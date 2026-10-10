@@ -18,7 +18,7 @@ Only include a post if it passes most of these:
 
 1. Specific: real numbers like latency, throughput, request volume, error rates. No vague claims like "improved performance significantly".
 2. Honest about trade-offs: what was tried, what failed, why the final choice was made.
-3. Still relevant: describes architecture that is current, not abandoned infrastructure.
+3. Still relevant: describes architecture that is current, not abandoned infrastructure. A post older than about five years passes only if it teaches a fundamental that has not changed, and its year must be shown on the page. Otherwise it fails. Never claim an old post's details still hold unless a source you opened says so; where you cannot confirm it, say it may have changed.
 4. Credible source: the engineering team of a company that runs the system at real scale (Netflix, Uber, Cloudflare, Discord, Meta, Stripe, LinkedIn, Slack, AWS, etc.). No personal toy projects, no SEO listicles, no marketing posts, no "top 10" roundups.
 5. Teaches something transferable to a concept in the graph.
 
@@ -26,6 +26,7 @@ Two content flows:
 
 - System design flow: the post maps to one graph node and teaches one transferable concept.
 - General knowledge flow: valuable stories (large migrations, incident write-ups) that do not map to one node. Keep these separate from topic pages.
+- Incident write-ups that teach a transferable concept (for example, how DNS caching and TTLs shaped an outage and its rollback) count as system design and belong on the matching topic. Pure war stories, with no concept a reader could reuse, go to the general-knowledge flow.
 
 ## Honesty rules
 
