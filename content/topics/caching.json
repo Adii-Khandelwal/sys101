@@ -13,6 +13,7 @@
       "url": "https://engineering.fb.com/2022/06/08/core-infra/cache-made-consistent/",
       "company": "Meta",
       "verifiedOn": "2026-10-11",
+      "published": "2022-06-08",
       "digest": {
         "problem": "A cache only stays correct if every change in the database reaches it as an invalidation, and races can break that. In Meta's example, a cache fill reads a value, the value then changes, the invalidation for the new value arrives first, and the delayed fill writes the old value back, leaving the cache wrong until something else evicts it. At Meta's scale such cases are rare but frequent enough to cause real harm, like two people's messages being routed to different regions.",
         "constraints": "Meta's TAO cache handles more than a quadrillion queries a day, so even rare races add up. Logging every cache change would turn a read-heavy system into a write-heavy one. Checking the database directly is expensive and could overload it. Any measurement had to be free of false alarms and precise enough to count past ten nines.",
@@ -77,6 +78,101 @@
         "failures": "Polaris caught a real bug: a rare transaction updated metadata and version together, a fill slipped in with old metadata, the next invalidation hit a transient error, and the error handler's drop-cache call only removed entries with a lower version. The stale entry carried the current version, so it stayed. Tracing showed the whole sequence and engineers found the cause in under 30 minutes. The authors note that shard moves, failovers and network partitions can trigger similar bugs.",
         "takeaways": "Measure what a client could actually observe, and keep the metric free of false alarms so people trust it. Expect some lag and retry before running expensive checks. Rare bugs tend to hide in error-handling paths, and running a consistent cache in production is a different problem from designing one."
       }
+    },
+    {
+      "title": "How Uber Serves Over 40 Million Reads Per Second from Online Storage Using an Integrated Cache",
+      "url": "https://www.uber.com/us/en/blog/how-uber-serves-over-40-million-reads-per-second-using-an-integrated-cache",
+      "company": "Uber",
+      "verifiedOn": "2026-10-11",
+      "published": "2024-02-15",
+      "digest": {
+        "problem": "Docstore, Uber's distributed database built on MySQL, stores tens of petabytes and serves tens of millions of requests per second. One service needed far more read throughput than Docstore could cheaply provide, and teams that cached on their own each ran a separate Redis cluster, wrote their own invalidation, and lost their warm cache whenever traffic failed over to another region.",
+        "constraints": "Docstore splits into a stateless query engine and a stateful storage engine. Each data partition has a leader and two followers kept in sync with Raft, and every write is replicated to a second active region, so each stateful node is paid for six times. Docstore promises strong consistency, which a cache can weaken. Some writes are conditional updates, where the database only learns which rows change when it runs the filter, so the query engine cannot know what to invalidate.",
+        "walkthrough": [
+          {
+            "step": "Cache inside the database",
+            "explanation": "The cache lives in Docstore's query engine. Reads check Redis first, fetch any missing rows from the storage engine, and fill Redis in the background, so services get caching without writing any cache code."
+          },
+          {
+            "step": "Make it opt-in",
+            "explanation": "Caching is switched on per database, table or request. Flows that need strong consistency, such as a shopping cart, skip it."
+          },
+          {
+            "step": "Expire as a backstop",
+            "explanation": "Entries expire after 5 minutes by default even if no invalidation arrives."
+          },
+          {
+            "step": "Invalidate from the log",
+            "explanation": "A system called Flux follows MySQL's binary log and invalidates or updates the affected rows in Redis. That covers conditional updates and never caches data that was not committed."
+          },
+          {
+            "step": "Let older writes lose",
+            "explanation": "Both the read path and Flux write to Redis, so a slow fill could overwrite newer data. A small Redis script compares each row's MySQL timestamp and keeps only the newer one."
+          },
+          {
+            "step": "Invalidate on request",
+            "explanation": "After a simple write, callers can invalidate rows themselves, so a service reads back what it just wrote."
+          },
+          {
+            "step": "Measure consistency",
+            "explanation": "A compare mode shadows cached reads against the database and reports mismatches."
+          },
+          {
+            "step": "Keep the other region warm",
+            "explanation": "Only cache keys are copied to the other region, which fills its own cache from its own database, so a failover does not land on a cold cache."
+          },
+          {
+            "step": "Contain failures",
+            "explanation": "Redis is sharded differently from the database so one Redis failure does not hammer one database shard. Circuit breakers and timeouts near the 99.99th percentile of cache latency keep a slow cache from slowing every request."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 330\" role=\"img\" aria-labelledby=\"dg-uber-cachefront-t\" class=\"dg\"><title id=\"dg-uber-cachefront-t\">Uber&#x27;s CacheFront: the query engine checks Redis first and fills misses from the storage engine; Flux tails the MySQL binlog to invalidate or update cached rows; only keys are sent to the other region, which fills its cache from its own database.</title><defs><marker id=\"dg-uber-cachefront-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"20\" width=\"110\" height=\"44\" class=\"dg-box\"/><text x=\"69\" y=\"47\" class=\"dg-label\" text-anchor=\"middle\">Service</text><rect x=\"190\" y=\"14\" width=\"160\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"270\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\">Query engine</text><text x=\"270\" y=\"55.5\" class=\"dg-label\" text-anchor=\"middle\">(cache-aside)</text><path d=\"M124,42 L186,42\" class=\"dg-line\" marker-end=\"url(#dg-uber-cachefront-a)\"/><rect x=\"420\" y=\"14\" width=\"120\" height=\"44\" class=\"dg-box\"/><text x=\"480\" y=\"41\" class=\"dg-label\" text-anchor=\"middle\">Redis</text><path d=\"M350,34 L416,34\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-uber-cachefront-a)\"/><text x=\"383\" y=\"26\" class=\"dg-note\" text-anchor=\"middle\">1. check</text><rect x=\"190\" y=\"130\" width=\"160\" height=\"56\" class=\"dg-box\"/><text x=\"270\" y=\"154.5\" class=\"dg-label\" text-anchor=\"middle\">Storage engine</text><text x=\"270\" y=\"171.5\" class=\"dg-label\" text-anchor=\"middle\">MySQL + Raft</text><path d=\"M270,70 L270,126\" class=\"dg-line\" marker-end=\"url(#dg-uber-cachefront-a)\"/><text x=\"278\" y=\"104\" class=\"dg-note\" text-anchor=\"start\">2. misses</text><path d=\"M350,52 L416,52\" class=\"dg-line dg-dashed\" marker-start=\"url(#dg-uber-cachefront-a)\"/><text x=\"383\" y=\"82\" class=\"dg-note\" text-anchor=\"middle\">3. fill async</text><rect x=\"420\" y=\"130\" width=\"120\" height=\"56\" class=\"dg-box\"/><text x=\"480\" y=\"154.5\" class=\"dg-label\" text-anchor=\"middle\">Flux</text><text x=\"480\" y=\"171.5\" class=\"dg-label\" text-anchor=\"middle\">tails binlog</text><path d=\"M350,158 L416,158\" class=\"dg-line\" marker-end=\"url(#dg-uber-cachefront-a)\"/><path d=\"M480,130 L480,62\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-uber-cachefront-a)\"/><text x=\"488\" y=\"100\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">invalidate</text><text x=\"488\" y=\"114\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">or upsert</text><rect x=\"190\" y=\"250\" width=\"160\" height=\"50\" class=\"dg-box dg-dashed\"/><text x=\"270\" y=\"271.5\" class=\"dg-label\" text-anchor=\"middle\">Other region</text><text x=\"270\" y=\"288.5\" class=\"dg-label\" text-anchor=\"middle\">own DB + Redis</text><path d=\"M470,186 C450,240 400,270 354,272\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-uber-cachefront-a)\"/><text x=\"440\" y=\"262\" class=\"dg-note\" text-anchor=\"start\">keys only</text><text x=\"100\" y=\"230\" class=\"dg-note\" text-anchor=\"middle\">rows carry a version:</text><text x=\"100\" y=\"244\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">older writes lose</text></svg>",
+        "numbers": [
+          {
+            "value": "over 40M per second",
+            "meaning": "Reads served across all Docstore instances"
+          },
+          {
+            "value": "tens of petabytes",
+            "meaning": "Data stored in Docstore"
+          },
+          {
+            "value": "6x",
+            "meaning": "Cost of each stateful node: 3 nodes per partition in each of 2 regions"
+          },
+          {
+            "value": "5 minutes",
+            "meaning": "Default cache expiry"
+          },
+          {
+            "value": "over 6M per second",
+            "meaning": "Requests in the largest first use case"
+          },
+          {
+            "value": "99%",
+            "meaning": "Cache hit rate for that use case (the post also gives 99.9% for the same workload; see note)"
+          },
+          {
+            "value": "about 60K vs 3K",
+            "meaning": "CPU cores needed without caching vs Redis cores with it, for that use case"
+          },
+          {
+            "value": "75% and over 67%",
+            "meaning": "Drop in p75 and p99.9 read latency"
+          },
+          {
+            "value": "99.99%",
+            "meaning": "Share of cached reads matching the database, measured by compare mode"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "One cache built into the database's query layer, filled on reads, invalidated from the binary log, protected by row versions, and switched off for flows that need strong consistency.",
+          "rejected": "Separate Redis caches run by each team, a shorter expiry time, invalidating in the write path, copying cached values between regions with Redis replication, and sharding Redis the same way as the database.",
+          "why": "A shorter expiry would cut the hit rate without fixing consistency, and write-path invalidation cannot see which rows a conditional update touches. Copying values between regions would add a second replication system that could disagree with the database, while copying keys lets each region fill from its own data. The cost is eventual consistency for cached reads, which is why caching is opt-in."
+        },
+        "failures": "The read path and the log follower could race, letting an older row overwrite a newer one, until row timestamps settled every write. Following the log alone did not let a service read its own write, so an explicit invalidation call was added. Fixed timeouts were either too short, wasting work, or too long, hurting tail latency, which led to adaptive ones. The post itself gives the largest use case's hit rate as both 99% and 99.9%; this page uses 99%.",
+        "takeaways": "Putting the cache inside the database makes it consistent across every service instead of reinvented in each. The database's own change log is the most reliable invalidation signal. A cache needs explicit ways to keep stale data out and a way to measure how often it fails, and a read-heavy workload can be served from far cheaper hardware once that is in place."
+      }
     }
   ],
   "glossary": [
@@ -103,6 +199,18 @@
     {
       "term": "Nines",
       "definition": "Shorthand for reliability: six nines is 99.9999%, ten nines is 99.99999999%."
+    },
+    {
+      "term": "Cache-aside",
+      "definition": "A pattern where the application checks the cache, reads the database on a miss, and then writes the result into the cache."
+    },
+    {
+      "term": "Change data capture",
+      "definition": "Reading a database's own log of committed changes so other systems, like a cache, can react to them."
+    },
+    {
+      "term": "Negative caching",
+      "definition": "Remembering that a key does not exist, so repeated lookups for it skip the database."
     }
   ],
   "mistakes": [
@@ -126,10 +234,15 @@
     {
       "question": "What did the drop-cache bug teach?",
       "answer": "Error-handling paths hide rare bugs: the handler only dropped entries with a lower version, and the stale entry already had the current version."
+    },
+    {
+      "question": "Uber's cache is filled by reads and also updated by Flux following the database log. What could go wrong, and how did Uber prevent it?",
+      "answer": "A slow read could write an older version of a row after Flux had written a newer one. Uber stores each row's MySQL timestamp in Redis and uses a small script that only accepts a write if it is newer."
     }
   ],
   "exercise": {
     "prompt": "Your product page cache uses invalidations from the database but no TTL. Customers occasionally see an old price for hours. How would you find out how often this happens, and how would you make it heal on its own?",
     "answer": "Measure it from the outside: subscribe to the same invalidation stream, read the key from each cache replica a little later, and count entries that are still older than the database after a grace period, rechecking before reporting so normal lag is not counted. Report it as the share of writes consistent within N minutes. To make it heal, add a TTL as a backstop, store versions with entries so older fills are rejected, and review the error paths around invalidation, since that is where stale entries usually survive."
-  }
+  },
+  "comparison": "Both companies cache in front of a strongly consistent database and both invalidate from the database's own stream of changes, but they spent their effort in different places. Meta's TAO cache already ran at over a quadrillion queries a day, so the hard problem was finding the rare races that left it wrong, and Meta built Polaris to measure only the inconsistencies a client could see. Uber was adding a cache to Docstore from scratch, so it designed the races out up front with row versions, made caching opt-in for flows that cannot tolerate staleness, and built a compare mode that reports its own consistency."
 }
