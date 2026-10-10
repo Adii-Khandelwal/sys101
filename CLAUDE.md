@@ -56,5 +56,5 @@ Personal progress/maturity per concept, interview-relevance tags, staleness flag
 - `npm run dev` for the dev server, `npm run build` to check a production build, `npx tsc --noEmit` to type-check.
 - Topics live in `content/topics/<slug>.json`, typed and validated in `lib/topics.ts`. A topic has `concept`, `prerequisites[]`, `primer`, `posts[]`, `comparison` (required with 2+ posts), `glossary[]`, `mistakes[3]`, `quiz[3-5]`, `exercise`. Each post has `title`, `url` (attribution only), `company`, and a `digest`: `problem`, `constraints`, `walkthrough[]`, `diagram` (inline SVG using the `dg-*` classes), `numbers[]`, `tradeoffs{chosen, rejected, why}`, `failures`, `takeaways`.
 - The build fails on an empty section, a missing prerequisite, a prerequisite cycle, or a diagram with gradients, filters, scripts, or no `<title>`.
-- `npm run build` also builds the Pagefind search index into `public/pagefind` (git-ignored). Search shows a notice under `npm run dev`, where no index exists.
+- `npm run build` also builds the Pagefind search index into `public/pagefind` (git-ignored). Under `npm run dev`, run `npm run search:index` to build the index without touching the dev server's `.next`.
 - Pushing to `main` on GitHub deploys to Vercel.

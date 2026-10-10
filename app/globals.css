@@ -33,6 +33,11 @@ h3 {
   margin: 0;
 }
 
+/* Room above headings reached through a search result's #anchor. */
+[id] {
+  scroll-margin-top: 32px;
+}
+
 a {
   color: inherit;
   text-decoration-color: var(--rule);
@@ -141,6 +146,10 @@ a:hover {
   font-size: 15px;
   line-height: 1.5;
   color: var(--ink-soft);
+}
+
+.search-section {
+  margin-left: 10px;
 }
 
 .search-results mark {

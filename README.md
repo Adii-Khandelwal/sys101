@@ -64,8 +64,9 @@ Requires Node 24 (see `.nvmrc`).
 
 ```
 npm install
-npm run dev       # http://localhost:3000, search is disabled without a build
-npm run build     # static build, then the Pagefind index
+npm run dev            # http://localhost:3000
+npm run search:index   # build the search index for local dev; rerun after content changes
+npm run build          # static build, then the Pagefind index
 ```
 
 The build fails if a topic lists a prerequisite with no topic file, if prerequisites form a cycle, if any section is empty (including each post's digest), if a quiz has fewer than 3 or more than 5 questions, or if a diagram uses gradients, filters or scripts or lacks a title.

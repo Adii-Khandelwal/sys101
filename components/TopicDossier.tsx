@@ -61,12 +61,9 @@ function PostDigest({ post, index }: { post: Post; index: number }) {
 
       <h3>Trade-offs</h3>
       <dl className="tradeoffs">
-        <dt>Chosen</dt>
-        <dd>{d.tradeoffs.chosen}</dd>
-        <dt>Rejected</dt>
-        <dd>{d.tradeoffs.rejected}</dd>
-        <dt>Why</dt>
-        <dd>{d.tradeoffs.why}</dd>
+        {/* The {" "} text nodes keep terms and definitions apart in the search index. */}
+        <dt>Chosen</dt> <dd>{d.tradeoffs.chosen}</dd> <dt>Rejected</dt> <dd>{d.tradeoffs.rejected}</dd>{" "}
+        <dt>Why</dt> <dd>{d.tradeoffs.why}</dd>
       </dl>
 
       <h3>What went wrong</h3>
@@ -86,7 +83,9 @@ export default function TopicDossier({ topic, prerequisites, dependents }: Props
       </nav>
 
       <div data-pagefind-body>
-        <div className="label">{topic.group ?? "Concept"}</div>
+        <div className="label" data-pagefind-ignore>
+          {topic.group ?? "Concept"}
+        </div>
         <h1 data-pagefind-meta="title">{topic.title}</h1>
         <p className="concept">{topic.concept}</p>
 
@@ -124,8 +123,7 @@ export default function TopicDossier({ topic, prerequisites, dependents }: Props
           <dl className="glossary">
             {topic.glossary.map((g) => (
               <div key={g.term}>
-                <dt>{g.term}</dt>
-                <dd>{g.definition}</dd>
+                <dt>{g.term}</dt> <dd>{g.definition}</dd>
               </div>
             ))}
           </dl>
