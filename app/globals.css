@@ -54,23 +54,13 @@ a:hover {
 /* ── Homepage ─────────────────────────────── */
 
 .home {
-  position: relative;
-  height: 100dvh;
-  overflow: hidden;
-}
-
-.graph {
-  position: absolute;
-  inset: 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 40px 48px;
 }
 
 .masthead {
-  position: absolute;
-  top: 32px;
-  left: 40px;
-  max-width: 340px;
-  pointer-events: none;
-  z-index: 1;
+  max-width: 420px;
 }
 
 .masthead h1 {
@@ -84,11 +74,16 @@ a:hover {
   font-style: italic;
 }
 
-.index {
+.graph-stage {
+  position: relative;
+  height: min(64vh, 620px);
+  margin: 16px 0 32px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.graph {
   position: absolute;
-  left: 40px;
-  bottom: 32px;
-  z-index: 1;
+  inset: 0;
 }
 
 .index ol {
@@ -190,14 +185,27 @@ a:hover {
   color: var(--ink-soft);
 }
 
+.comparison {
+  margin-top: 48px;
+}
+
+.comparison h2 {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+
+.comparison p {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.6;
+}
+
 @media (max-width: 640px) {
-  .masthead {
-    left: 16px;
-    top: 20px;
+  .home {
+    padding: 24px 16px 40px;
   }
-  .index {
-    left: 16px;
-    bottom: 20px;
+  .graph-stage {
+    height: 52vh;
   }
   .dossier {
     padding: 32px 16px 64px;
@@ -297,13 +305,6 @@ a:hover {
   color: var(--ink-soft);
 }
 
-.site-footer.floating {
-  position: absolute;
-  right: 40px;
-  bottom: 32px;
-  margin: 0;
-  z-index: 1;
-}
 
 .legal h1 {
   margin-bottom: 32px;
@@ -318,12 +319,6 @@ a:hover {
   margin: 0 0 12px;
 }
 
-@media (max-width: 640px) {
-  .site-footer.floating {
-    right: 16px;
-    bottom: 20px;
-  }
-}
 
 /* ── Reading progress ────────────────────── */
 

@@ -14,6 +14,8 @@ export type Topic = {
   concept: string;
   prerequisites: string[];
   posts: Post[];
+  /** Short prose comparing the posts' approaches; shown when a topic has two or more posts. */
+  comparison?: string;
 };
 
 const TOPICS_DIR = path.join(process.cwd(), "content", "topics");

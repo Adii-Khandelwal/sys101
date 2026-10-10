@@ -13,14 +13,16 @@ export default function Home() {
         <p>System design concepts, ordered by what you need to know first.</p>
       </header>
 
-      <GraphView
-        nodes={topics.map((t) => ({ slug: t.slug, title: t.title, posts: t.posts.length }))}
-        edges={topics.flatMap((t) => t.prerequisites.map((p) => ({ from: p, to: t.slug })))}
-      />
+      <section className="graph-stage">
+        <GraphView
+          nodes={topics.map((t) => ({ slug: t.slug, title: t.title, posts: t.posts.length }))}
+          edges={topics.flatMap((t) => t.prerequisites.map((p) => ({ from: p, to: t.slug })))}
+        />
+      </section>
 
       <TopicIndex topics={topics.map((t) => ({ slug: t.slug, title: t.title }))} />
 
-      <SiteFooter floating />
+      <SiteFooter />
     </main>
   );
 }

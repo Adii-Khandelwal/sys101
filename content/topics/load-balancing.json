@@ -2,13 +2,22 @@
   "slug": "load-balancing",
   "title": "Load Balancing",
   "concept": "Load balancing spreads requests across a pool of backends so that no single instance saturates. The hard parts are choosing which backends each client may talk to (subsetting), deciding where each request goes (round-robin, least-loaded, power of two choices), and reacting to load and health signals that are always slightly stale.",
-  "prerequisites": ["dns"],
+  "prerequisites": [
+    "dns"
+  ],
   "posts": [
     {
       "title": "Better Load Balancing: Real-Time Dynamic Subsetting",
       "url": "https://www.uber.com/blog/better-load-balancing-real-time-dynamic-subsetting/",
       "company": "Uber",
       "summary": "Each on-host proxy in Uber's service mesh picked a fixed-size random subset of backends, which caused load imbalance and needed constant manual tuning. Proxies now resize their subsets in near real time from load reports aggregated by the control plane, so each proxy's subset grows with its share of traffic. After rollout, 17 of 36 large services saw p99 CPU utilization fall by 10% or more, and some by up to 40%."
+    },
+    {
+      "title": "What’s new with Robinhood, our in-house load balancing service",
+      "url": "https://dropbox.tech/infrastructure/robinhood-in-house-load-balancing-service",
+      "company": "Dropbox",
+      "summary": "Clients at Dropbox round-robined over a subset of servers, and mixed hardware generations meant the same request cost more on some machines, so teams over-provisioned to avoid hot spots. Robinhood runs one PID controller per server that nudges its weight toward the service's average utilization, and clients do weighted round-robin on those weights, so fixes ship in one central service that can be rolled back in minutes instead of in every client. Max-to-average CPU fell from 1.26 to 1.01 on an Envoy cluster and from 1.4 to 1.05 on a database frontend, and some of the largest services shrank their fleets by 25%, though the feedback loop works poorly for very low-traffic services or requests that take minutes."
     }
-  ]
+  ],
+  "comparison": "Uber and Dropbox started from the same problem: clients spreading requests over a subset of servers still left some servers running much hotter than others. Uber changed who each proxy talks to, resizing its subset in near real time from load reports gathered by the control plane, so a caller that sends more traffic spreads it over more backends. Dropbox decided that tuning subset size only added another knob and instead changed how much traffic each server gets, with weights driven by measured utilization, which absorbs its mix of hardware generations and keeps the logic in one central service rather than in every client."
 }

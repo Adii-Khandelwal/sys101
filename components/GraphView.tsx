@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import type Graph from "graphology";
 import type Sigma from "sigma";
+import type { NodeHoverDrawingFunction, NodeLabelDrawingFunction } from "sigma/rendering";
 import { useReadTopics } from "@/lib/progress";
 
 type GraphNode = { slug: string; title: string; posts: number };
@@ -19,11 +21,12 @@ const PAPER = "#f3ecdc";
 const ACCENT = "#9a3b1f";
 
 /**
- * Lay the prerequisite DAG out left to right: a node's column is the length
- * of the longest prerequisite chain leading to it, so foundations sit on the
- * left and the things built on them fan out to the right.
+ * Starting positions for ForceAtlas2: a node's column is the length of the
+ * longest prerequisite chain leading to it. Seeding from this (instead of
+ * random positions) makes the settled layout the same on every load and keeps
+ * foundations roughly to the left of what builds on them.
  */
-function layout(nodes: GraphNode[], edges: GraphEdge[]) {
+function seedPositions(nodes: GraphNode[], edges: GraphEdge[]) {
   const prereqs = new Map(nodes.map((n) => [n.slug, [] as string[]]));
   for (const e of edges) prereqs.get(e.to)?.push(e.from);
 
@@ -48,11 +51,44 @@ function layout(nodes: GraphNode[], edges: GraphEdge[]) {
   const positions = new Map<string, { x: number; y: number }>();
   for (const [d, slugs] of columns) {
     slugs.forEach((slug, i) => {
-      positions.set(slug, { x: d, y: i - (slugs.length - 1) / 2 });
+      // Small alternating offset so a pure chain doesn't start on one line,
+      // which ForceAtlas2 can't pull apart vertically.
+      positions.set(slug, { x: d * 10, y: (i - (slugs.length - 1) / 2) * 10 + (d % 2 ? 3 : -3) });
     });
   }
   return positions;
 }
+
+/** Read topics are solid accent; unread ones are outlined in ink. */
+function nodeColors(isRead: boolean) {
+  return isRead ? { color: ACCENT, borderColor: ACCENT } : { color: PAPER, borderColor: INK };
+}
+
+// Labels sit centred below each node so edges rarely cross them.
+const drawLabel: NodeLabelDrawingFunction = (ctx, data, settings) => {
+  if (!data.label) return;
+  ctx.font = `${settings.labelWeight} ${settings.labelSize}px ${settings.labelFont}`;
+  ctx.fillStyle = INK;
+  ctx.textAlign = "center";
+  ctx.fillText(data.label, data.x, data.y + data.size + settings.labelSize + 4);
+  ctx.textAlign = "left";
+};
+
+// Sigma's default hover draws a white box with a drop shadow; instead, redraw
+// the label in accent ink on a flat paper ground.
+const drawHover: NodeHoverDrawingFunction = (ctx, data, settings) => {
+  if (!data.label) return;
+  const size = settings.labelSize;
+  ctx.font = `${settings.labelWeight} ${size}px ${settings.labelFont}`;
+  const width = ctx.measureText(data.label).width;
+  const baseline = data.y + data.size + size + 4;
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(data.x - width / 2 - 4, baseline - size, width + 8, size + 8);
+  ctx.fillStyle = ACCENT;
+  ctx.textAlign = "center";
+  ctx.fillText(data.label, data.x, baseline);
+  ctx.textAlign = "left";
+};
 
 export default function GraphView({ nodes, edges }: Props) {
   const container = useRef<HTMLDivElement>(null);
@@ -66,25 +102,25 @@ export default function GraphView({ nodes, edges }: Props) {
     let cancelled = false;
 
     (async () => {
-      const [{ default: Graph }, { default: SigmaCtor }] = await Promise.all([
-        import("graphology"),
-        import("sigma"),
-        document.fonts.ready,
-      ]);
+      const [{ default: GraphCtor }, { default: SigmaCtor }, { default: forceAtlas2 }, { createNodeBorderProgram }] =
+        await Promise.all([
+          import("graphology"),
+          import("sigma"),
+          import("graphology-layout-forceatlas2"),
+          import("@sigma/node-border"),
+          document.fonts.ready,
+        ]);
       if (cancelled || !container.current) return;
 
-      const serif = getComputedStyle(document.body).fontFamily;
-      const positions = layout(nodes, edges);
-      const graph = new Graph({ type: "directed" });
-
+      const graph: Graph = new GraphCtor({ type: "directed" });
+      const seeds = seedPositions(nodes, edges);
       for (const n of nodes) {
-        const { x, y } = positions.get(n.slug)!;
         graph.addNode(n.slug, {
-          x,
-          y,
+          ...seeds.get(n.slug)!,
           label: n.title,
-          size: 9 + Math.min(n.posts, 6) * 1.5,
-          color: INK,
+          size: 10 + Math.min(n.posts, 6) * 1.5,
+          type: "bordered",
+          ...nodeColors(false),
         });
       }
       for (const e of edges) {
@@ -93,52 +129,47 @@ export default function GraphView({ nodes, edges }: Props) {
         }
       }
 
+      // Run the layout to completion before the first paint, so the graph
+      // appears already settled and never moves afterwards.
+      forceAtlas2.assign(graph, {
+        iterations: 400,
+        settings: { ...forceAtlas2.inferSettings(graph), gravity: 1, scalingRatio: 20, adjustSizes: true },
+      });
+
       renderer = new SigmaCtor(graph, container.current, {
         defaultEdgeType: "arrow",
-        labelFont: serif,
+        nodeProgramClasses: {
+          bordered: createNodeBorderProgram({
+            borders: [
+              { size: { value: 2, mode: "pixels" }, color: { attribute: "borderColor" } },
+              { size: { fill: true }, color: { attribute: "color" } },
+            ],
+            drawLabel,
+            drawHover,
+          }),
+        },
+        labelFont: getComputedStyle(document.body).fontFamily,
         labelSize: 20,
         labelWeight: "500",
         labelColor: { color: INK },
         labelRenderedSizeThreshold: 0,
-        stagePadding: 120,
-        // Labels sit centred below each node so left-to-right edges never cross them.
-        defaultDrawNodeLabel: (ctx, data, settings) => {
-          if (!data.label) return;
-          ctx.font = `${settings.labelWeight} ${settings.labelSize}px ${settings.labelFont}`;
-          ctx.fillStyle = INK;
-          ctx.textAlign = "center";
-          ctx.fillText(data.label, data.x, data.y + data.size + settings.labelSize + 4);
-          ctx.textAlign = "left";
-        },
-        // Sigma's default hover draws a white box with a drop shadow; replace it
-        // with the label in accent ink on a flat paper ground.
-        defaultDrawNodeHover: (ctx, data, settings) => {
-          if (!data.label) return;
-          const size = settings.labelSize;
-          ctx.font = `${settings.labelWeight} ${size}px ${settings.labelFont}`;
-          const width = ctx.measureText(data.label).width;
-          const baseline = data.y + data.size + size + 4;
-          ctx.fillStyle = PAPER;
-          ctx.fillRect(data.x - width / 2 - 4, baseline - size, width + 8, size + 8);
-          ctx.fillStyle = ACCENT;
-          ctx.textAlign = "center";
-          ctx.fillText(data.label, data.x, baseline);
-          ctx.textAlign = "left";
-          ctx.beginPath();
-          ctx.arc(data.x, data.y, data.size, 0, Math.PI * 2);
-          ctx.fill();
-        },
+        defaultDrawNodeLabel: drawLabel,
+        defaultDrawNodeHover: drawHover,
+        stagePadding: 80,
+        enableCameraZooming: false,
+        enableCameraPanning: false,
+      });
+
+      renderer.on("clickNode", ({ node }) => router.push(`/topic/${node}`));
+      renderer.on("enterNode", () => {
+        if (container.current) container.current.style.cursor = "pointer";
+      });
+      renderer.on("leaveNode", () => {
+        if (container.current) container.current.style.cursor = "default";
       });
 
       rendererRef.current = renderer;
       setReady(true);
-      renderer.on("clickNode", ({ node }) => router.push(`/topic/${node}`));
-      renderer.on("enterNode", () => {
-        container.current!.style.cursor = "pointer";
-      });
-      renderer.on("leaveNode", () => {
-        container.current!.style.cursor = "default";
-      });
     })();
 
     return () => {
@@ -149,27 +180,26 @@ export default function GraphView({ nodes, edges }: Props) {
     };
   }, [nodes, edges, router]);
 
-  // Read topics are filled in the accent colour.
   useEffect(() => {
-    const renderer = rendererRef.current;
-    if (!ready || !renderer) return;
-    renderer.getGraph().forEachNode((slug) => {
-      renderer.getGraph().setNodeAttribute(slug, "color", read.includes(slug) ? ACCENT : INK);
-    });
+    const graph = rendererRef.current?.getGraph();
+    if (!ready || !graph) return;
+    graph.forEachNode((slug) => graph.mergeNodeAttributes(slug, nodeColors(read.includes(slug))));
   }, [ready, read]);
 
+  // The canvas is mouse-only; the text index below the graph carries the same
+  // links for keyboard and screen-reader users.
   return (
-    <div className="graph">
+    <div className="graph" aria-hidden="true">
       {!ready && <GraphSkeleton />}
-      <div ref={container} className="graph-canvas" aria-label="Topic prerequisite graph" />
+      <div ref={container} className="graph-canvas" />
     </div>
   );
 }
 
-/** Placeholder shown while Sigma and the fonts load: muted nodes, edges and label bars. */
+/** Placeholder shown while Sigma, the layout and the fonts load: muted nodes, edges and label bars. */
 function GraphSkeleton() {
   return (
-    <div className="graph-skeleton" aria-hidden="true">
+    <div className="graph-skeleton">
       {[0, 1, 2].map((i) => (
         <div key={i} className="graph-skeleton-step">
           {i > 0 && <span className="skeleton-edge" />}

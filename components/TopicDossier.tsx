@@ -62,6 +62,13 @@ export default function TopicDossier({ topic, prerequisites, dependents }: Props
         </ol>
       </section>
 
+      {topic.posts.length >= 2 && topic.comparison && (
+        <section className="comparison">
+          <h2>Where they differ</h2>
+          <p>{topic.comparison}</p>
+        </section>
+      )}
+
       <SiteFooter />
     </article>
   );
