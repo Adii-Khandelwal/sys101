@@ -2,13 +2,22 @@
   "slug": "consistent-hashing",
   "title": "Consistent Hashing",
   "concept": "Consistent hashing places both servers and keys on the same hash ring and assigns each key to the next server along it. When a server joins or leaves, only the keys next to it move, instead of nearly all of them as with hash-mod-N. That stability is what lets caches and stateful services grow and shrink without a mass reshuffle, though a ring with few servers spreads load unevenly unless each server takes many points on it.",
-  "prerequisites": ["caching"],
+  "prerequisites": [
+    "caching"
+  ],
   "posts": [
+    {
+      "title": "Saving another 100TB of RAM with math (and Rust)",
+      "url": "https://blog.cloudflare.com/saving-100-tb-of-ram-with-math/",
+      "company": "Cloudflare",
+      "summary": "Cloudflare routes cacheable requests by URL with consistent hashing so each data center keeps one copy of a file. Giving every server 160 points on the ring cuts load variation across 100 servers from about 99% to about 8%, but weighting servers by disk and keeping a separate ring for each combination of routing features pushed memory to 6GB in some cases. Packing each ring entry into 6 bytes instead of 8 saved 25%, and their math showed servers could use 90% fewer points with almost no loss of balance. Because changing the ring moves cached content and sends more traffic to origin, they ran old and new rings side by side and rolled out one data center at a time, reclaiming more than 100TB of RAM."
+    },
     {
       "title": "How Discord Scaled Elixir to 5,000,000 Concurrent Users",
       "url": "https://discord.com/blog/how-discord-scaled-elixir-to-5-000-000-concurrent-users",
       "company": "Discord",
       "summary": "Discord routes every entity to a node with a consistent hash ring, and bursts of reconnecting users overloaded the process serving ring lookups. At about 12μs per request to that process, a session server with up to 500,000 sessions, each in about 5 guilds, needed roughly 30 seconds of lookups after a restart. Copying the ring into ETS cut reads to about 7μs, which is still 17.5 seconds, and compiling it into a module with FastGlobal brought lookups to 0.3μs and the total to 750ms. The trade-off is that rebuilding that module can take up to a second, which they accepted because the ring rarely changes."
     }
-  ]
+  ],
+  "comparison": "Both companies kept consistent hashing and attacked the cost of the ring itself, but they hit different limits. Discord's problem was lookup speed on a hot path, with every user session needing ring lookups after a restart, so it moved the ring into compiled module memory and accepted slow rebuilds because the ring rarely changes. Cloudflare's problem was memory, with dozens of large weighted rings in its load balancer, so it shrank the ring with fewer points and a tighter layout, accepting slightly less even balance and a slow rollout because any ring change moves cached files."
 }
