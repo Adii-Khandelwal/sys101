@@ -1,0 +1,14 @@
+{
+  "slug": "load-balancing",
+  "title": "Load Balancing",
+  "concept": "Load balancing spreads requests across a pool of backends so that no single instance saturates. The hard parts are choosing which backends each client may talk to (subsetting), deciding where each request goes (round-robin, least-loaded, power of two choices), and reacting to load and health signals that are always slightly stale.",
+  "prerequisites": ["dns"],
+  "posts": [
+    {
+      "title": "Better Load Balancing: Real-Time Dynamic Subsetting",
+      "url": "https://www.uber.com/blog/better-load-balancing-real-time-dynamic-subsetting/",
+      "company": "Uber",
+      "summary": "Each on-host proxy in Uber's service mesh picked a fixed-size random subset of backends, which caused load imbalance and needed constant manual tuning. Proxies now resize their subsets in near real time from load reports aggregated by the control plane, so each proxy's subset grows with its share of traffic. After rollout, 17 of 36 large services saw p99 CPU utilization fall by 10% or more, and some by up to 40%."
+    }
+  ]
+}
