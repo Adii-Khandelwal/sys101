@@ -565,6 +565,41 @@ details p {
   margin-left: 6px;
 }
 
+.age-note {
+  margin: 0 0 24px;
+  padding: 12px 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.age-note p {
+  margin: 0;
+  font-size: 16px;
+}
+
+.age-note p + p {
+  margin-top: 6px;
+}
+
+.age-note .age-year {
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.age-cited {
+  margin: -8px 0 20px;
+  font-size: 15px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.related {
+  margin-top: 24px;
+}
+
 .sources .checked {
   display: block;
   font-size: 14px;

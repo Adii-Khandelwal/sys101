@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatDate, type Post, type Topic } from "@/lib/topics";
+import { formatDate, formatMonth, isOld, type Post, type Topic } from "@/lib/topics";
 import ReadToggle from "./ReadToggle";
 import SiteFooter from "./SiteFooter";
 
@@ -7,6 +7,8 @@ type Props = {
   topic: Topic;
   prerequisites: Topic[];
   dependents: Topic[];
+  /** slug -> title, for related-topic links. */
+  titles: Map<string, string>;
 };
 
 function TopicList({ topics }: { topics: Topic[] }) {
@@ -23,13 +25,39 @@ function TopicList({ topics }: { topics: Topic[] }) {
 }
 
 /** One post, rewritten: context, walkthrough, diagram, numbers, trade-offs, then what went wrong. */
-function PostDigest({ post, index }: { post: Post; index: number }) {
+function PostDigest({ post, index, titles }: { post: Post; index: number; titles: Map<string, string> }) {
   const d = post.digest;
   const id = `post-${index + 1}`;
+  const old = isOld(post.published);
   return (
     <section className="post" aria-labelledby={`${id}-title`}>
-      <div className="label">{post.company}</div>
+      <div className="label">
+        {post.company} · {formatMonth(post.published)}
+      </div>
       <h2 id={`${id}-title`}>{post.title}</h2>
+
+      {old && (
+        <aside className="age-note">
+          <p className="age-year">Written in {post.published.slice(0, 4)}</p>
+          <p>{post.ageNote}</p>
+          {post.stillCitedBy && (
+            <p>
+              Still cited in {post.stillCitedBy.year}:{" "}
+              <a href={post.stillCitedBy.url} target="_blank" rel="noopener noreferrer">
+                {post.stillCitedBy.title}
+              </a>
+            </p>
+          )}
+        </aside>
+      )}
+      {!old && post.stillCitedBy && (
+        <p className="age-cited">
+          Still cited in {post.stillCitedBy.year}:{" "}
+          <a href={post.stillCitedBy.url} target="_blank" rel="noopener noreferrer">
+            {post.stillCitedBy.title}
+          </a>
+        </p>
+      )}
 
       <p className="post-problem">{d.problem}</p>
       <h3>Constraints</h3>
@@ -70,11 +98,23 @@ function PostDigest({ post, index }: { post: Post; index: number }) {
       <p>{d.failures}</p>
       <h3>Takeaways</h3>
       <p>{d.takeaways}</p>
+
+      {post.related?.length ? (
+        <p className="related" data-pagefind-ignore>
+          <span className="label">Related topic</span>{" "}
+          {post.related.map((slug, i) => (
+            <span key={slug}>
+              {i > 0 && ", "}
+              <Link href={`/topic/${slug}`}>{titles.get(slug) ?? slug}</Link>
+            </span>
+          ))}
+        </p>
+      ) : null}
     </section>
   );
 }
 
-export default function TopicDossier({ topic, prerequisites, dependents }: Props) {
+export default function TopicDossier({ topic, prerequisites, dependents, titles }: Props) {
   return (
     <article className="dossier">
       <nav className="label" data-pagefind-ignore>
@@ -108,7 +148,7 @@ export default function TopicDossier({ topic, prerequisites, dependents }: Props
         </section>
 
         {topic.posts.map((post, i) => (
-          <PostDigest key={post.url} post={post} index={i} />
+          <PostDigest key={post.url} post={post} index={i} titles={titles} />
         ))}
 
         {topic.posts.length >= 2 && topic.comparison && (
@@ -173,7 +213,9 @@ export default function TopicDossier({ topic, prerequisites, dependents }: Props
               <a href={post.url} target="_blank" rel="noopener noreferrer">
                 {post.title}
               </a>{" "}
-              <span className="label">{post.company}</span>
+              <span className="label">
+                {post.company} · {post.published.slice(0, 4)}
+              </span>
               <span className="checked">Checked on {formatDate(post.verifiedOn)}</span>
             </li>
           ))}

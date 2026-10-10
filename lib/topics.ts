@@ -21,6 +21,14 @@ export type Post = {
   company: string;
   /** YYYY-MM-DD: when someone last opened the post and checked the digest against it. */
   verifiedOn: string;
+  /** YYYY-MM-DD: when the company published the post. Shown on the page. */
+  published: string;
+  /** Required for posts older than OLD_POST_YEARS: why it still passes rule 3, and what may have changed. */
+  ageNote?: string;
+  /** A newer source, opened by us, that still points to this post. */
+  stillCitedBy?: { title: string; url: string; year: number };
+  /** Topic slugs this post also teaches, linked from the post. */
+  related?: string[];
   digest: Digest;
 };
 
@@ -73,6 +81,21 @@ function isPastDate(v: unknown) {
   // UTC build machine, so allow one day of slack.
   const tomorrow = Date.now() + 24 * 60 * 60 * 1000;
   return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(v) && date.getTime() <= tomorrow;
+}
+
+/** Posts older than this must explain why they still pass rule 3 (see CLAUDE.md). */
+export const OLD_POST_YEARS = 5;
+
+export function isOld(iso: string) {
+  const cutoff = new Date();
+  cutoff.setUTCFullYear(cutoff.getUTCFullYear() - OLD_POST_YEARS);
+  return new Date(`${iso}T00:00:00Z`) < cutoff;
+}
+
+/** "2017-06-20" -> "June 2017". */
+export function formatMonth(iso: string) {
+  const [y, m] = iso.split("-").map(Number);
+  return `${MONTHS[m - 1]} ${y}`;
 }
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -140,6 +163,16 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
         if (!nonEmpty(post[field])) problems.push(`${where}: ${field} is empty`);
       }
       if (!isPastDate(post.verifiedOn)) problems.push(`${where}: verifiedOn must be a YYYY-MM-DD date, not in the future`);
+      if (!isPastDate(post.published)) problems.push(`${where}: published must be a YYYY-MM-DD date, not in the future`);
+      else if (isOld(post.published) && !nonEmpty(post.ageNote)) {
+        problems.push(`${where}: published ${post.published}, over ${OLD_POST_YEARS} years ago, so it needs an ageNote (CLAUDE.md rule 3)`);
+      }
+      if (post.stillCitedBy && !(nonEmpty(post.stillCitedBy.title) && nonEmpty(post.stillCitedBy.url) && post.stillCitedBy.year > 0)) {
+        problems.push(`${where}: stillCitedBy needs title, url and year`);
+      }
+      for (const r of post.related ?? []) {
+        if (!slugs.has(r)) problems.push(`${where}: related topic "${r}" has no topic file`);
+      }
       const d = post.digest;
       if (!d) return problems.push(`${where}: missing digest`);
       for (const field of ["problem", "constraints", "failures", "takeaways"] as const) {

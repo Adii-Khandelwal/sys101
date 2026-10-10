@@ -29,6 +29,11 @@ export default async function TopicPage({ params }: Props) {
     .filter((t) => t !== undefined);
 
   return (
-    <TopicDossier topic={topic} prerequisites={prerequisites} dependents={getDependents(slug)} />
+    <TopicDossier
+      topic={topic}
+      prerequisites={prerequisites}
+      dependents={getDependents(slug)}
+      titles={new Map(getAllTopics().map((t) => [t.slug, t.title]))}
+    />
   );
 }

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type Graph from "graphology";
 import type Sigma from "sigma";
 import type { NodeLabelDrawingFunction } from "sigma/rendering";
-import { columns, fitPositions, rowCount, type Orientation } from "@/lib/graph";
+import { columns, edgeCurvatures, fitPositions, layers, rowCount, slotsByEdge, type Orientation } from "@/lib/graph";
 import { useReadTopics } from "@/lib/progress";
 
 type GraphNode = { slug: string; title: string; posts: number };
@@ -79,6 +79,7 @@ export default function GraphView({ nodes, edges }: Props) {
   }, [read]);
 
   const cols = useMemo(() => columns(nodes, edges), [nodes, edges]);
+  const layered = useMemo(() => layers(nodes, edges), [nodes, edges]);
   const bySlug = useMemo(() => new Map(nodes.map((n) => [n.slug, n])), [nodes]);
 
   // Orientation follows the same breakpoint as the stage height in CSS.
@@ -171,7 +172,9 @@ export default function GraphView({ nodes, edges }: Props) {
 
       const graph: Graph = new GraphCtor({ type: "directed" });
       for (const n of nodes) {
-        graph.addNode(n.slug, { x: 0, y: 0, label: n.title, size: NODE_RADIUS, type: "bordered" });
+        // forceLabel: Sigma otherwise hides labels it guesses would collide;
+        // the layout already keeps them apart, and every topic needs its name.
+        graph.addNode(n.slug, { x: 0, y: 0, label: n.title, size: NODE_RADIUS, type: "bordered", forceLabel: true });
       }
       for (const e of edges) {
         if (graph.hasNode(e.from) && graph.hasNode(e.to)) graph.addEdge(e.from, e.to, { size: 1 });
@@ -276,16 +279,29 @@ export default function GraphView({ nodes, edges }: Props) {
     const labelled = orientation === "horizontal" ? (cols[cols.length - 1] ?? []) : cols.flat();
     const labelRoom = NODE_RADIUS + 8 + Math.max(0, ...labelled.map((n) => ctx.measureText(n.title).width));
 
-    fitPositions(cols, orientation, { width, height, labelRoom }).forEach((p, slug) =>
-      graph.mergeNodeAttributes(slug, p),
+    // Horizontal layout reserves slots for long edges; stacked layout lists topics only.
+    const positions = fitPositions(layered, orientation, { width, height, labelRoom });
+    cols.flat().forEach((n) => graph.mergeNodeAttributes(n.slug, positions.get(n.slug)!));
+
+    const labels = new Map(
+      cols.flat().map((n) => [n.slug, { start: NODE_RADIUS + 8, width: ctx.measureText(n.title).width }]),
     );
+    const bends = edgeCurvatures(positions, edges, slotsByEdge(layered, positions), {
+      minX: -PADDING + 8,
+      maxX: width + PADDING - 8,
+      minY: -PADDING + 8,
+      maxY: height + PADDING - 8,
+    }, orientation, labels);
+    graph.forEachEdge((edge, _attr, source, target) => {
+      graph.setEdgeAttribute(edge, "curvature", bends.get(`${source}->${target}`) ?? 0);
+    });
     renderer.setCustomBBox({ x: [-PADDING, width + PADDING], y: [-PADDING, height + PADDING] });
     // Forced, so a change in device pixel ratio (browser zoom, moving to
     // another display) also resizes the WebGL layers, not just the labels.
     renderer.resize(true);
     renderer.getCamera().setState({ x: 0.5, y: 0.5, ratio: 1, angle: 0 });
     renderer.refresh();
-  }, [ready, cols, orientation, size]);
+  }, [ready, cols, layered, edges, orientation, size]);
 
   const resetView = () => {
     const camera = rendererRef.current?.getCamera();
@@ -316,7 +332,7 @@ export default function GraphView({ nodes, edges }: Props) {
         role="group"
         aria-label="Topic map"
         // Stage height comes from the layout; CSS picks one per breakpoint (no shift on load).
-        style={{ "--rows": rowCount(cols, "horizontal"), "--layers": rowCount(cols, "vertical") } as React.CSSProperties}
+        style={{ "--rows": rowCount(layered, "horizontal"), "--layers": rowCount(layered, "vertical") } as React.CSSProperties}
       >
         {!ready && <GraphSkeleton />}
         <div ref={container} className="graph-canvas" aria-hidden="true" />
