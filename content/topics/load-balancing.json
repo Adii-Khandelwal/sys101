@@ -1,6 +1,7 @@
 {
   "slug": "load-balancing",
   "title": "Load Balancing",
+  "group": "Scaling",
   "concept": "Load balancing spreads requests across a pool of backends so that no single instance saturates. The hard parts are choosing which backends each client may talk to (subsetting), deciding where each request goes (round-robin, least-loaded, power of two choices), and reacting to load and health signals that are always slightly stale.",
   "prerequisites": [
     "dns"

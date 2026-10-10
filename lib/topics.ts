@@ -8,9 +8,14 @@ export type Post = {
   summary: string;
 };
 
+/** Index headings, in curriculum order. */
+export const GROUPS = ["Foundations", "Scaling", "Data"] as const;
+export type Group = (typeof GROUPS)[number];
+
 export type Topic = {
   slug: string;
   title: string;
+  group?: Group;
   concept: string;
   prerequisites: string[];
   posts: Post[];

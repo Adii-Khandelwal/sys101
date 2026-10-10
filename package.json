@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@google/genai": "^2.28.0",
+    "@sigma/edge-curve": "^3.1.0",
     "@sigma/node-border": "^3.0.0",
     "cheerio": "^1.2.0",
     "graphology": "^0.26.0",

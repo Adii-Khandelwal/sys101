@@ -1,6 +1,7 @@
 {
   "slug": "dns",
   "title": "DNS",
+  "group": "Foundations",
   "concept": "The Domain Name System maps human-readable names to the addresses machines route on. It is a hierarchical, distributed database: resolvers walk from the root to top-level domains to authoritative servers, and caching at every layer, bounded by each record's TTL, keeps the system fast at the cost of propagation delay.",
   "prerequisites": [],
   "posts": [

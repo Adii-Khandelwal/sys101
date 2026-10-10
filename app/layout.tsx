@@ -6,6 +6,7 @@ const serif = Newsreader({
   subsets: ["latin"],
   variable: "--font-serif",
   style: ["normal", "italic"],
+  axes: ["opsz"],
 });
 
 const mono = IBM_Plex_Mono({
