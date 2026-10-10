@@ -1,0 +1,227 @@
+{
+  "slug": "databases",
+  "title": "Databases",
+  "group": "Foundations",
+  "concept": "A database keeps data safe across crashes and lets many clients read and change it at once. Most relational databases share the same core: a change is written to a log before it touches the data files, a commit is the moment that log record is safely on disk, and copies on other machines, called replicas, stay current by replaying the primary's log.",
+  "prerequisites": [],
+  "primer": "This topic has no prerequisites. It helps to know that a server keeps working data in memory, which is lost in a crash, and on disk, which survives but is slower. Databases are built around that gap: they write as little as possible, in an order that lets them recover whatever was in memory when the machine stopped.",
+  "posts": [
+    {
+      "title": "Why Uber Engineering Switched from Postgres to MySQL",
+      "url": "https://www.uber.com/en-ES/blog/postgres-to-mysql-migration/",
+      "company": "Uber",
+      "verifiedOn": "2026-10-11",
+      "published": "2016-07-26",
+      "ageNote": "A 2016 account of Postgres 9.2 and the MySQL of that time. It is here for fundamentals that are not tied to a version: what a write-ahead log is for, what physical and logical replication each ship to replicas, and why every index costs a write. The specific limits it describes may have changed in later Postgres and MySQL releases. The only fix the post itself confirms is that the 9.2 replication bug was fixed.",
+      "digest": {
+        "problem": "In 2016 Uber explained why it moved its core storage from Postgres 9.2 to MySQL. Every update cost several disk writes, replication sent too much data between its two sites, a Postgres bug left replicas with wrong data, replicas cancelled long-running queries, and each major version upgrade meant hours of downtime. The post is useful mostly for how carefully it explains what a database does underneath.",
+        "constraints": "Uber ran a primary with replicas on the US West Coast and disaster-recovery replicas on the East Coast, and bandwidth between them was expensive. Archiving the write-ahead log to a storage service could not keep up at peak. Postgres also struggled past a few hundred active connections, while application bugs sometimes left many transactions open and idle.",
+        "walkthrough": [
+          {
+            "step": "Rows are versions at an address",
+            "explanation": "Postgres 9.2 stored each version of a row as an immutable tuple at a physical location called a ctid, and every index, including the primary key, pointed straight at that location."
+          },
+          {
+            "step": "An update writes a new version",
+            "explanation": "Changing a row writes a new tuple at a new location, so every index needs a new entry pointing to it, even indexes on columns that did not change."
+          },
+          {
+            "step": "Log first, then data",
+            "explanation": "Every change to tuples and indexes is first written to the write-ahead log. After a crash, the database replays the log to repair its files and roll back work that was never committed."
+          },
+          {
+            "step": "Replicas replay the same log",
+            "explanation": "The primary streams its log to replicas, which apply it like a never-ending crash recovery. The result is a byte-for-byte copy of the primary's disk, which ties every replica to the primary's exact layout and version."
+          },
+          {
+            "step": "Replicas and long queries collide",
+            "explanation": "A replica cannot keep old row versions for its own readers while applying log records that remove them, so a query that blocks replay for too long gets cancelled."
+          },
+          {
+            "step": "InnoDB points at the primary key",
+            "explanation": "In MySQL's InnoDB, the primary key index holds the row itself, secondary indexes store the primary key, and old versions go to an undo area. An update touches only the indexes whose columns changed, at the cost of two lookups for a read through a secondary index."
+          },
+          {
+            "step": "MySQL ships logical changes",
+            "explanation": "MySQL's binary log records statements or row changes rather than disk pages, and each replica works out its own index changes."
+          },
+          {
+            "step": "Memory and connections",
+            "explanation": "Postgres leaned on the operating system's file cache and used a process per connection; InnoDB managed its own buffer pool and MySQL used a thread per connection."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 320\" role=\"img\" aria-labelledby=\"dg-uber-pg-t\" class=\"dg\"><title id=\"dg-uber-pg-t\">Uber&#x27;s 2016 comparison of one row update: in Postgres 9.2 the new row version gets a new physical location, so every index needs a new entry and every change is shipped to replicas as physical WAL; in InnoDB, secondary indexes point to the primary key, so unchanged indexes are untouched and replicas receive logical row changes.</title><defs><marker id=\"dg-uber-pg-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"140\" y=\"24\" class=\"dg-label\" text-anchor=\"middle\">Postgres 9.2</text><text x=\"420\" y=\"24\" class=\"dg-label\" text-anchor=\"middle\">MySQL InnoDB</text><rect x=\"40\" y=\"44\" width=\"200\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"140\" y=\"69\" class=\"dg-label\" text-anchor=\"middle\">new row version, new ctid</text><rect x=\"40\" y=\"100\" width=\"200\" height=\"36\" class=\"dg-box\"/><text x=\"140\" y=\"123\" class=\"dg-label\" text-anchor=\"middle\">primary key index</text><rect x=\"40\" y=\"146\" width=\"200\" height=\"36\" class=\"dg-box dg-accent\"/><text x=\"140\" y=\"169\" class=\"dg-label\" text-anchor=\"middle\">every other index</text><text x=\"140\" y=\"202\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">all point at the ctid, all rewritten</text><rect x=\"40\" y=\"222\" width=\"200\" height=\"40\" class=\"dg-box\"/><text x=\"140\" y=\"247\" class=\"dg-label\" text-anchor=\"middle\">physical WAL to replicas</text><rect x=\"320\" y=\"44\" width=\"200\" height=\"40\" class=\"dg-box\"/><text x=\"420\" y=\"69\" class=\"dg-label\" text-anchor=\"middle\">row updated in place</text><rect x=\"320\" y=\"100\" width=\"200\" height=\"36\" class=\"dg-box\"/><text x=\"420\" y=\"123\" class=\"dg-label\" text-anchor=\"middle\">primary key index</text><rect x=\"320\" y=\"146\" width=\"200\" height=\"36\" class=\"dg-box\"/><text x=\"420\" y=\"169\" class=\"dg-label\" text-anchor=\"middle\">only changed indexes</text><text x=\"420\" y=\"202\" class=\"dg-note\" text-anchor=\"middle\">others point at the primary key</text><rect x=\"320\" y=\"222\" width=\"200\" height=\"40\" class=\"dg-box\"/><text x=\"420\" y=\"247\" class=\"dg-label\" text-anchor=\"middle\">logical row change to replicas</text><path d=\"M280,40 L280,270\" class=\"dg-line dg-dashed\"/><text x=\"280\" y=\"306\" class=\"dg-note\" text-anchor=\"middle\">one small update: at least 4 physical writes in the post&#x27;s example</text></svg>",
+        "numbers": [
+          {
+            "value": "at least 4",
+            "meaning": "Physical writes for one small update in the post's example table"
+          },
+          {
+            "value": "12",
+            "meaning": "Indexes a single changed column would touch in the post's larger example"
+          },
+          {
+            "value": "768 GB",
+            "meaning": "Memory on Uber's largest Postgres replicas"
+          },
+          {
+            "value": "about 25 GB vs over 700 GB",
+            "meaning": "Of that, memory used by Postgres processes vs left to the operating system's file cache"
+          },
+          {
+            "value": "a few hundred vs about 10,000",
+            "meaning": "Active connections where Postgres struggled vs concurrent connections MySQL handled"
+          },
+          {
+            "value": "9.2",
+            "meaning": "The Postgres version described; 9.5 was current when the post was written"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "MySQL with InnoDB, often under Uber's own sharding layer, Schemaless.",
+          "rejected": "Keeping Postgres and working around it with cascading replication, connection poolers, and the pglogical extension for logical replication, which was outside core Postgres and not available on 9.2.",
+          "why": "Uber's problems came from physical replication and from every index pointing at a row's location, which no workaround removed. MySQL's logical log and primary-key indexes cut write and replication volume and made upgrades possible without rebuilding every replica, in exchange for slower reads through secondary indexes and more complex memory management."
+        },
+        "failures": "During a routine primary promotion, a bug in some 9.2 releases made replicas follow the log incorrectly, so rows that should have been dead stayed visible and queries returned duplicates. Because replication was physical, the damage was in every replica's files, and Uber had to rebuild them from a fresh snapshot a few at a time. Archiving the log fell behind at peak, and the one major upgrade Uber completed, 9.1 to 9.2, took so long it could not repeat it.",
+        "takeaways": "A write-ahead log is what makes a database recoverable, and how you ship it decides what replicas can do: physical replication copies disk pages and inherits every bug and layout detail, while logical replication copies row changes and lets versions differ. Every index is another write on every update. Treat this as the 2016 picture; later versions may behave differently."
+      }
+    },
+    {
+      "title": "Upgrading GitHub.com to MySQL 8.0",
+      "url": "https://github.blog/engineering/infrastructure/upgrading-github-com-to-mysql-8-0/",
+      "company": "GitHub",
+      "verifiedOn": "2026-10-11",
+      "published": "2023-12-07",
+      "digest": {
+        "problem": "MySQL 5.7 was nearing the end of its support, so GitHub had to move its whole MySQL fleet to 8.0 without breaking its service level objectives, and with a way back at every step. This is the operational view: how a fleet of primaries, replicas and replication streams is actually run and changed at scale.",
+        "constraints": "The fleet has over 1,200 hosts on Azure virtual machines and GitHub's own hardware, holding over 300 TB across more than 50 clusters, each a primary with replicas, split by product area and, for the largest, sharded with Vitess. Each cluster had to be upgraded as one unit, mixed versions had to run for a long time, and a rollback had to be possible without disruption. MySQL officially supports replicating only to the next newer release, so replicating from 8.0 back to 5.7 was outside what it promises.",
+        "walkthrough": [
+          {
+            "step": "Prepare everything",
+            "explanation": "8.0 ran in CI next to 5.7, tooling learned the syntax differences, and character sets and client settings were standardized so data could still replicate back to 5.7."
+          },
+          {
+            "step": "Upgrade replicas first",
+            "explanation": "One replica was upgraded and watched, then data center by data center, always keeping enough 5.7 replicas to roll back."
+          },
+          {
+            "step": "Move reads",
+            "explanation": "Once 8.0 replicas served all reads, traffic to the 5.7 replicas stopped."
+          },
+          {
+            "step": "Build a two-way topology",
+            "explanation": "An 8.0 replica became the next primary. Below it ran a chain of 8.0 replicas serving traffic and an idle chain of 5.7 replicas, kept current by replicating backwards."
+          },
+          {
+            "step": "Fail over gracefully",
+            "explanation": "orchestrator moved the primary role to 8.0, and was told never to promote a 5.7 host, so an unplanned failover could not silently roll back."
+          },
+          {
+            "step": "Wait a full day, then clean up",
+            "explanation": "5.7 hosts stayed until at least one full 24-hour traffic cycle, peak included, passed on 8.0."
+          },
+          {
+            "step": "Throttle and adjust",
+            "explanation": "A tool called freno slowed writes when replicas lagged, and Vitess was told per keyspace when to report version 8.0 to clients."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 320\" role=\"img\" aria-labelledby=\"dg-gh-mysql8-t\" class=\"dg\"><title id=\"dg-gh-mysql8-t\">GitHub&#x27;s MySQL 8.0 upgrade topology: an 8.0 primary replicates to 8.0 replicas that serve reads and, backwards, to idle 5.7 replicas kept for rollback; orchestrator will not fail over to a 5.7 host.</title><defs><marker id=\"dg-gh-mysql8-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"200\" y=\"20\" width=\"160\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\">Primary</text><text x=\"280\" y=\"57.5\" class=\"dg-label\" text-anchor=\"middle\">MySQL 8.0</text><rect x=\"40\" y=\"150\" width=\"180\" height=\"48\" class=\"dg-box\"/><text x=\"130\" y=\"170.5\" class=\"dg-label\" text-anchor=\"middle\">8.0 replicas</text><text x=\"130\" y=\"187.5\" class=\"dg-label\" text-anchor=\"middle\">serve all reads</text><rect x=\"340\" y=\"150\" width=\"180\" height=\"48\" class=\"dg-box dg-dashed\"/><text x=\"430\" y=\"170.5\" class=\"dg-label\" text-anchor=\"middle\">5.7 replicas</text><text x=\"430\" y=\"187.5\" class=\"dg-label\" text-anchor=\"middle\">idle, for rollback</text><path d=\"M250,68 C220,100 160,110 140,146\" class=\"dg-line\" marker-end=\"url(#dg-gh-mysql8-a)\"/><path d=\"M310,68 C340,100 400,110 420,146\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-gh-mysql8-a)\"/><text x=\"110\" y=\"116\" class=\"dg-note\" text-anchor=\"middle\">binlog replication</text><text x=\"450\" y=\"116\" class=\"dg-note\" text-anchor=\"middle\">backward replication</text><text x=\"430\" y=\"222\" class=\"dg-note\" text-anchor=\"middle\">broke within hours on</text><text x=\"430\" y=\"236\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">some busy clusters</text><rect x=\"40\" y=\"250\" width=\"180\" height=\"44\" class=\"dg-box\"/><text x=\"130\" y=\"277\" class=\"dg-label\" text-anchor=\"middle\">orchestrator</text><text x=\"130\" y=\"310\" class=\"dg-note\" text-anchor=\"middle\">never promotes a 5.7 host</text><text x=\"400\" y=\"280\" class=\"dg-note\" text-anchor=\"middle\">keep 5.7 until a full 24 h</text><text x=\"400\" y=\"294\" class=\"dg-note\" text-anchor=\"middle\">traffic cycle passes on 8.0</text></svg>",
+        "numbers": [
+          {
+            "value": "over 1,200",
+            "meaning": "MySQL hosts in the fleet"
+          },
+          {
+            "value": "over 300 TB",
+            "meaning": "Data stored"
+          },
+          {
+            "value": "5.5 million",
+            "meaning": "Queries per second served"
+          },
+          {
+            "value": "over 50",
+            "meaning": "Database clusters, up from 5 at the previous major upgrade"
+          },
+          {
+            "value": "over a year",
+            "meaning": "Time for planning, testing and upgrading, starting July 2022"
+          },
+          {
+            "value": "24 hours",
+            "meaning": "Minimum traffic cycle on 8.0 before removing 5.7 hosts"
+          },
+          {
+            "value": "8.0.28",
+            "meaning": "First MySQL release with the fix for a replica hang GitHub hit"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Upgrade replicas first, move reads, fail over the primary gracefully, and keep 5.7 replicas fed by backward replication until a full day of traffic passed.",
+          "rejected": "Upgrading primaries in place, and adopting 8.0's newer default character set, which 5.7 could not replicate.",
+          "why": "Every step had to be reversible, and replication was the only practical way back. That meant spare capacity for idle 5.7 hosts, an older character set for a while, and a long, cluster-by-cluster schedule."
+        },
+        "failures": "In staging, promoting an 8.0 primary broke replication to every 5.7 replica, because of the character set and of permission statements 5.7 could not apply. A MySQL bug could hang replicas under heavy load until 8.0.28 fixed it. On clusters with many different clients, backward replication broke within hours, shrinking the rollback window. Queries with tens of thousands of values in a WHERE IN list passed CI but crashed MySQL in production, and replication lag under write bursts was worse on 8.0.",
+        "takeaways": "Replication is not only for reads and failover; it is also how a fleet is upgraded and rolled back. Plan the way back first, upgrade the least risky copies first, and keep old copies alive until real traffic, including peak, has run on the new version."
+      }
+    }
+  ],
+  "comparison": "Read together, the two posts are how a database works and how one is run at scale. Uber's 2016 account explains the machinery: a write-ahead log, indexes that point at row locations, and Postgres 9.2 shipping that log to replicas as physical disk changes, which tied every replica to the primary's version and spread a bug to all of them. GitHub's 2023 post shows the operational side: MySQL replicas apply a log of row or statement changes rather than disk pages, and GitHub relied on replicating that log, even backwards from 8.0 to 5.7, to run both versions side by side and keep a path back, though that broke within hours on some clusters. The common thread is that the replication log decides how freely you can upgrade, recover and roll back.",
+  "glossary": [
+    {
+      "term": "Primary",
+      "definition": "The database server that accepts writes for a dataset."
+    },
+    {
+      "term": "Replica",
+      "definition": "A copy of the primary that applies its log, usually serving reads and standing by to take over."
+    },
+    {
+      "term": "Write-ahead log",
+      "definition": "A log of every change, written before the data files are touched, so the database can recover after a crash."
+    },
+    {
+      "term": "Commit",
+      "definition": "The point where a transaction's log record is safely stored, after which the change must survive a crash."
+    },
+    {
+      "term": "Binary log",
+      "definition": "MySQL's record of committed changes, as statements or rows, which replicas apply."
+    },
+    {
+      "term": "Physical vs logical replication",
+      "definition": "Shipping changes to disk pages versus shipping changes to rows; logical replication lets replicas differ in version and layout."
+    },
+    {
+      "term": "MVCC",
+      "definition": "Multi-version concurrency control: keeping old row versions so readers see a consistent snapshot while writers continue."
+    }
+  ],
+  "mistakes": [
+    "Adding indexes as if they were free. Every index is another write on every update, and in the Postgres version Uber described, an update touched every index on the table.",
+    "Holding a transaction open while doing unrelated work, such as calling another service. In Uber's account this tied up connections on the primary and could get queries on replicas cancelled.",
+    "Starting a major version upgrade without a way back. GitHub kept old-version replicas fed by backward replication; without that, an upgrade is a one-way door."
+  ],
+  "quiz": [
+    {
+      "question": "In Uber's Postgres 9.2 example, why did one small update cause at least four physical writes?",
+      "answer": "The update wrote a new row version at a new location, and every index pointed at row locations, so each index needed a new entry as well."
+    },
+    {
+      "question": "What is the difference between physical and logical replication, and why did it matter to Uber?",
+      "answer": "Physical replication ships changes to disk pages, so replicas must match the primary's exact layout and version, and a bug spreads to all of them. Logical replication ships row changes, which is smaller and lets replicas run different versions."
+    },
+    {
+      "question": "Why did GitHub keep 5.7 replicas running after all reads had moved to 8.0?",
+      "answer": "They were the rollback path: backward replication kept them current, so the primary could move back to 5.7 if 8.0 misbehaved."
+    },
+    {
+      "question": "Why was orchestrator told never to promote a 5.7 host?",
+      "answer": "An unplanned failover could otherwise pick a 5.7 replica and silently roll the cluster back to the old version."
+    }
+  ],
+  "exercise": {
+    "prompt": "You run one primary and three replicas, and must move to a new major database version with at most a few minutes of write downtime. Using both posts, sketch the plan and the way back.",
+    "answer": "Bring up replicas on the new version first and move read traffic to them, watching errors and latency. Replicate logically, row changes rather than disk pages, since physical replication ties replicas to the primary's version in the setup Uber described. Then fail over writes to a new-version replica during a short window. Keep old-version replicas current by replicating backwards and make sure automatic failover can never pick one, so you can return if needed. Remove the old version only after a full traffic cycle, peak included, has run on the new one."
+  }
+}
