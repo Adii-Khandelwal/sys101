@@ -12,6 +12,7 @@
       "title": "Better Load Balancing: Real-Time Dynamic Subsetting",
       "url": "https://www.uber.com/blog/better-load-balancing-real-time-dynamic-subsetting/",
       "company": "Uber",
+      "verifiedOn": "2026-10-11",
       "digest": {
         "problem": "In Uber's service mesh, each host's proxy connects to only a subset of a backend service's tasks, chosen at random, and that subset had a fixed size. Callers sending heavy traffic squeezed it through the same small subset as quiet callers, so some backend tasks ran hot while others sat idle. Each case was fixed by hand-tuning subset sizes, and the right size kept drifting as traffic changed.",
         "constraints": "The mesh spans thousands of services in millions of containers, with services from tens to tens of thousands of tasks and traffic that can swing from 100 to 100,000 requests per second within minutes. Connecting everything to everything is impossible at that size. One proxy is shared by every task on a host and must be ready for any destination. The fix had to reuse the existing control plane and load reports, avoid reserving capacity per service, and work without proxies coordinating with each other.",
@@ -85,6 +86,7 @@
       "title": "What’s new with Robinhood, our in-house load balancing service",
       "url": "https://dropbox.tech/infrastructure/robinhood-in-house-load-balancing-service",
       "company": "Dropbox",
+      "verifiedOn": "2026-10-11",
       "digest": {
         "problem": "Dropbox clients spread requests round-robin across the servers they knew about, with no idea how busy each one was. The fleet mixes hardware generations, so the same request costs more on some machines than others, and some servers overloaded while others idled. Teams responded by buying extra capacity to stay safe.",
         "constraints": "Some services have millions of clients, so each client only talks to a subset of servers. Clients use both Envoy and gRPC, and client changes take months to reach everyone because some clients rarely deploy. The system also had to survive restarts, new servers, missing load reports, and traffic split across data centers, and the move off the old strategy had to be gradual.",

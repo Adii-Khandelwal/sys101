@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Post, Topic } from "@/lib/topics";
+import { formatDate, type Post, type Topic } from "@/lib/topics";
 import ReadToggle from "./ReadToggle";
 import SiteFooter from "./SiteFooter";
 
@@ -174,6 +174,7 @@ export default function TopicDossier({ topic, prerequisites, dependents }: Props
                 {post.title}
               </a>{" "}
               <span className="label">{post.company}</span>
+              <span className="checked">Checked on {formatDate(post.verifiedOn)}</span>
             </li>
           ))}
         </ul>

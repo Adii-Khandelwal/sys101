@@ -12,6 +12,7 @@
       "title": "Saving another 100TB of RAM with math (and Rust)",
       "url": "https://blog.cloudflare.com/saving-100-tb-of-ram-with-math/",
       "company": "Cloudflare",
+      "verifiedOn": "2026-10-11",
       "digest": {
         "problem": "Cloudflare routes cacheable requests to servers by URL with consistent hashing, so each data center keeps one copy of each file. Its internal load balancer builds these rings with the open-source pingora-ketama library, and an engineer flagged that the rings were using far too much memory, reaching about 6GB in some cases.",
         "constraints": "Every service runs on every machine, so wasted memory is multiplied across the fleet. With one point per server the ring is badly uneven, so each server gets many points, and weighting servers by disk size multiplies the count further. Compliance and caching features restrict which servers may handle a request, so each feature combination needs its own ring. Any change to a ring moves cached files and sends extra traffic to customers' origin servers, so the rollout had to be careful and reversible.",
@@ -89,6 +90,7 @@
       "title": "How Discord Scaled Elixir to 5,000,000 Concurrent Users",
       "url": "https://discord.com/blog/how-discord-scaled-elixir-to-5-000-000-concurrent-users",
       "company": "Discord",
+      "verifiedOn": "2026-10-11",
       "digest": {
         "problem": "Discord places each guild (a server, in Discord's terms) on a node chosen with a consistent hash ring, and every user session asks the ring where its guilds live. When many users reconnected at once, the single process answering ring lookups could not keep up, and the whole system overloaded.",
         "constraints": "Users are in about 5 guilds on average, and one Erlang VM can hold up to 500,000 sessions, so restarting a session server means millions of lookups at once. Any call to another Erlang process costs about 12μs, which alone added up to around 30 seconds of lookups after a restart.",

@@ -19,6 +19,8 @@ export type Post = {
   /** Attribution only: the digest is the content. */
   url: string;
   company: string;
+  /** YYYY-MM-DD: when someone last opened the post and checked the digest against it. */
+  verifiedOn: string;
   digest: Digest;
 };
 
@@ -63,6 +65,23 @@ export function getAllTopics(): Topic[] {
 }
 
 const nonEmpty = (v: unknown) => typeof v === "string" && v.trim().length > 0;
+
+function isPastDate(v: unknown) {
+  if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const date = new Date(`${v}T00:00:00Z`);
+  // A calendar date in the author's timezone can be up to a day ahead of the
+  // UTC build machine, so allow one day of slack.
+  const tomorrow = Date.now() + 24 * 60 * 60 * 1000;
+  return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(v) && date.getTime() <= tomorrow;
+}
+
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/** "2026-10-11" -> "11 October 2026". Fixed format, so server and client render the same text. */
+export function formatDate(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${d} ${MONTHS[m - 1]} ${y}`;
+}
 
 /** A non-empty array whose items all have the two given non-empty string fields. */
 function pairs<T>(list: T[] | undefined, a: keyof T, b: keyof T) {
@@ -120,6 +139,7 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
       for (const field of ["title", "url", "company"] as const) {
         if (!nonEmpty(post[field])) problems.push(`${where}: ${field} is empty`);
       }
+      if (!isPastDate(post.verifiedOn)) problems.push(`${where}: verifiedOn must be a YYYY-MM-DD date, not in the future`);
       const d = post.digest;
       if (!d) return problems.push(`${where}: missing digest`);
       for (const field of ["problem", "constraints", "failures", "takeaways"] as const) {

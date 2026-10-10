@@ -12,6 +12,7 @@
       "title": "Cache made consistent",
       "url": "https://engineering.fb.com/2022/06/08/core-infra/cache-made-consistent/",
       "company": "Meta",
+      "verifiedOn": "2026-10-11",
       "digest": {
         "problem": "A cache only stays correct if every change in the database reaches it as an invalidation, and races can break that. In Meta's example, a cache fill reads a value, the value then changes, the invalidation for the new value arrives first, and the delayed fill writes the old value back, leaving the cache wrong until something else evicts it. At Meta's scale such cases are rare but frequent enough to cause real harm, like two people's messages being routed to different regions.",
         "constraints": "Meta's TAO cache handles more than a quadrillion queries a day, so even rare races add up. Logging every cache change would turn a read-heavy system into a write-heavy one. Checking the database directly is expensive and could overload it. Any measurement had to be free of false alarms and precise enough to count past ten nines.",
