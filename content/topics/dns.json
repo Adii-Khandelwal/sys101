@@ -11,6 +11,7 @@
       "url": "https://blog.cloudflare.com/dns-build-improvement/",
       "company": "Cloudflare",
       "verifiedOn": "2026-10-11",
+      "published": "2022-05-25",
       "digest": {
         "problem": "When a customer edits a DNS record, the change has to reach Cloudflare's edge before queries return it. The slowest step was the Zone Builder, which reacted to any edit by rebuilding the whole zone: it read every record from the database, compared all of them against Quicksilver, Cloudflare's distributed key-value store, and fixed the differences. For very large zones that took tens of seconds per edit, and the rebuilds tied up database and Quicksilver capacity that other zones needed.",
         "constraints": "Record changes had grown about 25-fold since the Zone Builder was written, and some zones hold millions of records. The database events that triggered builds did not say which record changed. Some zone settings, such as nameserver and DNSSEC controls, really do depend on the whole zone, so full builds could not simply be deleted. Millions of domains sit on this component, so the change had to be safe.",
@@ -83,6 +84,93 @@
         "failures": "The first version sent update events containing only the new record. When a customer renamed a record, the old name was never removed from Quicksilver. The fix was to send every update as a delete followed by a create. Removing full builds entirely is still unfinished.",
         "takeaways": "A design sized for yesterday's load becomes the bottleneck as traffic grows, so look for places where a small change triggers a large amount of work. Any incremental path needs protection from the old bulk path writing stale data over it. When a bug appears, change the design so that class of bug cannot happen again."
       }
+    },
+    {
+      "title": "The Case of the Recursive Resolvers (What Happened During Slack’s DNSSEC Rollout)",
+      "url": "https://slack.engineering/what-happened-during-slacks-dnssec-rollout/",
+      "company": "Slack",
+      "verifiedOn": "2026-10-11",
+      "published": "2021-11-29",
+      "digest": {
+        "problem": "Slack had to sign its domains with DNSSEC to meet the FedRAMP Moderate compliance standard. On the third attempt to sign slack.com, some users could no longer resolve Slack's addresses and saw ERR_NAME_NOT_RESOLVED, mostly behind Google Public DNS and certain corporate resolvers. Fewer than 1% of online users were affected, but the outage lasted 24 hours, and Slack's own rollback made part of it worse. It is an incident write-up, and it is here because it shows how DNS caching decides how fast any change, including an undo, can take effect.",
+        "constraints": "Route 53 served Slack's public zones, with some subzones delegated to NS1. DNSSEC can only be switched on for a whole domain, not one subdomain at a time, so every attempt risked all of slack.com. Resolvers differ in how strictly they apply the rules once signing is on. Most importantly, the DS record that links the .com zone to slack.com is cached for as long as the .com zone says, 24 hours, not for as long as Slack would like.",
+        "walkthrough": [
+          {
+            "step": "Start with the smaller domains",
+            "explanation": "The team spent four months on DNSSEC, and other critical domains ran signed for at least a month before slack.com, all without trouble."
+          },
+          {
+            "step": "Attempt one",
+            "explanation": "On September 7 they signed slack.com but rolled back early, as a precaution, while an unrelated outage at a large US ISP was generating reports."
+          },
+          {
+            "step": "Attempt two",
+            "explanation": "On September 8 users on VPNs failed to resolve names, because some strict resolvers reject a CNAME at a zone's apex once the zone is signed. Slack switched those records to ALIAS records."
+          },
+          {
+            "step": "Attempt three",
+            "explanation": "On September 30 they signed the zones, validated them with external monitors and debugging tools, waited three hours, and only then published the DS record at the registrar to complete the chain of trust."
+          },
+          {
+            "step": "Pull the DS record",
+            "explanation": "When reports arrived, they removed the DS record to stop the damage, expecting resolvers to stop validating. Resolvers kept their cached copy for up to 24 hours."
+          },
+          {
+            "step": "Roll back signing",
+            "explanation": "After nearly an hour with no improvement they removed signing too. Resolvers still holding the cached DS record now expected signatures that no longer existed, and returned SERVFAIL for slack.com."
+          },
+          {
+            "step": "Recover by flushing caches",
+            "explanation": "Slack asked ISPs and public resolver operators to flush slack.com and used public purge tools where offered. Errors fell as caches cleared, with a long tail until the cached DS record expired."
+          },
+          {
+            "step": "Find the root cause",
+            "explanation": "Browser network logs showed slack.com resolving while app.slack.com failed, which pointed at the wildcard record. Route 53 returned signed 'no such record' (NSEC) answers for the wildcard that did not list the record types that did exist. A query for an IPv6 (AAAA) address, which Slack did not publish, was read by resolvers like Google's as 'nothing exists at this name', cached, and then used to refuse ordinary lookups."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 330\" role=\"img\" aria-labelledby=\"dg-slack-dnssec-t\" class=\"dg\"><title id=\"dg-slack-dnssec-t\">Slack&#x27;s DNSSEC rollback: the .com zone&#x27;s DS record for slack.com stayed cached in resolvers for up to 24 hours after Slack pulled it, so removing signing made those resolvers fail with SERVFAIL until the cache expired.</title><defs><marker id=\"dg-slack-dnssec-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"20\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"95\" y=\"41.5\" class=\"dg-label\" text-anchor=\"middle\">.com zone</text><text x=\"95\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\">DS for slack.com</text><rect x=\"20\" y=\"130\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"95\" y=\"151.5\" class=\"dg-label\" text-anchor=\"middle\">slack.com zone</text><text x=\"95\" y=\"168.5\" class=\"dg-label\" text-anchor=\"middle\">signed (Route 53)</text><path d=\"M95,70 L95,126\" class=\"dg-line\" marker-end=\"url(#dg-slack-dnssec-a)\"/><text x=\"104\" y=\"102\" class=\"dg-note\" text-anchor=\"start\">chain of trust</text><rect x=\"330\" y=\"40\" width=\"200\" height=\"120\" class=\"dg-box\"/><text x=\"430\" y=\"64\" class=\"dg-label\" text-anchor=\"middle\">Resolver cache</text><text x=\"345\" y=\"92\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">DS record: up to 24 h</text><text x=\"345\" y=\"112\" class=\"dg-note\" text-anchor=\"start\">8.8.8.8 caps it at 6 h</text><text x=\"345\" y=\"138\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">NSEC: no AAAA = no name</text><path d=\"M170,45 C240,45 280,70 326,80\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-slack-dnssec-a)\"/><path d=\"M170,155 C240,155 280,140 326,130\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-slack-dnssec-a)\"/><path d=\"M40,250 L520,250\" class=\"dg-line\"/><circle cx=\"80\" cy=\"250\" r=\"4\" class=\"dg-dot\"/><circle cx=\"240\" cy=\"250\" r=\"4\" class=\"dg-dot\"/><circle cx=\"420\" cy=\"250\" r=\"4\" class=\"dg-dot dg-dot-accent\"/><text x=\"80\" y=\"274\" class=\"dg-note\" text-anchor=\"middle\">DS published</text><text x=\"80\" y=\"288\" class=\"dg-note\" text-anchor=\"middle\">after 3 h soak</text><text x=\"240\" y=\"274\" class=\"dg-note\" text-anchor=\"middle\">DS pulled</text><text x=\"240\" y=\"288\" class=\"dg-note\" text-anchor=\"middle\">cached copies stay</text><text x=\"420\" y=\"274\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">signing removed</text><text x=\"420\" y=\"288\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">SERVFAIL until DS expires</text><text x=\"280\" y=\"322\" class=\"dg-note\" text-anchor=\"middle\">a rollback cannot outrun other people&#x27;s caches</text></svg>",
+        "numbers": [
+          {
+            "value": "under 1%",
+            "meaning": "Share of Slack's online users affected"
+          },
+          {
+            "value": "24 hours",
+            "meaning": "How long the outage lasted"
+          },
+          {
+            "value": "four months",
+            "meaning": "Time spent preparing DNSSEC across Slack's domains"
+          },
+          {
+            "value": "3 attempts",
+            "meaning": "Tries at signing slack.com: September 7, 8 and 30, 2021"
+          },
+          {
+            "value": "three hours",
+            "meaning": "Soak time between signing and publishing the DS record"
+          },
+          {
+            "value": "24 hours",
+            "meaning": "How long the .com zone tells resolvers to cache slack.com's DS record"
+          },
+          {
+            "value": "6 hours",
+            "meaning": "Google Public DNS's cap on how long it caches DS records"
+          },
+          {
+            "value": "nearly an hour",
+            "meaning": "Time between pulling the DS record and rolling back signing"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A staged rollout: smaller domains first, then signing, validation and a soak period before publishing the DS record last. During the incident, pull the DS record first, then remove signing, then flush caches.",
+          "rejected": "Re-signing slack.com mid-incident, which would have produced a new signing key that matched nothing cached, and signing subdomains one at a time, which DNSSEC does not allow.",
+          "why": "Publishing the DS record last should have made the change reversible, but that only holds if the DS record is not cached. Once resolvers had cached it, every rollback step had to wait for their caches, which Slack did not control."
+        },
+        "failures": "Slack had never tested DNSSEC on a domain with a wildcard record before slack.com, and the wildcard is where Route 53's incomplete NSEC answers broke resolution. The team believed DS records were not cached, when the .com zone asked for 24 hours. Managing DNS through Terraform hid a warning that the Route 53 console shows when disabling DNSSEC, and the rollback deleted signing keys that could not be recreated identically. Route 53 has since fixed the NSEC bug.",
+        "takeaways": "In DNS, an undo is just another change, and it propagates no faster than the longest cache in the path, including caches set by a parent zone you do not own. Test on a domain shaped like your most important one, wildcards included. Read tool warnings during rollbacks, and use real client evidence, here browser network logs, because resolvers that all follow the spec can still behave differently."
+      }
     }
   ],
   "glossary": [
@@ -109,6 +197,18 @@
     {
       "term": "Propagation",
       "definition": "The time between changing a record and every server answering with the new value."
+    },
+    {
+      "term": "DNSSEC",
+      "definition": "Signatures on DNS answers that let a resolver check they came from the zone's owner and were not altered."
+    },
+    {
+      "term": "DS record",
+      "definition": "A record in the parent zone (such as .com) that vouches for a child zone's signing key, linking the two in a chain of trust."
+    },
+    {
+      "term": "SERVFAIL",
+      "definition": "The answer a resolver gives when it cannot produce a trustworthy response, for example when signatures it expects are missing."
     }
   ],
   "mistakes": [
@@ -132,10 +232,15 @@
     {
       "question": "Why can't Cloudflare remove full builds entirely?",
       "answer": "Some zone settings, like nameserver and DNSSEC controls, depend on the whole zone, so about 13% of builds still need it."
+    },
+    {
+      "question": "Slack pulled its DS record to stop the outage, then removed signing. Why did removing signing make things worse for some users?",
+      "answer": "Resolvers had cached the DS record for up to 24 hours, so they still expected slack.com to be signed. Once the signatures were gone, those resolvers could not validate any answer and returned SERVFAIL until their cached DS record expired."
     }
   ],
   "exercise": {
     "prompt": "Your search index rebuilds itself from scratch whenever any document changes, and rebuilds now take minutes for large customers. Sketch an incremental design, and say what could go wrong when incremental updates and the occasional full rebuild run side by side.",
     "answer": "Emit an event per changed document that carries the document's ID and new content, consume those events in order, and update only the affected entries. Keep the full rebuild for schema changes and repairs. The risk is a full rebuild that started earlier finishing later and writing stale data over newer incremental updates, so either lock the two paths per customer or version every entry and refuse older writes. Also make deletes and renames explicit events, or old entries will linger."
-  }
+  },
+  "comparison": "Both posts are about how long a DNS change takes to take effect, seen from opposite ends. Cloudflare controlled the slow part, its own pipeline from a customer's edit to its edge, so it rebuilt that pipeline to apply one record in milliseconds instead of rebuilding a zone in tens of seconds. Slack's slow part was outside its control: resolvers across the internet held its DS record for up to 24 hours and read its signed answers in different ways, so even its rollback could not take effect faster than those caches expired."
 }
