@@ -42,6 +42,10 @@ Never use: gradients, neon, rainbow, pastels, purple and black, pure white backg
 
 Always: skeleton loaders, a real working demo, Terms and Privacy pages in the footer.
 
+## Architecture of the site itself
+
+Always apply system design thinking to this site itself: static generation, CDN caching, decoupled offline pipeline, idempotent jobs, cached outputs, no runtime dependency on third parties, graceful degradation. Justify architecture choices in these terms.
+
 ## Later ideas (do not build yet)
 
 Personal progress/maturity per concept, interview-relevance tags, staleness flags for outdated posts, LLM pipeline (Gemini Flash) to summarize and compare posts automatically.
@@ -50,5 +54,7 @@ Personal progress/maturity per concept, interview-relevance tags, staleness flag
 
 - Node 24 (`.nvmrc`). Run `source ~/.nvm/nvm.sh && nvm use` before npm commands.
 - `npm run dev` for the dev server, `npm run build` to check a production build, `npx tsc --noEmit` to type-check.
-- Topics live in `content/topics/<slug>.json`: `slug`, `title`, `concept`, `prerequisites[]` (slugs), `posts[{title, url, company, summary}]`, and optional `comparison` (shown when there are 2+ posts). Loaded by `lib/topics.ts`.
+- Topics live in `content/topics/<slug>.json`, typed and validated in `lib/topics.ts`. A topic has `concept`, `prerequisites[]`, `primer`, `posts[]`, `comparison` (required with 2+ posts), `glossary[]`, `mistakes[3]`, `quiz[3-5]`, `exercise`. Each post has `title`, `url` (attribution only), `company`, and a `digest`: `problem`, `constraints`, `walkthrough[]`, `diagram` (inline SVG using the `dg-*` classes), `numbers[]`, `tradeoffs{chosen, rejected, why}`, `failures`, `takeaways`.
+- The build fails on an empty section, a missing prerequisite, a prerequisite cycle, or a diagram with gradients, filters, scripts, or no `<title>`.
+- `npm run build` also builds the Pagefind search index into `public/pagefind` (git-ignored). Search shows a notice under `npm run dev`, where no index exists.
 - Pushing to `main` on GitHub deploys to Vercel.

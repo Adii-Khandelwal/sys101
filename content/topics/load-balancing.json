@@ -6,19 +6,199 @@
   "prerequisites": [
     "dns"
   ],
+  "primer": "DNS turns a service's name into addresses, and it can return several of them. Because resolvers cache answers for the length of the TTL, DNS alone cannot react quickly when one server is overloaded or down. Something closer to the traffic has to make a fresh choice for each connection or request, and that is the load balancer's job.",
   "posts": [
     {
       "title": "Better Load Balancing: Real-Time Dynamic Subsetting",
       "url": "https://www.uber.com/blog/better-load-balancing-real-time-dynamic-subsetting/",
       "company": "Uber",
-      "summary": "Each on-host proxy in Uber's service mesh picked a fixed-size random subset of backends, which caused load imbalance and needed constant manual tuning. Proxies now resize their subsets in near real time from load reports aggregated by the control plane, so each proxy's subset grows with its share of traffic. After rollout, 17 of 36 large services saw p99 CPU utilization fall by 10% or more, and some by up to 40%."
+      "digest": {
+        "problem": "In Uber's service mesh, each host's proxy connects to only a subset of a backend service's tasks, chosen at random, and that subset had a fixed size. Callers sending heavy traffic squeezed it through the same small subset as quiet callers, so some backend tasks ran hot while others sat idle. Each case was fixed by hand-tuning subset sizes, and the right size kept drifting as traffic changed.",
+        "constraints": "The mesh spans thousands of services in millions of containers, with services from tens to tens of thousands of tasks and traffic that can swing from 100 to 100,000 requests per second within minutes. Connecting everything to everything is impossible at that size. One proxy is shared by every task on a host and must be ready for any destination. The fix had to reuse the existing control plane and load reports, avoid reserving capacity per service, and work without proxies coordinating with each other.",
+        "walkthrough": [
+          {
+            "step": "Report load",
+            "explanation": "Each proxy periodically reports how much traffic it sends to each destination service."
+          },
+          {
+            "step": "Aggregate it",
+            "explanation": "Aggregators combine the reports, and a few global controllers build a view of total traffic per service."
+          },
+          {
+            "step": "Send totals back",
+            "explanation": "The total for each service is pushed back to every proxy within seconds. It does not need to be perfectly consistent across the fleet."
+          },
+          {
+            "step": "Size the subset",
+            "explanation": "Each proxy compares its own smoothed traffic to a service with that service's total and sizes its subset in proportion, so a proxy carrying a bigger share connects to more of the service's tasks."
+          },
+          {
+            "step": "Guard the extremes",
+            "explanation": "A tunable constant scales the result, with a minimum subset size for quiet callers and a cap on total connections."
+          },
+          {
+            "step": "Keep picking at random",
+            "explanation": "Which tasks go in the subset is still random, so proxies never need to coordinate."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 316\" role=\"img\" aria-labelledby=\"dg-uber-subset-t\" class=\"dg\"><title id=\"dg-uber-subset-t\">Dynamic subsetting at Uber: proxies report load to Traffic Control and get service totals back; a proxy that sends more traffic connects to a larger subset of backend tasks.</title><defs><marker id=\"dg-uber-subset-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"14\" width=\"170\" height=\"44\" class=\"dg-box\"/><text x=\"105\" y=\"41\" class=\"dg-label\" text-anchor=\"middle\">Traffic Control</text><text x=\"200\" y=\"32\" class=\"dg-note\" text-anchor=\"start\">load reports up,</text><text x=\"200\" y=\"46\" class=\"dg-note\" text-anchor=\"start\">service totals back</text><path d=\"M50,62 L50,106\" class=\"dg-line dg-dashed\" marker-start=\"url(#dg-uber-subset-a)\" marker-end=\"url(#dg-uber-subset-a)\"/><path d=\"M30,62 L30,230\" class=\"dg-line dg-dashed\" marker-start=\"url(#dg-uber-subset-a)\" marker-end=\"url(#dg-uber-subset-a)\"/><rect x=\"40\" y=\"110\" width=\"110\" height=\"44\" class=\"dg-box\"/><text x=\"95\" y=\"137\" class=\"dg-label\" text-anchor=\"middle\">Proxy A</text><text x=\"95\" y=\"172\" class=\"dg-note\" text-anchor=\"middle\">sends a lot</text><rect x=\"40\" y=\"234\" width=\"110\" height=\"44\" class=\"dg-box\"/><text x=\"95\" y=\"261\" class=\"dg-label\" text-anchor=\"middle\">Proxy B</text><text x=\"95\" y=\"296\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">sends a little</text><text x=\"500\" y=\"26\" class=\"dg-label\" text-anchor=\"middle\">Backend tasks</text><circle cx=\"500\" cy=\"50\" r=\"9\" class=\"dg-box\"/><circle cx=\"500\" cy=\"84\" r=\"9\" class=\"dg-box\"/><circle cx=\"500\" cy=\"118\" r=\"9\" class=\"dg-box\"/><circle cx=\"500\" cy=\"152\" r=\"9\" class=\"dg-box\"/><circle cx=\"500\" cy=\"186\" r=\"9\" class=\"dg-box\"/><circle cx=\"500\" cy=\"220\" r=\"9\" class=\"dg-box\"/><circle cx=\"500\" cy=\"254\" r=\"9\" class=\"dg-box\"/><circle cx=\"500\" cy=\"288\" r=\"9\" class=\"dg-box\"/><path d=\"M150,132 C280,132 360,50 490,50\" class=\"dg-line\"/><path d=\"M150,132 C280,132 360,84 490,84\" class=\"dg-line\"/><path d=\"M150,132 C280,132 360,118 490,118\" class=\"dg-line\"/><path d=\"M150,132 C280,132 360,152 490,152\" class=\"dg-line\"/><path d=\"M150,132 C280,132 360,186 490,186\" class=\"dg-line\"/><path d=\"M150,256 C280,256 360,220 490,220\" class=\"dg-line dg-accent\"/><path d=\"M150,256 C280,256 360,254 490,254\" class=\"dg-line dg-accent\"/><text x=\"320\" y=\"204\" class=\"dg-note\" text-anchor=\"middle\">subset of 5</text><text x=\"320\" y=\"290\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">subset of 2</text></svg>",
+        "numbers": [
+          {
+            "value": "100,000,000",
+            "meaning": "Connections needed if two 10,000-task services were fully meshed"
+          },
+          {
+            "value": "100 to 100,000 QPS",
+            "meaning": "How far one service's traffic can move minute to minute"
+          },
+          {
+            "value": "15 to 30%",
+            "meaning": "p99 CPU reduction from earlier manual tuning on 8 large services"
+          },
+          {
+            "value": "17 of 36",
+            "meaning": "Large services whose p99 CPU fell by 10% or more after rollout"
+          },
+          {
+            "value": "up to 40%",
+            "meaning": "Largest p99 CPU reduction seen"
+          },
+          {
+            "value": "under 0.01%",
+            "meaning": "Hosts hit by a later connection memory problem"
+          },
+          {
+            "value": "about 6 months",
+            "meaning": "Time to roll out across the mesh"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Subset size computed per proxy from its share of total traffic, with random task selection and no coordination between proxies.",
+          "rejected": "Fixed subset sizes with manual tuning, least-pending-request balancing, deterministic subsets that need proxies to coordinate, and tracking load per caller or per procedure.",
+          "why": "Reusing load reports the control plane already had made the fix cheap to build, and keeping proxies independent kept it simple and resilient. The price is a few seconds of lag, some leftover imbalance from random picks, and more connections per proxy, which they capped."
+        },
+        "failures": "Static subsets had already failed for the largest services, and least-pending-request balancing helped too little because each proxy only knew about its own requests. Months after rollout, during a protocol migration, a few hosts running many busy callers against large pools opened thousands of connections and hit a memory problem in Go's HTTP/2 code; capping connections fixed it. The first scaling constant was picked fairly arbitrarily and raised a year later once they could measure better.",
+        "takeaways": "Look for signals the system already collects before building new ones. A design that needs no coordination between clients scales and fails more gracefully. Erring toward subsets that are too large is safer than too small. Record a baseline before a fleet-wide rollout, because gains are hard to prove afterwards."
+      }
     },
     {
       "title": "What’s new with Robinhood, our in-house load balancing service",
       "url": "https://dropbox.tech/infrastructure/robinhood-in-house-load-balancing-service",
       "company": "Dropbox",
-      "summary": "Clients at Dropbox round-robined over a subset of servers, and mixed hardware generations meant the same request cost more on some machines, so teams over-provisioned to avoid hot spots. Robinhood runs one PID controller per server that nudges its weight toward the service's average utilization, and clients do weighted round-robin on those weights, so fixes ship in one central service that can be rolled back in minutes instead of in every client. Max-to-average CPU fell from 1.26 to 1.01 on an Envoy cluster and from 1.4 to 1.05 on a database frontend, and some of the largest services shrank their fleets by 25%, though the feedback loop works poorly for very low-traffic services or requests that take minutes."
+      "digest": {
+        "problem": "Dropbox clients spread requests round-robin across the servers they knew about, with no idea how busy each one was. The fleet mixes hardware generations, so the same request costs more on some machines than others, and some servers overloaded while others idled. Teams responded by buying extra capacity to stay safe.",
+        "constraints": "Some services have millions of clients, so each client only talks to a subset of servers. Clients use both Envoy and gRPC, and client changes take months to reach everyone because some clients rarely deploy. The system also had to survive restarts, new servers, missing load reports, and traffic split across data centers, and the move off the old strategy had to be gradual.",
+        "walkthrough": [
+          {
+            "step": "Collect load",
+            "explanation": "Servers send load reports through a per-data-center proxy to a load balancing service that is sharded by the service being balanced."
+          },
+          {
+            "step": "Run a controller per server",
+            "explanation": "For each server, a PID controller compares its utilization with the service's average and nudges that server's weight up or down."
+          },
+          {
+            "step": "Publish weights",
+            "explanation": "Weights are normalized across the service and stored in a ZooKeeper or etcd-based routing database, which pushes changes to anyone watching."
+          },
+          {
+            "step": "Weight the clients",
+            "explanation": "Clients receive weights through Envoy's endpoint discovery and do weighted round-robin. For gRPC, Dropbox wrote its own picker based on earliest-deadline-first scheduling."
+          },
+          {
+            "step": "Route across zones",
+            "explanation": "A locality config sets how much traffic each zone sends to each other zone, so clients pick a zone first and a server second."
+          },
+          {
+            "step": "Handle the edge cases",
+            "explanation": "After a restart, controller state is restored from the routing database; new servers start at a low weight; if 15% of load reports are missing, the update is skipped."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-dbx-robinhood-t\" class=\"dg\"><title id=\"dg-dbx-robinhood-t\">Robinhood at Dropbox: servers report load through a proxy to the load balancing service, where a PID controller per server sets weights; weights go through the routing database to clients, which send weighted round-robin traffic back to the servers.</title><defs><marker id=\"dg-dbx-robinhood-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"30\" width=\"120\" height=\"44\" class=\"dg-box\"/><text x=\"80\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\">Servers</text><rect x=\"210\" y=\"30\" width=\"120\" height=\"44\" class=\"dg-box\"/><text x=\"270\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\">Proxy</text><rect x=\"390\" y=\"22\" width=\"150\" height=\"60\" class=\"dg-box dg-accent\"/><text x=\"465\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\">Load balancer</text><text x=\"465\" y=\"65.5\" class=\"dg-label\" text-anchor=\"middle\">service</text><text x=\"465\" y=\"100\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">PID per server</text><path d=\"M140,52 L206,52\" class=\"dg-line\" marker-end=\"url(#dg-dbx-robinhood-a)\"/><text x=\"173\" y=\"44\" class=\"dg-note\" text-anchor=\"middle\">load</text><path d=\"M330,52 L386,52\" class=\"dg-line\" marker-end=\"url(#dg-dbx-robinhood-a)\"/><path d=\"M465,108 L465,196\" class=\"dg-line\" marker-end=\"url(#dg-dbx-robinhood-a)\"/><text x=\"474\" y=\"156\" class=\"dg-note\" text-anchor=\"start\">weights</text><rect x=\"390\" y=\"200\" width=\"150\" height=\"44\" class=\"dg-box\"/><text x=\"465\" y=\"227\" class=\"dg-label\" text-anchor=\"middle\">Routing DB</text><path d=\"M390,222 L264,222\" class=\"dg-line\" marker-end=\"url(#dg-dbx-robinhood-a)\"/><text x=\"327\" y=\"214\" class=\"dg-note\" text-anchor=\"middle\">push</text><rect x=\"140\" y=\"200\" width=\"120\" height=\"44\" class=\"dg-box\"/><text x=\"200\" y=\"227\" class=\"dg-label\" text-anchor=\"middle\">Clients</text><path d=\"M160,200 C120,150 90,120 82,78\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-dbx-robinhood-a)\"/><text x=\"46\" y=\"150\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">weighted</text><text x=\"46\" y=\"164\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">round-robin</text><text x=\"280\" y=\"280\" class=\"dg-note\" text-anchor=\"middle\">target: every server near the service average</text></svg>",
+        "numbers": [
+          {
+            "value": "1.26 to 1.01",
+            "meaning": "Max-to-average CPU on an Envoy proxy cluster, before and after"
+          },
+          {
+            "value": "1.4 to 1.05",
+            "meaning": "Max-to-average CPU on a database frontend cluster, before and after"
+          },
+          {
+            "value": "25%",
+            "meaning": "Fleet size reduction for some of the largest services"
+          },
+          {
+            "value": "15%",
+            "meaning": "Share of missing load reports at which weight updates are skipped"
+          },
+          {
+            "value": "100 and 200 at 30% give 170",
+            "meaning": "How old and new weights were blended during migration"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A central service that sets per-server weights from measured utilization, with clients doing weighted round-robin.",
+          "rejected": "Server load in response headers with clients choosing the least loaded server, larger subsets as a tuning knob, and balancing on CPU alone.",
+          "why": "Logic in one central service can change and roll back in minutes, while client changes take months. The cost is a feedback loop that needs steady traffic, so very quiet services and requests that take minutes balance poorly."
+        },
+        "failures": "The header-based approach worked but needed code changes on every server and client and was hard to roll out everywhere. Servers with stalled disk I/O showed low CPU, so the controller kept sending them more traffic; they now balance on the higher of CPU and in-flight requests. Migrating every service took far longer than planned because migration was not designed in from the start.",
+        "takeaways": "Keep configuration minimal with good defaults. Put logic where it can be changed and rolled back fastest. Pick a load signal that cannot look healthy while the server is stuck. Plan the migration while designing the system, and count migration effort as part of the cost."
+      }
     }
   ],
-  "comparison": "Uber and Dropbox started from the same problem: clients spreading requests over a subset of servers still left some servers running much hotter than others. Uber changed who each proxy talks to, resizing its subset in near real time from load reports gathered by the control plane, so a caller that sends more traffic spreads it over more backends. Dropbox decided that tuning subset size only added another knob and instead changed how much traffic each server gets, with weights driven by measured utilization, which absorbs its mix of hardware generations and keeps the logic in one central service rather than in every client."
+  "comparison": "Uber and Dropbox started from the same problem: clients spreading requests over a subset of servers still left some servers running much hotter than others. Uber changed who each proxy talks to, resizing its subset in near real time from load reports gathered by the control plane, so a caller that sends more traffic spreads it over more backends. Dropbox decided that tuning subset size only added another knob and instead changed how much traffic each server gets, with weights driven by measured utilization, which absorbs its mix of hardware generations and keeps the logic in one central service rather than in every client.",
+  "glossary": [
+    {
+      "term": "Subset",
+      "definition": "The slice of a service's servers that one client is allowed to connect to."
+    },
+    {
+      "term": "Round-robin",
+      "definition": "Sending each new request to the next server in a list, in turn."
+    },
+    {
+      "term": "Weighted round-robin",
+      "definition": "Round-robin where servers with higher weights receive proportionally more requests."
+    },
+    {
+      "term": "p99",
+      "definition": "The value below which 99% of measurements fall, used to describe the slow or busy tail."
+    },
+    {
+      "term": "Control plane",
+      "definition": "The part of a system that computes and distributes configuration, as opposed to the data plane that carries requests."
+    },
+    {
+      "term": "PID controller",
+      "definition": "A feedback loop that adjusts an output based on the current error, its accumulation over time, and how fast it is changing."
+    }
+  ],
+  "mistakes": [
+    "Assuming round-robin spreads load evenly. It spreads requests evenly, but requests differ in cost and servers differ in hardware, so load does not.",
+    "Balancing on a signal that can look healthy while the server is stuck, such as CPU on a server waiting on slow disks.",
+    "Letting every client connect to every server. Connection counts grow with clients times servers, so at scale each client needs a bounded subset."
+  ],
+  "quiz": [
+    {
+      "question": "What did Uber change: where each request goes, or which servers each proxy may use?",
+      "answer": "Which servers each proxy may use. The subset size grows or shrinks with the proxy's share of traffic, and requests within the subset are spread as before."
+    },
+    {
+      "question": "Why did Dropbox move balancing logic into a central service instead of the clients?",
+      "answer": "Client changes take months to roll out, while the central service can be changed and rolled back in minutes."
+    },
+    {
+      "question": "Why did Dropbox stop balancing on CPU alone?",
+      "answer": "Servers with stalled disk I/O showed low CPU, so the controller kept sending them more traffic. Using the higher of CPU and in-flight requests catches that."
+    },
+    {
+      "question": "Max-to-average CPU on a Dropbox cluster went from 1.26 to 1.01. What does that mean?",
+      "answer": "Before, the busiest server ran 26% above the average; after, it ran almost exactly at the average, so the load was nearly even."
+    }
+  ],
+  "exercise": {
+    "prompt": "Your API has 200 servers of three hardware generations behind clients that round-robin over a random subset of 20 servers each. Older machines regularly hit 90% CPU while newer ones sit near 40%. Propose a fix, and say how you would roll it out safely.",
+    "answer": "Measure load per server and turn it into weights, so newer machines receive more traffic, and have clients do weighted round-robin within their subset. Compute weights centrally from a signal that cannot look healthy while a server is stuck, such as the higher of CPU and in-flight requests, and push them through service discovery. Start new servers at a low weight, skip updates when many load reports are missing, and roll out by blending old and new weights behind a percentage so every client sees the same values and you can turn it back."
+  }
 }

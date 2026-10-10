@@ -3,6 +3,9 @@ import Link from "next/link";
 import SiteFooter from "@/components/SiteFooter";
 import { CONTACT_EMAIL } from "@/lib/site";
 
+// Prerendered at build time; using anything dynamic here fails the build.
+export const dynamic = "error";
+
 export const metadata: Metadata = { title: "Terms · sys101" };
 
 export default function Terms() {
@@ -29,21 +32,21 @@ export default function Terms() {
       <h2>Blog content belongs to its authors</h2>
       <p>
         Every linked post belongs to the company or person who published it. sys101 only links to the
-        original and adds a short summary.
+        original and adds its own write-up.
       </p>
 
-      <h2>Summaries can be wrong</h2>
+      <h2>Write-ups can be wrong</h2>
       <p>
-        Some summaries are written with help from AI and may contain errors. When a summary and the
+        Some write-ups are drafted with help from AI and may contain errors. When a write-up and the
         original post disagree, trust the post.
       </p>
 
       <h2>Things will change</h2>
-      <p>Topics, links, and summaries may be added, edited, or removed at any time.</p>
+      <p>Topics, links, and write-ups may be added, edited, or removed at any time.</p>
 
       <h2>Takedowns</h2>
       <p>
-        If you wrote a post listed here and want it removed or its summary corrected, email{" "}
+        If you wrote a post listed here and want it removed or its write-up corrected, email{" "}
         <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> and I&apos;ll deal with it promptly.
       </p>
 

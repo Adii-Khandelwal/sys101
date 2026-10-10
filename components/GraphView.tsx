@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type Graph from "graphology";
 import type Sigma from "sigma";
 import type { NodeLabelDrawingFunction } from "sigma/rendering";
-import { columns, layeredPositions, type Orientation } from "@/lib/graph";
+import { columns, fitPositions, rowCount, type Orientation } from "@/lib/graph";
 import { useReadTopics } from "@/lib/progress";
 
 type GraphNode = { slug: string; title: string; posts: number };
@@ -26,7 +26,8 @@ const ACCENT_DARK = "#7a2c15";
 
 const NODE_RADIUS = 14;
 const LABEL_SIZE = 18;
-const NARROW = 640; // px: below this the map stacks top to bottom
+const NARROW = "(max-width: 640px)"; // below this the map stacks top to bottom; matches the CSS
+const PADDING = 48; // px between the stage edge and the outermost nodes
 const FADE = 0.3; // non-neighbours keep 30% of their colour while a node is active
 const MAX_RATIO = 1; // the fitted view; zooming out further only crowds the labels
 
@@ -66,6 +67,7 @@ export default function GraphView({ nodes, edges }: Props) {
 
   const [ready, setReady] = useState(false);
   const [orientation, setOrientation] = useState<Orientation>("horizontal");
+  const [size, setSize] = useState({ width: 0, height: 0 });
   const [active, setActive] = useState<string | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
 
@@ -79,15 +81,40 @@ export default function GraphView({ nodes, edges }: Props) {
   const cols = useMemo(() => columns(nodes, edges), [nodes, edges]);
   const bySlug = useMemo(() => new Map(nodes.map((n) => [n.slug, n])), [nodes]);
 
-  // Pick the orientation from the stage width, and follow it on resize.
+  // Orientation follows the same breakpoint as the stage height in CSS.
+  useEffect(() => {
+    const query = window.matchMedia(NARROW);
+    const update = () => setOrientation(query.matches ? "vertical" : "horizontal");
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  // Track the stage size so the layout can fill it.
   useEffect(() => {
     const el = stage.current;
     if (!el) return;
-    const update = () => setOrientation(el.clientWidth < NARROW ? "vertical" : "horizontal");
+    const update = () => setSize({ width: el.clientWidth, height: el.clientHeight });
     update();
     const observer = new ResizeObserver(update);
     observer.observe(el);
-    return () => observer.disconnect();
+    // A pixel-ratio change (browser zoom, another display) keeps the CSS size
+    // but still needs the canvases resized.
+    let dpr: MediaQueryList;
+    const watchDpr = () => {
+      dpr?.removeEventListener("change", onDpr);
+      dpr = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+      dpr.addEventListener("change", onDpr);
+    };
+    const onDpr = () => {
+      update();
+      watchDpr();
+    };
+    watchDpr();
+    return () => {
+      observer.disconnect();
+      dpr.removeEventListener("change", onDpr);
+    };
   }, []);
 
   // Scroll zooms the map, but once it is fully zoomed out a downward scroll
@@ -177,7 +204,9 @@ export default function GraphView({ nodes, edges }: Props) {
         labelRenderedSizeThreshold: 0,
         defaultDrawNodeLabel: drawLabel,
         defaultDrawNodeHover: drawLabel,
-        stagePadding: 48,
+        // Padding is built into the custom bbox below instead, so the bbox has
+        // exactly the stage's aspect ratio and Sigma fits it edge to edge.
+        stagePadding: 0,
         minCameraRatio: 0.4,
         maxCameraRatio: MAX_RATIO,
         zoomDuration: still ? 0 : 150,
@@ -231,26 +260,32 @@ export default function GraphView({ nodes, edges }: Props) {
     };
   }, [nodes, edges, router, activate, syncPoints]);
 
-  // Place nodes for the current orientation and frame them with room for labels.
+  // Place nodes in stage pixels and set the camera bounds to exactly the
+  // padded stage, so the map fills the width and uses the full height.
   useEffect(() => {
     const renderer = rendererRef.current;
-    if (!ready || !renderer) return;
+    if (!ready || !renderer || !size.width || !size.height) return;
     const graph = renderer.getGraph();
-    const positions = layeredPositions(cols, orientation);
-    positions.forEach((p, slug) => graph.mergeNodeAttributes(slug, p));
+    const width = Math.max(1, size.width - PADDING * 2);
+    const height = Math.max(1, size.height - PADDING * 2);
 
-    const xs = [...positions.values()].map((p) => p.x);
-    const ys = [...positions.values()].map((p) => p.y);
-    const [minX, maxX, minY, maxY] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-    // Labels extend to the right of each node, so leave extra room on that side.
-    renderer.setCustomBBox(
-      orientation === "horizontal"
-        ? { x: [minX - 0.1, maxX + 0.75], y: [minY - 0.4, maxY + 0.4] }
-        : { x: [minX - 0.3, maxX + 1.8], y: [minY - 0.2, maxY + 0.2] },
+    // Room for labels to the right of the nodes that need it: the last column
+    // when horizontal, every node when stacked.
+    const ctx = document.createElement("canvas").getContext("2d")!;
+    ctx.font = `500 ${LABEL_SIZE}px ${getComputedStyle(document.body).fontFamily}`;
+    const labelled = orientation === "horizontal" ? (cols[cols.length - 1] ?? []) : cols.flat();
+    const labelRoom = NODE_RADIUS + 8 + Math.max(0, ...labelled.map((n) => ctx.measureText(n.title).width));
+
+    fitPositions(cols, orientation, { width, height, labelRoom }).forEach((p, slug) =>
+      graph.mergeNodeAttributes(slug, p),
     );
+    renderer.setCustomBBox({ x: [-PADDING, width + PADDING], y: [-PADDING, height + PADDING] });
+    // Forced, so a change in device pixel ratio (browser zoom, moving to
+    // another display) also resizes the WebGL layers, not just the labels.
+    renderer.resize(true);
     renderer.getCamera().setState({ x: 0.5, y: 0.5, ratio: 1, angle: 0 });
     renderer.refresh();
-  }, [ready, cols, orientation]);
+  }, [ready, cols, orientation, size]);
 
   const resetView = () => {
     const camera = rendererRef.current?.getCamera();
@@ -275,7 +310,14 @@ export default function GraphView({ nodes, edges }: Props) {
         </button>
       </div>
 
-      <div ref={stage} className="graph-stage" role="group" aria-label="Topic map">
+      <div
+        ref={stage}
+        className="graph-stage"
+        role="group"
+        aria-label="Topic map"
+        // Stage height comes from the layout; CSS picks one per breakpoint (no shift on load).
+        style={{ "--rows": rowCount(cols, "horizontal"), "--layers": rowCount(cols, "vertical") } as React.CSSProperties}
+      >
         {!ready && <GraphSkeleton />}
         <div ref={container} className="graph-canvas" aria-hidden="true" />
 

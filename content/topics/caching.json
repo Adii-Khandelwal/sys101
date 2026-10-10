@@ -6,12 +6,129 @@
   "prerequisites": [
     "load-balancing"
   ],
+  "primer": "With load balancing, requests spread across many identical servers, and each one can be added or removed as traffic changes. Those servers still read from shared databases, and for read-heavy workloads the same data is requested over and over. A cache sits between the servers and the database so repeated reads are served from memory instead.",
   "posts": [
     {
       "title": "Cache made consistent",
       "url": "https://engineering.fb.com/2022/06/08/core-infra/cache-made-consistent/",
       "company": "Meta",
-      "summary": "TAO serves more than one quadrillion queries a day, and at a 99 percent hit rate that means over 10 trillion cache fills daily, so rare invalidation races still add up to real inconsistencies. Meta built Polaris, a service that acts like a client, checks replicas after each invalidation, and only reports anomalies a client could actually see, deferring expensive database checks so they don't overload the database. Together with tracing limited to the short window where races happen, this took TAO from six nines to ten nines of cache writes consistent within five minutes."
+      "digest": {
+        "problem": "A cache only stays correct if every change in the database reaches it as an invalidation, and races can break that. In Meta's example, a cache fill reads a value, the value then changes, the invalidation for the new value arrives first, and the delayed fill writes the old value back, leaving the cache wrong until something else evicts it. At Meta's scale such cases are rare but frequent enough to cause real harm, like two people's messages being routed to different regions.",
+        "constraints": "Meta's TAO cache handles more than a quadrillion queries a day, so even rare races add up. Logging every cache change would turn a read-heavy system into a write-heavy one. Checking the database directly is expensive and could overload it. Any measurement had to be free of false alarms and precise enough to count past ten nines.",
+        "walkthrough": [
+          {
+            "step": "Listen like a cache",
+            "explanation": "Polaris, a separate service, receives the same invalidation events the cache does and otherwise behaves like an ordinary client."
+          },
+          {
+            "step": "Ask every replica",
+            "explanation": "After an invalidation, Polaris asks every cache replica for the key and flags any replica still returning an older version."
+          },
+          {
+            "step": "Wait before judging",
+            "explanation": "Flagged samples are rechecked after one, five and ten minutes and only counted if they are still wrong, so normal replication lag is not reported."
+          },
+          {
+            "step": "Ration database checks",
+            "explanation": "Checks that bypass the cache to read the database are delayed and limited, and a query flag shows whether a replica has processed the invalidation yet."
+          },
+          {
+            "step": "Report in nines",
+            "explanation": "Results are expressed as how many nines of cache writes are consistent within a given number of minutes."
+          },
+          {
+            "step": "Trace the race window",
+            "explanation": "Separately, consistency tracing on each cache server logs only the short window after a write when races happen, plus evictions, giving engineers a timeline when Polaris alarms."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 320\" role=\"img\" aria-labelledby=\"dg-meta-polaris-t\" class=\"dg\"><title id=\"dg-meta-polaris-t\">Polaris at Meta: a write updates the database, which sends invalidations to cache replicas and to Polaris; Polaris asks every replica for the key, rechecks at 1, 5 and 10 minutes, and only then runs a rationed database check.</title><defs><marker id=\"dg-meta-polaris-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"120\" width=\"110\" height=\"44\" class=\"dg-box\"/><text x=\"69\" y=\"147\" class=\"dg-label\" text-anchor=\"middle\">Write</text><rect x=\"170\" y=\"120\" width=\"120\" height=\"44\" class=\"dg-box\"/><text x=\"230\" y=\"147\" class=\"dg-label\" text-anchor=\"middle\">Database</text><path d=\"M124,142 L166,142\" class=\"dg-line\" marker-end=\"url(#dg-meta-polaris-a)\"/><rect x=\"370\" y=\"14\" width=\"160\" height=\"36\" class=\"dg-box\"/><text x=\"450\" y=\"37\" class=\"dg-label\" text-anchor=\"middle\">Replica 1</text><rect x=\"370\" y=\"58\" width=\"160\" height=\"36\" class=\"dg-box\"/><text x=\"450\" y=\"81\" class=\"dg-label\" text-anchor=\"middle\">Replica 2</text><rect x=\"370\" y=\"102\" width=\"160\" height=\"36\" class=\"dg-box\"/><text x=\"450\" y=\"125\" class=\"dg-label\" text-anchor=\"middle\">Replica 3</text><path d=\"M290,132 C320,120 330,80 366,76\" class=\"dg-line\" marker-end=\"url(#dg-meta-polaris-a)\"/><text x=\"318\" y=\"70\" class=\"dg-note\" text-anchor=\"middle\">invalidation</text><rect x=\"370\" y=\"196\" width=\"160\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"450\" y=\"223\" class=\"dg-label\" text-anchor=\"middle\">Polaris</text><path d=\"M290,152 C320,170 330,214 366,216\" class=\"dg-line\" marker-end=\"url(#dg-meta-polaris-a)\"/><path d=\"M505,196 L505,142\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-meta-polaris-a)\"/><text x=\"497\" y=\"174\" class=\"dg-note dg-note-accent\" text-anchor=\"end\">ask every replica</text><path d=\"M380,270 L520,270\" class=\"dg-line\"/><circle cx=\"390\" cy=\"270\" r=\"4\" class=\"dg-dot\"/><circle cx=\"450\" cy=\"270\" r=\"4\" class=\"dg-dot\"/><circle cx=\"510\" cy=\"270\" r=\"4\" class=\"dg-dot\"/><text x=\"390\" y=\"292\" class=\"dg-note\" text-anchor=\"middle\">1 min</text><text x=\"450\" y=\"292\" class=\"dg-note\" text-anchor=\"middle\">5 min</text><text x=\"510\" y=\"292\" class=\"dg-note\" text-anchor=\"middle\">10 min</text><text x=\"450\" y=\"312\" class=\"dg-note\" text-anchor=\"middle\">report only if still wrong</text><path d=\"M370,232 C300,260 240,230 232,168\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-meta-polaris-a)\"/><text x=\"250\" y=\"262\" class=\"dg-note\" text-anchor=\"middle\">rationed DB check</text></svg>",
+        "numbers": [
+          {
+            "value": "over 1 quadrillion",
+            "meaning": "Queries TAO serves per day"
+          },
+          {
+            "value": "over 10 trillion",
+            "meaning": "Cache fills per day, even at a 99% hit rate"
+          },
+          {
+            "value": "six nines to ten nines",
+            "meaning": "TAO cache writes consistent within five minutes, before and after"
+          },
+          {
+            "value": "1 in 10 billion",
+            "meaning": "Upper bound on inconsistent writes after five minutes"
+          },
+          {
+            "value": "1, 5 and 10 minutes",
+            "meaning": "Timescales Polaris reports on"
+          },
+          {
+            "value": "under 30 minutes",
+            "meaning": "Time to find a real bug with tracing, versus weeks before"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Measure only inconsistencies a client could observe, using sampled checks after invalidations, retries over several timescales, and tracing limited to the race window.",
+          "rejected": "Logging every cache state change, and checking the database immediately for every suspicious sample.",
+          "why": "Full logging would cost more than the cache itself, and immediate database checks could overload the database. Waiting and retrying means real problems are reported minutes later, which Meta accepted in exchange for a metric with no false alarms."
+        },
+        "failures": "Polaris caught a real bug: a rare transaction updated metadata and version together, a fill slipped in with old metadata, the next invalidation hit a transient error, and the error handler's drop-cache call only removed entries with a lower version. The stale entry carried the current version, so it stayed. Tracing showed the whole sequence and engineers found the cause in under 30 minutes. The authors note that shard moves, failovers and network partitions can trigger similar bugs.",
+        "takeaways": "Measure what a client could actually observe, and keep the metric free of false alarms so people trust it. Expect some lag and retry before running expensive checks. Rare bugs tend to hide in error-handling paths, and running a consistent cache in production is a different problem from designing one."
+      }
     }
-  ]
+  ],
+  "glossary": [
+    {
+      "term": "Cache hit / miss",
+      "definition": "A hit is a read served from the cache; a miss has to go to the source of truth."
+    },
+    {
+      "term": "Cache fill",
+      "definition": "Writing a value into the cache after a miss, using what the database returned."
+    },
+    {
+      "term": "Invalidation",
+      "definition": "A message telling the cache an entry is out of date, so it is deleted or replaced."
+    },
+    {
+      "term": "TTL",
+      "definition": "Time to live: how long an entry may be served before it expires on its own."
+    },
+    {
+      "term": "Replica",
+      "definition": "One of several copies of the same cached data, often in different regions."
+    },
+    {
+      "term": "Nines",
+      "definition": "Shorthand for reliability: six nines is 99.9999%, ten nines is 99.99999999%."
+    }
+  ],
+  "mistakes": [
+    "Assuming invalidations arrive in order. A delayed fill can land after the invalidation for a newer value and write the old value back.",
+    "Relying on a version check without storing the version. If the newer version is evicted, the cache can no longer tell which value wins.",
+    "Treating a stale entry as harmless because it will expire. Without a TTL, or with a long one, a missed invalidation can leave it wrong indefinitely."
+  ],
+  "quiz": [
+    {
+      "question": "Describe the race that leaves Meta's cache holding an old value.",
+      "answer": "A fill reads x=42, the database changes x to 43, the invalidation for 43 reaches the cache first, then the delayed fill writes 42. The cache now disagrees with the database."
+    },
+    {
+      "question": "Why does Polaris recheck at one, five and ten minutes before reporting?",
+      "answer": "Replicas lag briefly after a write. Waiting separates that normal lag from real inconsistencies and keeps the metric free of false alarms."
+    },
+    {
+      "question": "Why not log every cache change to catch these bugs?",
+      "answer": "At over 10 trillion cache fills a day, logging every change would turn a read-heavy system into a write-heavy one. Tracing only the race window keeps it affordable."
+    },
+    {
+      "question": "What did the drop-cache bug teach?",
+      "answer": "Error-handling paths hide rare bugs: the handler only dropped entries with a lower version, and the stale entry already had the current version."
+    }
+  ],
+  "exercise": {
+    "prompt": "Your product page cache uses invalidations from the database but no TTL. Customers occasionally see an old price for hours. How would you find out how often this happens, and how would you make it heal on its own?",
+    "answer": "Measure it from the outside: subscribe to the same invalidation stream, read the key from each cache replica a little later, and count entries that are still older than the database after a grace period, rechecking before reporting so normal lag is not counted. Report it as the share of writes consistent within N minutes. To make it heal, add a TTL as a backstop, store versions with entries so older fills are rejected, and review the error paths around invalidation, since that is where stale entries usually survive."
+  }
 }

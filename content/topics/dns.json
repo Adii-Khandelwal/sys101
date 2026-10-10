@@ -4,12 +4,137 @@
   "group": "Foundations",
   "concept": "The Domain Name System maps human-readable names to the addresses machines route on. It is a hierarchical, distributed database: resolvers walk from the root to top-level domains to authoritative servers, and caching at every layer, bounded by each record's TTL, keeps the system fast at the cost of propagation delay.",
   "prerequisites": [],
+  "primer": "Every machine on the internet is reached by an IP address, and a request travels from a client to a server at that address. People and programs prefer names, so something has to turn a name into an address before the request can start. That lookup happens before almost every connection, which is why it has to be fast and why answers get cached along the way.",
   "posts": [
     {
       "title": "How we improved DNS record build speed by more than 4,000x",
       "url": "https://blog.cloudflare.com/dns-build-improvement/",
       "company": "Cloudflare",
-      "summary": "Cloudflare's Zone Builder rebuilt a whole zone whenever a single record changed, which took up to 35 seconds for a zone with a million records. Cloudflare added per-record builds, fed by a Kafka event stream and run by a separate scheduler that locks against full builds. In a million-record test zone, a per-record build took 8 ms or less, against about 34 seconds for a full build."
+      "digest": {
+        "problem": "When a customer edits a DNS record, the change has to reach Cloudflare's edge before queries return it. The slowest step was the Zone Builder, which reacted to any edit by rebuilding the whole zone: it read every record from the database, compared all of them against Quicksilver, Cloudflare's distributed key-value store, and fixed the differences. For very large zones that took tens of seconds per edit, and the rebuilds tied up database and Quicksilver capacity that other zones needed.",
+        "constraints": "Record changes had grown about 25-fold since the Zone Builder was written, and some zones hold millions of records. The database events that triggered builds did not say which record changed. Some zone settings, such as nameserver and DNSSEC controls, really do depend on the whole zone, so full builds could not simply be deleted. Millions of domains sit on this component, so the change had to be safe.",
+        "walkthrough": [
+          {
+            "step": "Say what changed",
+            "explanation": "The database functions were changed so each record-level event carries the details of the record that was edited, instead of just naming the zone."
+          },
+          {
+            "step": "Stream record events",
+            "explanation": "Those events go onto a new Kafka stream that the Zone Builder consumes."
+          },
+          {
+            "step": "Split the scheduler",
+            "explanation": "The Zone Builder was split into scheduler types behind one interface: the old full-zone scheduler and a new per-record scheduler."
+          },
+          {
+            "step": "Apply one record at a time",
+            "explanation": "The per-record scheduler takes events one by one, in order, and reads only the record that changed."
+          },
+          {
+            "step": "Write just that record",
+            "explanation": "A dedicated Quicksilver interface writes the single change, and Quicksilver propagates it to the edge."
+          },
+          {
+            "step": "Lock the two paths",
+            "explanation": "The schedulers lock against each other, so a slow full rebuild can never overwrite a newer per-record change with stale data."
+          },
+          {
+            "step": "Model updates as delete plus create",
+            "explanation": "An edit is sent as a delete of the old record and a create of the new one, so renamed records do not leave old copies behind."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 330\" role=\"img\" aria-labelledby=\"dg-cf-dns-t\" class=\"dg\"><title id=\"dg-cf-dns-t\">Per-record DNS builds at Cloudflare: an edit flows from the database through Kafka to a per-record scheduler, which writes only that record to Quicksilver; the full-zone scheduler remains, locked against it.</title><defs><marker id=\"dg-cf-dns-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"20\" width=\"130\" height=\"44\" class=\"dg-box\"/><text x=\"85\" y=\"47\" class=\"dg-label\" text-anchor=\"middle\">Record edit</text><rect x=\"215\" y=\"20\" width=\"130\" height=\"44\" class=\"dg-box\"/><text x=\"280\" y=\"47\" class=\"dg-label\" text-anchor=\"middle\">Database</text><rect x=\"410\" y=\"20\" width=\"130\" height=\"44\" class=\"dg-box\"/><text x=\"475\" y=\"47\" class=\"dg-label\" text-anchor=\"middle\">Kafka</text><path d=\"M150,42 L211,42\" class=\"dg-line\" marker-end=\"url(#dg-cf-dns-a)\"/><path d=\"M345,42 L406,42\" class=\"dg-line\" marker-end=\"url(#dg-cf-dns-a)\"/><text x=\"378\" y=\"82\" class=\"dg-note\" text-anchor=\"middle\">record event</text><path d=\"M450,64 C430,110 330,100 300,136\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-cf-dns-a)\"/><path d=\"M500,64 C505,95 490,110 470,136\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-cf-dns-a)\"/><rect x=\"200\" y=\"140\" width=\"150\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"275\" y=\"161.5\" class=\"dg-label\" text-anchor=\"middle\">Per-record</text><text x=\"275\" y=\"178.5\" class=\"dg-label\" text-anchor=\"middle\">scheduler</text><rect x=\"390\" y=\"140\" width=\"150\" height=\"50\" class=\"dg-box dg-dashed\"/><text x=\"465\" y=\"161.5\" class=\"dg-label\" text-anchor=\"middle\">Full-zone</text><text x=\"465\" y=\"178.5\" class=\"dg-label\" text-anchor=\"middle\">scheduler</text><path d=\"M350,165 L390,165\" class=\"dg-line dg-dashed\"/><text x=\"370\" y=\"158\" class=\"dg-note\" text-anchor=\"middle\">lock</text><text x=\"192\" y=\"160\" class=\"dg-note dg-note-accent\" text-anchor=\"end\">8 ms or less</text><text x=\"192\" y=\"174\" class=\"dg-note dg-note-accent\" text-anchor=\"end\">per edit</text><text x=\"540\" y=\"212\" class=\"dg-note\" text-anchor=\"end\">about 34 s</text><text x=\"540\" y=\"226\" class=\"dg-note\" text-anchor=\"end\">on 1M records</text><path d=\"M300,190 C300,230 330,240 338,262\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-cf-dns-a)\"/><path d=\"M420,190 C420,230 410,240 404,262\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-cf-dns-a)\"/><rect x=\"300\" y=\"266\" width=\"140\" height=\"44\" class=\"dg-box\"/><text x=\"370\" y=\"293\" class=\"dg-label\" text-anchor=\"middle\">Quicksilver</text><text x=\"110\" y=\"292\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">only the changed record</text><path d=\"M180,288 L296,288\" class=\"dg-line dg-dashed\"/></svg>",
+        "numbers": [
+          {
+            "value": "5 to 10 per second",
+            "meaning": "Record changes the original Zone Builder was designed for"
+          },
+          {
+            "value": "250 per second",
+            "meaning": "Average record changes today, about 25 times more"
+          },
+          {
+            "value": "up to 35 seconds",
+            "meaning": "Full rebuild of a zone with one million records"
+          },
+          {
+            "value": "about 34 s vs 8 ms or less",
+            "meaning": "Full build vs per-record build in a one-million-record test zone"
+          },
+          {
+            "value": "4,250x",
+            "meaning": "Speedup in that test, the basis for the post's title"
+          },
+          {
+            "value": "150x",
+            "meaning": "Average speedup of per-record builds over full builds"
+          },
+          {
+            "value": "about 13%",
+            "meaning": "Share of builds that still need a full zone rebuild"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Incremental per-record builds on a new event stream, with full rebuilds kept for zone-wide settings and a lock between the two.",
+          "rejected": "Rebuilding the whole zone on every edit, and later, sending record edits as single update events.",
+          "why": "Full rebuilds scale with zone size rather than with the size of the edit, and they burned shared database capacity. Per-record builds cost more moving parts and cannot be batched, but their cost stays flat no matter how large the zone grows."
+        },
+        "failures": "The first version sent update events containing only the new record. When a customer renamed a record, the old name was never removed from Quicksilver. The fix was to send every update as a delete followed by a create. Removing full builds entirely is still unfinished.",
+        "takeaways": "A design sized for yesterday's load becomes the bottleneck as traffic grows, so look for places where a small change triggers a large amount of work. Any incremental path needs protection from the old bulk path writing stale data over it. When a bug appears, change the design so that class of bug cannot happen again."
+      }
     }
-  ]
+  ],
+  "glossary": [
+    {
+      "term": "Zone",
+      "definition": "The set of DNS records one operator is responsible for, usually a domain and its subdomains."
+    },
+    {
+      "term": "Record",
+      "definition": "One entry in a zone, such as an A record mapping a name to an IPv4 address."
+    },
+    {
+      "term": "Authoritative server",
+      "definition": "The server that holds the real answer for a zone, as opposed to a cache of it."
+    },
+    {
+      "term": "Resolver",
+      "definition": "The server that looks up names on a client's behalf and caches the answers."
+    },
+    {
+      "term": "TTL",
+      "definition": "Time to live: how long a resolver may cache an answer before asking again."
+    },
+    {
+      "term": "Propagation",
+      "definition": "The time between changing a record and every server answering with the new value."
+    }
+  ],
+  "mistakes": [
+    "Expecting a DNS change to apply instantly. Resolvers may keep serving the old answer until its TTL expires, and the provider's own pipeline adds time on top.",
+    "Setting very long TTLs on records you may need to change quickly, such as before a migration. Lower the TTL well before the change, then raise it again.",
+    "Treating DNS as a load balancer. It can hand out several addresses, but cached answers mean it cannot react quickly when one server fails or gets overloaded."
+  ],
+  "quiz": [
+    {
+      "question": "Why did one record edit take tens of seconds at Cloudflare before this change?",
+      "answer": "The Zone Builder rebuilt the whole zone for any edit, reading and comparing every record, so the cost grew with the size of the zone instead of the size of the change."
+    },
+    {
+      "question": "What stops a slow full rebuild from overwriting a newer per-record change?",
+      "answer": "A lock between the full-zone scheduler and the per-record scheduler, so they never write the same zone at once."
+    },
+    {
+      "question": "What went wrong with the first per-record design, and how was it fixed?",
+      "answer": "Update events carried only the new record, so a renamed record's old name stayed in Quicksilver. Updates are now sent as a delete plus a create."
+    },
+    {
+      "question": "Why can't Cloudflare remove full builds entirely?",
+      "answer": "Some zone settings, like nameserver and DNSSEC controls, depend on the whole zone, so about 13% of builds still need it."
+    }
+  ],
+  "exercise": {
+    "prompt": "Your search index rebuilds itself from scratch whenever any document changes, and rebuilds now take minutes for large customers. Sketch an incremental design, and say what could go wrong when incremental updates and the occasional full rebuild run side by side.",
+    "answer": "Emit an event per changed document that carries the document's ID and new content, consume those events in order, and update only the affected entries. Keep the full rebuild for schema changes and repairs. The risk is a full rebuild that started earlier finishing later and writing stale data over newer incremental updates, so either lock the two paths per customer or version every entry and refuse older writes. Also make deletes and renames explicit events, or old entries will linger."
+  }
 }

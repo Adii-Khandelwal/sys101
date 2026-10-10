@@ -1,24 +1,208 @@
 {
   "slug": "consistent-hashing",
   "title": "Consistent Hashing",
-  "group": "Data",
+  "group": "Scaling",
   "concept": "Consistent hashing places both servers and keys on the same hash ring and assigns each key to the next server along it. When a server joins or leaves, only the keys next to it move, instead of nearly all of them as with hash-mod-N. That stability is what lets caches and stateful services grow and shrink without a mass reshuffle, though a ring with few servers spreads load unevenly unless each server takes many points on it.",
   "prerequisites": [
     "caching"
   ],
+  "primer": "A cache only helps if repeated reads for the same key land on the server that already holds it. Once the cache spans many servers, every client needs the same rule for mapping a key to a server. The simple rule, hash the key and take it modulo the number of servers, moves almost every key when one server is added or removed, and every moved key becomes a cache miss.",
   "posts": [
     {
       "title": "Saving another 100TB of RAM with math (and Rust)",
       "url": "https://blog.cloudflare.com/saving-100-tb-of-ram-with-math/",
       "company": "Cloudflare",
-      "summary": "Cloudflare routes cacheable requests by URL with consistent hashing so each data center keeps one copy of a file. Giving every server 160 points on the ring cuts load variation across 100 servers from about 99% to about 8%, but weighting servers by disk and keeping a separate ring for each combination of routing features pushed memory to 6GB in some cases. Packing each ring entry into 6 bytes instead of 8 saved 25%, and their math showed servers could use 90% fewer points with almost no loss of balance. Because changing the ring moves cached content and sends more traffic to origin, they ran old and new rings side by side and rolled out one data center at a time, reclaiming more than 100TB of RAM."
+      "digest": {
+        "problem": "Cloudflare routes cacheable requests to servers by URL with consistent hashing, so each data center keeps one copy of each file. Its internal load balancer builds these rings with the open-source pingora-ketama library, and an engineer flagged that the rings were using far too much memory, reaching about 6GB in some cases.",
+        "constraints": "Every service runs on every machine, so wasted memory is multiplied across the fleet. With one point per server the ring is badly uneven, so each server gets many points, and weighting servers by disk size multiplies the count further. Compliance and caching features restrict which servers may handle a request, so each feature combination needs its own ring. Any change to a ring moves cached files and sends extra traffic to customers' origin servers, so the rollout had to be careful and reversible.",
+        "walkthrough": [
+          {
+            "step": "Do the math",
+            "explanation": "They worked out how unevenly load spreads with one point per server and how adding points shrinks that spread, with sharply diminishing returns."
+          },
+          {
+            "step": "Shrink each entry",
+            "explanation": "A ring entry went from 8 bytes to 6 by storing a 16-bit server index instead of 32-bit, saved as a raw byte array because Rust's alignment padding otherwise kept it at 8."
+          },
+          {
+            "step": "Use fewer points",
+            "explanation": "Guided by the math, they cut the points generated per server by 90%, where the measured loss of balance was negligible."
+          },
+          {
+            "step": "Run both rings",
+            "explanation": "The load balancer kept the old and new rings side by side and chose one per request, which made rollback instant."
+          },
+          {
+            "step": "Roll out by location",
+            "explanation": "The change went data center by data center, small locations first, with traffic share and location controlled separately."
+          },
+          {
+            "step": "Clean up",
+            "explanation": "Once the migration reached 100%, the old ring was removed."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-cf-ketama-t\" class=\"dg\"><title id=\"dg-cf-ketama-t\">Consistent hashing rings at Cloudflare: one point per server gives uneven arcs, many points per server evens them out; shrinking each ring entry from 8 to 6 bytes cut memory by a quarter.</title><defs><marker id=\"dg-cf-ketama-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><circle cx=\"90\" cy=\"110\" r=\"64\" class=\"dg-line\"/><circle cx=\"106.6\" cy=\"48.2\" r=\"4\" class=\"dg-dot\"/><circle cx=\"140.4\" cy=\"70.6\" r=\"4\" class=\"dg-dot\"/><circle cx=\"68.1\" cy=\"170.1\" r=\"4\" class=\"dg-dot\"/><circle cx=\"34.6\" cy=\"78.0\" r=\"4\" class=\"dg-dot\"/><text x=\"90\" y=\"200\" class=\"dg-note\" text-anchor=\"middle\">1 point per server</text><text x=\"90\" y=\"216\" class=\"dg-note\" text-anchor=\"middle\">load varies about 99%</text><circle cx=\"250\" cy=\"110\" r=\"64\" class=\"dg-line\"/><circle cx=\"250.0\" cy=\"46.0\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"262.2\" cy=\"47.2\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"274.0\" cy=\"50.7\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"280.0\" cy=\"53.5\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"290.3\" cy=\"60.3\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"295.3\" cy=\"64.7\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"303.1\" cy=\"74.2\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"308.9\" cy=\"85.0\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"311.2\" cy=\"91.3\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"313.6\" cy=\"103.3\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"314.0\" cy=\"110.0\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"312.8\" cy=\"122.2\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"309.3\" cy=\"134.0\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"306.5\" cy=\"140.0\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"299.7\" cy=\"150.3\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"295.3\" cy=\"155.3\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"285.8\" cy=\"163.1\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"275.0\" cy=\"168.9\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"268.7\" cy=\"171.2\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"256.7\" cy=\"173.6\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"250.0\" cy=\"174.0\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"237.8\" cy=\"172.8\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"226.0\" cy=\"169.3\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"220.0\" cy=\"166.5\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"209.7\" cy=\"159.7\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"204.7\" cy=\"155.3\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"196.9\" cy=\"145.8\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"191.1\" cy=\"135.0\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"188.8\" cy=\"128.7\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"186.4\" cy=\"116.7\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"186.0\" cy=\"110.0\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"187.2\" cy=\"97.8\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"190.7\" cy=\"86.0\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"193.5\" cy=\"80.0\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"200.3\" cy=\"69.7\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"204.7\" cy=\"64.7\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"214.2\" cy=\"56.9\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"225.0\" cy=\"51.1\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"231.3\" cy=\"48.8\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><circle cx=\"243.3\" cy=\"46.4\" r=\"2.2\" class=\"dg-dot dg-dot-accent\"/><text x=\"250\" y=\"200\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">160 points per server</text><text x=\"250\" y=\"216\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">about 8%</text><text x=\"340\" y=\"40\" class=\"dg-label\" text-anchor=\"start\">One ring entry</text><rect x=\"340\" y=\"60\" width=\"86\" height=\"34\" class=\"dg-box\"/><rect x=\"426\" y=\"60\" width=\"86\" height=\"34\" class=\"dg-box\"/><text x=\"383\" y=\"82\" class=\"dg-note\" text-anchor=\"middle\">hash 4 B</text><text x=\"469\" y=\"82\" class=\"dg-note\" text-anchor=\"middle\">index 4 B</text><rect x=\"340\" y=\"120\" width=\"86\" height=\"34\" class=\"dg-box dg-accent\"/><rect x=\"426\" y=\"120\" width=\"43\" height=\"34\" class=\"dg-box dg-accent\"/><text x=\"383\" y=\"142\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">hash 4 B</text><text x=\"447\" y=\"142\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">2 B</text><text x=\"518\" y=\"82\" class=\"dg-note\" text-anchor=\"start\">8 B</text><text x=\"475\" y=\"142\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">6 B</text><text x=\"426\" y=\"186\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">25% less memory</text><text x=\"280\" y=\"270\" class=\"dg-note\" text-anchor=\"middle\">plus 90% fewer points per server: over 100 TB of RAM back</text></svg>",
+        "numbers": [
+          {
+            "value": "about 99% to about 8%",
+            "meaning": "Variation in load across 100 servers, with 1 point each vs 160 points each"
+          },
+          {
+            "value": "160",
+            "meaning": "Default points per server in NGINX and Pingora"
+          },
+          {
+            "value": "about 6GB",
+            "meaning": "Ring memory in the worst cases"
+          },
+          {
+            "value": "8 to 6 bytes",
+            "meaning": "Size of one ring entry, before and after"
+          },
+          {
+            "value": "25%",
+            "meaning": "Memory saved by the smaller entries"
+          },
+          {
+            "value": "90%",
+            "meaning": "Reduction in points generated per server"
+          },
+          {
+            "value": "about 0.7%",
+            "meaning": "Error reduction bought by going from 10,000 to 100,000 points for one server"
+          },
+          {
+            "value": "over 100TB",
+            "meaning": "RAM reclaimed across the fleet"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Far fewer points per server, a smaller entry layout, and a slow rollout by data center with both rings running side by side.",
+          "rejected": "Keeping the default point counts, forcing a packed struct layout, and switching every data center at once.",
+          "why": "The math showed most points bought almost no extra balance while costing memory on every machine. A global switch would have invalidated most cached content at once and flooded origins, so they accepted a slower rollout and temporary double memory."
+        },
+        "failures": "Changing only the index type saved nothing because of alignment padding. Adding ever more points stopped paying off: each step down in error needs roughly ten times more points, and with 32-bit hashes, collisions at high point counts actually add error. Separate rings per feature combination grow quickly, so more points could never solve that part.",
+        "takeaways": "Check defaults like 160 points per server against the math, because small per-server costs become huge at fleet scale. Measure where returns diminish before assuming more is better. For anything that decides cache placement, roll out gradually with independent control over traffic share and location, and keep a way back."
+      }
     },
     {
       "title": "How Discord Scaled Elixir to 5,000,000 Concurrent Users",
       "url": "https://discord.com/blog/how-discord-scaled-elixir-to-5-000-000-concurrent-users",
       "company": "Discord",
-      "summary": "Discord routes every entity to a node with a consistent hash ring, and bursts of reconnecting users overloaded the process serving ring lookups. At about 12μs per request to that process, a session server with up to 500,000 sessions, each in about 5 guilds, needed roughly 30 seconds of lookups after a restart. Copying the ring into ETS cut reads to about 7μs, which is still 17.5 seconds, and compiling it into a module with FastGlobal brought lookups to 0.3μs and the total to 750ms. The trade-off is that rebuilding that module can take up to a second, which they accepted because the ring rarely changes."
+      "digest": {
+        "problem": "Discord places each guild (a server, in Discord's terms) on a node chosen with a consistent hash ring, and every user session asks the ring where its guilds live. When many users reconnected at once, the single process answering ring lookups could not keep up, and the whole system overloaded.",
+        "constraints": "Users are in about 5 guilds on average, and one Erlang VM can hold up to 500,000 sessions, so restarting a session server means millions of lookups at once. Any call to another Erlang process costs about 12μs, which alone added up to around 30 seconds of lookups after a restart.",
+        "walkthrough": [
+          {
+            "step": "Start with a library",
+            "explanation": "The ring began as an existing hash ring library called through an Erlang C port, owned by a single process."
+          },
+          {
+            "step": "Consider more processes",
+            "explanation": "Several copies of the ring in several processes would spread the load, but every lookup would still be a cross-process call on a hot path."
+          },
+          {
+            "step": "Move the ring into ETS",
+            "explanation": "They rewrote the ring in pure Elixir and copied it into ETS, Erlang's shared in-memory table, so sessions could read it without messaging a process."
+          },
+          {
+            "step": "Compile it into a module",
+            "explanation": "Finally they used mochiglobal, ported to Elixir as FastGlobal: the ring is compiled into a generated module whose constant data sits on a shared read-only heap, so reading it copies nothing."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-discord-ring-t\" class=\"dg\"><title id=\"dg-discord-ring-t\">Three ways Discord&#x27;s session processes looked up the hash ring: a call to the ring process, a copy from an ETS table, and a read from a compiled FastGlobal module with no copy.</title><defs><marker id=\"dg-discord-ring-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"120\" width=\"130\" height=\"50\" class=\"dg-box\"/><text x=\"79\" y=\"141.5\" class=\"dg-label\" text-anchor=\"middle\">Session</text><text x=\"79\" y=\"158.5\" class=\"dg-label\" text-anchor=\"middle\">process</text><rect x=\"220\" y=\"14\" width=\"170\" height=\"50\" class=\"dg-box\"/><text x=\"305\" y=\"35.5\" class=\"dg-label\" text-anchor=\"middle\">Ring process</text><text x=\"305\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\">(C port)</text><rect x=\"220\" y=\"120\" width=\"170\" height=\"50\" class=\"dg-box\"/><text x=\"305\" y=\"150\" class=\"dg-label\" text-anchor=\"middle\">ETS table</text><rect x=\"220\" y=\"226\" width=\"170\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"305\" y=\"247.5\" class=\"dg-label\" text-anchor=\"middle\">FastGlobal</text><text x=\"305\" y=\"264.5\" class=\"dg-label\" text-anchor=\"middle\">module</text><path d=\"M144,132 C180,100 190,50 216,40\" class=\"dg-line\" marker-end=\"url(#dg-discord-ring-a)\"/><path d=\"M144,145 L216,145\" class=\"dg-line\" marker-end=\"url(#dg-discord-ring-a)\"/><path d=\"M144,158 C180,190 190,240 216,250\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-discord-ring-a)\"/><text x=\"400\" y=\"34\" class=\"dg-note\" text-anchor=\"start\">12 μs per lookup</text><text x=\"400\" y=\"50\" class=\"dg-note\" text-anchor=\"start\">about 30 s total</text><text x=\"400\" y=\"140\" class=\"dg-note\" text-anchor=\"start\">7 μs, copies ring</text><text x=\"400\" y=\"156\" class=\"dg-note\" text-anchor=\"start\">17.5 s total</text><text x=\"400\" y=\"246\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">0.3 μs, no copy</text><text x=\"400\" y=\"262\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">750 ms total</text><text x=\"280\" y=\"296\" class=\"dg-note\" text-anchor=\"middle\">after restarting a server with up to 500,000 sessions</text></svg>",
+        "numbers": [
+          {
+            "value": "500,000",
+            "meaning": "Live sessions one Erlang VM can hold"
+          },
+          {
+            "value": "12μs",
+            "meaning": "Cost of one call to the process that owned the ring"
+          },
+          {
+            "value": "about 30 seconds",
+            "meaning": "Ring lookup time after a session server restart, originally"
+          },
+          {
+            "value": "7μs and 17.5 seconds",
+            "meaning": "Per-lookup and total cost with ETS"
+          },
+          {
+            "value": "0.3μs and 750ms",
+            "meaning": "Per-lookup and total cost with FastGlobal"
+          },
+          {
+            "value": "up to 1 second",
+            "meaning": "Time to rebuild the compiled module when the ring changes"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Compile the ring into a module so reads are nearly free and copy nothing.",
+          "rejected": "A single ring process, several ring processes, and an ETS table.",
+          "why": "Each rejected option still paid per lookup, either for a process hop or for copying the ring. FastGlobal makes every change to the ring slow, since the module must be regenerated, which Discord accepted because the ring is read constantly and changes rarely."
+        },
+        "failures": "The C port bottlenecked on its single process. More processes would have spread the load but kept the per-call cost. ETS removed the process hop but still copied the ring on every read, which left 17.5 seconds of lookups after a restart.",
+        "takeaways": "On a hot read path, copying shared data can cost more than the work itself, so removing the copy can beat adding parallelism. When data is read constantly and changes rarely, make reads cheap and let writes be slow."
+      }
     }
   ],
-  "comparison": "Both companies kept consistent hashing and attacked the cost of the ring itself, but they hit different limits. Discord's problem was lookup speed on a hot path, with every user session needing ring lookups after a restart, so it moved the ring into compiled module memory and accepted slow rebuilds because the ring rarely changes. Cloudflare's problem was memory, with dozens of large weighted rings in its load balancer, so it shrank the ring with fewer points and a tighter layout, accepting slightly less even balance and a slow rollout because any ring change moves cached files."
+  "comparison": "Both companies kept consistent hashing and attacked the cost of the ring itself, but they hit different limits. Discord's problem was lookup speed on a hot path, with every user session needing ring lookups after a restart, so it moved the ring into compiled module memory and accepted slow rebuilds because the ring rarely changes. Cloudflare's problem was memory, with dozens of large weighted rings in its load balancer, so it shrank the ring with fewer points and a tighter layout, accepting slightly less even balance and a slow rollout because any ring change moves cached files.",
+  "glossary": [
+    {
+      "term": "Hash ring",
+      "definition": "The output range of a hash function bent into a circle, with servers and keys placed on it by their hashes."
+    },
+    {
+      "term": "Point (virtual node)",
+      "definition": "One of several positions a single server takes on the ring, used to even out how much of the ring it owns."
+    },
+    {
+      "term": "Coefficient of variation",
+      "definition": "The standard deviation divided by the mean, a way to say how uneven load is in percent."
+    },
+    {
+      "term": "Rebalancing",
+      "definition": "Moving keys between servers after the set of servers changes."
+    },
+    {
+      "term": "Cache locality",
+      "definition": "Keeping requests for the same content on the same server, so it stays cached there."
+    },
+    {
+      "term": "Weight",
+      "definition": "A multiplier that gives a server more points, and so more keys, than others."
+    }
+  ],
+  "mistakes": [
+    "Using hash-mod-N for a cache cluster. Changing N remaps almost every key, and the resulting misses can overwhelm the database.",
+    "Giving each server a single point on the ring. Arcs end up very uneven, so some servers carry far more keys than others.",
+    "Assuming more points is always better. Returns diminish quickly, memory grows linearly, and with 32-bit hashes collisions eventually add error back."
+  ],
+  "quiz": [
+    {
+      "question": "Why does consistent hashing move fewer keys than hash-mod-N when a server is added?",
+      "answer": "Only keys on the arc the new server takes over change owners. With hash-mod-N, changing N changes the result for almost every key."
+    },
+    {
+      "question": "Cloudflare found load varying about 99% with one point per server and about 8% with 160. Why did they still cut points by 90%?",
+      "answer": "The math showed the extra points bought very little additional balance while costing memory on every machine, so far fewer points gave nearly the same evenness."
+    },
+    {
+      "question": "Why did Cloudflare roll the new ring out one data center at a time?",
+      "answer": "Any ring change moves cached content. Switching everywhere at once would have invalidated most caches and flooded customers' origins."
+    },
+    {
+      "question": "Why was ETS not fast enough for Discord?",
+      "answer": "Reading from ETS copies the data, and copying the ring on every lookup still cost 7μs per lookup and 17.5 seconds after a restart."
+    },
+    {
+      "question": "What trade did FastGlobal make?",
+      "answer": "Reads became nearly free with no copy, but changing the ring requires rebuilding a compiled module, which can take up to a second. That is fine because the ring rarely changes."
+    }
+  ],
+  "exercise": {
+    "prompt": "You run a 40-server cache cluster keyed by user ID, using hash-mod-N. Adding servers during peak traffic causes a burst of database load. Redesign the mapping, and explain how you would choose the number of points per server.",
+    "answer": "Place servers on a consistent hash ring so adding a server only moves the keys on the arc it takes over, roughly one-fortieth of them, instead of nearly all. Give each server many points so arcs even out, and weight points by capacity if servers differ. Choose the count by measuring how load variation falls as points rise and stopping where extra points barely help, since memory and lookup cost keep growing. Add new servers off-peak or gradually, because even a small remap causes some misses."
+  }
 }

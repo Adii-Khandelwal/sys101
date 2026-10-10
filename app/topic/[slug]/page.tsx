@@ -5,6 +5,11 @@ import { getAllTopics, getDependents, getTopic } from "@/lib/topics";
 
 type Props = { params: Promise<{ slug: string }> };
 
+// Every topic is prerendered at build time; unknown slugs are a static 404,
+// and anything that would make the page dynamic fails the build.
+export const dynamic = "error";
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return getAllTopics().map((t) => ({ slug: t.slug }));
 }

@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import SiteFooter from "@/components/SiteFooter";
 
+// Prerendered at build time; using anything dynamic here fails the build.
+export const dynamic = "error";
+
 export const metadata: Metadata = { title: "Privacy · sys101" };
 
 export default function Privacy() {

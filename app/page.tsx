@@ -1,8 +1,12 @@
 import GraphView from "@/components/GraphView";
+import Search from "@/components/Search";
 import SiteFooter from "@/components/SiteFooter";
 import TopicIndex from "@/components/TopicIndex";
 import { columns, depths } from "@/lib/graph";
 import { GROUPS, getAllTopics, type Group } from "@/lib/topics";
+
+// Prerendered at build time; using anything dynamic here fails the build.
+export const dynamic = "error";
 
 /** Fallback when a topic has no `group`: shallow topics are foundations, deep ones data. */
 function groupFromDepth(depth: number): Group {
@@ -33,6 +37,7 @@ export default function Home() {
       <header className="masthead">
         <h1>sys101</h1>
         <p>System design concepts, ordered by what you need to know first.</p>
+        <Search />
       </header>
 
       <GraphView nodes={nodes} edges={edges} />
