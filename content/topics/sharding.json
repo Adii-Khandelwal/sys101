@@ -1,0 +1,235 @@
+{
+  "slug": "sharding",
+  "title": "Sharding and Partitioning",
+  "group": "Data",
+  "concept": "Sharding splits one large dataset across many databases by a key, so each database stores and serves only part of it. The key decides which queries stay on one shard and which must visit all of them, and the layout decides how hard it is to add machines later. Vertical partitioning moves whole tables apart; horizontal sharding splits one table's rows.",
+  "prerequisites": [
+    "replication",
+    "consistent-hashing"
+  ],
+  "primer": "Replication copies all of the data to several machines, which helps reads and failover, but every copy still holds everything, so it cannot fix a table too big or too busy for one machine. Consistent hashing showed one way to map keys to machines so adding a machine moves few keys. Sharding needs a mapping like that, though, as both posts here show, it does not have to be a hash ring.",
+  "posts": [
+    {
+      "title": "How Figma’s databases team lived to tell the scale",
+      "url": "https://www.figma.com/blog/how-figmas-databases-team-lived-to-tell-the-scale/",
+      "company": "Figma",
+      "verifiedOn": "2026-10-11",
+      "published": "2024-03-14",
+      "digest": {
+        "problem": "Figma's databases grew almost 100x from 2020, when everything ran on one Postgres database on AWS's largest instance. By the end of 2022 it had added caching, read replicas and a dozen databases each holding different tables, but some single tables had reached several terabytes and billions of rows, Postgres's cleanup process (vacuum) struggled with them, and the busiest tables were nearing the most disk operations per second Amazon RDS supports. Moving whole tables to new databases could not split a single table.",
+        "constraints": "Growth left only months of runway for a small team. The team knew RDS Postgres deeply and wanted to keep it. It aimed to change little application code, avoid expensive backfills, move step by step, keep every step reversible, and keep strong consistency.",
+        "walkthrough": [
+          {
+            "step": "Group tables by key",
+            "explanation": "Tables that are queried together share a shard key, such as user, file or organization ID, and live together in a group Figma calls a colo, so joins and transactions within one key still work."
+          },
+          {
+            "step": "Hash the key",
+            "explanation": "The shard key is hashed so data spreads evenly and sequential IDs do not pile onto one shard, without migrating IDs."
+          },
+          {
+            "step": "Shard logically first",
+            "explanation": "Each shard is a Postgres view selecting a range of hashed keys from the still-unsplit table. Traffic moves to the views behind feature flags, so going back is a configuration change."
+          },
+          {
+            "step": "Test in the shadows",
+            "explanation": "Real production queries were replayed against candidate shard keys, and query plans were logged to choose a supported subset of SQL."
+          },
+          {
+            "step": "Route with DBProxy",
+            "explanation": "A Go service in front of the connection pooler parses each query, plans it, and sends it to the right shard; queries without a shard key go to every shard."
+          },
+          {
+            "step": "Keep one map",
+            "explanation": "A topology library maps tables to keys and shards to databases, and pushes changes in under a second."
+          },
+          {
+            "step": "Then split physically",
+            "explanation": "Data is copied to new databases and reads and writes fail over to them, the riskier and less reversible step."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 320\" role=\"img\" aria-labelledby=\"dg-figma-dbproxy-t\" class=\"dg\"><title id=\"dg-figma-dbproxy-t\">Figma&#x27;s horizontal sharding: DBProxy parses each query and routes it by a hash range of the shard key to a logical shard, a Postgres view, which lives on a physical database; queries without a shard key fan out to every shard.</title><defs><marker id=\"dg-figma-dbproxy-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"20\" width=\"130\" height=\"44\" class=\"dg-box\"/><text x=\"85\" y=\"47\" class=\"dg-label\" text-anchor=\"middle\">Application</text><rect x=\"210\" y=\"14\" width=\"150\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"285\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\">DBProxy</text><text x=\"285\" y=\"55.5\" class=\"dg-label\" text-anchor=\"middle\">parse, plan, route</text><path d=\"M150,42 L206,42\" class=\"dg-line\" marker-end=\"url(#dg-figma-dbproxy-a)\"/><text x=\"372\" y=\"34\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">hash(shard key)</text><text x=\"372\" y=\"48\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">picks a range</text><rect x=\"40\" y=\"120\" width=\"110\" height=\"40\" class=\"dg-box\"/><text x=\"95\" y=\"145\" class=\"dg-label\" text-anchor=\"middle\">view 1</text><rect x=\"160\" y=\"120\" width=\"110\" height=\"40\" class=\"dg-box\"/><text x=\"215\" y=\"145\" class=\"dg-label\" text-anchor=\"middle\">view 2</text><rect x=\"290\" y=\"120\" width=\"110\" height=\"40\" class=\"dg-box\"/><text x=\"345\" y=\"145\" class=\"dg-label\" text-anchor=\"middle\">view 3</text><rect x=\"410\" y=\"120\" width=\"110\" height=\"40\" class=\"dg-box\"/><text x=\"465\" y=\"145\" class=\"dg-label\" text-anchor=\"middle\">view 4</text><path d=\"M260,70 L120,116\" class=\"dg-line\" marker-end=\"url(#dg-figma-dbproxy-a)\"/><path d=\"M280,70 L215,116\" class=\"dg-line\" marker-end=\"url(#dg-figma-dbproxy-a)\"/><path d=\"M300,70 L345,116\" class=\"dg-line\" marker-end=\"url(#dg-figma-dbproxy-a)\"/><path d=\"M320,70 L465,116\" class=\"dg-line\" marker-end=\"url(#dg-figma-dbproxy-a)\"/><rect x=\"80\" y=\"210\" width=\"160\" height=\"44\" class=\"dg-box\"/><text x=\"160\" y=\"237\" class=\"dg-label\" text-anchor=\"middle\">Physical DB 1</text><rect x=\"320\" y=\"210\" width=\"160\" height=\"44\" class=\"dg-box\"/><text x=\"400\" y=\"237\" class=\"dg-label\" text-anchor=\"middle\">Physical DB 2</text><path d=\"M95,160 L150,210\" class=\"dg-line\"/><path d=\"M215,160 L170,210\" class=\"dg-line\"/><path d=\"M345,160 L390,210\" class=\"dg-line\"/><path d=\"M465,160 L410,210\" class=\"dg-line\"/><text x=\"280\" y=\"274\" class=\"dg-note\" text-anchor=\"middle\">views are logical shards, reversible by config</text><text x=\"280\" y=\"290\" class=\"dg-note\" text-anchor=\"middle\">no shard key in the query: scatter-gather to every shard</text><text x=\"280\" y=\"308\" class=\"dg-note\" text-anchor=\"middle\">no hash ring: fixed hash ranges per shard</text></svg>",
+        "numbers": [
+          {
+            "value": "almost 100x",
+            "meaning": "Growth of Figma's database stack since 2020"
+          },
+          {
+            "value": "several TB, billions of rows",
+            "meaning": "Size of the largest tables"
+          },
+          {
+            "value": "about 9 months",
+            "meaning": "Time to shard the first table end to end"
+          },
+          {
+            "value": "under 10%",
+            "meaning": "Worst-case overhead of querying through views"
+          },
+          {
+            "value": "90%",
+            "meaning": "Share of common queries the supported SQL subset covers"
+          },
+          {
+            "value": "10 s",
+            "meaning": "Partial unavailability on primaries during the physical failover"
+          },
+          {
+            "value": "under 1 s",
+            "meaning": "Time to push a topology change"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "In-house horizontal sharding on RDS Postgres, with hashed shard keys, views for a reversible logical step, and a proxy that supports a subset of SQL.",
+          "rejected": "Moving to CockroachDB, TiDB, Spanner or Vitess, moving to a NoSQL store, one shard key for every table, migrating to random IDs, and transactions that span shards.",
+          "why": "A new database would have meant a risky migration and rebuilding the team's expertise with months of runway left, and NoSQL would have meant rewriting the backend. Hashing gives even spread without changing IDs, at the cost of slower range scans. Supporting only common SQL kept the proxy small enough to build in time."
+        },
+        "failures": "Sharding removes guarantees the application relied on: foreign keys and global unique indexes are no longer enforced, schema changes must be coordinated across shards, and a write can succeed on some shards and fail on others. Queries without a shard key hit every shard, which limits scaling if there are too many. Views can change how Postgres plans queries, and the physical split added a failure mode where only some databases move.",
+        "takeaways": "Buy runway with simpler steps first, then split the big move into a reversible logical step and a riskier physical one. Build only the features your own application needs. Figma does not use a hash ring: each shard owns a fixed range of hashed keys, which is the contrast with the Consistent Hashing topic."
+      }
+    },
+    {
+      "title": "Herding elephants: Lessons learned from sharding Postgres at Notion",
+      "url": "https://www.notion.com/blog/sharding-postgres-at-notion",
+      "company": "Notion",
+      "verifiedOn": "2026-10-11",
+      "published": "2021-10-06",
+      "ageNote": "From October 2021. Notion's July 2023 follow-up shows the same design still running: data partitioned by workspace ID with 15 logical schemas per database, grown from 32 to 96 databases with no downtime users noticed.",
+      "stillCitedBy": {
+        "title": "The Great Re-shard: adding Postgres capacity (again) with zero downtime",
+        "url": "https://www.notion.com/blog/the-great-re-shard",
+        "year": 2023
+      },
+      "digest": {
+        "problem": "By 2021 Notion's single Postgres database had grown four orders of magnitude in five years. Its cleanup process, vacuum, kept stalling, which threatened transaction ID wraparound, the point where Postgres stops accepting writes to protect data. CPU spikes paged on-call engineers, and even simple schema changes had become unsafe.",
+        "constraints": "The new setup needed at least 60K disk operations per second to start, with room to grow. To stay within Postgres and RDS replication limits, no table could exceed 500 GB and no database 10 TB. It had to last two years of projected growth, with costs that grow linearly and little operational effort.",
+        "walkthrough": [
+          {
+            "step": "Choose what to shard",
+            "explanation": "The block table, plus every table reachable from it through foreign keys."
+          },
+          {
+            "step": "Pick the key",
+            "explanation": "Workspace ID, since every block belongs to exactly one workspace, so most queries stay on one shard."
+          },
+          {
+            "step": "Fix the shard count",
+            "explanation": "480 logical shards, each a Postgres schema with its own copy of the tables, 15 per database across 32 databases."
+          },
+          {
+            "step": "Route in one place",
+            "explanation": "Application code maps each workspace ID to its logical shard; the ID space is split into even buckets."
+          },
+          {
+            "step": "Double-write through a log",
+            "explanation": "New writes went to an audit log that a catch-up script applied to the new databases."
+          },
+          {
+            "step": "Backfill old data",
+            "explanation": "A backfill copied existing rows, never overwriting a newer version, taking about three days on a 96-CPU machine."
+          },
+          {
+            "step": "Verify",
+            "explanation": "Random ranges were compared, and dark reads queried both systems and logged any difference."
+          },
+          {
+            "step": "Switch over",
+            "explanation": "During five minutes of scheduled maintenance, the catch-up script finished and traffic moved."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 316\" role=\"img\" aria-labelledby=\"dg-notion-shards-t\" class=\"dg\"><title id=\"dg-notion-shards-t\">Notion&#x27;s sharding: the application maps each workspace ID to one of 480 logical shards, each a Postgres schema, with 15 per database across 32 databases, later spread over 96.</title><defs><marker id=\"dg-notion-shards-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"20\" width=\"150\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"95\" y=\"47\" class=\"dg-label\" text-anchor=\"middle\">workspace ID</text><rect x=\"230\" y=\"14\" width=\"170\" height=\"56\" class=\"dg-box\"/><text x=\"315\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\">application</text><text x=\"315\" y=\"55.5\" class=\"dg-label\" text-anchor=\"middle\">routing</text><path d=\"M170,42 L226,42\" class=\"dg-line\" marker-end=\"url(#dg-notion-shards-a)\"/><text x=\"482\" y=\"36\" class=\"dg-note\" text-anchor=\"middle\">one place maps</text><text x=\"482\" y=\"50\" class=\"dg-note\" text-anchor=\"middle\">workspace to shard</text><text x=\"280\" y=\"104\" class=\"dg-label\" text-anchor=\"middle\">480 logical shards (Postgres schemas)</text><rect x=\"40\" y=\"118\" width=\"24\" height=\"24\" class=\"dg-box\"/><rect x=\"71\" y=\"118\" width=\"24\" height=\"24\" class=\"dg-box\"/><rect x=\"102\" y=\"118\" width=\"24\" height=\"24\" class=\"dg-box\"/><rect x=\"133\" y=\"118\" width=\"24\" height=\"24\" class=\"dg-box\"/><rect x=\"164\" y=\"118\" width=\"24\" height=\"24\" class=\"dg-box\"/><rect x=\"195\" y=\"118\" width=\"24\" height=\"24\" class=\"dg-box\"/><rect x=\"226\" y=\"118\" width=\"24\" height=\"24\" class=\"dg-box\"/><rect x=\"257\" y=\"118\" width=\"24\" height=\"24\" class=\"dg-box\"/><rect x=\"288\" y=\"118\" width=\"24\" height=\"24\" class=\"dg-box\"/><rect x=\"319\" y=\"118\" width=\"24\" height=\"24\" class=\"dg-box\"/><rect x=\"350\" y=\"118\" width=\"24\" height=\"24\" class=\"dg-box\"/><rect x=\"381\" y=\"118\" width=\"24\" height=\"24\" class=\"dg-box\"/><rect x=\"412\" y=\"118\" width=\"24\" height=\"24\" class=\"dg-box\"/><rect x=\"443\" y=\"118\" width=\"24\" height=\"24\" class=\"dg-box\"/><rect x=\"474\" y=\"118\" width=\"24\" height=\"24\" class=\"dg-box\"/><rect x=\"505\" y=\"118\" width=\"24\" height=\"24\" class=\"dg-box\"/><text x=\"280\" y=\"162\" class=\"dg-note\" text-anchor=\"middle\">15 schemas per database</text><rect x=\"60\" y=\"180\" width=\"140\" height=\"40\" class=\"dg-box\"/><text x=\"130\" y=\"205\" class=\"dg-label\" text-anchor=\"middle\">DB 1</text><rect x=\"210\" y=\"180\" width=\"140\" height=\"40\" class=\"dg-box\"/><text x=\"280\" y=\"205\" class=\"dg-label\" text-anchor=\"middle\">DB 2</text><rect x=\"360\" y=\"180\" width=\"140\" height=\"40\" class=\"dg-box\"/><text x=\"430\" y=\"205\" class=\"dg-label\" text-anchor=\"middle\">... DB 32</text><text x=\"280\" y=\"250\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">2023: 5 schemas each, across 96 databases</text><text x=\"280\" y=\"270\" class=\"dg-note\" text-anchor=\"middle\">480 has many divisors: grow 32, 40, 48 hosts</text><text x=\"280\" y=\"300\" class=\"dg-note\" text-anchor=\"middle\">no hash ring: a fixed count of shards, moved between hosts</text></svg>",
+        "numbers": [
+          {
+            "value": "480",
+            "meaning": "Logical shards"
+          },
+          {
+            "value": "32",
+            "meaning": "Physical databases at launch, 15 shards each"
+          },
+          {
+            "value": "60K",
+            "meaning": "Disk operations per second needed at minimum"
+          },
+          {
+            "value": "500 GB and 10 TB",
+            "meaning": "Size limits per table and per database"
+          },
+          {
+            "value": "about 3 days",
+            "meaning": "Backfill time, on a 96-CPU machine"
+          },
+          {
+            "value": "5 minutes",
+            "meaning": "Downtime for the switchover"
+          },
+          {
+            "value": "32, 40, 48 vs 64",
+            "meaning": "Host counts 480 allows vs the jump 512 would force"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Sharding in the application by workspace ID, 480 schema-based logical shards, and an audit log for double writes.",
+          "rejected": "Citus and Vitess, DynamoDB, bare-metal servers with local NVMe disks, Postgres logical replication for the double writes, native table partitioning, and 512 shards.",
+          "why": "Citus and Vitess hid how data was distributed, which Notion wanted to control. Logical replication could not keep up with block writes during the initial copy. Native partitioning would add a second routing layer. 480 divides evenly in many ways, so hosts can be added a few at a time instead of doubling."
+        },
+        "failures": "The team says it sharded too late: the monolith was so strained that adding the workspace ID column to old rows would have added load, so rows were backfilled on the fly instead. The switchover needed downtime because catch-up was slow; under 30 seconds might have allowed a live swap. Keeping a separate partition key also meant passing it through the whole application.",
+        "takeaways": "Shard before the database is in crisis, keep routing logic in one place, choose a shard count with many divisors, and have different people write the migration and the verification. Notion does not use a hash ring: the number of shards is fixed, and growth means moving whole shards between hosts."
+      }
+    }
+  ],
+  "comparison": "Neither Figma nor Notion uses a consistent hash ring, which is the useful contrast with the topic before this one. Notion fixed the number of logical shards at 480 up front and moves whole shards between hosts, and Figma assigns each shard a fixed range of hashed keys; both get the ring's main benefit, adding machines without reshuffling every key, from a fixed set of shards instead. Where they differ is circumstance: Notion, under pressure from a failing database in 2021, put routing in its application and accepted five minutes of downtime, while Figma, with many more tables to move, built a proxy that understands SQL so the application barely changed, and split the work into a reversible logical step and a physical one.",
+  "glossary": [
+    {
+      "term": "Shard",
+      "definition": "One slice of a dataset, stored and served by its own database."
+    },
+    {
+      "term": "Shard key",
+      "definition": "The column used to decide which shard a row belongs to, such as a workspace or user ID."
+    },
+    {
+      "term": "Logical vs physical shard",
+      "definition": "A logical shard is a unit of data that can move; a physical shard is the database server holding some of them."
+    },
+    {
+      "term": "Vertical partitioning",
+      "definition": "Moving whole tables to different databases."
+    },
+    {
+      "term": "Scatter-gather",
+      "definition": "Sending a query to every shard and combining the answers, needed when the query has no shard key."
+    },
+    {
+      "term": "Dark reads",
+      "definition": "Reading from both the old and new system and comparing results without showing the new ones to users."
+    }
+  ],
+  "mistakes": [
+    "Sharding only once the database is in crisis. Notion found the strained monolith limited its migration options and forced extra work.",
+    "Picking a shard count that only splits in halves. With 512 shards, Notion would have had to go from 32 to 64 hosts; 480 allows 40 or 48.",
+    "Assuming the database still enforces everything after sharding. Foreign keys, global unique indexes and transactions across shards stop working unless you rebuild them."
+  ],
+  "quiz": [
+    {
+      "question": "Do Notion and Figma use a consistent hash ring? How do they map keys to shards?",
+      "answer": "No. Notion maps workspace IDs to a fixed set of 480 logical shards and moves whole shards between hosts. Figma hashes the shard key and gives each shard a fixed range of hash values."
+    },
+    {
+      "question": "Why did Notion choose 480 shards instead of 512?",
+      "answer": "480 has many divisors, so the fleet can grow from 32 to 40 or 48 hosts; 512 only divides into powers of two, forcing a jump from 32 to 64."
+    },
+    {
+      "question": "What did Figma gain by sharding logically with views before splitting physically?",
+      "answer": "It could test routing, query support and performance on the real application while the data still sat in one database, and roll back with a configuration change."
+    },
+    {
+      "question": "What happens to a Figma query that does not include a shard key?",
+      "answer": "DBProxy sends it to every shard and combines the results, which costs as much load as an unsharded query, so too many of them would limit scaling."
+    }
+  ],
+  "exercise": {
+    "prompt": "Your multi-tenant app has one 4 TB orders table that is close to your database's disk throughput limit, and most queries filter by tenant. Design a sharding plan and a migration with as little downtime as possible.",
+    "answer": "Shard by tenant ID so most queries stay on one shard, and choose a fixed number of logical shards with many divisors, mapped to a smaller number of databases, so you can add hosts gradually. Keep the tenant-to-shard mapping in one place. Migrate by double-writing through a change log, backfilling old rows without overwriting newer ones, verifying with comparisons and dark reads, and switching over once catch-up takes seconds. Before cutting over, list what breaks across shards, such as foreign keys, global unique constraints and cross-tenant reports, and decide how each is handled."
+  }
+}
