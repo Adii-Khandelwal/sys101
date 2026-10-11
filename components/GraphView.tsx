@@ -588,11 +588,14 @@ export default function GraphView({ nodes, edges }: Props) {
           // Lit nodes take the strong ink (read: darker rust); otherwise the usual soft outline.
           const border = isRead ? (isActive || lit ? ACCENT_DARK : ACCENT) : isActive || lit ? INK : INK_SOFT;
           const baseSize = ready ? 3 : 1.5;
+          // The lit set thickens by 1; the single hovered/focused node thickens
+          // a little more, so you still see exactly which node you are on.
+          const borderSize = isActive ? baseSize + 1.5 : lit ? baseSize + 1 : baseSize;
           return {
             ...data,
             color: near ? fill : fade(fill),
             borderColor: near ? border : fade(border),
-            borderSize: lit ? baseSize + 1 : baseSize,
+            borderSize,
             dotColor: ready ? (near ? border : fade(border)) : near ? fill : fade(fill),
             labelColor: near ? INK : FADED_LABEL, // faded labels keep AA contrast
             zIndex: near ? 1 : 0,
@@ -696,13 +699,21 @@ export default function GraphView({ nodes, edges }: Props) {
     // Horizontal only when every column fits its widest label with the minimum gap, with labels at
     // full size or shrunk to no less than MIN_LABEL_SCALE; below that the map stacks.
     let scale = 1;
+    let localFits = fits;
     if (orientation === "horizontal") {
       const found = fitLabelScale(layered, { width, height, edges: drawn }, baseWidth);
-      const ok = found !== null;
-      if (ok !== fits) return setFits(ok);
+      localFits = found !== null;
+      // Keep the state in step, but do NOT return early: a bare return would
+      // leave every node at its initial {0,0} for a frame (all nodes and labels
+      // stacked on one point) until the re-run placed them. Instead place them
+      // now using the orientation this fit result implies.
+      if (localFits !== fits) setFits(localFits);
       scale = found ?? 1;
     }
-    if (effective === "vertical") {
+    // The orientation to lay out with right now, from the fresh fit result
+    // rather than the possibly-stale `fits` state.
+    const effectiveNow: Orientation = orientation === "horizontal" && localFits ? "horizontal" : "vertical";
+    if (effectiveNow === "vertical") {
       // Stacked on a narrow phone, the longest label can run past the stage edge: shrink labels
       // (never below MIN_LABEL_SCALE) until each one ends inside it.
       const probe = fitPositions(layered, "vertical", { width, height, labelWidth: baseWidth, edges: drawn }).positions;
@@ -719,14 +730,14 @@ export default function GraphView({ nodes, edges }: Props) {
     // Horizontal layout reserves slots for long edges; stacked layout lists topics only.
     // With real label widths known, pick the column ordering that draws cleanly.
     const stageBox = { minX: -PADDING + 8, maxX: width + PADDING - 8, minY: -PADDING + 8, maxY: height + PADDING_TOP - TOP_CLEAR };
-    const lay = effective === "horizontal" ? chooseLayers(layered, drawn, { width, height, labelWidth }, stageBox) : layered;
-    const { positions } = fitPositions(lay, effective, { width, height, labelWidth, edges: drawn });
+    const lay = effectiveNow === "horizontal" ? chooseLayers(layered, drawn, { width, height, labelWidth }, stageBox) : layered;
+    const { positions } = fitPositions(lay, effectiveNow, { width, height, labelWidth, edges: drawn });
     cols.flat().forEach((n) => graph.mergeNodeAttributes(n.slug, positions.get(n.slug)!));
 
     const labels = new Map(cols.flat().map((n) => [n.slug, { start: LABEL_START, width: labelWidth.get(n.slug)! }]));
-    const bends = edgeCurvatures(positions, drawn, slotsByEdge(lay, positions), stageBox, effective, labels);
+    const bends = edgeCurvatures(positions, drawn, slotsByEdge(lay, positions), stageBox, effectiveNow, labels);
     hiddenRef.current = hidden;
-    hiddenBends.current = edgeCurvatures(positions, hidden, new Map(), stageBox, effective, labels);
+    hiddenBends.current = edgeCurvatures(positions, hidden, new Map(), stageBox, effectiveNow, labels);
     graph.forEachEdge((edge, _attr, source, target) => {
       graph.setEdgeAttribute(edge, "curvature", bends.get(`${source}->${target}`) ?? 0);
     });
