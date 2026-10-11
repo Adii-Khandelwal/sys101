@@ -56,12 +56,12 @@
             "meaning": "Growth of Figma's database stack since 2020"
           },
           {
-            "value": "several TB, billions of rows",
-            "meaning": "Size of the largest tables"
+            "value": "several terabytes and billions of rows",
+            "meaning": "Size of some of the tables that were becoming too large for a single database"
           },
           {
-            "value": "about 9 months",
-            "meaning": "Time to shard the first table end to end"
+            "value": "roughly nine months",
+            "meaning": "Time the post says it took the team, end to end, to shard the first table"
           },
           {
             "value": "under 10%",

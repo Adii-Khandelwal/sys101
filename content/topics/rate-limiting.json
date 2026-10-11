@@ -288,8 +288,8 @@
             "meaning": "False positives in that test"
           },
           {
-            "value": "several billion per day",
-            "meaning": "Requests the limiter was handling when the post was written"
+            "value": "several billion requests per day",
+            "meaning": "Requests the rate limiter already handled when the post was written"
           },
           {
             "value": "400,000 per second",

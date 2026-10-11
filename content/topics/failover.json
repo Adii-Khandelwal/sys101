@@ -275,8 +275,8 @@
             "meaning": "Total outage in less frequent (20s) and extreme (25s) cases"
           },
           {
-            "value": "one primary",
-            "meaning": "The single write node per cluster; failover must promote exactly one replacement to avoid split-brain"
+            "value": "a single node in a cluster",
+            "meaning": "The primary: the one node in a cluster that is able to accept writes; failover must promote exactly one replacement"
           }
         ],
         "tradeoffs": {

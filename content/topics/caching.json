@@ -55,8 +55,8 @@
             "meaning": "Cache fills per day, even at a 99% hit rate"
           },
           {
-            "value": "six nines to ten nines",
-            "meaning": "TAO cache writes consistent within five minutes, before and after"
+            "value": "99.9999 percent to 99.99999999 percent",
+            "meaning": "TAO cache consistency, by one measure, before and after (six nines to 10 nines): the share of cache writes consistent within five minutes"
           },
           {
             "value": "1 in 10 billion",

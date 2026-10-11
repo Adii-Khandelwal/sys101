@@ -270,8 +270,8 @@
             "meaning": "Events a week the platform was scaled to service"
           },
           {
-            "value": "terabytes per hour",
-            "meaning": "Data ingress the Coban team's platform handles"
+            "value": "terabytes of data ingress each hour",
+            "meaning": "Data ingress the post says the streaming platform operates at"
           },
           {
             "value": "hundreds",
@@ -381,12 +381,12 @@
             "meaning": "Chance the partition leader is in a different AZ from a client, under three-AZ rack-awareness"
           },
           {
-            "value": "about half",
-            "meaning": "Share of the total Kafka platform cost that cross-AZ traffic accounted for"
+            "value": "half of the total cost",
+            "meaning": "Share of the total cost of Grab's Kafka platform that cross-AZ traffic amounted to"
           },
           {
-            "value": "about two-thirds",
-            "meaning": "Fraction of consumers, on average, in a different AZ from the leader, which is why consuming dominates the cross-AZ traffic"
+            "value": "two-thirds",
+            "meaning": "On the consuming side, cross-AZ traffic can occur as many times as there are consumers, which the post puts on average at two-thirds of the number of consumers"
           },
           {
             "value": "25% drop",

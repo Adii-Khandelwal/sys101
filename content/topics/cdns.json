@@ -64,7 +64,7 @@
             "meaning": "Fewer new connections to that customer's origins"
           },
           {
-            "value": "one third",
+            "value": "a third as many",
             "meaning": "New connections per second compared with the old service, across all customers"
           },
           {
@@ -149,11 +149,11 @@
             "meaning": "Files stored for one episode of The Crown"
           },
           {
-            "value": "up to 100 Gbps",
+            "value": "up to 100Gbps",
             "meaning": "Throughput of the servers that hold the most popular content"
           },
           {
-            "value": "200 TB and up",
+            "value": "200TB+",
             "meaning": "Capacity of the storage servers that hold the long tail"
           }
         ],

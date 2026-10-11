@@ -333,8 +333,8 @@
             "meaning": "Ranges in a large cluster, each previously renewing its own lease, which is why the renewal CPU added up"
           },
           {
-            "value": "one leaseholder per Range",
-            "meaning": "The single authoritative replica that serves reads without per-request coordination"
+            "value": "one of its replicas",
+            "meaning": "Each Range designates one of its replicas, the leaseholder, as the authoritative source of truth that serves reads without coordinating on every request"
           }
         ],
         "tradeoffs": {

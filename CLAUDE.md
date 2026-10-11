@@ -23,7 +23,8 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - Original posts lists company, year, and "Checked on"; links open in a new tab with rel="noopener noreferrer".
 - "Checked on" is exactly the `verifiedOn` date in the content JSON: the date that entry was last edited. No code writes it; the weekly link check only reports dead links. Pages must never say or imply the author personally read or checked sources unless true, and must describe the process as it is.
 - Optional `description` on a topic replaces the generated meta description: one sentence of 8 words or more ending in a period, under 155 characters. Interview tags are hidden for now (SHOW_INTERVIEW_TAGS in lib/topics.ts); the field stays.
-- A source with no date (versioned docs) sets `published` to "no date shown" plus `edition`. `tradeoffs.rejected` is left out when the source names no alternative. A paper says "This is a research paper, not a company blog post"; no internal phrasing like "the rules" on a page.
+- A source with no date (versioned docs) sets `published` to "no date shown" plus `edition`, the full label shown instead of a date. `tradeoffs.rejected` is left out when the source names no alternative.
+- A paper says "This is a research paper, not a company blog post"; no internal phrasing like "the rules" on a page.
 - Read docs/topic-pages.md before editing topic pages or their content.
 
 ## Learn pages (start from zero)
@@ -128,7 +129,7 @@ Apply system design thinking to this site: static generation, CDN caching, decou
 - `npm run dev`, `npm run build` (production check), `npx tsc --noEmit`. Pushing to `main` deploys to Vercel.
 - Topics live in `content/topics/<slug>.json`; the schema in lib/topics.ts is checked by the build. Keep it in sync with this file.
 - The build fails on an empty section or quiz, a missing prerequisite, a prerequisite cycle, missing attribution or verifiedOn, or a bad diagram (gradients, filters, scripts, no `<title>`).
-- `npm run verify:figures` fetches every source with curl (PDFs through pdftotext or pypdf) and writes docs/verification-log.md (figure, URL, nearest heading, found or NOT FOUND). Needs the network, so it never runs in the build.
+- `npm run verify:figures` fetches every source with curl (PDFs through pdftotext or pypdf, blocked pages through the Internet Archive, marked in the log) and writes docs/verification-log.md (figure, URL, nearest heading, found or NOT FOUND). Needs the network, so it never runs in the build.
 - `npm run build` also builds the Pagefind index into `public/pagefind` (git-ignored). Under `npm run dev`, run `npm run search:index` instead.
 
 ## Keeping CLAUDE.md current

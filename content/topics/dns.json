@@ -149,8 +149,8 @@
             "meaning": "Tries at signing slack.com: September 7, 8 and 30, 2021"
           },
           {
-            "value": "three hours",
-            "meaning": "Soak time between signing and publishing the DS record"
+            "value": "three hour",
+            "meaning": "Soak time between enabling signing and publishing the DS record, after which validations were successful"
           },
           {
             "value": "24 hours",
