@@ -749,11 +749,36 @@ a:hover {
   color: var(--ink);
 }
 
-.home-view-toggle .text-button[aria-pressed="true"] {
+/* The active view word sits right after "View" and is the one marked pressed. */
+.home-view-toggle .home-view-active {
   color: var(--accent);
   text-decoration: underline;
   text-decoration-color: var(--accent);
   text-underline-offset: 4px;
+}
+
+/* On toggle the active word is remounted (keyed on the view) so this entry
+   animation replays: it slides in from the separator side, reading as the new
+   word moving in front of "View". Transform and opacity only. */
+.home-view-toggle .home-view-active {
+  animation: home-view-in var(--dur-base) var(--ease-out);
+}
+
+@keyframes home-view-in {
+  from {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-view-toggle .home-view-active {
+    animation: none;
+  }
 }
 
 /* ── Path view: a syllabus drawn as a timeline ─────────── */
