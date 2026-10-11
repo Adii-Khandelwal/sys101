@@ -35,7 +35,7 @@ export type Post = {
 };
 
 /** Index headings, in curriculum order. */
-export const GROUPS = ["Foundations", "Scaling", "Data"] as const;
+export const GROUPS = ["Foundations", "Scaling", "Data", "Messaging"] as const;
 export type Group = (typeof GROUPS)[number];
 
 /** A concept section in the lesson format: one line on what you can do after it, then the teaching. */

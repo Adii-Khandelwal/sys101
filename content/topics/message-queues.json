@@ -1,0 +1,419 @@
+{
+  "slug": "message-queues",
+  "title": "Message Queues",
+  "group": "Messaging",
+  "concept": "A message queue lets one part of a system hand work to another without waiting for it: producers add messages, the queue stores them, and consumers take them when they have capacity. That absorbs bursts and isolates failures, but it changes what can go wrong: a message can be delivered twice, delivered late or lost, so the design has to say which of those it allows, and consumers have to be safe to run twice.",
+  "prerequisites": [
+    "sharding"
+  ],
+  "posts": [
+    {
+      "id": "slack-job-queue-2017",
+      "title": "Scaling Slack's Job Queue",
+      "url": "https://slack.engineering/scaling-slacks-job-queue/",
+      "company": "Slack",
+      "verifiedOn": "2026-10-11",
+      "published": "2017-12-06",
+      "ageNote": "From December 2017; the page also shows an update in June 2020. It is here for a fundamental that has not changed: putting a durable log in front of an in-memory queue, so a backlog fills disk instead of memory, and choosing how many copies must confirm a write. I did not find a newer Slack source confirming this setup is still in use, so its details, such as Kafka 0.10, the cluster size and Redis as the execution store, may have changed.",
+      "digest": {
+        "problem": "Slack runs work that is too slow for a web request, such as message posts, push notifications, URL unfurls, reminders and billing, through a job queue built on Redis. In an outage about a year before the post, slow database queries slowed job execution, Redis reached its memory limit, and new jobs could no longer be added. Dequeuing also needed a little free memory, so the queue stayed stuck even after the database recovered, and it took extensive manual work to bring it back.",
+        "constraints": "The queue handles over 1.4 billion jobs on the busiest days, at a peak of 33,000 per second, with jobs running from a few milliseconds to several minutes. Many features relied on the existing enqueue and dequeue behaviour, including its limited deduplication, so changing it was risky. The team wanted no stop-the-world switchover and no one-way migration.",
+        "walkthrough": [
+          {
+            "step": "Find the root causes",
+            "explanation": "Redis had little memory headroom, every client connected to every Redis host, adding workers added polling load on Redis, and dequeuing took work proportional to queue length, so long queues got harder to drain."
+          },
+          {
+            "step": "Add a durable buffer",
+            "explanation": "Instead of replacing Redis, Kafka was put in front of it, keeping the application's enqueue and dequeue interfaces unchanged."
+          },
+          {
+            "step": "Write through Kafkagate",
+            "explanation": "A small Go service takes jobs from the web app over HTTP and writes them to Kafka synchronously, so the app gets a clear success or error. It waits only for the partition leader to acknowledge, not for copies on other brokers."
+          },
+          {
+            "step": "Relay at a set rate",
+            "explanation": "JQRelay reads each Kafka topic and writes jobs into the matching Redis cluster at a rate set in Consul. It advances its Kafka offset only after a job is safely in Redis, and re-enqueues jobs that fail rather than dropping them."
+          },
+          {
+            "step": "Size and break it on purpose",
+            "explanation": "The cluster was load-tested at expected production rates, then tested with brokers killed hard and gracefully, two brokers lost in one zone, and an unclean leader election."
+          },
+          {
+            "step": "Migrate with double writes",
+            "explanation": "Jobs were written to both paths while the relay ran in shadow mode, counts were compared at every hop, and canary jobs ran through every partition every minute before job types moved over one at a time."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-slack-jq-t\" class=\"dg\"><title id=\"dg-slack-jq-t\">Slack&#x27;s job queue after 2017: the web app posts jobs to Kafkagate, which writes them to Kafka; JQRelay moves jobs from Kafka into Redis at a configured rate; workers take jobs from Redis as before. Kafka holds the backlog, so Redis no longer runs out of memory.</title><defs><marker id=\"dg-slack-jq-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"40\" width=\"86\" height=\"44\" class=\"dg-box\"/><text x=\"57\" y=\"67\" class=\"dg-label\" text-anchor=\"middle\">Web app</text><path d=\"M100,62 L116,62\" class=\"dg-line\" marker-end=\"url(#dg-slack-jq-a)\"/><rect x=\"120\" y=\"40\" width=\"96\" height=\"44\" class=\"dg-box\"/><text x=\"168\" y=\"67\" class=\"dg-label\" text-anchor=\"middle\">Kafkagate</text><path d=\"M216,62 L236,62\" class=\"dg-line\" marker-end=\"url(#dg-slack-jq-a)\"/><rect x=\"240\" y=\"34\" width=\"130\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"305\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\">Kafka</text><text x=\"305\" y=\"75.5\" class=\"dg-label\" text-anchor=\"middle\">durable backlog</text><path d=\"M370,62 L390,62\" class=\"dg-line\" marker-end=\"url(#dg-slack-jq-a)\"/><rect x=\"394\" y=\"40\" width=\"76\" height=\"44\" class=\"dg-box\"/><text x=\"432\" y=\"67\" class=\"dg-label\" text-anchor=\"middle\">JQRelay</text><path d=\"M470,62 L490,62\" class=\"dg-line\" marker-end=\"url(#dg-slack-jq-a)\"/><rect x=\"494\" y=\"40\" width=\"52\" height=\"44\" class=\"dg-box\"/><text x=\"520\" y=\"67\" class=\"dg-label\" text-anchor=\"middle\">Redis</text><path d=\"M520,84 L520,130\" class=\"dg-line\" marker-end=\"url(#dg-slack-jq-a)\"/><rect x=\"462\" y=\"134\" width=\"84\" height=\"40\" class=\"dg-box\"/><text x=\"504\" y=\"159\" class=\"dg-label\" text-anchor=\"middle\">Workers</text><text x=\"305\" y=\"112\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">2 days retention, 3 copies</text><text x=\"432\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\">rate-limited</text><text x=\"168\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\">waits for leader only</text><path d=\"M14,200 L546,200\" class=\"dg-line dg-dashed\"/><text x=\"280\" y=\"228\" class=\"dg-note\" text-anchor=\"middle\">before: jobs went straight into Redis, so a slow-down</text><text x=\"280\" y=\"244\" class=\"dg-note\" text-anchor=\"middle\">filled its memory and stopped both enqueue and dequeue</text><text x=\"280\" y=\"280\" class=\"dg-note\" text-anchor=\"middle\">figures from Slack&#x27;s 2017 post</text></svg>",
+        "numbers": [
+          {
+            "value": "over 1.4 billion",
+            "meaning": "Jobs processed on the busiest days"
+          },
+          {
+            "value": "33,000 per second",
+            "meaning": "Peak job rate"
+          },
+          {
+            "value": "16",
+            "meaning": "Kafka brokers, on i3.2xlarge EC2 machines"
+          },
+          {
+            "value": "32 partitions, 3 copies, 2 days",
+            "meaning": "Per topic: partitions, replication factor and retention"
+          },
+          {
+            "value": "50 and 1,600",
+            "meaning": "Redis clusters, and Kafka partitions (50 topics x 32) covered by the rollout"
+          },
+          {
+            "value": "every minute",
+            "meaning": "Heartbeat canary jobs sent through every partition during the rollout"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Kafka in front of the existing Redis queue, with a synchronous write path that waits for the leader only, and a rate-limited relay into Redis.",
+          "rejected": "Replacing Redis with Kafka outright, scaling the old design further, and existing tools for getting jobs from the web app into Kafka.",
+          "why": "Replacing Redis would have meant rewriting scheduling, execution and deduplication; adding Kafka in front fixed the memory exhaustion with the smallest change. Waiting only for the leader keeps writes fast but risks losing a job if a broker dies before it copies it, which Slack judged right for most jobs, while considering a stricter option for critical ones."
+        },
+        "failures": "The original outage locked the queue: once Redis was full it could neither accept nor release jobs. During the rebuild, Go and PHP encoded JSON differently, escaping characters such as <, > and / in different ways, which caused mismatches that did not exist when PHP did everything. The post gives no latency figures before or after.",
+        "takeaways": "A queue that keeps its backlog in memory fails exactly when it is needed most, during a slowdown. A durable log in front turns a memory crisis into a growing backlog you can drain at a controlled rate. Decide per kind of job how many copies must confirm a write, and migrate with double writes and end-to-end counts rather than a single switchover."
+      }
+    },
+    {
+      "id": "meta-foqs-2021",
+      "title": "FOQS: Scaling a distributed priority queue",
+      "url": "https://engineering.fb.com/2021/02/22/production-engineering/foqs-scaling-a-distributed-priority-queue/",
+      "company": "Meta",
+      "verifiedOn": "2026-10-11",
+      "published": "2021-02-22",
+      "ageNote": "From February 2021. It is here for fundamentals that have not changed: leases, acks and nacks, the choice between at-least-once and at-most-once delivery, and a priority queue built on sharded storage. I did not open a newer Meta source confirming FOQS still works this way, so its figures and design may have changed.",
+      "digest": {
+        "problem": "Many services at Facebook need to run work later, at off-peak times or on another service, from notifications and integrity checks to video encoding and translation. FOQS is the shared queue they use: a multitenant, persistent priority queue built on sharded MySQL, where each item is one row.",
+        "constraints": "Workloads differ widely: some topics need items within milliseconds and others can wait days, and processing rates range from tens of items per minute to over 10 million per minute. Some items must be processed in a particular region. Every MySQL shard is replicated to two more regions, and FOQS has to keep working when a whole data center is drained.",
+        "walkthrough": [
+          {
+            "step": "Give each item a priority and a time",
+            "explanation": "An item has a priority, a payload of up to 10 Kb, small mutable metadata, a time before which it must not be delivered, a lease duration and a time to live."
+          },
+          {
+            "step": "Enqueue into shards",
+            "explanation": "A host buffers enqueue requests, and one worker per MySQL shard inserts them as rows. The returned ID contains the shard ID, so later acks can be routed to the right host."
+          },
+          {
+            "step": "Stop feeding sick shards",
+            "explanation": "A circuit breaker stops sending work to a shard whose queries are slow or whose error rate is high, judged over a rolling window."
+          },
+          {
+            "step": "Dequeue the best items",
+            "explanation": "Each shard keeps an in-memory index of ready items by priority. A prefetch buffer merges these across a host's shards and refills each topic in proportion to how fast it is being dequeued."
+          },
+          {
+            "step": "Lease, then ack or nack",
+            "explanation": "A dequeue starts a lease. An ack deletes the row; a nack reschedules the item, optionally later, which allows exponential backoff. If neither arrives before the lease ends, the item is redelivered for at-least-once delivery or deleted for at-most-once."
+          },
+          {
+            "step": "Let consumers pull",
+            "explanation": "Consumers discover active topics and pull items at the pace they choose, rather than having FOQS push to them, with a routing layer to find where items are."
+          },
+          {
+            "step": "Bound the background queries",
+            "explanation": "Jobs that scan rows by timestamp made MySQL keep long histories of old row versions, slowing reads. FOQS now remembers the last timestamp processed and only scans forward from it."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-foqs-t\" class=\"dg\"><title id=\"dg-foqs-t\">FOQS at Meta, 2021: an enqueue is buffered on a host and written as one row to a MySQL shard; a prefetch buffer merges the highest-priority ready items across the host&#x27;s shards; a consumer dequeues, then acks to delete the row or nacks to schedule it again; an expired lease means redelivery.</title><defs><marker id=\"dg-foqs-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"30\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"64\" y=\"55\" class=\"dg-label\" text-anchor=\"middle\">Enqueue</text><path d=\"M114,50 L150,50\" class=\"dg-line\" marker-end=\"url(#dg-foqs-a)\"/><rect x=\"154\" y=\"24\" width=\"150\" height=\"52\" class=\"dg-box dg-accent\"/><text x=\"229\" y=\"46.5\" class=\"dg-label\" text-anchor=\"middle\">FOQS host</text><text x=\"229\" y=\"63.5\" class=\"dg-label\" text-anchor=\"middle\">buffer per shard</text><rect x=\"352\" y=\"10\" width=\"110\" height=\"30\" class=\"dg-box\"/><text x=\"407\" y=\"30\" class=\"dg-label\" text-anchor=\"middle\">MySQL shard</text><rect x=\"352\" y=\"50\" width=\"110\" height=\"30\" class=\"dg-box\"/><text x=\"407\" y=\"70\" class=\"dg-label\" text-anchor=\"middle\">MySQL shard</text><path d=\"M304,44 L348,26\" class=\"dg-line\" marker-end=\"url(#dg-foqs-a)\"/><path d=\"M304,56 L348,64\" class=\"dg-line\" marker-end=\"url(#dg-foqs-a)\"/><text x=\"506\" y=\"30\" class=\"dg-note\" text-anchor=\"middle\">one item =</text><text x=\"506\" y=\"46\" class=\"dg-note\" text-anchor=\"middle\">one row</text><rect x=\"154\" y=\"116\" width=\"150\" height=\"52\" class=\"dg-box\"/><text x=\"229\" y=\"138.5\" class=\"dg-label\" text-anchor=\"middle\">Prefetch buffer</text><text x=\"229\" y=\"155.5\" class=\"dg-label\" text-anchor=\"middle\">best priority first</text><path d=\"M404,82 C404,130 340,142 308,142\" class=\"dg-line\" marker-end=\"url(#dg-foqs-a)\"/><path d=\"M154,142 L118,142\" class=\"dg-line\" marker-end=\"url(#dg-foqs-a)\"/><rect x=\"14\" y=\"122\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"64\" y=\"147\" class=\"dg-label\" text-anchor=\"middle\">Dequeue</text><text x=\"64\" y=\"186\" class=\"dg-note\" text-anchor=\"middle\">lease starts</text><rect x=\"14\" y=\"206\" width=\"100\" height=\"36\" class=\"dg-box\"/><text x=\"64\" y=\"229\" class=\"dg-label\" text-anchor=\"middle\">ack: delete</text><rect x=\"130\" y=\"206\" width=\"160\" height=\"36\" class=\"dg-box\"/><text x=\"210\" y=\"229\" class=\"dg-label\" text-anchor=\"middle\">nack: retry later</text><text x=\"410\" y=\"216\" class=\"dg-note\" text-anchor=\"middle\">no ack or nack in time:</text><text x=\"410\" y=\"232\" class=\"dg-note\" text-anchor=\"middle\">lease expires, redelivered</text><text x=\"280\" y=\"284\" class=\"dg-note\" text-anchor=\"middle\">figures from Meta&#x27;s 2021 post; it gives no latency numbers</text></svg>",
+        "numbers": [
+          {
+            "value": "close to one trillion",
+            "meaning": "Items processed per day"
+          },
+          {
+            "value": "hundreds of billions",
+            "meaning": "Items in backlogs, during widespread downstream failures"
+          },
+          {
+            "value": "10s to 10+ million",
+            "meaning": "Items per minute that different topics consume"
+          },
+          {
+            "value": "up to 10 Kb",
+            "meaning": "Maximum payload of one item"
+          },
+          {
+            "value": "two additional regions",
+            "meaning": "Where each MySQL shard is replicated"
+          },
+          {
+            "value": "a few milliseconds",
+            "meaning": "Usual read-only window while a replica catches up before promotion"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A pull-based priority queue on sharded MySQL, with leases and acks, and a prefetch buffer to find the highest-priority items across shards.",
+          "rejected": "A push model, where the queue sends items to consumers as soon as they are ready.",
+          "why": "Pulling lets very different consumers choose when and where to process, and keeps the queue simpler; the price is a routing layer so consumers can find items. Push delivers sooner but has to avoid overloading consumers. Rate limits are enforced globally, since per-region limits cannot be guaranteed."
+        },
+        "failures": "Long-running timestamp scans slowed reads until they were bounded with checkpoints. Promoting MySQL replicas in another region could leave capacity badly unbalanced, so FOQS added enqueue forwarding to hosts with spare capacity and better routing for dequeues. Lost acks and nacks, from MySQL outages or crashed hosts, are recovered when leases expire. The post gives no latency figures, and its circuit-breaker thresholds are written only as \"x ms\" and \"x%\".",
+        "takeaways": "A lease plus an ack is what makes delivery reliable without the queue knowing whether work finished: anything unacknowledged comes back. At-least-once is the safe default and needs idempotent consumers. A queue on ordinary sharded storage can reach very large scale, but the details of background queries and failover decide whether it stays fast."
+      }
+    }
+  ],
+  "comparison": "Both queues exist to absorb work that cannot be done immediately, and both keep it in durable storage so a backlog survives, but they started from different places. Slack's job queue was already in production on Redis and had failed by running out of memory, so in 2017 Slack added Kafka in front as a durable buffer with the smallest possible change, keeping Redis and its workers for execution. Meta built FOQS in 2021 as a general queue for many teams, so it designed the delivery contract itself: priorities, delays, leases, acks and nacks, on sharded MySQL with replicas in other regions. Slack's post is concrete about its cluster and rollout; Meta's is concrete about the delivery model but gives no latency numbers.",
+  "glossary": [
+    {
+      "term": "Producer",
+      "definition": "The part of a system that adds messages to a queue."
+    },
+    {
+      "term": "Consumer",
+      "definition": "The part that takes messages from a queue and processes them."
+    },
+    {
+      "term": "Acknowledgment (ack)",
+      "definition": "A consumer's signal that a message was processed, so it can be removed."
+    },
+    {
+      "term": "Lease",
+      "definition": "The time a consumer has to acknowledge a message before it is delivered again."
+    },
+    {
+      "term": "At-least-once",
+      "definition": "Every message is delivered, but some may be delivered more than once."
+    },
+    {
+      "term": "At-most-once",
+      "definition": "No message is delivered twice, but some may be lost."
+    },
+    {
+      "term": "Idempotent",
+      "definition": "Safe to run more than once: running it twice has the same effect as running it once."
+    },
+    {
+      "term": "Backlog",
+      "definition": "Messages waiting in a queue because consumers are slower than producers."
+    }
+  ],
+  "mistakes": [
+    "Assuming each message is delivered exactly once. With at-least-once delivery, retries and expired leases mean duplicates, so consumers must be safe to run twice.",
+    "Keeping the backlog in memory. Slack's Redis queue filled its memory during a slowdown and then could neither accept nor release jobs.",
+    "Retrying a failing message immediately and forever. Reschedule it with a growing delay, as FOQS's nack allows, and set it aside after a limit, so one bad message does not block or flood the queue."
+  ],
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why systems put a queue between the part that asks for work and the part that does it.",
+      "body": "Some work is too slow to do while a user waits: sending notifications, resizing images, charging a card, updating a search index. If the web request did it inline, every slowdown downstream would become a slow or failed page.\n\nA queue separates the two sides. The producer records the work and returns at once; consumers do it when they can. Bursts become a backlog instead of an outage, consumers can be scaled on their own, and a consumer that crashes does not lose the work. The price is that the work now happens later, possibly more than once, and you need to know which."
+    },
+    "mentalModel": {
+      "outcome": "After this you can picture a message's path through a queue and the ways it can be lost or repeated.",
+      "body": "Think of a ticket rail in a busy kitchen. Orders are clipped on as they come in, cooks take the next one when they are free, and an order is only thrown away when the dish goes out. If a cook walks away mid-order, the ticket goes back on the rail.\n\nA queue works the same way. A consumer takes a message, which starts a lease. When it finishes it acknowledges, and the message is removed. If the lease runs out first, the message is delivered again. That is at-least-once delivery: nothing is lost, but some messages arrive twice. The alternative, at-most-once, deletes the message when it is handed out, so a crash loses it. Exactly-once is not something a queue can promise on its own; you get its effect by making consumers idempotent, so a repeat does no harm.",
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-queue-t\" class=\"dg\"><title id=\"dg-c-queue-t\">A message queue: producers add messages and move on; the queue stores them durably; consumers take a message, process it and acknowledge it; a message that is not acknowledged in time is delivered again, so consumers must handle duplicates.</title><defs><marker id=\"dg-c-queue-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"40\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"64\" y=\"65\" class=\"dg-label\" text-anchor=\"middle\">Producer</text><rect x=\"14\" y=\"100\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"64\" y=\"125\" class=\"dg-label\" text-anchor=\"middle\">Producer</text><path d=\"M114,60 L170,96\" class=\"dg-line\" marker-end=\"url(#dg-c-queue-a)\"/><path d=\"M114,120 L170,112\" class=\"dg-line\" marker-end=\"url(#dg-c-queue-a)\"/><rect x=\"174\" y=\"76\" width=\"170\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"259\" y=\"100.5\" class=\"dg-label\" text-anchor=\"middle\">Queue</text><text x=\"259\" y=\"117.5\" class=\"dg-label\" text-anchor=\"middle\">stored durably</text><text x=\"214\" y=\"152\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">absorbs bursts while</text><text x=\"214\" y=\"166\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">consumers catch up</text><rect x=\"420\" y=\"40\" width=\"126\" height=\"40\" class=\"dg-box\"/><text x=\"483\" y=\"65\" class=\"dg-label\" text-anchor=\"middle\">Consumer</text><rect x=\"420\" y=\"120\" width=\"126\" height=\"40\" class=\"dg-box\"/><text x=\"483\" y=\"145\" class=\"dg-label\" text-anchor=\"middle\">Consumer</text><path d=\"M344,96 L416,62\" class=\"dg-line\" marker-end=\"url(#dg-c-queue-a)\"/><path d=\"M344,112 L416,138\" class=\"dg-line\" marker-end=\"url(#dg-c-queue-a)\"/><path d=\"M483,160 C483,196 340,196 322,136\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-c-queue-a)\"/><text x=\"440\" y=\"222\" class=\"dg-note\" text-anchor=\"middle\">no ack before the deadline:</text><text x=\"440\" y=\"238\" class=\"dg-note\" text-anchor=\"middle\">delivered again</text><text x=\"280\" y=\"270\" class=\"dg-note\" text-anchor=\"middle\">at-least-once delivery means duplicates happen,</text><text x=\"280\" y=\"286\" class=\"dg-note\" text-anchor=\"middle\">so processing a message twice must be safe</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can walk through enqueue, delivery and failure handling step by step.",
+      "steps": [
+        {
+          "step": "Enqueue durably",
+          "explanation": "The producer writes the message and waits for the queue to confirm it is stored. How many copies must confirm, one or several, decides whether a crash right after can lose it."
+        },
+        {
+          "step": "Deliver with a lease",
+          "explanation": "A consumer pulls a message, or the queue pushes one, and a lease starts. The message stays in the queue but is hidden from other consumers."
+        },
+        {
+          "step": "Acknowledge or retry",
+          "explanation": "On success the consumer acknowledges and the message is deleted. On failure it gives the message back, ideally with a delay that grows on each attempt."
+        },
+        {
+          "step": "Redeliver on silence",
+          "explanation": "If the lease runs out without an answer, because the consumer crashed or stalled, the message is delivered again. This is where duplicates come from."
+        },
+        {
+          "step": "Make consumers idempotent",
+          "explanation": "Give each message an ID and record what has been done, or write results so that applying them twice changes nothing, such as setting a value rather than adding to it."
+        },
+        {
+          "step": "Set aside the poison",
+          "explanation": "A message that fails every time is moved aside after a set number of attempts, to a dead-letter queue, so it does not block or flood everything else."
+        },
+        {
+          "step": "Control the drain rate",
+          "explanation": "Consumers, or a relay in front of them, take messages at a rate the systems behind them can handle, so a backlog drains instead of causing a second overload."
+        }
+      ]
+    },
+    "workedExample": {
+      "outcome": "After this you can follow a real backlog through a queue and see where durability and rate limits matter.",
+      "steps": [
+        {
+          "step": "A slowdown starts",
+          "explanation": "At Slack in 2017, slow database queries made jobs run slowly. The job queue handled over 1.4 billion jobs on busy days, peaking at 33,000 per second, so a backlog grew fast."
+        },
+        {
+          "step": "Memory runs out",
+          "explanation": "The queue lived in Redis memory. When it filled, new jobs were rejected, and because taking a job out also needed a little free memory, the queue locked up even after the database recovered."
+        },
+        {
+          "step": "Put a durable log in front",
+          "explanation": "Slack added Kafka in front of Redis. Jobs are written to Kafka, kept for 2 days with 3 copies, so a backlog now grows on disk instead of in memory."
+        },
+        {
+          "step": "Choose the write guarantee",
+          "explanation": "Kafkagate waits only for the partition leader to confirm a job. That is fast, but a job can be lost if a broker dies before copying it: a deliberate trade for most jobs."
+        },
+        {
+          "step": "Drain at a safe rate",
+          "explanation": "JQRelay moves jobs from Kafka into Redis at a configured rate and only advances its position after each job is stored, so a crash means re-sending, not losing."
+        },
+        {
+          "step": "Expect duplicates",
+          "explanation": "Re-sending after a crash can deliver a job twice, which is the at-least-once trade-off; the job code has to cope with that."
+        }
+      ]
+    },
+    "mistakesOutcome": "After this you can avoid the three most common mistakes with queues.",
+    "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
+    "quiz": [
+      {
+        "question": "Why put a queue between a web request and slow work like sending notifications?",
+        "options": [
+          "So the request can return at once and the work survives slowdowns",
+          "To make the work run faster",
+          "To avoid storing the work anywhere"
+        ],
+        "correct": 0,
+        "why": "The producer records the work and returns; consumers do it later, and a burst becomes a backlog instead of failed requests.",
+        "wrong": [
+          "",
+          "The work takes as long as before; it just no longer blocks the request.",
+          "A queue exists precisely to store the work until it is done."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "A consumer takes a message, then crashes before acknowledging it. With at-least-once delivery, what happens?",
+        "options": [
+          "The message is delivered again when its lease runs out",
+          "The message is lost",
+          "The queue stops"
+        ],
+        "correct": 0,
+        "why": "Unacknowledged messages come back after the lease, which is what makes delivery reliable.",
+        "wrong": [
+          "",
+          "Losing it is what at-most-once allows, not at-least-once.",
+          "The queue carries on; only that message is retried."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "Why must consumers be idempotent under at-least-once delivery?",
+        "options": [
+          "Because the same message can arrive more than once",
+          "Because messages arrive out of order only",
+          "Because acks are optional"
+        ],
+        "correct": 0,
+        "why": "Retries and expired leases cause duplicates, so processing a message twice must have the same effect as once.",
+        "wrong": [
+          "",
+          "Ordering is a separate concern; duplicates are the reason here.",
+          "Acks are what remove messages; duplicates happen when they are missing or late."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "What is the risk of acknowledging a write after only the leader has stored it?",
+        "options": [
+          "A crash before it is copied can lose the message",
+          "Every message is delivered twice",
+          "Writes become slower"
+        ],
+        "correct": 0,
+        "why": "Waiting for one copy is fast, but that copy can be lost before replication, which Slack accepted for most jobs.",
+        "wrong": [
+          "",
+          "Duplicates come from redelivery, not from how many copies confirm a write.",
+          "It is the fastest option; waiting for more copies is what slows writes."
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "A message fails every time it is processed. What should the queue do?",
+        "options": [
+          "Retry with growing delays, then set it aside after a limit",
+          "Retry immediately forever",
+          "Delete it on the first failure"
+        ],
+        "correct": 0,
+        "why": "Backoff avoids flooding, and a dead-letter queue stops one bad message from blocking the rest while keeping it for diagnosis.",
+        "wrong": [
+          "",
+          "Endless instant retries waste capacity and can block other messages.",
+          "Deleting on first failure loses work that might succeed on a retry."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why did Slack's Redis-based queue lock up during a slowdown?",
+        "options": [
+          "Its backlog lived in memory, and when memory filled it could neither add nor remove jobs",
+          "Kafka was down",
+          "Workers acknowledged too early"
+        ],
+        "correct": 0,
+        "why": "In-memory storage made a slowdown into a full outage; a durable log in front turns it into a backlog.",
+        "wrong": [
+          "",
+          "Kafka was what Slack added afterwards to fix this.",
+          "The failure was about memory, not acknowledgments."
+        ],
+        "teaches": "mistakes"
+      }
+    ],
+    "postsOutcome": "After this you can describe how two companies built queues that survive backlogs and failures.",
+    "differOutcome": "After this you can explain the difference between adding a durable buffer to an existing queue and designing the delivery contract from scratch.",
+    "exercisesOutcome": "After this you can apply queues to a slow request, design a shared queue, and plan for ten times the scale.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "Sending a welcome email inside the sign-up request makes sign-up fail whenever the email provider is slow. What do you change?",
+        "answer": "Enqueue a send-email message and return at once. A consumer sends it, acknowledges on success and retries with backoff on failure. Give the message an ID and record sent emails, so a redelivery does not send a second email.",
+        "tradeoffs": "The email arrives a little later, and you now run a queue and a consumer.",
+        "wrongAnswers": [
+          "Retrying the provider inside the request.",
+          "Assuming the message is delivered exactly once.",
+          "Retrying instantly with no limit."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "design",
+        "prompt": "Design a shared job queue for many teams, where jobs have priorities and some must run hours later.",
+        "answer": "Store each job durably, sharded for scale, with a priority and a not-before time. Consumers pull ready jobs in priority order under a lease, ack to delete and nack to reschedule with backoff, and expired leases cause redelivery. Give each team a rate limit and capacity, and stop sending work to unhealthy shards.",
+        "tradeoffs": "Pulling needs a way for consumers to find work; at-least-once needs idempotent jobs; per-team limits need enforcing everywhere.",
+        "wrongAnswers": [
+          "Push with no limit on consumers.",
+          "One unsharded store for everyone.",
+          "No lease, so crashed consumers lose jobs."
+        ],
+        "teaches": "posts"
+      },
+      {
+        "level": "scale",
+        "prompt": "Your queue's traffic grows ten times and backlogs during outages now reach billions of messages. What do you plan for?",
+        "answer": "Keep the backlog on durable storage sized for the worst outage, not the average day, and drain it at a controlled rate after recovery so downstream systems are not overwhelmed. Bound background scans, watch shard health, and test broker and shard failures before they happen.",
+        "tradeoffs": "Durable storage for large backlogs costs disk, and draining slowly means longer recovery.",
+        "wrongAnswers": [
+          "Keeping the backlog in memory.",
+          "Draining at full speed the moment the outage ends.",
+          "Testing failure only in production."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "Message Queues is the end of this branch of the map for now. Rate limits came up in both posts, Slack's relay and Meta's per-team limits, and Rate Limiting is the next topic planned."
+    }
+  }
+}
