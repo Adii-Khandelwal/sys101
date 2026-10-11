@@ -43,7 +43,6 @@ const emptyTopic = (): TopicProgress => ({ done: [], visited: [], answers: {} })
 /** Post ids that were renamed (the id carried a wrong year), so saved progress under the old id still counts. */
 export const POST_ID_ALIASES: Record<string, string> = {
   "github-mysql-ha-2020": "github-mysql-ha-failover-2018",
-  "cloudflare-traffic-manager-2026": "cloudflare-traffic-manager-2016",
 };
 const current = (id: string) => POST_ID_ALIASES[id] ?? id;
 

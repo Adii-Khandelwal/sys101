@@ -3,7 +3,7 @@
   "title": "Failover",
   "group": "Reliability",
   "interviewRelevance": "common",
-  "concept": "Failover is how a system keeps serving when a component dies: detect the failure, promote or route to a healthy stand-in, and send clients to the new target, all fast enough that users barely notice. The hard parts are detecting a real failure without being fooled by a slow network, choosing exactly one replacement so you never end up with two primaries (split-brain), and redirecting traffic without waiting on slow caches or DNS. Failover spans tiers: a database promotes a replica to primary, and the edge routes around an unhealthy origin, but both are the same loop of detect, decide, redirect.",
+  "concept": "Failover is how a system keeps serving when a component dies: detect the failure, promote or route to a healthy stand-in, and send clients to the new target, all fast enough that users barely notice. The hard parts are detecting a real failure without being fooled by a slow network, choosing exactly one replacement so you never end up with two primaries (split-brain), and redirecting traffic without waiting on slow caches or DNS. Failover spans tiers: a database promotes a replica to primary, and a load balancer routes around an unhealthy server, but both are the same loop of detect, decide, redirect. A third approach prepares spare capacity in advance so little has to be detected and decided at the moment of failure.",
   "prerequisites": [
     "replication",
     "consensus",
@@ -179,8 +179,8 @@
         "teaches": "how"
       }
     ],
-    "postsOutcome": "After this you can describe how a database tier and an edge traffic tier each do failover, and the numbers they achieve.",
-    "differOutcome": "After this you can tell apart promoting a database primary and routing around an unhealthy origin at the edge.",
+    "postsOutcome": "After this you can describe how a database tier fails over by detecting and reacting, and how static stability prepares spare capacity so nothing has to react.",
+    "differOutcome": "After this you can tell apart detecting and reacting to a failure, as GitHub does, and pre-provisioning capacity so that little has to react, as the AWS article describes.",
     "exercisesOutcome": "After this you can design detection that avoids false positives, prevent split-brain, and plan cross-region failover.",
     "exercises": [
       {
@@ -209,13 +209,13 @@
       },
       {
         "level": "scale",
-        "prompt": "You serve from origins in several regions behind a global edge. A whole region's origins go unhealthy. How do you fail over in seconds for users worldwide without waiting on DNS?",
-        "answer": "Health-check each origin from the edge and group origins into pools per region, with a rule for how many unhealthy members trigger steering away. When a region's pool is unhealthy, the edge routes those users to the next-nearest healthy region automatically, deciding per edge location rather than globally. Because the edge terminates the connection and chooses the origin, you do not depend on clients honouring short DNS TTLs, so failover can take effect in seconds, as Cloudflare claimed for Traffic Manager in 2016.",
-        "tradeoffs": "Steering users to a farther region raises their latency until the home region recovers, and edge health checks add probing load. In return, failover is near-immediate and fine-grained, not gated on DNS caches. You must define what unhealthy means per pool to avoid steering on a transient dip.",
+        "prompt": "Your service runs on a fleet in one Region across three Availability Zones, and traffic grows tenfold. Today, when a zone is impaired, you rely on Auto Scaling to launch replacement instances in the other zones. How do you change the design so a zone failure needs no reaction, and what does it cost?",
+        "answer": "Provision for the failure in advance instead of reacting to it. Keep the fleet across three or more zones and size it so the instances in any two zones can carry the full load; the AWS article's example is 50 percent extra capacity with three zones, so each zone runs at about 66 percent of its load-tested level. Put the fleet behind a load balancer with health checks, so when a zone is impaired its instances fail checks and traffic shifts to the others with no launches. For the primary database, keep a warm standby in a different zone so promotion needs no new infrastructure, and for a cluster with a leader elect the new leader from a standby candidate instead of launching one just in time.",
+        "tradeoffs": "You pay for spare capacity all the time, and every zone is deliberately underused. In return a zone failure needs no control plane action and no instance start-up steps, which are the things most likely to misbehave during an impairment. As traffic grows tenfold the spare capacity grows with it, so the cost grows too, and the article notes that gray failures a load balancer cannot see still need other handling.",
         "wrongAnswers": [
-          "Lower DNS TTLs to a few seconds and hope every resolver respects them.",
-          "Fail over the entire globe when any one region dips.",
-          "Route all traffic to one region to simplify, losing geo-locality and that region's headroom."
+          "Size the fleet for normal load and count on Auto Scaling to launch enough replacements after a zone fails.",
+          "Run everything in one zone to keep the design simple and avoid cross-zone traffic.",
+          "Add more instances only after a zone shows errors, since idle capacity is wasted money."
         ],
         "teaches": "how"
       }
@@ -289,68 +289,73 @@
       }
     },
     {
-      "id": "cloudflare-traffic-manager-2016",
-      "title": "Cloudflare Traffic Manager: The Details",
-      "url": "https://blog.cloudflare.com/cloudflare-traffic-manager-the-details/",
-      "company": "Cloudflare",
+      "id": "aws-static-stability-azs",
+      "title": "Static stability using Availability Zones",
+      "url": "https://aws.amazon.com/builders-library/static-stability-using-availability-zones/",
+      "company": "Amazon Web Services (Builders' Library)",
       "verifiedOn": "2026-10-11",
-      "published": "2016-09-29",
+      "published": "no date shown",
+      "edition": "no date shown; the page shows a republish date, Oct 2, 2026",
       "related": [
-        "circuit-breakers",
+        "load-balancing",
         "replication"
       ],
+      "ageNote": "No year is recorded. The page shows \"Published Oct 2, 2026\" and \"Last modified Oct 2, 2026\", which looks like a republication of an older article, so the real age is unknown. It is here for a fundamental: prepare capacity before a failure instead of reacting to it. The page describes how Amazon builds its services, in the author's words, and any opinions in it may not reflect AWS's. Treat its details as that article's account, and do not assume they describe AWS today.",
       "digest": {
-        "problem": "In 2016 Cloudflare launched Traffic Manager, then in Early Access, to fix two limits it saw in existing products: slow failover times, measured in minutes, and a lack of granular decisions when failing over. It wanted the product to suit anyone, from two servers in one region to 400 spread across the globe.",
-        "constraints": "The launch post says Traffic Manager is built on Cloudflare's existing Anycast DNS infrastructure and had three scenarios in mind: load balancing, failover, and geo-steering. It makes failover decisions at a per-data-center level, and for proxied records it does not wait for recursive DNS caches to expire or rely on clients respecting sub-60-second TTLs.",
+        "problem": "AWS services must meet very high availability targets, and every one of them depends on Availability Zones, which are logically isolated sections of a Region built to operate independently. The article asks how to build on that so a service keeps working when a zone, or any dependency, becomes impaired. Its answer is a pattern called static stability: the system keeps working even when a dependency is impaired, because everything it was doing before continues to work.",
+        "constraints": "The article contrasts two ways to use several zones. A less effective one is to deploy to multiple zones and, if one is impaired, scale up in the others, for example with Auto Scaling. That depends on reacting as the impairment happens, which means taking an immediate dependency on the EC2 control plane and on every application-specific step a new instance needs, such as downloading configuration, registering with discovery and acquiring credentials. Stateful services add a further constraint: a relational database has one primary that takes all writes.",
         "walkthrough": [
           {
-            "step": "Define what healthy means with health checks",
-            "explanation": "The post says health checks let the customer define what a healthy origin means: probes over HTTP(S) from every data center or selected regions, status codes the customer treats as healthy, text in the response body, and a timeout. Email notifications report availability changes."
+            "step": "Prepare before the impairment",
+            "explanation": "The article's lesson is to be ready for impairments before they happen. A statically stable service overprovisions its infrastructure until it would keep operating correctly without launching any new EC2 instances, even if a zone became impaired."
           },
           {
-            "step": "Group origins into pools",
-            "explanation": "Origins are organised into pools, and the post says you can tune what counts as a failure: given a pool of five servers you might sustain two unhealthy ones, with a third failure the trigger to steer traffic to the next data center."
+            "step": "Spread across three or more zones with spare room",
+            "explanation": "For stateless services the article describes an Auto Scaling group across three or more zones, overprovisioned so the servers in the remaining zones can carry the load if an entire zone is impaired. With three zones that means 50 percent extra, so each zone runs at only 66 percent of the level it was load-tested for."
           },
           {
-            "step": "Fail over at the edge within seconds",
-            "explanation": "The post claims that for proxied (orange-clouded) records Cloudflare can fail over within seconds, because connecting clients do not wait for recursive DNS caches to expire or trust sub-60-second TTLs."
+            "step": "Do nothing when a zone fails",
+            "explanation": "In the load-balanced example no action is needed: the instances in the impaired zone start failing health checks and the Application Load Balancer shifts traffic away from them. For a fleet reading from a queue the article says the service does nothing, because the impaired instances stop working and others pick up the slack."
           },
           {
-            "step": "Decide per data center",
-            "explanation": "The post says that at 100 data centers, and growing, Cloudflare could assess origin availability and make failover decisions per data center, so a network path failure to an origin in London does not change how traffic is routed in New York."
+            "step": "Keep a warm standby for stateful services",
+            "explanation": "For a service with a single primary the article puts a warm standby in a different zone. When the primary's zone is impaired, the service does nothing with the infrastructure: for Amazon RDS, RDS manages the failover and repoints the DNS name to the new primary in the working zone. Clusters with a leader are deployed across zones and elect the new leader from a standby candidate instead of launching a replacement just in time."
           },
           {
-            "step": "Geo-steer and balance load",
-            "explanation": "Beyond failover, the post describes geo-steering, which directs traffic to the nearest origin by region, and active-active round robin, which spreads load across all healthy servers."
+            "step": "Separate the control plane from the data plane",
+            "explanation": "The article says the control plane is the machinery for making changes, such as launching an instance, and the data plane is the daily business of the resources. The EC2 data plane is designed to stay statically stable if the control plane is impaired: the physical machine has local access to what it needs to route packets, so traffic that worked before keeps working, though it may not see new updates."
+          },
+          {
+            "step": "Keep zones independent",
+            "explanation": "For foundational building blocks the article goes further: deployments follow a zonal calendar so a bad change affects one zone, packet flows stay inside their zone, and the NAT gateway is a zonal service. It accepts the extra complexity of managing zonal rather than regional resources in return."
           }
         ],
-        "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-cftm-t\" class=\"dg\"><title id=\"dg-cftm-t\">Cloudflare Traffic Manager: edge data centers health-check origin pools; when a pool crosses its unhealthy threshold the edge, as the 2016 post describes it, steers users to the next-nearest healthy region within seconds for proxied records, deciding per data center rather than waiting on DNS caches.</title><defs><marker id=\"dg-cftm-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"18\" y=\"120\" width=\"120\" height=\"48\" class=\"dg-box\"/><text x=\"78\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\">user</text><text x=\"78\" y=\"157\" class=\"dg-label\" text-anchor=\"middle\">(a region)</text><path d=\"M138,144 L198,144\" class=\"dg-line\" marker-end=\"url(#dg-cftm-a)\"/><rect x=\"202\" y=\"112\" width=\"130\" height=\"64\" class=\"dg-box dg-accent\"/><text x=\"267\" y=\"138\" class=\"dg-label\" text-anchor=\"middle\">edge data center</text><text x=\"267\" y=\"156\" class=\"dg-label\" text-anchor=\"middle\">health-checks pools</text><path d=\"M332,130 L392,70\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-cftm-a)\"/><path d=\"M332,158 L392,218\" class=\"dg-line\" marker-end=\"url(#dg-cftm-a)\"/><rect x=\"396\" y=\"50\" width=\"150\" height=\"40\" class=\"dg-box\" opacity=\"0.5\"/><text x=\"471\" y=\"74.5\" class=\"dg-label\" text-anchor=\"middle\">home pool (unhealthy)</text><rect x=\"396\" y=\"198\" width=\"150\" height=\"40\" class=\"dg-box\"/><text x=\"471\" y=\"222.5\" class=\"dg-label\" text-anchor=\"middle\">next region (healthy)</text><text x=\"267\" y=\"202\" class=\"dg-note\" text-anchor=\"middle\">threshold crossed</text><text x=\"280\" y=\"270\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">2016 post: steer within seconds for proxied records; no DNS TTL wait</text><text x=\"280\" y=\"290\" class=\"dg-note\" text-anchor=\"middle\">decision made per data center, across 100 data centers in 2016</text></svg>",
+        "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-aws-ss-t\" class=\"dg\"><title id=\"dg-aws-ss-t\">Static stability across three Availability Zones, as the AWS article describes it: capacity is overprovisioned in advance, so each zone runs at about two thirds of its load-tested level; when one zone is impaired, its instances fail health checks and the load balancer shifts traffic to the other two, with no new instances launched.</title><defs><marker id=\"dg-aws-ss-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"200\" y=\"20\" width=\"160\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"47\" class=\"dg-label\" text-anchor=\"middle\">load balancer</text><path d=\"M240,64 L100,120\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-aws-ss-a)\"/><path d=\"M280,64 L280,120\" class=\"dg-line\" marker-end=\"url(#dg-aws-ss-a)\"/><path d=\"M320,64 L460,120\" class=\"dg-line\" marker-end=\"url(#dg-aws-ss-a)\"/><rect x=\"20\" y=\"124\" width=\"160\" height=\"80\" class=\"dg-box\" opacity=\"0.5\"/><text x=\"100\" y=\"156\" class=\"dg-label\" text-anchor=\"middle\">zone 1 (impaired)</text><text x=\"100\" y=\"178\" class=\"dg-note\" text-anchor=\"middle\">fails health checks</text><rect x=\"200\" y=\"124\" width=\"160\" height=\"80\" class=\"dg-box\"/><text x=\"280\" y=\"156\" class=\"dg-label\" text-anchor=\"middle\">zone 2</text><text x=\"280\" y=\"178\" class=\"dg-note\" text-anchor=\"middle\">spare capacity already running</text><rect x=\"380\" y=\"124\" width=\"160\" height=\"80\" class=\"dg-box\"/><text x=\"460\" y=\"156\" class=\"dg-label\" text-anchor=\"middle\">zone 3</text><text x=\"460\" y=\"178\" class=\"dg-note\" text-anchor=\"middle\">spare capacity already running</text><text x=\"280\" y=\"240\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">three zones: overprovision by 50 percent, each zone at 66 percent of tested load</text><text x=\"280\" y=\"268\" class=\"dg-note\" text-anchor=\"middle\">no instances launched, so nothing depends on the control plane at the moment of failure</text></svg>",
         "numbers": [
           {
-            "value": "within seconds",
-            "meaning": "Failover time the 2016 post claims for proxied (orange-clouded) records, without waiting for DNS caches to expire"
+            "value": "50 percent",
+            "meaning": "Extra capacity the article says it overprovisions when it uses three Availability Zones, so the remaining zones can carry the load"
           },
           {
-            "value": "no wait on sub-60s TTLs",
-            "meaning": "The 2016 post says connecting clients do not need to wait for recursive DNS caches to expire or trust that they respect sub-60-second TTLs"
+            "value": "66 percent",
+            "meaning": "The level of its load-tested capacity at which each zone then runs, in the article's three-zone example"
           },
           {
-            "value": "100 data centers (2016)",
-            "meaning": "The post's count of Cloudflare data centers in 2016, from which it assesses origin availability and makes per-data-center failover decisions; the network has grown since"
+            "value": "4/9 versus 2/3",
+            "meaning": "The chance a request avoids an impaired zone when one regional service calls another (2/3 x 2/3 = 4/9), versus a zonal service called from the same zone (2/3); for N services the article gives (2/3)^N versus 2/3"
           }
         ],
         "tradeoffs": {
-          "chosen": "As the 2016 post describes it: health checks from Cloudflare's data centers, origin pools with a failure threshold, decisions per data center, and steering within seconds for proxied records, plus geo-steering and active-active load balancing.",
-          "rejected": "The slow failover times, measured in minutes, that the post says existing products had, and waiting on recursive DNS caches to expire.",
-          "why": "The post's stated goals were fast failover and granular, per-data-center decisions. It argues that on-premise load balancers are vulnerable to local network conditions and that existing cloud services have smaller network footprints; it gives no figures to compare them."
+          "chosen": "Provision all capacity needed for a zone impairment in advance, so that neither stateless fleets nor stateful clusters need to launch new infrastructure or modify anything in response.",
+          "rejected": "Deploying across several zones and scaling up in the surviving zones after an impairment, which the article calls less effective because it relies on reacting as impairments happen.",
+          "why": "The article says a reactive design takes an immediate dependency for its recovery path on the EC2 control plane and on application-specific steps, and that control plane systems are more complex and more likely to misbehave when the overall system is impaired. A service that already has the capacity needs none of that at the moment of failure."
         },
-        "failures": "The post gives no failure account: it is a product launch announcement with no incident, mistake or abandoned design. Its stated limits are about the launch itself: the Early Access program needed some additional technical savvy and a willingness to share feedback, and the service was free only for the duration of Early Access. It describes existing on-premise and cloud load balancers as vulnerable to local network conditions or limited by a smaller network footprint, but it gives no figures for them.",
-        "takeaways": "As described in 2016, failover at the edge means health-checking origins and steering traffic away from unhealthy ones without waiting for DNS caches to expire. The lasting idea is to terminate the connection at a layer you control and decide per location, the same lesson as GitHub's move off DNS, applied to global traffic instead of a single database. The product, its name and its numbers have changed since 2016."
-      },
-      "ageNote": "From September 2016, about ten years old, and a launch announcement for what was then called Traffic Manager, in Early Access. It is here for a fundamental: why failover for proxied traffic is decided at the edge from health-checked origin pools instead of waiting on DNS caches. Every figure, including the number of data centers, is as of 2016, and the product has since become Cloudflare Load Balancing, so treat the details as dated and do not read the numbers as current."
+        "failures": "The article gives no incident or failure account of its own. It names a failure mode it designs around: gray failures, such as software bugs that a load balancer cannot see in its health check, which is one reason it keeps foundational services zonal. It also states the costs of its choices: additional complexity, for example managing zonal rather than regional service environments, or running multiple NAT gateways and route tables per zone, and capacity that is paid for before it is needed.",
+        "takeaways": "The best recovery step is one that does not have to happen. By holding spare capacity in other zones, a stateless service can lose a zone without launching anything, and a stateful service can promote a standby that already exists. The article's own summary is that the key to static stability is to anticipate impairments before they happen."
+      }
     }
   ],
-  "comparison": "Both posts solve failover, the detect-decide-redirect loop, and both reach the same core conclusion: do not let client-side DNS caching set your recovery time. But they operate at different tiers, which is why they teach different things together. GitHub is failover of a stateful single-writer database: the hard parts are promoting exactly one replica and losing as little data as possible. Cloudflare is failover of stateless traffic at the edge: the hard part is deciding, per location and in seconds, which healthy origin to use.\n\nWhere they diverge is what \"decide\" means. For GitHub the decision is a consensus-backed promotion, because electing two primaries would corrupt data, so it runs orchestrator on Raft and corroborates failure across the primary's replicas before acting. For Cloudflare the decision is a health-and-threshold judgement over a pool of interchangeable origins, made independently at each of its many data centers, because routing a request to a different healthy origin has no split-brain risk. Statefulness is the difference: a promoted database primary is a point of no return; a re-routed request is not.\n\nThe evidence reflects the tiers. GitHub reports total outage of 10 to 13 seconds in most cases, up to 20 to 25 in rarer ones, with the win coming from Consul-plus-proxy discovery replacing VIP and DNS. In 2016 Cloudflare claimed failover within seconds for proxied records, with decisions per data center across the 100 data centers it had then, with the win coming from the edge choosing the origin rather than trusting sub-60-second TTLs. Read together, they show failover as one pattern applied at two layers, and that redirect speed, not just detection, is what determines how long users feel an outage.",
+  "comparison": "Both posts are about keeping a service up when part of it fails, and both reach the same practical conclusion: do not make recovery depend on something slow or fragile at the moment of failure. GitHub's post is about a stateful single-writer database; the AWS article is about building on Availability Zones, mostly for stateless fleets, with a short section on stateful ones.\n\nWhere they diverge is when the work happens. GitHub detects and reacts: orchestrator and Raft decide that the primary is dead and promote exactly one replica, and a proxy fed by Consul redirects clients. The AWS article argues for pre-provisioning: capacity for a zone impairment is already running, so the load balancer simply shifts traffic and nothing is launched. For stateful services the article still has a failover, since RDS repoints a DNS name and a standby is elected as leader, but the standby already exists and nothing new is provisioned in response.\n\nThe evidence differs too. GitHub reports total outage of 10 to 13 seconds in most cases, up to 20 to 25 in rarer ones. The AWS article gives no recovery times; it gives capacity arithmetic, 50 percent extra with three zones and each zone at 66 percent of its tested level, and the odds of a request avoiding an impaired zone, 4/9 for two regional services in a row against 2/3 for zonal ones. It is a republished page with no date to rely on, and it describes Amazon's own practice, so read it as one company's account of a pattern.",
   "glossary": [
     {
       "term": "Failover",
@@ -385,12 +390,12 @@
       "definition": "How long a DNS answer is cached; relying on it makes failover wait for caches to expire."
     },
     {
-      "term": "Origin pool",
-      "definition": "A group of interchangeable origin servers with a rule for how many may be unhealthy before steering away."
+      "term": "Static stability",
+      "definition": "A design that keeps working when a dependency is impaired because the capacity and state it needs are already in place, so nothing has to be launched or changed in response."
     },
     {
-      "term": "Geo-steering",
-      "definition": "Routing each user to the nearest healthy region, and to the next-nearest on failure."
+      "term": "Control plane and data plane",
+      "definition": "The control plane is the machinery for making changes, such as launching an instance; the data plane is the daily work of the running resources. Keeping the data plane working without the control plane is the heart of static stability."
     }
   ],
   "mistakes": [
