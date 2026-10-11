@@ -69,9 +69,9 @@ export default function About() {
 
       <h2>About the write-ups</h2>
       <p>
-        The explanations and summaries here are my own write-ups of those posts, drafted with AI assistance
-        and checked against the originals. They can still contain mistakes, so check the original when it
-        matters. The posts belong to their authors and companies, and this personal project is not
+        The explanations and summaries here are write-ups of those posts. Some are drafted with help from AI
+        and may contain errors. When a write-up and the original post disagree, trust the post.{" "}
+        The posts belong to their authors and companies, and this personal project is not
         affiliated with any of them. Found an error? Email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
       </p>
 

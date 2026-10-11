@@ -10,7 +10,6 @@ import { scrollToTop } from "./BackToTop";
 export function LogoMark({ size = 18 }: { size?: number }) {
   return (
     <svg className="logo-mark" viewBox="0 0 24 20" width={size * 1.2} height={size} aria-hidden="true" focusable="false">
-      <title>sys101 mark</title>
       <path d="M5,4 L19,10 M5,16 L19,10" className="logo-line" />
       <circle cx="5" cy="4" r="2.6" className="logo-node" />
       <circle cx="5" cy="16" r="2.6" className="logo-node" />
