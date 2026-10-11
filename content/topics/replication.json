@@ -95,7 +95,7 @@
       "company": "GitHub",
       "verifiedOn": "2026-10-11",
       "published": "2018-06-20",
-      "ageNote": "A 2018 account, updated in 2020, of an older approach: failover driven from outside the database by orchestrator. I found no newer GitHub post on MySQL failover, so GitHub's current setup may differ. GitHub's 2023 MySQL 8.0 post, on the Databases topic, still describes orchestrator running a planned failover. It is here as the contrast to Meta's consensus-based design.",
+      "ageNote": "A 2018 account, updated in 2020, of an older approach: failover driven from outside the database by orchestrator. No newer GitHub post on MySQL failover is cited here, so GitHub's current setup may differ. GitHub's 2023 MySQL 8.0 post, on the Databases topic, still describes orchestrator running a planned failover. It is here as the contrast to Meta's consensus-based design.",
       "digest": {
         "problem": "GitHub's applications found each MySQL primary through a DNS name pointing to a virtual IP that the primary held. Moving that IP needed the old primary's cooperation, so a dead or unreachable primary could delay failover or leave two hosts claiming the same address, and a move to another data center needed a DNS change that clients had cached.",
         "constraints": "GitHub ran several data centers and wanted to survive one being cut off, keep outages short, avoid losing data where possible, and limit split brain, where two servers accept writes at once. Failover could not depend on the failed primary doing anything.",

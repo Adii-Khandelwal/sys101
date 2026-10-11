@@ -232,7 +232,7 @@
       "company": "Cloudflare",
       "verifiedOn": "2026-10-11",
       "published": "2017-06-07",
-      "ageNote": "From June 2017. It is here for fundamentals that do not depend on Cloudflare's current setup: how a sliding window estimate counts with two numbers, and why shared counters should stay off the request path. I did not open a newer Cloudflare source confirming this design is still in use, so its details, such as Twemproxy and Twemcache, may have changed.",
+      "ageNote": "From June 2017. It is here for fundamentals that do not depend on Cloudflare's current setup: how a sliding window estimate counts with two numbers, and why shared counters should stay off the request path. No newer Cloudflare source cited here confirms this design is still in use, so its details, such as Twemproxy and Twemcache, may have changed.",
       "related": [
         "consistent-hashing"
       ],

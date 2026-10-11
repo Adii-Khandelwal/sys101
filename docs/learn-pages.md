@@ -16,3 +16,9 @@ Moved unchanged from CLAUDE.md. Read before editing learn pages or their content
 - Show candidate sources in a table and wait for approval before writing, as with posts.
 - Learn text may link to our own pages as `[text](/path)`. An Internet-Draft source must say in its note that it is a work in progress, not a standard, with its version and expiry; the build fails otherwise.
 - Build fails on: an empty stage, a stage with no official source, an unknown source id, a missing publisher, kind, year or verifiedOn, or a video without channel, length or year. The weekly link check covers these URLs too.
+
+
+## Checks added in the October 2026 review
+
+- Every Try it command must appear in the cited page or a page it links to. Commands never start with a prompt character. A command that changes or interrupts something real (matched by RISKY_COMMAND in lib/learn.ts) needs a `warning` saying what it does and to run it only on a test system. Names we made up are listed in `exampleNames` and shown as "example names, not from the docs".
+- A source `year` is a four-digit year, "no date shown", or "page shows last updated YYYY-MM-DD" (VALID_SOURCE_YEAR), recorded only when the page shows it. Microsoft Learn pages render their date with script, so read them in a browser.

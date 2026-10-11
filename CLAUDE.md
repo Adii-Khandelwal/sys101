@@ -30,7 +30,8 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 
 - Every topic has a second page at /topic/<slug>/learn, titled "Start from zero: <Topic>", for a complete beginner. Not counted in "topic read"; never touches the progress store. A new topic is not done until its learn page exists.
 - Content lives in content/learn/<slug>.json, typed in lib. Pagefind indexes it with a "Start from zero" label.
-- Official sources only. Any number, default, limit, or command must be confirmed in an opened source. Try it commands are exactly what you type, with no leading "> " or "$ " (the build fails on one).
+- Official sources only. Any number, default, limit, or command must be confirmed in an opened source; cite the page that says it. A source year is a four-digit year, "no date shown", or "page shows last updated YYYY-MM-DD", only if the page shows it (build check).
+- Try it commands appear on the cited page, with no "> " or "$ " prompt; risky ones carry a visible `warning`; invented names go in `exampleNames` (build checks).
 - Get approval for candidate sources and videos before saving. Read docs/learn-pages.md before editing learn pages.
 
 ## Progress tracking

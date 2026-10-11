@@ -15,7 +15,7 @@
       "company": "Slack",
       "verifiedOn": "2026-10-11",
       "published": "2017-12-06",
-      "ageNote": "From December 2017; the page also shows an update in June 2020. It is here for a fundamental that has not changed: putting a durable log in front of an in-memory queue, so a backlog fills disk instead of memory, and choosing how many copies must confirm a write. I did not find a newer Slack source confirming this setup is still in use, so its details, such as Kafka 0.10, the cluster size and Redis as the execution store, may have changed.",
+      "ageNote": "From December 2017; the page also shows an update in June 2020. It is here for a fundamental that has not changed: putting a durable log in front of an in-memory queue, so a backlog fills disk instead of memory, and choosing how many copies must confirm a write. No newer Slack source cited here confirms this setup is still in use, so its details, such as Kafka 0.10, the cluster size and Redis as the execution store, may have changed.",
       "digest": {
         "problem": "Slack runs work that is too slow for a web request, such as message posts, push notifications, URL unfurls, reminders and billing, through a job queue built on Redis. In an outage about a year before the post, slow database queries slowed job execution, Redis reached its memory limit, and new jobs could no longer be added. Dequeuing also needed a little free memory, so the queue stayed stuck even after the database recovered, and it took extensive manual work to bring it back.",
         "constraints": "The queue handles over 1.4 billion jobs on the busiest days, at a peak of 33,000 per second, with jobs running from a few milliseconds to several minutes. Many features relied on the existing enqueue and dequeue behaviour, including its limited deduplication, so changing it was risky. The team wanted no stop-the-world switchover and no one-way migration.",
@@ -88,7 +88,7 @@
       "company": "Meta",
       "verifiedOn": "2026-10-11",
       "published": "2021-02-22",
-      "ageNote": "From February 2021. It is here for fundamentals that have not changed: leases, acks and nacks, the choice between at-least-once and at-most-once delivery, and a priority queue built on sharded storage. I did not open a newer Meta source confirming FOQS still works this way, so its figures and design may have changed.",
+      "ageNote": "From February 2021. It is here for fundamentals that have not changed: leases, acks and nacks, the choice between at-least-once and at-most-once delivery, and a priority queue built on sharded storage. No newer Meta source cited here confirms FOQS still works this way, so its figures and design may have changed.",
       "digest": {
         "problem": "Many services at Facebook need to run work later, at off-peak times or on another service, from notifications and integrity checks to video encoding and translation. FOQS is the shared queue they use: a multitenant, persistent priority queue built on sharded MySQL, where each item is one row.",
         "constraints": "Workloads differ widely: some topics need items within milliseconds and others can wait days, and processing rates range from tens of items per minute to over 10 million per minute. Some items must be processed in a particular region. Every MySQL shard is replicated to two more regions, and FOQS has to keep working when a whole data center is drained.",

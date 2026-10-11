@@ -15,7 +15,7 @@
       "company": "Spotify",
       "verifiedOn": "2026-10-11",
       "published": "2019-11-12",
-      "ageNote": "From November 2019, almost seven years old. It is here for a fundamental that has not changed: giving every kind of event its own topic and pipeline so one noisy or blocked kind cannot hold up the rest. The post itself says Spotify was rolling out a next-generation system, and I did not find a newer source confirming this setup is still in use, so the figures, the VM counts and the choice of Cloud Pub/Sub may have changed.",
+      "ageNote": "From November 2019, almost seven years old. It is here for a fundamental that has not changed: giving every kind of event its own topic and pipeline so one noisy or blocked kind cannot hold up the rest. The post itself says Spotify was rolling out a next-generation system, and no newer source cited here confirms this setup is still in use, so the figures, the VM counts and the choice of Cloud Pub/Sub may have changed.",
       "related": [
         "message-queues"
       ],
@@ -95,7 +95,7 @@
       "company": "Uber",
       "verifiedOn": "2026-10-11",
       "published": "2021-08-31",
-      "ageNote": "From August 2021, just over five years old. It is here for a fundamental that has not changed: a log partition limits how many consumers can work in parallel, and per-message work needs something between the log and the workers. I did not find a newer Uber source confirming Consumer Proxy is unchanged, so the figures, such as 12 million messages a second and 300 services, may have changed.",
+      "ageNote": "From August 2021, just over five years old. It is here for a fundamental that has not changed: a log partition limits how many consumers can work in parallel, and per-message work needs something between the log and the workers. No newer Uber source cited here confirms Consumer Proxy is unchanged, so the figures, such as 12 million messages a second and 300 services, may have changed.",
       "related": [
         "message-queues",
         "circuit-breakers"
