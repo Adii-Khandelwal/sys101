@@ -233,7 +233,7 @@
       "company": "Amazon",
       "verifiedOn": "2026-10-11",
       "published": "2007-10-14",
-      "ageNote": "This is the 2007 SOSP paper, about nineteen years old, included as a paper under the same rules. It is here for a fundamental that has not changed: how a system deliberately chooses availability over strong consistency and reconciles divergence afterwards. The DynamoDB product Amazon sells today has evolved well beyond this design and now offers strongly consistent reads and transactions, so treat the paper as the origin of the ideas, not a description of the current service.",
+      "ageNote": "This is a research paper, not a company blog post: the 2007 SOSP paper, about nineteen years old. It is here for a fundamental that has not changed: how a system deliberately chooses availability over strong consistency and reconciles divergence afterwards. The DynamoDB product Amazon sells today has evolved well beyond this design and now offers strongly consistent reads and transactions, so treat the paper as the origin of the ideas, not a description of the current service.",
       "related": [
         "consistent-hashing",
         "replication",
@@ -303,7 +303,7 @@
       "company": "Google",
       "verifiedOn": "2026-10-11",
       "published": "2012-10-08",
-      "ageNote": "This is the 2012 OSDI paper, about fourteen years old, included as a paper under the same rules. It is here for a fundamental that has not changed: how a system chooses strong consistency across the globe and engineers around partitions and clock uncertainty rather than giving up consistency. Cloud Spanner has grown since, but the TrueTime and commit-wait ideas the paper introduces are the point.",
+      "ageNote": "This is a research paper, not a company blog post: the 2012 OSDI paper, about fourteen years old. It is here for a fundamental that has not changed: how a system chooses strong consistency across the globe and engineers around partitions and clock uncertainty rather than giving up consistency. Cloud Spanner has grown since, but the TrueTime and commit-wait ideas the paper introduces are the point.",
       "related": [
         "replication",
         "sharding",
