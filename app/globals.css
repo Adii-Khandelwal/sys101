@@ -607,6 +607,327 @@ details p {
   color: var(--ink-soft);
 }
 
+/* ── Lesson format ───────────────────────── */
+
+.lesson-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px 16px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.lesson-top p {
+  margin: 0;
+}
+
+
+.option {
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+}
+
+.option:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+.option:disabled {
+  cursor: default;
+  text-decoration: none;
+}
+
+.option[aria-pressed="true"] {
+  font-weight: 600;
+}
+
+.verdict {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.verdict.is-wrong {
+  color: var(--ink-soft);
+}
+
+.explain {
+  margin-top: 8px;
+  padding-left: 12px;
+  border-left: 1px solid var(--rule);
+}
+
+.explain p {
+  margin: 0 0 6px;
+}
+
+.quiz-score {
+  margin: 8px 0 0;
+}
+
+.resume a {
+  color: var(--accent);
+}
+
+/* Progress header: count, segmented bar, and Start / Continue / Review. */
+.progress-head {
+  margin: 0 0 16px;
+}
+
+.progress-head p {
+  margin: 0;
+}
+
+.progress-head a,
+.progress-line a,
+.dossier .lesson-rail .progress-head a {
+  color: var(--accent);
+}
+
+.progress-bar {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  width: 168px;
+  margin: 6px 0;
+  outline-offset: 3px;
+}
+
+.seg {
+  flex: 1;
+  height: 4px;
+  background: var(--skeleton);
+}
+
+.seg.group-start {
+  margin-left: 5px;
+}
+
+.seg.is-done {
+  background: var(--accent);
+  transition: background-color 200ms ease;
+}
+
+.progress-tip {
+  display: none;
+  position: absolute;
+  top: 12px;
+  left: 0;
+  z-index: 2;
+  padding: 4px 8px;
+  background: var(--paper);
+  border: 1px solid var(--ink-soft);
+  white-space: nowrap;
+}
+
+.progress-bar:hover .progress-tip,
+.progress-bar:focus-visible .progress-tip {
+  display: block;
+}
+
+/* Narrow screens: the rail becomes one sticky line in the page flow. */
+.progress-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  margin: 0 -16px 16px;
+  padding: 8px 16px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+
+.progress-line {
+  margin: 0;
+}
+
+@media (min-width: 1180px) {
+  .progress-sticky {
+    display: none;
+  }
+}
+
+@media (max-width: 1179px) {
+  .lesson [id] {
+    scroll-margin-top: 56px; /* clear the sticky progress line */
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seg.is-done {
+    transition: none;
+  }
+}
+
+.your-data {
+  margin-top: 64px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+
+.your-data h2 {
+  margin: 0 0 4px;
+}
+
+.data-note {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.data-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0 0 8px;
+}
+
+.mark-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.mark-note {
+  font-size: 15px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.part {
+  margin-top: 56px;
+}
+
+.part-label {
+  margin: 0;
+  color: var(--accent);
+}
+
+.part-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+}
+
+.lesson section {
+  margin-top: 48px;
+}
+
+.lesson section > h2 {
+  font-size: 30px;
+  margin-bottom: 6px;
+}
+
+.outcome {
+  margin: 0 0 16px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.lesson section > p + p {
+  margin-top: 12px;
+}
+
+.options {
+  list-style: upper-alpha;
+  margin: 6px 0 0;
+  padding-left: 1.6em;
+  font-size: 17px;
+}
+
+.wrong {
+  margin: 8px 0;
+  padding-left: 1.2em;
+  font-size: 16px;
+  color: var(--ink-soft);
+}
+
+.exercises {
+  margin: 0;
+  padding-left: 1.4em;
+}
+
+.exercises > li {
+  margin-bottom: 24px;
+}
+
+.exercises .label {
+  margin: 0 0 4px;
+}
+
+.exercises h4 {
+  margin: 12px 0 4px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.lesson-mark {
+  margin-top: 24px;
+}
+
+/* Thin progress rail, desktop only: it sits in the margin left of the text column. */
+.dossier .lesson-rail {
+  display: none; /* beats .dossier nav, which would otherwise show it as a row */
+}
+
+@media (min-width: 1180px) {
+  /* .lesson-rail sits inside .dossier, whose nav rule makes a flex row: undo it. */
+  .dossier .lesson-rail {
+    display: block;
+    position: fixed;
+    top: 120px;
+    left: max(24px, calc(50% - 340px - 230px));
+    width: 200px;
+    margin: 0;
+  }
+
+  .lesson-rail .status {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 7px;
+    background: currentColor;
+    vertical-align: 1px;
+  }
+
+  .lesson-rail ol {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 12px;
+    border-left: 1px solid var(--rule);
+  }
+
+  .lesson-rail li {
+    margin: 0 0 8px;
+    font-family: var(--font-mono), monospace;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+
+  .lesson-rail a {
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+
+  .lesson-rail .is-current a {
+    color: var(--accent);
+  }
+}
+
 /* ── Diagrams (SVG in content JSON) ──────── */
 
 .dg {
