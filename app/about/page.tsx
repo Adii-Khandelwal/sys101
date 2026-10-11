@@ -40,6 +40,25 @@ export default function About() {
         exercises at the end let you try it yourself.
       </p>
 
+      <h2>How to use it</h2>
+      <p>
+        Start on the map. Hollow circles are unread, a circle with a dot is ready to read, and a filled one is
+        done. &ldquo;Next up&rdquo; at the top tells you where to go.
+      </p>
+      <p>Already know a topic&apos;s idea? Use &ldquo;Skip to the posts&rdquo; at the top of any topic page.</p>
+      <p>
+        Mark things done as you go. Each section and each post has its own button, the quiz counts once you
+        have answered every question, and the bar on the page shows how far you are.
+      </p>
+      <p>
+        Test yourself. Every topic has a quiz with explanations, and design exercises with model answers that
+        stay hidden until you open them.
+      </p>
+      <p>Search finds topics, companies, and terms across every topic page.</p>
+      <p>
+        Your progress is yours. Export it, import it, or reset it on the <Link href="/data">Your data</Link> page.
+      </p>
+
       <h2>How posts are picked</h2>
       <p>
         A post gets in only if it has real numbers, is honest about what went wrong, comes from the team
