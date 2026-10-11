@@ -3,6 +3,7 @@ import HomeView from "@/components/HomeView";
 import InsideTopic from "@/components/InsideTopic";
 import { featuredFigures } from "@/lib/lessonOutline";
 import NextUp from "@/components/NextUp";
+import HomeResume from "@/components/HomeResume";
 import PostSources from "@/components/PostSources";
 import Search from "@/components/Search";
 import TryQuestion from "@/components/TryQuestion";
@@ -76,6 +77,8 @@ export default function Home() {
         <NextUp entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))} />
         <Search />
       </header>
+
+      <HomeResume titles={Object.fromEntries(ordered.map((t) => [t.slug, t.title]))} />
 
       <HomeView
         nodes={nodes}

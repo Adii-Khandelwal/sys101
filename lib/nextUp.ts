@@ -35,3 +35,23 @@ export function readCount(entries: IndexEntry[], read: readonly string[]) {
 export function startVariant(read: readonly string[]): "first" | "progress" {
   return read.length === 0 ? "first" : "progress";
 }
+
+/** A topic the reader was partway through, best to resume. */
+export type ResumeTarget = { slug: string; section: string };
+
+/**
+ * The topic to offer as "Continue where you left off": one that is not finished
+ * yet, has a last-viewed section past the start, and was touched most recently
+ * (by the per-topic change date). Returns null when there is nothing to resume.
+ */
+export function resumeTarget(
+  topics: Record<string, { last?: string }>,
+  updated: Record<string, string>,
+  read: readonly string[],
+): ResumeTarget | null {
+  const candidates = Object.entries(topics)
+    .filter(([slug, t]) => t.last && t.last !== "why" && !read.includes(slug))
+    .map(([slug, t]) => ({ slug, section: t.last!, when: updated[slug] ?? "" }))
+    .sort((a, b) => (a.when < b.when ? 1 : a.when > b.when ? -1 : a.slug.localeCompare(b.slug)));
+  return candidates[0] ? { slug: candidates[0].slug, section: candidates[0].section } : null;
+}
