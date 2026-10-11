@@ -129,7 +129,58 @@ export function layers<T extends Node>(nodes: T[], edges: Edge[]): (T | Slot)[][
     const count = countCrossings(order, feeds);
     if (count < bestCount) [best, bestCount] = [order, count];
   }
+  // Barycenter sweeps are a heuristic. Crossings only occur between neighbouring columns, so the
+  // fewest-crossings ordering can be found exactly, column by column.
+  if (bestCount > 0) {
+    const exact = fewestCrossings(best, feeds);
+    const count = countCrossings(exact, feeds);
+    if (count < bestCount) [best, bestCount] = [exact, count];
+  }
   return best;
+}
+
+/**
+ * The ordering of every column with the fewest crossings, by dynamic programming over each
+ * column's permutations (the cost of a column depends only on the column before it). Ties go to
+ * the earlier permutation, so the result is the same on every load. Columns of more than 6
+ * entries are left as they are.
+ */
+function fewestCrossings<T extends Node>(cols: (T | Slot)[][], feeds: Map<string, string[]>): (T | Slot)[][] {
+  if (cols.some((c) => c.length > 6)) return cols;
+  const perms = <U,>(a: U[]): U[][] =>
+    a.length <= 1 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map((p) => [x, ...p]));
+  const options = cols.map((c) => perms(c));
+  const between = (prev: (T | Slot)[], cur: (T | Slot)[]) => {
+    const at = new Map(prev.map((n, i) => [n.slug, i]));
+    const segs = cur.flatMap((n, j) => (feeds.get(n.slug) ?? []).filter((f) => at.has(f)).map((f) => [at.get(f)!, j]));
+    let count = 0;
+    for (let i = 0; i < segs.length; i++) {
+      for (let j = i + 1; j < segs.length; j++) if ((segs[i][0] - segs[j][0]) * (segs[i][1] - segs[j][1]) < 0) count++;
+    }
+    return count;
+  };
+  const cost = options.map(() => [] as number[]);
+  const from = options.map(() => [] as number[]);
+  options[0].forEach(() => cost[0].push(0));
+  for (let c = 1; c < cols.length; c++) {
+    options[c].forEach((cur, q) => {
+      let bestCost = Infinity;
+      let bestFrom = 0;
+      options[c - 1].forEach((prev, p) => {
+        const total = cost[c - 1][p] + between(prev, cur);
+        if (total < bestCost) [bestCost, bestFrom] = [total, p];
+      });
+      cost[c].push(bestCost);
+      from[c].push(bestFrom);
+    });
+  }
+  let q = cost[cols.length - 1].indexOf(Math.min(...cost[cols.length - 1]));
+  const result: (T | Slot)[][] = [];
+  for (let c = cols.length - 1; c >= 0; c--) {
+    result[c] = options[c][q];
+    q = from[c][q];
+  }
+  return result;
 }
 
 /**

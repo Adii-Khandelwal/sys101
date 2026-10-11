@@ -3,8 +3,9 @@
   "promise": "After this you can follow the topic page and the posts.",
   "before": {
     "prerequisites": [
-      "circuit-breakers",
-      "replication"
+      "replication",
+      "consensus",
+      "circuit-breakers"
     ],
     "terms": [
       {
@@ -20,7 +21,7 @@
         "definition": "Having spare copies or servers so that one failure need not take the system down."
       }
     ],
-    "note": "Read Replication and Circuit Breakers first: failover switches to the replicas that replication provides, and it decides what counts as failed using the kind of health checking circuit breakers rely on. The terms below are enough to begin."
+    "note": "Read Replication, Consensus and Circuit Breakers first: failover switches to the replicas that replication provides, it picks exactly one new primary the way consensus elects a leader, and it decides what counts as failed using the kind of health checking circuit breakers rely on. The terms below are enough to begin."
   },
   "stages": [
     {

@@ -5,6 +5,8 @@
   "interviewRelevance": "common",
   "concept": "Failover is how a system keeps serving when a component dies: detect the failure, promote or route to a healthy stand-in, and send clients to the new target, all fast enough that users barely notice. The hard parts are detecting a real failure without being fooled by a slow network, choosing exactly one replacement so you never end up with two primaries (split-brain), and redirecting traffic without waiting on slow caches or DNS. Failover spans tiers: a database promotes a replica to primary, and the edge routes around an unhealthy origin, but both are the same loop of detect, decide, redirect.",
   "prerequisites": [
+    "replication",
+    "consensus",
     "circuit-breakers"
   ],
   "lesson": {
@@ -220,7 +222,7 @@
     ],
     "next": {
       "outcome": "After this you can see how failover ties the reliability topics together.",
-      "body": "Failover builds directly on Replication, which provides the stand-ins, and on Circuit Breakers and health checks, which decide what counts as failed. Its promotion step is Consensus and leader election in practice, and its detection must respect the same slow-versus-dead ambiguity that Rate Limiting and Load Shedding handle. Together these are how a system stays available through failure."
+      "body": "Failover builds on three topics. Replication provides the stand-ins. Consensus supplies the promotion step, electing exactly one new primary. Circuit Breakers and health checks decide what counts as failed, and the detection step has to cope with the same ambiguity between a slow node and a dead one. Together these are how a system stays available through failure."
     }
   },
   "posts": [
