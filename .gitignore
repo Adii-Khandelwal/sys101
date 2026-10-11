@@ -1,5 +1,7 @@
 node_modules
 .next
+.next-dev
+.next-build
 out
 .env*.local
 .env
@@ -8,3 +10,4 @@ next-env.d.ts
 .DS_Store
 public/pagefind
 .next-search
+.kiro
