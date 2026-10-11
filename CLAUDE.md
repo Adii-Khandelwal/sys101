@@ -137,7 +137,7 @@ Two exceptions:
 
 ## Later ideas (do not build yet)
 
-LLM pipeline (Gemini Flash) to summarize and compare posts automatically, alternative views and the mobile Path view (see docs/ideas.md). Weekly link checking is built and replaces staleness flags for dead links.
+LLM pipeline (Gemini Flash) to summarize and compare posts automatically, and the alternative views (Tracks, Companies matrix, expandable tree) in docs/ideas.md. The Path view, the mobile Path default and weekly link checking are built; link checking replaces staleness flags for dead links.
 
 ## Working in this repo
 

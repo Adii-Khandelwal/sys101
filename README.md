@@ -191,7 +191,6 @@ Every post belongs to its authors. The digests are original write-ups of what ea
 
 - Capstone case studies
 - Sync reading progress across devices
-- Interview-relevance tags on topics
 - Staleness review driven by link-check results and post age
 - An LLM pipeline (Gemini Flash) to draft digests and comparisons for review
 
