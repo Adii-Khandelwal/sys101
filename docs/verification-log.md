@@ -105,13 +105,16 @@ Each figure from a digest's numbers table, problem, walkthrough, failures and ta
 |---|---|---|---|---|---|
 | etcd-performance | numbers | ~50 ms US, up to 400 ms intercontinental | https://etcd.io/docs/v3.5/op-guide/performance/ | Understanding performance | found with different formatting |
 | etcd-performance | numbers | ~10 ms spinning, <1 ms SSD | https://etcd.io/docs/v3.5/op-guide/performance/ | (before first heading) | found with different formatting |
-| etcd-performance | numbers | majority | https://etcd.io/docs/v3.5/op-guide/performance/ | - | NOT FOUND |
+| etcd-performance | numbers | over 30,000 requests per second | https://etcd.io/docs/v3.5/op-guide/performance/ | Understanding performance | found with different formatting |
 | etcd-performance | walkthrough | 50 ms | https://etcd.io/docs/v3.5/op-guide/performance/ | Understanding performance | found with different formatting |
 | etcd-performance | walkthrough | 400 ms | https://etcd.io/docs/v3.5/op-guide/performance/ | Understanding performance | found with different formatting |
 | etcd-performance | walkthrough | 10 ms | https://etcd.io/docs/v3.5/op-guide/performance/ | (before first heading) | found with different formatting |
 | etcd-performance | walkthrough | 1 ms | https://etcd.io/docs/v3.5/op-guide/performance/ | (before first heading) | found with different formatting |
+| etcd-performance | failures | 50 ms | https://etcd.io/docs/v3.5/op-guide/performance/ | Understanding performance | found with different formatting |
+| etcd-performance | failures | 400 ms | https://etcd.io/docs/v3.5/op-guide/performance/ | Understanding performance | found with different formatting |
+| etcd-performance | failures | 10 ms | https://etcd.io/docs/v3.5/op-guide/performance/ | (before first heading) | found with different formatting |
 | cockroachdb-leader-leases-2026 | numbers | up to 85% | https://www.cockroachlabs.com/blog/distributed-database-leader-leases/ | Scalable Leader Leases for Distributed SQL Databases: CockroachDB | found |
-| cockroachdb-leader-leases-2026 | numbers | hundreds of thousands to millions | https://www.cockroachlabs.com/blog/distributed-database-leader-leases/ | - | NOT FOUND |
+| cockroachdb-leader-leases-2026 | numbers | hundreds of thousands or millions | https://www.cockroachlabs.com/blog/distributed-database-leader-leases/ | Scalable Leader Leases for Distributed SQL Databases: CockroachDB | found |
 | cockroachdb-leader-leases-2026 | numbers | one leaseholder per Range | https://www.cockroachlabs.com/blog/distributed-database-leader-leases/ | - | NOT FOUND |
 | cockroachdb-leader-leases-2026 | takeaways | 85% | https://www.cockroachlabs.com/blog/distributed-database-leader-leases/ | Scalable Leader Leases for Distributed SQL Databases: CockroachDB | found |
 
@@ -181,8 +184,9 @@ Each figure from a digest's numbers table, problem, walkthrough, failures and ta
 | google-percolator-2010 | numbers | thousands of machines | https://research.google/pubs/pub36726/ | (before first heading) | found |
 | google-percolator-2010 | failures | 2 million | https://research.google/pubs/pub36726/ | 2.3 Timestamps | found |
 | cockroachdb-transaction-pipelining-2019 | numbers | O(n) to O(1) | https://www.cockroachlabs.com/blog/transaction-pipelining/ | How Pipelining consensus writes speeds up distributed SQL | found |
-| cockroachdb-transaction-pipelining-2019 | numbers | n = statements | https://www.cockroachlabs.com/blog/transaction-pipelining/ | - | NOT FOUND |
-| cockroachdb-transaction-pipelining-2019 | numbers | Raft per write | https://www.cockroachlabs.com/blog/transaction-pipelining/ | - | NOT FOUND |
+| cockroachdb-transaction-pipelining-2019 | numbers | slope 6 vs slope 2 | https://www.cockroachlabs.com/blog/transaction-pipelining/ | Inter-Node Latency vs. Txn Latency | found with different formatting |
+| cockroachdb-transaction-pipelining-2019 | numbers | a little under half a millisecond | https://www.cockroachlabs.com/blog/transaction-pipelining/ | DML Statement Count vs. Txn Latency | found |
+| cockroachdb-transaction-pipelining-2019 | failures | 1.0 | https://www.cockroachlabs.com/blog/transaction-pipelining/ | Prior Art (a.k.a. the curse of SQL) | found |
 
 ## DNS
 
@@ -236,14 +240,16 @@ Each figure from a digest's numbers table, problem, walkthrough, failures and ta
 
 | Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
 |---|---|---|---|---|---|
-| github-mysql-ha-2020 | numbers | 10 to 13 seconds | https://github.blog/engineering/infrastructure/mysql-high-availability-at-github/ | The results | found with different formatting |
-| github-mysql-ha-2020 | numbers | up to 20-25 seconds | https://github.blog/engineering/infrastructure/mysql-high-availability-at-github/ | MySQL High Availability at GitHub | found with different formatting |
-| github-mysql-ha-2020 | numbers | one primary | https://github.blog/engineering/infrastructure/mysql-high-availability-at-github/ | - | NOT FOUND |
-| cloudflare-traffic-manager-2026 | numbers | within seconds | https://blog.cloudflare.com/cloudflare-traffic-manager-the-details/ | The Details | found |
-| cloudflare-traffic-manager-2026 | numbers | sub-60s TTLs not trusted | https://blog.cloudflare.com/cloudflare-traffic-manager-the-details/ | The Details | found with different formatting |
-| cloudflare-traffic-manager-2026 | numbers | 100+ data centers | https://blog.cloudflare.com/cloudflare-traffic-manager-the-details/ | The Details | found with different formatting |
-| cloudflare-traffic-manager-2026 | walkthrough | 60 | https://blog.cloudflare.com/cloudflare-traffic-manager-the-details/ | The Details | found |
-| cloudflare-traffic-manager-2026 | walkthrough | 100 | https://blog.cloudflare.com/cloudflare-traffic-manager-the-details/ | The Details | found |
+| github-mysql-ha-failover-2018 | numbers | 10 to 13 seconds | https://github.blog/engineering/infrastructure/mysql-high-availability-at-github/ | The results | found with different formatting |
+| github-mysql-ha-failover-2018 | numbers | up to 20-25 seconds | https://github.blog/engineering/infrastructure/mysql-high-availability-at-github/ | MySQL High Availability at GitHub | found with different formatting |
+| github-mysql-ha-failover-2018 | numbers | one primary | https://github.blog/engineering/infrastructure/mysql-high-availability-at-github/ | - | NOT FOUND |
+| cloudflare-traffic-manager-2016 | numbers | within seconds | https://blog.cloudflare.com/cloudflare-traffic-manager-the-details/ | The Details | found |
+| cloudflare-traffic-manager-2016 | numbers | no wait on sub-60s TTLs | https://blog.cloudflare.com/cloudflare-traffic-manager-the-details/ | The Details | found with different formatting |
+| cloudflare-traffic-manager-2016 | numbers | 100 data centers (2016) | https://blog.cloudflare.com/cloudflare-traffic-manager-the-details/ | The Details | found with different formatting |
+| cloudflare-traffic-manager-2016 | problem | 400 | https://blog.cloudflare.com/cloudflare-traffic-manager-the-details/ | The Details | found |
+| cloudflare-traffic-manager-2016 | walkthrough | 60 | https://blog.cloudflare.com/cloudflare-traffic-manager-the-details/ | The Details | found |
+| cloudflare-traffic-manager-2016 | walkthrough | 100 | https://blog.cloudflare.com/cloudflare-traffic-manager-the-details/ | The Details | found |
+| cloudflare-traffic-manager-2016 | takeaways | 2016, | https://blog.cloudflare.com/cloudflare-traffic-manager-the-details/ | (before first heading) | found with different formatting |
 
 ## Indexing and Search
 
@@ -436,13 +442,13 @@ Each figure from a digest's numbers table, problem, walkthrough, failures and ta
 | cap | 3 | 5 | 0 |
 | cdns | 4 | 2 | 5 |
 | circuit-breakers | 23 | 13 | 0 |
-| consensus | 2 | 6 | 3 |
+| consensus | 3 | 10 | 1 |
 | consistent-hashing | 15 | 7 | 0 |
 | databases | 18 | 7 | 0 |
-| distributed-transactions | 3 | 1 | 3 |
+| distributed-transactions | 5 | 2 | 1 |
 | dns | 14 | 7 | 1 |
 | event-driven-architecture | 9 | 4 | 3 |
-| failover | 3 | 4 | 1 |
+| failover | 4 | 5 | 1 |
 | indexing | 24 | 8 | 0 |
 | load-balancing | 8 | 5 | 0 |
 | message-queues | 9 | 4 | 0 |
