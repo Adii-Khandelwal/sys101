@@ -17,6 +17,12 @@ import {
   markVisited,
   toggleUnit,
   validateImport,
+  mergeProgress,
+  diffSummary,
+  deriveRead,
+  resetAll,
+  resetTopic,
+  exportName,
   type LessonMeta,
   type Progress,
 } from "./lessonStore";
@@ -141,5 +147,74 @@ describe("read marks from before lesson tracking", () => {
     expect(syncRead([meta.slug], visited, meta)).toEqual([meta.slug]);
     const started = toggleUnit(visited, meta, "why");
     expect(syncRead([meta.slug], started, meta)).toEqual([]);
+  });
+});
+
+describe("your data: export, import, merge, reset", () => {
+  const lb: LessonMeta = { slug: "load-balancing", postIds: ["uber-dynamic-subsetting-2022", "dropbox-robinhood-2024"], correct: [0, 0, 1, 0, 1, 0] };
+  const metas = [meta, lb];
+  const known = { slugs: ["dns", "load-balancing"], postIds: [...meta.postIds, ...lb.postIds] };
+  const started = answer(toggleUnit(toggleUnit(emptyProgress(), meta, "why"), meta, "cloudflare-dns-builds-2022"), "dns", 0, 1);
+
+  it("round-trips an export through import unchanged, with a dated file name", () => {
+    const file = JSON.stringify(exportFile(started, ["dns"], new Date("2026-10-11T12:00:00Z"), { dns: "2026-10-11T12:00:00.000Z" }));
+    const r = validateImport(file, known);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.progress).toEqual(started);
+    expect(r.read).toEqual(["dns"]);
+    expect(r.updated).toEqual({ dns: "2026-10-11T12:00:00.000Z" });
+    expect(r.ignored).toBe(0);
+    expect(exportName(new Date(2026, 9, 11))).toBe("sys101-progress-2026-10-11.json");
+  });
+
+  it("merge keeps the more complete value; replace uses only the file", () => {
+    const here = answer(toggleUnit(emptyProgress(), lb, "why"), "dns", 0, 2);
+    const merged = mergeProgress(here, started);
+    expect(merged.topics.dns.done).toEqual(["why"]);
+    expect(merged.topics.dns.answers).toEqual({ 0: 2 }); // the answer already given here is kept
+    expect(merged.topics["load-balancing"].done).toEqual(["why"]);
+    expect(merged.posts).toEqual(["cloudflare-dns-builds-2022"]);
+    expect(diffSummary(here, merged, metas)).toEqual({ topics: 1, items: 2 });
+    expect(diffSummary(here, started, metas)).toEqual({ topics: 2, items: 4 });
+  });
+
+  it("rejects invalid and wrong-version files whole, and ignores unknown topics with a count", () => {
+    const good = JSON.parse(JSON.stringify(exportFile(started, ["dns"])));
+    expect(validateImport(JSON.stringify({ ...good, version: 3 }), known).ok).toBe(false);
+    const badType = structuredClone(good);
+    badType.progress.topics.dns.answers = { 0: "one" };
+    expect(validateImport(JSON.stringify(badType), known).ok).toBe(false);
+    const badList = structuredClone(good);
+    badList.progress.topics.dns.done = "why";
+    expect(validateImport(JSON.stringify(badList), known).ok).toBe(false);
+    const extra = structuredClone(good);
+    extra.progress.topics.kafka = { done: ["why"], visited: [], answers: {} };
+    extra.progress.posts.push("someone-elses-post");
+    const r = validateImport(JSON.stringify(extra), known);
+    expect(r.ok && r.ignored).toBe(2);
+    expect(r.ok && Object.keys(r.progress.topics)).toEqual(["dns"]);
+  });
+
+  it("resets one topic or everything", () => {
+    const both = toggleUnit(started, lb, "why");
+    const one = resetTopic(both, meta);
+    expect(one.topics.dns).toBeUndefined();
+    expect(one.posts).toEqual([]);
+    expect(one.topics["load-balancing"].done).toEqual(["why"]);
+    expect(resetAll()).toEqual({ progress: emptyProgress(), read: [] });
+  });
+
+  it("derives read flags after an import", () => {
+    let full = CONCEPT_SECTIONS.reduce((p, s) => toggleUnit(p, meta, s), emptyProgress());
+    full = meta.postIds.reduce((p, id) => toggleUnit(p, meta, id), full);
+    full = meta.correct.reduce((p, c, i) => answer(p, "dns", i, c), full);
+    expect(deriveRead([], full, metas)).toEqual(["dns"]);
+  });
+
+  it("treats corrupt storage as unreadable rather than throwing", () => {
+    expect(parseProgress("{not json")).toBeNull();
+    expect(parseProgress(JSON.stringify({ version: 2, topics: "x" }))).toEqual({ version: 2, topics: {}, posts: [] });
+    expect(loadProgress((k) => (k === "sys101:progress" ? "{broken" : null))).toEqual(emptyProgress());
   });
 });

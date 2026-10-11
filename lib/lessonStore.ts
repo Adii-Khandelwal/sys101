@@ -217,14 +217,56 @@ export function resetTopic(p: Progress, meta: LessonMeta): Progress {
 
 // ── Export and import ──────────────────────────────────────────────────────
 
-export type ExportFile = { app: "sys101"; version: typeof VERSION; exportedAt: string; progress: Progress; read: string[] };
+export type ExportFile = {
+  app: "sys101";
+  version: typeof VERSION;
+  exportedAt: string;
+  progress: Progress;
+  read: string[];
+  /** Last change per topic (ISO dates), where known. */
+  updated?: Record<string, string>;
+};
 
-export function exportFile(p: Progress, read: string[], now = new Date()): ExportFile {
-  return { app: "sys101", version: VERSION, exportedAt: now.toISOString(), progress: p, read };
+export function exportFile(p: Progress, read: string[], now = new Date(), updated: Record<string, string> = {}): ExportFile {
+  return { app: "sys101", version: VERSION, exportedAt: now.toISOString(), progress: p, read, updated };
 }
 
-/** Validate an uploaded export before applying it. */
-export function validateImport(text: string): { ok: true; progress: Progress; read: string[] } | { ok: false; error: string } {
+/** "sys101-progress-2026-10-11.json", in local time. */
+export function exportName(now = new Date()) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `sys101-progress-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.json`;
+}
+
+/** What this site knows about, to check an import against. */
+export type Known = { slugs: string[]; postIds: string[] };
+
+export type ImportResult =
+  | { ok: true; progress: Progress; read: string[]; updated: Record<string, string>; ignored: number }
+  | { ok: false; error: string };
+
+const isStrings = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === "string");
+
+/** The stored shape exactly, or a reason it is not. Nothing is repaired: a file is used whole or not at all. */
+function strictTopic(v: unknown): TopicProgress | string {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return "a topic entry is not an object";
+  const t = v as Record<string, unknown>;
+  if (!isStrings(t.done) || !isStrings(t.visited)) return "a topic's done or visited list is not a list of names";
+  if (!t.answers || typeof t.answers !== "object" || Array.isArray(t.answers)) return "a topic's quiz answers are not an object";
+  const answers: Record<string, number> = {};
+  for (const [k, a] of Object.entries(t.answers as Record<string, unknown>)) {
+    if (!/^\d+$/.test(k) || !Number.isInteger(a) || (a as number) < 0) return "a quiz answer is not a whole number";
+    answers[k] = a as number;
+  }
+  if (t.last !== undefined && typeof t.last !== "string") return "a topic's last position is not text";
+  return { done: [...t.done], visited: [...t.visited], answers, ...(typeof t.last === "string" ? { last: t.last } : {}) };
+}
+
+/**
+ * Validate an uploaded export before anything is applied: app, version,
+ * shape and value types. Topics and posts this site does not have are
+ * dropped and counted, not treated as errors.
+ */
+export function validateImport(text: string, known?: Known): ImportResult {
   let v: unknown;
   try {
     v = JSON.parse(text);
@@ -234,8 +276,79 @@ export function validateImport(text: string): { ok: true; progress: Progress; re
   const f = v as Partial<ExportFile>;
   if (!f || typeof f !== "object" || f.app !== "sys101") return { ok: false, error: "That file is not a sys101 progress export." };
   if (f.version !== VERSION) return { ok: false, error: `This export is version ${String(f.version)}; only version ${VERSION} can be imported.` };
-  const progress = parseProgress(JSON.stringify(f.progress));
-  if (!progress) return { ok: false, error: "The progress data in that file is damaged." };
-  if (!Array.isArray(f.read) || !f.read.every((s) => typeof s === "string")) return { ok: false, error: "The read list in that file is damaged." };
-  return { ok: true, progress, read: f.read };
+  const p = f.progress as Partial<Progress> | undefined;
+  if (!p || typeof p !== "object" || p.version !== VERSION || !p.topics || typeof p.topics !== "object" || Array.isArray(p.topics))
+    return { ok: false, error: "The progress data in that file is damaged." };
+  if (!isStrings(p.posts)) return { ok: false, error: "The progress data in that file is damaged: posts is not a list of names." };
+  if (!isStrings(f.read)) return { ok: false, error: "The read list in that file is damaged." };
+  const updatedIn = f.updated ?? {};
+  if (typeof updatedIn !== "object" || Array.isArray(updatedIn) || !Object.values(updatedIn).every((d) => typeof d === "string"))
+    return { ok: false, error: "The dates in that file are damaged." };
+
+  const isTopic = (slug: string) => !known || known.slugs.includes(slug);
+  const isPost = (id: string) => !known || known.postIds.includes(id);
+  let ignored = 0;
+  const topics: Record<string, TopicProgress> = {};
+  for (const [slug, t] of Object.entries(p.topics)) {
+    const clean = strictTopic(t);
+    if (typeof clean === "string") return { ok: false, error: `The progress data in that file is damaged: ${clean}.` };
+    if (isTopic(slug)) topics[slug] = clean;
+    else ignored++;
+  }
+  const posts = p.posts.filter(isPost);
+  ignored += p.posts.length - posts.length;
+  const read = f.read.filter(isTopic);
+  ignored += f.read.filter((s) => !isTopic(s) && !(s in p.topics!)).length;
+  const updated = Object.fromEntries(Object.entries(updatedIn as Record<string, string>).filter(([slug]) => isTopic(slug)));
+  return { ok: true, progress: { version: VERSION, topics, posts: [...new Set(posts)] }, read: [...new Set(read)], updated, ignored };
+}
+
+const union = (a: string[], b: string[]) => [...new Set([...a, ...b])];
+
+/** Merge keeps the more complete value: lists are combined, and an answer already given here is kept. */
+export function mergeProgress(current: Progress, incoming: Progress): Progress {
+  const topics: Record<string, TopicProgress> = { ...current.topics };
+  for (const [slug, t] of Object.entries(incoming.topics)) {
+    const c = current.topics[slug];
+    topics[slug] = c
+      ? {
+          done: union(c.done, t.done),
+          visited: union(c.visited, t.visited),
+          answers: { ...t.answers, ...c.answers },
+          ...((c.last ?? t.last) ? { last: c.last ?? t.last } : {}),
+        }
+      : t;
+  }
+  return { version: VERSION, topics, posts: union(current.posts, incoming.posts) };
+}
+
+/**
+ * What applying `after` over `before` changes, for the preview: topics
+ * touched, and items changed (sections done, quiz answers, posts read).
+ */
+export function diffSummary(before: Progress, after: Progress, metas: LessonMeta[]) {
+  let topics = 0;
+  let items = 0;
+  for (const m of metas) {
+    const a = topicOf(before, m.slug);
+    const b = topicOf(after, m.slug);
+    const flips = (x: string[], y: string[]) => x.filter((i) => !y.includes(i)).length + y.filter((i) => !x.includes(i)).length;
+    const keys = new Set([...Object.keys(a.answers), ...Object.keys(b.answers)]);
+    const n =
+      flips(a.done, b.done) +
+      [...keys].filter((k) => a.answers[k] !== b.answers[k]).length +
+      flips(before.posts.filter((p) => m.postIds.includes(p)), after.posts.filter((p) => m.postIds.includes(p)));
+    if (n) topics++;
+    items += n;
+  }
+  return { topics, items };
+}
+
+/** The read list for this progress: each lesson topic's flag derived, any other entries kept. */
+export function deriveRead(read: string[], p: Progress, metas: LessonMeta[]) {
+  return metas.reduce((r, m) => syncRead(r, p, m), [...new Set(read)]);
+}
+
+export function resetAll(): { progress: Progress; read: string[] } {
+  return { progress: emptyProgress(), read: [] };
 }

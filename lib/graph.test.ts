@@ -7,6 +7,7 @@ import {
   chooseLayers,
   crossings,
   drawnCrossings,
+  sample,
   edgeCollisions,
   edgeCurvatures,
   fitPositions,
@@ -21,7 +22,7 @@ import {
 type E = { from: string; to: string };
 const keys = (es: E[]) => es.map((e) => `${e.from}->${e.to}`).sort();
 const PAD = 48;
-const PAD_TOP = 70;
+const PAD_TOP = 86;
 
 describe("transitive reduction", () => {
   it("drops the shortcut in a small chain", () => {
@@ -56,8 +57,8 @@ function plan(nodes: { slug: string; title: string }[], edges: E[], stageWidth: 
   const labelWidth = new Map(nodes.map((n) => [n.slug, n.title.length * perChar]));
   const width = stageWidth - PAD * 2;
   const rows = rowCount(cols, orientation);
-  const height = Math.min(rows * 120 + 142, 700) - PAD - PAD_TOP; // as the map: CSS stage height, 70px top padding
-  const stage = { minX: -PAD + 8, maxX: width + PAD - 8, minY: -PAD + 8, maxY: height + PAD_TOP - 8 };
+  const height = Math.min(rows * 120 + 158, 700) - PAD - PAD_TOP; // as the map: CSS stage height, 86px top padding
+  const stage = { minX: -PAD + 8, maxX: width + PAD - 8, minY: -PAD + 8, maxY: height + PAD_TOP - 24 };
   const lay = orientation === "horizontal" ? chooseLayers(cols, drawn, { width, height, labelWidth }, stage) : cols;
   const { positions, required } = fitPositions(lay, orientation, { width, height, labelWidth, edges: drawn });
   const labels = new Map(nodes.map((n) => [n.slug, { start: LABEL_START, width: labelWidth.get(n.slug)! }]));
@@ -69,6 +70,8 @@ function plan(nodes: { slug: string; title: string }[], edges: E[], stageWidth: 
     collisions: edgeCollisions(real, drawn, bends, labels, stage),
     gap: minLabelGap(real, labels),
     crossed: drawnCrossings(real, drawn, bends),
+    // Distance from the highest point of any edge to the stage's top line (the legend and controls row).
+    topGap: height + PAD_TOP - Math.max(...drawn.map((e) => Math.max(...sample(positions.get(e.from)!, positions.get(e.to)!, bends.get(`${e.from}->${e.to}`) ?? 0).map((p) => p.y)))),
   };
 }
 
@@ -90,6 +93,7 @@ describe("layout: no edge crosses a label or node, labels keep their gap", () =>
     for (const perChar of [7.5, 8, 8.5, 9.2, 10]) {
       const r = plan(nodes, edges, 1120, "horizontal", perChar);
       expect([perChar, r.collisions, r.crossed]).toEqual([perChar, [], []]);
+      expect(r.topGap).toBeGreaterThanOrEqual(24);
     }
   });
 

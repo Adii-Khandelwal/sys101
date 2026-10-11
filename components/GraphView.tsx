@@ -51,7 +51,8 @@ const NODE_RADIUS = 14;
 const LABEL_SIZE = 18;
 const NARROW = "(max-width: 640px)"; // below this the map stacks top to bottom; matches the CSS
 const PADDING = 48; // px between the stage edge and the outermost nodes
-const PADDING_TOP = 70; // node centres sit this far down, so the first row is 56px+ below the controls
+const PADDING_TOP = 86; // node centres sit this far down, so the first row is 56px+ below the controls
+const TOP_CLEAR = 24; // edges stay this far below the legend and controls line
 /**
  * Sigma's own wheel, drag and double-click handling stays off (it checks
  * these flags), but with them off camera.setState also ignores x/y/ratio.
@@ -642,7 +643,7 @@ export default function GraphView({ nodes, edges }: Props) {
 
     // Horizontal layout reserves slots for long edges; stacked layout lists topics only.
     // With real label widths known, pick the column ordering that draws cleanly.
-    const stageBox = { minX: -PADDING + 8, maxX: width + PADDING - 8, minY: -PADDING + 8, maxY: height + PADDING_TOP - 8 };
+    const stageBox = { minX: -PADDING + 8, maxX: width + PADDING - 8, minY: -PADDING + 8, maxY: height + PADDING_TOP - TOP_CLEAR };
     const lay = effective === "horizontal" ? chooseLayers(layered, drawn, { width, height, labelWidth }, stageBox) : layered;
     const { positions } = fitPositions(lay, effective, { width, height, labelWidth, edges: drawn });
     cols.flat().forEach((n) => graph.mergeNodeAttributes(n.slug, positions.get(n.slug)!));

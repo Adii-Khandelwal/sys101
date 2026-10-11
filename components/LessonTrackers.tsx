@@ -1,23 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { lastViewedOnLoad, replaceProgress, useLesson, useReadTopics } from "@/lib/progress";
+import { useEffect, useMemo, useState } from "react";
+import { lastViewedOnLoad, useLesson } from "@/lib/progress";
 import { RevealPanel } from "./Reveal";
 import {
   markAllDone,
   quizComplete,
   summary,
   counts,
-  exportFile,
   firstIncomplete,
   quizScore,
-  resetTopic,
   retryQuiz,
   answer,
   toggleUnit,
   topicOf,
   unitStatus,
-  validateImport,
   type LessonMeta,
 } from "@/lib/lessonStore";
 
@@ -211,89 +208,5 @@ export function QuizBlock({ meta, quiz, names }: { meta: LessonMeta; quiz: Quest
         )}
       </p>
     </>
-  );
-}
-
-/** Export, import and reset for this browser's progress. */
-export function YourData({ meta, title }: { meta: LessonMeta; title: string }) {
-  const m = useMeta(meta);
-  const { progress, update } = useLesson(m);
-  const read = useReadTopics();
-  const [confirming, setConfirming] = useState(false);
-  const [message, setMessage] = useState("");
-  const file = useRef<HTMLInputElement>(null);
-
-  const doExport = () => {
-    const blob = new Blob([JSON.stringify(exportFile(progress, [...read]), null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "sys101-progress.json";
-    a.click();
-    URL.revokeObjectURL(url);
-    setMessage("Exported.");
-  };
-
-  const doImport = async (f: File) => {
-    const result = validateImport(await f.text());
-    if (!result.ok) return setMessage(result.error);
-    replaceProgress(result.progress, result.read);
-    setMessage("Imported.");
-  };
-
-  return (
-    <section className="your-data" aria-labelledby="data-h" data-pagefind-ignore>
-      <h2 id="data-h" className="label">
-        Your data
-      </h2>
-      <p className="data-note">Progress is saved in this browser only.</p>
-      <p className="data-actions">
-        <button type="button" className="text-button label" onClick={doExport}>
-          Export progress
-        </button>
-        <button type="button" className="text-button label" onClick={() => file.current?.click()}>
-          Import progress
-        </button>
-        <input
-          ref={file}
-          type="file"
-          accept="application/json,.json"
-          hidden
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) doImport(f);
-            e.target.value = "";
-          }}
-        />
-        {confirming ? (
-          <span className="confirm">
-            Reset all progress for {title}?{" "}
-            <button
-              type="button"
-              className="text-button label"
-              onClick={() => {
-                update((p) => resetTopic(p, m));
-                setConfirming(false);
-                setMessage(`${title} reset.`);
-              }}
-            >
-              Yes, reset
-            </button>{" "}
-            <button type="button" className="text-button label" onClick={() => setConfirming(false)}>
-              Cancel
-            </button>
-          </span>
-        ) : (
-          <button type="button" className="text-button label" onClick={() => setConfirming(true)}>
-            Reset this topic
-          </button>
-        )}
-      </p>
-      {message && (
-        <p className="data-note" aria-live="polite">
-          {message}
-        </p>
-      )}
-    </section>
   );
 }

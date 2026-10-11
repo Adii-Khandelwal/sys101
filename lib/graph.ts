@@ -415,7 +415,7 @@ export function edgeCurvatures(
 }
 
 /** Points along the quadratic curve Sigma draws for curvature c. */
-function sample(a: Point, b: Point, c: number, steps = 40) {
+export function sample(a: Point, b: Point, c: number, steps = 40) {
   const ctrl = { x: (a.x + b.x) / 2 - (b.y - a.y) * c, y: (a.y + b.y) / 2 + (b.x - a.x) * c };
   return Array.from({ length: steps + 1 }, (_, i) => {
     const t = i / steps;

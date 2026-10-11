@@ -229,7 +229,7 @@ a:hover {
 
 .graph-stage {
   position: relative;
-  height: clamp(262px, calc(var(--rows, 1) * 120px + 142px), 70vh);
+  height: clamp(278px, calc(var(--rows, 1) * 120px + 158px), 70vh);
   overflow: hidden;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
@@ -294,7 +294,7 @@ a:hover {
 
 /* Stacked when the columns' labels do not fit the stage width. */
 .graph-stage[data-orientation="vertical"] {
-  height: clamp(262px, calc(var(--layers, 1) * 120px + 142px), 70vh);
+  height: clamp(278px, calc(var(--layers, 1) * 120px + 158px), 70vh);
 }
 
 .graph-node-link {
@@ -835,16 +835,6 @@ a:hover {
 
 
 
-.your-data {
-  margin-top: 64px;
-  padding-top: 16px;
-  border-top: 1px solid var(--rule);
-}
-
-.your-data h2 {
-  margin: 0 0 4px;
-}
-
 .data-note {
   margin: 0 0 8px;
   font-size: 15px;
@@ -857,6 +847,75 @@ a:hover {
   flex-wrap: wrap;
   gap: 8px 20px;
   margin: 0 0 8px;
+}
+
+/* Your data page */
+.data-page section {
+  margin-top: 40px;
+}
+
+.data-alert {
+  margin: 24px 0 0;
+  padding: 12px 16px;
+  border: 1px solid var(--accent);
+}
+
+.data-topics {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.data-topics li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.data-topic-title {
+  flex: 1 1 200px;
+}
+
+.data-confirm {
+  flex-basis: 100%;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.data-preview {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--rule);
+}
+
+.data-mode {
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+}
+
+.data-mode label {
+  display: flex;
+  gap: 8px;
+  min-height: 44px;
+  align-items: center;
+}
+
+.data-danger {
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+}
+
+.data-page .text-button {
+  min-height: 44px;
+}
+
+.data-page .text-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .finish-topic {
@@ -1083,7 +1142,7 @@ a:hover {
     margin-top: 32px;
   }
   .graph-stage {
-    height: clamp(262px, calc(var(--layers, 1) * 120px + 142px), 70vh);
+    height: clamp(278px, calc(var(--layers, 1) * 120px + 158px), 70vh);
   }
   .index-groups {
     grid-template-columns: 1fr;

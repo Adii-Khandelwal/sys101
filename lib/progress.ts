@@ -7,7 +7,9 @@ import {
   PROGRESS_KEY,
   emptyProgress,
   loadProgress,
+  parseProgress,
   syncRead,
+  topicOf,
   type LessonMeta,
   type Progress,
 } from "./lessonStore";
@@ -118,6 +120,7 @@ export function useLesson(meta: LessonMeta) {
       const next = f(current);
       if (next === current) return; // nothing changed: no write, no re-render
       saveProgress(next);
+      if (trackedChanged(current, next, meta)) stampUpdated([meta.slug]);
       write(syncRead([...getSnapshot()], next, meta)); // notifies this tab; other tabs get the storage event
     },
     [meta],
@@ -149,8 +152,91 @@ export function lastViewedOnLoad(slug: string): string | undefined {
   return lastAtLoad[slug];
 }
 
-/** Replace all progress, for import. */
-export function replaceProgress(p: Progress, read: string[]) {
+/** Replace all progress, for import and reset. `updated` replaces the change dates when given. */
+export function replaceProgress(p: Progress, read: string[], updated?: Record<string, string>) {
   saveProgress(p);
+  if (updated) saveUpdated(updated);
   write(read);
+}
+
+// ── Change dates and storage health, for the Your data page ──────────────
+// Dates live beside the progress object, under their own key, so the
+// progress format itself is unchanged. Visits do not count as changes.
+
+const UPDATED_KEY = "sys101:updated";
+
+function trackedChanged(a: Progress, b: Progress, meta: LessonMeta) {
+  const [x, y] = [topicOf(a, meta.slug), topicOf(b, meta.slug)];
+  const mine = (p: Progress) => p.posts.filter((id) => meta.postIds.includes(id)).sort().join();
+  return x.done.join() !== y.done.join() || JSON.stringify(x.answers) !== JSON.stringify(y.answers) || mine(a) !== mine(b);
+}
+
+let updatedCache: { raw: string; value: Record<string, string> } | null = null;
+
+function getUpdated(): Record<string, string> {
+  const raw = safeGet(UPDATED_KEY) ?? "";
+  if (updatedCache?.raw !== raw) {
+    let value: Record<string, string> = {};
+    try {
+      const v = raw ? JSON.parse(raw) : {};
+      if (v && typeof v === "object" && !Array.isArray(v))
+        value = Object.fromEntries(Object.entries(v).filter((e): e is [string, string] => typeof e[1] === "string"));
+    } catch {
+      // damaged dates only cost the dates
+    }
+    updatedCache = { raw, value };
+  }
+  return updatedCache.value;
+}
+
+function saveUpdated(v: Record<string, string>) {
+  try {
+    window.localStorage.setItem(UPDATED_KEY, JSON.stringify(v));
+  } catch {
+    // storage unavailable
+  }
+}
+
+export function stampUpdated(slugs: string[], now = new Date()) {
+  const next = { ...getUpdated() };
+  for (const s of slugs) next[s] = now.toISOString();
+  saveUpdated(next);
+}
+
+export type StorageStatus = "ok" | "empty" | "blocked" | "corrupt";
+
+function getStatus(): StorageStatus {
+  try {
+    const probe = "sys101:probe";
+    window.localStorage.setItem(probe, "1");
+    window.localStorage.removeItem(probe);
+  } catch {
+    return "blocked";
+  }
+  const raw = safeGet(PROGRESS_KEY);
+  if (raw !== null && parseProgress(raw) === null) return "corrupt";
+  const p = getProgress();
+  return Object.keys(p.topics).length || p.posts.length || getSnapshot().length ? "ok" : "empty";
+}
+
+type DataState = { status: StorageStatus; progress: Progress; read: readonly string[]; updated: Record<string, string> };
+let dataCache: DataState | null = null;
+const SERVER_DATA: DataState = { status: "empty", progress: SERVER_PROGRESS, read: EMPTY, updated: {} };
+
+function getData(): DataState {
+  const next = { status: getStatus(), progress: getProgress(), read: getSnapshot(), updated: getUpdated() };
+  if (
+    dataCache &&
+    dataCache.status === next.status &&
+    dataCache.progress === next.progress &&
+    dataCache.read === next.read &&
+    dataCache.updated === next.updated
+  )
+    return dataCache;
+  return (dataCache = next);
+}
+
+/** Everything the Your data page shows, kept live across tabs. */
+export function useAllProgress() {
+  return useSyncExternalStore(subscribe, getData, () => SERVER_DATA);
 }
