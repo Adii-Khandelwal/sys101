@@ -84,15 +84,15 @@
       {
         "question": "What distinguishes an event in event-driven architecture from a normal service call?",
         "options": [
-          "An event is a fact about something that already happened, which any number of services may react to",
           "An event is a command telling one named service to do something",
+          "An event is a fact about something that already happened, which any number of services may react to",
           "An event is a synchronous request that blocks until every consumer replies"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Events describe facts in the past tense, so the producer does not know or wait for its consumers, and new reactions can be added later.",
         "wrong": [
-          "",
           "A command names its receiver and tells it what to do; an event just states what happened and leaves interpretation to readers.",
+          "",
           "The producer appends the fact and moves on; it does not block waiting for consumers to reply."
         ],
         "teaches": "why"
@@ -101,31 +101,31 @@
         "question": "A service writes its database row and then publishes the event in a separate step. The publish fails after the commit succeeds. What has gone wrong?",
         "options": [
           "Nothing, the event will be inferred automatically from the row",
-          "The state changed but no event was published, so downstream services never learn of it",
-          "The database automatically rolls back when a publish fails"
+          "The database automatically rolls back when a publish fails",
+          "The state changed but no event was published, so downstream services never learn of it"
         ],
-        "correct": 1,
+        "correct": 2,
         "why": "Writing to the database and the broker as two steps can succeed on one and fail on the other; here the change is committed but the event is lost. A transactional outbox fixes this by writing the event in the same transaction.",
         "wrong": [
           "Nothing reads a committed row and emits an event on its own; the event has to be published deliberately.",
-          "",
-          "A failed publish after a separate commit does not undo that commit; the two are not in one transaction."
+          "A failed publish after a separate commit does not undo that commit; the two are not in one transaction.",
+          ""
         ],
         "teaches": "how"
       },
       {
         "question": "Why must a consumer in an event-driven system usually be idempotent?",
         "options": [
-          "Because the log guarantees exactly-once delivery",
-          "Because events are delivered in random order on purpose",
-          "Because delivery is at-least-once, so the same event can arrive more than once"
+          "Because delivery is at-least-once, so the same event can arrive more than once",
+          "Because the log guarantees exactly-once delivery, and idempotency is how that guarantee is implemented",
+          "Because events are delivered in random order on purpose, so handlers must tolerate any order"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "At-least-once delivery means a crash before acknowledgement causes a redelivery, so handling the same event twice must have the same effect as once.",
         "wrong": [
+          "",
           "Exactly-once is the costly exception, not the baseline; most logs give at-least-once, which is why duplicates happen.",
-          "Order is kept within a partition, not deliberately randomised; the reason for idempotency is duplicates, not shuffling.",
-          ""
+          "Order is kept within a partition, not deliberately randomised; the reason for idempotency is duplicates, not shuffling."
         ],
         "teaches": "how"
       },
@@ -133,7 +133,7 @@
         "question": "What does storing changes as an immutable event log let you do that updating rows in place does not?",
         "options": [
           "Rebuild a service's state by replaying the log, and rewind to reprocess after a bug",
-          "Avoid ever having to think about duplicates",
+          "Avoid ever having to think about duplicates, since an append-only log removes redelivery entirely",
           "Guarantee every consumer sees a single global order across the whole system"
         ],
         "correct": 0,
@@ -148,9 +148,9 @@
       {
         "question": "A team adds a new fraud-check service that must react to every order. In a well-built event-driven system, what do they change in the checkout service?",
         "options": [
-          "Add a direct call from checkout to the fraud service",
+          "Add a direct call from checkout to the fraud service, then deploy both services together",
           "Nothing: the fraud service subscribes to the existing order events",
-          "Give checkout a list of every consumer to notify"
+          "Give checkout a list of every consumer to notify, and add the fraud service to it"
         ],
         "correct": 1,
         "why": "The producer publishes facts without knowing its consumers, so a new reaction is just a new subscription, often backfilled by replaying history.",
@@ -164,9 +164,9 @@
       {
         "question": "In event-driven architecture, when is the overall business operation \"finished\" from the caller's point of view?",
         "options": [
-          "Only once every consumer has finished reacting, synchronously",
+          "Only once every consumer has finished reacting, with the caller waiting on each one in turn",
           "As soon as the database row is written, before any event exists",
-          "The moment the producer publishes the event; the reactions complete afterwards, eventually"
+          "When the producer publishes the event; the reactions complete afterwards, eventually"
         ],
         "correct": 2,
         "why": "The producer returns after publishing the fact; downstream reactions happen on their own schedule, so the system is eventually consistent.",

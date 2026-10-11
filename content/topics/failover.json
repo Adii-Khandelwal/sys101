@@ -83,31 +83,31 @@
       {
         "question": "Why is replication alone not enough for high availability?",
         "options": [
-          "Spare copies do nothing unless something detects a failure and switches traffic to them",
           "Replication already handles failover automatically",
-          "Replicas are only for backups, never for serving"
+          "Replicas are only for backups, never for serving",
+          "Spare copies do nothing unless something detects a failure and switches traffic to them"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "Redundancy is only potential availability; failover is the mechanism that detects the failure and promotes or routes to a healthy copy, turning spares into real availability.",
         "wrong": [
-          "",
           "Replication copies data but does not by itself detect failure or redirect clients; that is what failover adds.",
-          "Replicas commonly serve reads and become the new primary on failover, so they are not only backups."
+          "Replicas commonly serve reads and become the new primary on failover, so they are not only backups.",
+          ""
         ],
         "teaches": "why"
       },
       {
         "question": "Why confirm a failure with multiple observers before failing over?",
         "options": [
-          "To make the health checks run faster",
           "To avoid being fooled by a slow or briefly unreachable node and failing over needlessly",
+          "To make the health checks run faster",
           "Because one observer cannot send a health check"
         ],
-        "correct": 1,
+        "correct": 0,
         "why": "A single missed check can mean a slow network, not a dead node; requiring several vantage points to agree prevents a needless failover that would cause its own outage.",
         "wrong": [
-          "More observers do not speed up checks; they raise confidence that the failure is real.",
           "",
+          "More observers do not speed up checks; they raise confidence that the failure is real.",
           "One observer can check fine; the point is that one observer's view is not trustworthy enough to act on."
         ],
         "teaches": "how"
@@ -115,25 +115,25 @@
       {
         "question": "What is split-brain, and what prevents it during failover?",
         "options": [
-          "Two replicas falling behind; fixed by faster replication",
-          "The monitor crashing; fixed by more monitors",
-          "Two nodes both acting as primary and taking conflicting writes; prevented by electing one winner and fencing the old primary"
+          "Replicas falling so far behind the primary that reads go stale; fixed by upgrading to faster replication links",
+          "Two active primaries taking conflicting writes; prevented by electing one winner and fencing the old one",
+          "The monitor crashing so that no failover can happen; fixed by running more monitors in more zones"
         ],
-        "correct": 2,
+        "correct": 1,
         "why": "If the old primary keeps accepting writes while a new one is promoted, both diverge; a quorum picks exactly one and fencing stops the old one from writing.",
         "wrong": [
           "Split-brain is about two primaries, not lagging replicas.",
-          "A crashed monitor is a different problem; split-brain is specifically two active primaries.",
-          ""
+          "",
+          "A crashed monitor is a different problem; split-brain is specifically two active primaries."
         ],
         "teaches": "model"
       },
       {
         "question": "Why do fast systems redirect clients through a proxy or load balancer instead of DNS?",
         "options": [
-          "Because DNS cannot store IP addresses",
-          "Because clients may cache a DNS record until its TTL expires, delaying the switch to the new target",
-          "Because proxies are cheaper than DNS"
+          "Because DNS cannot store IP addresses, so every redirect needs a proxy that keeps its own address table",
+          "Because clients may cache a DNS record until its TTL expires, delaying the switch",
+          "Because proxies are cheaper to run than DNS"
         ],
         "correct": 1,
         "why": "DNS answers are cached for their time-to-live, so clients can keep using the dead address for seconds or minutes; a controlled proxy layer moves traffic immediately.",
@@ -147,32 +147,32 @@
       {
         "question": "During an asynchronous-replication failover, which replica should be promoted to minimise data loss?",
         "options": [
-          "The most up-to-date replica, the one furthest ahead in applying the primary's changes",
-          "Any replica at random",
-          "The one with the least traffic"
+          "Any replica at random, since every replica is equally current once a failure has been detected",
+          "The one with the least traffic, because it has the most spare capacity to take over",
+          "The most up-to-date replica, the one furthest ahead in applying the primary's changes"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "With asynchronous replication some replicas lag; promoting the furthest-ahead one loses the fewest acknowledged writes.",
         "wrong": [
-          "",
           "A random replica might be far behind, losing more writes than necessary.",
-          "Traffic level does not indicate how current a replica's data is."
+          "Traffic level does not indicate how current a replica's data is.",
+          ""
         ],
         "teaches": "how"
       },
       {
         "question": "Why rate-limit or dampen repeated failovers?",
         "options": [
-          "To make failover slower on purpose",
-          "Because failover is only allowed once per cluster ever",
-          "So a flapping component that fails and recovers repeatedly does not trigger a storm of promotions"
+          "So a flapping node does not trigger a storm of back-to-back promotions",
+          "To make failover slower on purpose, so operators always have time to approve each promotion by hand",
+          "Because failover is only allowed once per cluster ever, after which the cluster becomes read-only"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "A node that flaps up and down could cause back-to-back failovers, each disruptive; an anti-flapping delay lets things settle before failing over again.",
         "wrong": [
+          "",
           "The aim is stability, not slowness for its own sake; a real failure still fails over promptly.",
-          "Failover can happen many times over a cluster's life; it is just damped against flapping.",
-          ""
+          "Failover can happen many times over a cluster's life; it is just damped against flapping."
         ],
         "teaches": "how"
       }

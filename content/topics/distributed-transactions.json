@@ -101,47 +101,47 @@
       {
         "question": "In two-phase commit, what happens during the prepare phase?",
         "options": [
-          "The coordinator immediately makes all changes visible",
-          "Each participant durably readies its change and votes yes or no, but nothing is final yet",
-          "Participants delete their data"
+          "The coordinator immediately makes all changes visible to readers, then asks whether anyone objects",
+          "Participants release their locks and discard their pending work so the coordinator can start cleanly",
+          "Each participant durably readies its change and votes yes or no, but nothing is final yet"
         ],
-        "correct": 1,
+        "correct": 2,
         "why": "Prepare makes each participant's change durable and gets its vote, so the coordinator can then decide; nothing commits until the decision is recorded.",
         "wrong": [
           "Changes are not made visible in prepare; that happens only after the commit decision.",
-          "",
-          "Prepare readies a change to commit, it does not delete data."
+          "Prepare keeps the pending change and its locks; discarding them would make a yes vote meaningless.",
+          ""
         ],
         "teaches": "model"
       },
       {
         "question": "The coordinator durably records \"commit\", then crashes before telling one participant. What happens on recovery?",
         "options": [
-          "The whole transaction is lost",
-          "The participant decides for itself",
-          "Recovery reads the committed decision and drives that participant to finalise"
+          "The whole transaction is lost, because only the coordinator knew it had ever started",
+          "Recovery reads the committed decision and drives that participant to finalise",
+          "The participant waits a while and then decides for itself whether to commit or abort"
         ],
-        "correct": 2,
+        "correct": 1,
         "why": "The commit point is the durable decision record, so recovery can always complete a committed transaction and no acknowledged commit is lost.",
         "wrong": [
           "A recorded commit is not lost; durability of the decision is what makes 2PC safe across crashes.",
-          "A participant does not decide alone; it follows the recorded coordinator decision.",
-          ""
+          "",
+          "A participant does not decide alone; it follows the recorded coordinator decision."
         ],
         "teaches": "how"
       },
       {
         "question": "What is the main cost two-phase commit pays for its all-or-nothing guarantee?",
         "options": [
-          "Participants hold locks from prepare until finalise, and coordination adds round trips",
           "It can only ever involve one shard",
+          "Participants hold locks from prepare until finalise, and coordination adds round trips",
           "It silently drops conflicting writes"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Each participant must hold its prepared state locked until it hears the decision, so other work on that data waits, and the prepare and commit rounds add latency.",
         "wrong": [
-          "",
           "2PC exists precisely to span multiple shards; one shard would not need it.",
+          "",
           "2PC does not drop writes; it either commits them all or aborts them all."
         ],
         "teaches": "example"
@@ -149,15 +149,15 @@
       {
         "question": "When is a saga a better fit than two-phase commit?",
         "options": [
-          "When you need the strictest possible isolation",
-          "When holding locks across a long or cross-service workflow is too costly, and intermediate states can be compensated",
+          "When locks across a long, cross-service workflow cost too much and steps can be compensated",
+          "When you need the strictest possible isolation between concurrent transactions in every service",
           "When all the data lives in one database"
         ],
-        "correct": 1,
+        "correct": 0,
         "why": "A saga commits each step locally and undoes with compensations on failure, so it holds no cross-service locks, at the price of visible intermediate states.",
         "wrong": [
-          "A saga gives up strict isolation; if you need that, 2PC or a single-node transaction fits better.",
           "",
+          "A saga gives up strict isolation; if you need that, 2PC or a single-node transaction fits better.",
           "If all the data is in one database you can use a local transaction and need neither 2PC nor a saga."
         ],
         "teaches": "how"
@@ -165,9 +165,9 @@
       {
         "question": "Why do distributed transactions build on consensus?",
         "options": [
-          "Consensus makes the whole transaction run on one machine",
-          "Consensus removes the need for a commit decision",
-          "Each participant's prepared state and the commit decision must survive crashes, which consensus makes durable and agreed"
+          "Consensus makes the whole transaction run on one machine, so no cross-shard coordination is left",
+          "Consensus removes the need for a commit decision, because replicas simply vote on every write",
+          "Prepared votes and the commit decision must survive crashes, and consensus makes them durable"
         ],
         "correct": 2,
         "why": "A prepared vote and the commit record must not be lost if a node crashes, so they are replicated by consensus, which is why this topic sits on top of consensus.",

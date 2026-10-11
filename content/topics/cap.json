@@ -85,31 +85,31 @@
       {
         "question": "What does the CAP theorem actually force you to choose between?",
         "options": [
+          "Speed and correctness, which no distributed system can ever have together, with or without a partition",
           "Consistency and availability, but only while a network partition is happening",
-          "Consistency, availability, and partition tolerance, picking any two at all times",
-          "Speed and correctness, always"
+          "Consistency, availability, and partition tolerance, picking any two at all times"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Partitions are unavoidable, so the real trade-off is what a node does during one: answer (available) or refuse to serve unsafe data (consistent). With no partition you can have both.",
         "wrong": [
+          "CAP is about consistency versus availability under partitions, not a general speed-versus-correctness rule.",
           "",
-          "The popular \"pick two of three\" phrasing is misleading: partition tolerance is not optional on a real network, so the choice is really consistency versus availability during a partition.",
-          "CAP is about consistency versus availability under partitions, not a general speed-versus-correctness rule."
+          "The popular \"pick two of three\" phrasing is misleading: partition tolerance is not optional on a real network, so the choice is really consistency versus availability during a partition."
         ],
         "teaches": "why"
       },
       {
         "question": "Why can't you simply trade away partition tolerance to keep both consistency and availability?",
         "options": [
-          "Because partition tolerance is the most valuable of the three",
           "Because networks fail, so partitions happen whether or not you plan for them",
+          "Because partition tolerance is the most valuable of the three",
           "Because dropping it would make the system slower"
         ],
-        "correct": 1,
+        "correct": 0,
         "why": "A partition is a physical event on the network, not a design option; the system only gets to decide how it behaves when one occurs.",
         "wrong": [
-          "It is not about ranking the three; it is that a partition is not something you can opt out of.",
           "",
+          "It is not about ranking the three; it is that a partition is not something you can opt out of.",
           "Dropping partition tolerance is not even possible on a real network, so speed is beside the point."
         ],
         "teaches": "why"
@@ -117,14 +117,14 @@
       {
         "question": "A key is stored on N = 3 replicas with R = 2 and W = 2. What does R + W > N buy you?",
         "options": [
-          "Lower latency on every read",
+          "Strong consistency on its own, with no other conditions needed at all, even when writes land on stand-in replicas",
           "The ability to answer even when two replicas are unreachable",
-          "A read set that always overlaps the latest write set, so reads see the newest write"
+          "Reads that overlap the latest acknowledged write, necessary but not sufficient for strong consistency"
         ],
         "correct": 2,
-        "why": "With R + W greater than N, every read quorum shares at least one replica with every write quorum, so a read cannot miss the latest acknowledged write.",
+        "why": "With R + W greater than N, every read quorum shares at least one replica with every write quorum, so a read always includes a replica that holds the latest acknowledged write. That is necessary but not sufficient for strong consistency: concurrent writes still need ordering, and a sloppy quorum, which accepts writes on stand-in nodes outside the usual N, does not give the overlap at all.",
         "wrong": [
-          "Requiring more replicas to respond tends to raise latency, not lower it.",
+          "R + W > N is necessary but not sufficient: concurrent writes and sloppy quorums, which accept writes on stand-in nodes, can still leave reads stale or conflicting.",
           "Needing a quorum of 2 means it cannot answer when two of three are unreachable; that is the availability cost.",
           ""
         ],
@@ -133,32 +133,32 @@
       {
         "question": "During a partition, an AP (available) system accepts writes on both sides. What must it do once the partition heals?",
         "options": [
-          "Reconcile the diverged versions, by last-write-wins, vector clocks, or application merge",
-          "Nothing, the versions are guaranteed identical",
-          "Delete all writes made during the partition"
+          "Nothing, because the versions are guaranteed identical once the network is restored",
+          "Delete every write made during the partition and restart both sides from the last shared state",
+          "Reconcile the diverged versions, by last-write-wins, vector clocks, or application merge"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "Both sides accepted independent writes, so the copies disagree and must be merged; vector clocks detect which edits were concurrent.",
         "wrong": [
-          "",
           "Each side took writes the other never saw, so they are not identical; that is the whole cost of staying available.",
-          "Throwing away partition-time writes would lose acknowledged data, which defeats accepting them in the first place."
+          "Throwing away partition-time writes would lose acknowledged data, which defeats accepting them in the first place.",
+          ""
         ],
         "teaches": "how"
       },
       {
         "question": "When is it right to choose the consistent (CP) policy for a piece of data?",
         "options": [
-          "Always, because consistency is strictly better",
-          "When the data can be merged safely, like a shopping cart",
-          "When two conflicting truths would be dangerous, like an account balance"
+          "When two conflicting truths would be dangerous, like an account balance",
+          "Always, because consistency is strictly better than availability in every system",
+          "When the data can be merged safely, like a shopping cart"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "Data that must never disagree, such as a balance, is worth refusing service during a partition rather than risking divergence.",
         "wrong": [
+          "",
           "Consistency costs availability during partitions, so it is not strictly better; mergeable data is fine to keep available.",
-          "Mergeable data like a cart is the case for staying available, not for choosing consistency.",
-          ""
+          "Mergeable data like a cart is the case for staying available, not for choosing consistency."
         ],
         "teaches": "example"
       },

@@ -84,16 +84,16 @@
       {
         "question": "Why do consensus clusters use an odd number of nodes like 3 or 5?",
         "options": [
-          "So a majority always exists and any two majorities overlap, preventing two conflicting decisions",
           "Because odd numbers are faster to replicate to",
-          "So every node can be a leader at once"
+          "So every node can be a leader at once",
+          "So a majority always exists and any two majorities overlap, preventing two conflicting decisions"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "A cluster of 2f+1 has a clear majority, and because any two majorities share a node, the group can never commit two conflicting histories.",
         "wrong": [
-          "",
           "Node count parity does not change replication speed; it is about forming a non-ambiguous majority.",
-          "There is at most one leader per term; multiple simultaneous leaders is exactly what consensus prevents."
+          "There is at most one leader per term; multiple simultaneous leaders is exactly what consensus prevents.",
+          ""
         ],
         "teaches": "why"
       },
@@ -116,25 +116,25 @@
       {
         "question": "A five-node cluster has two nodes down. Can it still commit writes?",
         "options": [
-          "No, any node loss stops writes",
-          "Only reads work, never writes",
-          "Yes, the remaining three are a majority, which is enough to commit"
+          "Yes, the remaining three are a majority, which is enough to commit",
+          "No, a five-node cluster tolerates only one failure, so with two nodes down every write must stop",
+          "Only reads can continue, because a write needs every node to be up and acknowledging it"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "Five nodes tolerate two failures because three still form a majority; the cluster keeps committing until it loses the majority.",
         "wrong": [
-          "A single loss does not stop a cluster sized to tolerate failures; that is the whole point of 2f+1.",
-          "Both reads and writes can proceed while a majority survives.",
-          ""
+          "",
+          "A cluster of five tolerates two failures because three still form a majority.",
+          "Both reads and writes can proceed while a majority survives; requiring every node would defeat fault tolerance."
         ],
         "teaches": "how"
       },
       {
         "question": "The leader crashes just after committing an entry on itself and one follower. Why is that entry safe?",
         "options": [
-          "A new leader must win a majority and have an up-to-date log, so it already holds the committed entry",
-          "The crashed leader will come back and replay it",
-          "Entries are never actually lost because they are cached on the client"
+          "A new leader must win a majority and have an up-to-date log, so it already holds the entry",
+          "The crashed leader will come back and replay it, because a leader's log is always kept on disk",
+          "Entries are never really lost, because every client keeps a cached copy and resends it if needed"
         ],
         "correct": 0,
         "why": "Only a node whose log is at least as current as a majority can win the election, and the entry is on a majority, so the winner has it.",
@@ -148,32 +148,32 @@
       {
         "question": "What is the main cost a consensus system pays for its guarantees?",
         "options": [
-          "It can never tolerate any node failure",
-          "A write needs a round trip to a majority, which adds latency",
-          "It must store the data on only one node"
+          "It can never tolerate any node failure, because every node must acknowledge every write",
+          "It must store the data on only one node, to avoid ever having to coordinate replicas",
+          "A write needs a round trip to a majority, which adds latency"
         ],
-        "correct": 1,
+        "correct": 2,
         "why": "Every committed write waits for a majority to acknowledge, so network and disk round trips to those nodes set a latency floor.",
         "wrong": [
           "Tolerating failures is what consensus is for; it is a benefit, not the cost.",
-          "",
-          "Consensus replicates to many nodes, not one; single-node storage would not be fault tolerant."
+          "Consensus replicates to many nodes, not one; single-node storage would not be fault tolerant.",
+          ""
         ],
         "teaches": "why"
       },
       {
         "question": "Why do production systems often give the leader a time-bounded lease?",
         "options": [
-          "To allow two leaders at once for more throughput",
-          "To remove the need for any leader",
-          "So the leader can serve reads locally without a majority round trip while the lease holds"
+          "To allow two leaders at once, so both halves of a partitioned cluster keep accepting writes",
+          "So the leader can serve reads locally without a majority round trip while the lease holds",
+          "To remove the need for any leader, since the lease lets every node accept writes by itself"
         ],
-        "correct": 2,
+        "correct": 1,
         "why": "A lease lets the leader know it is still the leader for a bounded time, so reads are safe to answer locally, avoiding a coordination round trip on every read.",
         "wrong": [
           "Two concurrent leaders would break safety; a lease is designed to guarantee the opposite.",
-          "A lease is a property of the leader, not a way to eliminate the leader role.",
-          ""
+          "",
+          "A lease is a property of the leader, not a way to eliminate the leader role."
         ],
         "teaches": "how"
       }

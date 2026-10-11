@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkQuizPositions, getAllTopics } from "./topics";
+import { checkQuizPositions, checkQuizStyle, getAllTopics, QUIZ_STYLE_PENDING } from "./topics";
 
 const q = (correct: number, extra: object = {}) => ({ options: ["a", "b", "c"], correct, why: "Because.", wrong: ["x", "y", "z"], ...extra });
 
@@ -32,5 +32,32 @@ describe("quiz answer positions", () => {
   it("requires Neither and All of the above to be last", () => {
     expect(checkQuizPositions([q(0, { options: ["Neither", "b", "c"] }), q(1)]).join()).toMatch(/must be the last/);
     expect(checkQuizPositions([q(0, { options: ["a", "b", "Neither"] }), q(1)])).toEqual([]);
+  });
+});
+
+describe("quiz style checks", () => {
+  const long = (correct: number, longestIsCorrect: boolean) => ({
+    options: ["aa", "bb", "cc"].map((o, j) => (j === correct ? (longestIsCorrect ? "the longest option here" : "mid") : "a medium length one")),
+    correct,
+  });
+
+  it("fails a period-3 and a period-2 pattern of correct positions", () => {
+    const qs = (xs: number[]) => xs.map((c) => long(c, false));
+    expect(checkQuizStyle(qs([0, 1, 2, 0, 1, 2])).join()).toMatch(/period 3/);
+    expect(checkQuizStyle(qs([2, 0, 1, 0, 1, 1])).join()).toMatch(/period 2/);
+    expect(checkQuizStyle(qs([1, 0, 2, 2, 0, 1]))).toEqual([]);
+  });
+
+  it("fails when the correct option is the longest in more than 2 questions", () => {
+    expect(checkQuizStyle([long(0, true), long(1, true), long(2, true)]).join()).toMatch(/longest in 3 of 3/);
+    expect(checkQuizStyle([long(0, true), long(1, true), long(2, false)])).toEqual([]);
+  });
+
+  it("every topic outside the pending list passes, and no pending topic already does", () => {
+    for (const t of getAllTopics().filter((t) => t.lesson)) {
+      const problems = checkQuizStyle(t.lesson!.quiz);
+      if (QUIZ_STYLE_PENDING.includes(t.slug)) expect(problems.length, `${t.slug} passes: remove it from QUIZ_STYLE_PENDING`).toBeGreaterThan(0);
+      else expect(problems, t.slug).toEqual([]);
+    }
   });
 });

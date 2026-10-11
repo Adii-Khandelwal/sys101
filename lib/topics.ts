@@ -213,6 +213,41 @@ export function checkQuizPositions(quiz: Pick<LessonQuestion, "options" | "corre
   return problems;
 }
 
+/**
+ * Topics whose quizzes predate the style checks below. The checks run on every other topic
+ * and fail the build; remove a slug from this list once its quiz is reworked. A test fails
+ * if a listed topic already passes, so the list can only shrink.
+ */
+export const QUIZ_STYLE_PENDING: readonly string[] = [
+  "caching", "cdns", "circuit-breakers", "consistent-hashing", "databases", "dns", "indexing",
+  "load-balancing", "message-queues", "pub-sub", "rate-limiting", "replication", "sharding",
+];
+
+/** Most questions in which the correct option may be the single longest one. */
+export const MAX_LONGEST_CORRECT = 2;
+
+/**
+ * Two tells a reader can use without knowing the answer: the correct positions repeat in a
+ * cycle (period 2 or 3 over a full window, such as A,B,C,A,B,C), and the correct option is
+ * the longest in more than MAX_LONGEST_CORRECT questions.
+ */
+export function checkQuizStyle(quiz: Pick<LessonQuestion, "options" | "correct">[]): string[] {
+  const problems: string[] = [];
+  const at = quiz.map((q) => q.correct);
+  for (const period of [2, 3]) {
+    for (let i = 0; i + 2 * period <= at.length; i++) {
+      const w = at.slice(i, i + 2 * period);
+      if (new Set(w).size > 1 && w.slice(0, period).every((v, k) => v === w[k + period])) {
+        problems.push(`quiz: correct positions repeat with period ${period} from question ${i + 1}; break the pattern`);
+        break;
+      }
+    }
+  }
+  const longest = quiz.filter((q) => q.options.every((o, j) => j === q.correct || q.options[q.correct].length > o.length)).length;
+  if (longest > MAX_LONGEST_CORRECT) problems.push(`quiz: the correct option is the longest in ${longest} of ${quiz.length} questions (max ${MAX_LONGEST_CORRECT}); even out the option lengths`);
+  return problems;
+}
+
 /** Every lesson section filled, 5 to 8 explained questions, 2 to 3 exercises, ids on posts. */
 function checkLesson(topic: Topic): string[] {
   const l = topic.lesson!;
@@ -255,6 +290,7 @@ function checkLesson(topic: Topic): string[] {
     }
   });
   problems.push(...checkQuizPositions(l.quiz ?? []));
+  if (!QUIZ_STYLE_PENDING.includes(topic.slug)) problems.push(...checkQuizStyle(l.quiz ?? []));
   if (!Array.isArray(l.exercises) || l.exercises.length < 2 || l.exercises.length > 3) problems.push("lesson.exercises needs 2 to 3");
   const order = ["apply", "design", "scale"];
   const levels = (l.exercises ?? []).map((x) => order.indexOf(x.level));
