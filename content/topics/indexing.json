@@ -1,0 +1,430 @@
+{
+  "slug": "indexing",
+  "title": "Indexing and Search",
+  "group": "Data",
+  "concept": "An index is a second, smaller structure kept beside the data so a query can jump to what it needs instead of reading everything. Databases keep sorted B-tree indexes on columns for exact lookups and ranges; search engines keep inverted indexes that map each word or fragment to the documents containing it. Every index makes some reads fast and every write a little slower, and at scale the index itself has to be sharded, which decides whether a query touches one machine or all of them.",
+  "prerequisites": [
+    "databases",
+    "sharding"
+  ],
+  "posts": [
+    {
+      "id": "github-code-search-2023",
+      "title": "The technology behind GitHub's new code search",
+      "url": "https://github.blog/engineering/architecture-optimization/the-technology-behind-githubs-new-code-search/",
+      "company": "GitHub",
+      "verifiedOn": "2026-10-11",
+      "published": "2023-02-06",
+      "digest": {
+        "problem": "GitHub wanted to search all of its code, including punctuation and regular expressions, without stemming or dropping common words, which general text search does badly. When it first deployed Elasticsearch, indexing all the code on GitHub, about 8 million repositories at the time, took months; by 2023 there were more than 200 million repositories, and the code keeps changing. All figures below describe the code search beta as of February 2023: almost 45 million searchable repositories, 115 TB of code and 15.5 billion documents.",
+        "constraints": "Scanning everything per query is out of reach. GitHub's own estimate: ripgrep reads about 0.6 GB per second per core, so one query over 115 TB on a 32-machine, 64-core cluster would hold 2,048 cores for 96 seconds, about 0.01 queries per second. Results also had to be consistent per commit: a search must not see half of a push that is still being processed.",
+        "walkthrough": [
+          {
+            "step": "Build an ngram index",
+            "explanation": "An inverted index from short substrings to documents. With trigrams, \"limits\" becomes lim, imi, mit and its, so a substring query becomes a lookup of a few short lists."
+          },
+          {
+            "step": "Make grams selective",
+            "explanation": "Common trigrams match too many documents, and each false match has to be fetched and checked. GitHub uses sparse grams: variable-length grams chosen from weighted bigrams, so lookups stay selective."
+          },
+          {
+            "step": "Shard by blob ID",
+            "explanation": "Git names every file version by a hash of its content, so sharding on that ID spreads documents evenly, stores each unique file once, and avoids hot servers for popular repositories."
+          },
+          {
+            "step": "Crawl only what is new",
+            "explanation": "Repositories are ingested in an order built from a tree of similar repositories, and each is crawled as a difference from its parent. The approximate tree takes a few minutes to compute and gives about 90% of the possible savings."
+          },
+          {
+            "step": "Feed shards through Kafka",
+            "explanation": "Documents go to a Kafka topic where each shard consumes one partition at its own pace. Message order is what makes results consistent per commit."
+          },
+          {
+            "step": "Compact",
+            "explanation": "Shards merge small indexes into larger ones and order posting lists by score, so likely matches have low IDs and come back first."
+          },
+          {
+            "step": "Answer a query",
+            "explanation": "A query service parses the query, adds permission and scope clauses, and sends it to every shard. Each shard intersects or unions its gram lists, checks the real content, and the service merges results, re-checks permissions and returns the top 100."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 312\" role=\"img\" aria-labelledby=\"dg-gh-blackbird-t\" class=\"dg\"><title id=\"dg-gh-blackbird-t\">GitHub&#x27;s code search in its 2023 beta: push events lead crawlers to fetch only content new to each repository, documents go through Kafka with one partition per index shard, and shards are keyed by blob ID; a query goes to the query service, which asks every shard, merges, re-checks permissions and returns the top 100.</title><defs><marker id=\"dg-gh-blackbird-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"18\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">indexing</text><rect x=\"14\" y=\"30\" width=\"96\" height=\"44\" class=\"dg-box\"/><text x=\"62\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\">git push</text><path d=\"M110,52 L132,52\" class=\"dg-line\" marker-end=\"url(#dg-gh-blackbird-a)\"/><rect x=\"136\" y=\"30\" width=\"124\" height=\"44\" class=\"dg-box\"/><text x=\"198\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\">Crawl only</text><text x=\"198\" y=\"65.5\" class=\"dg-label\" text-anchor=\"middle\">new blobs</text><path d=\"M260,52 L282,52\" class=\"dg-line\" marker-end=\"url(#dg-gh-blackbird-a)\"/><rect x=\"286\" y=\"30\" width=\"124\" height=\"44\" class=\"dg-box\"/><text x=\"348\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\">Kafka: one</text><text x=\"348\" y=\"65.5\" class=\"dg-label\" text-anchor=\"middle\">partition each</text><text x=\"348\" y=\"92\" class=\"dg-note\" text-anchor=\"middle\">shard key: blob ID</text><path d=\"M14,128 L420,128\" class=\"dg-line dg-dashed\"/><text x=\"14\" y=\"150\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">searching</text><rect x=\"14\" y=\"162\" width=\"96\" height=\"44\" class=\"dg-box\"/><text x=\"62\" y=\"189\" class=\"dg-label\" text-anchor=\"middle\">Query</text><path d=\"M110,184 L132,184\" class=\"dg-line\" marker-end=\"url(#dg-gh-blackbird-a)\"/><rect x=\"136\" y=\"156\" width=\"150\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"211\" y=\"180.5\" class=\"dg-label\" text-anchor=\"middle\">Query service:</text><text x=\"211\" y=\"197.5\" class=\"dg-label\" text-anchor=\"middle\">add permissions</text><text x=\"211\" y=\"232\" class=\"dg-note\" text-anchor=\"middle\">merge, re-check, top 100</text><text x=\"280\" y=\"300\" class=\"dg-note\" text-anchor=\"middle\">figures on this page come from the 2023 beta</text><rect x=\"450\" y=\"24\" width=\"96\" height=\"40\" class=\"dg-box\"/><text x=\"498\" y=\"49\" class=\"dg-label\" text-anchor=\"middle\">Shard A</text><path d=\"M410,52 C430,52 430,44 446,44\" class=\"dg-line\" marker-end=\"url(#dg-gh-blackbird-a)\"/><path d=\"M286,184 C380,184 400,44 446,44\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-gh-blackbird-a)\"/><rect x=\"450\" y=\"104\" width=\"96\" height=\"40\" class=\"dg-box\"/><text x=\"498\" y=\"129\" class=\"dg-label\" text-anchor=\"middle\">Shard B</text><path d=\"M410,52 C430,52 430,124 446,124\" class=\"dg-line\" marker-end=\"url(#dg-gh-blackbird-a)\"/><path d=\"M286,184 C380,184 400,124 446,124\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-gh-blackbird-a)\"/><rect x=\"450\" y=\"184\" width=\"96\" height=\"40\" class=\"dg-box\"/><text x=\"498\" y=\"209\" class=\"dg-label\" text-anchor=\"middle\">Shard C</text><path d=\"M410,52 C430,52 430,204 446,204\" class=\"dg-line\" marker-end=\"url(#dg-gh-blackbird-a)\"/><path d=\"M286,184 C380,184 400,204 446,204\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-gh-blackbird-a)\"/><text x=\"546\" y=\"252\" class=\"dg-note\" text-anchor=\"end\">every query asks every shard</text></svg>",
+        "numbers": [
+          {
+            "value": "about 8 million",
+            "meaning": "Repositories when Elasticsearch was first deployed; indexing them took months"
+          },
+          {
+            "value": "almost 45 million",
+            "meaning": "Repositories searchable in the 2023 beta, holding 115 TB of code and 15.5 billion documents"
+          },
+          {
+            "value": "2,048 cores for 96 seconds",
+            "meaning": "Estimated cost of one brute-force grep query over 115 TB, about 0.01 queries per second"
+          },
+          {
+            "value": "about 100 ms",
+            "meaning": "p99 response time from an individual shard; total response time is a bit longer"
+          },
+          {
+            "value": "about 640 per second",
+            "meaning": "Upper bound on queries for one 64-core index host"
+          },
+          {
+            "value": "about 120,000 per second",
+            "meaning": "Documents the ingest pipeline publishes"
+          },
+          {
+            "value": "about 36 hours to 18 hours",
+            "meaning": "Time to index the 15.5 billion documents, before and after delta indexing cut crawling by over 50%"
+          },
+          {
+            "value": "115 TB to 25 TB",
+            "meaning": "Original content versus the whole index, which includes a compressed copy of all unique content"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Its own search engine, Blackbird, written in Rust: an ngram index with sparse grams, sharded by blob ID, fed through Kafka with delta-encoded crawling.",
+          "rejected": "General text search products such as Elasticsearch, existing open source code search tools, and brute-force scanning with grep.",
+          "why": "General products handled code poorly, indexed slowly and were expensive to host; the open source tools did not work at GitHub's scale; and scanning was thousands of times too slow. Sharding by content keeps storage even and free of duplicates, at the price that every query has to visit every shard."
+        },
+        "failures": "The first Elasticsearch deployment took months to index about 8 million repositories. Plain trigrams produced so many false matches that queries slowed down, which led to sparse grams. The post is clear that the 100 ms p99 is per shard, and that total response time is longer once results are aggregated, permission-checked and highlighted. It describes a beta that was still adding repositories.",
+        "takeaways": "An index is only as good as its selectivity: grams that match too much cost as much as no index. The shard key decides the query path; sharding by content spreads data evenly but makes every query fan out. Knowing your data, here content hashes and heavy duplication, can cut indexing work in half."
+      }
+    },
+    {
+      "id": "discord-search-indexing-2025",
+      "title": "How Discord Indexes Trillions of Messages",
+      "url": "https://discord.com/blog/how-discord-indexes-trillions-of-messages",
+      "company": "Discord",
+      "verifiedOn": "2026-10-11",
+      "published": "2025-04-24",
+      "digest": {
+        "problem": "Discord indexes messages in Elasticsearch so people can search them, with each guild's messages, or each DM's, kept together in one index. As message volume grew, the clusters reached more than 200 nodes, indexing slowed and failed more often, upgrades became nearly impossible, and the biggest guilds started hitting a hard limit on index size.",
+        "constraints": "Each Elasticsearch index is a single Lucene index, and Lucene caps an index at about 2 billion documents; past that, every write to it fails. Elastic's recommendation is to keep an index under 200M messages and 50GB. Large clusters also carry coordination overhead on their master nodes, which grows with nodes and indexes.",
+        "walkthrough": [
+          {
+            "step": "Batch by destination",
+            "explanation": "Workers used to send batches of 50 messages that could land on 50 different nodes, so one failed node failed the whole batch. A router now groups messages by the cluster and index they belong to, so each bulk write touches one node."
+          },
+          {
+            "step": "Run many small clusters",
+            "explanation": "Instead of clusters of over 200 nodes, messages live on many smaller clusters grouped into cells, with indexes kept within the 200M message and 50GB recommendation."
+          },
+          {
+            "step": "Give nodes one job",
+            "explanation": "Each cluster has separate ingest, master-eligible and data nodes, and an index's primary and replica sit in different zones."
+          },
+          {
+            "step": "Upgrade without downtime",
+            "explanation": "Clusters run on Kubernetes with Elastic's operator, which handles OS upgrades and rolling restarts."
+          },
+          {
+            "step": "Pick the shard key per use",
+            "explanation": "Guild messages stay sharded by guild. DMs are now sharded by user in a separate cell, so one user's DMs can be searched together, at the cost of storing each DM twice, once per participant."
+          },
+          {
+            "step": "Split only the giants",
+            "explanation": "Most indexes keep a single primary shard, so a query hits one node. Guilds nearing the Lucene limit are moved to new indexes with more primary shards: new messages are written to both, history is copied, then queries switch over."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 280\" role=\"img\" aria-labelledby=\"dg-dc-cells-t\" class=\"dg\"><title id=\"dg-dc-cells-t\">Discord&#x27;s search indexing from 2025: a router groups messages by destination so each bulk write goes to one Elasticsearch node; messages live in cells of small clusters, guild messages sharded by guild, DMs by user, and very large guilds on indices with more shards.</title><defs><marker id=\"dg-dc-cells-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"40\" width=\"110\" height=\"44\" class=\"dg-box\"/><text x=\"69\" y=\"67\" class=\"dg-label\" text-anchor=\"middle\">New messages</text><path d=\"M124,62 L156,62\" class=\"dg-line\" marker-end=\"url(#dg-dc-cells-a)\"/><rect x=\"150\" y=\"34\" width=\"150\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"225\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\">Router: group</text><text x=\"225\" y=\"75.5\" class=\"dg-label\" text-anchor=\"middle\">by destination</text><text x=\"225\" y=\"110\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">one bulk write, one node</text><rect x=\"330\" y=\"14\" width=\"216\" height=\"50\" class=\"dg-box\"/><text x=\"438\" y=\"35.5\" class=\"dg-label\" text-anchor=\"middle\">guild cell</text><text x=\"438\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\">sharded by guild_id</text><rect x=\"330\" y=\"82\" width=\"216\" height=\"50\" class=\"dg-box\"/><text x=\"438\" y=\"103.5\" class=\"dg-label\" text-anchor=\"middle\">user DM cell</text><text x=\"438\" y=\"120.5\" class=\"dg-label\" text-anchor=\"middle\">sharded by user_id</text><rect x=\"330\" y=\"150\" width=\"216\" height=\"50\" class=\"dg-box dg-dashed\"/><text x=\"438\" y=\"171.5\" class=\"dg-label\" text-anchor=\"middle\">BFG cell</text><text x=\"438\" y=\"188.5\" class=\"dg-label\" text-anchor=\"middle\">more primary shards</text><path d=\"M300,54 L326,40\" class=\"dg-line\" marker-end=\"url(#dg-dc-cells-a)\"/><path d=\"M300,64 L326,104\" class=\"dg-line\" marker-end=\"url(#dg-dc-cells-a)\"/><path d=\"M300,74 L326,170\" class=\"dg-line\" marker-end=\"url(#dg-dc-cells-a)\"/><text x=\"438\" y=\"220\" class=\"dg-note\" text-anchor=\"middle\">each index kept under</text><text x=\"438\" y=\"236\" class=\"dg-note\" text-anchor=\"middle\">200M messages and 50GB</text><text x=\"225\" y=\"150\" class=\"dg-note\" text-anchor=\"middle\">before: a 50-message batch</text><text x=\"225\" y=\"166\" class=\"dg-note\" text-anchor=\"middle\">could touch 50 nodes</text><text x=\"280\" y=\"266\" class=\"dg-note\" text-anchor=\"middle\">small clusters in cells, instead of clusters of over 200 nodes</text></svg>",
+        "numbers": [
+          {
+            "value": "~40%",
+            "meaning": "Bulk index operations failing after one node failure, in Discord's example of a 100-node cluster and batches of 50 messages"
+          },
+          {
+            "value": "over 200",
+            "meaning": "Nodes per cluster in the old setup"
+          },
+          {
+            "value": "about 2 billion",
+            "meaning": "Lucene's limit on documents per index; past it, all indexing to that index fails"
+          },
+          {
+            "value": "200M messages and 50GB",
+            "meaning": "Recommended maximum size of one index"
+          },
+          {
+            "value": "40",
+            "meaning": "Elasticsearch clusters after the rebuild, holding thousands of indexes"
+          },
+          {
+            "value": "double",
+            "meaning": "Indexing throughput compared with the old system"
+          },
+          {
+            "value": "500ms to under 100ms",
+            "meaning": "Median query latency, before and after"
+          },
+          {
+            "value": "1s to under 500ms",
+            "meaning": "p99 query latency, before and after"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Many small clusters in cells, bulk writes grouped by destination, single-shard indexes for most guilds, user-sharded DMs, and dedicated multi-shard indexes for the largest guilds.",
+          "rejected": "Ever-larger clusters, batches that span many nodes, and one sharding scheme for every kind of message.",
+          "why": "Large clusters failed more often, coordinated slowly and could not be restarted safely. Keeping a guild on one shard means no query fan-out for almost every search; only the biggest guilds are worth the coordination cost of several shards. Sharding DMs by user doubles their storage but makes cross-DM search possible."
+        },
+        "failures": "One node failure could fail about 40% of bulk writes. Master nodes ran out of memory as clusters grew, which caused indexing failures and timeouts. Patching the Log4Shell vulnerability meant taking search fully offline to restart every node. When indexes hit Lucene's limit, the only fix was to work with the Safety team to delete spam guilds.",
+        "takeaways": "Write batches should match how data is placed, or one failure spreads to many writes. Choose the shard key from the query you need: by guild for guild search, by user for searching all your DMs. Keep indexes well below hard limits, and split the rare giant ones rather than every index."
+      }
+    }
+  ],
+  "comparison": "Both companies built search on an inverted index and both had to choose how to shard it, but they chose opposite ways for opposite queries. GitHub shards code by content, using each file's blob ID, which spreads data evenly and stores each file once, so every query has to visit every shard and the query service merges the results. Discord shards by the thing people search inside, a guild or a user's DMs, so almost every query touches a single node and only the largest guilds get several shards. GitHub's searches span all of GitHub, so it accepts fan-out; Discord's are scoped to one place, so it avoids it. The GitHub figures are from its 2023 beta; Discord's are from 2025.",
+  "glossary": [
+    {
+      "term": "Index",
+      "definition": "A separate structure kept in step with the data so queries can find rows or documents without reading everything."
+    },
+    {
+      "term": "B-tree",
+      "definition": "A shallow, sorted tree of keys used by most database indexes; it finds a key, or a range of keys, in a few page reads."
+    },
+    {
+      "term": "Composite index",
+      "definition": "An index on several columns in a fixed order; it helps queries that filter on its leading columns."
+    },
+    {
+      "term": "Query planner",
+      "definition": "The part of a database that decides how to run a query, including which index, if any, to use."
+    },
+    {
+      "term": "Inverted index",
+      "definition": "A map from each word or fragment to the list of documents that contain it, used by search engines."
+    },
+    {
+      "term": "Posting list",
+      "definition": "The list of documents an inverted index stores for one word or fragment."
+    },
+    {
+      "term": "Ngram",
+      "definition": "A run of n characters; indexing ngrams lets a search engine find substrings, not just whole words."
+    },
+    {
+      "term": "Fan-out",
+      "definition": "Sending one query to many shards and merging what comes back."
+    }
+  ],
+  "mistakes": [
+    "Adding an index for every slow query. Each index is another structure to update on every write; in Uber's 2016 account of Postgres 9.2, one small update cost at least 4 physical writes in its example table.",
+    "Putting the columns of a composite index in the wrong order. A B-tree on (a, b) is sorted by a first, so it does little for a query that filters only on b.",
+    "Letting one index grow without limit. Lucene caps an index at about 2 billion documents, and Discord found that once an index reached it, every write to it failed."
+  ],
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why a database or search engine needs indexes, and what they cost.",
+      "body": "Without an index, the only way to answer \"which rows match?\" is to read every row. That is fine for a thousand rows and hopeless for a billion, and for text it is worse: finding a word means scanning every document. GitHub worked out that brute-force searching its 115 TB of code would tie up 2,048 cores for 96 seconds per query.\n\nAn index is a second structure, built ahead of time, that points straight at the matching rows or documents. Reads get dramatically faster. The price is paid on every write, which now has to update the index too, and in storage, since the index is extra data."
+    },
+    "mentalModel": {
+      "outcome": "After this you can picture the two main kinds of index and what each is good at.",
+      "body": "Think of the index at the back of a book. You look up a word and get page numbers, so you never read the whole book.\n\nDatabases mostly use B-trees: keys kept sorted in a shallow tree, so finding one key or a range of keys takes a few page reads. A B-tree on several columns is sorted by the first column, then the next, so the order of columns matters. Search engines use inverted indexes: for each word, or each short fragment of text, a list of the documents that contain it. A search looks up a few short lists and intersects them.\n\nBoth are copies kept in step with the data. At scale they are sharded too, and the shard key decides whether a query visits one machine or all of them.",
+      "diagram": "<svg viewBox=\"0 0 560 296\" role=\"img\" aria-labelledby=\"dg-c-index-t\" class=\"dg\"><title id=\"dg-c-index-t\">Two kinds of index: a B-tree keeps keys sorted in a shallow tree so one row is found in a few page reads; an inverted index maps each word to the documents that contain it, so a search intersects short lists instead of reading every document.</title><defs><marker id=\"dg-c-index-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"130\" y=\"22\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">B-tree: sorted keys, find one row fast</text><rect x=\"80\" y=\"40\" width=\"100\" height=\"34\" class=\"dg-box dg-accent\"/><text x=\"130\" y=\"62\" class=\"dg-label\" text-anchor=\"middle\">40 | 80</text><rect x=\"10\" y=\"110\" width=\"70\" height=\"34\" class=\"dg-box\"/><text x=\"45\" y=\"132\" class=\"dg-label\" text-anchor=\"middle\">10 20</text><rect x=\"95\" y=\"110\" width=\"70\" height=\"34\" class=\"dg-box\"/><text x=\"130\" y=\"132\" class=\"dg-label\" text-anchor=\"middle\">50 70</text><rect x=\"180\" y=\"110\" width=\"70\" height=\"34\" class=\"dg-box\"/><text x=\"215\" y=\"132\" class=\"dg-label\" text-anchor=\"middle\">90 95</text><path d=\"M100,74 L52,108\" class=\"dg-line\" marker-end=\"url(#dg-c-index-a)\"/><path d=\"M130,74 L130,108\" class=\"dg-line\" marker-end=\"url(#dg-c-index-a)\"/><path d=\"M160,74 L212,108\" class=\"dg-line\" marker-end=\"url(#dg-c-index-a)\"/><text x=\"130\" y=\"172\" class=\"dg-note\" text-anchor=\"middle\">each leaf points at rows</text><text x=\"130\" y=\"188\" class=\"dg-note\" text-anchor=\"middle\">lookup: a few page reads</text><text x=\"130\" y=\"204\" class=\"dg-note\" text-anchor=\"middle\">every write updates it too</text><path d=\"M280,16 L280,290\" class=\"dg-line dg-dashed\"/><text x=\"420\" y=\"22\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">Inverted index: word to documents</text><rect x=\"300\" y=\"44\" width=\"80\" height=\"34\" class=\"dg-box dg-accent\"/><text x=\"340\" y=\"66\" class=\"dg-label\" text-anchor=\"middle\">cache</text><path d=\"M380,61 L414,61\" class=\"dg-line\" marker-end=\"url(#dg-c-index-a)\"/><rect x=\"418\" y=\"44\" width=\"132\" height=\"34\" class=\"dg-box\"/><text x=\"484\" y=\"66\" class=\"dg-label\" text-anchor=\"middle\">doc 1, doc 4, doc 9</text><rect x=\"300\" y=\"94\" width=\"80\" height=\"34\" class=\"dg-box\"/><text x=\"340\" y=\"116\" class=\"dg-label\" text-anchor=\"middle\">shard</text><path d=\"M380,111 L414,111\" class=\"dg-line\" marker-end=\"url(#dg-c-index-a)\"/><rect x=\"418\" y=\"94\" width=\"132\" height=\"34\" class=\"dg-box\"/><text x=\"484\" y=\"116\" class=\"dg-label\" text-anchor=\"middle\">doc 4, doc 7</text><rect x=\"300\" y=\"144\" width=\"80\" height=\"34\" class=\"dg-box\"/><text x=\"340\" y=\"166\" class=\"dg-label\" text-anchor=\"middle\">index</text><path d=\"M380,161 L414,161\" class=\"dg-line\" marker-end=\"url(#dg-c-index-a)\"/><rect x=\"418\" y=\"144\" width=\"132\" height=\"34\" class=\"dg-box\"/><text x=\"484\" y=\"166\" class=\"dg-label\" text-anchor=\"middle\">doc 2, doc 4</text><text x=\"420\" y=\"212\" class=\"dg-note\" text-anchor=\"middle\">query &quot;cache shard&quot;:</text><text x=\"420\" y=\"228\" class=\"dg-note\" text-anchor=\"middle\">intersect the two lists: doc 4</text><text x=\"280\" y=\"284\" class=\"dg-note\" text-anchor=\"middle\">both trade extra writes and space for fast reads</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can walk through how an index is used on a read and maintained on a write.",
+      "steps": [
+        {
+          "step": "Plan the query",
+          "explanation": "The database's query planner looks at the filter and decides whether an index helps. An index on (org, kind) helps a filter on org, or org and kind, but not on kind alone."
+        },
+        {
+          "step": "Walk the B-tree",
+          "explanation": "For an exact match or a range, the database walks from the root to a leaf in a few page reads, then follows pointers to the rows."
+        },
+        {
+          "step": "Pay on every write",
+          "explanation": "Each insert, update or delete must also update every index on the table, so each extra index adds write work and storage."
+        },
+        {
+          "step": "Tokenize for search",
+          "explanation": "A search engine splits text into words or ngrams and adds each document to the posting list of every token it contains."
+        },
+        {
+          "step": "Intersect posting lists",
+          "explanation": "A query looks up the list for each token and intersects them, then checks the real text, because an ngram match can be a false positive."
+        },
+        {
+          "step": "Shard the index",
+          "explanation": "Shard by document and every query must ask every shard and merge the results. Shard by the thing users search within, such as a team or a user, and most queries go to one shard."
+        }
+      ]
+    },
+    "workedExample": {
+      "outcome": "After this you can estimate what an index saves and see how the shard key shapes a real query.",
+      "steps": [
+        {
+          "step": "Try without an index",
+          "explanation": "GitHub's estimate for searching 115 TB of code by brute force: at about 0.6 GB per second per core, one query would hold 2,048 cores for 96 seconds, about 0.01 queries per second."
+        },
+        {
+          "step": "Add an inverted index",
+          "explanation": "With an ngram index, each shard answers in about 100 ms at p99, and one 64-core host can serve something like 640 queries per second. Those figures are from GitHub's 2023 beta."
+        },
+        {
+          "step": "See the cost",
+          "explanation": "Building it is real work: GitHub's pipeline publishes about 120,000 documents per second, and indexing all 15.5 billion documents takes about 18 hours even after cutting the crawl by over 50%."
+        },
+        {
+          "step": "Shard by content",
+          "explanation": "GitHub shards by each file's content hash, so data spreads evenly, and every query visits every shard."
+        },
+        {
+          "step": "Shard by scope",
+          "explanation": "Discord shards messages by guild, so a search inside a guild usually touches one node. Its median query latency went from 500ms to under 100ms after its rebuild."
+        },
+        {
+          "step": "Watch the limits",
+          "explanation": "A single Lucene index holds at most about 2 billion documents. Discord moves the few guilds approaching that onto indexes with more shards, rather than splitting every index."
+        }
+      ]
+    },
+    "mistakesOutcome": "After this you can avoid the three most common indexing mistakes.",
+    "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
+    "quiz": [
+      {
+        "question": "Without any index, how does a database find the rows that match a filter?",
+        "options": [
+          "It reads every row and checks each one",
+          "It asks a replica",
+          "It guesses from statistics"
+        ],
+        "correct": 0,
+        "why": "With nothing to jump to, a full scan is the only way, and its cost grows with the size of the table.",
+        "wrong": [
+          "",
+          "A replica holds the same data and would have to scan too.",
+          "Statistics help the planner choose a plan; they do not find rows."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "A table has an index on (org_id, kind). Which filter can it serve directly?",
+        "options": [
+          "org_id = 7",
+          "kind = 'error'",
+          "Neither"
+        ],
+        "correct": 0,
+        "why": "The index is sorted by org_id first, so a filter on its leading column can jump straight to the matching keys.",
+        "wrong": [
+          "",
+          "kind is the second column; without org_id the matching keys are scattered through the index.",
+          "A filter on the leading column is exactly what a composite index serves."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "You add five indexes to a busy table. What gets slower?",
+        "options": [
+          "Writes, because each one must update every index",
+          "Reads on unindexed columns",
+          "Nothing"
+        ],
+        "correct": 0,
+        "why": "Every insert, update and delete now maintains five more structures.",
+        "wrong": [
+          "",
+          "Reads that the indexes do not cover behave as before.",
+          "Indexes always cost write work and storage."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "What does an inverted index store?",
+        "options": [
+          "For each word or fragment, the documents that contain it",
+          "Each document in reverse order",
+          "Rows sorted by primary key"
+        ],
+        "correct": 0,
+        "why": "It maps tokens to posting lists, so a search intersects a few lists instead of reading documents.",
+        "wrong": [
+          "",
+          "The name refers to inverting document to words into word to documents.",
+          "That describes a B-tree on a primary key."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "Why must an ngram search still check the real text of each match?",
+        "options": [
+          "Matching every fragment does not mean they appear next to each other",
+          "The index is always out of date",
+          "To decompress it"
+        ],
+        "correct": 0,
+        "why": "A document can contain all the trigrams of a word in different places, so each candidate is verified.",
+        "wrong": [
+          "",
+          "Indexes are kept current; the issue is false positives.",
+          "Checking is about correctness, not compression."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "An index is sharded by document ID. What does a search across everything have to do?",
+        "options": [
+          "Ask every shard and merge the results",
+          "Ask one shard",
+          "Scan the original data"
+        ],
+        "correct": 0,
+        "why": "Matching documents can be on any shard, so the query fans out to all of them.",
+        "wrong": [
+          "",
+          "Only a query scoped to the shard key can go to one shard.",
+          "The index still answers the query; it just has to be asked everywhere."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "postsOutcome": "After this you can describe how two companies built and sharded search indexes at very different scales.",
+    "differOutcome": "After this you can explain how the shard key of an index decides whether queries fan out.",
+    "exercisesOutcome": "After this you can apply indexes to a slow query, design a search index, and plan for ten times the scale.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A query filters orders by customer_id and created_at and takes seconds. The table has an index on (created_at, customer_id). What do you do?",
+        "answer": "Add an index that leads with customer_id, such as (customer_id, created_at), so the database jumps to one customer and reads their orders by date. Check the plan before and after, and drop the old index if nothing else uses it.",
+        "tradeoffs": "Another index adds write work and storage on a busy table.",
+        "wrongAnswers": [
+          "Assuming any index on the right columns helps, whatever the order.",
+          "Adding an index on every column separately.",
+          "Never checking whether the old index is still used."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "design",
+        "prompt": "Design search for a chat product where people search inside one workspace, and some workspaces are huge.",
+        "answer": "Use an inverted index sharded by workspace, so most searches hit one shard. Group writes by destination so a batch touches one node. Keep each index well below its hard limits, and move the few huge workspaces to indexes with several shards, migrating by writing to both, copying history, then switching queries.",
+        "tradeoffs": "Uneven shard sizes, and extra work to detect and migrate the giants.",
+        "wrongAnswers": [
+          "Sharding by message ID, so every search fans out.",
+          "One huge cluster for everything.",
+          "Waiting for an index to hit its hard limit."
+        ],
+        "teaches": "posts"
+      },
+      {
+        "level": "scale",
+        "prompt": "Your code search must cover ten times more repositories. What changes?",
+        "answer": "Keep sharding by content so new data spreads evenly, add shards, and cut indexing work by deduplicating content and crawling only what changed. Keep grams selective so per-shard latency holds, and watch total latency, since every query still visits every shard.",
+        "tradeoffs": "More shards mean more fan-out per query and more merge work.",
+        "wrongAnswers": [
+          "Scanning instead of indexing.",
+          "Re-crawling every repository in full.",
+          "Using common trigrams that match too much."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "Indexing and Search is the end of this branch of the map for now. Go back to the map to pick another topic, or revisit Sharding to compare how shard keys shape databases and search indexes."
+    }
+  }
+}

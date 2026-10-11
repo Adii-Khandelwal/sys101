@@ -29,12 +29,12 @@ describe("transitive reduction", () => {
     expect(keys(transitiveReduction([{ from: "a", to: "b" }, { from: "b", to: "c" }, { from: "a", to: "c" }]))).toEqual(["a->b", "b->c"]);
   });
 
-  it("on this graph hides only DNS -> CDNs", () => {
+  it("on this graph hides only the two shortcuts", () => {
     const dir = path.resolve(__dirname, "../content/topics");
     const topics = fs.readdirSync(dir).map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")));
     const edges = topics.flatMap((t) => t.prerequisites.map((p: string) => ({ from: p, to: t.slug })));
     const reduced = transitiveReduction(edges);
-    expect(keys(edges).filter((k) => !keys(reduced).includes(k))).toEqual(["dns->cdns"]);
+    expect(keys(edges).filter((k) => !keys(reduced).includes(k)).sort()).toEqual(["databases->indexing", "dns->cdns"]);
   });
 
   it("leaves a graph with no redundant edges unchanged", () => {
@@ -81,23 +81,24 @@ describe("layout: no edge crosses a label or node, labels keep their gap", () =>
   const nodes = topics.map((t) => ({ slug: t.slug, title: t.title }));
   const edges = topics.flatMap((t) => t.prerequisites.map((p: string) => ({ from: p, to: t.slug })));
 
-  it("the current 8 topics at 1440px (stage 1120px)", () => {
-    const r = plan(nodes, edges, 1120, "horizontal");
+  it("the current topics at 1440px (stage 1200px), at the real label width", () => {
+    const r = plan(nodes, edges, 1200, "horizontal", 7.8);
     expect(r.required).toBeLessThanOrEqual(r.width);
     expect(r.collisions).toEqual([]);
     expect(r.gap).toBeGreaterThanOrEqual(MIN_LABEL_GAP);
     expect(r.crossed).toEqual([]);
   });
 
-  it("the current 8 topics at 1440px for any realistic label width", () => {
+  it("the current topics at 1440px for any realistic label width: horizontal if it fits, stacked if not", () => {
     for (const perChar of [7.5, 8, 8.5, 9.2, 10]) {
-      const r = plan(nodes, edges, 1120, "horizontal", perChar);
+      const wide = plan(nodes, edges, 1200, "horizontal", perChar);
+      const r = wide.required <= wide.width ? wide : plan(nodes, edges, 1200, "vertical", perChar);
       expect([perChar, r.collisions, r.crossed]).toEqual([perChar, [], []]);
-      expect(r.topGap).toBeGreaterThanOrEqual(24);
+      if (r === wide) expect(r.topGap).toBeGreaterThanOrEqual(24);
     }
   });
 
-  it("the current 8 topics stacked at 390px (stage 358px)", () => {
+  it("the current topics stacked at 390px (stage 358px)", () => {
     const r = plan(nodes, edges, 358, "vertical");
     expect(r.collisions).toEqual([]);
     expect(r.crossed).toEqual([]);

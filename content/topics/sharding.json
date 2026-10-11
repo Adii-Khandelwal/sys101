@@ -422,7 +422,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic that builds on this one.",
-      "body": "Sharding is the last topic on the map for now. Go back to the map to review any topic, or revisit Consistent Hashing to compare a hash ring with the fixed shard sets Figma and Notion chose."
+      "body": "Indexing and Search builds on this: an index has to be sharded too, and the shard key decides whether a search touches one machine or all of them."
     }
   }
 }
