@@ -78,3 +78,5 @@ Output:
 
 Safety stays on:
 - Keep all CLAUDE.md rules: honesty, post selection, design, approval before saving new posts. Saving tokens never means skipping verification.
+
+Planned work lives in docs/ideas.md. Read it only when asked.
