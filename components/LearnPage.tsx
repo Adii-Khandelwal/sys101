@@ -173,9 +173,17 @@ export default function LearnPage({ topic, learn, titles }: Props) {
           <ul className="learn-try">
             {learn.tryIt.commands.map((c) => (
               <li key={c.command}>
+                {c.warning && (
+                  <p className="learn-warn">
+                    <strong>Warning:</strong> {c.warning}
+                  </p>
+                )}
                 <pre className="learn-code" tabIndex={0} aria-label="Example, scrolls sideways">
                   <code>{c.command}</code>
                 </pre>
+                {c.exampleNames && c.exampleNames.length > 0 && (
+                  <span className="learn-names">Example names, not from the docs: {c.exampleNames.join(", ")}.</span>
+                )}
                 <span>
                   {c.shows}
                   {c.note ? ` ${c.note}` : ""}{" "}

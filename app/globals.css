@@ -2470,6 +2470,15 @@ html {
   -webkit-overflow-scrolling: touch;
 }
 
+.learn-warn {
+  margin: 0;
+  color: var(--accent);
+}
+
+.learn-names {
+  font-size: 0.9em;
+}
+
 .learn-code code {
   font: inherit;
 }
