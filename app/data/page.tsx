@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export default function YourData() {
   const topics = getAllTopics()
     .filter((t) => t.lesson)
-    .map((t) => ({ slug: t.slug, title: t.title, postIds: t.posts.map((p) => p.id!), correct: t.lesson!.quiz.map((q) => optionId(q.options[q.correct])) }));
+    .map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites, postIds: t.posts.map((p) => p.id!), correct: t.lesson!.quiz.map((q) => optionId(q.options[q.correct])) }));
   return (
     <article className="dossier legal">
       <h1>Your data</h1>

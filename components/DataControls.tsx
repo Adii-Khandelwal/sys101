@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { replaceProgress, useAllProgress } from "@/lib/progress";
+import { inProgressSlugs, replaceProgress, useAllProgress } from "@/lib/progress";
 import {
   deriveRead,
   diffSummary,
@@ -17,7 +17,7 @@ import {
   type Progress,
 } from "@/lib/lessonStore";
 
-type TopicMeta = LessonMeta & { title: string };
+type TopicMeta = LessonMeta & { title: string; prerequisites: string[] };
 type Pending = { progress: Progress; read: string[]; updated: Record<string, string>; ignored: number; name: string };
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -116,6 +116,12 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
 
   const preview = pending ? plan(pending, mode) : null;
   const doneTopics = topics.filter((t) => read.includes(t.slug)).length;
+  // Read-only progress tally: read, started-but-unfinished, and ready to start.
+  const inProgress = new Set(inProgressSlugs(progress, read));
+  const inProgressCount = topics.filter((t) => inProgress.has(t.slug)).length;
+  const readyCount = topics.filter(
+    (t) => !read.includes(t.slug) && !inProgress.has(t.slug) && t.prerequisites.every((p) => read.includes(p)),
+  ).length;
   // Topics with any progress first, most recently changed first; untouched topics keep their order.
   const ordered = topics
     .map((t, i) => ({ t, i, s: summary(progress, t) }))
@@ -147,7 +153,9 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
         <section aria-labelledby="summary-h">
           <h2 id="summary-h">Progress</h2>
           <p>
-            {doneTopics} of {topics.length} topics read.
+            {doneTopics} of {topics.length} topics read
+            {inProgressCount > 0 ? `, ${inProgressCount} in progress` : ""}
+            {readyCount > 0 ? `, ${readyCount} ready to start` : ""}.
           </p>
           <ul className="data-topics">
             {ordered.map(({ t, s }) => {
