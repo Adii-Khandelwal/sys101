@@ -1,0 +1,398 @@
+{
+  "slug": "dns",
+  "promise": "After this you can follow the topic page and the posts.",
+  "before": {
+    "prerequisites": [],
+    "terms": [
+      {
+        "term": "IP address",
+        "definition": "The number a computer uses to reach another computer on a network, the way a phone number reaches a phone."
+      },
+      {
+        "term": "Server",
+        "definition": "A program, or the machine running it, that answers requests from other programs."
+      },
+      {
+        "term": "Protocol",
+        "definition": "An agreed format for messages, so two programs written by different people can talk."
+      }
+    ],
+    "note": "DNS has no prerequisite topics on this map. If the three terms below are familiar, you are ready."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "Computers find each other by IP address, but people remember names. DNS, the Domain Name System, is the service that turns a name like www.example.com into the address a computer can actually connect to. It does this before almost every connection on the internet, which is why it has to be fast and hard to break.",
+        "DNS is not one big list kept in one place. The names form a tree. At the top is the root, then top-level domains such as com or uk, then the names under them, and so on. Each piece between the dots is a label, and reading the labels from left to right up to the root gives the full domain name [[bind-arm]].",
+        "The specification describes DNS as three parts working together: the tree of names and the data attached to them, the name servers that hold that data, and the resolvers that go and fetch it for whoever is asking [[rfc1034]]. Every later idea on this page is one of those three parts doing its job."
+      ],
+      "terms": [
+        {
+          "term": "Domain name",
+          "definition": "A name in the DNS tree, written as labels separated by dots, such as www.example.com."
+        },
+        {
+          "term": "Label",
+          "definition": "One piece of a domain name between dots, such as www, example or com."
+        },
+        {
+          "term": "Resource record",
+          "definition": "One piece of data attached to a name, such as the address for www.example.com."
+        },
+        {
+          "term": "Name server",
+          "definition": "A server that holds DNS data for part of the tree and answers questions about it."
+        },
+        {
+          "term": "Resolver",
+          "definition": "A program that asks name servers on someone's behalf and returns the answer."
+        }
+      ],
+      "reading": [
+        {
+          "source": "bind-arm",
+          "section": "1.4.1 DNS Fundamentals",
+          "what": "How the tree of names is organized, from the root to top-level and second-level domains."
+        },
+        {
+          "source": "rfc1034",
+          "section": "2.4 Elements of the DNS",
+          "what": "The three components: the name space with its records, name servers, and resolvers."
+        },
+        {
+          "source": "cs168",
+          "section": "What is DNS For? and Name server hierarchy",
+          "what": "A course's plain explanation of why names exist and how the hierarchy splits the work."
+        }
+      ],
+      "video": "nanog-dns-fundamentals",
+      "canNow": [
+        "Say what problem DNS solves.",
+        "Read a domain name as a path of labels up to the root.",
+        "Name the three parts of DNS: names and records, name servers, resolvers."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "Your device does not search the internet itself. A small piece of software on it, the stub resolver, sends the question to a recursive resolver, often run by your internet provider or your network. The recursive resolver does the work of finding the answer and hands it back [[bind-arm]].",
+        "If the recursive resolver has no saved copy, it starts at the top. It asks a root server, which does not know the final answer but replies with a referral: the servers responsible for the top-level domain. It asks one of those, gets another referral to the servers for the domain itself, and finally asks those, which are authoritative and give the real answer [[bind-arm]]. The root is served under 13 named authorities, made up of hundreds of servers around the world [[iana-root]].",
+        "Each part of the tree whose data is managed together is a zone, and a parent zone delegates a child zone to the child's own name servers. A zone is expected to run two or more name servers, so one failure does not take its names offline [[bind-arm]].",
+        "Answers come as resource records of different types: an address record for IPv4 or IPv6, a record naming a zone's name servers, an alias pointing one name at another, a record saying where mail for a domain should go, and more [[rfc1035]]. Every record carries a time to live, which tells resolvers how long they may keep reusing a copy before asking again.",
+        "There are hard limits built into names: each label is at most 63 octets and a whole name at most 255 octets [[rfc1035]]. Queries usually travel over UDP on port 53, and TCP or TLS can also be used in parts of the network [[bind-arm]]."
+      ],
+      "terms": [
+        {
+          "term": "Stub resolver",
+          "definition": "The small resolver on your device that passes questions to a recursive resolver."
+        },
+        {
+          "term": "Recursive resolver",
+          "definition": "A resolver that does the whole lookup for you, following referrals and caching what it learns."
+        },
+        {
+          "term": "Root server",
+          "definition": "A name server for the very top of the tree; it refers resolvers to the top-level domains."
+        },
+        {
+          "term": "Top-level domain (TLD)",
+          "definition": "The last label in a name, such as com or uk, with its own name servers."
+        },
+        {
+          "term": "Authoritative server",
+          "definition": "A name server that holds the real data for a zone, rather than a cached copy."
+        },
+        {
+          "term": "Referral",
+          "definition": "A reply that does not answer the question but names the servers that know more."
+        },
+        {
+          "term": "Zone and delegation",
+          "definition": "A part of the tree managed together; delegation hands a child zone to its own name servers."
+        },
+        {
+          "term": "TTL (time to live)",
+          "definition": "How long a resolver may reuse a cached record before it must ask again."
+        }
+      ],
+      "reading": [
+        {
+          "source": "bind-arm",
+          "section": "1.4.4 Name Resolution and 1.4.5 DNS Protocol and Queries",
+          "what": "The step-by-step path from a browser to the stub resolver, the recursive resolver and the authoritative servers, and what a referral looks like."
+        },
+        {
+          "source": "bind-arm",
+          "section": "1.4.2 Authority and Delegation",
+          "what": "How a parent hands authority for a zone to the zone's own name servers."
+        },
+        {
+          "source": "iana-root",
+          "section": "The introduction and the list of root servers",
+          "what": "What the root servers are and who operates the 13 named authorities."
+        },
+        {
+          "source": "rfc1035",
+          "section": "2.3.4 Size limits and 3.2.2 TYPE values",
+          "what": "The label and name length limits, and the list of record types."
+        },
+        {
+          "source": "rfc9499",
+          "section": "Section 6, DNS Servers and Clients",
+          "what": "Precise definitions of stub resolver, recursive resolver and authoritative server."
+        }
+      ],
+      "video": "apnic-dns-dnssec-tutorial-1",
+      "canNow": [
+        "Trace a lookup from your device to an authoritative server and back.",
+        "Explain what a referral is and who sends one.",
+        "Say what a TTL controls.",
+        "Name common record types and what each one holds."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "Not every answer is good news. If a name does not exist, the server says so, and that negative answer is cached too, so resolvers do not keep asking about a name that is not there. A negative answer has no record of its own to carry a time to live, so the server includes the zone's SOA record, and the cache time comes from that record [[rfc2308]].",
+        "A resolver normally has to trust whatever answer arrives. DNSSEC adds signatures to DNS data so a resolver can check that an answer really came from the zone's owner and was not changed on the way, including proof that a name does not exist [[rfc4033]]. Trust is chained from the parent: a parent zone publishes a DS record that vouches for the child zone's signing key.",
+        "DNSSEC has clear limits. It does not hide your queries, since DNS data is designed to be public, and it does not protect against floods of traffic meant to knock servers over [[rfc4033]]. It answers one question only: is this the data the zone's owner published?"
+      ],
+      "terms": [
+        {
+          "term": "NXDOMAIN",
+          "definition": "The answer that a name does not exist."
+        },
+        {
+          "term": "Negative caching",
+          "definition": "Keeping a \"does not exist\" answer for a while, so the same question is not asked again and again."
+        },
+        {
+          "term": "SOA record",
+          "definition": "The record at the top of a zone that describes it; it sets how long negative answers are cached."
+        },
+        {
+          "term": "DNSSEC",
+          "definition": "Extensions that sign DNS data so resolvers can check where it came from and that it was not altered."
+        },
+        {
+          "term": "DS record",
+          "definition": "A record in the parent zone that vouches for a child zone's signing key."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rfc2308",
+          "section": "2 Negative Responses and 5 Caching Negative Answers",
+          "what": "The two kinds of negative answer and how long each may be cached."
+        },
+        {
+          "source": "rfc4033",
+          "section": "3 Services Provided by DNS Security and 4 Services Not Provided",
+          "what": "What DNSSEC guarantees, the record types it adds, and what it deliberately does not do."
+        }
+      ],
+      "canNow": [
+        "Explain why a \"does not exist\" answer is cached and what decides for how long.",
+        "Say what DNSSEC protects and what it does not.",
+        "Describe how a parent zone vouches for a signed child zone."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "The root has to stay up for everyone, so each root server name is served by many machines in many places that share the same address. Network routing sends you to a nearby one, a technique called anycast. If one copy fails, traffic flows to another, and the list of root servers never has to change [[cs168]].",
+        "Caching is what makes DNS fast, and it is also what makes changes slow. A resolver keeps a record until its time to live runs out, so after you change a record, people can still get the old answer until their resolver's copy expires. A long time to live means fewer queries and steadier performance; a short one means changes are seen sooner but your servers answer more questions. Lowering it well before a planned change, then raising it again afterwards, is the usual compromise.",
+        "Most people use a recursive resolver chosen for them, by their internet provider or their network, and you can choose a different public one. Because resolvers serve many users, a popular answer is usually already cached, which is why most lookups finish without walking the tree at all [[cs168]]."
+      ],
+      "terms": [
+        {
+          "term": "Anycast",
+          "definition": "Many servers in different places sharing one address, with routing sending each user to a nearby one."
+        },
+        {
+          "term": "Propagation",
+          "definition": "The time it takes for a change to be seen everywhere, as cached copies expire."
+        },
+        {
+          "term": "Public resolver",
+          "definition": "A recursive resolver anyone can use, rather than one run by your own network."
+        }
+      ],
+      "reading": [
+        {
+          "source": "cs168",
+          "section": "Root Server Availability with Anycast and Stub Resolvers and Recursive Resolvers",
+          "what": "How anycast keeps the root available, and why shared resolvers cache so well."
+        },
+        {
+          "source": "rfc1034",
+          "section": "4.2 How the database is divided into zones",
+          "what": "How zones divide the tree so different organizations run their own parts."
+        }
+      ],
+      "canNow": [
+        "Explain how a handful of root server names can serve the whole internet.",
+        "Choose a TTL for a record and explain the trade-off.",
+        "Plan a DNS change so users switch over quickly."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "A DNS change takes effect everywhere at once.",
+      "truth": "Resolvers keep cached copies until each copy's time to live runs out, so some people see the old answer for a while."
+    },
+    {
+      "myth": "The root servers know the address of every website.",
+      "truth": "They only know which servers handle each top-level domain, and refer resolvers there [[bind-arm]]."
+    },
+    {
+      "myth": "There are only 13 root server machines.",
+      "truth": "There are 13 named root server authorities, served by hundreds of servers around the world [[iana-root]]."
+    },
+    {
+      "myth": "DNSSEC makes DNS lookups private.",
+      "truth": "DNSSEC proves where data came from and that it was not changed; it does not hide what you look up [[rfc4033]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These use dig, the lookup tool that ships with BIND [[bind-arm]]. Run them in a terminal and compare the output with the stages above. The output depends on your resolver and changes over time, so it is not shown here.",
+    "commands": [
+      {
+        "command": "dig example.com",
+        "shows": "A plain lookup: the question, the answer, and which server replied.",
+        "source": "bind-arm"
+      },
+      {
+        "command": "dig example.com MX",
+        "shows": "One record type, here the mail servers for a domain.",
+        "source": "bind-arm"
+      },
+      {
+        "command": "dig +short example.com",
+        "shows": "Just the answer, without the rest of the output.",
+        "source": "bind-arm"
+      },
+      {
+        "command": "dig +trace example.com",
+        "shows": "The whole path from the root servers down, following each referral.",
+        "source": "bind-arm"
+      },
+      {
+        "command": "dig +dnssec example.com",
+        "shows": "DNSSEC records alongside the answer, where the zone is signed.",
+        "source": "bind-arm"
+      },
+      {
+        "command": "dig @1.1.1.1 example.com",
+        "shows": "The same lookup sent to a specific recursive resolver.",
+        "source": "bind-arm",
+        "note": "1.1.1.1 is only an example resolver; any resolver address works."
+      }
+    ]
+  },
+  "next": "Go back to the DNS topic page for the worked example and the quiz, then read the two company posts: Cloudflare on applying a record change in milliseconds, and Slack on a DNSSEC change that caches kept alive for hours.",
+  "sources": [
+    {
+      "id": "rfc1034",
+      "title": "RFC 1034: Domain Names, Concepts and Facilities",
+      "url": "https://www.rfc-editor.org/rfc/rfc1034",
+      "publisher": "IETF",
+      "kind": "Internet standard",
+      "year": "1987",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "rfc1035",
+      "title": "RFC 1035: Domain Names, Implementation and Specification",
+      "url": "https://www.rfc-editor.org/rfc/rfc1035",
+      "publisher": "IETF",
+      "kind": "Internet standard",
+      "year": "1987",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "rfc9499",
+      "title": "RFC 9499: DNS Terminology",
+      "url": "https://www.rfc-editor.org/rfc/rfc9499",
+      "publisher": "IETF",
+      "kind": "Best current practice",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "rfc2308",
+      "title": "RFC 2308: Negative Caching of DNS Queries",
+      "url": "https://www.rfc-editor.org/rfc/rfc2308",
+      "publisher": "IETF",
+      "kind": "Internet standard",
+      "year": "1998",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "rfc4033",
+      "title": "RFC 4033: DNS Security Introduction and Requirements",
+      "url": "https://www.rfc-editor.org/rfc/rfc4033",
+      "publisher": "IETF",
+      "kind": "Internet standard",
+      "year": "2005",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "bind-arm",
+      "title": "BIND 9 Administrator Reference Manual: Introduction to DNS and BIND 9, and the dig manual page",
+      "url": "https://bind9.readthedocs.io/en/stable/chapter1.html",
+      "publisher": "Internet Systems Consortium (ISC)",
+      "kind": "Project documentation",
+      "year": "2023",
+      "verifiedOn": "2026-10-11",
+      "note": "BIND 9.20.29 documentation, copyright 2023. The dig manual page is at bind9.readthedocs.io/en/stable/manpages.html."
+    },
+    {
+      "id": "cs168",
+      "title": "CS 168 Textbook: DNS",
+      "url": "https://textbook.cs168.io/applications/dns.html",
+      "publisher": "UC Berkeley, CS 168",
+      "kind": "University course notes",
+      "year": "2024",
+      "verifiedOn": "2026-10-11",
+      "note": "Maintained as of the Fall 2024 semester."
+    },
+    {
+      "id": "iana-root",
+      "title": "Root Servers",
+      "url": "https://www.iana.org/domains/root/servers",
+      "publisher": "IANA",
+      "kind": "Registry page",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "nanog-dns-fundamentals",
+      "title": "NANOG U Webinar: DNS Fundamentals",
+      "url": "https://www.youtube.com/watch?v=oeceM-R8DVU",
+      "publisher": "NANOG",
+      "kind": "video",
+      "channel": "NANOG",
+      "year": "2021",
+      "length": "1:22:12",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "apnic-dns-dnssec-tutorial-1",
+      "title": "DNS & DNSSEC Tutorial 1",
+      "url": "https://www.youtube.com/watch?v=WkXSx-Tuzlo",
+      "publisher": "APNIC",
+      "kind": "video",
+      "channel": "APNIC",
+      "year": "2023",
+      "length": "1:35:06",
+      "verifiedOn": "2026-10-11"
+    }
+  ]
+}

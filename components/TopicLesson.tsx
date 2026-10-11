@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { formatDate, type Topic } from "@/lib/topics";
 import { PostDigest, TopicList } from "./TopicDossier";
 import { CompactProgress, FinishTopic, MarkDone, QuizBlock, ResumeLine } from "./LessonTrackers";
@@ -11,6 +12,8 @@ type Props = {
   prerequisites: Topic[];
   dependents: Topic[];
   titles: Map<string, string>;
+  /** Link to the topic's "Start from zero" page, when it has one. */
+  learnHref?: string;
 };
 
 const SECTION_NAMES: Record<string, string> = {
@@ -42,7 +45,7 @@ function Outcome({ text }: { text: string }) {
 }
 
 /** Topic page in the teaching-journey format: concept first, then real-world posts. */
-export default function TopicLesson({ topic, prerequisites, dependents, titles }: Props) {
+export default function TopicLesson({ topic, prerequisites, dependents, titles, learnHref }: Props) {
   const l = topic.lesson!;
   const meta: LessonMeta = { slug: topic.slug, postIds: topic.posts.map((p) => p.id!), correct: l.quiz.map((q) => q.correct) };
   const names: Record<string, string> = {
@@ -89,6 +92,11 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles }
           <a className="text-button label" href="#posts">
             Skip to the posts
           </a>
+          {learnHref && (
+            <Link className="text-button label learn-link" href={learnHref}>
+              New to this? Start from zero
+            </Link>
+          )}
         </div>
 
         <div id="concept" className="part">

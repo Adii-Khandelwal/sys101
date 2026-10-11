@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import TopicDossier from "@/components/TopicDossier";
 import TopicLesson from "@/components/TopicLesson";
 import { getAllTopics, getDependents, getTopic } from "@/lib/topics";
+import { getLearn } from "@/lib/learn";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -37,6 +38,7 @@ export default async function TopicPage({ params }: Props) {
       prerequisites={prerequisites}
       dependents={getDependents(slug)}
       titles={new Map(getAllTopics().map((t) => [t.slug, t.title]))}
+      learnHref={getLearn(slug, getAllTopics().map((t) => t.slug)) ? `/topic/${slug}/learn` : undefined}
     />
   );
 }

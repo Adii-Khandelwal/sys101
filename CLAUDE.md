@@ -105,7 +105,7 @@ Always apply system design thinking to this site itself: static generation, CDN 
 
 Two exceptions:
 - Vercel Web Analytics (anonymous page views, no cookies). The site must work fully if it fails to load, it never receives reading progress, and the Privacy page must describe it.
-- YouTube videos on learn pages, click to load only. Show a plain card (title, channel, length, year, "Play here", "Watch on YouTube"); nothing loads from YouTube until "Play here" is pressed, then the youtube-nocookie.com player replaces the card. The link works without JavaScript or if the player fails; videos with embedding disabled show the link only. The Privacy page must say YouTube receives data only after play is pressed. Ship the component and the Privacy section with the first learn page that has a video.
+- YouTube videos on learn pages: plain text links for now (title, channel, year, length, "optional, long", "not reviewed by the author"), so nothing loads from YouTube. An embed is allowed later only as click to load (nothing from YouTube until "Play here"; youtube-nocookie.com player; link fallback), with a Privacy page section saying YouTube receives data only after play is pressed.
 
 ## Later ideas (do not build yet)
 

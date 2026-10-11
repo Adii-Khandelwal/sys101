@@ -1,4 +1,4 @@
-// Requests every source URL in content/topics and reports the ones that fail.
+// Requests every source URL in content/topics and content/learn and reports the ones that fail.
 //
 // Run locally:   node scripts/check-links.mjs
 // In CI (weekly, see .github/workflows/link-check.yml) it also keeps exactly
@@ -17,6 +17,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const TOPICS_DIR = path.join(process.cwd(), "content", "topics");
+const LEARN_DIR = path.join(process.cwd(), "content", "learn");
 const LABEL = "link-check";
 const TITLE = "Source links failing";
 const MARKER = "<!-- sys101-link-check -->";
@@ -34,13 +35,24 @@ const HEADERS = {
 const BLOCKED = new Set([401, 403, 406, 429, 999]);
 
 function loadSources() {
-  return fs
+  const posts = fs
     .readdirSync(TOPICS_DIR)
     .filter((f) => f.endsWith(".json"))
     .flatMap((f) => {
       const topic = JSON.parse(fs.readFileSync(path.join(TOPICS_DIR, f), "utf8"));
       return topic.posts.map((p) => ({ topic: topic.title, title: p.title, company: p.company, url: p.url }));
     });
+  // Official sources on "Start from zero" pages.
+  const learn = fs.existsSync(LEARN_DIR)
+    ? fs
+        .readdirSync(LEARN_DIR)
+        .filter((f) => f.endsWith(".json"))
+        .flatMap((f) => {
+          const page = JSON.parse(fs.readFileSync(path.join(LEARN_DIR, f), "utf8"));
+          return page.sources.map((s) => ({ topic: `Start from zero: ${page.slug}`, title: s.title, company: s.publisher, url: s.url }));
+        })
+    : [];
+  return [...posts, ...learn];
 }
 
 async function request(url) {

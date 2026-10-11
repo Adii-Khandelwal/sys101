@@ -1749,3 +1749,98 @@ body {
     white-space: nowrap;
   }
 }
+
+/* ── Start from zero (learn pages) ───────── */
+
+.learn-note {
+  font-size: 15px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.learn-section {
+  margin-top: 56px;
+}
+
+.learn-section h3 {
+  margin: 28px 0 8px;
+  font-size: 18px;
+}
+
+.learn-terms,
+.learn-myths {
+  margin: 0;
+}
+
+.learn-terms div,
+.learn-myths div {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.learn-terms dt,
+.learn-myths dt {
+  font-weight: 600;
+}
+
+.learn-terms dd,
+.learn-myths dd {
+  margin: 2px 0 0;
+}
+
+.learn-reading,
+.learn-can,
+.learn-sources {
+  padding-left: 20px;
+}
+
+.learn-reading li,
+.learn-can li,
+.learn-sources li {
+  margin: 6px 0;
+}
+
+.learn-video {
+  margin: 20px 0 0;
+  padding: 12px 16px;
+  border: 1px solid var(--rule);
+}
+
+.learn-video-meta,
+.learn-source-meta {
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+.learn-try {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.learn-try li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.learn-try code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.cite {
+  font-size: 12px;
+  line-height: 0;
+}
+
+.cite a {
+  text-decoration: none;
+}
+
+.lesson-top .learn-link {
+  margin-left: 20px;
+}
