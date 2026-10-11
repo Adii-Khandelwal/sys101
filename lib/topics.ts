@@ -38,6 +38,22 @@ export type Post = {
 export const GROUPS = ["Foundations", "Scaling", "Data", "Messaging", "Reliability"] as const;
 export type Group = (typeof GROUPS)[number];
 
+/**
+ * How often this topic comes up in system design interviews, shown as a small
+ * marker on the topic page. Optional: a topic without it shows no marker.
+ * "core" is asked in almost every interview, "common" comes up often, "niche"
+ * is occasional or specialised.
+ */
+export const INTERVIEW_RELEVANCE = ["core", "common", "niche"] as const;
+export type InterviewRelevance = (typeof INTERVIEW_RELEVANCE)[number];
+
+/** The label shown for each interview-relevance value. */
+export const INTERVIEW_RELEVANCE_LABEL: Record<InterviewRelevance, string> = {
+  core: "Core interview topic",
+  common: "Common in interviews",
+  niche: "Niche in interviews",
+};
+
 /** A concept section in the lesson format: one line on what you can do after it, then the teaching. */
 export type LessonSection = { outcome: string; body: string };
 
@@ -91,6 +107,8 @@ export type Topic = {
   /** A shorter name for page titles when the full title with the site name would reach 60 characters. */
   shortTitle?: string;
   group?: Group;
+  /** Optional: how often this topic appears in system design interviews. */
+  interviewRelevance?: InterviewRelevance;
   concept: string;
   prerequisites: string[];
   /** Recap of what the prerequisites taught, 2 to 4 sentences. Not used by lesson topics. */
@@ -277,6 +295,9 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
       problems.push(`${file}: shortTitle must be a non-empty name shorter than the title`);
     }
     if (topic.group && !GROUPS.includes(topic.group)) problems.push(`${file}: unknown group "${topic.group}"`);
+    if (topic.interviewRelevance !== undefined && !INTERVIEW_RELEVANCE.includes(topic.interviewRelevance)) {
+      problems.push(`${file}: interviewRelevance must be one of ${INTERVIEW_RELEVANCE.join(", ")}`);
+    }
   }
 
   for (const { file, topic } of entries) {

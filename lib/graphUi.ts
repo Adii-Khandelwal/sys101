@@ -47,6 +47,11 @@ export function highlightSet(node: string, edges: { from: string; to: string }[]
   return keep;
 }
 
+/** The slugs of every node in a group: everything that stays opaque when the group is highlighted. */
+export function groupSet(group: string, nodes: { slug: string; group?: string }[]) {
+  return new Set(nodes.filter((n) => n.group === group).map((n) => n.slug));
+}
+
 /**
  * Below this many topics the map is a fixed, fitted picture: no zoom, pan or map controls.
  * Lowered from 25 to 12 when the twelfth topic's long label made the map need a wider stage than
@@ -54,6 +59,14 @@ export function highlightSet(node: string, edges: { from: string; to: string }[]
  */
 export const INTERACTIVE_MIN_NODES = 12;
 export const mapIsInteractive = (nodeCount: number) => nodeCount >= INTERACTIVE_MIN_NODES;
+
+/**
+ * Whether the map should be interactive (zoom and pan) right now. Needs both
+ * enough nodes to justify it and a non-phone viewport: a phone always gets a
+ * fixed, non-interactive map so a finger scrolls the page past it and a tap
+ * opens the topic (CLAUDE.md, Graph and Touch).
+ */
+export const mapIsInteractiveAt = (nodeCount: number, isPhone: boolean) => mapIsInteractive(nodeCount) && !isPhone;
 
 export type HighlightEvent =
   | { type: "enter"; node: string }

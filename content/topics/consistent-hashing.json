@@ -2,6 +2,7 @@
   "slug": "consistent-hashing",
   "title": "Consistent Hashing",
   "group": "Scaling",
+  "interviewRelevance": "common",
   "concept": "Consistent hashing places both servers and keys on the same hash ring and assigns each key to the next server along it. When a server joins or leaves, only the keys next to it move, instead of nearly all of them as with hash-mod-N. That stability is what lets caches and stateful services grow and shrink without a mass reshuffle, though a ring with few servers spreads load unevenly unless each server takes many points on it.",
   "prerequisites": [
     "caching"

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatDate, formatMonth, isOld, type Post, type Topic } from "@/lib/topics";
 import ReadToggle from "./ReadToggle";
+import InterviewTag from "./InterviewTag";
 import Reveal from "./Reveal";
 import SiteFooter from "./SiteFooter";
 
@@ -123,8 +124,9 @@ export default function TopicDossier({ topic, prerequisites, dependents, titles 
       </nav>
 
       <div data-pagefind-body>
-        <div className="label" data-pagefind-ignore>
-          {topic.group ?? "Concept"}
+        <div className="topic-tagline" data-pagefind-ignore>
+          <span className="label">{topic.group ?? "Concept"}</span>
+          {topic.interviewRelevance && <InterviewTag level={topic.interviewRelevance} />}
         </div>
         <h1 data-pagefind-meta="title">{topic.title}</h1>
         <p className="concept">{topic.concept}</p>

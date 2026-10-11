@@ -2,6 +2,7 @@
   "slug": "pub-sub",
   "title": "Publish-Subscribe",
   "group": "Messaging",
+  "interviewRelevance": "niche",
   "concept": "Publish-subscribe lets a producer announce that something happened without knowing who needs to hear it: every subscriber gets its own copy of each message. A queue hands each message to one consumer; pub-sub hands it to every subscription, and only inside a subscription do consumers share the work. That makes it easy to add readers later, but each subscription now has its own backlog, its own failures and its own idea of order, so the design has to say what a subscriber can count on.",
   "prerequisites": [
     "message-queues"

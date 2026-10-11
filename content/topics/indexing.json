@@ -2,6 +2,7 @@
   "slug": "indexing",
   "title": "Indexing and Search",
   "group": "Data",
+  "interviewRelevance": "common",
   "concept": "An index is a second, smaller structure kept beside the data so a query can jump to what it needs instead of reading everything. Databases keep sorted B-tree indexes on columns for exact lookups and ranges; search engines keep inverted indexes that map each word or fragment to the documents containing it. Every index makes some reads fast and every write a little slower, and at scale the index itself has to be sharded, which decides whether a query touches one machine or all of them.",
   "prerequisites": [
     "databases",

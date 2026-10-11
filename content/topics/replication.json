@@ -2,6 +2,7 @@
   "slug": "replication",
   "title": "Database Replication",
   "group": "Data",
+  "interviewRelevance": "core",
   "concept": "Replication keeps copies of a database on several machines so reads can spread out and a failed primary can be replaced. The hard questions are when a write counts as safe, on the primary alone or only once some copies have it, and how the system picks and announces a new primary without two machines accepting writes at once.",
   "prerequisites": [
     "databases"

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { INTERACTIVE_MIN_NODES, groupLabelSpots, placeGroupLabel, mapIsInteractive, FADED_LABEL, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, type HighlightEvent } from "./graphUi";
+import { INTERACTIVE_MIN_NODES, groupLabelSpots, groupSet, placeGroupLabel, mapIsInteractive, mapIsInteractiveAt, FADED_LABEL, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, type HighlightEvent } from "./graphUi";
 
 describe("tooltip placement", () => {
   const tip = { w: 280, h: 72 };
@@ -50,6 +50,18 @@ describe("fading", () => {
     const edges = [{ from: "dns", to: "lb" }, { from: "lb", to: "cache" }, { from: "cache", to: "cdn" }, { from: "cache", to: "ch" }, { from: "ch", to: "shard" }];
     expect([...highlightSet("cache", edges)].sort()).toEqual(["cache", "cdn", "ch", "dns", "lb"]);
   });
+
+  it("highlights exactly the nodes of a clicked group", () => {
+    const nodes = [
+      { slug: "mq", group: "Messaging" },
+      { slug: "pubsub", group: "Messaging" },
+      { slug: "cache", group: "Scaling" },
+      { slug: "dns", group: "Foundations" },
+    ];
+    expect([...groupSet("Messaging", nodes)].sort()).toEqual(["mq", "pubsub"]);
+    expect([...groupSet("Scaling", nodes)]).toEqual(["cache"]);
+    expect([...groupSet("Nonexistent", nodes)]).toEqual([]);
+  });
 });
 
 describe("highlight clears", () => {
@@ -69,6 +81,16 @@ describe("map controls", () => {
     expect(mapIsInteractive(11)).toBe(false);
     expect(mapIsInteractive(12)).toBe(true);
     expect(INTERACTIVE_MIN_NODES).toBe(12);
+  });
+
+  it("are never interactive on a phone, whatever the topic count", () => {
+    // Phone: fixed map so a finger scrolls the page past it and a tap opens the topic.
+    expect(mapIsInteractiveAt(12, true)).toBe(false);
+    expect(mapIsInteractiveAt(50, true)).toBe(false);
+    // Desktop: interactive only once there are enough topics.
+    expect(mapIsInteractiveAt(11, false)).toBe(false);
+    expect(mapIsInteractiveAt(12, false)).toBe(true);
+    expect(mapIsInteractiveAt(13, false)).toBe(true);
   });
 });
 

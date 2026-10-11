@@ -133,6 +133,7 @@ Create `content/topics/<slug>.json` and, with it, `content/learn/<slug>.json`: a
   "title": "CDNs",
   "shortTitle": "optional, used in page titles when the full title would pass 60 characters",
   "group": "Scaling",
+  "interviewRelevance": "optional: core, common, or niche; shown as a marker on the topic page",
   "concept": "Two to four sentences on the idea itself.",
   "prerequisites": ["dns", "caching"],
   "lesson": {

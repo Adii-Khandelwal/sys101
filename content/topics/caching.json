@@ -2,6 +2,7 @@
   "slug": "caching",
   "title": "Caching",
   "group": "Scaling",
+  "interviewRelevance": "core",
   "concept": "A cache keeps a copy of data closer to the reader than the source of truth, so most reads skip the slow path. The price is staleness: every write now has to reach the cache too, either by invalidating the old entry or by letting it expire, and races between reads, writes, and invalidations can leave the cache holding a value the database no longer has.",
   "prerequisites": [
     "load-balancing"

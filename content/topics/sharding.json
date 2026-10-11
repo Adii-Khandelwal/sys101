@@ -2,6 +2,7 @@
   "slug": "sharding",
   "title": "Sharding and Partitioning",
   "group": "Data",
+  "interviewRelevance": "core",
   "concept": "Sharding splits one large dataset across many databases by a key, so each database stores and serves only part of it. The key decides which queries stay on one shard and which must visit all of them, and the layout decides how hard it is to add machines later. Vertical partitioning moves whole tables apart; horizontal sharding splits one table's rows.",
   "prerequisites": [
     "replication",

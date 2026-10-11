@@ -17,8 +17,9 @@ import {
   INK_SOFT,
   PAPER,
   fade,
+  groupSet,
   highlightSet,
-  mapIsInteractive,
+  mapIsInteractiveAt,
   nextHighlight,
   placeTooltip,
   groupLabelSpots,
@@ -53,6 +54,7 @@ type Props = {
 
 const NODE_RADIUS = 14;
 const LABEL_SIZE = 18;
+const EDGE_EMPHASIS = 2; // highlighted edges are drawn this many times their base width
 const NARROW = "(max-width: 767px)"; // below this the map stacks top to bottom; matches the CSS and the mobile Path default
 const PADDING = 48; // px between the stage edge and the outermost nodes
 const PADDING_TOP = 86; // node centres sit this far down, so the first row is 56px+ below the controls
@@ -105,8 +107,11 @@ export default function GraphView({ nodes, edges }: Props) {
   const highlightRef = useRef<Set<string>>(new Set());
   const edgesRef = useRef(edges);
   edgesRef.current = edges;
+  const nodesRef = useRef(nodes);
+  nodesRef.current = nodes;
   const hiddenRef = useRef<{ from: string; to: string }[]>([]);
   const activeRef = useRef<string | null>(null);
+  const activeGroupRef = useRef<string | null>(null);
   const router = useRouter();
   const read = useReadTopics();
 
@@ -118,6 +123,7 @@ export default function GraphView({ nodes, edges }: Props) {
   const [isPhone, setIsPhone] = useState(false);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [active, setActive] = useState<string | null>(null);
+  const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
 
   // Reducers read this ref, so read-state changes only need a refresh.
@@ -266,8 +272,22 @@ export default function GraphView({ nodes, edges }: Props) {
 
   const activate = useCallback((slug: string | null) => {
     activeRef.current = slug;
+    activeGroupRef.current = null;
+    setActiveGroup(null);
     highlightRef.current = slug ? highlightSet(slug, edgesRef.current) : new Set();
     setActive(slug);
+    rendererRef.current?.refresh({ skipIndexation: true });
+  }, []);
+
+  // Clicking a group label highlights just that group's nodes and fades the
+  // rest. A second click on the same group, or any node/escape/scroll, clears it.
+  const activateGroup = useCallback((name: string | null) => {
+    const next = name === activeGroupRef.current ? null : name;
+    activeRef.current = null;
+    setActive(null);
+    activeGroupRef.current = next;
+    setActiveGroup(next);
+    highlightRef.current = next ? groupSet(next, nodesRef.current) : new Set();
     rendererRef.current?.refresh({ skipIndexation: true });
   }, []);
 
@@ -277,7 +297,7 @@ export default function GraphView({ nodes, edges }: Props) {
   // Small maps fit on screen: no zoom, pan or controls until there are enough
   // topics to need them. Phones always get the fixed map, whatever the count,
   // so a finger scrolls the page past it and a tap opens the topic.
-  const interactive = mapIsInteractive(nodes.length) && !isPhone;
+  const interactive = mapIsInteractiveAt(nodes.length, isPhone);
   const interactiveRef = useRef(interactive);
   interactiveRef.current = interactive;
   const animFrame = useRef(0);
@@ -552,9 +572,12 @@ export default function GraphView({ nodes, edges }: Props) {
         nodeReducer: (slug, data) => {
           const isRead = readRef.current.includes(slug);
           const current = activeRef.current;
+          // Something is highlighting: a hovered/focused node or a clicked group.
+          const highlighting = current !== null || activeGroupRef.current !== null;
           const isActive = slug === current;
-          // Opaque: the node, its whole prerequisite chain and its dependents.
-          const near = !current || highlightRef.current.has(slug);
+          // Opaque: the node, its whole prerequisite chain and its dependents,
+          // or every node of the clicked group.
+          const near = !highlighting || highlightRef.current.has(slug);
           // Ready: unread with every prerequisite read. A thicker outline and a centre dot, so it reads without colour.
           const ready = !isRead && (prereqsRef.current.get(slug) ?? []).every((p) => readRef.current.includes(p));
           const fill = isRead ? ACCENT : PAPER;
@@ -570,11 +593,16 @@ export default function GraphView({ nodes, edges }: Props) {
           };
         },
         edgeReducer: (edge, data) => {
-          const current = activeRef.current;
-          if (!current) return data;
+          const highlighting = activeRef.current !== null || activeGroupRef.current !== null;
+          if (!highlighting) return data;
           const h = highlightRef.current;
           const inChain = h.has(graph.source(edge)) && h.has(graph.target(edge));
-          return { ...data, color: inChain ? INK_SOFT : fade(EDGE) };
+          // Highlighted edges are the signal: darker ink and a touch thicker, so
+          // the lit path reads clearly against the faded rest (CLAUDE.md: emphasise
+          // the highlight rather than add a dashed style that clashes with implied links).
+          return inChain
+            ? { ...data, color: INK, size: (data.size ?? 1) * EDGE_EMPHASIS }
+            : { ...data, color: fade(EDGE) };
         },
       });
 
@@ -716,6 +744,9 @@ export default function GraphView({ nodes, edges }: Props) {
   useEffect(() => {
     const clear = (event: HighlightEvent) => {
       if (activeRef.current) activate(nextHighlight(activeRef.current, event));
+      // A clicked group is sticky: cleared by escape, scroll or a click outside,
+      // but not by the pointer leaving the canvas (that is hover only).
+      if (activeGroupRef.current && event.type !== "leave") activateGroup(null);
     };
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && clear({ type: "escape" });
     const onScroll = () => clear({ type: "scroll" });
@@ -734,7 +765,7 @@ export default function GraphView({ nodes, edges }: Props) {
       document.removeEventListener("pointerdown", onDown);
       canvas?.removeEventListener("pointerleave", onLeave);
     };
-  }, [activate, ready]);
+  }, [activate, activateGroup, ready]);
 
   // Tooltip: rendered in a portal with fixed coordinates, so nothing clips it.
   const tipRef = useRef<HTMLDivElement>(null);
@@ -832,11 +863,19 @@ export default function GraphView({ nodes, edges }: Props) {
         {!ready && <GraphSkeleton />}
         <div ref={container} className="graph-canvas" aria-hidden="true" />
 
-        {/* Faint group names: pinned to the left of a group's row, or above its first node. */}
+        {/* Faint group names: click one to highlight just that group's topics. */}
         {groupLabels.map((g) => (
-          <span key={g.name} className="graph-group label" aria-hidden="true" style={{ left: g.x, top: g.y }}>
+          <button
+            key={g.name}
+            type="button"
+            className="graph-group label"
+            style={{ left: g.x, top: g.y }}
+            aria-pressed={activeGroup === g.name}
+            aria-label={`Highlight the ${g.name} topics`}
+            onClick={() => activateGroup(g.name)}
+          >
             {g.name}
-          </span>
+          </button>
         ))}
 
         {/* Edges implied by a longer path: faint and dashed, on hover or focus of either end, or always with "Show all links". */}

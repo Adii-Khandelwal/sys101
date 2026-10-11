@@ -67,7 +67,25 @@ a:hover {
   color: var(--ink-soft);
 }
 
-/* ── Homepage ─────────────────────────────── */
+/* Group label and the optional interview-relevance tag on a topic page, in a
+   row with a gap so the two markers never run together. */
+.topic-tagline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+}
+/* A dot between the group and the tag, mirroring the "Company · Month" labels. */
+.topic-tagline .interview-tag::before {
+  content: "·";
+  margin-right: 10px;
+  color: var(--rule);
+}
+/* "Core" earns the one rust accent; the others stay quiet. State reads from the
+   text, so colour is never the only signal. */
+.interview-tag.is-core {
+  color: var(--accent);
+}
 
 .home {
   max-width: 1400px; /* the map's six columns need a stage of about 1,300px at the real label widths; narrower stages stack it */
@@ -412,11 +430,34 @@ a:hover {
 /* Group names on the map: faint, never interactive. */
 .graph-group {
   position: absolute;
-  z-index: 1;
-  pointer-events: none;
+  z-index: 2;
   white-space: nowrap;
   color: var(--ink-soft);
   opacity: 0.8;
+  /* It is a real button now: strip the default chrome, keep the mono label. */
+  appearance: none;
+  margin: 0;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.graph-group:hover {
+  opacity: 1;
+  color: var(--ink);
+}
+.graph-group:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+/* Pressed: this group's topics are the highlighted ones. */
+.graph-group[aria-pressed="true"] {
+  opacity: 1;
+  color: var(--accent);
 }
 
 .legend-mark {

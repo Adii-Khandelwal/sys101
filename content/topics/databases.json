@@ -2,6 +2,7 @@
   "slug": "databases",
   "title": "Databases",
   "group": "Foundations",
+  "interviewRelevance": "core",
   "concept": "A database keeps data safe across crashes and lets many clients read and change it at once. Most relational databases share the same core: a change is written to a log before it touches the data files, a commit is the moment that log record is safely on disk, and copies on other machines, called replicas, stay current by replaying the primary's log.",
   "prerequisites": [],
   "posts": [

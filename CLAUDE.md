@@ -24,6 +24,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - Diagrams are original inline SVG in the site style. Never copy or embed a blog's diagram. Link to an original figure only if verified it exists. Every diagram has a title and alt text. The build requires a diagram on the Mental model, How it works and Worked example concept sections, and on every post digest.
 - Original posts lists each source with company, year, and "Checked on" date. Links open in a new tab with rel="noopener noreferrer". Missing attribution fields fail the build.
 - No data controls on topic pages. They live on /data.
+- Optional `interviewRelevance` on a topic ("core", "common" or "niche", in lib/topics.ts) shows a small mono small-caps marker beside the group label (components/InterviewTag.tsx), state carried by the text with only "core" taking the rust accent. The build rejects any other value; a topic without the field shows no marker.
 
 ## Learn pages (start from zero)
 
@@ -57,6 +58,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - Draw only the transitive reduction of prerequisites by default. Hidden edges show faintly on hover or focus, and with "Show all links" once the map is interactive. Data and build checks use the full set.
 - Node states that do not rely on color: unread (thin outline), ready (all prerequisites read, thicker outline), read (filled rust). Not-yet nodes stay clickable.
 - No edge crosses a label or node. Labels sit right of nodes with a 16px gap. Tooltips are viewport-clamped and never clipped. Unrelated items fade to no lower than 60% opacity, and highlight always clears.
+- Group labels are real buttons: clicking one highlights just that group's topics (its nodes stay opaque, the rest fade to no lower than 60%, like a node highlight), with the clicked label taking the rust accent and aria-pressed. Clicking it again, Escape, a scroll, or a click outside clears it; hovering or focusing a node takes over. Computed by groupSet in lib/graphUi.ts.
 - Keyboard traversal, aria-live announcements, 44px hit areas, and a plain text index as the full fallback, including when WebGL fails. Smooth at 150 nodes.
 - Pivot trigger: when the graph stops being readable (crowded nodes or unreadable edges), the Path view is the fallback. The Path view and the mobile Path default under 768px are built; see docs/ideas.md ideas 5 and 6. (The separate zoom/pan interactivity threshold is INTERACTIVE_MIN_NODES, currently 12; see above.)
 - Touch: an interactive map is desktop-only; there one finger pans (the drag follows the finger) and two fingers pinch to zoom. On a phone the map is always fixed and non-interactive, so it captures no touch, a finger scrolls the page past it, a tap opens the topic, and pull to refresh works.
@@ -135,7 +137,7 @@ Two exceptions:
 
 ## Later ideas (do not build yet)
 
-Interview-relevance tags, LLM pipeline (Gemini Flash) to summarize and compare posts automatically, alternative views and the mobile Path view (see docs/ideas.md). Weekly link checking is built and replaces staleness flags for dead links.
+LLM pipeline (Gemini Flash) to summarize and compare posts automatically, alternative views and the mobile Path view (see docs/ideas.md). Weekly link checking is built and replaces staleness flags for dead links.
 
 ## Working in this repo
 

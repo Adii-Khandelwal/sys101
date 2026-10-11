@@ -2,6 +2,7 @@
   "slug": "message-queues",
   "title": "Message Queues",
   "group": "Messaging",
+  "interviewRelevance": "common",
   "concept": "A message queue lets one part of a system hand work to another without waiting for it: producers add messages, the queue stores them, and consumers take them when they have capacity. That absorbs bursts and isolates failures, but it changes what can go wrong: a message can be delivered twice, delivered late or lost, so the design has to say which of those it allows, and consumers have to be safe to run twice.",
   "prerequisites": [
     "sharding"

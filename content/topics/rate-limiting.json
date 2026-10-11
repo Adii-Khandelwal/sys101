@@ -2,6 +2,7 @@
   "slug": "rate-limiting",
   "title": "Rate Limiting",
   "group": "Reliability",
+  "interviewRelevance": "common",
   "concept": "Rate limiting caps how many requests a client can make in a window of time, so one noisy or abusive caller cannot use up capacity that everyone shares. Counting is easy on one machine and hard across many, so real systems trade a little accuracy for speed and keep the shared count off the path of every request.",
   "prerequisites": [
     "caching",

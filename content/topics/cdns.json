@@ -2,6 +2,7 @@
   "slug": "cdns",
   "title": "CDNs",
   "group": "Scaling",
+  "interviewRelevance": "common",
   "concept": "A content delivery network keeps copies of content on servers spread close to users, so most requests are answered nearby instead of crossing the internet to the origin server. A CDN has two jobs: deciding what to keep at each edge when disk space is limited, and making the misses that still go back to the origin as cheap as possible.",
   "prerequisites": [
     "dns",

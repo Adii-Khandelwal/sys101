@@ -5,6 +5,7 @@ import { PostDigest, TopicList } from "./TopicDossier";
 import { CompactProgress, FinishTopic, MarkDone, QuizBlock, ResumeLine } from "./LessonTrackers";
 import type { LessonMeta } from "@/lib/lessonStore";
 import LessonRail from "./LessonRail";
+import InterviewTag from "./InterviewTag";
 import Reveal from "./Reveal";
 import SiteFooter from "./SiteFooter";
 
@@ -70,8 +71,9 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
       </div>
 
       <div data-pagefind-body>
-        <div className="label" data-pagefind-ignore>
-          {topic.group ?? "Concept"}
+        <div className="topic-tagline" data-pagefind-ignore>
+          <span className="label">{topic.group ?? "Concept"}</span>
+          {topic.interviewRelevance && <InterviewTag level={topic.interviewRelevance} />}
         </div>
         <h1 data-pagefind-meta="title">{topic.title}</h1>
         <p className="concept">{topic.concept}</p>
