@@ -10,7 +10,8 @@
     "pipeline:fetch": "node pipeline/fetch-rss.mjs",
     "pipeline:summarize": "node pipeline/summarize.mjs",
     "postbuild": "pagefind --site .next/server/app --output-path public/pagefind",
-    "search:index": "NEXT_DIST_DIR=.next-search next build && pagefind --site .next-search/server/app --output-path public/pagefind"
+    "search:index": "NEXT_DIST_DIR=.next-search next build && pagefind --site .next-search/server/app --output-path public/pagefind",
+    "test": "vitest run"
   },
   "engines": {
     "node": ">=20.9"
@@ -32,6 +33,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "pagefind": "^1.5.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
   }
 }

@@ -703,6 +703,18 @@ details p {
 .graph-canvas {
   position: absolute;
   inset: 0;
+  touch-action: none; /* one finger pans, two pinch; the rest of the page scrolls normally */
+}
+
+.graph-controls {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.zoom-readout {
+  min-width: 4ch;
+  text-align: right;
 }
 
 .graph-skeleton {
