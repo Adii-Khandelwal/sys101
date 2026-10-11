@@ -41,7 +41,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 
 ## Homepage
 
-- Order: masthead (wordmark, intro line, one start line, search), the map or Path view with the "All topics" index and a "Latest added" line, Inside a topic (DNS), Try a question, Where the posts come from. Thin dividers, no cards, icons, or images. The top edge of the map stays visible without scrolling at 1440x800 and 390x844.
+- Order: masthead (wordmark, intro line, one start line, search), the map or Path view with the "All topics" index, Inside a topic (DNS), Try a question, Where the posts come from. Thin dividers, no cards, icons, or images. The top edge of the map stays visible without scrolling at 1440x800 and 390x844.
 - Every homepage number, name, date, and excerpt is computed from data at build time (topics, quiz, posts). Never hardcode them; lib/homepage.test.ts scans the source.
 - Start line: one version at a time (lib/nextUp.ts startVariant). Nothing read: "Start here" (plus "Start from zero" only if the learn page exists, "Also ready", "Explore the map"). Anything read: "Next up" and "Also ready". The "x of N topics read" count stays in both.
 - Inside a topic: the real section names in order (lib/lessonOutline.ts, checked against TopicLesson.tsx), real counts, and one figure from a post digest with company, year, and source link; section list only if no figure.

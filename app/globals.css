@@ -256,10 +256,6 @@ a:hover {
   }
 }
 
-.latest-added {
-  margin: 20px 0 0;
-}
-
 .search input::-webkit-search-cancel-button {
   -webkit-appearance: none;
   appearance: none;
