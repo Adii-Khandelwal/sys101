@@ -175,13 +175,6 @@ a:hover {
   }
 }
 
-.masthead .proof-line {
-  margin: 10px 0 0;
-  font-size: 16px;
-  font-style: normal;
-  color: var(--ink-soft);
-}
-
 .inside-topic .home-extra-note {
   margin: 0 0 24px;
 }
@@ -554,7 +547,7 @@ a:hover {
   height: 8px;
 }
 
-/* ── Homepage extras: Try a question, sources, Still to come ── */
+/* ── Homepage extras: Try a question, and sources ── */
 .home-extra {
   margin-top: 56px;
   padding-top: 24px;
@@ -572,13 +565,8 @@ a:hover {
   color: var(--ink-soft);
 }
 
-.home-extra.planned,
 .home-extra.inside-topic {
   max-width: none;
-}
-
-.home-extra.planned .home-extra-note {
-  margin: 0 0 20px;
 }
 
 .try-source {

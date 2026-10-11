@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { homeStats } from "./homeStats";
 import { LESSON_OUTLINE, topicPreview } from "./lessonOutline";
 import { startVariant } from "./nextUp";
 import { getAllTopics } from "./topics";
@@ -9,17 +8,6 @@ import { getAllTopics } from "./topics";
 const dir = path.resolve(__dirname, "../content/topics");
 const raw = fs.readdirSync(dir).map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")));
 const topics = getAllTopics();
-
-describe("homepage proof line", () => {
-  it("counts equal the raw content files", () => {
-    const posts = raw.flatMap((t) => t.posts);
-    const s = homeStats(topics);
-    expect(s.topics).toBe(raw.length);
-    expect(s.posts).toBe(posts.length);
-    expect(s.companies).toBe(new Set(posts.map((p: { company: string }) => p.company)).size);
-    expect(s.lastChecked).toBe(posts.map((p: { verifiedOn: string }) => p.verifiedOn).sort().at(-1));
-  });
-});
 
 describe("Inside a topic preview", () => {
   const dns = topics.find((t) => t.slug === "dns")!;
