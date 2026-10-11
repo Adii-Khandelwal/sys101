@@ -91,7 +91,7 @@
         "correct": 2,
         "why": "A cluster of 2f+1 has a clear majority, and because any two majorities share a node, the group can never commit two conflicting histories.",
         "wrong": [
-          "Node count parity does not change replication speed; it is about forming a non-ambiguous majority.",
+          "Replication speed does not depend on whether the node count is odd or even. The odd count helps because it forms a non-ambiguous majority.",
           "There is at most one leader per term; multiple simultaneous leaders is exactly what consensus prevents.",
           ""
         ],
@@ -155,7 +155,7 @@
         "correct": 2,
         "why": "Every committed write waits for a majority to acknowledge, so network and disk round trips to those nodes set a latency floor.",
         "wrong": [
-          "Tolerating failures is what consensus is for; it is a benefit, not the cost.",
+          "Tolerating failures is what consensus is for, so it is a benefit rather than a cost.",
           "Consensus replicates to many nodes, not one; single-node storage would not be fault tolerant.",
           ""
         ],

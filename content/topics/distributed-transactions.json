@@ -126,7 +126,7 @@
         "wrong": [
           "A recorded commit is not lost; durability of the decision is what makes 2PC safe across crashes.",
           "",
-          "A participant does not decide alone; it follows the recorded coordinator decision."
+          "A participant follows the recorded coordinator decision rather than deciding alone."
         ],
         "teaches": "how"
       },
@@ -142,7 +142,7 @@
         "wrong": [
           "2PC exists precisely to span multiple shards; one shard would not need it.",
           "",
-          "2PC does not drop writes; it either commits them all or aborts them all."
+          "2PC either commits all the writes or aborts them all, so none are silently dropped."
         ],
         "teaches": "example"
       },
@@ -172,8 +172,8 @@
         "correct": 2,
         "why": "A prepared vote and the commit record must not be lost if a node crashes, so they are replicated by consensus, which is why this topic sits on top of consensus.",
         "wrong": [
-          "Consensus coordinates replicas; it does not collapse a distributed transaction onto one machine.",
-          "The commit decision is essential; consensus is what makes it durable, not what removes it.",
+          "Consensus coordinates replicas and leaves the transaction spread across machines.",
+          "The commit decision is essential, and consensus is what makes it durable.",
           ""
         ],
         "teaches": "why"

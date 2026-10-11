@@ -71,7 +71,7 @@
       "name": "How it works",
       "body": [
         "The strongest form of event-driven design makes the event log the source of truth. Microsoft's Event Sourcing pattern says that instead of storing only the current state, you store the full series of actions on an object in an append-only store, and that this store serves as the system of record, the authoritative source for the current state. Each entity has its own ordered event stream recording every change to it [[ms-event-sourcing]].",
-        "Because the events are kept rather than overwritten, current state is a thing you compute, not a thing you store. You rebuild it by replaying the entity's event stream from the start, and you can rewind and recompute after a bug. Microsoft contrasts this with the usual create-read-update-delete model, where an application reads data, modifies it, and overwrites the current state, typically locking the data in a transaction [[ms-event-sourcing]].",
+        "Because the events are kept rather than overwritten, current state is something you compute from the events. You rebuild it by replaying the entity's event stream from the start, and you can rewind and recompute after a bug. Microsoft contrasts this with the usual create-read-update-delete model, where an application reads data, modifies it, and overwrites the current state, typically locking the data in a transaction [[ms-event-sourcing]].",
         "On top of this log, consumers build their own views and run processing. The pub-sub fan-out you already know is what delivers each event to every subscription; event sourcing is what lets a brand-new consumer join later and replay history to catch up. The producer never has to know those consumers exist."
       ],
       "terms": [

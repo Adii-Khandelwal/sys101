@@ -58,7 +58,7 @@
         {
           "source": "cassandra-dynamo",
           "section": "Dynamo: tunable consistency and consistency levels (intro)",
-          "what": "That consistency versus availability is a per-operation tradeoff, not a fixed property of the whole database."
+          "what": "That consistency versus availability is a tradeoff you can set for each operation."
         }
       ],
       "canNow": [
@@ -166,7 +166,7 @@
       "body": [
         "In practice the first question for any stored data is: if a partition hit right now, would you rather this request fail or return possibly stale data? A shopping cart or a product view can tolerate staleness and should stay available; a bank balance or an inventory count cannot tolerate two disagreeing truths and should refuse rather than diverge. The same database can serve both by setting the consistency level per operation [[cassandra-dynamo]].",
         "Watch for the hidden costs on each side. On the available side, eventual consistency is cheaper and faster, but you must build and test the reconciliation path and accept a staleness window; Amazon makes the cost explicit by charging eventually consistent reads at half the price of strongly consistent ones [[aws-ddb-consistency]]. On the consistent side, you pay latency for coordination and, at global scale, you depend on infrastructure like Spanner's synchronised clocks [[spanner-truetime]].",
-        "The deepest practical point is that CAP is not a label you stamp on a database once. It is a per-operation, per-data decision about what to do during the partitions that will happen. Decide it deliberately for each kind of data, measure the staleness or the latency you are paying, and revisit it as the data's needs change."
+        "The deepest practical point is that CAP applies per operation and per kind of data: it is a decision about what to do during the partitions that will happen, so one database can answer differently for different data. Decide it deliberately for each kind of data, measure the staleness or the latency you are paying, and revisit it as the data's needs change."
       ],
       "terms": [
         {
@@ -201,7 +201,7 @@
       "canNow": [
         "Decide, for a given kind of data, whether to favour availability or consistency.",
         "Name the hidden cost on each side of the choice.",
-        "Explain why CAP is a per-operation decision, not a one-time label."
+        "Explain why CAP is decided per operation."
       ]
     }
   ],

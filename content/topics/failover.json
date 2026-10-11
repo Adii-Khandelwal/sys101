@@ -16,7 +16,7 @@
     },
     "mentalModel": {
       "outcome": "After this you can picture the detect, decide, redirect loop and where split-brain threatens it.",
-      "body": "Picture a primary and its replicas, plus a watcher observing them. The watcher continuously health-checks the primary. When checks fail, the watcher must answer: is the primary really dead, or just slow? To avoid being fooled, good systems do not trust a single missed check or a single observer; they ask several vantage points and act only when they agree, which is why failover and consensus are close relatives.\n\nOnce the watcher is confident, it promotes one replica to primary. This is a leader election, and it must yield exactly one winner, so it is typically backed by a quorum: only a replacement that a majority agrees on is allowed to take over, which prevents two primaries. Finally, clients must find the new primary. If they rely on DNS with a time-to-live, they may keep using the old address until the cache expires, so fast systems redirect at a layer they control, a load balancer or proxy, rather than waiting on a cache. The fencing of the old primary, making sure it cannot still accept writes, is the subtle safety step that stops split-brain.",
+      "body": "Picture a primary and its replicas, plus a watcher observing them. The watcher continuously health-checks the primary. When checks fail, the watcher must answer: is the primary really dead, or just slow? To avoid being fooled, good systems ask several vantage points and act only when they agree, rather than trusting a single missed check or a single observer, which is why failover and consensus are close relatives.\n\nOnce the watcher is confident, it promotes one replica to primary. This is a leader election, and it must yield exactly one winner, so it is typically backed by a quorum: only a replacement that a majority agrees on is allowed to take over, which prevents two primaries. Finally, clients must find the new primary. If they rely on DNS with a time-to-live, they may keep using the old address until the cache expires, so fast systems redirect at a layer they control, a load balancer or proxy, rather than waiting on a cache. The fencing of the old primary, making sure it cannot still accept writes, is the subtle safety step that stops split-brain.",
       "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-fo-model-t\" class=\"dg\"><title id=\"dg-c-fo-model-t\">Failover loop: a watcher health-checks the primary, confirms a real failure with several observers, promotes one replica by quorum (so there is never a second primary), fences the old primary, and updates a proxy so clients reach the new primary without waiting on DNS caches.</title><defs><marker id=\"dg-c-fo-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"40\" width=\"110\" height=\"40\" class=\"dg-box\"/><text x=\"75\" y=\"64.5\" class=\"dg-label\" text-anchor=\"middle\">Watcher</text><rect x=\"20\" y=\"130\" width=\"110\" height=\"40\" class=\"dg-box\" opacity=\"0.5\"/><text x=\"75\" y=\"154.5\" class=\"dg-label\" text-anchor=\"middle\">Primary (dead)</text><path d=\"M75,80 L75,130\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-c-fo-model-a)\"/><text x=\"82\" y=\"108\" class=\"dg-note\" text-anchor=\"start\">health check fails</text><rect x=\"20\" y=\"210\" width=\"110\" height=\"36\" class=\"dg-box dg-accent\"/><text x=\"75\" y=\"232.5\" class=\"dg-label\" text-anchor=\"middle\">Replica -&gt; new primary</text><path d=\"M130,60 L200,228 L130,228\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-model-a)\"/><text x=\"214\" y=\"150\" class=\"dg-note\" text-anchor=\"start\">promote by quorum</text><text x=\"214\" y=\"168\" class=\"dg-note\" text-anchor=\"start\">(exactly one winner)</text><rect x=\"360\" y=\"120\" width=\"110\" height=\"40\" class=\"dg-box\"/><text x=\"415\" y=\"144.5\" class=\"dg-label\" text-anchor=\"middle\">Proxy / LB</text><path d=\"M130,224 L360,150\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-model-a)\"/><rect x=\"360\" y=\"40\" width=\"110\" height=\"40\" class=\"dg-box\"/><text x=\"415\" y=\"64.5\" class=\"dg-label\" text-anchor=\"middle\">Clients</text><path d=\"M415,120 L415,80\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-model-a)\"/><text x=\"300\" y=\"286\" class=\"dg-note\" text-anchor=\"middle\">fence the old primary so it cannot still accept writes: no split-brain</text></svg>"
     },
     "howItWorks": {
@@ -92,7 +92,7 @@
         "correct": 2,
         "why": "Redundancy is only potential availability; failover is the mechanism that detects the failure and promotes or routes to a healthy copy, turning spares into real availability.",
         "wrong": [
-          "Replication copies data but does not by itself detect failure or redirect clients; that is what failover adds.",
+          "Replication copies data. Detecting failure and redirecting clients is what failover adds.",
           "Replicas commonly serve reads and become the new primary on failover, so they are not only backups.",
           ""
         ],
@@ -109,8 +109,8 @@
         "why": "A single missed check can mean a slow network, not a dead node; requiring several vantage points to agree prevents a needless failover that would cause its own outage.",
         "wrong": [
           "",
-          "More observers do not speed up checks; they raise confidence that the failure is real.",
-          "One observer can check fine; the point is that one observer's view is not trustworthy enough to act on."
+          "More observers raise confidence that the failure is real.",
+          "One observer can run a check, but its view alone is too unreliable to act on."
         ],
         "teaches": "how"
       },
@@ -140,9 +140,9 @@
         "correct": 1,
         "why": "DNS answers are cached for their time-to-live, so clients can keep using the dead address for seconds or minutes; a controlled proxy layer moves traffic immediately.",
         "wrong": [
-          "DNS does store addresses; the problem is caching and TTLs, not capability.",
+          "DNS stores addresses fine; the problem is caching and TTLs.",
           "",
-          "Cost is not the reason; the reason is avoiding the delay of waiting for cached DNS to expire."
+          "The reason is avoiding the delay of waiting for cached DNS to expire; cost plays no part."
         ],
         "teaches": "how"
       },
@@ -173,7 +173,7 @@
         "why": "A node that flaps up and down could cause back-to-back failovers, each disruptive; an anti-flapping delay lets things settle before failing over again.",
         "wrong": [
           "",
-          "The aim is stability, not slowness for its own sake; a real failure still fails over promptly.",
+          "The aim is stability, and a real failure still fails over promptly.",
           "Failover can happen many times over a cluster's life; it is just damped against flapping."
         ],
         "teaches": "how"
@@ -345,7 +345,7 @@
           "why": "Because clients cannot be trusted to honour short TTLs, DNS-based failover is slow and unreliable. Making the edge terminate the connection and choose the origin lets Cloudflare react in seconds and at a fine, per-data-center granularity, and reuse the same machinery for load balancing and geo-steering."
         },
         "failures": "The post is explicit that DNS-based failover's weakness, clients ignoring or caching short TTLs, is exactly what pushed the decision to the edge. It also makes clear failover is a judgement: the customer must define what healthy means and how many unhealthy pool members should trigger steering, since too twitchy a threshold would steer on a transient dip and too lax a one would leave users on a failing origin.",
-        "takeaways": "Failover is not only a database concern; at the edge it means health-checking origins and routing around unhealthy ones faster than DNS can propagate. Terminating the connection at a layer you control, and deciding per location, is what lets failover happen in seconds, the same lesson as GitHub's move off DNS, applied to global traffic instead of a single database."
+        "takeaways": "Failover applies beyond databases: at the edge it means health-checking origins and routing around unhealthy ones faster than DNS can propagate. Terminating the connection at a layer you control, and deciding per location, is what lets failover happen in seconds, the same lesson as GitHub's move off DNS, applied to global traffic instead of a single database."
       }
     }
   ],
