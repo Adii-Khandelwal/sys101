@@ -9,6 +9,7 @@ import TryQuestion from "@/components/TryQuestion";
 import SiteFooter from "@/components/SiteFooter";
 import { columns, depths, transitiveReduction } from "@/lib/graph";
 import { GROUPS, getAllTopics, type Group } from "@/lib/topics";
+import { readingMinutes } from "@/lib/readingTime";
 import { SITE_DESCRIPTION, pageMeta } from "@/lib/site";
 
 // Prerendered at build time; using anything dynamic here fails the build.
@@ -45,6 +46,7 @@ export default function Home() {
     slug: t.slug,
     title: t.title,
     number: String(i + 1).padStart(2, "0"),
+    minutes: readingMinutes(t),
     group: t.group ?? groupFromDepth(depth.get(t.slug) ?? 0),
   }));
   const groups = GROUPS.map((name) => ({ name, entries: entries.filter((e) => e.group === name) })).filter(

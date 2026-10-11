@@ -6,6 +6,7 @@ import VideoEmbed from "./VideoEmbed";
 import { prerequisiteLabel, type Learn, type Source, type VideoSource } from "@/lib/learn";
 import type { Topic } from "@/lib/topics";
 import { formatDate } from "@/lib/topics";
+import { learnReadingLabel } from "@/lib/readingTime";
 
 type Props = { topic: Topic; learn: Learn; titles: Map<string, string> };
 
@@ -63,8 +64,9 @@ export default function LearnPage({ topic, learn, titles }: Props) {
       </nav>
 
       <div data-pagefind-body>
-        <div className="label" data-pagefind-ignore>
-          Start from zero
+        <div className="topic-tagline" data-pagefind-ignore>
+          <span className="label">Start from zero</span>
+          <span className="label reading-time">{learnReadingLabel(learn)}</span>
         </div>
         <h1 data-pagefind-meta="title">Start from zero: {topic.title}</h1>
         <p className="concept">{learn.promise}</p>

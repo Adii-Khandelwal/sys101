@@ -7,7 +7,7 @@ import TopicIndex from "./TopicIndex";
 
 type GraphNode = { slug: string; title: string; posts: number; group: string };
 type Edge = { from: string; to: string };
-type IndexGroup = { name: string; entries: { slug: string; title: string; number: string }[] };
+type IndexGroup = { name: string; entries: { slug: string; title: string; number: string; minutes: number }[] };
 
 type Props = {
   nodes: GraphNode[];

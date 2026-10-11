@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useReadTopics } from "@/lib/progress";
 
-type Entry = { slug: string; title: string; number: string };
+type Entry = { slug: string; title: string; number: string; minutes: number };
 type Props = { groups: { name: string; entries: Entry[] }[] };
 
 export default function TopicIndex({ groups }: Props) {
@@ -25,6 +25,9 @@ export default function TopicIndex({ groups }: Props) {
                   <li key={e.slug}>
                     <span className="index-number">{e.number}</span>
                     <Link href={`/topic/${e.slug}`}>{e.title}</Link>
+                    <span className="index-time label" aria-hidden="true">
+                      {e.minutes} min
+                    </span>
                     <span className={isRead ? "legend-dot is-read" : "legend-dot"} aria-hidden="true" />
                     <span className="visually-hidden">{isRead ? "read" : "unread"}</span>
                   </li>

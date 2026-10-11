@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { optionId } from "@/lib/quizIds";
 import { formatDate, postWhen, type Topic } from "@/lib/topics";
+import { readingLabel } from "@/lib/readingTime";
 import { PostDigest, TopicList } from "./TopicDossier";
 import { CompactProgress, FinishTopic, MarkDone, QuizBlock, ResumeLine } from "./LessonTrackers";
 import type { LessonMeta } from "@/lib/lessonStore";
@@ -74,6 +75,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
         <div className="topic-tagline" data-pagefind-ignore>
           <span className="label">{topic.group ?? "Concept"}</span>
           {topic.interviewRelevance && <InterviewTag level={topic.interviewRelevance} />}
+          <span className="label reading-time">{readingLabel(topic)}</span>
         </div>
         <h1 data-pagefind-meta="title">{topic.title}</h1>
         <p className="concept">{topic.concept}</p>
