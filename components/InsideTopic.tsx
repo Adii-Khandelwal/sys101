@@ -12,25 +12,30 @@ export default function InsideTopic({ topic }: { topic: Topic }) {
       </h2>
       <p className="home-extra-note">What a topic page holds, shown for {topic.title}.</p>
       <ol className="inside-sequence">
-        {sections.map((s) => (
+        {sections.map((s, i) => (
           <li key={s.id}>
-            <span>{s.name}</span>
-            {s.count && <span className="inside-count">{s.count}</span>}
+            <span className="index-number">{String(i + 1).padStart(2, "0")}</span>
+            <span className="inside-name">{s.name}</span>
+            <span className="inside-count">{s.count ?? "\u00a0"}</span>
           </li>
         ))}
       </ol>
       {figure && (
-        <p className="inside-figure">
-          <strong>{figure.value}</strong>: {figure.meaning}.{" "}
-          <span className="inside-source">
-            {figure.company}, {figure.year},{" "}
-            <a href={figure.url} target="_blank" rel="noopener noreferrer">
-              original post
-            </a>
-          </span>
-        </p>
+        <div className="inside-figure">
+          <p className="inside-value">{figure.value}</p>
+          <p className="inside-meaning">
+            {figure.meaning}.
+            <span className="inside-source label">
+              {figure.company}, {figure.year}
+              <span aria-hidden="true"> · </span>
+              <a href={figure.url} target="_blank" rel="noopener noreferrer">
+                Original post
+              </a>
+            </span>
+          </p>
+        </div>
       )}
-      <p>
+      <p className="inside-open">
         <Link href={`/topic/${topic.slug}`}>Open {topic.title}</Link>
       </p>
     </section>

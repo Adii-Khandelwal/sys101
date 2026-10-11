@@ -182,24 +182,32 @@ a:hover {
   color: var(--ink-soft);
 }
 
+.inside-topic .home-extra-note {
+  margin: 0 0 24px;
+}
+
+/* Five across, two rows: each step is a top rule, a number, a name, and a count line. */
 .inside-sequence {
   list-style: none;
-  margin: 0 0 20px;
+  margin: 0;
   padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  border-top: 1px solid var(--rule);
-  border-left: 1px solid var(--rule);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0 24px;
 }
 
 .inside-sequence li {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 8px 14px;
-  border-right: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-  font-size: 17px;
+  gap: 4px;
+  padding: 12px 0 18px;
+  border-top: 1px solid var(--rule);
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.inside-name {
+  color: var(--ink);
 }
 
 .inside-count {
@@ -208,12 +216,51 @@ a:hover {
   color: var(--ink-soft);
 }
 
+/* One real figure: the number large on the left, what it means and where it is from on the right. */
 .inside-figure {
-  margin: 0 0 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px 32px;
+  margin: 8px 0 0;
+  padding: 20px 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.inside-value {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.1;
+  color: var(--accent);
+}
+
+.inside-meaning {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 18px;
 }
 
 .inside-source {
-  color: var(--ink-soft);
+  display: block;
+  margin-top: 6px;
+}
+
+.inside-source a {
+  color: inherit;
+}
+
+.inside-open {
+  margin: 20px 0 0;
+}
+
+@media (max-width: 900px) {
+  .inside-sequence {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .inside-figure {
+    flex-direction: column;
+  }
 }
 
 .latest-added {
