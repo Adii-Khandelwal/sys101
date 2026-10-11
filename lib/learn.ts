@@ -57,7 +57,20 @@ export type Learn = {
   before: { prerequisites: string[]; terms: Term[]; note?: string };
   stages: Stage[];
   misconceptions: { myth: string; truth: string }[];
-  tryIt: { intro: string; commands: { command: string; shows: string; source: string; note?: string }[] };
+  tryIt: {
+    intro: string;
+    commands: {
+      /** Exactly what you type: no prompt character. Must appear in the cited page or a page it links to. */
+      command: string;
+      shows: string;
+      source: string;
+      note?: string;
+      /** Names in the command that we made up (tables, keys, instances, databases); shown as "example names, not from the docs". */
+      exampleNames?: string[];
+      /** Required for a command that changes data or interrupts something real: what it does, and to run it only on a test system. */
+      warning?: string;
+    }[];
+  };
   next: string;
   sources: Source[];
 };
@@ -75,6 +88,10 @@ const LEARN_DIR = path.join(process.cwd(), "content", "learn");
 const nonEmpty = (v: unknown) => typeof v === "string" && v.trim().length > 0;
 const isVideo = (s: Source): s is VideoSource => s.kind === "video";
 const CITE = /\[\[([a-z0-9-]+)\]\]/g;
+/** Commands that change data or interrupt a running system; each needs a visible warning. */
+export const RISKY_COMMAND = /force-failover|reboot|\bdelete\b|\bdrop\b|truncate|flushall|flushdb|shutdown|terminate|\bkill\b|\bUPDATE\b|\bINSERT\b|\bALTER\b|CONFIG SET|--alter|etcdctl (put|del)|\bSET\b|\bCREATE\b|--create|console-producer|\bPUBLISH\b|\b(INCR|DECR|LPUSH|XADD)\b/i;
+/** A source year is a four-digit year, "no date shown", or "page shows last updated YYYY-MM-DD", and only when the page shows it. */
+export const VALID_SOURCE_YEAR = /^(\d{4}|no date shown|page shows last updated \d{4}-\d{2}-\d{2})$/;
 
 /** Source ids cited inline in a piece of text. */
 export const citations = (text: string) => [...text.matchAll(CITE)].map((m) => m[1]);
@@ -98,6 +115,7 @@ export function checkLearn(l: Learn, topicSlugs: string[]): string[] {
     const where = `source "${s.id}"`;
     if (ids.has(s.id)) problems.push(`${where} is listed twice`);
     ids.set(s.id, s);
+    if (!VALID_SOURCE_YEAR.test(s.year ?? "")) problems.push(`${where}: year "${s.year}" must be a four-digit year, "no date shown" or "page shows last updated YYYY-MM-DD"`);
     for (const f of ["title", "url", "publisher", "kind", "year", "verifiedOn"] as const) {
       if (!nonEmpty(s[f])) problems.push(`${where} is missing ${f}`);
     }
@@ -144,6 +162,9 @@ export function checkLearn(l: Learn, topicSlugs: string[]): string[] {
   (l.misconceptions ?? []).forEach((m) => citations(`${m.myth} ${m.truth}`).forEach((id) => known(id, "misconceptions")));
   (l.tryIt?.commands ?? []).forEach((c) => known(c.source, `try it "${c.command}"`));
   (l.tryIt?.commands ?? []).forEach((c) => {
+    if (RISKY_COMMAND.test(c.command) && !nonEmpty(c.warning)) {
+      problems.push(`try it "${c.command.slice(0, 40)}" changes or interrupts something real, so it needs a warning (what it does, and run only on a test system)`);
+    }
     if (/^\s*[>$]\s/m.test(c.command)) problems.push(`try it "${c.command.slice(0, 40)}" starts with a prompt character; commands must be exactly what you type`);
   });
   citations(l.next ?? "").forEach((id) => known(id, "where to go next"));

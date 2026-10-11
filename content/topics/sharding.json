@@ -289,8 +289,8 @@
         "question": "Why can't more replicas fix a table that is too big for one machine?",
         "options": [
           "Every replica still holds all of the data",
-          "Replicas cannot serve reads",
-          "Replicas only store indexes"
+          "Replicas cannot serve reads, so extra copies never reduce the load on the primary",
+          "Replicas only store indexes, which are far smaller than the table itself"
         ],
         "correct": 0,
         "why": "Replication copies everything; only splitting the data reduces each machine's share.",
@@ -320,9 +320,9 @@
       {
         "question": "What makes a good shard key?",
         "options": [
-          "A timestamp",
+          "A timestamp, because every new row then lands in a fresh, predictable position",
           "One most queries include, shared by tables queried together",
-          "Any column with few values"
+          "Any column with few values, because that keeps the number of shards small and simple"
         ],
         "correct": 1,
         "why": "Queries with the key stay on one shard, and joins within a key still work.",
@@ -337,15 +337,15 @@
         "question": "After sharding, what does the database stop enforcing across shards?",
         "options": [
           "Nothing changes",
-          "Column types",
-          "Foreign keys, global unique indexes and cross-shard transactions"
+          "Foreign keys, global unique indexes and cross-shard transactions",
+          "Column types"
         ],
-        "correct": 2,
+        "correct": 1,
         "why": "Each shard only knows its own rows, so global rules must be rebuilt in the application.",
         "wrong": [
           "These guarantees are lost unless rebuilt.",
-          "Each shard still enforces its own types.",
-          ""
+          "",
+          "Each shard still enforces its own types."
         ],
         "teaches": "how"
       },
@@ -368,16 +368,16 @@
       {
         "question": "Why did Figma shard logically with views before moving data?",
         "options": [
-          "Views are faster than tables",
-          "So the step could be reversed with a configuration change",
-          "Postgres requires it"
+          "Views are faster than tables, so the queries ran quicker after the change",
+          "Postgres requires it before any data can be moved to a separate database",
+          "So the step could be reversed with a configuration change"
         ],
-        "correct": 1,
+        "correct": 2,
         "why": "The risky, less reversible physical move came only after the logical step had proved itself.",
         "wrong": [
           "Views added up to 10% overhead.",
-          "",
-          "It was Figma's choice, not a requirement."
+          "It was Figma's choice, not a requirement.",
+          ""
         ],
         "teaches": "example"
       }

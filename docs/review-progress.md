@@ -20,6 +20,10 @@ Done. Quizzes reworked and removed from QUIZ_STYLE_PENDING. Learn pages: several
 
 Done. Quizzes reworked (Pub-Sub and Rate Limiting learn pages already matched their pages; only Try it warnings were added). Load Balancing cited RFC 7231, which RFC 9110 replaced, and the HAProxy docs landing page, which only lists versions; both were replaced with the HAProxy starter guide and RFC 9110. Message Queues cited an Amazon SQS page that now only redirects, and a Kafka documentation shell page; both were replaced with SQS's current pages and Kafka's design page. Try it commands now appear on the cited pages.
 
+## Batch 5: Replication, Sharding
+
+Done. Quizzes reworked and QUIZ_STYLE_PENDING is now empty, so the quiz style checks apply to all 18 topics. Replication cited PostgreSQL's chapter intro (which has no content on the trade-offs), and sharding's Try it used commands not on the cited pages; both were re-sourced. MySQL's replication page returned 403 to curl, so it was read from an archived copy of the same address.
+
 ## Remaining
 
-Batch 5: Replication, Sharding. Then: checks and rendering code, quiz rework for the 13 pending topics (as each batch lands), full build, verify:figures, search check.
+Final checks: full build, tests, verify:figures, SEO check, search index, and CLAUDE.md for the new checks.

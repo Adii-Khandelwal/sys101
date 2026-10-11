@@ -236,9 +236,7 @@ export function checkQuizPositions(quiz: Pick<LessonQuestion, "options" | "corre
  * and fail the build; remove a slug from this list once its quiz is reworked. A test fails
  * if a listed topic already passes, so the list can only shrink.
  */
-export const QUIZ_STYLE_PENDING: readonly string[] = [
-  "replication", "sharding",
-];
+export const QUIZ_STYLE_PENDING: readonly string[] = [];
 
 /** Most questions in which the correct option may be the single longest one. */
 export const MAX_LONGEST_CORRECT = 2;

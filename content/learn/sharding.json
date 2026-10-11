@@ -27,9 +27,9 @@
       "id": "basics",
       "name": "Basics",
       "body": [
-        "Replication makes copies of the same data, but one machine can only hold and write so much. When the data set or the write rate outgrows a single machine, you split the data into partitions and put each on its own machine. Splitting data this way to scale beyond one server is called sharding, and each piece is a shard [[mongodb-sharding]].",
-        "The point is horizontal scale for both storage and writes. Reads could already be spread across replicas, but every write still went to one primary. Sharding spreads writes too, because different shards accept writes independently. MongoDB describes this as the way to support very large data sets and high write throughput [[mongodb-sharding]].",
-        "Sharding is not the same as partitioning within one server, though they share ideas. A single database can partition a big table into pieces on one machine to speed queries and maintenance; sharding takes partitions across many machines. The placement logic is similar, the scale and failure story are not [[pg-partitioning]]."
+        "Replication makes copies of the same data, but one machine can only hold and write so much. MongoDB's page defines sharding as a method for distributing data across multiple machines, used when the data set or write rate outgrows one. Each shard holds a subset of the sharded data [[mongodb-sharding]].",
+        "The point is horizontal scale for both storage and writes. Reads could already be spread across replicas, but every write still went to one primary. MongoDB lists advantages of sharding for reads and writes, with the workload distributed across the shards, and for storage capacity [[mongodb-sharding]].",
+        "Sharding is not the same as partitioning within one server, though they share ideas. PostgreSQL's page describes partitioning a table into pieces on one database server, with built-in range, list and hash forms, and gives a rule of thumb that a table should exceed the server's physical memory before partitioning is worth it [[pg-partitioning]]. Sharding takes partitions across many machines, so the scale and failure story are different."
       ],
       "terms": [
         {
@@ -56,12 +56,12 @@
       "reading": [
         {
           "source": "mongodb-sharding",
-          "section": "Sharding, the overview and \"When to shard\"",
-          "what": "Why one machine's storage and write limits force splitting the data across many."
+          "section": "Sharding (the overview), and Advantages of Sharding",
+          "what": "What sharding is and why one machine's storage and write limits lead to it."
         },
         {
           "source": "pg-partitioning",
-          "section": "5.12 Table Partitioning, Overview",
+          "section": "5.12. Table Partitioning: Overview",
           "what": "Partitioning a table into pieces, the single-server cousin of sharding."
         }
       ],
@@ -75,10 +75,10 @@
       "id": "how",
       "name": "How it works",
       "body": [
-        "Everything turns on the shard key and how its values map to shards. There are two main strategies. Range sharding assigns contiguous ranges of the key to shards, which keeps ranges together for range scans. Hash sharding hashes the key first, which scatters neighbours across shards and spreads writes evenly. MongoDB supports both and the choice shapes performance [[mongodb-sharding]].",
-        "Hash-based placement is where consistent hashing returns. Hashing the shard key and placing it on a ring, or into fixed hash slots, is how a hash-sharded system decides ownership and limits how much data moves when shards are added. The ring you learned earlier is the mechanism underneath [[dynamo]].",
-        "A router sits between clients and shards. When a query names the shard key, the router sends it to the one shard that holds the data, a targeted query. When a query does not, the router must ask every shard and merge the results, a scatter-gather, which is much more expensive. MongoDB makes this distinction central to designing a shard key [[mongodb-sharding]].",
-        "Picking the shard key is the single most important decision. A good key spreads both data and traffic evenly and lets common queries target one shard. A poor key sends most traffic to one shard, a hot shard, or forces most queries to scatter to all shards [[mongodb-sharding]]."
+        "Everything turns on the shard key and how its values map to shards. MongoDB says it uses the shard key to distribute a collection's documents across shards, and supports two strategies. Hashed sharding computes a hash of the shard key value and assigns each chunk a range of hashed values. Ranged sharding divides data into ranges of shard key values, so keys whose values are close are more likely to live together [[mongodb-sharding]].",
+        "Hash-based placement is where consistent hashing returns. Dynamo describes treating the output of a hash function as a ring, with each node at a position on it, so a key's hash decides which node owns it and adding or removing a node affects only its neighbours [[dynamo]]. The ring you learned earlier is one mechanism for hash placement; Redis Cluster's fixed hash slots are another.",
+        "A router sits between clients and shards. MongoDB's page says a mongos acts as a query router between client applications and the sharded cluster, while config servers store the cluster's metadata [[mongodb-sharding]]. When a query names the shard key, the router can send it to the shard that holds the data; when it does not, it has to ask every shard and merge the results, which is much more expensive. MongoDB notes that with hashed sharding, range queries on the shard key are less likely to target a single shard and cause more cluster-wide broadcast operations [[mongodb-sharding]].",
+        "Picking the shard key is the single most important decision. A good key spreads both data and traffic evenly and lets common queries target one shard. A poor key sends most traffic to one shard, a hot shard, or forces most queries to scatter to all shards."
       ],
       "terms": [
         {
@@ -105,13 +105,13 @@
       "reading": [
         {
           "source": "mongodb-sharding",
-          "section": "Shard Keys, Hashed Sharding and Ranged Sharding",
-          "what": "The two placement strategies and how the shard key decides targeting versus scatter-gather."
+          "section": "Shard Keys and Sharding Strategy (Hashed Sharding and Ranged Sharding)",
+          "what": "The two placement strategies and how the shard key decides where documents go."
         },
         {
           "source": "dynamo",
-          "section": "Section 4.2, Partitioning",
-          "what": "How hashing the key onto a ring places data across shards and limits movement."
+          "section": "Section 4.2, Partitioning Algorithm",
+          "what": "How hashing keys onto a ring places data across nodes and limits movement."
         }
       ],
       "canNow": [
@@ -125,9 +125,9 @@
       "id": "deeper",
       "name": "Going deeper",
       "body": [
-        "Shards drift out of balance as data grows unevenly, so systems rebalance by moving chunks of data between shards. MongoDB groups documents into chunks and migrates them in the background to keep shards even. This movement competes with normal traffic, so it is throttled and done gradually [[mongodb-sharding]].",
-        "Some operations get hard once data is split. A query that joins or aggregates across shards must gather partial results from each and combine them. A transaction that touches more than one shard needs coordination to stay atomic, which is slower and more complex than a single-shard transaction. The cheapest designs keep related data on the same shard so these cross-shard operations are rare [[pg-partitioning]].",
-        "Sharding and replication combine rather than compete. Each shard is itself replicated, so a shard is really a small replicated cluster with its own primary and replicas. DynamoDB describes storing data in partitions that are replicated across availability zones, so a shard surviving a machine loss and the data being split are handled together [[dynamo-partitions]]."
+        "Shards drift out of balance as data grows unevenly, so systems rebalance by moving chunks of data between shards. MongoDB partitions sharded data into chunks, each with a range of shard key values, and says a balancer runs in the background to migrate ranges across the shards and keep the data evenly distributed [[mongodb-sharding]].",
+        "Some operations get hard once data is split. A query that joins or aggregates across shards must gather partial results from each and combine them. A transaction that touches more than one shard needs coordination to stay atomic, which is slower and more complex than a single-shard transaction. The cheapest designs keep related data on the same shard so these cross-shard operations are rare. This is general reasoning; the cited pages do not cover cross-shard transactions.",
+        "Sharding and replication combine rather than compete. MongoDB says each shard must be deployed as a replica set, so a shard is really a small replicated cluster [[mongodb-sharding]]. DynamoDB describes storing data in partitions that are automatically replicated across multiple Availability Zones, so the data is split and each piece survives a machine loss [[dynamo-partitions]]."
       ],
       "terms": [
         {
@@ -154,13 +154,13 @@
       "reading": [
         {
           "source": "mongodb-sharding",
-          "section": "Data Partitioning with Chunks and the Balancer",
+          "section": "Chunks, and Balancer and Even Data Distribution",
           "what": "How data is grouped into chunks and migrated to keep shards balanced."
         },
         {
           "source": "dynamo-partitions",
-          "section": "Data distribution and partition replication across zones",
-          "what": "How a production system replicates each partition so a shard survives failures."
+          "section": "Partitions and data distribution in DynamoDB",
+          "what": "How a production service hashes a partition key to a partition and replicates each partition across zones."
         }
       ],
       "canNow": [
@@ -173,9 +173,9 @@
       "id": "practice",
       "name": "In practice and trade-offs",
       "body": [
-        "The deepest trade-off is that sharding adds permanent complexity to buy scale. Routing, rebalancing, cross-shard queries and multi-shard transactions all become harder, so the usual advice is to shard only when a single replicated database can no longer cope, not before. MongoDB explicitly frames sharding as a response to real storage or throughput limits [[mongodb-sharding]].",
-        "The shard key is close to irreversible. Once data is spread by a key and queries are written around it, changing it means redistributing everything. A key that spreads load today but concentrates tomorrow's hot data, like a monotonically increasing timestamp sending all new writes to one shard, is a classic trap. Hash sharding avoids that at the cost of range scans [[mongodb-sharding]].",
-        "Range versus hash is the recurring practical choice. Range keeps neighbours together, so time-range or alphabetical scans hit few shards, but risks hot shards at the end of the range. Hash spreads writes evenly and avoids hot shards but turns any range scan into a scatter-gather. The right answer follows your dominant query pattern [[pg-partitioning]]."
+        "The deepest trade-off is that sharding adds permanent complexity to buy scale. Routing, rebalancing, cross-shard queries and multi-shard transactions all become harder, so the usual advice is to shard only when a single replicated database can no longer cope, not before. MongoDB frames sharding as a response to the data and write limits of a single machine [[mongodb-sharding]].",
+        "The shard key is close to irreversible. Once data is spread by a key and queries are written around it, changing it means redistributing everything. A key that spreads load today but concentrates tomorrow's hot data, like a monotonically increasing timestamp sending all new writes to one shard, is a classic trap. Hashed sharding avoids that at the cost of range scans, as MongoDB's note on range queries shows [[mongodb-sharding]].",
+        "Range versus hash is the recurring practical choice. Ranged sharding keeps neighbours together, so range scans hit few shards, but risks hot shards at the end of the range. Hashed sharding spreads writes evenly but makes range scans cluster-wide broadcasts [[mongodb-sharding]]. PostgreSQL's partitioning page offers the same menu inside one server, range, list and hash, and the right answer follows your dominant query pattern [[pg-partitioning]]."
       ],
       "terms": [
         {
@@ -198,13 +198,13 @@
       "reading": [
         {
           "source": "mongodb-sharding",
-          "section": "Choose a Shard Key and its consequences",
-          "what": "Why the shard key is hard to change and how a poor key creates hot shards."
+          "section": "Sharding Strategy: Hashed Sharding and Ranged Sharding",
+          "what": "What each strategy gives and costs for range queries."
         },
         {
           "source": "pg-partitioning",
-          "section": "5.12.2 Declarative Partitioning, range vs list vs hash",
-          "what": "How the partitioning strategy follows the query pattern, mirroring the shard-key choice."
+          "section": "5.12.2. Declarative Partitioning",
+          "what": "The range, list and hash forms of partitioning inside one server."
         }
       ],
       "canNow": [
@@ -217,38 +217,39 @@
   "misconceptions": [
     {
       "myth": "Sharding and replication are alternatives.",
-      "truth": "They combine: data is split into shards, and each shard is itself replicated for safety [[dynamo-partitions]]."
+      "truth": "They combine: MongoDB says each shard must be deployed as a replica set, and DynamoDB replicates each partition across Availability Zones [[mongodb-sharding]] [[dynamo-partitions]]."
     },
     {
       "myth": "Any shard key works as long as it is unique.",
-      "truth": "A poor key, like an increasing timestamp, concentrates traffic on one shard; the key must spread load and suit queries [[mongodb-sharding]]."
+      "truth": "A poor key, like an increasing timestamp, concentrates traffic on one shard; the key must spread load and suit queries. MongoDB says it uses the shard key to distribute documents across shards [[mongodb-sharding]]."
     },
     {
       "myth": "Sharding makes every query faster.",
-      "truth": "Queries without the shard key become scatter-gather across all shards, which is slower than one database [[mongodb-sharding]]."
+      "truth": "MongoDB notes that range queries on a hashed shard key are less likely to target a single shard, resulting in more cluster-wide broadcast operations [[mongodb-sharding]]."
     },
     {
       "myth": "You can change the shard key later if you get it wrong.",
-      "truth": "Changing it forces redistributing the whole data set, so it is close to irreversible [[mongodb-sharding]]."
+      "truth": "Changing it means redistributing the data set, so it is close to irreversible; plan the key around your main queries."
     }
   ],
   "tryIt": {
-    "intro": "These inspect sharding in a running system. Output depends on your cluster, so it is not shown here. The views are described in the MongoDB and PostgreSQL documentation.",
+    "intro": "These inspect sharding in MongoDB and show how PostgreSQL partitions a table on one server. The mongosh methods come from MongoDB's reference pages; the PostgreSQL statement and the table name measurement come from the PostgreSQL partitioning page. Output depends on your cluster, so it is not shown here.",
     "commands": [
       {
         "command": "sh.status()",
-        "shows": "In the mongo shell, the shards, the shard key per collection, and chunk distribution.",
-        "source": "mongodb-sharding"
+        "shows": "When run on a mongos, prints a report of the sharding configuration and information about existing chunks.",
+        "source": "mongodb-sh-status"
       },
       {
         "command": "db.collection.getShardDistribution()",
-        "shows": "How documents and size are spread across shards for one collection.",
-        "source": "mongodb-sharding"
+        "shows": "Prints data distribution statistics for a sharded collection. Replace collection with the name of yours.",
+        "source": "mongodb-shard-distribution"
       },
       {
-        "command": "\\d+ parent_table",
-        "shows": "In psql, a partitioned table and its partitions, the single-server analogue.",
-        "source": "pg-partitioning"
+        "command": "CREATE TABLE measurement (\n    city_id int not null,\n    logdate date not null,\n    peaktemp int,\n    unitsales int\n) PARTITION BY RANGE (logdate);",
+        "shows": "PostgreSQL's example of a table partitioned by range on logdate, the single-server cousin of range sharding. Partitions are created separately.",
+        "source": "pg-partitioning",
+        "warning": "This creates a table. Run it only on a test database."
       }
     ]
   },
@@ -260,7 +261,7 @@
       "url": "https://www.mongodb.com/docs/manual/sharding/",
       "publisher": "MongoDB",
       "kind": "Project documentation",
-      "year": "2024",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
     },
     {
@@ -269,7 +270,7 @@
       "url": "https://www.postgresql.org/docs/current/ddl-partitioning.html",
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
-      "year": "2024",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
     },
     {
@@ -278,9 +279,9 @@
       "url": "https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf",
       "publisher": "Amazon (Werner Vogels, allthingsdistributed.com)",
       "kind": "Academic paper",
-      "year": "2007",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11",
-      "note": "The SOSP 2007 Dynamo paper, hosted on the Amazon CTO's site."
+      "note": "The Dynamo paper, hosted on the Amazon CTO's site; the PDF itself shows no publication date."
     },
     {
       "id": "dynamo-partitions",
@@ -288,7 +289,25 @@
       "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.Partitions.html",
       "publisher": "Amazon Web Services",
       "kind": "Vendor documentation",
-      "year": "2024",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "mongodb-sh-status",
+      "title": "MongoDB: sh.status()",
+      "url": "https://www.mongodb.com/docs/manual/reference/method/sh.status/",
+      "publisher": "MongoDB",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "mongodb-shard-distribution",
+      "title": "MongoDB: db.collection.getShardDistribution()",
+      "url": "https://www.mongodb.com/docs/manual/reference/method/db.collection.getShardDistribution/",
+      "publisher": "MongoDB",
+      "kind": "Project documentation",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
     }
   ]

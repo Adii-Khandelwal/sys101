@@ -47,6 +47,27 @@ describe("learn pages", () => {
     }
   });
 
+  it("fails a risky Try it command with no warning, and passes it with one", () => {
+    const l = clone();
+    l.tryIt.commands[0].command = "aws rds reboot-db-instance --db-instance-identifier x --force-failover";
+    expect(checkLearn(l, slugs).join()).toMatch(/needs a warning/);
+    l.tryIt.commands[0].warning = "Reboots the instance and forces a failover. Run only on a test instance.";
+    expect(checkLearn(l, slugs).join()).not.toMatch(/needs a warning/);
+  });
+
+  it("fails a source year that is not a year, a date the page shows, or 'no date shown'", () => {
+    for (const bad of ["around 2024", "2024-01-01", "undated"]) {
+      const l = clone();
+      l.sources[0].year = bad;
+      expect(checkLearn(l, slugs).join(), bad).toMatch(/year/);
+    }
+    for (const good of ["2024", "no date shown", "page shows last updated 2026-04-16"]) {
+      const l = clone();
+      l.sources[0].year = good;
+      expect(checkLearn(l, slugs).join(), good).not.toMatch(/must be a four-digit year/);
+    }
+  });
+
   it("fails a source missing publisher, kind, year or verifiedOn", () => {
     for (const f of ["publisher", "kind", "year", "verifiedOn"] as const) {
       const l = clone();
@@ -128,8 +149,8 @@ describe("circuit breakers learn page", () => {
     expect(getAllLearn(slugs).map((l) => l.slug)).toContain("circuit-breakers");
   });
 
-  it("labels every claim from the AWS article as AWS's view and records no year", () => {
-    expect(src("aws-timeouts-retries").year).toBe("no year recorded");
+  it("labels every claim from the AWS article as AWS's view and records only the date the page shows", () => {
+    expect(src("aws-timeouts-retries").year).toBe("page shows last updated 2026-06-15");
     for (const p of paras.filter((x) => x.includes("[[aws-timeouts-retries]]"))) expect(p).toMatch(/AWS/);
     expect(src("aws-timeouts-retries").note).toMatch(/AWS's view/);
   });

@@ -26,9 +26,9 @@
       "id": "basics",
       "name": "Basics",
       "body": [
-        "A single database is a single point of failure: if its machine dies, the data is unreachable and maybe lost. Replication keeps one or more extra copies of the database on other machines, kept up to date with the first, so a copy can take over if the main one fails and reads can be spread across the copies [[pg-ha]].",
-        "The usual shape is one primary that accepts writes and one or more replicas that copy those writes and serve reads. The primary stays the single source of truth for changes; the replicas follow along. PostgreSQL frames this as the standard way to get both high availability and extra read capacity [[pg-ha]].",
-        "Replication buys two things: durability and availability, by having copies survive a machine loss, and read scaling, by sending read queries to replicas. It does not by itself let you store more data than one machine holds; that is sharding, a later topic. Replication is about copies of the same data, not splitting it [[mysql-repl]]."
+        "A single database is a single point of failure: if its machine dies, the data is unreachable and maybe lost. PostgreSQL's documentation opens by describing two goals for servers that work together: allowing a second server to take over quickly if the primary fails, which is high availability, and allowing several computers to serve the same data, which is load balancing [[pg-solutions]]. Replication keeps extra copies on other machines, kept up to date with the first.",
+        "The usual shape is one primary that accepts writes and one or more replicas that copy those writes and serve reads. PostgreSQL calls servers that can modify data read/write, master or primary servers, and servers that track changes in the primary standby or secondary servers [[pg-solutions]]. MySQL uses the terms source and replicas, and says replication is asynchronous by default [[mysql-repl]].",
+        "Replication buys two things: durability and availability, by having copies survive a machine loss, and read scaling. MySQL lists scale-out among its advantages, with all writes and updates taking place on the source and reads spread across replicas [[mysql-repl]]. It does not by itself let you store more data than one machine holds; that is sharding, a later topic. Replication is about copies of the same data, not splitting it."
       ],
       "terms": [
         {
@@ -54,14 +54,14 @@
       ],
       "reading": [
         {
-          "source": "pg-ha",
-          "section": "Comparison of Different Solutions, overview",
-          "what": "Why keeping copies on other machines gives both availability and read capacity."
+          "source": "pg-solutions",
+          "section": "26.1. Comparison of Different Solutions",
+          "what": "The goals of high availability and load balancing, and the terms primary and standby."
         },
         {
           "source": "mysql-repl",
-          "section": "Replication, the introductory overview",
-          "what": "The primary-and-replica shape and that replicas copy the primary's writes."
+          "section": "Chapter 19, Replication (the introduction)",
+          "what": "The source and replica shape, that replication is asynchronous by default, and the advantages MySQL lists."
         }
       ],
       "canNow": [
@@ -74,10 +74,10 @@
       "id": "how",
       "name": "How it works",
       "body": [
-        "The primary records every change in an ordered log and streams it to the replicas, which replay the same changes in the same order. PostgreSQL ships its write-ahead log to standbys; MySQL ships its binary log of events. Either way the replica rebuilds the primary's state by applying the log [[pg-warm-standby]].",
-        "Replication can be asynchronous or synchronous. Asynchronous means the primary commits and tells the client done without waiting for replicas, which is fast but means a replica can lag behind. Synchronous means the primary waits for a replica to confirm before telling the client done, which protects against losing that commit on failover but makes every write slower [[pg-ha]].",
-        "The gap between a replica and the primary is replication lag. Under asynchronous replication a read sent to a lagging replica can return data slightly out of date, so a user who just wrote something might not see it on the next read if that read hit a behind replica [[mysql-repl]].",
-        "When the primary fails, a replica is promoted to be the new primary, a failover. If replication was asynchronous, any writes the old primary had not yet shipped are lost. Setups weigh how much they are willing to lose against how much they are willing to slow every write to avoid it [[pg-warm-standby]]."
+        "The primary records every change in an ordered log and streams it to the replicas, which replay the same changes in the same order. PostgreSQL's standbys read the primary's write-ahead log, which the page describes in terms of continuous archiving and streaming replication [[pg-warm-standby]]. MySQL says its traditional method replicates events from the source's binary log [[mysql-repl]]. Either way the replica rebuilds the primary's state by applying the log.",
+        "Replication can be asynchronous or synchronous. Asynchronous means the primary commits and tells the client done without waiting for replicas, which is fast but means a replica can lag behind; MySQL says replication is asynchronous by default [[mysql-repl]]. PostgreSQL describes the synchronous option: each commit of a write transaction waits until confirmation is received that the commit has been written to the write-ahead log on disk of both the primary and the standby, and data can then be lost only if both are damaged at once [[pg-warm-standby]]. That protects against losing the commit on failover but makes every write wait.",
+        "The gap between a replica and the primary is replication lag. PostgreSQL's page describes it as the amount of WAL records generated on the primary but not yet applied on the standby, which you can calculate by comparing the primary's current WAL write location with the last location received by the standby [[pg-warm-standby]]. Under asynchronous replication a read sent to a lagging replica can return data slightly out of date, so a user who just wrote something might not see it on the next read.",
+        "When the primary fails, a replica is promoted to be the new primary, a failover. PostgreSQL's page says a standby leaves standby mode and switches to normal operation when pg_ctl promote is run or pg_promote() is called [[pg-warm-standby]]. If replication was asynchronous, any writes the old primary had not yet shipped are lost. Setups weigh how much they are willing to lose against how much they are willing to slow every write to avoid it."
       ],
       "terms": [
         {
@@ -104,13 +104,13 @@
       "reading": [
         {
           "source": "pg-warm-standby",
-          "section": "Log-Shipping Standby Servers and Streaming Replication",
-          "what": "How a standby replays the primary's log to stay in step."
+          "section": "26.2. Log-Shipping Standby Servers (including Streaming Replication and Synchronous Replication)",
+          "what": "How a standby replays the primary's log, how synchronous commits wait, and how lag is measured."
         },
         {
-          "source": "pg-ha",
-          "section": "Synchronous vs asynchronous discussion",
-          "what": "The trade-off between waiting for a replica and risking lost writes on failover."
+          "source": "mysql-repl",
+          "section": "Chapter 19, Replication (the introduction)",
+          "what": "Binary log based replication and that replication is asynchronous by default."
         }
       ],
       "canNow": [
@@ -124,9 +124,9 @@
       "id": "deeper",
       "name": "Going deeper",
       "body": [
-        "Reading from replicas introduces a subtle correctness issue: read-your-writes. If you write to the primary and then read from a lagging replica, you may not see your own change. Common fixes are routing a user's reads to the primary for a short window after they write, or waiting for the replica to catch up to the write's log position before reading [[mysql-repl]].",
-        "A single-primary design avoids write conflicts, since only one machine accepts writes, but makes the primary a bottleneck and a failure point until a replica is promoted. Multi-primary designs let more than one node accept writes, which removes that bottleneck but creates the problem of two nodes changing the same row at once and having to reconcile the conflict [[mysql-repl]].",
-        "Deciding who becomes the new primary safely is itself hard. If two nodes both think they are primary, they can accept conflicting writes, a split brain. Avoiding this needs agreement among the nodes about who leads, which is what consensus algorithms such as Raft provide: a safe, understandable way to elect one leader and keep a single replicated log [[raft-site]]."
+        "Reading from replicas introduces a subtle correctness issue: read-your-writes. If you write to the primary and then read from a lagging replica, you may not see your own change. Common fixes are routing a user's reads to the primary for a short window after they write, or waiting for the replica to catch up to the write's log position before reading. These are general techniques, not something the cited pages describe.",
+        "A single-primary design avoids write conflicts, since only one machine accepts writes, but makes the primary a bottleneck and a failure point until a replica is promoted. PostgreSQL's page describes the alternative: in asynchronous multimaster replication each server works independently and periodically communicates with the others to identify conflicting transactions, which can be resolved by users or by conflict resolution rules [[pg-solutions]].",
+        "Deciding who becomes the new primary safely is itself hard. If two nodes both think they are primary, they can accept conflicting writes, a split brain. Avoiding this needs agreement among the nodes, which is what consensus algorithms provide. The Raft project page describes consensus as multiple servers agreeing on values, where a decision, once reached, is final, and where typical algorithms make progress when any majority of servers is available [[raft-site]]."
       ],
       "terms": [
         {
@@ -152,14 +152,14 @@
       ],
       "reading": [
         {
-          "source": "mysql-repl",
-          "section": "Group Replication overview",
-          "what": "How a group handles multiple writers and the conflicts that creates."
+          "source": "pg-solutions",
+          "section": "26.1. Comparison of Different Solutions: Asynchronous Multimaster Replication",
+          "what": "How servers that all accept writes find and resolve conflicting transactions."
         },
         {
           "source": "raft-site",
-          "section": "The introduction and \"leader election\" summary",
-          "what": "How a consensus algorithm elects one leader safely, preventing split brain."
+          "section": "What is Raft? and Hold on, what is consensus?",
+          "what": "What consensus is and how many servers a cluster needs to keep making progress."
         }
       ],
       "canNow": [
@@ -172,9 +172,9 @@
       "id": "practice",
       "name": "In practice and trade-offs",
       "body": [
-        "The governing trade-off is the one from the Databases topic made concrete: strong versus eventual consistency. Synchronous replication to a majority gives reads a current view but slows writes and can stall if replicas are unreachable. Asynchronous replication keeps writes fast but lets replicas serve slightly stale reads. Which you choose depends on whether a stale read or a slow write hurts your application more [[pg-ha]].",
-        "Replication is also how backups and zero-downtime maintenance work. A standby can be upgraded or taken offline without stopping writes, and failover turns a dead primary into a few seconds of disruption rather than an outage, provided the promotion is handled cleanly and clients reconnect [[pg-warm-standby]].",
-        "The hard limit to remember: replication multiplies copies of the same data but never shrinks the data set a single machine must hold. When one machine can no longer hold or write all the data, you must split it, which is Sharding. Replication and sharding are usually combined, each shard being itself replicated [[mysql-repl]]."
+        "The governing trade-off is the one from the Databases topic made concrete: strong versus eventual consistency. Synchronous replication makes each commit wait for the standby's confirmation, which gives a current view and little loss but slows writes; PostgreSQL notes it also depends on the standby being reachable to confirm [[pg-warm-standby]]. Asynchronous replication keeps writes fast but lets replicas serve slightly stale reads. Which you choose depends on whether a stale read or a slow write hurts your application more.",
+        "Replication is also how backups and low-disruption maintenance work. MySQL says that because a replica can pause the replication process, you can run backup services on the replica without corrupting the source's data [[mysql-repl]]. A standby can be taken offline without stopping writes on the primary, and failover turns a dead primary into a short disruption rather than an outage, provided the promotion is handled cleanly and clients reconnect.",
+        "The hard limit to remember: replication multiplies copies of the same data but never shrinks the data set a single machine must hold. MySQL's own scale-out description keeps all writes on the source [[mysql-repl]]. When one machine can no longer hold or write all the data, you must split it, which is Sharding. Replication and sharding are usually combined, each shard being itself replicated."
       ],
       "terms": [
         {
@@ -196,14 +196,14 @@
       ],
       "reading": [
         {
-          "source": "pg-ha",
-          "section": "Comparison of Different Solutions, the trade-off table",
-          "what": "How each replication choice weighs consistency, write speed and failover loss."
+          "source": "pg-warm-standby",
+          "section": "26.2.8. Synchronous Replication",
+          "what": "What a synchronous commit waits for, and when data can still be lost."
         },
         {
           "source": "mysql-repl",
-          "section": "Replication introduction, uses of replication",
-          "what": "Why replication alone does not scale storage, which leads into sharding."
+          "section": "Chapter 19, Replication: advantages of replication in MySQL",
+          "what": "Scale-out, backups and analytics as uses of replication, and why writes stay on the source."
         }
       ],
       "canNow": [
@@ -216,59 +216,60 @@
   "misconceptions": [
     {
       "myth": "A replica is always an exact, up-to-the-moment copy.",
-      "truth": "With asynchronous replication a replica lags, so a read there can return slightly stale data [[mysql-repl]]."
+      "truth": "MySQL says replication is asynchronous by default, so replicas lag; PostgreSQL describes lag as WAL records generated on the primary but not yet applied on the standby [[mysql-repl]] [[pg-warm-standby]]."
     },
     {
       "myth": "Replication lets you store more data than one machine holds.",
-      "truth": "It makes copies of the same data; storing more than one machine holds needs sharding [[mysql-repl]]."
+      "truth": "Replication copies the same data to more servers. MySQL's scale-out model keeps all writes on the source, so storing more than one machine holds needs sharding [[mysql-repl]]."
     },
     {
       "myth": "Failover never loses data.",
-      "truth": "After an asynchronous failover, writes the old primary had not shipped yet are lost [[pg-warm-standby]]."
+      "truth": "PostgreSQL says that with synchronous replication data can be lost only if both primary and standby are damaged at once; with asynchronous replication, writes the old primary had not yet shipped can be lost [[pg-warm-standby]]."
     },
     {
       "myth": "Any replica can safely decide to become primary.",
-      "truth": "Without agreement two nodes can both claim to be primary (split brain); safe election needs consensus [[raft-site]]."
+      "truth": "Without agreement two nodes can both claim to be primary. The Raft page describes consensus as servers agreeing on values, with a decision that is final once reached [[raft-site]]."
     }
   ],
   "tryIt": {
-    "intro": "These inspect replication on a running PostgreSQL primary and replica. Output depends on your setup, so it is not shown here. Each view is described in the PostgreSQL documentation.",
+    "intro": "These inspect replication on a running PostgreSQL primary and replica with psql. The PostgreSQL pages name the view pg_stat_replication and the functions below, and the statements are the usual ways to call them. Output depends on your setup, so it is not shown here.",
     "commands": [
       {
         "command": "SELECT * FROM pg_stat_replication;",
-        "shows": "On the primary, each connected replica and how far behind it is.",
+        "shows": "On the primary, one row for each WAL sender process, which the page says you can list through this view.",
         "source": "pg-warm-standby"
+      },
+      {
+        "command": "SELECT pg_current_wal_lsn();",
+        "shows": "On the primary, the current write-ahead log write location. The page compares it with the standby's last received location to see lag.",
+        "source": "pg-recovery-functions"
+      },
+      {
+        "command": "SELECT pg_last_wal_receive_lsn();",
+        "shows": "On a standby, the last write-ahead log location received and synced to disk by streaming replication.",
+        "source": "pg-recovery-functions"
       },
       {
         "command": "SELECT pg_is_in_recovery();",
-        "shows": "Whether this server is a replica (true) or the primary (false).",
-        "source": "pg-warm-standby"
+        "shows": "Whether this server is still in recovery, which is true on a standby.",
+        "source": "pg-recovery-functions"
       },
       {
-        "command": "SELECT now() - pg_last_xact_replay_timestamp();",
-        "shows": "On a replica, an estimate of its replication lag behind the primary.",
-        "source": "pg-warm-standby"
+        "command": "SELECT pg_last_xact_replay_timestamp();",
+        "shows": "On a standby, the time stamp of the last transaction replayed, taken from when the commit was generated on the primary.",
+        "source": "pg-recovery-functions"
       }
     ]
   },
   "next": "Go back to the Database Replication topic page for the worked example and the quiz, then read the two company posts on replicating real databases. From here the map leads to Sharding, which splits data, and the consensus idea reappears throughout distributed systems.",
   "sources": [
     {
-      "id": "pg-ha",
-      "title": "PostgreSQL Documentation: High Availability, Load Balancing, and Replication",
-      "url": "https://www.postgresql.org/docs/current/high-availability.html",
-      "publisher": "PostgreSQL Global Development Group",
-      "kind": "Project documentation",
-      "year": "2024",
-      "verifiedOn": "2026-10-11"
-    },
-    {
       "id": "pg-warm-standby",
       "title": "PostgreSQL Documentation: Log-Shipping Standby Servers",
       "url": "https://www.postgresql.org/docs/current/warm-standby.html",
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
-      "year": "2024",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
     },
     {
@@ -277,8 +278,9 @@
       "url": "https://dev.mysql.com/doc/refman/8.4/en/replication.html",
       "publisher": "Oracle (MySQL)",
       "kind": "Project documentation",
-      "year": "2024",
-      "verifiedOn": "2026-10-11"
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "The MySQL 8.4 Reference Manual, chapter 19."
     },
     {
       "id": "raft-site",
@@ -288,7 +290,26 @@
       "kind": "Academic project page",
       "year": "no date shown",
       "verifiedOn": "2026-10-11",
-      "note": "Links to the paper \"In Search of an Understandable Consensus Algorithm\" (USENIX ATC 2014)."
+      "note": "The Raft project page. It refers to the 2014 Raft paper; the page itself shows no date."
+    },
+    {
+      "id": "pg-solutions",
+      "title": "PostgreSQL: Comparison of Different Solutions",
+      "url": "https://www.postgresql.org/docs/current/different-replication-solutions.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "The PostgreSQL 18 documentation, the current version when opened."
+    },
+    {
+      "id": "pg-recovery-functions",
+      "title": "PostgreSQL: Recovery Information Functions",
+      "url": "https://www.postgresql.org/docs/current/functions-admin.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11"
     }
   ]
 }

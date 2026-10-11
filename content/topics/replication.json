@@ -266,31 +266,31 @@
       {
         "question": "What is split brain?",
         "options": [
-          "A replica falling behind",
-          "Two machines both accepting writes as primary",
-          "A query split across replicas"
+          "A replica falling behind the primary, so its reads show older data than the primary's",
+          "A query split across replicas, each of which answers a different part of it",
+          "Two machines both accepting writes as primary"
         ],
-        "correct": 1,
+        "correct": 2,
         "why": "Conflicting writes on two primaries can diverge and be hard to reconcile.",
         "wrong": [
           "That is replication lag.",
-          "",
-          "That is not a failure mode."
+          "That is not a failure mode.",
+          ""
         ],
         "teaches": "model"
       },
       {
         "question": "With asynchronous replication, the primary dies right after a commit. What can happen?",
         "options": [
-          "The commit may be lost if no replica received it",
           "Nothing can be lost",
+          "The commit may be lost if no replica received it",
           "The replica rejects all writes forever"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "The primary did not wait for any copy, so the newest commits may exist only on the dead machine.",
         "wrong": [
-          "",
           "Only waiting for confirmation protects recent commits.",
+          "",
           "A replica can be promoted and accept writes."
         ],
         "teaches": "how"
@@ -298,16 +298,16 @@
       {
         "question": "Why should a failover not depend on the failed primary's cooperation?",
         "options": [
-          "The primary is always busy",
-          "It slows reads",
-          "A dead or cut-off machine cannot help"
+          "A dead or cut-off machine cannot help",
+          "The primary is always busy, so it cannot answer a promotion request in time",
+          "It slows reads, because every replica must ask the old primary before answering"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "Designs like a shared IP that the old primary must release fail exactly when needed.",
         "wrong": [
+          "",
           "Busy is not the issue; unreachable is.",
-          "Reads are unrelated.",
-          ""
+          "Reads are unrelated."
         ],
         "teaches": "mistakes"
       },
@@ -330,32 +330,32 @@
       {
         "question": "Why keep replicas at all, beyond backups?",
         "options": [
-          "Because primaries cannot write",
-          "To make writes faster",
-          "To spread reads and replace a failed primary quickly"
+          "Because primaries cannot write, so every change has to be made on a replica first",
+          "To spread reads and replace a failed primary quickly",
+          "To make writes faster, since each write can be sent to the nearest replica"
         ],
-        "correct": 2,
+        "correct": 1,
         "why": "Copies serve reads and are ready to take over.",
         "wrong": [
           "The primary handles writes.",
-          "Waiting for replicas can make writes slower, not faster.",
-          ""
+          "",
+          "Waiting for replicas can make writes slower, not faster."
         ],
         "teaches": "why"
       },
       {
         "question": "Meta's commits wait for 2 of 3 votes in the leader's region. Why only that region?",
         "options": [
-          "Other regions do not store data",
-          "To avoid a cross-region round trip on every commit",
-          "Raft forbids more votes"
+          "Other regions do not store data, so they have nothing to vote on",
+          "Raft forbids more votes, so a larger quorum would not be allowed to commit",
+          "To avoid a cross-region round trip on every commit"
         ],
-        "correct": 1,
+        "correct": 2,
         "why": "Regions are 10 to 100 ms apart; a local quorum keeps commits fast.",
         "wrong": [
           "Other regions receive the data without voting.",
-          "",
-          "Raft allows larger quorums; Meta chose a small local one."
+          "Raft allows larger quorums; Meta chose a small local one.",
+          ""
         ],
         "teaches": "example"
       }
