@@ -199,10 +199,25 @@ await pool(urls, 4, async (u) => {
   let r = await fetchRaw(u);
   if (r.status !== 200) {
     // Blocked or gone: read the Internet Archive's copies of the same address, and say so in the log.
-    // Snapshots differ (some are bot-challenge pages), so the text of every copy that loads is searched.
+    // Ask the CDX API for snapshots the archive served as 200 text/html, so we fetch the real article
+    // rather than a year-stub that Wayback may resolve to a bot-challenge page. Snapshots still differ,
+    // so the text of every copy that loads is searched.
+    const stamps = [];
+    const cdx = await fetchRaw(
+      `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(u)}` +
+        `&output=text&filter=statuscode:200&filter=mimetype:text/html&fl=timestamp&collapse=digest&limit=5`,
+    );
+    if (cdx.status === 200) {
+      for (const line of cdx.body.toString("utf8").trim().split("\n")) {
+        const ts = line.trim();
+        if (/^\d{14}$/.test(ts)) stamps.push(ts);
+      }
+    }
+    // Fall back to year stubs if the CDX API gave nothing.
+    if (!stamps.length) stamps.push("2024", "2021", "2025");
     const copies = [];
-    for (const year of ["2024", "2021", "2025"]) {
-      const copy = await fetchRaw(`https://web.archive.org/web/${year}/${u}`);
+    for (const ts of stamps) {
+      const copy = await fetchRaw(`https://web.archive.org/web/${ts}id_/${u}`);
       if (copy.status === 200 && !isPdf(copy.body)) copies.push(copy.body.toString("utf8"));
     }
     if (copies.length) {

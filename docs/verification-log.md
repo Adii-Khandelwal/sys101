@@ -54,7 +54,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | cloudflare-pingora-2022 | numbers | about 70% and 67% | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | More efficient | found with different formatting |
 | cloudflare-pingora-2022 | numbers | 434 years | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Pingora is faster in production | found |
 | netflix-open-connect-popularity-2017 | numbers | 50% | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | What granularity do we use to predict popularity? | found |
-| netflix-open-connect-popularity-2017 | numbers | about 1,200 | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | How is our content organized? | found with different formatting |
+| netflix-open-connect-popularity-2017 | numbers | around 1,200 | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | How is our content organized? | found |
 | netflix-open-connect-popularity-2017 | numbers | up to 100Gbps | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | Organizing content into server tiers | found |
 | netflix-open-connect-popularity-2017 | numbers | 200TB+ | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | Organizing content into server tiers | found |
 
@@ -438,7 +438,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 |---|---|---|---|
 | caching | 11 | 9 | 0 |
 | cap | 3 | 5 | 0 |
-| cdns | 8 | 3 | 0 |
+| cdns | 9 | 2 | 0 |
 | circuit-breakers | 23 | 13 | 0 |
 | consensus | 4 | 10 | 0 |
 | consistent-hashing | 15 | 7 | 0 |
