@@ -78,7 +78,9 @@ export default function HomeView({ nodes, edges, pathEntries, indexGroups }: Pro
     <>
       <div className="home-toolbar" id="the-map">
         <span className="home-toolbar-label label">
-          {view === "map" ? "The map" : "The path"}
+          <span key={view} className="fade-swap">
+            {view === "map" ? "The map" : "The path"}
+          </span>
         </span>
         <div className="home-view-toggle label" role="group" aria-label="Choose how to view the topics">
           <span className="home-view-toggle-lead" aria-hidden="true">
