@@ -7,7 +7,9 @@ export default function ReadToggle({ slug }: { slug: string }) {
   return (
     <button type="button" className="read-toggle label" aria-pressed={isRead} onClick={toggle}>
       <span className="read-box" aria-hidden="true" />
-      {isRead ? "Read" : "Mark as read"}
+      <span key={isRead ? "read" : "unread"} className="fade-swap">
+        {isRead ? "Read" : "Mark as read"}
+      </span>
     </button>
   );
 }

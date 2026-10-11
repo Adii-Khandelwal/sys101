@@ -309,12 +309,18 @@ a:hover {
   font-size: 15px;
   font-style: italic;
   color: var(--ink-soft);
+  animation: fade-in var(--dur-fast) var(--ease-out);
 }
 
 .search-results {
   list-style: none;
   margin: 8px 0 0;
   padding: 0;
+}
+
+/* Each result fades in; keyed by url, so only new or changed hits animate. */
+.search-results:not([aria-busy="true"]) li {
+  animation: fade-in var(--dur-fast) var(--ease-out);
 }
 
 .search-results li {
@@ -452,6 +458,7 @@ a:hover {
   text-transform: inherit;
   cursor: pointer;
   border-radius: 2px;
+  transition: color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 }
 .graph-group:hover {
   opacity: 1;

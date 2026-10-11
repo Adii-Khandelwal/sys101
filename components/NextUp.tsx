@@ -32,7 +32,7 @@ export default function NextUp({ entries }: { entries: IndexEntry[] }) {
   };
 
   const count = (
-    <span className="next-count label">
+    <span key={done} className="next-count label fade-swap">
       {done} of {entries.length} topics read
     </span>
   );
@@ -43,7 +43,7 @@ export default function NextUp({ entries }: { entries: IndexEntry[] }) {
   return (
     <p className="next-up" data-pagefind-ignore>
       {next ? (
-        <>
+        <span key={next.slug} className="fade-swap">
           Next up:{" "}
           <Link href={`/topic/${next.slug}`} data-own-transition onClick={(e) => open(e, next.slug)}>
             {next.title}
@@ -57,7 +57,7 @@ export default function NextUp({ entries }: { entries: IndexEntry[] }) {
               </Link>
             </span>
           )}
-        </>
+        </span>
       ) : (
         "All caught up"
       )}
