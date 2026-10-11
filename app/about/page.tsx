@@ -15,16 +15,11 @@ export default function About() {
 
       <h2>Why I made it</h2>
       <p>
-        I wanted to learn system design properly. Every attempt ended with forty open tabs: a textbook
-        definition of caching, a video on consistent hashing, and a company blog post that assumed I
-        already knew what replication lag was. I could never tell what to read first, or which posts were
-        worth the time.
-      </p>
-      <p>
-        The best material was the engineering blogs, where the people who run these systems explain what
-        broke, what they tried and what it cost. But they are scattered, they assume a lot, and nobody puts
-        them in order. So I built the thing I wanted: a map of topics in the order they depend on each
-        other, with the good posts picked out and explained.
+        I’m learning system design, and the best material I found was the engineering blogs, where the
+        people who run these systems explain what broke and what they tried. But each company has its own
+        blog, they assume a lot of background, and nothing tells you which post to read first or what you
+        should know before it. So I built the thing I wanted: a map of topics in the order they depend on
+        each other, with the good posts picked out and explained.
       </p>
 
       <h2>How it works</h2>
