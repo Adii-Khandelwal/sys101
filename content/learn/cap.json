@@ -1,0 +1,276 @@
+{
+  "slug": "cap",
+  "promise": "After this you can follow the topic page and the posts.",
+  "before": {
+    "prerequisites": [
+      "replication",
+      "sharding"
+    ],
+    "terms": [
+      {
+        "term": "Replica",
+        "definition": "One of several copies of the same data kept on different machines."
+      },
+      {
+        "term": "Partition (network)",
+        "definition": "A break that stops some nodes from reaching others, even though each is still running."
+      },
+      {
+        "term": "Consistency vs availability",
+        "definition": "Consistency means every read sees the latest write; availability means every request gets a non-error answer."
+      }
+    ],
+    "note": "Read Replication and Sharding first: CAP is about what happens to replicated, partitioned data when the network between copies breaks. The terms below are enough to begin."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "Once data lives on more than one machine, the network between those machines can fail: messages are dropped or delayed, and two groups of nodes can no longer talk. That is a network partition. The CAP theorem is about what a system does in that moment. It says that during a partition you can keep every node answering (availability) or keep every answer correct and up to date (consistency), but not both at once.",
+        "The popular shorthand \"pick two of three: consistency, availability, partition tolerance\" is misleading. On a real network, partitions happen whether you want them or not, so partition tolerance is not something you trade away. The honest statement is: when a partition occurs, choose consistency or availability. When there is no partition, a good system gives you both.",
+        "Different databases make this choice differently, and often make it configurable. Amazon's DynamoDB, for instance, offers two read modes: eventually consistent reads (the default), which Amazon notes might not reflect a recently completed write, and strongly consistent reads, which do but cost more [[aws-ddb-consistency]]. That single setting is the CAP trade-off made concrete."
+      ],
+      "terms": [
+        {
+          "term": "CAP theorem",
+          "definition": "During a network partition a distributed system must choose between consistency and availability."
+        },
+        {
+          "term": "Partition tolerance",
+          "definition": "Continuing to operate despite dropped or delayed messages; mandatory on a real network."
+        },
+        {
+          "term": "Eventually consistent read",
+          "definition": "A read that may not yet reflect the newest write, but will once replicas converge."
+        },
+        {
+          "term": "Strongly consistent read",
+          "definition": "A read guaranteed to reflect the latest acknowledged write."
+        }
+      ],
+      "reading": [
+        {
+          "source": "aws-ddb-consistency",
+          "section": "Read consistency: eventually vs strongly consistent reads",
+          "what": "How one real database exposes the CAP trade-off as a per-read choice, and what each option promises."
+        },
+        {
+          "source": "cassandra-dynamo",
+          "section": "Dynamo: tunable consistency and consistency levels (intro)",
+          "what": "That consistency versus availability is a per-operation tradeoff, not a fixed property of the whole database."
+        }
+      ],
+      "canNow": [
+        "State the CAP theorem correctly as a choice made during a partition.",
+        "Explain why partition tolerance is not optional.",
+        "Give a concrete example of the trade-off as a database setting."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "The common way to make the CAP choice adjustable is a quorum over replicas. Apache Cassandra describes it directly: with a replication factor N, you set how many nodes must take part in reads (R) and writes (W). If you make R plus W larger than N, the read set and the write set are guaranteed to overlap, so a read sees the latest write; Cassandra calls this a quorum intersection [[cassandra-dynamo]].",
+        "That overlap is the knob. High R and W give strong consistency but need more replicas reachable, so a partition that isolates too many nodes makes the operation fail: the consistent, less-available end. Low R and W let reads and writes succeed with fewer replicas, so the system keeps answering through a partition but can return stale data: the available, less-consistent end. Cassandra lets you choose this per operation through consistency levels, without even knowing the replication factor [[cassandra-dynamo]].",
+        "The far consistent end is a system that keeps one correct global order no matter what. Google Spanner does this: it uses TrueTime to assign transaction timestamps and provides external consistency, the strictest guarantee, so transactions appear in an order that matches real time [[spanner-truetime]]. Getting there costs coordination and careful timekeeping, which is the price of the consistent choice."
+      ],
+      "terms": [
+        {
+          "term": "Replication factor (N)",
+          "definition": "How many replicas hold each piece of data."
+        },
+        {
+          "term": "R and W",
+          "definition": "How many replicas must answer a read (R) or acknowledge a write (W)."
+        },
+        {
+          "term": "Quorum intersection",
+          "definition": "When R + W > N, so every read set shares a replica with every write set and reads see the latest write."
+        },
+        {
+          "term": "Consistency level",
+          "definition": "A per-operation setting that picks R and W behaviour, trading consistency against availability and latency."
+        },
+        {
+          "term": "External consistency",
+          "definition": "The strictest guarantee: transactions appear in an order consistent with real time."
+        }
+      ],
+      "reading": [
+        {
+          "source": "cassandra-dynamo",
+          "section": "Tunable Consistency, and the R + W > N quorum intersection",
+          "what": "How a quorum turns the CAP choice into R and W values, and when a read is guaranteed to see a write."
+        },
+        {
+          "source": "spanner-truetime",
+          "section": "TrueTime and external consistency",
+          "what": "What the strongest consistency guarantee is and how a system assigns transaction timestamps to achieve it."
+        }
+      ],
+      "canNow": [
+        "Explain how R, W and N express the CAP trade-off.",
+        "Say why R + W > N makes reads see the latest write.",
+        "Describe what external consistency guarantees at the strong end."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 140\" role=\"img\" aria-labelledby=\"dg-learn-cap-how-t\" class=\"dg\"><title id=\"dg-learn-cap-how-t\">A quorum dial: with N replicas, high R and W make reads see the latest write (consistent, less available during a partition); low R and W keep the system answering (available, possibly stale). R + W greater than N is the overlap point.</title><defs><marker id=\"dg-learn-cap-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><line x1=\"60\" y1=\"70\" x2=\"500\" y2=\"70\" class=\"dg-line\"/><text x=\"70\" y=\"50\" class=\"dg-label\" text-anchor=\"start\" font-size=\"13\">available</text><text x=\"70\" y=\"96\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">low R, W: answer, maybe stale</text><text x=\"490\" y=\"50\" class=\"dg-label\" text-anchor=\"end\" font-size=\"13\">consistent</text><text x=\"490\" y=\"96\" class=\"dg-note\" text-anchor=\"end\" font-size=\"11\">high R, W: see latest write</text><circle cx=\"280\" cy=\"70\" r=\"6\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"112\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">R + W &gt; N: the overlap point</text><text x=\"280\" y=\"26\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">one dial, set per operation</text></svg>"
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "If you keep the system available during a partition, two sides can accept writes that the other never sees, so the copies diverge and must be reconciled when the partition heals. Cassandra converges replicas using mutation-timestamp versioning, so a later write wins over an earlier one [[cassandra-dynamo]]. Last-write-wins is simple but silently drops one of two concurrent edits, which is why some systems instead keep both versions and let the application merge them.",
+        "If you keep the system consistent instead, the cost moves to coordination and latency. Spanner's external consistency depends on TrueTime treating time as a bounded interval and waiting out that uncertainty before a transaction is visible, so that timestamps order correctly [[spanner-truetime]]. The reward is that application developers never see stale or out-of-order data; the price is the wait and the special timekeeping hardware behind it.",
+        "Either way, the choice is best made per piece of data, not once for the whole system. DynamoDB exposes exactly this: the same table can be read eventually consistent or strongly consistent per request, and eventually consistent reads cost half as much [[aws-ddb-consistency]]. Pick the cheaper, available mode where staleness is harmless, and the stronger mode where it is not."
+      ],
+      "terms": [
+        {
+          "term": "Reconciliation",
+          "definition": "Merging replica versions that diverged during a partition, by last-write-wins or application logic."
+        },
+        {
+          "term": "Last-write-wins",
+          "definition": "A simple conflict rule that keeps the most recent write and discards the other, which can lose data."
+        },
+        {
+          "term": "Clock uncertainty",
+          "definition": "How far a clock might be off; Spanner bounds it and waits it out so transaction order stays correct."
+        },
+        {
+          "term": "Staleness window",
+          "definition": "How long after a write a read might still return the old value under eventual consistency."
+        }
+      ],
+      "reading": [
+        {
+          "source": "cassandra-dynamo",
+          "section": "Data Versioning and conflict resolution",
+          "what": "How an available system converges diverged replicas, and the risk of last-write-wins."
+        },
+        {
+          "source": "aws-ddb-consistency",
+          "section": "Cost and behaviour of eventually vs strongly consistent reads",
+          "what": "Why the trade-off is worth setting per request rather than once for the whole store."
+        }
+      ],
+      "canNow": [
+        "Explain what reconciliation is and why last-write-wins can lose data.",
+        "Say what the consistent choice costs and why clock uncertainty matters.",
+        "Decide per-data which consistency mode to use."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "In practice the first question for any stored data is: if a partition hit right now, would you rather this request fail or return possibly stale data? A shopping cart or a product view can tolerate staleness and should stay available; a bank balance or an inventory count cannot tolerate two disagreeing truths and should refuse rather than diverge. The same database can serve both by setting the consistency level per operation [[cassandra-dynamo]].",
+        "Watch for the hidden costs on each side. On the available side, eventual consistency is cheaper and faster, but you must build and test the reconciliation path and accept a staleness window; Amazon makes the cost explicit by charging eventually consistent reads at half the price of strongly consistent ones [[aws-ddb-consistency]]. On the consistent side, you pay latency for coordination and, at global scale, you depend on infrastructure like Spanner's synchronised clocks [[spanner-truetime]].",
+        "The deepest practical point is that CAP is not a label you stamp on a database once. It is a per-operation, per-data decision about what to do during the partitions that will happen. Decide it deliberately for each kind of data, measure the staleness or the latency you are paying, and revisit it as the data's needs change."
+      ],
+      "terms": [
+        {
+          "term": "AP system",
+          "definition": "One that favours availability during partitions, staying up but possibly stale."
+        },
+        {
+          "term": "CP system",
+          "definition": "One that favours consistency during partitions, refusing rather than serving unsafe data."
+        },
+        {
+          "term": "Per-operation choice",
+          "definition": "Setting consistency per request so one store can serve both AP and CP workloads."
+        },
+        {
+          "term": "Read-your-writes",
+          "definition": "A middle guarantee where a client at least sees its own latest writes, even if others lag."
+        }
+      ],
+      "reading": [
+        {
+          "source": "cassandra-dynamo",
+          "section": "Consistency Levels in practice",
+          "what": "How to choose a per-operation level for a given data need."
+        },
+        {
+          "source": "spanner-truetime",
+          "section": "Why external consistency simplifies applications",
+          "what": "What you gain for the latency you pay on the consistent side."
+        }
+      ],
+      "canNow": [
+        "Decide, for a given kind of data, whether to favour availability or consistency.",
+        "Name the hidden cost on each side of the choice.",
+        "Explain why CAP is a per-operation decision, not a one-time label."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "CAP means pick any two of consistency, availability, and partition tolerance.",
+      "truth": "Partitions are unavoidable on a real network, so the real choice is consistency versus availability during a partition [[cassandra-dynamo]]."
+    },
+    {
+      "myth": "A database is permanently either consistent or available.",
+      "truth": "It is a per-operation tradeoff: the same store can be read eventually or strongly consistent per request [[aws-ddb-consistency]]."
+    },
+    {
+      "myth": "Eventual consistency means the data is just wrong.",
+      "truth": "Replicas converge once writes stop; the system reconciles diverged versions, for example by timestamp versioning [[cassandra-dynamo]]."
+    },
+    {
+      "myth": "Strong consistency across the globe is free if you engineer well.",
+      "truth": "It costs coordination latency and, at Spanner's scale, synchronised-clock hardware to bound uncertainty [[spanner-truetime]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These use the cqlsh shell for Apache Cassandra against a local or test cluster, to see how a per-operation consistency level changes the CAP trade-off. Output depends on your cluster, so it is not shown here. Consistency levels are described in the Cassandra documentation.",
+    "commands": [
+      {
+        "command": "CONSISTENCY QUORUM;",
+        "shows": "Setting the session to require a quorum of replicas, so reads see the latest write (the consistent end).",
+        "source": "cassandra-dynamo"
+      },
+      {
+        "command": "CONSISTENCY ONE;",
+        "shows": "Dropping to one replica per operation, which stays available with fewer replicas up but may read stale data.",
+        "source": "cassandra-dynamo"
+      },
+      {
+        "command": "SELECT * FROM app.users WHERE id = 42;",
+        "shows": "A read that now answers under whichever consistency level the session is set to.",
+        "source": "cassandra-dynamo"
+      }
+    ]
+  },
+  "next": "Go back to the CAP Theorem topic page for the worked example and the quiz, then read the Dynamo and Spanner papers for the two opposite choices made in production. CAP leads into Consensus, where a majority of replicas agree on one order so a system can stay consistent as long as a quorum survives.",
+  "sources": [
+    {
+      "id": "aws-ddb-consistency",
+      "title": "Amazon DynamoDB: Read consistency",
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadConsistency.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "cassandra-dynamo",
+      "title": "Apache Cassandra: Dynamo (tunable consistency)",
+      "url": "https://cassandra.apache.org/doc/stable/cassandra/architecture/dynamo.html",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "spanner-truetime",
+      "title": "Cloud Spanner: TrueTime and external consistency",
+      "url": "https://cloud.google.com/spanner/docs/true-time-external-consistency",
+      "publisher": "Google Cloud",
+      "kind": "Vendor documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    }
+  ]
+}

@@ -31,12 +31,12 @@ describe("transitive reduction", () => {
     expect(keys(transitiveReduction([{ from: "a", to: "b" }, { from: "b", to: "c" }, { from: "a", to: "c" }]))).toEqual(["a->b", "b->c"]);
   });
 
-  it("on this graph hides only the three shortcuts", () => {
+  it("on this graph hides only the redundant shortcuts", () => {
     const dir = path.resolve(__dirname, "../content/topics");
     const topics = fs.readdirSync(dir).map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")));
     const edges = topics.flatMap((t) => t.prerequisites.map((p: string) => ({ from: p, to: t.slug })));
     const reduced = transitiveReduction(edges);
-    expect(keys(edges).filter((k) => !keys(reduced).includes(k)).sort()).toEqual(["caching->rate-limiting", "databases->indexing", "dns->cdns"]);
+    expect(keys(edges).filter((k) => !keys(reduced).includes(k)).sort()).toEqual(["caching->rate-limiting", "databases->indexing", "dns->cdns", "replication->cap"]);
   });
 
   it("leaves a graph with no redundant edges unchanged", () => {
