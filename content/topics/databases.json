@@ -276,31 +276,31 @@
       {
         "question": "When is a change committed?",
         "options": [
-          "When the data file is updated",
-          "When its log record is safely on disk",
-          "When a replica reads it"
+          "When the data file is updated and the new page has been flushed from memory",
+          "When a replica reads it and acknowledges that it has applied the same change",
+          "When its log record is safely on disk"
         ],
-        "correct": 1,
+        "correct": 2,
         "why": "The write-ahead log is what recovery uses, so a durable log record is what makes the change safe.",
         "wrong": [
           "Data files are updated later; the log already makes the change safe.",
-          "",
-          "A commit on the primary does not wait for replicas unless configured to."
+          "A commit on the primary does not wait for replicas unless configured to.",
+          ""
         ],
         "teaches": "model"
       },
       {
         "question": "A database crashes after committing a change but before updating its data files. What happens on restart?",
         "options": [
+          "The change is lost, because the data files were never updated before the crash",
           "It replays the log and the change is applied",
-          "The change is lost",
-          "The database refuses to start"
+          "The database refuses to start until an administrator restores the data files"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Recovery redoes every committed change found in the log.",
         "wrong": [
-          "",
           "The log record survived, so the change is redone.",
+          "",
           "Recovery is exactly what the log is for."
         ],
         "teaches": "how"
@@ -308,48 +308,48 @@
       {
         "question": "Why does adding an index slow down writes?",
         "options": [
+          "Every index is another structure to update and log on each write",
           "Indexes lock the whole table",
-          "Indexes are stored on replicas only",
-          "Every index is another structure to update and log on each write"
+          "Indexes are stored on replicas only"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "An index speeds some reads but adds work to every write that touches it.",
         "wrong": [
+          "",
           "Indexes do not lock the table by themselves.",
-          "Indexes live on the primary as well.",
-          ""
+          "Indexes live on the primary as well."
         ],
         "teaches": "mistakes"
       },
       {
         "question": "What does physical replication ship to replicas?",
         "options": [
-          "Only SQL statements",
-          "Nothing; replicas query the primary",
-          "Disk-level changes, so replicas are byte-for-byte copies"
+          "Disk-level changes, so replicas are byte-for-byte copies",
+          "Only SQL statements, so each replica re-executes the same commands itself",
+          "Nothing; replicas query the primary whenever a client asks them for data"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "That ties replicas to the primary's version and layout, including its bugs.",
         "wrong": [
+          "",
           "That is closer to logical replication.",
-          "Replicas replay the shipped log.",
-          ""
+          "Replicas replay the shipped log."
         ],
         "teaches": "how"
       },
       {
         "question": "Why do databases write a log before touching data files?",
         "options": [
-          "So a crash midway can be repaired from the log",
-          "Because logs are smaller than data",
-          "To make reads faster"
+          "Because logs are smaller than data files, so writing them first saves disk space",
+          "To make reads faster, since readers can scan the log instead of the data files",
+          "So a crash midway can be repaired from the log"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "Memory is lost in a crash; the log records what to redo or undo.",
         "wrong": [
-          "",
           "Size is not the reason.",
-          "The log is about safety, not read speed."
+          "The log is about safety, not read speed.",
+          ""
         ],
         "teaches": "why"
       },

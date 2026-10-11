@@ -299,97 +299,97 @@
       {
         "question": "A resolver has cached a record for example.com. You change the record at the authoritative servers. When does that resolver return the new value?",
         "options": [
+          "When its cached copy's TTL runs out and it asks again",
           "Immediately, because the authoritative servers notify it",
-          "Only after you flush every resolver by hand",
-          "When its cached copy's TTL runs out and it asks again"
+          "Only after you flush every resolver by hand"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "A resolver reuses its copy until the TTL expires, then asks again and gets the new value.",
         "wrong": [
+          "",
           "Authoritative servers do not notify resolvers of changes; resolvers only find out when they ask again.",
-          "Expiry makes the resolver ask again on its own; flushing only speeds it up.",
-          ""
+          "Expiry makes the resolver ask again on its own; flushing only speeds it up."
         ],
         "teaches": "model"
       },
       {
         "question": "Which servers hold the real answer for app.example.com?",
         "options": [
-          "Your recursive resolver",
-          "The root servers",
-          "The .com servers",
-          "The servers that are authoritative for example.com"
+          "Your recursive resolver, which stores the real records for every site you visit",
+          "The servers that are authoritative for example.com",
+          "The root servers, which hold the full record set for every top-level domain",
+          "The .com servers, which store each registered domain's records themselves"
         ],
-        "correct": 3,
+        "correct": 1,
         "why": "The authoritative servers for a domain hold its records; everyone else holds referrals or cached copies.",
         "wrong": [
           "The resolver holds cached copies, which can be up to one TTL old.",
+          "",
           "Root servers only refer the resolver to the top-level domain servers.",
-          "The .com servers only refer the resolver to example.com's servers.",
-          ""
+          "The .com servers only refer the resolver to example.com's servers."
         ],
         "teaches": "how"
       },
       {
         "question": "Why does DNS cache answers at every step?",
         "options": [
-          "So most lookups are answered nearby instead of walking the whole chain",
           "Because records never change",
-          "To encrypt the answers"
+          "To encrypt the answers",
+          "So most lookups are answered nearby instead of walking the whole chain"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "Nearly every connection starts with a lookup, so reusing copies keeps lookups fast and keeps load off the servers higher up the chain.",
         "wrong": [
-          "",
           "Records do change, which is exactly why every answer carries a TTL.",
-          "Caching does not encrypt anything; DNSSEC signs answers so they can be checked, which is a separate thing."
+          "Caching does not encrypt anything; DNSSEC signs answers so they can be checked, which is a separate thing.",
+          ""
         ],
         "teaches": "why"
       },
       {
         "question": "On a cache miss, what does the .com server give a resolver looking up example.com?",
         "options": [
-          "The address of example.com",
-          "A referral to the servers that are authoritative for example.com",
-          "Nothing; resolvers skip the .com servers"
+          "The address of example.com, since the .com servers store every domain's records",
+          "Nothing; resolvers skip the .com servers and ask the root servers a second time",
+          "A referral to the servers that are authoritative for example.com"
         ],
-        "correct": 1,
+        "correct": 2,
         "why": "The top-level domain servers do not hold example.com's records. They point the resolver to the domain's authoritative servers, and for a signed domain also return a DS record.",
         "wrong": [
           "Only the authoritative servers hold the record itself; .com only knows who they are.",
-          "",
-          "On a miss the resolver has to ask .com to find out which servers are authoritative for the domain."
+          "On a miss the resolver has to ask .com to find out which servers are authoritative for the domain.",
+          ""
         ],
         "teaches": "how"
       },
       {
         "question": "Slack pulled its DS record to stop an outage, but failures went on. Why?",
         "options": [
+          "Resolvers had cached the DS record, which .com tells them to keep for 24 hours",
           "The registrar ignored the change",
-          "Browsers cache DS records",
-          "Resolvers had cached the DS record, which .com tells them to keep for 24 hours"
+          "Browsers cache DS records"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "Removing the record at the parent does not reach resolvers that already cached it; they keep it until it expires.",
         "wrong": [
+          "",
           "The DS record was removed; the problem was copies already cached elsewhere.",
-          "DS records are checked by resolvers, not browsers.",
-          ""
+          "DS records are checked by resolvers, not browsers."
         ],
         "teaches": "example"
       },
       {
         "question": "You plan to move a site to a new address next week. What should you do with the record's TTL?",
         "options": [
+          "Raise it, so the new address sticks in caches before you switch over",
           "Lower it well before the move, then raise it again afterwards",
-          "Raise it, so the new address sticks",
-          "Nothing; TTLs do not affect moves"
+          "Nothing; TTLs do not affect moves because caches check the address every time"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "A short TTL before the move means caches drop the old address quickly once you switch; raising it afterwards restores caching.",
         "wrong": [
-          "",
           "A longer TTL makes caches keep the old address longer after you switch.",
+          "",
           "The TTL decides how long caches keep serving the old address, so it matters most during a move."
         ],
         "teaches": "mistakes"

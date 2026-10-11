@@ -12,6 +12,10 @@ Failover learn page: the RDS Multi-AZ failover page says failover changes the DN
 
 Done. Learn pages checked against the cited pages and rewritten where a sentence carried a citation the page does not support (for example Memcached's page does not describe cache-aside, and Redis's page does not state a default eviction policy). Caching, CDNs and Circuit Breakers quizzes reworked and removed from QUIZ_STYLE_PENDING. Microsoft Learn dates are rendered by script, so they were read in a browser. Posts: all dates agree with the pages.
 
+## Batch 3: Consistent Hashing, Databases, DNS, Indexing
+
+Done. Quizzes reworked and removed from QUIZ_STYLE_PENDING. Learn pages: several citations pointed at pages that do not say the thing (the Lucene landing page has nothing on inverted indexes or scoring; Redis Cluster's page says it does not use consistent hashing; PostgreSQL's concepts page has nothing on the planner), so the claims were re-sourced to pages that do, or the citation was dropped and the sentence left as general explanation. Try it commands replaced with ones that appear on the cited pages. Posts: all dates agree with the pages.
+
 ## Remaining
 
-Batch 3: Consistent Hashing, Databases, DNS, Indexing. Batch 4: Load Balancing, Message Queues, Pub-Sub, Rate Limiting. Batch 5: Replication, Sharding. Then: checks and rendering code, quiz rework for the 13 pending topics (as each batch lands), full build, verify:figures, search check.
+Batch 4: Load Balancing, Message Queues, Pub-Sub, Rate Limiting. Batch 5: Replication, Sharding. Then: checks and rendering code, quiz rework for the 13 pending topics (as each batch lands), full build, verify:figures, search check.

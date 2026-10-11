@@ -262,38 +262,40 @@
     }
   ],
   "tryIt": {
-    "intro": "These use dig, the lookup tool that ships with BIND [[bind-arm]]. Run them in a terminal and compare the output with the stages above. The output depends on your resolver and changes over time, so it is not shown here.",
+    "intro": "These use dig, the lookup tool that ships with BIND, which documents the syntax dig @server name type and the options used here [[bind-dig]]. The name example.com is the manual's own example. Run them in a terminal and compare the output with the stages above. The output depends on your resolver and changes over time, so it is not shown here.",
     "commands": [
       {
         "command": "dig example.com",
         "shows": "A plain lookup: the question, the answer, and which server replied.",
-        "source": "bind-arm"
+        "source": "bind-dig"
       },
       {
         "command": "dig example.com MX",
         "shows": "One record type, here the mail servers for a domain.",
-        "source": "bind-arm"
+        "source": "bind-dig"
       },
       {
         "command": "dig +short example.com",
         "shows": "Just the answer, without the rest of the output.",
-        "source": "bind-arm"
+        "source": "bind-dig"
       },
       {
         "command": "dig +trace example.com",
         "shows": "The whole path from the root servers down, following each referral.",
-        "source": "bind-arm"
+        "source": "bind-dig"
       },
       {
         "command": "dig +dnssec example.com",
         "shows": "DNSSEC records alongside the answer, where the zone is signed.",
-        "source": "bind-arm"
+        "source": "bind-dig"
       },
       {
         "command": "dig @1.1.1.1 example.com",
         "shows": "The same lookup sent to a specific recursive resolver.",
-        "source": "bind-arm",
-        "note": "1.1.1.1 is only an example resolver; any resolver address works."
+        "source": "bind-dig",
+        "exampleNames": [
+          "1.1.1.1 is one public resolver, used only as an example; any resolver address works"
+        ]
       }
     ]
   },
@@ -352,7 +354,7 @@
       "kind": "Project documentation",
       "year": "2023",
       "verifiedOn": "2026-10-11",
-      "note": "BIND 9.20.29 documentation, copyright 2023. The dig manual page is at bind9.readthedocs.io/en/stable/manpages.html."
+      "note": "BIND 9.20.29 documentation, shown with a 2023 copyright line."
     },
     {
       "id": "cs168",
@@ -394,6 +396,16 @@
       "year": "2023",
       "length": "1:35:06",
       "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "bind-dig",
+      "title": "BIND 9 manual pages: dig",
+      "url": "https://bind9.readthedocs.io/en/stable/manpages.html",
+      "publisher": "Internet Systems Consortium (BIND 9)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "The dig section of the manual pages. It documents the syntax dig @server name type and the +short, +trace and +dnssec options."
     }
   ]
 }

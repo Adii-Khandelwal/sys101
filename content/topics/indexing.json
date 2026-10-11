@@ -290,16 +290,16 @@
       {
         "question": "Without any index, how does a database find the rows that match a filter?",
         "options": [
-          "It reads every row and checks each one",
           "It asks a replica",
-          "It guesses from statistics"
+          "It guesses from statistics",
+          "It reads every row and checks each one"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "With nothing to jump to, a full scan is the only way, and its cost grows with the size of the table.",
         "wrong": [
-          "",
           "A replica holds the same data and would have to scan too.",
-          "Statistics help the planner choose a plan; they do not find rows."
+          "Statistics help the planner choose a plan; they do not find rows.",
+          ""
         ],
         "teaches": "why"
       },
@@ -322,31 +322,31 @@
       {
         "question": "You add five indexes to a busy table. What gets slower?",
         "options": [
-          "Reads on unindexed columns",
-          "Nothing",
-          "Writes, because each one must update every index"
+          "Writes, because each one must update every index",
+          "Reads on unindexed columns, because the extra structures crowd out the table's pages",
+          "Nothing, because indexes are only consulted by reads and never touched by writes"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "Every insert, update and delete now maintains five more structures.",
         "wrong": [
+          "",
           "Reads that the indexes do not cover behave as before.",
-          "Indexes always cost write work and storage.",
-          ""
+          "Indexes always cost write work and storage."
         ],
         "teaches": "mistakes"
       },
       {
         "question": "What does an inverted index store?",
         "options": [
-          "Each document in reverse order",
           "For each word or fragment, the documents that contain it",
+          "Each document in reverse order",
           "Rows sorted by primary key"
         ],
-        "correct": 1,
+        "correct": 0,
         "why": "It maps tokens to posting lists, so a search intersects a few lists instead of reading documents.",
         "wrong": [
-          "The name refers to inverting document to words into word to documents.",
           "",
+          "The name refers to inverting document to words into word to documents.",
           "That describes a B-tree on a primary key."
         ],
         "teaches": "model"
@@ -354,8 +354,8 @@
       {
         "question": "Why must an ngram search still check the real text of each match?",
         "options": [
-          "The index is always out of date",
-          "To decompress it",
+          "The index is always out of date, so each match must be confirmed against the table",
+          "To decompress the stored text, because the index keeps documents in a compressed form",
           "Matching every fragment does not mean they appear next to each other"
         ],
         "correct": 2,
@@ -370,15 +370,15 @@
       {
         "question": "An index is sharded by document ID. What does a search across everything have to do?",
         "options": [
+          "Ask one shard, because the document ID tells the query which shard to use",
           "Ask every shard and merge the results",
-          "Ask one shard",
-          "Scan the original data"
+          "Scan the original data again, because a sharded index cannot answer queries"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Matching documents can be on any shard, so the query fans out to all of them.",
         "wrong": [
-          "",
           "Only a query scoped to the shard key can go to one shard.",
+          "",
           "The index still answers the query; it just has to be asked everywhere."
         ],
         "teaches": "example"

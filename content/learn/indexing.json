@@ -27,9 +27,9 @@
       "id": "basics",
       "name": "Basics",
       "body": [
-        "Without help, finding rows that match a condition means reading every row, a full table scan, which gets slow as the table grows. An index is a separate, ordered structure the database keeps alongside the data so it can jump straight to matching rows instead of scanning them all. It is the same idea as the index at the back of a book [[pg-indexes-intro]].",
-        "An index trades space and write cost for read speed. It takes extra storage, and every insert or update must also update the index, so writes get a little slower. In return, the right query becomes dramatically faster. Deciding which indexes to keep is a balance between faster reads and slower, larger writes [[pg-indexes-intro]].",
-        "Search engines generalise the same idea to text. Instead of scanning every document for a word, they build an inverted index that maps each word to the list of documents containing it, so a search jumps straight to the matching documents. Lucene, the engine behind many search systems, is built around this structure [[lucene]]."
+        "Without help, finding rows that match a condition means reading every row, a full table scan, which gets slow as the table grows. PostgreSQL's page says that without an index the system would have to scan the entire table row by row, which is clearly inefficient when only a few rows are returned. An index lets it jump to matching rows instead, the same idea as the alphabetic index at the back of a book, which the page itself uses as its comparison [[pg-indexes-intro]].",
+        "An index trades write cost for read speed. After an index is created the system has to keep it synchronised with the table, which the page says adds overhead to data manipulation operations, and indexes that are seldom or never used in queries should be removed [[pg-indexes-intro]]. In return, the right query becomes dramatically faster. Deciding which indexes to keep is a balance between faster reads and slower writes.",
+        "Search engines generalise the same idea to text. Instead of scanning every document for a word, they build an inverted index that maps each word to the list of documents containing it. Lucene's documentation says its core, the inverted index, is made of postings, which with their term dictionary work as a map from a term to the ordered list of documents containing it [[lucene-index]]."
       ],
       "terms": [
         {
@@ -56,13 +56,13 @@
       "reading": [
         {
           "source": "pg-indexes-intro",
-          "section": "11.1 Introduction",
-          "what": "What an index is, why it speeds lookups, and that it costs storage and write time."
+          "section": "11.1. Introduction",
+          "what": "What an index is, why it avoids scanning every row, and that it adds overhead to data changes."
         },
         {
-          "source": "lucene",
-          "section": "The documentation landing page and \"basic concepts\"",
-          "what": "How a search engine builds an inverted index to find documents by their words."
+          "source": "lucene-index",
+          "section": "Package org.apache.lucene.index: Postings",
+          "what": "How the inverted index maps a term to the documents containing it."
         }
       ],
       "canNow": [
@@ -75,10 +75,10 @@
       "id": "how",
       "name": "How it works",
       "body": [
-        "The default index type in most databases is the B-tree, a balanced tree that keeps keys in sorted order. It answers equality lookups and range queries efficiently because the sort order lets the database descend to a key and then walk neighbours. PostgreSQL uses B-tree by default and also offers hash, GIN, GiST and others for specific needs [[pg-indexes-types]].",
-        "The index type must match the query. A hash index serves equality but not ranges. A GIN index suits values that contain many items, such as the words in a document or the keys in a JSON field, which is how a relational database does its own full-text search. Choosing the type is choosing which queries get fast [[pg-indexes-types]].",
-        "Text search needs more than exact matching. Before building the inverted index, the engine breaks text into tokens, lowercases them, and often reduces words to a root form so that run, runs and running match. This analysis step decides what a search can and cannot find, and it happens both when indexing and when querying [[es-docs]].",
-        "A relevant point for scale: in a search system each shard holds its own inverted index over its share of the documents, so a query runs on every shard in parallel and the results are merged and ranked. Elasticsearch builds directly on this, with indices split into shards across nodes [[es-docs]]."
+        "PostgreSQL's page says that by default CREATE INDEX creates a B-tree index, which fits the most common situations, and that B-trees can handle equality and range queries on data that can be sorted. It offers other types too: hash, GiST, SP-GiST, GIN and BRIN [[pg-indexes-types]].",
+        "The index type must match the query. The page says hash indexes can only handle simple equality comparisons. Choosing the type is choosing which queries get fast; each type uses a different algorithm that is best suited to different indexable clauses [[pg-indexes-types]].",
+        "Text search needs more than exact matching. Elasticsearch describes text analysis as converting unstructured text into a structured format optimised for search. It breaks text into tokens, which are usually individual words, and normalises them, for example lowercasing and reducing foxes to its root fox, and it applies the same rules to the query string. Analysis happens when indexing or searching text fields [[es-analysis]].",
+        "A relevant point for scale: Elasticsearch divides each index into shards and distributes them across the nodes in your cluster, which lets an index handle large volumes of traffic [[es-docs]]. A search across shards has to ask every shard and merge the results, which is general practice rather than something that page spells out."
       ],
       "terms": [
         {
@@ -105,13 +105,13 @@
       "reading": [
         {
           "source": "pg-indexes-types",
-          "section": "11.2 Index Types",
-          "what": "B-tree, hash, GIN and GiST, and which query shapes each one serves."
+          "section": "11.2. Index Types: B-Tree and Hash",
+          "what": "Which kinds of comparison each index type can serve."
         },
         {
-          "source": "es-docs",
-          "section": "Data in: documents and indices, and the mapping of an index to shards",
-          "what": "How documents become a searchable index and how an index is split into shards."
+          "source": "es-analysis",
+          "section": "Text analysis: Tokenization and Normalization",
+          "what": "How text is broken into tokens and normalised so a search can match related words."
         }
       ],
       "canNow": [
@@ -125,9 +125,9 @@
       "id": "deeper",
       "name": "Going deeper",
       "body": [
-        "A query often filters on several columns, and the order of columns in a composite index matters. An index on (customer, date) helps a query that filters by customer, or by customer and date, but not one that filters by date alone, because the index is sorted by customer first. Getting this order wrong is why an index that looks relevant is never used [[pg-indexes-multicolumn]].",
-        "The database does not use an index just because one exists; the query planner decides. If a condition matches most of the table, a scan can be cheaper than jumping through an index row by row, so the planner may ignore the index on purpose. Reading the chosen plan is how you learn whether your index is actually helping [[pg-indexes-intro]].",
-        "Search ranks rather than just matches. Once the inverted index finds the documents containing the query terms, the engine scores them, so the most relevant come first. Classic scoring weighs how often a term appears in a document against how common it is across all documents, so a rare, on-topic word counts for more than a common one [[lucene]]."
+        "A query often filters on several columns, and the order of columns in a multicolumn index matters. PostgreSQL's page says a multicolumn B-tree index can be used with conditions on any subset of its columns, but the index is most efficient when there are constraints on the leading, leftmost columns. Getting this order wrong is why an index that looks relevant may not help the query you actually run [[pg-indexes-multicolumn]].",
+        "The database does not use an index just because one exists; the query planner decides. PostgreSQL says the system will use the index in queries when it thinks that would be more efficient than a sequential table scan, and that you may need to run ANALYZE regularly so the planner has statistics to decide with. Reading the chosen plan is how you learn whether your index is actually helping [[pg-indexes-intro]].",
+        "Search ranks rather than just matches. Lucene's similarity classes score the matching documents so the most relevant come first. Its documentation describes BM25Similarity, with a parameter that calibrates term frequency saturation, scoring that also uses the IDF of the matched terms, and ClassicSimilarity, the original Lucene scoring function based on the vector space model and TF-IDF [[lucene-similarities]]."
       ],
       "terms": [
         {
@@ -154,13 +154,13 @@
       "reading": [
         {
           "source": "pg-indexes-multicolumn",
-          "section": "11.3 Multicolumn Indexes",
-          "what": "Why column order in a composite index decides which queries it can speed up."
+          "section": "11.3. Multicolumn Indexes",
+          "what": "Why column order in a multicolumn index decides how efficient it is."
         },
         {
-          "source": "lucene",
-          "section": "The scoring and similarity documentation",
-          "what": "How matching documents are ranked so the most relevant come first."
+          "source": "lucene-similarities",
+          "section": "Package org.apache.lucene.search.similarities",
+          "what": "How Lucene scores matching documents with BM25 and with classic TF-IDF."
         }
       ],
       "canNow": [
@@ -174,7 +174,7 @@
       "name": "In practice and trade-offs",
       "body": [
         "Every index is a bet: it speeds some queries while slowing all writes and taking space. The practical discipline is to index for the queries you actually run, confirm with the query plan that each index is used, and drop ones that are not. An unused index is pure cost. PostgreSQL devotes a whole section to examining whether your indexes are being used and refining them against the real workload [[pg-indexes-examine]].",
-        "Databases and search engines make opposite default bargains. A relational B-tree index favours exact and range lookups on structured columns and strong consistency; a search engine favours flexible text matching and ranking, often updating its index slightly behind the source data. Many systems use both: the database as the source of truth, a search index kept in sync beside it [[es-docs]].",
+        "Databases and search engines make different default bargains. A relational B-tree index favours exact and range lookups on structured columns; a search engine favours flexible text matching and ranking, and it updates its index slightly behind the source data. Elasticsearch says a stored document is fully searchable in near real-time, within one second, because a refresh makes recent changes visible, by default every second [[es-near-real-time]]. Many systems use both: the database as the source of truth, a search index kept in sync beside it.",
         "At scale the two topics meet. A sharded database spreads rows across shards, and a search cluster spreads its inverted index across shards the same way, running each query on every shard and merging results. The indexing ideas here are what make queries fast within each shard, so this topic completes the data path the earlier topics built [[es-docs]]."
       ],
       "terms": [
@@ -198,13 +198,13 @@
       "reading": [
         {
           "source": "pg-indexes-examine",
-          "section": "11.12 Examining Index Usage",
+          "section": "11.12. Examining Index Usage",
           "what": "Treating indexing as a design task: check which indexes the planner uses against the real workload."
         },
         {
-          "source": "es-docs",
-          "section": "How indexing and refresh make new data searchable",
-          "what": "Why a search index can trail the source data and run across shards."
+          "source": "es-near-real-time",
+          "section": "Near real-time search",
+          "what": "Why a search index can trail the source data, and how a refresh makes changes visible."
         }
       ],
       "canNow": [
@@ -217,38 +217,40 @@
   "misconceptions": [
     {
       "myth": "More indexes always make a database faster.",
-      "truth": "Each index slows every write and takes space; only indexes the planner actually uses help [[pg-indexes-intro]]."
+      "truth": "Each index adds overhead to data manipulation operations, and PostgreSQL says indexes that are seldom or never used should be removed [[pg-indexes-intro]]."
     },
     {
       "myth": "An index on the right column is always used.",
-      "truth": "The planner may skip it when a scan is cheaper, and a composite index helps only its leftmost columns [[pg-indexes-multicolumn]]."
+      "truth": "The system uses an index when it thinks that is more efficient than a sequential scan, and a multicolumn index is most efficient on its leading columns [[pg-indexes-intro]] [[pg-indexes-multicolumn]]."
     },
     {
       "myth": "Full-text search is just a LIKE query on steroids.",
-      "truth": "It builds an inverted index with tokenization and analysis, then ranks matches by relevance [[lucene]]."
+      "truth": "Elasticsearch breaks text into tokens and normalises them before indexing, and Lucene's inverted index maps each term to the documents containing it [[es-analysis]] [[lucene-index]]."
     },
     {
       "myth": "A search index is always perfectly in sync with the database.",
-      "truth": "It is often near-real-time, reflecting new data after a short delay, so it can trail the source [[es-docs]]."
+      "truth": "Elasticsearch calls its search near real-time: document changes are not visible to search immediately but within about a second [[es-near-real-time]]."
     }
   ],
   "tryIt": {
-    "intro": "These inspect indexing in a running PostgreSQL database. Output depends on your data, so it is not shown here. Each is described in the PostgreSQL documentation.",
+    "intro": "These inspect indexing in a PostgreSQL database with psql. The statements and the table names test1 and tenk1 are examples from the PostgreSQL pages cited below, so use tables of your own. Output depends on your data, so it is not shown here.",
     "commands": [
       {
-        "command": "CREATE INDEX ON orders (customer_id);",
-        "shows": "Building a B-tree index on a column so lookups by customer are fast.",
-        "source": "pg-indexes-types"
+        "command": "CREATE INDEX test1_id_index ON test1 (id);",
+        "shows": "Builds an index on the id column of the page's example table test1. The page says the index name can be chosen freely.",
+        "source": "pg-indexes-intro",
+        "warning": "This builds an index, which can take a long time on a large table and blocks writes to it while it runs. Run it only on a test database."
       },
       {
-        "command": "EXPLAIN ANALYZE SELECT * FROM orders WHERE customer_id = 42;",
-        "shows": "Whether the planner used the index and how long the query took.",
-        "source": "pg-indexes-intro"
+        "command": "CREATE INDEX test2_mm_idx ON test2 (major, minor);",
+        "shows": "A multicolumn index on two columns of the page's example table test2.",
+        "source": "pg-indexes-multicolumn",
+        "warning": "This builds an index on a table. Run it only on a test database."
       },
       {
-        "command": "SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'orders';",
-        "shows": "Every index on a table and its definition.",
-        "source": "pg-indexes-intro"
+        "command": "EXPLAIN SELECT * FROM tenk1 WHERE unique1 < 100;",
+        "shows": "The plan chosen for a restrictive condition. The page's example output uses a bitmap index scan on tenk1; EXPLAIN shows the plan without running the query.",
+        "source": "pg-explain"
       }
     ]
   },
@@ -260,7 +262,7 @@
       "url": "https://www.postgresql.org/docs/current/indexes-intro.html",
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
-      "year": "2024",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
     },
     {
@@ -269,7 +271,7 @@
       "url": "https://www.postgresql.org/docs/current/indexes-types.html",
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
-      "year": "2024",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
     },
     {
@@ -278,8 +280,9 @@
       "url": "https://lucene.apache.org/core/documentation.html",
       "publisher": "Apache Software Foundation",
       "kind": "Project documentation",
-      "year": "2024",
-      "verifiedOn": "2026-10-11"
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "The Lucene landing page. The inverted index and scoring claims below come from the Lucene core pages added as separate sources."
     },
     {
       "id": "es-docs",
@@ -287,7 +290,7 @@
       "url": "https://www.elastic.co/guide/en/elasticsearch/reference/current/documents-indices.html",
       "publisher": "Elastic",
       "kind": "Vendor documentation",
-      "year": "2024",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
     },
     {
@@ -296,7 +299,7 @@
       "url": "https://www.postgresql.org/docs/current/indexes-multicolumn.html",
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
-      "year": "2024",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
     },
     {
@@ -305,7 +308,56 @@
       "url": "https://www.postgresql.org/docs/current/indexes-examine.html",
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
-      "year": "2024",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "lucene-index",
+      "title": "Apache Lucene core: org.apache.lucene.index (postings and the inverted index)",
+      "url": "https://lucene.apache.org/core/10_5_2/core/org/apache/lucene/index/package-summary.html",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "Lucene 10.5.2 API documentation."
+    },
+    {
+      "id": "lucene-similarities",
+      "title": "Apache Lucene core: org.apache.lucene.search.similarities (scoring)",
+      "url": "https://lucene.apache.org/core/10_5_2/core/org/apache/lucene/search/similarities/package-summary.html",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "Lucene 10.5.2 API documentation."
+    },
+    {
+      "id": "es-analysis",
+      "title": "Elasticsearch: Text analysis",
+      "url": "https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis.html",
+      "publisher": "Elastic",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "The address redirects to the current Elastic docs page."
+    },
+    {
+      "id": "es-near-real-time",
+      "title": "Elasticsearch: Near real-time search",
+      "url": "https://www.elastic.co/guide/en/elasticsearch/reference/current/near-real-time.html",
+      "publisher": "Elastic",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "The address redirects to the current Elastic docs page."
+    },
+    {
+      "id": "pg-explain",
+      "title": "PostgreSQL: Using EXPLAIN",
+      "url": "https://www.postgresql.org/docs/current/using-explain.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
     }
   ]

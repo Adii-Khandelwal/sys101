@@ -258,15 +258,15 @@
       {
         "question": "A cache cluster uses hash(key) mod N. You add one server. What happens?",
         "options": [
+          "Only the new server's keys move, because the rest of the mapping is left alone",
           "Almost every key maps to a different server, so most reads miss",
-          "Only the new server's keys move",
-          "Nothing; keys stay put"
+          "Nothing happens, because keys stay on the servers they were first stored on"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Changing N changes the result for nearly every key.",
         "wrong": [
-          "",
           "That is what consistent hashing achieves, not mod N.",
+          "",
           "The mapping depends on N, so it changes."
         ],
         "teaches": "why"
@@ -274,57 +274,57 @@
       {
         "question": "On a hash ring, which server owns a key?",
         "options": [
+          "The first server point clockwise from the key's hash",
           "The server with the most keys",
-          "A random server each time",
-          "The first server point clockwise from the key's hash"
+          "A random server each time"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "Every client walks clockwise to the same point, so they all agree.",
         "wrong": [
+          "",
           "Ownership depends on position, not load.",
-          "It must be the same server every time for the cache to help.",
-          ""
+          "It must be the same server every time for the cache to help."
         ],
         "teaches": "model"
       },
       {
         "question": "A server leaves the ring. Which keys move?",
         "options": [
-          "All keys",
-          "Only the keys that server owned",
-          "Half the keys"
+          "All keys, because the ring is rebuilt from scratch when a server leaves",
+          "Half the keys, because they are shared between the two neighbouring servers",
+          "Only the keys that server owned"
         ],
-        "correct": 1,
+        "correct": 2,
         "why": "Its keys pass to the next server along; everyone else keeps theirs.",
         "wrong": [
           "That is the hash-mod-N behavior.",
-          "",
-          "Only the departing server's share moves."
+          "Only the departing server's share moves.",
+          ""
         ],
         "teaches": "how"
       },
       {
         "question": "Why give each server many points on the ring?",
         "options": [
-          "To even out how much of the ring each server owns",
-          "To encrypt keys",
-          "So lookups need no search"
+          "To encrypt keys so that no other server can read where they are placed",
+          "So lookups need no search because each point is found directly by its hash",
+          "To even out how much of the ring each server owns"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "With one point each, arcs vary wildly; many points average them out.",
         "wrong": [
-          "",
           "Points have nothing to do with encryption.",
-          "Lookups still search the sorted points."
+          "Lookups still search the sorted points.",
+          ""
         ],
         "teaches": "model"
       },
       {
         "question": "Going from 160 to 1,600 points per server mostly costs you what?",
         "options": [
-          "Correctness",
+          "Correctness, because more points on the ring means more chances for two servers to disagree",
           "Ten times the memory for little extra balance",
-          "Nothing"
+          "Nothing, because points are only pointers and take no memory on any machine"
         ],
         "correct": 1,
         "why": "Balance improves slowly while memory grows with the point count.",
@@ -338,16 +338,16 @@
       {
         "question": "Why did Discord's ring lookups take seconds after a restart?",
         "options": [
+          "Every lookup paid for a call to the single process that owned the ring",
           "The ring had too few points",
-          "The hash function was slow",
-          "Every lookup paid for a call to the single process that owned the ring"
+          "The hash function was slow"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "Millions of lookups each paying about 12μs added up to around 30 seconds.",
         "wrong": [
+          "",
           "Point count was not the bottleneck.",
-          "The cost was the process hop, not hashing.",
-          ""
+          "The cost was the process hop, not hashing."
         ],
         "teaches": "example"
       }
