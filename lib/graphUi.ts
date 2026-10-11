@@ -12,13 +12,62 @@ export const FADE = 0.6;
 /** Faded labels use the secondary ink, which keeps WCAG AA contrast on the paper colour. */
 export const FADED_LABEL = INK_SOFT;
 
-/** Blend `hex` toward the paper colour, keeping `amount` of the original. */
-export function fade(hex: string, amount = FADE) {
+/** The map's palette. Defaults are the light theme; readThemeColors() reads the live CSS vars. */
+export type ThemeColors = {
+  ink: string;
+  inkSoft: string;
+  edge: string;
+  paper: string;
+  accent: string;
+  accentDark: string;
+};
+
+export const LIGHT_COLORS: ThemeColors = { ink: INK, inkSoft: INK_SOFT, edge: EDGE, paper: PAPER, accent: ACCENT, accentDark: ACCENT_DARK };
+
+/**
+ * The current theme's map colours, read from the CSS custom properties so the
+ * Sigma canvas (which cannot use CSS) matches the themed page. Falls back to the
+ * light constants on the server or before styles resolve. --accent-dark is
+ * derived if the theme does not define it.
+ */
+export function readThemeColors(): ThemeColors {
+  if (typeof window === "undefined") return LIGHT_COLORS;
+  const s = getComputedStyle(document.documentElement);
+  const v = (name: string, fallback: string) => {
+    const raw = s.getPropertyValue(name).trim();
+    return /^#[0-9a-f]{6}$/i.test(raw) ? raw : fallback;
+  };
+  const accent = v("--accent", ACCENT);
+  return {
+    ink: v("--ink", INK),
+    inkSoft: v("--ink-soft", INK_SOFT),
+    edge: v("--edge", EDGE),
+    paper: v("--paper", PAPER),
+    accent,
+    accentDark: v("--accent-dark", darken(accent)),
+  };
+}
+
+/** A slightly darker shade of a hex colour, for the pressed/active rust outline. */
+function darken(hex: string, amount = 0.82) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex;
+  const n = parseInt(hex.slice(1), 16);
+  const ch = (s: number) => Math.round(((n >> s) & 255) * amount);
+  return `#${((ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).padStart(6, "0")}`;
+}
+
+/** Blend `hex` toward `paper`, keeping `amount` of the original. */
+export function fadeTo(hex: string, paper: string, amount = FADE) {
   const a = parseInt(hex.slice(1), 16);
-  const b = parseInt(PAPER.slice(1), 16);
+  const b = parseInt(paper.slice(1), 16);
   const ch = (v: number, s: number) => (v >> s) & 255;
   const mix = (s: number) => Math.round(ch(a, s) * amount + ch(b, s) * (1 - amount));
   return `#${((mix(16) << 16) | (mix(8) << 8) | mix(0)).toString(16).padStart(6, "0")}`;
+}
+
+/** Blend `hex` toward the (light) paper colour, keeping `amount` of the original. */
+export function fade(hex: string, amount = FADE) {
+  return fadeTo(hex, PAPER, amount);
 }
 
 /** WCAG contrast ratio between two hex colours. */

@@ -18,6 +18,34 @@
   --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
 }
 
+/* Dark theme: a warm, low-glare dark that keeps the handcrafted feel - deep
+   brown-charcoal paper, warm off-white ink, and a brighter rust that holds
+   WCAG AA on the dark background. Applied when the reader chooses dark, or when
+   the OS prefers dark and the reader has made no explicit choice. The colour
+   tokens are the whole system, so the SVG diagrams (var(--paper)/--ink/--edge)
+   theme for free; the Sigma map reads these same values at runtime. */
+:root[data-theme="dark"] {
+  --paper: #1a1713;
+  --ink: #ece4d4;
+  --ink-soft: #a89b85;
+  --rule: #39332a;
+  --accent: #d4683f;
+  --skeleton: #2a251e;
+  --edge: #6b6252;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #1a1713;
+    --ink: #ece4d4;
+    --ink-soft: #a89b85;
+    --rule: #39332a;
+    --accent: #d4683f;
+    --skeleton: #2a251e;
+    --edge: #6b6252;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -32,6 +60,7 @@ body {
   font-size: 18px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  transition: background-color var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
 }
 
 h1,
@@ -2278,6 +2307,27 @@ html {
   height: 100%;
   margin: 0 auto;
   padding: 0 40px;
+}
+
+/* Theme toggle sits at the right of the header, a sun or crescent-moon icon. */
+.theme-toggle {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.theme-toggle:hover {
+  color: var(--accent);
+}
+.theme-icon {
+  display: block;
 }
 
 /* The narrow-screen progress line sticks just below the header. */

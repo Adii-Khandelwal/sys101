@@ -5,6 +5,7 @@ import ViewTransitions from "@/components/ViewTransitions";
 import Logo from "@/components/Logo";
 import HeaderTopic from "@/components/HeaderTopic";
 import BackToTop from "@/components/BackToTop";
+import ThemeToggle from "@/components/ThemeToggle";
 import { Analytics } from "@vercel/analytics/next";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
@@ -32,6 +33,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${serif.variable} ${mono.variable}`}>
       <head>
+        {/* Set the theme before first paint so there is no flash. Reads the saved
+            choice; with none, follows the OS. Mirrors ThemeToggle's storage key. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('sys101:theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`,
+          }}
+        />
         {/* Without JavaScript, reveals cannot open, so show their content. */}
         <noscript>
           <style>{`.reveal{grid-template-rows:1fr}.reveal-content{opacity:1;transform:none}.reveal-wrap>button{display:none}`}</style>
@@ -43,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="site-header-inner">
             <Logo />
             <HeaderTopic />
+            <ThemeToggle />
           </div>
         </header>
         {children}

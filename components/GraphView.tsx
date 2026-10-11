@@ -9,14 +9,10 @@ import type { NodeLabelDrawingFunction } from "sigma/rendering";
 import { LABEL_START, MIN_LABEL_SCALE, chooseLayers, columns, edgeCurvatures, fitLabelScale, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
 import { useInProgressTopics, useReadTopics } from "@/lib/progress";
 import {
-  ACCENT,
-  ACCENT_DARK,
-  EDGE,
-  FADED_LABEL,
-  INK,
-  INK_SOFT,
-  PAPER,
-  fade,
+  LIGHT_COLORS,
+  type ThemeColors,
+  readThemeColors,
+  fadeTo,
   groupSet,
   highlightSet,
   mapIsInteractiveAt,
@@ -83,6 +79,10 @@ function firstSentence(text: string) {
 }
 
 
+// The live map palette, refreshed from the CSS theme vars on load and whenever
+// the theme changes, so the Sigma canvas (which cannot read CSS) stays in step.
+let liveColors: ThemeColors = LIGHT_COLORS;
+
 // Labels sit to the right of the node on a paper-coloured halo, so an edge
 // passing behind never runs through the text.
 const drawLabel: NodeLabelDrawingFunction = (ctx, data, settings) => {
@@ -92,9 +92,9 @@ const drawLabel: NodeLabelDrawingFunction = (ctx, data, settings) => {
   ctx.font = `${settings.labelWeight} ${settings.labelSize}px ${settings.labelFont}`;
   ctx.lineJoin = "round";
   ctx.lineWidth = 6;
-  ctx.strokeStyle = PAPER;
+  ctx.strokeStyle = liveColors.paper;
   ctx.strokeText(data.label, x, y);
-  ctx.fillStyle = (data as { labelColor?: string }).labelColor ?? INK;
+  ctx.fillStyle = (data as { labelColor?: string }).labelColor ?? liveColors.ink;
   ctx.fillText(data.label, x, y);
 };
 
@@ -144,6 +144,30 @@ export default function GraphView({ nodes, edges }: Props) {
     inProgressRef.current = inProgress;
     rendererRef.current?.refresh({ skipIndexation: true });
   }, [inProgress]);
+
+  // Keep the Sigma canvas palette in step with the page theme. The map reads
+  // the CSS theme vars into module-level `liveColors`; refresh it (and the
+  // default edge colour) whenever the <html data-theme> attribute changes.
+  useEffect(() => {
+    const sync = () => {
+      liveColors = readThemeColors();
+      const r = rendererRef.current;
+      if (r) {
+        r.setSetting("defaultEdgeColor", liveColors.edge);
+        r.refresh({ skipIndexation: true });
+      }
+    };
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    // The OS theme can change while no explicit choice is set.
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    mq.addEventListener("change", sync);
+    return () => {
+      observer.disconnect();
+      mq.removeEventListener("change", sync);
+    };
+  }, []);
 
   // Draw only the transitive reduction; the full edge set still drives
   // neighbours, ready state and the "Also builds on" hints.
@@ -543,7 +567,7 @@ export default function GraphView({ nodes, edges }: Props) {
 
       renderer = new SigmaCtor(graph, container.current, {
         defaultEdgeType: "curve",
-        defaultEdgeColor: EDGE,
+        defaultEdgeColor: liveColors.edge,
         edgeProgramClasses: {
           curve: createEdgeCurveProgram({
             defaultCurvature: 0.18,
@@ -577,6 +601,7 @@ export default function GraphView({ nodes, edges }: Props) {
         enableCameraRotation: false,
         // Colours depend on read state and on which node is active.
         nodeReducer: (slug, data) => {
+          const c = liveColors; // the current theme's palette
           const isRead = readRef.current.includes(slug);
           const current = activeRef.current;
           // Something is highlighting: a hovered/focused node or a clicked group.
@@ -594,20 +619,20 @@ export default function GraphView({ nodes, edges }: Props) {
           // In progress: started but not finished. A rust outline and a rust centre dot on a hollow node,
           // so it sits between unread (soft outline) and read (solid fill): "yours, but not full yet".
           const inProg = !isRead && inProgressRef.current.includes(slug);
-          const fill = isRead ? ACCENT : PAPER;
+          const fill = isRead ? c.accent : c.paper;
           // Lit nodes take the strong ink (read: darker rust); otherwise the usual soft outline.
           // In progress uses the rust accent on the outline even when not read.
           const border = isRead
             ? isActive || lit
-              ? ACCENT_DARK
-              : ACCENT
+              ? c.accentDark
+              : c.accent
             : inProg
               ? isActive || lit
-                ? ACCENT_DARK
-                : ACCENT
+                ? c.accentDark
+                : c.accent
               : isActive || lit
-                ? INK
-                : INK_SOFT;
+                ? c.ink
+                : c.inkSoft;
           // Ready and in-progress both carry a centre dot (shape signal); size matches "ready".
           const dotted = ready || inProg;
           const baseSize = dotted ? 3 : 1.5;
@@ -615,14 +640,14 @@ export default function GraphView({ nodes, edges }: Props) {
           // a little more, so you still see exactly which node you are on.
           const borderSize = isActive ? baseSize + 1.5 : lit ? baseSize + 1 : baseSize;
           // Centre dot colour: in-progress gets the rust border colour; ready keeps the soft outline colour.
-          const dot = dotted ? (near ? border : fade(border)) : near ? fill : fade(fill);
+          const dot = dotted ? (near ? border : fadeTo(border, c.paper)) : near ? fill : fadeTo(fill, c.paper);
           return {
             ...data,
-            color: near ? fill : fade(fill),
-            borderColor: near ? border : fade(border),
+            color: near ? fill : fadeTo(fill, c.paper),
+            borderColor: near ? border : fadeTo(border, c.paper),
             borderSize,
             dotColor: dot,
-            labelColor: near ? INK : FADED_LABEL, // faded labels keep AA contrast
+            labelColor: near ? c.ink : c.inkSoft, // faded labels keep AA contrast
             zIndex: near ? 1 : 0,
           };
         },
@@ -635,8 +660,8 @@ export default function GraphView({ nodes, edges }: Props) {
           // the lit path reads clearly against the faded rest (CLAUDE.md: emphasise
           // the highlight rather than add a dashed style that clashes with implied links).
           return inChain
-            ? { ...data, color: INK, size: (data.size ?? 1) * EDGE_EMPHASIS }
-            : { ...data, color: fade(EDGE) };
+            ? { ...data, color: liveColors.ink, size: (data.size ?? 1) * EDGE_EMPHASIS }
+            : { ...data, color: fadeTo(liveColors.edge, liveColors.paper) };
         },
       });
 
@@ -965,14 +990,14 @@ function LegendMark({ state }: { state: "unread" | "ready" | "progress" | "read"
   return (
     <svg className="legend-mark" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
       {state === "read" ? (
-        <circle cx="8" cy="8" r="7" fill={ACCENT} />
+        <circle cx="8" cy="8" r="7" fill="var(--accent)" />
       ) : state === "progress" ? (
-        <circle cx="8" cy="8" r="5.5" fill={PAPER} stroke={ACCENT} strokeWidth="3" />
+        <circle cx="8" cy="8" r="5.5" fill="var(--paper)" stroke="var(--accent)" strokeWidth="3" />
       ) : (
-        <circle cx="8" cy="8" r={state === "ready" ? 5.5 : 6.25} fill={PAPER} stroke={INK_SOFT} strokeWidth={state === "ready" ? 3 : 1.5} />
+        <circle cx="8" cy="8" r={state === "ready" ? 5.5 : 6.25} fill="var(--paper)" stroke="var(--ink-soft)" strokeWidth={state === "ready" ? 3 : 1.5} />
       )}
-      {state === "ready" && <circle cx="8" cy="8" r="1.6" fill={INK_SOFT} />}
-      {state === "progress" && <circle cx="8" cy="8" r="1.6" fill={ACCENT} />}
+      {state === "ready" && <circle cx="8" cy="8" r="1.6" fill="var(--ink-soft)" />}
+      {state === "progress" && <circle cx="8" cy="8" r="1.6" fill="var(--accent)" />}
     </svg>
   );
 }
