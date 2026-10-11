@@ -5,13 +5,17 @@ import type { Progress } from "./lessonStore";
 const progress = (topics: Progress["topics"]): Progress => ({ version: 3, topics, posts: [] });
 
 describe("inProgressSlugs", () => {
-  it("lists topics with some progress that are not read", () => {
+  it("lists topics the reader deliberately started (a section done or a quiz answered)", () => {
     const p = progress({
       dns: { done: ["why"], visited: ["why"], answers: {} },
-      caching: { done: [], visited: ["why", "model"], answers: {} },
       databases: { done: [], visited: [], answers: { "0": "a" } },
     });
-    expect(inProgressSlugs(p, []).sort()).toEqual(["caching", "databases", "dns"]);
+    expect(inProgressSlugs(p, []).sort()).toEqual(["databases", "dns"]);
+  });
+
+  it("does not count a topic only scrolled into view (visited but nothing done)", () => {
+    const p = progress({ caching: { done: [], visited: ["why", "model", "how"], answers: {} } });
+    expect(inProgressSlugs(p, [])).toEqual([]);
   });
 
   it("excludes read topics", () => {
