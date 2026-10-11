@@ -372,6 +372,21 @@ a:hover {
   color: var(--ink-soft);
 }
 
+/* The description reads as prose, not a mono label. */
+.graph-tooltip .tip-desc {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 13px;
+  letter-spacing: normal;
+  text-transform: none;
+  line-height: 1.35;
+  color: var(--ink);
+  margin: 2px 0;
+}
+
+.graph-tooltip .tip-why {
+  color: var(--accent);
+}
+
 .index {
   margin-top: 40px;
 }

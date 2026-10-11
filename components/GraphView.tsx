@@ -38,7 +38,7 @@ import {
   type Camera,
 } from "@/lib/camera";
 
-type GraphNode = { slug: string; title: string; posts: number; group?: string };
+type GraphNode = { slug: string; title: string; posts: number; group?: string; concept?: string };
 type GraphEdge = { from: string; to: string };
 
 type Props = {
@@ -68,6 +68,13 @@ function setCamera(camera: ReturnType<Sigma["getCamera"]>, state: Camera) {
 
 const CLICK_SLOP = 5; // px a pointer may move before a press becomes a drag
 const DOUBLE_CLICK_MS = 250; // wait this long before opening a topic, so a double-click can cancel it
+
+/** The first sentence of a concept, trimmed, for a one-line tooltip description. */
+function firstSentence(text: string) {
+  const end = text.search(/\.\s/);
+  const s = end === -1 ? text : text.slice(0, end + 1);
+  return s.length > 140 ? s.slice(0, 137).trimEnd() + "…" : s;
+}
 
 
 // Labels sit to the right of the node on a paper-coloured halo, so an edge
@@ -841,14 +848,31 @@ export default function GraphView({ nodes, edges }: Props) {
               style={tipPos ? { left: tipPos.left, top: tipPos.top } : { left: 0, top: 0, visibility: "hidden" }}
             >
               <strong>{activeNode.title}</strong>
-              <span>
-                {activeNode.posts} {activeNode.posts === 1 ? "post" : "posts"}
-              </span>
-              {(prereqs.get(activeNode.slug) ?? []).length > 0 && (
-                <span>
-                  Builds on: {(prereqs.get(activeNode.slug) ?? []).map((q) => bySlug.get(q)?.title ?? q).join(", ")}
-                </span>
-              )}
+              {activeNode.concept && <span className="tip-desc">{firstSentence(activeNode.concept)}</span>}
+              {(() => {
+                const pre = prereqs.get(activeNode.slug) ?? [];
+                const isRead = read.includes(activeNode.slug);
+                const pending = pre.filter((q) => !read.includes(q));
+                const isReady = !isRead && pending.length === 0;
+                const status = isRead ? "Read" : isReady ? "Ready to read" : "Not ready yet";
+                return (
+                  <>
+                    <span className="tip-status">
+                      {status} · {activeNode.posts} {activeNode.posts === 1 ? "post" : "posts"}
+                    </span>
+                    {pre.length > 0 && (
+                      <span>
+                        Builds on: {pre.map((q) => bySlug.get(q)?.title ?? q).join(", ")}
+                      </span>
+                    )}
+                    {pending.length > 0 && (
+                      <span className="tip-why">
+                        Finish {pending.map((q) => bySlug.get(q)?.title ?? q).join(" and ")} first.
+                      </span>
+                    )}
+                  </>
+                );
+              })()}
             </div>,
             document.body,
           )}

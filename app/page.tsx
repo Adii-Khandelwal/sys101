@@ -36,6 +36,7 @@ export default function Home() {
     title: t.title,
     posts: t.posts.length,
     group: t.group ?? groupFromDepth(depth.get(t.slug) ?? 0),
+    concept: t.concept,
   }));
   const entries = ordered.map((t, i) => ({
     slug: t.slug,
