@@ -8,9 +8,10 @@
     "start": "next start",
     "lint": "next lint",
     "verify:figures": "node scripts/verify-figures.mjs",
+    "check:diagrams": "node scripts/check-diagram-overflow.mjs",
     "pipeline:fetch": "node pipeline/fetch-rss.mjs",
     "pipeline:summarize": "node pipeline/summarize.mjs",
-    "postbuild": "node scripts/check-seo.mjs && pagefind --site .next/server/app --output-path public/pagefind",
+    "postbuild": "node scripts/check-seo.mjs && node scripts/check-diagram-overflow.mjs && pagefind --site .next/server/app --output-path public/pagefind",
     "search:index": "NEXT_DIST_DIR=.next-search next build && pagefind --site .next-search/server/app --output-path public/pagefind",
     "test": "vitest run"
   },
@@ -35,6 +36,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "pagefind": "^1.5.2",
+    "playwright": "^1.64.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"
   }
