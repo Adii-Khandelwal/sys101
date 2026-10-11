@@ -77,7 +77,7 @@ export default function LearnRail({ entries, variant = "rail" }: { entries: Lear
     history.replaceState(null, "", `#${id}`);
   };
 
-  const label = `${percent}% read. Section ${done} of ${total}: ${entries[index]?.name ?? ""}`;
+  const label = `Page scrolled: ${percent}%. Section ${done} of ${total}: ${entries[index]?.name ?? ""}`;
 
   if (variant === "line") {
     return (
@@ -97,10 +97,10 @@ export default function LearnRail({ entries, variant = "rail" }: { entries: Lear
     <nav className="lesson-rail" aria-label="Contents of this page" data-pagefind-ignore>
       <div className="progress-head" aria-live="polite">
         <p className="label">
+          Page scrolled:{" "}
           <span key={percent} className="fade-swap">
             {percent}%
-          </span>{" "}
-          read
+          </span>
         </p>
         <div className="learn-progress-track" tabIndex={0} aria-label={label}>
           <span className="learn-progress-fill" style={{ transform: `scaleX(${ratio})` }} />
