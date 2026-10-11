@@ -1,0 +1,435 @@
+{
+  "slug": "rate-limiting",
+  "title": "Rate Limiting",
+  "group": "Reliability",
+  "concept": "Rate limiting caps how many requests a client can make in a window of time, so one noisy or abusive caller cannot use up capacity that everyone shares. Counting is easy on one machine and hard across many, so real systems trade a little accuracy for speed and keep the shared count off the path of every request.",
+  "prerequisites": [
+    "caching",
+    "consistent-hashing"
+  ],
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why a service limits requests per client and what makes counting hard.",
+      "body": "Caching and consistent hashing help a system serve more traffic, but capacity is still finite. One client stuck in a retry loop, a script that polls too fast, or an attack can send more requests than the service can handle, and every other client pays for it.\n\nA rate limiter puts a cap on each client: at most this many requests in this much time. Requests under the cap go through, and the rest are rejected or delayed. The cap protects shared capacity so that one caller cannot use all of it.\n\nOn a single machine, counting is easy. It gets hard when requests from one client land on many machines, because each machine sees only part of the traffic. A limit of 100 per minute that is enforced separately on four servers allows far more than 100 in total. The design question is where the count lives, and how exact it needs to be."
+    },
+    "mentalModel": {
+      "outcome": "After this you can picture a limiter as a counter per client in front of a service, and the two common ways to count.",
+      "body": "Picture a turnstile with a counter and a clock. Each client has its own counter, kept under a key such as an IP address, an API key or a domain. Each request ticks the counter. If the count is under the limit the turnstile opens; if not, the request is turned away.\n\nThere are two common ways to count. A window counts requests in a slice of time, such as one minute, and compares the total with the limit. A token bucket works the other way round: tokens are added at a steady rate, each request spends one, and a client that has been quiet can spend saved-up tokens in a short burst.\n\nEither way, the counter is a small piece of shared state that sits on the path of every request. Almost every design choice in rate limiting is about keeping that state close, cheap to update, and agreed on by every machine that needs it.",
+      "diagram": "<svg viewBox=\"0 0 560 210\" role=\"img\" aria-labelledby=\"dg-rl-model-t\" class=\"dg\"><title id=\"dg-rl-model-t\">A rate limiter sits in front of a service: each request is counted against its client's key, then allowed through if the count is under the limit or rejected if it is over.</title><defs><marker id=\"dg-rl-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"76\" width=\"110\" height=\"50\" class=\"dg-box\"/><text x=\"69\" y=\"97.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Requests</text><text x=\"69\" y=\"113.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">from clients</text><rect x=\"176\" y=\"62\" width=\"150\" height=\"78\" class=\"dg-box dg-accent\"/><text x=\"251\" y=\"97.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Limiter</text><text x=\"251\" y=\"113.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">count per key</text><rect x=\"400\" y=\"24\" width=\"146\" height=\"50\" class=\"dg-box\"/><text x=\"473\" y=\"45.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Service</text><text x=\"473\" y=\"61.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">under the limit</text><rect x=\"400\" y=\"126\" width=\"146\" height=\"50\" class=\"dg-box\"/><text x=\"473\" y=\"147.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Rejected</text><text x=\"473\" y=\"163.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">over the limit</text><path d=\"M124,101 L176,101\" class=\"dg-line\" marker-end=\"url(#dg-rl-model-a)\"/><path d=\"M326,84 L400,52\" class=\"dg-line\" marker-end=\"url(#dg-rl-model-a)\"/><path d=\"M326,118 L400,150\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-rl-model-a)\"/><text x=\"251\" y=\"160\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">key: client IP, API key, domain</text><text x=\"280\" y=\"198\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The counter is the whole job: where it lives and how exact it is.</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can walk through what a limiter does for one request and where designs differ.",
+      "steps": [
+        {
+          "step": "Pick a key",
+          "explanation": "Decide who is being limited: a client IP, an API key, a user, a domain. Everything is counted per key."
+        },
+        {
+          "step": "Count in a window",
+          "explanation": "Add the request to that key's count for the current period. A fixed window resets the count at each boundary; a sliding window blends the previous period in; a token bucket adds tokens at a steady rate instead."
+        },
+        {
+          "step": "Compare with the limit",
+          "explanation": "If the count is under the limit the request passes. If it is over, the request is rejected, often with an HTTP 429 status, or delayed."
+        },
+        {
+          "step": "Remember the verdict",
+          "explanation": "Once a key is over the limit, the system can remember until when it is blocked and skip counting for later requests, which saves work during an attack."
+        },
+        {
+          "step": "Share the count",
+          "explanation": "When requests for one key reach many machines, the count must be shared: in a central store, in shards chosen by hashing the key, or counted locally and reported in batches."
+        },
+        {
+          "step": "Accept some error",
+          "explanation": "An exact shared count costs time on every request. Most designs allow a small overshoot in return for keeping the check off the slow path."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 150\" role=\"img\" aria-labelledby=\"dg-rl-how-t\" class=\"dg\"><title id=\"dg-rl-how-t\">Five steps of rate limiting: pick a key, count the request in a window, compare with the limit, allow or reject, and share the count across machines.</title><defs><marker id=\"dg-rl-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"88\" height=\"50\" class=\"dg-box\"/><text x=\"56\" y=\"57.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Pick a</text><text x=\"56\" y=\"73.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">key</text><rect x=\"124\" y=\"36\" width=\"88\" height=\"50\" class=\"dg-box\"/><text x=\"168\" y=\"57.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Count in</text><text x=\"168\" y=\"73.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">a window</text><rect x=\"236\" y=\"36\" width=\"88\" height=\"50\" class=\"dg-box\"/><text x=\"280\" y=\"57.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Compare</text><text x=\"280\" y=\"73.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">to limit</text><rect x=\"348\" y=\"36\" width=\"88\" height=\"50\" class=\"dg-box\"/><text x=\"392\" y=\"57.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Allow or</text><text x=\"392\" y=\"73.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">reject</text><rect x=\"460\" y=\"36\" width=\"88\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"504\" y=\"57.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Share the</text><text x=\"504\" y=\"73.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">count</text><path d=\"M100,61 L124,61\" class=\"dg-line\" marker-end=\"url(#dg-rl-how-a)\"/><path d=\"M212,61 L236,61\" class=\"dg-line\" marker-end=\"url(#dg-rl-how-a)\"/><path d=\"M324,61 L348,61\" class=\"dg-line\" marker-end=\"url(#dg-rl-how-a)\"/><path d=\"M436,61 L460,61\" class=\"dg-line\" marker-end=\"url(#dg-rl-how-a)\"/><text x=\"56\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">per client</text><text x=\"168\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">per period</text><text x=\"280\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">one number</text><text x=\"392\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">429 or delay</text><text x=\"504\" y=\"104\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">the hard part</text><text x=\"280\" y=\"138\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Steps 1 to 4 are simple on one machine; step 5 is where real designs differ.</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can compute a sliding window estimate and see how two real systems counted at scale.",
+      "steps": [
+        {
+          "step": "Set the limit",
+          "explanation": "A key may make 50 requests per minute. Cloudflare's post uses this example to show its sliding window."
+        },
+        {
+          "step": "Look at two minutes",
+          "explanation": "The current minute began 15 seconds ago and holds 18 requests. The previous minute held 42."
+        },
+        {
+          "step": "Weight the old minute",
+          "explanation": "A window of one minute ending now still covers 45 of the previous minute's 60 seconds, so those 42 requests count with weight 0.75."
+        },
+        {
+          "step": "Add them up",
+          "explanation": "42 x 0.75 + 18 = 49.5, which is under 50, so the request passes. One more request at the same moment would make 50.5, and it would be limited. The estimate assumes the previous minute's requests were spread evenly."
+        },
+        {
+          "step": "Keep it cheap",
+          "explanation": "Cloudflare keeps just two numbers per key and adds one increment per request, and counts each location's traffic with a shard of memcache servers chosen by consistent hashing."
+        },
+        {
+          "step": "Contrast the other design",
+          "explanation": "Databricks counts in memory on the server that owns the key, and clients report counts in batches, so no request waits on a remote call. It moved to a token bucket."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 210\" role=\"img\" aria-labelledby=\"dg-rl-example-t\" class=\"dg\"><title id=\"dg-rl-example-t\">Sliding window estimate: the previous minute had 42 requests and the current minute has 18 after 15 seconds, so the estimate is 42 times 0.75 plus 18, which is 49.5, under a limit of 50.</title><defs><marker id=\"dg-rl-example-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"30\" y=\"50\" width=\"240\" height=\"44\" class=\"dg-box\"/><text x=\"150\" y=\"76.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Previous minute: 42</text><rect x=\"270\" y=\"50\" width=\"260\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"400\" y=\"76.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Current minute: 18 so far</text><path d=\"M90,38 L90,50\" class=\"dg-line dg-dashed\"/><path d=\"M90,94 L90,106\" class=\"dg-line dg-dashed\"/><path d=\"M335,38 L335,50\" class=\"dg-line dg-dashed\"/><path d=\"M335,94 L335,106\" class=\"dg-line dg-dashed\"/><text x=\"90\" y=\"32\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">window starts</text><text x=\"335\" y=\"32\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">now: 15 s in</text><text x=\"180\" y=\"122\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">last 45 s of it count: weight 0.75</text><text x=\"432\" y=\"122\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">counted in full</text><rect x=\"130\" y=\"138\" width=\"300\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"163.25\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"15\">42 x 0.75 + 18 = 49.5</text><text x=\"280\" y=\"198\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">49.5 is under 50, so the request passes; one more at the same moment gives 50.5.</text></svg>"
+    },
+    "mistakesOutcome": "After this you can avoid the three most common ways rate limiters go wrong.",
+    "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
+    "quiz": [
+      {
+        "question": "Four servers each count requests locally, and the limit is 100 per minute per client. At most how many requests per minute can one client send before any server blocks it?",
+        "options": [
+          "100",
+          "400",
+          "25"
+        ],
+        "correct": 1,
+        "why": "Each server enforces 100 on its own, so four servers allow up to 400 in total.",
+        "wrong": [
+          "That would hold only if all four servers shared one count.",
+          "",
+          "A quarter of the limit is what each server sees if traffic is spread evenly, not what it permits."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "What does a token bucket allow that a plain count per second does not?",
+        "options": [
+          "Short bursts, up to the tokens saved up while the client was quiet",
+          "Unlimited requests from clients that behave well",
+          "Counting without any shared state"
+        ],
+        "correct": 0,
+        "why": "Tokens arrive at a steady rate and can pile up, so a quiet client can spend them at once, while the average rate stays capped.",
+        "wrong": [
+          "",
+          "The bucket still caps the average rate, however well a client behaves.",
+          "A bucket still keeps a token count per key; whether that count is shared is a separate decision."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "Why is a fixed window counter not very accurate?",
+        "options": [
+          "It counts only the first request in each window",
+          "It must store a timestamp for every request",
+          "A burst split across a reset can pass at twice the limit"
+        ],
+        "correct": 2,
+        "why": "Requests just before a boundary and just after it are counted in different windows, so a short span can hold nearly two windows' worth.",
+        "wrong": [
+          "It counts every request; the weakness is where the boundary falls.",
+          "That describes keeping a log of timestamps, which is accurate but needs much more memory.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "The limit is 50 per minute. The current minute started 15 seconds ago with 18 requests, and the previous minute had 42. What does the sliding window estimate give?",
+        "options": [
+          "60",
+          "49.5",
+          "18"
+        ],
+        "correct": 1,
+        "why": "The previous minute is weighted by the 45 seconds of it still in the window: 42 x 0.75 + 18 = 49.5.",
+        "wrong": [
+          "That adds the whole previous minute, although part of it is outside the window.",
+          "",
+          "That ignores the previous minute completely."
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "Why avoid calling a remote counter store on every request?",
+        "options": [
+          "Remote stores cannot count",
+          "It makes limits less strict",
+          "It adds latency to every request and is one more thing that can fail them all"
+        ],
+        "correct": 2,
+        "why": "A lookup on the hot path costs time for every request, and if the store is slow or down, every request suffers.",
+        "wrong": [
+          "Remote stores can count; the cost is in asking on each request.",
+          "A remote store can give an exact count; the cost is latency and availability.",
+          ""
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "A client is over its limit. How can servers avoid checking the counter for each later request?",
+        "options": [
+          "Remember until when the client is blocked and skip the check until then",
+          "Ask the client to slow down",
+          "Double the limit"
+        ],
+        "correct": 0,
+        "why": "If the end of the block is known, servers can keep it in memory and reject straight away, which saves work during an attack.",
+        "wrong": [
+          "",
+          "A client under attack will not cooperate; the server has to enforce the limit itself.",
+          "Raising the limit lets more traffic through, the opposite of the goal."
+        ],
+        "teaches": "how"
+      }
+    ],
+    "postsOutcome": "After this you can describe how two companies counted requests across many machines without slowing each one down.",
+    "differOutcome": "After this you can explain when consistent hashing belongs in a rate limiter and when it was dropped.",
+    "exercisesOutcome": "After this you can apply the concept to a leak in a limit, design a limiter, and plan for ten times the traffic.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "Your API is limited to 100 requests per minute per key. It runs on four servers, each counting separately, and one client sends 300 per minute spread evenly. Is it limited? What do you change?",
+        "answer": "No: each server sees 75, under its own limit of 100, so all 300 pass and the real limit is up to four times higher. Share the count, for example by sending each key's counter to one place chosen by hashing the key, so all four servers update the same number.",
+        "tradeoffs": "A shared count costs a network call per request unless it is kept off the request path; a local count with periodic reports is faster but allows some overshoot.",
+        "wrongAnswers": [
+          "Divide the limit by four on each server, which breaks when traffic is not spread evenly.",
+          "Raise the limit so no client is ever blocked.",
+          "Ask clients to count their own requests."
+        ],
+        "teaches": "why"
+      },
+      {
+        "level": "design",
+        "prompt": "Design a per-key limiter for an API served from several locations, where adding latency to each request is not acceptable. State where counts live, how they are updated, and what you give up.",
+        "answer": "Count per location rather than globally, so no request crosses to another region. Inside a location, spread keys over cache servers by hashing the key, update the count with one increment per request off the request path, and use a sliding window estimate with two numbers per key. When a key goes over, store a block flag with its end time that every server reads and caches, so later requests skip counting.",
+        "tradeoffs": "Per-location counting means a client that spreads traffic across locations is limited per location, and the estimate is approximate: expect some requests wrongly allowed or limited, and measure how many.",
+        "wrongAnswers": [
+          "One global counter in a single region.",
+          "Exact timestamps for every request.",
+          "Blocking the key permanently after the first excess request."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "scale",
+        "prompt": "Traffic grows tenfold and your central counter store, called on every request, is now the slowest and riskiest part. How do you change the design, and how do you know it still works?",
+        "answer": "Take the store off the request path. Either shard counters across many nodes by hashing the key, or give each key an owner and have clients count locally and report in batches, receiving a reject-until time in return. Move to a token bucket or sliding window that tolerates small errors, add a client-side check to cut off obvious excess, and track overshoot: how far over the limit traffic gets before it is stopped.",
+        "tradeoffs": "Each step trades exactness for speed and availability. Batching means traffic inside one reporting interval can exceed the limit, and owner assignments must be kept in step with machines joining and leaving.",
+        "wrongAnswers": [
+          "Buy a bigger single store and keep calling it every time.",
+          "Remove the limits during peak load.",
+          "Count only every tenth request and multiply by ten."
+        ],
+        "teaches": "mistakes"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "A rate limiter protects a service from too much traffic. The planned topics on circuit breakers and failover cover what to do when a dependency is already failing. They are not written yet."
+    }
+  },
+  "posts": [
+    {
+      "id": "cloudflare-rate-limiting-2017",
+      "title": "How we built rate limiting capable of scaling to millions of domains",
+      "url": "https://blog.cloudflare.com/counting-things-a-lot-of-different-things/",
+      "company": "Cloudflare",
+      "verifiedOn": "2026-10-11",
+      "published": "2017-06-07",
+      "ageNote": "From June 2017. It is here for fundamentals that do not depend on Cloudflare's current setup: how a sliding window estimate counts with two numbers, and why shared counters should stay off the request path. I did not open a newer Cloudflare source confirming this design is still in use, so its details, such as Twemproxy and Twemcache, may have changed.",
+      "related": [
+        "consistent-hashing"
+      ],
+      "digest": {
+        "problem": "Cloudflare offered rate limiting to every customer: count the requests that match a rule per client IP, and block once a threshold is passed. The stock NGINX limit_req module counts per server, so it fails when a client's requests are spread across many servers. A single central counter store was rejected because its latency would be too high and its availability hard to guarantee.",
+        "constraints": "The counting store gave only GET, SET and INCR (an atomic increment). The count could not slow down requests, and it had to work for very many domains and rules. The post's title says millions of domains, and it gives no count of servers, locations or rules.",
+        "walkthrough": [
+          {
+            "step": "Count per location",
+            "explanation": "Anycast announces the same IP from many places and sends traffic to the closest live data center, so one client IP normally reaches the same location. Each location gets its own counting system, with no counts shared between locations. The post assumes route changes are rare."
+          },
+          {
+            "step": "Share counters inside a location",
+            "explanation": "A Twemproxy cluster in each location splits a memcache database across the servers there, with each server holding a shard. Consistent hashing means resizing the cluster remaps only a few keys. The team reused this from an earlier system for SSL session IDs."
+          },
+          {
+            "step": "Choose a cheap algorithm",
+            "explanation": "Fixed windows let spikes through, a timestamp log needs too much memory, and a leaky bucket needs two parameters and several operations that cannot be done atomically. A compare-and-set approach would fail often under attack. They chose a sliding window estimate that needs two numbers per counter."
+          },
+          {
+            "step": "Estimate the rate",
+            "explanation": "The rate is the previous period's count, weighted by how much of it still lies inside the window, plus the current count. With 42 requests last minute, 18 so far and 15 seconds elapsed, that is 42 x 0.75 + 18 = 49.5. It assumes the previous period's requests were evenly spread."
+          },
+          {
+            "step": "Count off the request path",
+            "explanation": "Each request adds one increment, done asynchronously so it does not slow the request. One read returns both counters when the rate is computed."
+          },
+          {
+            "step": "Flag instead of recount",
+            "explanation": "When a client goes over, a separate record tells all servers in the location to mitigate it. Its end time is known, so servers keep it in memory and skip further lookups for that client, and only this flag is checked while serving requests."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 280\" role=\"img\" aria-labelledby=\"dg-rl-cf-t\" class=\"dg\"><title id=\"dg-rl-cf-t\">Cloudflare's design: traffic reaches one location, a Twemproxy layer there shards counters across memcache servers using consistent hashing, each request adds to two counters, and a flag tells every server in the location to block a client that went over.</title><defs><marker id=\"dg-rl-cf-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"100\" width=\"96\" height=\"50\" class=\"dg-box\"/><text x=\"62\" y=\"129.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><rect x=\"150\" y=\"100\" width=\"112\" height=\"50\" class=\"dg-box\"/><text x=\"206\" y=\"121.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">One location</text><text x=\"206\" y=\"137.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">(PoP)</text><path d=\"M110,125 L150,125\" class=\"dg-line\" marker-end=\"url(#dg-rl-cf-a)\"/><text x=\"130\" y=\"92\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">anycast</text><rect x=\"310\" y=\"24\" width=\"236\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"428\" y=\"43.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Twemproxy</text><text x=\"428\" y=\"59.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">consistent hashing</text><path d=\"M262,112 L310,56\" class=\"dg-line\" marker-end=\"url(#dg-rl-cf-a)\"/><rect x=\"310\" y=\"104\" width=\"68\" height=\"40\" class=\"dg-box\"/><text x=\"344\" y=\"128.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Shard 1</text><rect x=\"394\" y=\"104\" width=\"68\" height=\"40\" class=\"dg-box\"/><text x=\"428\" y=\"128.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Shard 2</text><rect x=\"478\" y=\"104\" width=\"68\" height=\"40\" class=\"dg-box\"/><text x=\"512\" y=\"128.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Shard 3</text><path d=\"M428,70 L344,104\" class=\"dg-line\" marker-end=\"url(#dg-rl-cf-a)\"/><path d=\"M428,70 L428,104\" class=\"dg-line\" marker-end=\"url(#dg-rl-cf-a)\"/><path d=\"M428,70 L512,104\" class=\"dg-line\" marker-end=\"url(#dg-rl-cf-a)\"/><rect x=\"310\" y=\"192\" width=\"236\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"428\" y=\"210.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Block flag for the client</text><text x=\"428\" y=\"226.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">read by every server</text><path d=\"M428,144 L428,192\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-rl-cf-a)\"/><text x=\"436\" y=\"174\" class=\"dg-note dg-note-accent\" text-anchor=\"start\" font-size=\"11\">over the limit</text><path d=\"M262,140 L310,210\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-rl-cf-a)\"/><text x=\"150\" y=\"214\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">later requests read the flag,</text><text x=\"150\" y=\"230\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">not the counters</text><text x=\"280\" y=\"268\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Counters: 2 numbers per key, one increment per request, updated off the request path.</text></svg>",
+        "numbers": [
+          {
+            "value": "400 million requests from 270,000 sources",
+            "meaning": "Size of the test the post used to check accuracy"
+          },
+          {
+            "value": "0.003%",
+            "meaning": "Share of requests wrongly allowed or limited in that test"
+          },
+          {
+            "value": "6%",
+            "meaning": "Average difference between the real rate and the estimate"
+          },
+          {
+            "value": "3 sources",
+            "meaning": "Allowed through despite traffic slightly above the threshold, each less than 15% over"
+          },
+          {
+            "value": "none",
+            "meaning": "False positives in that test"
+          },
+          {
+            "value": "several billion per day",
+            "meaning": "Requests the limiter was handling when the post was written"
+          },
+          {
+            "value": "400,000 per second",
+            "meaning": "Largest attack the post says it mitigated against one domain"
+          },
+          {
+            "value": "2 numbers, 1 increment",
+            "meaning": "State per counter and work per request in the chosen algorithm"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Counts kept separately in each location, spread over memcache shards by consistent hashing, with a sliding window estimate, increments off the request path, and a cached block flag.",
+          "rejected": "A central counter store, fixed windows, a timestamp log, a leaky bucket, and compare-and-set updates.",
+          "why": "A central store would be slow and hard to keep available, and the other algorithms were too inaccurate, too memory hungry, or needed operations the store could not do atomically. The estimate is cheap and, in the post's test, close enough to the real rate."
+        },
+        "failures": "The estimate is approximate: in the test, 3 sources got through despite being slightly over the limit. Compare-and-set updates would have failed often under attack. The post calls the product young and says more optimizations and features were being explored. It gives no latency, memory or time-to-live figures.",
+        "takeaways": "Choose the counting algorithm by what your store can do atomically and cheaply. Keep counting off the request path, and keep the block decision as a small flag that servers can cache. Measure the error of an approximate count instead of assuming it is small."
+      }
+    },
+    {
+      "id": "databricks-ratelimiting-2025",
+      "title": "High performance ratelimiting at Databricks",
+      "url": "https://databricks.com/blog/high-performance-ratelimiting-databricks",
+      "company": "Databricks",
+      "verifiedOn": "2026-10-11",
+      "published": "2025-09-11",
+      "related": [
+        "consistent-hashing"
+      ],
+      "digest": {
+        "problem": "Databricks' ingress gateway, built on Envoy, called a Ratelimit Service backed by a single Redis instance. The post names three problems: high tail latency, with a P99 network latency of 10ms to 20ms in one of the cloud providers; throughput that stopped growing with more machines and point optimizations; and the single Redis instance as a single point of failure. It gives no request volumes or instance counts.",
+        "constraints": "Envoy is third-party code the team could not change, so new logic had to live in a sidecar on localhost. The backend services could tolerate some traffic over the limit, so exact counts were not required, though the team still wanted a bound on overshoot (the post's example is 5%).",
+        "walkthrough": [
+          {
+            "step": "Try Envoy's consistent hashing",
+            "explanation": "Sending the same keys to the same machine improved cache hit rates. The post lists three drawbacks: it could not be shared with services that do not use Envoy, assignments churned when machines resized or restarted so counts had to be synced with Redis regularly, and it was prone to hotspotting."
+          },
+          {
+            "step": "Count in memory with Dicer",
+            "explanation": "With Dicer, an autosharding technology, clients ask where a key belongs and the server checks that it is the proper owner. Counting in memory removed Redis, the single point of failure. The post does not describe Dicer's routing in more detail."
+          },
+          {
+            "step": "Count locally, report in batches",
+            "explanation": "Clients make no remote call on the critical path. They count locally and report periodically (the post's example is every 100ms), sending outstanding hits and rejected hits per key and getting back a time to reject until and a rejection rate."
+          },
+          {
+            "step": "Group by assignment",
+            "explanation": "One batched request could fan out to 500+ remote calls. Grouping keys by Dicer assignment means each server replica handles at most one remote request from a client replica per batch cycle."
+          },
+          {
+            "step": "Add a sidecar",
+            "explanation": "A sidecar next to the Envoy ingress, reached over localhost, carries the new client logic."
+          },
+          {
+            "step": "Move to a token bucket",
+            "explanation": "A token bucket allows controlled bursts, remembers overage by going negative, and can approximate a sliding window. It made the earlier rejection-rate prediction unnecessary, and all limits were converted."
+          },
+          {
+            "step": "Add defense in depth",
+            "explanation": "A client-side local limiter cuts off obvious excess before it reaches a server."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 310\" role=\"img\" aria-labelledby=\"dg-rl-db-t\" class=\"dg\"><title id=\"dg-rl-db-t\">Databricks' redesign: before, the gateway called a rate limit service backed by one Redis instance on every request; after, clients count locally, report counts in batches to the server that Dicer assigns the key to, and receive a reject-until time back.</title><defs><marker id=\"dg-rl-db-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"130\" y=\"20\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">BEFORE</text><rect x=\"14\" y=\"34\" width=\"90\" height=\"44\" class=\"dg-box\"/><text x=\"59\" y=\"60.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Gateway</text><rect x=\"150\" y=\"34\" width=\"110\" height=\"44\" class=\"dg-box\"/><text x=\"205\" y=\"52.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Ratelimit</text><text x=\"205\" y=\"68.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">service</text><rect x=\"300\" y=\"34\" width=\"90\" height=\"44\" class=\"dg-box\"/><text x=\"345\" y=\"60.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Redis</text><path d=\"M104,56 L150,56\" class=\"dg-line\" marker-end=\"url(#dg-rl-db-a)\"/><path d=\"M260,56 L300,56\" class=\"dg-line\" marker-end=\"url(#dg-rl-db-a)\"/><text x=\"14\" y=\"98\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">a remote call on every request</text><text x=\"300\" y=\"98\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">single point of failure</text><path d=\"M14,120 L546,120\" class=\"dg-line dg-dashed\"/><text x=\"130\" y=\"142\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">AFTER</text><rect x=\"14\" y=\"160\" width=\"120\" height=\"50\" class=\"dg-box\"/><text x=\"74\" y=\"181.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><text x=\"74\" y=\"197.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">counts locally</text><rect x=\"14\" y=\"226\" width=\"120\" height=\"44\" class=\"dg-box\"/><text x=\"74\" y=\"244.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Sidecar next</text><text x=\"74\" y=\"260.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">to the gateway</text><rect x=\"250\" y=\"160\" width=\"140\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"320\" y=\"181.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Server that owns</text><text x=\"320\" y=\"197.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">the key</text><rect x=\"430\" y=\"160\" width=\"116\" height=\"50\" class=\"dg-box\"/><text x=\"488\" y=\"181.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Dicer</text><text x=\"488\" y=\"197.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">key assignments</text><path d=\"M134,185 L250,185\" class=\"dg-line\" marker-end=\"url(#dg-rl-db-a)\"/><text x=\"192\" y=\"177\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">batch report</text><path d=\"M250,200 L134,200\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-rl-db-a)\"/><text x=\"192\" y=\"220\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">reject until...</text><path d=\"M430,185 L390,185\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-rl-db-a)\"/><text x=\"410\" y=\"232\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">who owns which key</text><text x=\"330\" y=\"294\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Token bucket on the server; the client never waits on a remote call.</text></svg>",
+        "numbers": [
+          {
+            "value": "10ms to 20ms",
+            "meaning": "P99 network latency in one cloud provider, cited as a reason to change"
+          },
+          {
+            "value": "up to 10x in some cases",
+            "meaning": "Tail latency improvement, Databricks' own headline; the post gives no baseline, percentile, traffic level or time period"
+          },
+          {
+            "value": "100ms",
+            "meaning": "The post's example batching interval"
+          },
+          {
+            "value": "5%",
+            "meaning": "The post's example of how far over the limit the team wanted to bound traffic"
+          },
+          {
+            "value": "500+",
+            "meaning": "Remote calls one batched request could fan out to before grouping by assignment"
+          },
+          {
+            "value": "1 per client replica",
+            "meaning": "Remote requests a server replica handles from each client replica per batch cycle"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "In-memory counting on the server that owns each key, clients counting locally and reporting in batches, and a token bucket.",
+          "rejected": "Counting in a single Redis instance, and Envoy's consistent hashing for routing keys.",
+          "why": "A remote call on every request and one Redis instance limited latency, throughput and availability. The team accepted no strict guarantees on limits because backends could tolerate some traffic over the limit."
+        },
+        "failures": "Traffic inside one batching window can exceed the limit, and fixed-window resets can let overshoot repeat every second under constant high traffic. The team answered with rejection-rate prediction, later replaced by the token bucket, and a client-side limiter. The post does not cover what happens when Dicer or the sidecar fails, how counts survive restarts, or what happens to a lost report.",
+        "takeaways": "If the limit can tolerate some overshoot, take the remote call off the request path: count locally, report in batches, and let the owner of each key answer with a time to reject until. Treat the 10x as the company's headline, not as a measurement you can reuse."
+      }
+    }
+  ],
+  "comparison": "Both companies keep a shared counter store off the path of each request, but they get there differently, and the difference is the one the prerequisites point at. Cloudflare keeps shared counters in each location and spreads keys over memcache servers with consistent hashing, so the ring is what keeps the design stable when the cluster is resized. Databricks starts from Envoy's consistent hashing and drops it: its post lists three drawbacks, that it could not be shared with services that do not use Envoy, that assignments churned on resizes and restarts, and that it was prone to hotspotting. It routes by Dicer's assignments instead and has clients count locally and report in batches. So the edge from Consistent Hashing holds for Cloudflare, not for Databricks, and the contrast is the lesson. They also differ in evidence. Cloudflare tested accuracy on 400 million requests and reports the error. Databricks gives an example bound of 5% and a tail latency improvement of up to 10x in some cases, which is the company's own headline with no baseline or detail. Cloudflare's post is from 2017, Databricks' from 2025, so treat Cloudflare's details as possibly changed.",
+  "glossary": [
+    {
+      "term": "Rate limit",
+      "definition": "A cap on how many requests one client may make in a period of time."
+    },
+    {
+      "term": "Key",
+      "definition": "What requests are counted under: a client IP, an API key, a user, a domain."
+    },
+    {
+      "term": "Fixed window",
+      "definition": "A count that resets at each boundary, such as every minute. Simple, but bursts that straddle a reset can pass."
+    },
+    {
+      "term": "Sliding window",
+      "definition": "A count over the last period ending now. An estimate can be made from two fixed windows, weighting the older one by how much of it is still inside."
+    },
+    {
+      "term": "Token bucket",
+      "definition": "A limiter where tokens are added at a steady rate and each request spends one, so quiet clients can send short bursts."
+    },
+    {
+      "term": "Overshoot",
+      "definition": "How far traffic gets over the limit before it is stopped, usually because counts are approximate or reported late."
+    },
+    {
+      "term": "Tail latency",
+      "definition": "The slowest requests, such as the P99: the time that 99 in 100 requests beat."
+    },
+    {
+      "term": "Anycast",
+      "definition": "Announcing the same IP address from many places, so traffic reaches the closest live location."
+    },
+    {
+      "term": "Sidecar",
+      "definition": "A helper process that runs next to a service and handles a job for it, here reached over localhost."
+    }
+  ],
+  "mistakes": [
+    "Counting per server and assuming the limit holds overall. With several servers each counting only its own traffic, a client can send up to the limit on each of them.",
+    "Treating a fixed window as a smooth limit. A burst that straddles a window boundary is counted in two windows, so a short span can carry nearly twice the limit.",
+    "Calling a remote counter store on every request. It adds latency to all traffic and makes the store one more thing whose failure takes everything down with it."
+  ]
+}
