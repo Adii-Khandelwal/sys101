@@ -16,6 +16,13 @@ function youtubeId(url: string): string | null {
   }
 }
 
+/** Over 20 minutes counts as long. Lengths look like "10:20" or "1:22:12". */
+function isLong(length: string) {
+  const p = length.split(":").map(Number);
+  const minutes = p.length === 3 ? p[0] * 60 + p[1] : p[0];
+  return minutes >= 20;
+}
+
 /**
  * Click-to-load YouTube embed (CLAUDE.md: nothing from YouTube until "Play
  * here"). Until the reader presses play, this is only text and a button, and
@@ -27,10 +34,12 @@ export default function VideoEmbed({ video }: { video: VideoSource }) {
   const [playing, setPlaying] = useState(false);
   const id = youtubeId(video.url);
 
+  const label = `Video, optional${isLong(video.length) ? ", long" : ""}${video.tag ? `, ${video.tag}` : ""}`;
+
   const meta = (
     <span className="learn-video-meta">
       {" "}
-      {video.channel}, {video.year}, {video.length}. Not vetted line by line like the written sources.
+      {video.channel}, {video.year}, {video.length}. Not vetted line by line like the written sources, and not reviewed by the author.
     </span>
   );
 
@@ -38,7 +47,7 @@ export default function VideoEmbed({ video }: { video: VideoSource }) {
   if (!id) {
     return (
       <p className="learn-video">
-        <span className="label">Video, optional and long</span>{" "}
+        <span className="label">{label}</span>{" "}
         <a href={video.url} target="_blank" rel="noopener noreferrer">
           {video.title}
         </a>
@@ -71,7 +80,7 @@ export default function VideoEmbed({ video }: { video: VideoSource }) {
 
   return (
     <div className="learn-video">
-      <span className="label">Video, optional and long</span>{" "}
+      <span className="label">{label}</span>{" "}
       <button type="button" className="text-button video-play" onClick={() => setPlaying(true)}>
         Play here: {video.title}
       </button>

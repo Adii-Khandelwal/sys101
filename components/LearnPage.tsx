@@ -11,21 +11,25 @@ type Props = { topic: Topic; learn: Learn; titles: Map<string, string> };
 
 const isVideo = (s: Source): s is VideoSource => s.kind === "video";
 
-/** Text with [[source-id]] citations turned into numbered links to the Sources list. */
+/** Text with [[source-id]] citations turned into numbered links to the Sources list, and [text](/path) into internal links. */
 function Cited({ text, number }: { text: string; number: Map<string, number> }) {
-  const parts = text.split(/(\[\[[a-z0-9-]+\]\])/g);
+  const parts = text.split(/(\[\[[a-z0-9-]+\]\]|\[[^[\]]+\]\(\/[^)\s]*\))/g);
   return (
     <>
       {parts.map((part, i) => {
-        const m = part.match(/^\[\[([a-z0-9-]+)\]\]$/);
-        if (!m) return <Fragment key={i}>{part}</Fragment>;
-        return (
-          <sup key={i} className="cite">
-            <a href={`#src-${m[1]}`} aria-label={`Source ${number.get(m[1])}`}>
-              [{number.get(m[1])}]
-            </a>
-          </sup>
-        );
+        const cite = part.match(/^\[\[([a-z0-9-]+)\]\]$/);
+        if (cite) {
+          return (
+            <sup key={i} className="cite">
+              <a href={`#src-${cite[1]}`} aria-label={`Source ${number.get(cite[1])}`}>
+                [{number.get(cite[1])}]
+              </a>
+            </sup>
+          );
+        }
+        const link = part.match(/^\[([^[\]]+)\]\((\/[^)\s]*)\)$/);
+        if (link) return <Link key={i} href={link[2]}>{link[1]}</Link>;
+        return <Fragment key={i}>{part}</Fragment>;
       })}
     </>
   );

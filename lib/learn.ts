@@ -20,7 +20,13 @@ export type WrittenSource = {
 };
 
 /** A video from an official, university or recognized conference channel. */
-export type VideoSource = WrittenSource & { kind: "video"; channel: string; length: string };
+export type VideoSource = WrittenSource & {
+  kind: "video";
+  channel: string;
+  length: string;
+  /** Short label shown on the video, such as "company talk, advanced". */
+  tag?: string;
+};
 
 export type Source = WrittenSource | VideoSource;
 
@@ -91,6 +97,13 @@ export function checkLearn(l: Learn, topicSlugs: string[]): string[] {
     }
     if (nonEmpty(s.verifiedOn) && !/^\d{4}-\d{2}-\d{2}$/.test(s.verifiedOn)) problems.push(`${where}: verifiedOn must be YYYY-MM-DD`);
     if (nonEmpty(s.url) && !/^https:\/\//.test(s.url)) problems.push(`${where}: url must be https`);
+    // An Internet-Draft is a work in progress, not a standard: the source must say so and give its expiry.
+    if (/datatracker\.ietf\.org\/doc\/draft-/.test(s.url ?? "")) {
+      const note = s.note ?? "";
+      if (!/Internet-Draft/.test(note) || !/work in progress/i.test(note) || !/not a standard/i.test(note) || !/expires \d{1,2} \w+ \d{4}/i.test(note)) {
+        problems.push(`${where} is an Internet-Draft: its note must say "Internet-Draft", "work in progress", "not a standard", and when it expires`);
+      }
+    }
     if (isVideo(s)) {
       for (const f of ["channel", "length", "year"] as const) if (!nonEmpty(s[f])) problems.push(`${where}: a video needs its ${f}`);
     }
