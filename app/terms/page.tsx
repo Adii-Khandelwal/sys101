@@ -6,7 +6,7 @@ import SiteFooter from "@/components/SiteFooter";
 // Prerendered at build time; using anything dynamic here fails the build.
 export const dynamic = "error";
 
-export const metadata: Metadata = pageMeta({ path: "/terms", title: "Terms", description: "Terms of use for sys101: the site is provided as is, blog content belongs to its authors, write-ups can be wrong, and how to ask for a takedown." });
+export const metadata: Metadata = pageMeta({ path: "/terms", title: "Terms", description: "Terms of use for sys101: the site is provided as is, linked content belongs to its authors, write-ups can be wrong, and how to ask for a takedown." });
 
 export default function Terms() {
   return (
@@ -26,16 +26,16 @@ export default function Terms() {
         not responsible for decisions you make based on it.
       </p>
 
-      <h2>Blog content belongs to its authors</h2>
+      <h2>Linked content belongs to its authors</h2>
       <p>
-        Every linked post belongs to the company or person who published it. sys101 only links to the
-        original and adds its own write-up.
+        Every linked post, document and video belongs to the company, organization or person who
+        published it. sys101 only links to the original and adds its own write-up.
       </p>
 
       <h2>Write-ups can be wrong</h2>
       <p>
-        Some write-ups are drafted with help from AI and may contain errors. When a write-up and the
-        original post disagree, trust the post.
+        The write-ups are drafted with an AI assistant and may contain errors. When a write-up and the
+        original disagree, trust the original.
       </p>
 
       <h2>Things will change</h2>

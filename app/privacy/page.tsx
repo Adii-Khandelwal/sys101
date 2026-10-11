@@ -7,7 +7,7 @@ import SiteFooter from "@/components/SiteFooter";
 // Prerendered at build time; using anything dynamic here fails the build.
 export const dynamic = "error";
 
-export const metadata: Metadata = pageMeta({ path: "/privacy", title: "Privacy", description: "What sys101 stores and sends: reading progress stays in your browser, and anonymous page views go to Vercel Web Analytics without cookies." });
+export const metadata: Metadata = pageMeta({ path: "/privacy", title: "Privacy", description: "What sys101 stores and sends: reading progress stays in your browser, and anonymous page views go to Vercel Web Analytics without third-party cookies." });
 
 export default function Privacy() {
   return (
@@ -20,8 +20,8 @@ export default function Privacy() {
 
       <h2>No accounts</h2>
       <p>
-        There is nothing to sign up for or log in to. We don&apos;t collect your name, email, or any
-        other personal data.
+        There is nothing to sign up for or log in to. We don&apos;t ask for your name, email or account details. Your host and our analytics tool
+        process some technical data, described below.
       </p>
 
       <h2>Your progress stays in your browser</h2>
@@ -40,9 +40,15 @@ export default function Privacy() {
 
       <h2>Page view counts</h2>
       <p>
-        We use Vercel Web Analytics to count visits: which pages are viewed, the referring site, and
-        rough device, browser and country. It sets no cookies and doesn&apos;t identify you or follow
-        you across sites; visits are counted anonymously. Your reading progress is never part of it.
+        We use Vercel Web Analytics to count visits. Per its documentation, each page view can be stored with
+        the page address, the referring site, a rough location, and your device type, operating system and
+        browser. It uses no third-party cookies; a visitor is told apart by a hash made from the request, and
+        that session is discarded after 24 hours. Vercel states that the data points are anonymous and cannot
+        be used to follow you across sites. Your reading progress is never part of it. See{" "}
+        <a href="https://vercel.com/docs/analytics/privacy-policy" target="_blank" rel="noopener noreferrer">
+          Vercel&apos;s Web Analytics privacy documentation
+        </a>
+        .
       </p>
 
       <h2>Videos</h2>

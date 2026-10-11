@@ -59,14 +59,18 @@ export default function About() {
       <p>
         A post gets in only if it has real numbers, is honest about what went wrong, comes from the team
         that built the system, and teaches something you can reuse. Older posts are allowed when the idea
-        has not changed, and they show their year. Every figure on a topic page comes from a post I
-        actually read. The original is always linked, with the date I last checked it.
+        has not changed, and they show their year. Every figure on a topic page was checked against the
+        text of the post it comes from when the topic was written. The original is always linked, with
+        the date I last edited that entry. Nothing updates the date automatically, and the weekly link
+        check only reports links that stop working.
       </p>
 
       <h2>About the write-ups</h2>
       <p>
-        The explanations and summaries here are write-ups of those posts. Some are drafted with help from AI
-        and may contain errors. When a write-up and the original post disagree, trust the post.{" "}
+        I write these with an AI assistant. It reads each source and drafts the explanations, quizzes and
+        summaries, and I have not reviewed every line. Figures are checked against the original pages with
+        a script. Write-ups can contain mistakes, so when one and the original post disagree, trust the
+        post.{" "}
         The posts belong to their authors and companies, and this personal project is not
         affiliated with any of them. Found an error? Email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
       </p>
