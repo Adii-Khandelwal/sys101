@@ -53,8 +53,8 @@ export default function Home() {
 
   // Homepage extras, all computed from content at build time.
   const dns = topics.find((t) => t.slug === "dns");
-  const sample = dns?.lesson?.quiz[0];
-  if (!dns || !sample) throw new Error("Homepage: the DNS topic needs a lesson quiz for Try a question");
+  const quiz = dns?.lesson?.quiz;
+  if (!dns || !quiz?.length) throw new Error("Homepage: the DNS topic needs a lesson quiz for Try a question");
   const postCounts = new Map<string, Set<string>>();
   for (const p of topics.flatMap((t) => t.posts)) {
     postCounts.set(p.company, (postCounts.get(p.company) ?? new Set()).add(p.url));
@@ -89,7 +89,7 @@ export default function Home() {
       />
 
       <InsideTopic topic={dns} figures={featuredFigures(topics)} />
-      <TryQuestion slug={dns.slug} topicTitle={dns.title} question={sample} />
+      <TryQuestion slug={dns.slug} topicTitle={dns.title} questions={quiz} />
       <PostSources companies={companies} />
 
       <SiteFooter />

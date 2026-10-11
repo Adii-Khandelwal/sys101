@@ -590,6 +590,31 @@ a:hover {
   color: var(--ink-soft);
 }
 
+/* A new question fades in and rises a few pixels; the old one fades out first. Only opacity and transform. */
+.try-body {
+  animation: try-enter var(--dur-slow) var(--ease-out);
+  transition: opacity var(--dur-base) var(--ease-in-out), transform var(--dur-base) var(--ease-in-out);
+}
+
+.try-body.is-leaving {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+@keyframes try-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.try-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 20px;
+}
+
 .try-source {
   margin: 0 0 12px;
 }
