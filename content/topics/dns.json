@@ -344,20 +344,20 @@
         "teaches": "why"
       },
       {
-        "question": "At Cloudflare, an edit to one record in a million-record zone used to take about 34 seconds to build. Why?",
+        "question": "On a cache miss, what does the .com server give a resolver looking up example.com?",
         "options": [
-          "Resolvers across the internet were slow to update",
-          "The Zone Builder rebuilt the whole zone for any edit",
-          "Root servers were overloaded"
+          "The address of example.com",
+          "A referral to the servers that are authoritative for example.com",
+          "Nothing; resolvers skip the .com servers"
         ],
         "correct": 1,
-        "why": "Every edit triggered a full rebuild that read and compared every record, so cost grew with the size of the zone, not the size of the change.",
+        "why": "The top-level domain servers do not hold example.com's records. They point the resolver to the domain's authoritative servers, and for a signed domain also return a DS record.",
         "wrong": [
-          "Resolver caching happens after the build and was not what the 34 seconds measured.",
+          "Only the authoritative servers hold the record itself; .com only knows who they are.",
           "",
-          "Root servers play no part in a provider building its own zone."
+          "On a miss the resolver has to ask .com to find out which servers are authoritative for the domain."
         ],
-        "teaches": "posts"
+        "teaches": "how"
       },
       {
         "question": "Slack pulled its DS record to stop an outage, but failures went on. Why?",

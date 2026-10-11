@@ -82,6 +82,8 @@ export type Lesson = {
 
 /** Section ids a quiz answer may link back to. */
 export const LESSON_SECTIONS = ["why", "model", "how", "example", "mistakes", "posts", "differ"] as const;
+/** Sections in the concept part, which comes before the posts. */
+export const CONCEPT_SECTION_IDS = ["why", "model", "how", "example", "mistakes"] as const;
 
 export type Topic = {
   slug: string;
@@ -194,7 +196,10 @@ function checkLesson(topic: Topic): string[] {
     q.options?.forEach((_, j) => {
       if (j !== q.correct && !nonEmpty(q.wrong?.[j])) problems.push(`${where}: option ${j + 1} has no explanation of why it is wrong`);
     });
-    if (!(LESSON_SECTIONS as readonly string[]).includes(q.teaches)) problems.push(`${where}: teaches "${q.teaches}" is not a section id`);
+    // Check yourself sits in the concept part, before the posts, so it may only test the concept.
+    if (!(CONCEPT_SECTION_IDS as readonly string[]).includes(q.teaches)) {
+      problems.push(`${where}: teaches "${q.teaches}", but quiz questions may only test concept sections (${CONCEPT_SECTION_IDS.join(", ")})`);
+    }
   });
   if (!Array.isArray(l.exercises) || l.exercises.length < 2 || l.exercises.length > 3) problems.push("lesson.exercises needs 2 to 3");
   const order = ["apply", "design", "scale"];
