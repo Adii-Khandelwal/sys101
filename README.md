@@ -166,7 +166,7 @@ Before committing:
 
 ## Content and attribution
 
-Every post belongs to its authors. The digests are original write-ups of what each post says, drafted with AI assistance and checked against the originals, and every topic page links to the original. To have a post removed or a digest corrected, email contact@example.com.
+Every post belongs to its authors. The digests are original write-ups of what each post says, drafted with AI assistance and checked against the originals, and every topic page links to the original. To have a post removed or a digest corrected, email aditya01khandelwal@gmail.com.
 
 ## Roadmap
 
