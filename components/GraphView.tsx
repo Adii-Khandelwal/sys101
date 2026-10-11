@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type Graph from "graphology";
 import type Sigma from "sigma";
 import type { NodeLabelDrawingFunction } from "sigma/rendering";
-import { LABEL_START, chooseLayers, columns, edgeCurvatures, fitLabelScale, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
+import { LABEL_START, MIN_LABEL_SCALE, chooseLayers, columns, edgeCurvatures, fitLabelScale, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
 import { useReadTopics } from "@/lib/progress";
 import {
   ACCENT,
@@ -659,7 +659,16 @@ export default function GraphView({ nodes, edges }: Props) {
       if (ok !== fits) return setFits(ok);
       scale = found ?? 1;
     }
-    if (effective === "vertical") scale = 1;
+    if (effective === "vertical") {
+      // Stacked on a narrow phone, the longest label can run past the stage edge: shrink labels
+      // (never below MIN_LABEL_SCALE) until each one ends inside it.
+      const probe = fitPositions(layered, "vertical", { width, height, labelWidth: baseWidth, edges: drawn }).positions;
+      const room = width + PADDING - 8;
+      scale = Math.max(
+        MIN_LABEL_SCALE,
+        Math.min(1, ...cols.flat().map((n) => (room - probe.get(n.slug)!.x - LABEL_START) / baseWidth.get(n.slug)!)),
+      );
+    }
     const labelWidth = new Map([...baseWidth].map(([slug, w]) => [slug, w * scale] as const));
     renderer.setSetting("labelSize", LABEL_SIZE * scale);
     setLabelScale(scale);

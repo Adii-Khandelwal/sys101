@@ -1650,6 +1650,23 @@ a:hover {
   }
   .graph-toolbar {
     margin-top: 32px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  /* Map controls get their own row, with 44px tap targets and room between them. */
+  .graph-controls {
+    flex-wrap: wrap;
+    gap: 0 4px;
+    width: 100%;
+  }
+  .graph-controls .text-button {
+    min-height: 44px;
+    padding: 0 12px 0 0;
+  }
+  .zoom-readout {
+    margin-left: auto;
+    align-self: center;
   }
   .graph-stage {
     height: clamp(278px, calc(var(--layers, 1) * 120px + 158px), 70vh);
@@ -2417,4 +2434,95 @@ html {
 
 .cite a {
   text-decoration: none;
+}
+
+/* ── Touch targets on phones ─────────────────
+   Small text links and buttons keep their look and spacing; an invisible
+   pseudo-element grows the tap area to 44px (WCAG AA, CLAUDE.md). */
+@media (max-width: 767px), (pointer: coarse) {
+  .masthead p a,
+  .index-groups a,
+  .search-results li > a,
+  .legal a,
+  .dossier li > a,
+  .dossier nav a,
+  .video-note a,
+  .learn-section#next a,
+  .progress-line a,
+  .progress-sticky a,
+  .sources li a,
+  .lesson-rail a,
+  .explain a,
+  .related a,
+  .relations a,
+  .reveal-content a,
+  .part-head a,
+  .finish-note a,
+  .site-footer a,
+  .inside-source a,
+  .mark-done,
+  .reveal-wrap .text-button,
+  .home-view-toggle .text-button,
+  .path-title,
+  .lesson-top .lesson-jump a {
+    position: relative;
+  }
+  .masthead p a::after,
+  .search-results li > a::after,
+  .legal a::after,
+  .dossier li > a::after,
+  .dossier nav a::after,
+  .video-note a::after,
+  .learn-section#next a::after,
+  .progress-line a::after,
+  .progress-sticky a::after,
+  .sources li a::after,
+  .lesson-rail a::after,
+  .explain a::after,
+  .related a::after,
+  .relations a::after,
+  .reveal-content a::after,
+  .part-head a::after,
+  .finish-note a::after,
+  .site-footer a::after,
+  .inside-source a::after,
+  .mark-done::after,
+  .reveal-wrap .text-button::after,
+  .home-view-toggle .text-button::after,
+  .path-title::after {
+    content: "";
+    position: absolute;
+    inset: -15px -4px;
+  }
+  /* The Map and Path toggle sits close together, so its areas grow sideways just enough to reach 44px. */
+  .home-view-toggle .text-button::after {
+    inset: -13px -9px;
+  }
+  /* The All topics rows are close together, so their areas stay within the row. */
+  .index-groups a::after {
+    content: "";
+    position: absolute;
+    inset: -8px -4px;
+  }
+  /* Citation marks sit inside a sentence: full 44px tall, as wide as the text around them allows. */
+  .cite a {
+    position: relative;
+  }
+  .cite a::after {
+    content: "";
+    position: absolute;
+    inset: -16px -6px;
+  }
+  .video-play {
+    min-height: 44px;
+  }
+  .data-page .text-button {
+    min-width: 44px;
+  }
+  /* Quiz options are rows of wrapped text, so they get real height. */
+  .options .option {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
 }
