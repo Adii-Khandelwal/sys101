@@ -2085,12 +2085,6 @@ html {
   scroll-padding-top: calc(var(--header-h) + 16px); /* anchors land below the header */
 }
 
-/* No rubber-band pull at the ends of the page, so the header never drifts. */
-html,
-body {
-  overscroll-behavior-y: none;
-}
-
 .site-header {
   position: sticky;
   top: 0;

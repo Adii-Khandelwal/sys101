@@ -76,3 +76,13 @@ export function clampPan(cam: Camera, graph: Box, view: { width: number; height:
 export function wheelFactor(deltaY: number) {
   return Math.exp(-deltaY * 0.002);
 }
+
+/** The screen distance the view moves when a finger or pointer goes from `prev` to `now`: the opposite way, so the content follows the pointer. */
+export function dragView(prev: { x: number; y: number }, now: { x: number; y: number }) {
+  return { x: prev.x - now.x, y: prev.y - now.y };
+}
+
+/** Move the camera by a distance in framed-graph units. A camera that moves right shows content further right, so the content on screen moves left. */
+export function moveView(cam: Camera, delta: { x: number; y: number }): Camera {
+  return { ...cam, x: cam.x + delta.x, y: cam.y + delta.y };
+}

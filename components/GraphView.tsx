@@ -31,8 +31,10 @@ import { navigateWithTransition } from "./ViewTransitions";
 import {
   STEP,
   clampPan,
+  dragView,
   fitRatio,
   fitState,
+  moveView,
   ratioLimits,
   wheelFactor,
   zoomBy,
@@ -356,7 +358,7 @@ export default function GraphView({ nodes, edges }: Props) {
         minY: Math.min(...pts.map((p) => p.y)),
         maxY: Math.max(...pts.map((p) => p.y)),
       };
-      const moved = { ...cam, x: cam.x - (b.x - a.x), y: cam.y - (b.y - a.y) };
+      const moved = moveView(cam, { x: b.x - a.x, y: b.y - a.y });
       applyCamera(clampPan(moved, box, { width: el.clientWidth, height: el.clientHeight }, unitsPerPx), false);
     },
     [applyCamera, framed],
@@ -417,7 +419,8 @@ export default function GraphView({ nodes, edges }: Props) {
         const after = pinch();
         draggedRef.current = true;
         if (before.dist > 0 && after.dist > 0) zoomAt(after.dist / before.dist, after.mid, false);
-        panBy(before.mid.x - after.mid.x, before.mid.y - after.mid.y);
+        const v = dragView(before.mid, after.mid);
+        panBy(v.x, v.y);
         return;
       }
       pointers.set(e.pointerId, p);
@@ -430,7 +433,8 @@ export default function GraphView({ nodes, edges }: Props) {
         el.setPointerCapture(e.pointerId);
         setCursor();
       }
-      panBy(prev.x - p.x, prev.y - p.y);
+      const v = dragView(prev, p);
+      panBy(v.x, v.y);
     };
     const onUp = (e: PointerEvent) => {
       pointers.delete(e.pointerId);

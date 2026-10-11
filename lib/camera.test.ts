@@ -4,6 +4,8 @@ import {
   MIN_ZOOM,
   STEP,
   clampPan,
+  dragView,
+  moveView,
   fitRatio,
   fitState,
   ratioLimits,
@@ -123,3 +125,18 @@ describe("zoom round trips", () => {
   });
 });
 
+
+describe("dragging", () => {
+  // A node's place on screen, in pixels from the view centre: (graph - camera) / s, where s is framed units per pixel.
+  const screenX = (nodeX: number, cam: Camera, s: number) => (nodeX - cam.x) / s;
+  const screenY = (nodeY: number, cam: Camera, s: number) => (nodeY - cam.y) / s;
+
+  it("content follows the finger: dragging right moves the content right, dragging up moves it up", () => {
+    const cam: Camera = { x: 0.5, y: 0.5, ratio: 1, angle: 0 };
+    const s = 0.001;
+    const view = dragView({ x: 100, y: 100 }, { x: 200, y: 60 }); // finger: 100px right, 40px up
+    const next = moveView(cam, { x: view.x * s, y: view.y * s });
+    expect(screenX(0.6, next, s) - screenX(0.6, cam, s)).toBeCloseTo(100);
+    expect(screenY(0.6, next, s) - screenY(0.6, cam, s)).toBeCloseTo(-40);
+  });
+});
