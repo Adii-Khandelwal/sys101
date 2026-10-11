@@ -86,11 +86,46 @@ a:hover {
   letter-spacing: -0.02em;
 }
 
+/* The value line: clear and serif, but kept below the wordmark in weight. */
+.masthead .masthead-lead {
+  margin: 16px 0 0;
+  font-size: 26px;
+  font-style: normal;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
 .masthead p {
   margin: 14px 0 0;
   font-size: 20px;
   font-style: italic;
   color: var(--ink-soft);
+}
+
+/* First-run guidance: text links, the first in the accent, not a promo button. */
+.start-here {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin: 14px 0 0;
+  font-size: 18px;
+}
+
+.start-primary {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+.start-sep {
+  color: var(--rule);
+}
+
+.start-secondary {
+  color: var(--ink-soft);
+}
+.start-secondary:hover {
+  color: var(--ink);
 }
 
 .search {

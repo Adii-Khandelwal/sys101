@@ -2,6 +2,7 @@ import Link from "next/link";
 import HomeView from "@/components/HomeView";
 import NextUp from "@/components/NextUp";
 import Search from "@/components/Search";
+import StartHere from "@/components/StartHere";
 import SiteFooter from "@/components/SiteFooter";
 import { columns, depths, transitiveReduction } from "@/lib/graph";
 import { GROUPS, getAllTopics, type Group } from "@/lib/topics";
@@ -50,11 +51,13 @@ export default function Home() {
     <main className="home">
       <header className="masthead">
         <h1>sys101</h1>
+        <p className="masthead-lead">Learn system design in the order it makes sense.</p>
         <p>
-          Learn system design from how real companies built it, one topic at a time, in the order they
-          build on each other. <Link href="/about">Why this exists</Link>
+          A guided path through the concepts behind systems at scale, built from real engineering
+          stories. <Link href="/about">Why this exists</Link>
         </p>
         <NextUp entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))} />
+        <StartHere firstSlug="dns" firstTitle="DNS" />
         <Search />
       </header>
 

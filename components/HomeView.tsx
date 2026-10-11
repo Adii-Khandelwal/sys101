@@ -56,6 +56,14 @@ export default function HomeView({ nodes, edges, pathEntries, indexGroups }: Pro
     return () => mq.removeEventListener("change", apply);
   }, []);
 
+  // "Explore the map" from the intro switches to Map without marking an
+  // explicit preference (so the mobile Path default still applies afterwards).
+  useEffect(() => {
+    const show = () => setView("map");
+    window.addEventListener("sys101:show-map", show);
+    return () => window.removeEventListener("sys101:show-map", show);
+  }, []);
+
   const choose = (v: View) => {
     setView(v);
     chosenRef.current = true;
@@ -68,7 +76,7 @@ export default function HomeView({ nodes, edges, pathEntries, indexGroups }: Pro
 
   return (
     <>
-      <div className="home-toolbar">
+      <div className="home-toolbar" id="the-map">
         <span className="home-toolbar-label label">
           {view === "map" ? "The map" : "The path"}
         </span>
