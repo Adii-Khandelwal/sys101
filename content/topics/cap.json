@@ -245,11 +245,11 @@
         "walkthrough": [
           {
             "step": "Place keys with consistent hashing",
-            "explanation": "Keys are spread around a consistent hashing ring, and each key's N replicas are the next distinct nodes on the ring (its preference list), so adding or removing a node moves only a slice of the data."
+            "explanation": "Keys are spread around a consistent hashing ring and each key is stored on N nodes that follow its position. The list of nodes responsible for a key is its preference list, which holds more than N nodes to cover failures, so adding or removing a node moves only a slice of the data."
           },
           {
             "step": "Make it always writable with tunable quorums",
-            "explanation": "The protocol has two configurable values, R and W, over N replicas. Dynamo favours low values so writes are never rejected: a write is accepted by whatever replicas are reachable rather than waiting for all N."
+            "explanation": "The protocol has two configurable values, R and W, over N replicas, and the paper says they are usually set below N for better latency. The common configuration is (3, 2, 2). Raising W makes writes more durable but can reject them when fewer hosts are alive."
           },
           {
             "step": "Keep writing during failures with a sloppy quorum",
@@ -275,16 +275,12 @@
             "meaning": "The SLA Dynamo is built to: 99.9% of read and write requests complete within 300 milliseconds, measured at the 99.9th percentile rather than the mean"
           },
           {
-            "value": "N, R, W",
-            "meaning": "The three tunable quorum values; Dynamo favours low R and W so writes are never rejected"
-          },
-          {
-            "value": "N = 3",
-            "meaning": "A typical replication factor: each key's preference list is the next three distinct nodes on the ring"
+            "value": "(3, 2, 2)",
+            "meaning": "The common (N, R, W) configuration the paper reports for several Dynamo instances; R and W are usually set below N for better latency"
           },
           {
             "value": "24 hours",
-            "meaning": "The period over which the shopping cart service was profiled for the paper's latency measurements"
+            "meaning": "The period over which the versions returned to the shopping cart service were profiled; 99.94% of requests saw exactly one version"
           }
         ],
         "tradeoffs": {
@@ -292,7 +288,7 @@
           "rejected": "Strong consistency and the simplicity of a single authoritative copy, which would make the system unavailable to a partitioned side.",
           "why": "For the shopping cart and similar services, refusing a write during a partition is worse than briefly diverging, because the data can be merged. Dynamo therefore keeps answering and spends the cost later, in conflict reconciliation and in the complexity of vector clocks and anti-entropy."
         },
-        "failures": "The design is candid about its costs. The basic consistent hashing scheme gave uneven load and had to be refined. Vector clocks can grow with the number of nodes that touch a key, so their size must be bounded. Pushing conflict resolution to the application is powerful but puts a real burden on developers, and last-write-wins silently drops one of two concurrent writes.",
+        "failures": "The design is candid about its costs. The basic consistent hashing scheme gave uneven load and had to be refined. Vector clocks can grow with the number of nodes that touch a key, so their size must be bounded. Pushing conflict resolution to the application is powerful, but some developers do not want to write their own, so the data store can apply a simple policy such as last write wins instead.",
         "takeaways": "CAP is a design input, not an afterthought: Dynamo starts from \"never reject a write\" and derives quorums, hinted handoff and reconciliation from it. The lesson that outlived the specifics is that availability is bought with eventual consistency and a reconciliation strategy, and that the right strategy depends on the data, which is why Dynamo made R, W and conflict handling tunable."
       }
     },
@@ -346,7 +342,7 @@
           },
           {
             "value": "about 9 ms",
-            "meaning": "Typical Paxos (replication) latency reported in the paper"
+            "meaning": "Paxos latency in the paper's one-replica latency experiments, where commit wait was about 5 ms"
           },
           {
             "value": "under 1 ms",
@@ -354,7 +350,7 @@
           },
           {
             "value": "50 MB",
-            "meaning": "A directory, the unit of data placement, can be moved between Paxos groups in a few seconds"
+            "meaning": "Size of a directory, the unit of data placement, that the paper expects can be moved between Paxos groups in a few seconds (an expectation, not a measurement)"
           }
         ],
         "tradeoffs": {
@@ -367,7 +363,7 @@
       }
     }
   ],
-  "comparison": "Both papers face the same impossibility and both run at enormous scale, but they sit on opposite sides of the CAP choice, which is exactly why they belong together. Dynamo starts from \"a write must never be rejected\" and accepts eventual consistency; Spanner starts from \"transactions must have one correct global order\" and accepts added latency. Reading them in sequence is the clearest way to see that CAP is a decision, not a fact handed to you.\n\nWhere they diverge is what each spends. Dynamo spends on reconciliation: vector clocks, sloppy quorums with hinted handoff, read repair, anti-entropy with Merkle trees, and application-level merges, all to keep answering during a partition and sort out divergence later. Spanner spends on coordination and hardware: Paxos majorities, two-phase commit across shards, and GPS plus atomic clocks feeding TrueTime so a short commit-wait can enforce order. Dynamo's partitioned side stays available but may be stale; Spanner's partitioned minority goes unavailable but is never wrong.\n\nThe evidence shows the price of each stance. Dynamo's goal is a 99.9th-percentile SLA of 300 ms with writes never rejected, and its complexity lives in conflict handling. Spanner's numbers are about the cost of agreement: Paxos latency around 9 ms and a TrueTime uncertainty of roughly 1 to 7 ms that every committing transaction waits out. Neither is the right answer in general; the right answer depends on whether the data can be merged, which is the real lesson under CAP.",
+  "comparison": "Both papers face the same impossibility and both run at enormous scale, but they sit on opposite sides of the CAP choice, which is exactly why they belong together. Dynamo starts from \"a write must never be rejected\" and accepts eventual consistency; Spanner starts from \"transactions must have one correct global order\" and accepts added latency. Reading them in sequence is the clearest way to see that CAP is a decision, not a fact handed to you.\n\nWhere they diverge is what each spends. Dynamo spends on reconciliation: vector clocks, sloppy quorums with hinted handoff, read repair, anti-entropy with Merkle trees, and application-level merges, all to keep answering during a partition and sort out divergence later. Spanner spends on coordination and hardware: Paxos majorities, two-phase commit across shards, and GPS plus atomic clocks feeding TrueTime so a short commit-wait can enforce order. Dynamo's partitioned side stays available but may be stale; Spanner's partitioned minority goes unavailable but is never wrong.\n\nThe evidence shows the price of each stance. Dynamo's goal is a 99.9th-percentile SLA of 300 ms with writes never rejected, and its complexity lives in conflict handling. Spanner's numbers are about the cost of agreement: Paxos latency around 9 ms in the paper's one-replica experiments and a TrueTime uncertainty of roughly 1 to 7 ms that every committing transaction waits out. Neither is the right answer in general; the right answer depends on whether the data can be merged, which is the real lesson under CAP.",
   "glossary": [
     {
       "term": "Partition",
