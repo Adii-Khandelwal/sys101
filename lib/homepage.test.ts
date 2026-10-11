@@ -10,6 +10,7 @@ const FILES = [
   "components/PathView.tsx",
   "components/PostSources.tsx",
   "components/InsideTopic.tsx",
+  "components/DailyFigure.tsx",
   "lib/lessonOutline.ts",
   "components/TopicIndex.tsx",
   "components/TryQuestion.tsx",

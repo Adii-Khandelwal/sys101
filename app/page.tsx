@@ -1,6 +1,7 @@
 import Link from "next/link";
 import HomeView from "@/components/HomeView";
 import InsideTopic from "@/components/InsideTopic";
+import { featuredFigures } from "@/lib/lessonOutline";
 import NextUp from "@/components/NextUp";
 import PostSources from "@/components/PostSources";
 import Search from "@/components/Search";
@@ -88,7 +89,7 @@ export default function Home() {
         }))}
       />
 
-      <InsideTopic topic={dns} />
+      <InsideTopic topic={dns} figures={featuredFigures(topics)} />
       <TryQuestion slug={dns.slug} topicTitle={dns.title} question={sample} />
       <PostSources companies={companies} />
 

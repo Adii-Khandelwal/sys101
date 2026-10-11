@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { FEATURED_FIGURE, LESSON_OUTLINE, topicPreview } from "./lessonOutline";
+import { FEATURED_FIGURES, LESSON_OUTLINE, featuredFigures, topicSections } from "./lessonOutline";
 import { startVariant } from "./nextUp";
 import { getAllTopics } from "./topics";
 
@@ -11,7 +11,7 @@ const topics = getAllTopics();
 
 describe("Inside a topic preview", () => {
   const dns = topics.find((t) => t.slug === "dns")!;
-  const preview = topicPreview(dns);
+  const sections = topicSections(dns);
 
   it("uses the real section names, in the order the topic page has them", () => {
     const src = fs.readFileSync(path.resolve(__dirname, "../components/TopicLesson.tsx"), "utf8");
@@ -24,23 +24,23 @@ describe("Inside a topic preview", () => {
   });
 
   it("shows the real counts", () => {
-    const by = Object.fromEntries(preview.sections.map((s) => [s.id, s.count]));
+    const by = Object.fromEntries(sections.map((s) => [s.id, s.count]));
     expect(by.check).toBe(`${dns.lesson!.quiz.length} questions`);
     expect(by.exercises).toBe(`${dns.lesson!.exercises.length} exercises`);
     expect(by.posts).toBe(`${dns.posts.length} posts`);
   });
 
-  it("features the chosen figure, which exists in that post digest", () => {
-    expect(preview.figure!.value).toBe(FEATURED_FIGURE.value);
-    expect(dns.posts.find((p) => p.id === FEATURED_FIGURE.post)!.digest.numbers.some((n) => n.value === FEATURED_FIGURE.value)).toBe(true);
-  });
-
-  it("the figure exists in a post digest and carries its source", () => {
-    const f = preview.figure!;
-    expect(f).not.toBeNull();
-    const post = dns.posts.find((p) => p.url === f.url)!;
-    expect(post.company).toBe(f.company);
-    expect(post.digest.numbers.some((n) => n.value === f.value && n.meaning === f.meaning)).toBe(true);
+  it("rotates through real figures that exist in their posts, with sources", () => {
+    const figs = featuredFigures(topics);
+    expect(figs).toHaveLength(FEATURED_FIGURES.length);
+    expect(figs[0].value).toBe("150x");
+    const posts = topics.flatMap((t) => t.posts);
+    figs.forEach((f, i) => {
+      const post = posts.find((p) => p.id === FEATURED_FIGURES[i].post)!;
+      expect(post.digest.numbers.some((n) => n.value === f.value && n.meaning === f.meaning)).toBe(true);
+      expect([f.company, f.url]).toEqual([post.company, post.url]);
+    });
+    expect(new Set(FEATURED_FIGURES.map((x) => x.post)).size).toBe(FEATURED_FIGURES.length);
   });
 });
 

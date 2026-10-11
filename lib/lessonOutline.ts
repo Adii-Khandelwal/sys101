@@ -14,14 +14,8 @@ export const LESSON_OUTLINE = [
   { id: "next", name: "What to learn next" },
 ] as const;
 
-/** The digest figure the preview features, picked because it reads clearly on its own. Must exist in the data. */
-export const FEATURED_FIGURE = { topic: "dns", post: "cloudflare-dns-builds-2022", value: "150x" };
-
-/**
- * What the "Inside a topic" preview shows for one lesson topic: its section names with
- * real counts, and one figure from the first post digest that has one (null if none).
- */
-export function topicPreview(topic: Topic) {
+/** Section names of a lesson topic with its real counts, for the "Inside a topic" preview. */
+export function topicSections(topic: Topic) {
   const l = topic.lesson;
   if (!l) throw new Error(`Inside a topic: "${topic.slug}" has no lesson`);
   const counts: Record<string, string> = {
@@ -29,16 +23,36 @@ export function topicPreview(topic: Topic) {
     posts: `${topic.posts.length} posts`,
     exercises: `${l.exercises.length} exercises`,
   };
-  const sections = LESSON_OUTLINE.map((s) => ({ ...s, count: counts[s.id] }));
-  const posts = [...topic.posts].sort((a, b) =>
-    topic.slug === FEATURED_FIGURE.topic ? Number(b.id === FEATURED_FIGURE.post) - Number(a.id === FEATURED_FIGURE.post) : 0,
-  );
-  for (const post of posts) {
-    const featured = topic.slug === FEATURED_FIGURE.topic && post.id === FEATURED_FIGURE.post;
-    const n = post.digest.numbers.find((x) => (featured ? x.value === FEATURED_FIGURE.value : x.value.trim()) && x.meaning.trim());
-    if (n) {
-      return { sections, figure: { ...n, company: post.company, year: post.published.slice(0, 4), url: post.url, postTitle: post.title } };
-    }
-  }
-  return { sections, figure: null };
+  return LESSON_OUTLINE.map((s) => ({ ...s, count: counts[s.id] }));
+}
+
+/**
+ * Digest figures the homepage rotates through, one a day, picked because each reads clearly on its own
+ * with the post's title beside it. Each must exist in a post digest, and the first is the default.
+ */
+export const FEATURED_FIGURES: { post: string; value: string }[] = [
+  { post: "cloudflare-dns-builds-2022", value: "150x" },
+  { post: "meta-cache-consistency-2022", value: "over 1 quadrillion" },
+  { post: "cloudflare-pingora-2022", value: "160x" },
+  { post: "cloudflare-ketama-ram-2026", value: "over 100TB" },
+  { post: "github-mysql-8-upgrade-2023", value: "5.5 million" },
+  { post: "discord-search-indexing-2025", value: "500ms to under 100ms" },
+  { post: "uber-dynamic-subsetting-2022", value: "up to 40%" },
+  { post: "meta-foqs-2021", value: "close to one trillion" },
+  { post: "meta-mysql-raft-2023", value: "about 2 s vs 20 to 40 s" },
+  { post: "notion-postgres-sharding-2021", value: "5 minutes" },
+  { post: "cloudflare-rate-limiting-2017", value: "400,000 per second" },
+];
+
+export type Figure = { value: string; meaning: string; company: string; year: string; url: string; postTitle: string };
+
+/** The featured figures, read from the posts' digests. A missing post or figure fails the build. */
+export function featuredFigures(topics: Topic[]): Figure[] {
+  const posts = topics.flatMap((t) => t.posts);
+  return FEATURED_FIGURES.map(({ post: id, value }) => {
+    const post = posts.find((p) => p.id === id);
+    const n = post?.digest.numbers.find((x) => x.value === value && x.meaning.trim());
+    if (!post || !n) throw new Error(`Featured figure "${value}" was not found in post "${id}"`);
+    return { value: n.value, meaning: n.meaning, company: post.company, year: post.published.slice(0, 4), url: post.url, postTitle: post.title };
+  });
 }

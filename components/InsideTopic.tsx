@@ -1,10 +1,10 @@
-import Link from "next/link";
-import { topicPreview } from "@/lib/lessonOutline";
+import { topicSections, type Figure } from "@/lib/lessonOutline";
+import DailyFigure from "./DailyFigure";
 import type { Topic } from "@/lib/topics";
 
-/** A look at what one topic page contains, built from that topic's data. */
-export default function InsideTopic({ topic }: { topic: Topic }) {
-  const { sections, figure } = topicPreview(topic);
+/** What every topic page holds, built from a topic's data, with a figure of the day from the posts. */
+export default function InsideTopic({ topic, figures }: { topic: Topic; figures: Figure[] }) {
+  const sections = topicSections(topic);
   return (
     <section className="home-extra inside-topic" aria-labelledby="inside-heading">
       <h2 id="inside-heading" className="label">
@@ -20,25 +20,7 @@ export default function InsideTopic({ topic }: { topic: Topic }) {
           </li>
         ))}
       </ol>
-      {figure && (
-        <div className="inside-figure">
-          <p className="inside-kicker label">A real figure from a post</p>
-          <p className="inside-value">{figure.value}</p>
-          <p className="inside-meaning">
-            {figure.meaning}.
-            <span className="inside-source label">
-              {figure.company}, {figure.year}
-              <span aria-hidden="true"> · </span>
-              <a href={figure.url} target="_blank" rel="noopener noreferrer">
-                {figure.postTitle}
-              </a>
-            </span>
-          </p>
-        </div>
-      )}
-      <p className="inside-open">
-        <Link href={`/topic/${topic.slug}`}>Open {topic.title}</Link>
-      </p>
+      <DailyFigure figures={figures} />
     </section>
   );
 }
