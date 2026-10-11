@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useInProgressTopics, useReadTopics } from "@/lib/progress";
+import { markTopics, useInProgressTopics, useReadTopics } from "@/lib/progress";
 import { readyTopics, type IndexEntry } from "@/lib/nextUp";
 
 export type PathEntry = {
@@ -48,12 +48,27 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
       <h2 id={headingId} className="visually-hidden">
         The path
       </h2>
-      {groups.map((g) => (
-        <div key={g.name} className="path-group">
-          <h3 className="label path-group-name">
-            <span>{g.name}</span>
-          </h3>
-          <ol className="path-list">
+      {groups.map((g) => {
+        const slugs = g.items.map((e) => e.slug);
+        const readInGroup = slugs.filter((s) => read.includes(s)).length;
+        const allRead = readInGroup === slugs.length;
+        return (
+          <div key={g.name} className="path-group">
+            <h3 className="label path-group-name">
+              <span>{g.name}</span>
+              <span className="path-group-count">
+                {readInGroup} / {slugs.length} read
+              </span>
+              <button
+                type="button"
+                className="text-button label path-group-mark"
+                aria-pressed={allRead}
+                onClick={() => markTopics(slugs, !allRead)}
+              >
+                {allRead ? "Mark group unread" : "Mark group read"}
+              </button>
+            </h3>
+            <ol className="path-list">
             {g.items.map((e) => {
               const st = state(e.slug);
               const buildsOn = e.prerequisites.map((p) => titleOf.get(p) ?? p);
@@ -89,7 +104,8 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
             })}
           </ol>
         </div>
-      ))}
+        );
+      })}
     </section>
   );
 }

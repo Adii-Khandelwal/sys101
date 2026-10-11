@@ -78,6 +78,18 @@ export function useIsRead(slug: string) {
   return [isRead, toggle] as const;
 }
 
+/**
+ * Set several topics' read flag at once, for "mark a whole group". Marks the
+ * read list directly, the same flag the map and index use; a topic page visit
+ * keeps it as long as that topic has no partial tracked progress (syncRead).
+ */
+export function markTopics(slugs: readonly string[], read: boolean) {
+  const current = getSnapshot();
+  const set = new Set(current);
+  for (const s of slugs) (read ? set.add(s) : set.delete(s));
+  write([...set]);
+}
+
 // ── Lesson progress (topics in the lesson format) ─────────────────────────
 // Stored as one versioned object (see lib/lessonStore.ts). The read list
 // above stays the single flag the map and index use; for lesson topics it is

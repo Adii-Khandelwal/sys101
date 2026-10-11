@@ -840,11 +840,28 @@ a:hover {
   margin: 0 0 4px;
   color: var(--ink-soft);
 }
+/* The connecting rule follows the group name and fills to the controls on the right. */
+.path-group-name > span:first-child {
+  flex: 0 0 auto;
+}
 .path-group-name::after {
   content: "";
+  order: 1;
   flex: 1;
   height: 1px;
   background: var(--rule);
+}
+.path-group-count {
+  order: 2;
+  flex: 0 0 auto;
+  color: var(--ink-soft);
+}
+.path-group-mark {
+  order: 3;
+  flex: 0 0 auto;
+}
+.path-group-mark[aria-pressed="true"] {
+  color: var(--accent);
 }
 
 .path-list {
