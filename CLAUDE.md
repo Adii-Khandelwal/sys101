@@ -52,13 +52,13 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 ## Graph
 
 - The graph is the homepage on desktop (768px and up). Under 768px the homepage defaults to the Path view (components/PathView.tsx), a linear grouped syllabus; a Map/Path toggle switches between them and an explicit choice is remembered per browser and wins at any width. Layout is deterministic, left to right by prerequisite depth, and panning never moves nodes.
-- Under 25 topics the map is fixed and fitted: no zoom, pan, or map controls, and clicking a node cross-fades to its topic. From 25 topics, all of the following switch on.
+- Under INTERACTIVE_MIN_NODES topics (12, in lib/graphUi.ts) the map is fixed and fitted: no zoom, pan, or map controls, and clicking a node cross-fades to its topic. From that count, all of the following switch on. The threshold was lowered from 25 when a long label no longer fit a 1280px screen: turn zoom and pan on earlier rather than squeeze the layout. After adding a topic, check the map at 1280px, 1440px, and 390px for zero crossings and overlaps. The horizontal map needs a stage of about 1,300px; narrower stages stack it, one topic per row.
 - One fitRatio, recomputed on load, resize, and node-set change. Zoom range 0.6x to 8x of the fitted view, with identical limits for wheel, pinch, buttons, keys, and double-click. Ctrl or Cmd plus wheel zooms and plain wheel scrolls the page. Fit all always restores the identical state. 5px drag threshold. 64px pan limit.
 - Draw only the transitive reduction of prerequisites by default. Hidden edges show faintly on hover or focus, and with "Show all links" once the map is interactive. Data and build checks use the full set.
 - Node states that do not rely on color: unread (thin outline), ready (all prerequisites read, thicker outline), read (filled rust). Not-yet nodes stay clickable.
 - No edge crosses a label or node. Labels sit right of nodes with a 16px gap. Tooltips are viewport-clamped and never clipped. Unrelated items fade to no lower than 60% opacity, and highlight always clears.
 - Keyboard traversal, aria-live announcements, 44px hit areas, and a plain text index as the full fallback, including when WebGL fails. Smooth at 150 nodes.
-- Pivot trigger: past about 25 nodes or unreadable edges. The Path view (the graph's fallback) and the mobile Path default under 768px are built; see docs/ideas.md ideas 5 and 6.
+- Pivot trigger: past about 25 nodes or unreadable edges (the Path view is the fallback). The Path view (the graph's fallback) and the mobile Path default under 768px are built; see docs/ideas.md ideas 5 and 6.
 
 ## Motion
 
@@ -101,6 +101,8 @@ Two content flows:
 - Write summaries from what the post says, with its figures, in your own words. No copying passages.
 - If a post fails the selection rules, say so and find another.
 - Before saving any new post, show the user the URL, the company, and why it passed.
+- The fetch tool returns a model-written reading, not the page. For every figure you use, fetch the raw page with curl (browser-like headers if it is blocked) and confirm the number appears in the text. Drop any figure you cannot find, and list the drops in the reply.
+- A peer-reviewed paper by a company's engineering team counts as a post, labeled "paper", under the same five rules.
 
 ### Official sources (learn pages)
 

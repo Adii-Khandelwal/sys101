@@ -47,8 +47,12 @@ export function highlightSet(node: string, edges: { from: string; to: string }[]
   return keep;
 }
 
-/** Below this many topics the map is a fixed, fitted picture: no zoom, pan or map controls. */
-export const INTERACTIVE_MIN_NODES = 25;
+/**
+ * Below this many topics the map is a fixed, fitted picture: no zoom, pan or map controls.
+ * Lowered from 25 to 12 when the twelfth topic's long label made the map need a wider stage than
+ * a 1280px screen gives it: zoom and pan switch on earlier instead of squeezing the layout.
+ */
+export const INTERACTIVE_MIN_NODES = 12;
 export const mapIsInteractive = (nodeCount: number) => nodeCount >= INTERACTIVE_MIN_NODES;
 
 export type HighlightEvent =

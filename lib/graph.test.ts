@@ -81,8 +81,8 @@ describe("layout: no edge crosses a label or node, labels keep their gap", () =>
   const nodes = topics.map((t) => ({ slug: t.slug, title: t.title }));
   const edges = topics.flatMap((t) => t.prerequisites.map((p: string) => ({ from: p, to: t.slug })));
 
-  it("the current topics at 1440px (stage 1200px), at the real label width", () => {
-    const r = plan(nodes, edges, 1200, "horizontal", 7.8);
+  it("the current topics at 1440px (stage 1320px), at the real label width", () => {
+    const r = plan(nodes, edges, 1320, "horizontal", 7.8);
     expect(r.required).toBeLessThanOrEqual(r.width);
     expect(r.collisions).toEqual([]);
     expect(r.gap).toBeGreaterThanOrEqual(MIN_LABEL_GAP);
@@ -91,15 +91,23 @@ describe("layout: no edge crosses a label or node, labels keep their gap", () =>
 
   it("the current topics at 1440px for any realistic label width: horizontal if it fits, stacked if not", () => {
     for (const perChar of [7.5, 8, 8.5, 9.2, 10]) {
-      const wide = plan(nodes, edges, 1200, "horizontal", perChar);
-      const r = wide.required <= wide.width ? wide : plan(nodes, edges, 1200, "vertical", perChar);
+      const wide = plan(nodes, edges, 1320, "horizontal", perChar);
+      const r = wide.required <= wide.width ? wide : plan(nodes, edges, 1320, "vertical", perChar);
       expect([perChar, r.collisions, r.crossed]).toEqual([perChar, [], []]);
       if (r === wide) expect(r.topGap).toBeGreaterThanOrEqual(24);
     }
   });
 
-  it("the current topics stacked at 390px (stage 358px)", () => {
-    const r = plan(nodes, edges, 358, "vertical");
+  it("the current topics stacked at 1280px (stage 1200px), where the horizontal map no longer fits", () => {
+    const wide = plan(nodes, edges, 1200, "horizontal", 7.8);
+    expect(wide.required).toBeGreaterThan(wide.width);
+    const r = plan(nodes, edges, 1200, "vertical", 7.8);
+    expect(r.collisions).toEqual([]);
+    expect(r.crossed).toEqual([]);
+  });
+
+  it("the current topics stacked at 390px (stage 358px), at the real label width", () => {
+    const r = plan(nodes, edges, 358, "vertical", 7.8);
     expect(r.collisions).toEqual([]);
     expect(r.crossed).toEqual([]);
   });

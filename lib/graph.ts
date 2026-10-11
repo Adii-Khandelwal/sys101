@@ -145,11 +145,21 @@ function stackOrder<T extends Node>(topics: T[], edges: Edge[]): T[] {
   while (out.length < topics.length) {
     const ready = topics.filter((t) => !placed.has(t.slug) && preds.get(t.slug)!.every((p) => placed.has(p) || !preds.has(p)));
     const recency = (t: T) => Math.max(-1, ...preds.get(t.slug)!.map((p) => placed.get(p) ?? -1));
-    // Most recent prerequisite first; on a tie, a dead end first, so its edge closes before others open.
-    const leads = (t: T) => edges.some((e) => e.from === t.slug);
+    // Most recent prerequisite first; on a tie, the topic with the smaller branch below it first, so its
+    // edge closes before the bigger branch opens (a dead end has the smallest branch, zero).
+    const below = (slug: string): number => {
+      const seen = new Set<string>();
+      const walk = (x: string) => edges.filter((e) => e.from === x && !seen.has(e.to)).forEach((e) => (seen.add(e.to), walk(e.to)));
+      walk(slug);
+      return seen.size;
+    };
+    // A topic that starts a new chain (no prerequisite placed yet) goes the other way: the longest chain
+    // first, so a shorter chain is placed just before the topic it joins and its edge stays short.
     const next = ready.reduce((best, t) => {
       const d = recency(t) - recency(best);
-      return d > 0 || (d === 0 && !leads(t) && leads(best)) ? t : best;
+      if (d !== 0) return d > 0 ? t : best;
+      const fewer = below(t.slug) - below(best.slug);
+      return (recency(t) === -1 ? fewer > 0 : fewer < 0) ? t : best;
     }, ready[0]);
     placed.set(next.slug, out.length);
     out.push(next);

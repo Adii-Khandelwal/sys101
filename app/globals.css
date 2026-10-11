@@ -70,7 +70,7 @@ a:hover {
 /* ── Homepage ─────────────────────────────── */
 
 .home {
-  max-width: 1280px; /* six map columns need about 1,140px of stage at the real label widths */
+  max-width: 1400px; /* the map's six columns need a stage of about 1,300px at the real label widths; narrower stages stack it */
   margin: 0 auto;
   padding: 88px 40px 48px;
 }

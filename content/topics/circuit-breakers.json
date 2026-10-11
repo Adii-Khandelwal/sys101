@@ -1,0 +1,435 @@
+{
+  "slug": "circuit-breakers",
+  "title": "Circuit Breakers and Load Shedding",
+  "group": "Reliability",
+  "concept": "A circuit breaker stops a client from calling a failing dependency for a while, so calls fail fast instead of piling up, and load shedding makes an overloaded server reject some requests, lowest priority first, so the rest are served in time. One protects the caller and the other protects the server, and both depend on when they act and on what their probes or limits can actually see.",
+  "prerequisites": [
+    "rate-limiting"
+  ],
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why a slow or overloaded service needs protection on both sides of a call.",
+      "body": "Rate limiting caps how much one client can send. It does not help when the trouble is not a noisy client but a dependency that has become slow or a server that has more work than it can finish. Two things go wrong. A caller keeps sending requests to a dependency that is failing, and each call ties up a thread, a connection or a queue slot while it waits. And a server that accepts more work than it can handle gets slower for everyone, so even the requests it could have served in time arrive too late.\n\nTimeouts and retries are the first line of defense, and they can make things worse. A timeout is how long a caller waits before giving up on a call. A retry is trying a failed call again. Waiting for every timeout still costs time, and retries add load to a dependency that is already struggling.\n\nA circuit breaker protects the caller: after enough failures it stops calling the dependency for a while, so calls fail at once instead of waiting. Load shedding protects the server: when it is overloaded, it rejects some requests, usually the least important first, so the rest are served in time. They are two answers to two different problems."
+    },
+    "mentalModel": {
+      "outcome": "After this you can picture a breaker's three states and a shedder's priorities.",
+      "body": "A circuit breaker works like the one in a building's electrical panel. While things are fine it is closed and calls flow, and it counts failures. When failures pile up it trips open: calls are rejected immediately, with no waiting, often with a fallback answer. After a pause it goes half-open and lets a few probe calls through. If they succeed it closes again. If they fail it opens again.\n\nA load shedder is more like a bouncer at a door. When the queue inside is not draining, it decides who is let in. Every request carries a priority, so a batch job is turned away before a customer tapping a button, and the server spends its limited capacity on the requests that matter most.\n\nThe breaker sits in the caller and looks at the health of what it calls. The shedder sits in the server and looks at its own load. One protects a client from a failing dependency, the other protects a server from overload.",
+      "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-cb-model-t\" class=\"dg\"><title id=\"dg-cb-model-t\">A circuit breaker on the client moves between closed, open and half-open; a load shedder on the server turns away low-priority requests when the server is overloaded.</title><defs><marker id=\"dg-cb-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"20\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">CLIENT SIDE: circuit breaker</text><rect x=\"14\" y=\"34\" width=\"118\" height=\"50\" class=\"dg-box\"/><text x=\"73\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Closed</text><text x=\"73\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">calls flow</text><rect x=\"222\" y=\"34\" width=\"118\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"281\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Open</text><text x=\"281\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">calls fail fast</text><rect x=\"430\" y=\"34\" width=\"118\" height=\"50\" class=\"dg-box\"/><text x=\"489\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Half-open</text><text x=\"489\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">a few probes</text><path d=\"M132,59 L222,59\" class=\"dg-line\" marker-end=\"url(#dg-cb-model-a)\"/><path d=\"M340,59 L430,59\" class=\"dg-line\" marker-end=\"url(#dg-cb-model-a)\"/><text x=\"177\" y=\"50\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">failures</text><text x=\"385\" y=\"50\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">pause</text><path d=\"M489,84 L489,106\" class=\"dg-line dg-dashed\"/><path d=\"M489,106 L73,106\" class=\"dg-line dg-dashed\"/><path d=\"M73,106 L73,84\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-cb-model-a)\"/><text x=\"280\" y=\"124\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">probes succeed: close again. Probes fail: open again.</text><path d=\"M14,138 L546,138\" class=\"dg-line dg-dashed\"/><text x=\"14\" y=\"160\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">SERVER SIDE: load shedder</text><rect x=\"14\" y=\"174\" width=\"118\" height=\"50\" class=\"dg-box\"/><text x=\"73\" y=\"195.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Requests</text><text x=\"73\" y=\"211.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">with priorities</text><rect x=\"222\" y=\"174\" width=\"118\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"281\" y=\"195.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Shedder</text><text x=\"281\" y=\"211.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">queue and limit</text><rect x=\"430\" y=\"174\" width=\"118\" height=\"50\" class=\"dg-box\"/><text x=\"489\" y=\"195.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Service</text><text x=\"489\" y=\"211.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">serves the rest</text><path d=\"M132,199 L222,199\" class=\"dg-line\" marker-end=\"url(#dg-cb-model-a)\"/><path d=\"M340,199 L430,199\" class=\"dg-line\" marker-end=\"url(#dg-cb-model-a)\"/><text x=\"385\" y=\"190\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">the rest</text><text x=\"281\" y=\"242\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">lowest priority is turned away first when overloaded</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can walk through what a breaker and a shedder do when things go wrong.",
+      "steps": [
+        {
+          "step": "Call with a timeout",
+          "explanation": "The client sets how long it will wait for each call, so one slow dependency cannot hold it forever."
+        },
+        {
+          "step": "Count failures",
+          "explanation": "While closed, the breaker counts failed and timed-out calls over a recent period."
+        },
+        {
+          "step": "Open and fail fast",
+          "explanation": "Past a threshold, the breaker opens. Calls are rejected at once, which frees the caller and gives the dependency room to recover. A fallback can supply a default answer."
+        },
+        {
+          "step": "Probe",
+          "explanation": "After a pause, a few calls are let through. If they meet the success criteria the breaker closes; if not, it opens again."
+        },
+        {
+          "step": "Notice overload on the server",
+          "explanation": "A server can tell it is overloaded when its request queue stops draining or when latency climbs while work piles up."
+        },
+        {
+          "step": "Shed by priority",
+          "explanation": "The server rejects some requests, the lowest priority first, and caps how many it works on at once, so accepted requests finish in time."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 200\" role=\"img\" aria-labelledby=\"dg-cb-how-t\" class=\"dg\"><title id=\"dg-cb-how-t\">Steps of a circuit breaker and a load shedder: call with a timeout and count failures, open and fail fast, probe, close or re-open; on the server, notice overload, rank by priority, reject the lowest first.</title><defs><marker id=\"dg-cb-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"30\" width=\"96\" height=\"50\" class=\"dg-box\"/><text x=\"60\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Call with</text><text x=\"60\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">a timeout</text><rect x=\"120\" y=\"30\" width=\"96\" height=\"50\" class=\"dg-box\"/><text x=\"168\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Count</text><text x=\"168\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">failures</text><rect x=\"228\" y=\"30\" width=\"96\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"276\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Open: fail</text><text x=\"276\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">fast</text><rect x=\"336\" y=\"30\" width=\"96\" height=\"50\" class=\"dg-box\"/><text x=\"384\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Probe a</text><text x=\"384\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">few calls</text><rect x=\"444\" y=\"30\" width=\"96\" height=\"50\" class=\"dg-box\"/><text x=\"492\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Close or</text><text x=\"492\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">re-open</text><path d=\"M108,55 L120,55\" class=\"dg-line\" marker-end=\"url(#dg-cb-how-a)\"/><path d=\"M216,55 L228,55\" class=\"dg-line\" marker-end=\"url(#dg-cb-how-a)\"/><path d=\"M324,55 L336,55\" class=\"dg-line\" marker-end=\"url(#dg-cb-how-a)\"/><path d=\"M432,55 L444,55\" class=\"dg-line\" marker-end=\"url(#dg-cb-how-a)\"/><text x=\"280\" y=\"100\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The client protects itself from a failing dependency.</text><path d=\"M14,118 L546,118\" class=\"dg-line dg-dashed\"/><rect x=\"12\" y=\"134\" width=\"124\" height=\"46\" class=\"dg-box\"/><text x=\"74\" y=\"153.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Notice</text><text x=\"74\" y=\"169.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">overload</text><rect x=\"152\" y=\"134\" width=\"124\" height=\"46\" class=\"dg-box\"/><text x=\"214\" y=\"153.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Rank by</text><text x=\"214\" y=\"169.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">priority</text><rect x=\"292\" y=\"134\" width=\"124\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"354\" y=\"153.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Reject the</text><text x=\"354\" y=\"169.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">lowest first</text><rect x=\"432\" y=\"134\" width=\"124\" height=\"46\" class=\"dg-box\"/><text x=\"494\" y=\"153.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Serve the</text><text x=\"494\" y=\"169.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">rest in time</text><path d=\"M136,157 L152,157\" class=\"dg-line\" marker-end=\"url(#dg-cb-how-a)\"/><path d=\"M276,157 L292,157\" class=\"dg-line\" marker-end=\"url(#dg-cb-how-a)\"/><path d=\"M416,157 L432,157\" class=\"dg-line\" marker-end=\"url(#dg-cb-how-a)\"/><text x=\"280\" y=\"196\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The server protects itself from too much work.</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can trace how a breaker, an autoscaler and a quiet service can trap each other, and where a shedder fits.",
+      "steps": [
+        {
+          "step": "The breaker opens",
+          "explanation": "At Zalando, a client's breaker stayed open for hours and blocked roughly 95% of its requests. The service it protected showed no errors and no restarts."
+        },
+        {
+          "step": "The service shrinks",
+          "explanation": "With little traffic getting through, the service's autoscaler scaled it down to its minimum, three pods."
+        },
+        {
+          "step": "Probes pass",
+          "explanation": "In the half-open phase a handful of probe requests were fast: 15 ms at the client, 10 ms at the reverse proxy, 2 ms in the service. They met the breaker's success criteria."
+        },
+        {
+          "step": "The breaker closes",
+          "explanation": "All the traffic it had been holding back arrived at once. Each pod faced about 10x its traffic, requests queued for over 100 ms although serving took 3 ms, and nearly all of them timed out."
+        },
+        {
+          "step": "It opens again",
+          "explanation": "The breaker re-opened after about three seconds. An autoscaler that averages CPU over minutes barely noticed, so the cycle repeated."
+        },
+        {
+          "step": "Where a shedder fits",
+          "explanation": "Zalando lists backpressure or load shedding at the service boundary among the ideas that could break the cycle. Uber's Cinnamon is a shedder, built to reject the lowest-priority requests when a queue stops draining instead of letting every request queue and time out."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-cb-example-t\" class=\"dg\"><title id=\"dg-cb-example-t\">The loop in Zalando's incident: the open breaker cuts traffic, the autoscaler shrinks the service to its minimum, fast probes close the breaker, the full load arrives at once, requests time out, and the breaker opens again.</title><defs><marker id=\"dg-cb-example-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"30\" width=\"150\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"89\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Breaker open</text><text x=\"89\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">traffic drops</text><rect x=\"204\" y=\"30\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"279\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Autoscaler scales</text><text x=\"279\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">down to the minimum</text><rect x=\"394\" y=\"30\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"469\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Probes arrive,</text><text x=\"469\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">all fast</text><path d=\"M164,55 L204,55\" class=\"dg-line\" marker-end=\"url(#dg-cb-example-a)\"/><path d=\"M354,55 L394,55\" class=\"dg-line\" marker-end=\"url(#dg-cb-example-a)\"/><rect x=\"394\" y=\"190\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"469\" y=\"211.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Breaker closes,</text><text x=\"469\" y=\"227.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">full load returns</text><path d=\"M469,80 L469,190\" class=\"dg-line\" marker-end=\"url(#dg-cb-example-a)\"/><rect x=\"204\" y=\"190\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"279\" y=\"211.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Queues build,</text><text x=\"279\" y=\"227.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">requests time out</text><path d=\"M394,215 L354,215\" class=\"dg-line\" marker-end=\"url(#dg-cb-example-a)\"/><path d=\"M204,215 L164,215\" class=\"dg-line\" marker-end=\"url(#dg-cb-example-a)\"/><rect x=\"14\" y=\"190\" width=\"150\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"89\" y=\"211.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Breaker opens</text><text x=\"89\" y=\"227.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">again</text><path d=\"M89,190 L89,80\" class=\"dg-line\" marker-end=\"url(#dg-cb-example-a)\"/><text x=\"280\" y=\"275\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">A burst lasts about three seconds; averaged CPU barely shows it.</text><text x=\"280\" y=\"138\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"12\">the loop repeats</text></svg>"
+    },
+    "mistakesOutcome": "After this you can avoid the three most common ways these protections go wrong.",
+    "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
+    "quiz": [
+      {
+        "question": "A dependency starts answering very slowly. What does a circuit breaker on the client do?",
+        "options": [
+          "Makes the dependency answer faster",
+          "Retries every call until one succeeds",
+          "Stops calling it for a while, so calls fail at once instead of waiting"
+        ],
+        "correct": 2,
+        "why": "The breaker trips open after enough failures, which frees the caller's threads and connections and gives the dependency room to recover.",
+        "wrong": [
+          "A breaker only controls the caller; it cannot speed up a dependency.",
+          "Retrying every call adds load to a dependency that is already struggling.",
+          ""
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "In the half-open state, what does the breaker allow?",
+        "options": [
+          "A small number of probe calls, to see whether the dependency has recovered",
+          "Every call, with no counting",
+          "No calls at all until an operator resets it"
+        ],
+        "correct": 0,
+        "why": "Probes test the dependency cheaply: if they succeed the breaker closes, and if they fail it opens again.",
+        "wrong": [
+          "",
+          "Letting everything through with no counting would be the closed state without protection.",
+          "That describes the open state; half-open exists so recovery can be detected automatically."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "What is the main job of load shedding?",
+        "options": [
+          "Slowing every request equally so none is rejected",
+          "Rejecting some requests, lowest priority first, so the rest are served in time",
+          "Retrying rejected requests on the client"
+        ],
+        "correct": 1,
+        "why": "When a server cannot do everything, it is better to serve the important requests well than to serve all of them late.",
+        "wrong": [
+          "Slowing everything equally makes more requests miss their timeouts.",
+          "",
+          "Retrying adds load; shedding is about taking load off the server."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "In Zalando's incident, why did the service handle the half-open probes well but fail once the breaker closed?",
+        "options": [
+          "The probes were slow, so the breaker closed by mistake",
+          "The probes went to a different service",
+          "The probes were few and the service had scaled down, then the full load arrived at once on too few pods"
+        ],
+        "correct": 2,
+        "why": "A handful of probes cannot show how the service copes with its real load, so a quick, healthy probe phase said nothing about the avalanche that followed.",
+        "wrong": [
+          "The probes were fast: 15, 10 and 2 milliseconds in the post.",
+          "The probes reached the same service; the difference was how much traffic arrived.",
+          ""
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "Why can unlimited retries make an outage worse?",
+        "options": [
+          "Retries make failures less likely to be noticed",
+          "Each retry adds load to a dependency that is already struggling",
+          "Retries always return stale data"
+        ],
+        "correct": 1,
+        "why": "Retried calls come on top of the normal traffic, so a dependency that is failing from load receives even more of it.",
+        "wrong": [
+          "Failures are still counted and noticed; the problem is the extra load.",
+          "",
+          "A retry repeats the call; whether data is stale depends on the dependency, not on retrying."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "What is the difference in what a circuit breaker and a load shedder protect?",
+        "options": [
+          "A breaker protects a caller from a failing dependency, and a shedder protects a server from overload",
+          "A breaker protects a server from overload, and a shedder protects a caller from a failing dependency",
+          "Both protect only the database"
+        ],
+        "correct": 0,
+        "why": "The breaker lives in the caller and reacts to the health of what it calls; the shedder lives in the server and reacts to its own load.",
+        "wrong": [
+          "",
+          "That swaps them: the shedder sits in the server and the breaker in the caller.",
+          "Neither is specific to databases; they protect any dependency or any server."
+        ],
+        "teaches": "model"
+      }
+    ],
+    "postsOutcome": "After this you can describe how one company analyzed a breaker that trapped itself and another built a load shedder for its services.",
+    "differOutcome": "After this you can explain how protecting a client differs from protecting a server.",
+    "exercisesOutcome": "After this you can diagnose a breaker that will not close, design overload protection, and plan for ten times the services.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A client's circuit breaker keeps opening after a slow period and will not stay closed. The service it calls shows no errors, and it scales automatically with traffic. What is a likely cause, and what could you change?",
+        "answer": "While the breaker is open, little traffic reaches the service, so the autoscaler shrinks it. The probes then succeed on a small, quiet service, the breaker closes, the full load arrives at once, requests queue and time out, and the breaker opens again. Size the service before the breaker closes, scale on queue depth or concurrency instead of averaged CPU, make probes heavier or longer, and shed load at the service so queues cannot run away.",
+        "tradeoffs": "Pre-scaling and longer probes cost capacity and slow recovery; load shedding rejects some requests that might have succeeded.",
+        "wrongAnswers": [
+          "Lower the failure threshold so the breaker opens sooner.",
+          "Add more retries on the client.",
+          "Remove the timeout so slow calls finish."
+        ],
+        "teaches": "example"
+      },
+      {
+        "level": "design",
+        "prompt": "Design overload protection for a service that gets online customer requests and batch jobs. Which requests are rejected first, how does the server decide it is overloaded, and what should you avoid configuring by hand?",
+        "answer": "Tag each request with a priority at the edge and carry it down the call chain, so the batch jobs rank below customer requests everywhere. Treat the server as overloaded when its request queue stops draining, and shed a ratio of the lowest-priority requests, adjusting it gradually. Limit how many requests run at once, with a limit that adapts to latency instead of being set by hand, and time out requests that wait too long in the queue.",
+        "tradeoffs": "Shedding spends some work on rejecting, so capacity falls under heavy load; a limit that adapts needs time to settle after a change.",
+        "wrongAnswers": [
+          "Reject at random so no caller is favored.",
+          "Give every service its own hand-set concurrency limit.",
+          "Prioritize by which service made the call."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "scale",
+        "prompt": "You now run hundreds of services, and the hand-set limits and priorities for each have gone stale. How do you change the approach, and how do you check it works?",
+        "answer": "Make protection automatic: a shared library or middleware that reads propagated priorities, finds the shed ratio and the concurrency limit itself, and needs no per-service settings. Check it by overloading a real service and measuring how many requests succeed in time, and how latency for the high-priority requests behaves, as load climbs well past capacity.",
+        "tradeoffs": "Automatic controllers can oscillate or take time to find the right limit, so test them under changing load. A shared library changes every service at once, so roll it out gradually.",
+        "wrongAnswers": [
+          "Review every service's limits each quarter.",
+          "Turn off shedding and rely on autoscaling alone.",
+          "Rely on circuit breakers in clients to protect servers."
+        ],
+        "teaches": "mistakes"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "Breakers and shedders keep a failing or overloaded part from taking everything down. The planned topic on failover covers switching to a healthy copy. It is not written yet."
+    }
+  },
+  "posts": [
+    {
+      "id": "zalando-circuit-breaker-herd-2026",
+      "title": "Thundering herd of circuit breakers",
+      "url": "https://engineering.zalando.com/posts/2026/10/thundering-herd-of-circuit-breakers.html",
+      "company": "Zalando",
+      "verifiedOn": "2026-10-11",
+      "published": "2026-10-08",
+      "digest": {
+        "problem": "A client-side circuit breaker at Zalando stayed open for hours, blocking roughly 95% of requests, while the service it protected looked healthy. The post is an incident analysis by two Zalando engineers, built from OpenTelemetry trace data.",
+        "constraints": "The client carried organic customer traffic at about 5 requests per second per pod, so aggregate percentiles were hard to read, and the dashboards did not show the recovery cycle. The service also took heavy morning load from a scheduled pipeline, and it scaled with a Horizontal Pod Autoscaler (HPA) driven by CPU.",
+        "walkthrough": [
+          {
+            "step": "A normal morning",
+            "explanation": "Latency spikes around 05:00 to 06:00 when a batch pipeline hits, then settles. The client sees some timeouts and may open and close its breaker, then recovers."
+          },
+          {
+            "step": "The anomalous morning",
+            "explanation": "The breaker stays open for hours and blocks roughly 95% of requests, and the request rate falls to near zero for long stretches. The service shows no errors and no restarts."
+          },
+          {
+            "step": "Two mitigations nobody could explain",
+            "explanation": "Force-closing the breaker lets traffic flood back, the pods scale out, and after a brief error spike things settle. Weeks later, pre-scaling the service first leaves the breaker already closed."
+          },
+          {
+            "step": "Look at many traces at once",
+            "explanation": "Dashboards and one-trace-at-a-time views did not show the cause, so the team exported raw OpenTelemetry trace data and built a purpose-made visualizer to see many requests together."
+          },
+          {
+            "step": "Watch a failed close",
+            "explanation": "In the half-open phase a handful of probes are fast, with span latencies of 15 ms at the client, 10 ms at the reverse proxy and 2 ms in the service. They meet the breaker's success criteria, so it closes."
+          },
+          {
+            "step": "The avalanche",
+            "explanation": "All the withheld traffic arrives at once. Service processing stays at 3 ms, but requests queue for over 100 ms. The HPA had scaled the service to a minimum of three pods, each now taking about 10x the traffic, so nearly all requests time out and the breaker re-opens. The burst lasts about three seconds."
+          },
+          {
+            "step": "Why it repeats",
+            "explanation": "CPU averaged over minutes shows only a small blip, so the autoscaler does not react and the service stays at three pods. Force-closing restores real volume so the HPA scales out, and pre-scaling sizes the service before the breaker closes."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 260\" role=\"img\" aria-labelledby=\"dg-cb-zalando-t\" class=\"dg\"><title id=\"dg-cb-zalando-t\">Zalando's probe versus its load: during half-open probes the client, reverse proxy and service spans take 15, 10 and 2 milliseconds; once the breaker closes, requests queue for over 100 milliseconds at a service scaled to three pods.</title><defs><marker id=\"dg-cb-zalando-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"20\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">HALF-OPEN: a handful of probes</text><rect x=\"14\" y=\"34\" width=\"100\" height=\"46\" class=\"dg-box\"/><text x=\"64\" y=\"53.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><text x=\"64\" y=\"69.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">15 ms</text><rect x=\"230\" y=\"34\" width=\"100\" height=\"46\" class=\"dg-box\"/><text x=\"280\" y=\"53.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Reverse proxy</text><text x=\"280\" y=\"69.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">10 ms</text><rect x=\"446\" y=\"34\" width=\"100\" height=\"46\" class=\"dg-box\"/><text x=\"496\" y=\"53.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Service</text><text x=\"496\" y=\"69.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">2 ms</text><path d=\"M114,57 L230,57\" class=\"dg-line\" marker-end=\"url(#dg-cb-zalando-a)\"/><path d=\"M330,57 L446,57\" class=\"dg-line\" marker-end=\"url(#dg-cb-zalando-a)\"/><text x=\"280\" y=\"100\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">all healthy, so the breaker's success criteria are met</text><path d=\"M14,120 L546,120\" class=\"dg-line dg-dashed\"/><text x=\"14\" y=\"142\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">CLOSED: the withheld traffic arrives at once</text><rect x=\"14\" y=\"156\" width=\"100\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"64\" y=\"175.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><text x=\"64\" y=\"191.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">full load</text><rect x=\"230\" y=\"156\" width=\"100\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"175.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Queue</text><text x=\"280\" y=\"191.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">over 100 ms</text><rect x=\"446\" y=\"156\" width=\"100\" height=\"46\" class=\"dg-box\"/><text x=\"496\" y=\"175.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">3 pods</text><text x=\"496\" y=\"191.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">3 ms to serve</text><path d=\"M114,179 L230,179\" class=\"dg-line\" marker-end=\"url(#dg-cb-zalando-a)\"/><path d=\"M330,179 L446,179\" class=\"dg-line\" marker-end=\"url(#dg-cb-zalando-a)\"/><text x=\"280\" y=\"224\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">each pod takes about 10x the traffic; nearly all requests time out</text><text x=\"280\" y=\"246\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">the breaker re-opens after about three seconds</text></svg>",
+        "numbers": [
+          {
+            "value": "roughly 95%",
+            "meaning": "Share of requests the open breaker blocked, for hours"
+          },
+          {
+            "value": "about 5 RPS per pod",
+            "meaning": "Request rate the client sent, low enough that percentiles were hard to read"
+          },
+          {
+            "value": "15 ms, 10 ms and 2 ms",
+            "meaning": "Span latencies at the client, reverse proxy and service during the half-open probes"
+          },
+          {
+            "value": "3 ms vs over 100 ms",
+            "meaning": "Service processing time versus time requests queued during the avalanche"
+          },
+          {
+            "value": "10x",
+            "meaning": "Traffic each pod faced once the breaker closed, at a minimum of three pods"
+          },
+          {
+            "value": "about three seconds",
+            "meaning": "How long one close, avalanche and re-open burst lasted"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Force-closing the breaker so real traffic returns and the autoscaler scales out, or pre-scaling the service before the breaker closes.",
+          "rejected": "The post does not weigh alternatives. It lists ideas it did not test: autoscaling on queue depth or concurrency, longer or heavier probes, backpressure or load shedding at the service, and propagating cancellations.",
+          "why": "Probes cannot detect autoscaling capacity: the breaker checks the service as it is while probing, not as it will be under full traffic."
+        },
+        "failures": "The breaker, the autoscaler and the probes each did what they were built to do, and together they trapped the system. The post does not give the breaker's threshold or timeout values, and no fix is measured; only the two manual mitigations are described. The service also keeps working on requests the client has already cancelled, which makes the queues worse.",
+        "takeaways": "A breaker's probes test the service at a trickle, not under the load that returns when it closes. Autoscale on signals that move in seconds, and protect the service at its own boundary instead of relying on the caller's breaker alone. The post is an analysis of one incident, not a measured fix."
+      }
+    },
+    {
+      "id": "uber-cinnamon-load-shedder-2023",
+      "title": "Cinnamon: Using Century Old Tech to Build a Mean Load Shedder",
+      "url": "https://www.uber.com/en-US/blog/cinnamon-using-century-old-tech-to-build-a-mean-load-shedder/",
+      "company": "Uber",
+      "verifiedOn": "2026-10-11",
+      "published": "2023-11-22",
+      "digest": {
+        "problem": "Uber runs thousands of microservices serving about 130 million monthly customers, with millions of requests per second in total. Services get overloaded by traffic spikes, such as a too-aggressive batch job, or by slowness, such as a slow database. Uber wanted graceful degradation, shedding lower-priority requests before online customer requests, with no per-service configuration. This post is about load shedding and never mentions circuit breakers.",
+        "constraints": "Even one setting per service would cost too many engineering hours across so many services, and such values go stale. The earlier shedder, QALM, which is based on CoDel, needed callers' priorities and a maximum concurrency configured, and its Go channels were costly points of synchronization.",
+        "walkthrough": [
+          {
+            "step": "Tag each request with a priority",
+            "explanation": "The edge tags the request and the priority is propagated down the call chain via Jaeger, so every service knows how important the request is. A priority has a tier, 0 to 5, and a cohort, one of 128."
+          },
+          {
+            "step": "Shed the same users everywhere",
+            "explanation": "Cohorts are based on the user in the request, so when a service sheds 5% of its tier 1 requests it is the same users everywhere, and hashing with timing information shifts which users so the same ones are not always shed first. Six tiers and 128 cohorts make 768 priorities."
+          },
+          {
+            "step": "Decide a service is overloaded",
+            "explanation": "Cinnamon records when the request queue was last empty. If it has not emptied in the last, say, 10 seconds, the endpoint counts as overloaded."
+          },
+          {
+            "step": "Shed a ratio",
+            "explanation": "A PID controller watches the inflow and outflow of the priority queue and sets what share of requests to reject. Once the queue has drained it lowers the ratio only slowly, to avoid oscillating rates that worsen latency."
+          },
+          {
+            "step": "Limit concurrent work",
+            "explanation": "A scheduler lets only a set number of requests run at once, the inflight limit. An auto-tuner built on a heavily modified TCP Vegas algorithm lowers the limit when latency rises and raises it when latency is stable or falling."
+          },
+          {
+            "step": "Queue by priority, time out the rest",
+            "explanation": "Accepted requests wait in a priority queue with a bucket per priority, highest first. Requests that wait too long time out of the queue, typically at 33% of the normal request timeout."
+          },
+          {
+            "step": "Compare with QALM",
+            "explanation": "Five-minute runs at a fixed request rate, half tier 1 and half tier 5, against a test service that takes about 120 ms unloaded, with a 1 second timeout. It ran on two backend instances in production, each good for about 650 requests per second."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 270\" role=\"img\" aria-labelledby=\"dg-cb-uber-t\" class=\"dg\"><title id=\"dg-cb-uber-t\">Cinnamon at Uber: a request gets a priority, passes a rejector, waits in a priority queue, and is scheduled up to an inflight limit; a PID controller sets the shed ratio and an auto-tuner sets the inflight limit.</title><defs><marker id=\"dg-cb-uber-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"10\" y=\"40\" width=\"98\" height=\"50\" class=\"dg-box\"/><text x=\"59\" y=\"61.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Priority</text><text x=\"59\" y=\"77.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">tier, cohort</text><rect x=\"118\" y=\"40\" width=\"98\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"167\" y=\"61.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Rejector</text><text x=\"167\" y=\"77.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">sheds a ratio</text><rect x=\"226\" y=\"40\" width=\"98\" height=\"50\" class=\"dg-box\"/><text x=\"275\" y=\"61.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Priority</text><text x=\"275\" y=\"77.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">queue</text><rect x=\"334\" y=\"40\" width=\"98\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"383\" y=\"61.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Scheduler</text><text x=\"383\" y=\"77.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">inflight limit</text><rect x=\"442\" y=\"40\" width=\"98\" height=\"50\" class=\"dg-box\"/><text x=\"491\" y=\"61.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Business</text><text x=\"491\" y=\"77.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">logic</text><path d=\"M108,65 L118,65\" class=\"dg-line\" marker-end=\"url(#dg-cb-uber-a)\"/><path d=\"M216,65 L226,65\" class=\"dg-line\" marker-end=\"url(#dg-cb-uber-a)\"/><path d=\"M324,65 L334,65\" class=\"dg-line\" marker-end=\"url(#dg-cb-uber-a)\"/><path d=\"M432,65 L442,65\" class=\"dg-line\" marker-end=\"url(#dg-cb-uber-a)\"/><text x=\"280\" y=\"28\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">life of one request</text><rect x=\"118\" y=\"160\" width=\"140\" height=\"50\" class=\"dg-box\"/><text x=\"188\" y=\"181.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">PID controller</text><text x=\"188\" y=\"197.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">sets the shed ratio</text><rect x=\"302\" y=\"160\" width=\"140\" height=\"50\" class=\"dg-box\"/><text x=\"372\" y=\"181.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Auto-tuner</text><text x=\"372\" y=\"197.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">sets the inflight limit</text><path d=\"M188,160 L172,90\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-cb-uber-a)\"/><path d=\"M372,160 L388,90\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-cb-uber-a)\"/><text x=\"280\" y=\"132\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">two background loops</text><text x=\"280\" y=\"244\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">6 tiers x 128 cohorts = 768 priorities; shed the lowest first</text></svg>",
+        "numbers": [
+          {
+            "value": "P50 up 50% at 300% overload",
+            "meaning": "Median latency under heavy overload, the post's headline for Cinnamon"
+          },
+          {
+            "value": "about 1 microsecond",
+            "meaning": "Overhead Cinnamon adds per request"
+          },
+          {
+            "value": "768",
+            "meaning": "Priorities: 6 tiers times 128 cohorts"
+          },
+          {
+            "value": "40% of capacity",
+            "meaning": "Total goodput of the older QALM at 3,000 requests per second, about 552 requests per second"
+          },
+          {
+            "value": "under 500 ms vs near 1 s",
+            "meaning": "Tier 1 latency above capacity for Cinnamon versus QALM, which approaches the 1 second timeout"
+          },
+          {
+            "value": "about 140 ms to 190 ms",
+            "meaning": "P99 latency from light load to 1,000 requests per second, for all setups"
+          },
+          {
+            "value": "about 240, then 60, then 110",
+            "meaning": "Inflight limit at 1,500 requests per second as the auto-tuner settles, which takes a few minutes"
+          },
+          {
+            "value": "about 30%",
+            "meaning": "Steady rejection rate at 2,000 requests per second"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Priorities propagated from the edge, a PID controller for the shed ratio, and an auto-tuned inflight limit, with no configuration.",
+          "rejected": "Priority by caller, a hand-set maximum concurrency, Go channels for shedding, and CoDel alone, which oscillates between rejecting everything and nothing.",
+          "why": "Callers' priorities miss cases such as a test system calling a service, hand-set limits go stale as traffic and hardware change, and a single threshold or limit handles only part of the problem, hence two background controllers."
+        },
+        "failures": "At 1,500 requests per second the older QALM kept about 2% more goodput, which the post attributes to the auto-tuner still finding the right inflight limit plus noise in production. At high load the service spends more of its resources rejecting requests, so its capacity falls. The tests use a synthetic service on two instances, and the post gives no count of services using Cinnamon, only that it is being rapidly adopted.",
+        "takeaways": "A server can protect itself, without help from callers, by ranking requests, shedding the lowest first and adapting its own limits. The post compares a shedder with another shedder, not with a circuit breaker, so read it as the server side of the picture. It is the first of three posts on Cinnamon."
+      }
+    }
+  ],
+  "comparison": "Both posts are about a service getting more work than it can finish, and both show that the obvious protection can fail in a way its owner does not expect. They protect opposite ends of the same call. Zalando's circuit breaker sits in a client and protects it from a failing dependency. Uber's Cinnamon sits in the server and protects it from overload, and its post is about load shedding and never mentions circuit breakers.\n\nZalando's is an incident analysis: a breaker stayed open for hours and blocked roughly 95% of requests, healthy-looking probes closed it, the full load came back at once on a service scaled to its minimum, and it opened again within about three seconds. The post does not give the breaker's thresholds, and no fix is measured. Its own ideas, among them autoscaling on queue depth and load shedding at the service, are untested. Uber's is a design with a comparison: priorities carried from the edge, a PID controller for the shed ratio, and an auto-tuned inflight limit, with no configuration.\n\nThe evidence differs. Zalando gives observations from one incident, with no measurement after a fix. Uber measured against its older shedder in production on a synthetic service with two instances, and reports latency and goodput at several request rates, plus a headline of median latency up 50% at 300% overload. Zalando's post is from 2026 and Uber's from 2023, and Uber's is the first of three on Cinnamon.",
+  "glossary": [
+    {
+      "term": "Circuit breaker",
+      "definition": "A guard in a caller that stops calling a failing dependency for a while, so calls fail at once instead of waiting."
+    },
+    {
+      "term": "Closed, open, half-open",
+      "definition": "The breaker's three states: calls flow and failures are counted, calls are rejected immediately, and a few probe calls test whether the dependency has recovered."
+    },
+    {
+      "term": "Probe",
+      "definition": "One of the few calls a half-open breaker lets through to test the dependency."
+    },
+    {
+      "term": "Timeout",
+      "definition": "How long a caller waits for a call before giving up."
+    },
+    {
+      "term": "Retry",
+      "definition": "Trying a failed call again. Retries add load, so they need limits."
+    },
+    {
+      "term": "Load shedding",
+      "definition": "Rejecting some requests when a server is overloaded, usually the least important first, so the rest are served in time."
+    },
+    {
+      "term": "Goodput",
+      "definition": "The requests that actually succeed, as opposed to all requests sent to a server."
+    },
+    {
+      "term": "Autoscaler",
+      "definition": "A controller that adds or removes copies of a service as load changes. The post's Horizontal Pod Autoscaler (HPA) works on CPU."
+    },
+    {
+      "term": "Queue depth",
+      "definition": "How many requests are waiting. A queue that stops draining is a sign of overload."
+    },
+    {
+      "term": "Backpressure",
+      "definition": "Pushing back on senders when a server cannot keep up, instead of letting work pile up."
+    }
+  ],
+  "mistakes": [
+    "Trusting the probes. A half-open breaker tests the service at a trickle, so quick, healthy probes say nothing about how it will cope when the full load returns.",
+    "Retrying without limits. Each retry adds load to a dependency that is already struggling, so unbounded retries can turn a slowdown into an outage.",
+    "Setting one limit by hand and forgetting it. The right concurrency limit moves with traffic and hardware, so hand-set limits go stale, especially across many services."
+  ]
+}
