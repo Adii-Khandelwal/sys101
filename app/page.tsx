@@ -7,7 +7,6 @@ import Search from "@/components/Search";
 import TryQuestion from "@/components/TryQuestion";
 import SiteFooter from "@/components/SiteFooter";
 import { columns, depths, transitiveReduction } from "@/lib/graph";
-import { getAllLearn } from "@/lib/learn";
 import { GROUPS, getAllTopics, type Group } from "@/lib/topics";
 import { SITE_DESCRIPTION, pageMeta } from "@/lib/site";
 
@@ -62,7 +61,6 @@ export default function Home() {
   const companies = [...postCounts]
     .map(([name, urls]) => ({ name, posts: urls.size }))
     .sort((a, b) => a.name.localeCompare(b.name));
-  const learnSlugs = getAllLearn(topics.map((t) => t.slug)).map((l) => l.slug);
   return (
     <main className="home">
       <header className="masthead">
@@ -72,10 +70,7 @@ export default function Home() {
           Each topic builds on the one before it, and every one is taught through how real engineering teams solved it.{" "}
           <Link href="/about">Why this exists</Link>
         </p>
-        <NextUp
-          entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))}
-          learnSlugs={learnSlugs}
-        />
+        <NextUp entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))} />
         <Search />
       </header>
 

@@ -8,11 +8,11 @@ import { readCount, readyTopics, startVariant, type IndexEntry } from "@/lib/nex
 import { navigateWithTransition } from "./ViewTransitions";
 
 /**
- * The one start line under the intro, from what has been read in this browser.
- * With nothing read it is "Start here"; once something is read it is "Next up".
- * The two never show together.
+ * The line under the intro, from what has been read in this browser.
+ * With nothing read it renders nothing (the map is the way in); once something
+ * is read it shows "Next up" and the count.
  */
-export default function NextUp({ entries, learnSlugs }: { entries: IndexEntry[]; learnSlugs: string[] }) {
+export default function NextUp({ entries }: { entries: IndexEntry[] }) {
   const read = useReadTopics();
   const router = useRouter();
   const ready = readyTopics(entries, read);
@@ -31,48 +31,14 @@ export default function NextUp({ entries, learnSlugs }: { entries: IndexEntry[];
     window.setTimeout(() => navigateWithTransition(router, href), wait);
   };
 
-  // Reveal the Map (if the reader is on Path), then scroll to it and focus the first node.
-  const exploreMap = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    window.dispatchEvent(new CustomEvent("sys101:show-map"));
-    requestAnimationFrame(() => {
-      document.querySelector<HTMLElement>(".graph-stage")?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "center" });
-      requestAnimationFrame(() => document.querySelector<HTMLElement>(".graph-node-link")?.focus({ preventScroll: true }));
-    });
-  };
-
   const count = (
     <span className="next-count label">
       {done} of {entries.length} topics read
     </span>
   );
 
-  if (startVariant(read) === "first" && next) {
-    return (
-      <p className="next-up" data-pagefind-ignore>
-        <span>
-          Start here:{" "}
-          <Link className="start-primary" href={`/topic/${next.slug}`}>
-            {next.title}
-          </Link>
-        </span>
-        {learnSlugs.includes(next.slug) && (
-          <span className="next-also">
-            New to this? <Link href={`/topic/${next.slug}/learn`}>Start from zero</Link>
-          </span>
-        )}
-        {also && (
-          <span className="next-also">
-            Also ready: <Link href={`/topic/${also.slug}`}>{also.title}</Link>
-          </span>
-        )}
-        <a className="start-secondary next-also" href="#the-map" onClick={exploreMap}>
-          Explore the map
-        </a>
-        {count}
-      </p>
-    );
-  }
+  // Nothing read yet: the map below is the way in, so nothing shows here.
+  if (startVariant(read) === "first") return null;
 
   return (
     <p className="next-up" data-pagefind-ignore>

@@ -31,7 +31,7 @@ export function readCount(entries: IndexEntry[], read: readonly string[]) {
   return entries.filter((e) => read.includes(e.slug)).length;
 }
 
-/** The start line has two versions and never shows both: the first-visit one only while nothing is read. */
+/** Nothing read yet ("first": no link, the map is the way in) or some progress ("progress": Next up). */
 export function startVariant(read: readonly string[]): "first" | "progress" {
   return read.length === 0 ? "first" : "progress";
 }
