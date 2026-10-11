@@ -52,7 +52,7 @@ export default function VideoEmbed({ video }: { video: VideoSource }) {
       <figure className="learn-video is-playing">
         <div className="video-frame">
           <iframe
-            src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`}
+            src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&color=white`}
             title={video.title}
             allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
