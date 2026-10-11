@@ -20,6 +20,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - Concept text may come from general knowledge, but every figure or company claim must come from a verified post in the JSON. Never invent numbers.
 - Check yourself is 5 to 8 questions; the build enforces answer positions, no 2- or 3-cycle of positions, and the correct option longest in at most 2. QUIZ_STYLE_PENDING (lib/topics.ts) lists topics not yet reworked.
 - Diagrams are original inline SVG with a title and alt text. No data controls on topic pages (they live on /data).
+- A reading-time estimate ("~N min read") shows beside the group label on topic and learn pages and in the All-topics index; it is computed from the rendered prose plus a per-diagram allowance (lib/readingTime.ts), never hardcoded.
 - Original posts lists company, year, and "Checked on"; links open in a new tab with rel="noopener noreferrer".
 - "Checked on" is exactly the `verifiedOn` date in the content JSON: the date that entry was last edited. No code writes it; the weekly link check only reports dead links. Pages must never say or imply the author personally read or checked sources unless true, and must describe the process as it is.
 - Optional `description` on a topic replaces the generated meta description: one sentence of 8 words or more ending in a period, under 155 characters. Interview tags are hidden for now (SHOW_INTERVIEW_TAGS in lib/topics.ts); the field stays.
@@ -38,8 +39,9 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 ## Progress tracking
 
 - Tracked units per topic: each concept section, the quiz, each post, each with "Mark done" at the end of its section. A topic is read when all are done; the read flag is derived, and the graph and "Next up" use only it.
+- "In progress" means deliberate progress only: a section marked done or a quiz question answered (inProgressSlugs in lib/progress.ts). Scrolling a section into view ("visited") does not count, so merely opening a topic never marks it in progress.
 - Stored in localStorage only: versioned, try/catch, tolerant of missing or corrupt data, pages render without it, synced across tabs, old keys migrate. No accounts, nothing sent anywhere.
-- Display: "x of N done", a thin segmented bar, and a Continue link. /data (linked in the footer): export, import with validation first, reset.
+- Display: "x of N done", a thin segmented bar, a Continue link. The homepage shows a "pick up where you left off" line (HomeResume) below the masthead. /data shows a read/in-progress/ready tally then export/import/reset. The Path view shows a per-group count and a mark-group-read toggle (markTopics).
 
 ## Homepage
 
@@ -52,7 +54,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 
 - The map is the homepage on desktop (768px and up); under 768px the Path view is the default, and a Map/Path toggle remembers an explicit choice.
 - Layout is deterministic and static. Draw only the transitive reduction by default. No edge crosses a label or node.
-- Node states never rely on color alone (unread thin outline, ready thicker outline, read filled rust). Not-yet nodes stay clickable.
+- Node states never rely on color alone: unread (thin outline), ready (thicker outline + centre dot), in progress (rust outline + rust centre dot, for a topic deliberately started), read (filled rust). In progress ranks above ready. The Path view and the map legend show the same four states.
 - Pan is desktop-only and starts at INTERACTIVE_MIN_NODES topics; zoom is keyboard-only (`+`/`-`/`0`). The on-screen Zoom/Fit all/Show all links buttons were removed (camera and edge-filter state stay). A phone gets the fixed map. Keep a plain text index and keyboard use as the fallback.
 - After adding a topic, check the map at 1280px, 1440px, and 390px for zero crossings and overlaps. At 1280px also test that sideways page scroll and map pan do not conflict.
 - Read docs/graph.md before editing graph code.
@@ -68,7 +70,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - One absolute canonical per page from SITE_URL in lib/site.ts, no query strings. Set metadata through pageMeta(), which adds Open Graph and Twitter text tags.
 - Unique title under 60 characters with the " · sys101" suffix (optional topic `shortTitle`, used by pageTitle in lib/site.ts). Description under 155, ending at a sentence or clause boundary with no ellipsis (metaDescription), generated from content.
 - Exactly one H1 and no skipped heading levels. Content must be in the HTML and render without JavaScript.
-- app/sitemap.ts lists every indexable page with lastmod from content dates (newest verifiedOn; PAGE_DATES for About, Terms, Privacy). /data and the 404 are noindex and left out.
+- app/sitemap.ts lists every indexable page with lastmod from content dates (PAGE_DATES for About, Glossary, Terms, Privacy). /data and 404 are noindex. /glossary aggregates every topic's glossary terms (grouped, backlinked) with a slash-to-focus filter; all terms are server-rendered for Pagefind.
 - JSON-LD only where it matches visible content: BreadcrumbList on topic and learn pages, LearningResource on topic pages. No FAQ schema.
 - No raster image without alt, width, and height. SVGs need role="img" and a name, or aria-hidden.
 - scripts/check-seo.mjs runs after every build and fails it on any of these.
@@ -78,7 +80,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - WCAG AA contrast, visible focus rings, full keyboard use, 44px touch targets, real buttons, aria-live for results. Verify at 1440px and 390px.
 - Every feature must work seamlessly on a phone: verify each new feature at 390px (and touch), with no horizontal overflow, readable wrapping, and tap targets of 44px. A feature is not done until it works on mobile.
 - Skeleton loaders match the final size and only stand in for client-loaded parts (no loading.tsx on content routes).
-- Shared header with the sys101 wordmark and three-node mark linking home. Footer links: About, Terms, Privacy, Your data, Report a mistake (mails REPORT_EMAIL in lib/site.ts). A "Back to top" text button appears after about 1.5 screens.
+- Shared header with the sys101 wordmark and three-node mark linking home, and a sun/crescent-moon theme toggle (ThemeToggle). Footer links: About, Glossary, Terms, Privacy, Your data, Report a mistake (mails REPORT_EMAIL in lib/site.ts). A "Back to top" text button appears after about 1.5 screens.
 - About and Terms describe AI assistance identically (an AI assistant drafts the write-ups; trust the original). Change one, check the other.
 
 ## Post selection (strict, never use just any post)
@@ -105,6 +107,9 @@ Only include a post if it passes most of these:
 ## Site feel
 
 Handcrafted, not AI-template. Cream background, serif headings, restrained palette with one or two accents (one rust). Plain, specific copy written like a person.
+
+- Two themes from CSS-variable tokens in app/globals.css: light (cream) and a warm dark (brown-charcoal, off-white ink, brighter AA rust). Any new colour must be a token, never a literal.
+- Theme toggle (sun/moon) stored locally, follows prefers-color-scheme until chosen, set before paint (no flash). SVG diagrams theme via the tokens; the Sigma map reads live vars (readThemeColors, lib/graphUi.ts).
 
 - Never use: gradients, neon, rainbow, pastels, purple and black, pure white background, drop shadows, large radius, liquid glass, emojis, sparkle icons, loose side icons, animated arrows, hover animations everywhere, bounce or elastic easing,
   three-card rows, bento grids, pricing tiers, testimonials, colored stripes, terminal mockups, dot grids, radial orbs, checkmark bullets, Inter/Geist/Space Grotesk, em dashes, "It's not X, it's Y" phrasing.
@@ -134,11 +139,11 @@ Apply system design thinking to this site: static generation, CDN caching, decou
 - `scripts/check-diagram-overflow.mjs` runs after the build (and as `npm run check:diagrams`): it renders each diagram SVG in headless Chromium and fails if a label's box spills past its rect. It skips when Chromium is absent (`npx playwright install chromium`); Playwright is a devDependency.
 - `npm run build` also builds the Pagefind index into `public/pagefind` (git-ignored). Under `npm run dev`, run `npm run search:index` instead.
 
-## Keeping CLAUDE.md current
+## Keeping docs current
 
-- When a task adds or changes a standing rule, page type, schema, route, or convention, update the matching section in the same commit. Edit existing text; never duplicate a rule.
-- Do not record one-off details or temporary state. Keep this file under 150 lines and each line under about 300 characters by moving detail into docs/.
-- Final reply says, in one line: "CLAUDE.md: updated <section>" or "CLAUDE.md: no change".
+- Update docs with every commit. When a task adds or changes a standing rule, page type, schema, route, feature, or convention, update the matching section of CLAUDE.md and README.md in the same commit. Edit existing text; never duplicate a rule.
+- Do not record one-off details or temporary state. Keep CLAUDE.md under 160 lines and each line under about 300 characters by moving detail into docs/.
+- Final reply says, in one line: "CLAUDE.md: updated <section>" (or "no change"), and likewise for README.
 
 ## Token discipline
 
