@@ -258,46 +258,46 @@
         "question": "Why can't DNS alone keep servers evenly loaded?",
         "options": [
           "It can only return one address",
-          "Resolvers cache its answers, so it cannot react quickly to one server being busy or down",
-          "It does not work inside a data center"
+          "It does not work inside a data center",
+          "Resolvers cache its answers, so it cannot react quickly to one server being busy or down"
         ],
-        "correct": 1,
+        "correct": 2,
         "why": "DNS answers are reused until their TTL runs out, so a change in load is not seen in time.",
         "wrong": [
           "DNS can return several addresses for one name.",
-          "",
-          "Where DNS runs is not the issue; caching is."
+          "Where DNS runs is not the issue; caching is.",
+          ""
         ],
         "teaches": "why"
       },
       {
         "question": "Round-robin sends the same number of requests to each server. Why can load still be uneven?",
         "options": [
-          "Round-robin skips servers at random",
-          "It only works with two servers",
-          "Requests differ in cost and servers differ in hardware"
+          "Requests differ in cost and servers differ in hardware",
+          "Round-robin skips servers at random whenever one of them looks busy",
+          "It only works with two servers, so larger pools fall back to random choice"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "Equal request counts are not equal work when some requests or machines are more expensive.",
         "wrong": [
+          "",
           "Round-robin takes servers strictly in turn.",
-          "It works with any number of servers.",
-          ""
+          "It works with any number of servers."
         ],
         "teaches": "mistakes"
       },
       {
         "question": "Why does each caller connect to only a subset of servers at scale?",
         "options": [
+          "Subsets are faster to encrypt because each connection carries fewer handshakes",
           "Connecting everyone to everyone needs callers times servers connections",
-          "Subsets are faster to encrypt",
-          "Servers can only accept one caller"
+          "Servers can only accept one caller at a time, so callers are split into groups"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Two services with 10,000 tasks each would need on the order of 100 million connections if fully meshed.",
         "wrong": [
-          "",
           "Encryption has nothing to do with it.",
+          "",
           "Servers accept many callers; the total connection count is the problem."
         ],
         "teaches": "model"
@@ -305,8 +305,8 @@
       {
         "question": "A server's disk stalls. Its CPU drops and the balancer sends it more traffic. What went wrong?",
         "options": [
-          "Round-robin was turned off",
-          "The subset was too large",
+          "Round-robin was turned off, so the balancer fell back to sending extra traffic to idle servers",
+          "The subset was too large, so the server was picked by more callers than it could take",
           "The balancer used a load signal that looks healthy while the server is stuck"
         ],
         "correct": 2,
@@ -321,15 +321,15 @@
       {
         "question": "Load reports reach the balancer a few seconds late. What does that mean in practice?",
         "options": [
-          "Decisions are made on slightly stale data, so the system must tolerate some lag and imbalance",
           "Load balancing is impossible",
+          "Decisions are made on slightly stale data, so the system must tolerate some lag and imbalance",
           "Reports must be sent on every request"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Every balancer works from data that is a little old; good designs smooth it and accept a few seconds of lag.",
         "wrong": [
-          "",
           "Real systems balance well with stale data, as long as they expect it.",
+          "",
           "Per-request reporting would cost more than it saves."
         ],
         "teaches": "how"
@@ -337,15 +337,15 @@
       {
         "question": "What does weighted round-robin do?",
         "options": [
-          "Picks a server at random",
           "Sends each server traffic in proportion to its weight",
-          "Sends everything to the heaviest server"
+          "Picks a server at random, then adjusts the odds after each response arrives",
+          "Sends everything to the heaviest server until it is full, then moves to the next one"
         ],
-        "correct": 1,
+        "correct": 0,
         "why": "Higher-weight servers get more turns, so a controller can shift load by changing weights.",
         "wrong": [
-          "It is deterministic in proportion, not random.",
           "",
+          "It is deterministic in proportion, not random.",
           "Weights share traffic out; they do not send it all to one server."
         ],
         "teaches": "how"

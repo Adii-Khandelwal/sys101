@@ -294,9 +294,9 @@
       {
         "question": "An order service must tell billing, email and analytics that an order was placed, and a fourth system will need it next year. Which design avoids changing the order service later?",
         "options": [
-          "The order service calls each system directly",
+          "The order service calls each system directly, and a new call is added later for the fourth system",
           "The order service publishes to a topic and each system has its own subscription",
-          "All of the systems share one subscription"
+          "All of the systems share one subscription, so any system can read any order message"
         ],
         "correct": 1,
         "why": "The publisher only knows the topic, and every subscription receives every message, so a new system just adds a subscription.",
@@ -310,48 +310,48 @@
       {
         "question": "Three workers read from the same subscription. One message is published. What happens?",
         "options": [
+          "Only one worker receives it",
           "All three workers receive a copy",
-          "The message is split into three parts",
-          "Only one worker receives it"
+          "The message is split into three parts"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "Workers inside one subscription share its messages, so each message goes to one of them. That is the queue behaviour inside pub-sub.",
         "wrong": [
+          "",
           "Copies go to separate subscriptions, not to workers sharing one; three copies would triple the work.",
-          "A message is delivered whole; it is never divided between workers.",
-          ""
+          "A message is delivered whole; it is never divided between workers."
         ],
         "teaches": "model"
       },
       {
         "question": "Two subscriptions read one topic. The email subscription falls far behind. What happens to billing?",
         "options": [
-          "Billing keeps receiving messages at its own pace while email builds a backlog",
-          "Billing slows down to match email",
-          "Messages are dropped for both"
+          "Billing slows down to match email, because both subscriptions share one position in the topic",
+          "Messages are dropped for both, because the topic discards anything a subscription has not read",
+          "Billing keeps receiving messages at its own pace while email builds a backlog"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "Each subscription has its own position and backlog, so a slow reader delays only itself.",
         "wrong": [
-          "",
           "Subscriptions do not wait for each other, so one slow reader cannot set the pace for another.",
-          "Messages stay in the topic until each subscription acknowledges them; one reader falling behind does not discard them for the other."
+          "Messages stay in the topic until each subscription acknowledges them; one reader falling behind does not discard them for the other.",
+          ""
         ],
         "teaches": "model"
       },
       {
         "question": "A subscriber crashes after processing a message but before acknowledging it, under at-least-once delivery. What should you expect?",
         "options": [
-          "The message is lost",
-          "The message is skipped for good",
-          "The message is delivered again, so processing it twice must be safe"
+          "The message is delivered again, so processing it twice must be safe",
+          "The message is lost, because the crash happened before it was acknowledged",
+          "The message is skipped for good, because the work had already been done"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "With no acknowledgement the system cannot tell the work was done, so it delivers again. The consumer has to be idempotent.",
         "wrong": [
+          "",
           "At-least-once delivery exists to prevent loss, so an unacknowledged message is not dropped.",
-          "Nothing marks it finished, so it is not skipped; it comes back.",
-          ""
+          "Nothing marks it finished, so it is not skipped; it comes back."
         ],
         "teaches": "how"
       },
@@ -374,16 +374,16 @@
       {
         "question": "One message can never be processed, and it blocks the messages behind it. What fixes this?",
         "options": [
-          "Retry it a limited number of times, then move it to a dead letter queue and carry on",
           "Retry it forever",
-          "Delete the whole subscription"
+          "Delete the whole subscription",
+          "Retry it a limited number of times, then move it to a dead letter queue and carry on"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "Parking the failing message lets the others proceed, and it can be inspected and replayed later.",
         "wrong": [
-          "",
           "Retrying forever keeps the block in place and still never succeeds.",
-          "Deleting the subscription throws away the backlog of good messages as well."
+          "Deleting the subscription throws away the backlog of good messages as well.",
+          ""
         ],
         "teaches": "how"
       }

@@ -249,12 +249,14 @@
         "command": "bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server localhost:9092",
         "shows": "Creates a topic called quickstart-events. The page prints no output for this command.",
         "source": "kafka-quickstart",
-        "note": "Needs the server from the quickstart's second step, and a second terminal."
+        "note": "Needs the server from the quickstart's second step, and a second terminal.",
+        "warning": "This creates a topic on the cluster at localhost:9092. Run it only against a test or local cluster."
       },
       {
         "command": "bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server localhost:9092",
         "shows": "Starts a producer: each line you type becomes one event. The page shows the lines \"This is my first event\" and \"This is my second event\" typed at the > prompt, and stops it with Ctrl-C.",
-        "source": "kafka-quickstart"
+        "source": "kafka-quickstart",
+        "warning": "This writes events to the topic. Run it only against a test or local cluster."
       },
       {
         "command": "bin/kafka-console-consumer.sh --topic quickstart-events --from-beginning --bootstrap-server localhost:9092",
@@ -271,7 +273,8 @@
       {
         "command": "PUBLISH second Hello",
         "shows": "From another client, publishes Hello to the channel second. The page shows client A receiving a message array holding message, second and Hello, again as raw protocol text.",
-        "source": "redis-pubsub"
+        "source": "redis-pubsub",
+        "warning": "This publishes a message to a channel on the Redis server. Run it only on a local or test server."
       }
     ]
   },

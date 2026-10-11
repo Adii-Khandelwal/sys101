@@ -279,16 +279,16 @@
       {
         "question": "Why put a queue between a web request and slow work like sending notifications?",
         "options": [
-          "To make the work run faster",
-          "To avoid storing the work anywhere",
-          "So the request can return at once and the work survives slowdowns"
+          "So the request can return at once and the work survives slowdowns",
+          "To make the work run faster, because queued tasks are processed in parallel",
+          "To avoid storing the work anywhere, so nothing needs to be cleaned up later"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "The producer records the work and returns; consumers do it later, and a burst becomes a backlog instead of failed requests.",
         "wrong": [
+          "",
           "The work takes as long as before; it just no longer blocks the request.",
-          "A queue exists precisely to store the work until it is done.",
-          ""
+          "A queue exists precisely to store the work until it is done."
         ],
         "teaches": "why"
       },
@@ -311,15 +311,15 @@
       {
         "question": "Why must consumers be idempotent under at-least-once delivery?",
         "options": [
+          "Because messages arrive out of order only, and the same effect must hold in any order",
           "Because the same message can arrive more than once",
-          "Because messages arrive out of order only",
-          "Because acks are optional"
+          "Because acks are optional, so consumers never know a message was already handled"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Retries and expired leases cause duplicates, so processing a message twice must have the same effect as once.",
         "wrong": [
-          "",
           "Ordering is a separate concern; duplicates are the reason here.",
+          "",
           "Acks are what remove messages; duplicates happen when they are missing or late."
         ],
         "teaches": "model"
@@ -327,31 +327,31 @@
       {
         "question": "What is the risk of acknowledging a write after only the leader has stored it?",
         "options": [
-          "A crash before it is copied can lose the message",
-          "Every message is delivered twice",
-          "Writes become slower"
+          "Every message is delivered twice, because the leader sends a copy to each follower",
+          "Writes become slower, since the leader must wait for the slowest follower first",
+          "A crash before it is copied can lose the message"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "Waiting for one copy is fast, but that copy can be lost before replication, which Slack accepted for most jobs.",
         "wrong": [
-          "",
           "Duplicates come from redelivery, not from how many copies confirm a write.",
-          "It is the fastest option; waiting for more copies is what slows writes."
+          "It is the fastest option; waiting for more copies is what slows writes.",
+          ""
         ],
         "teaches": "example"
       },
       {
         "question": "A message fails every time it is processed. What should the queue do?",
         "options": [
-          "Retry immediately forever",
           "Retry with growing delays, then set it aside after a limit",
-          "Delete it on the first failure"
+          "Retry immediately forever, so the message is eventually processed by something",
+          "Delete it on the first failure, because a failed message can never succeed later"
         ],
-        "correct": 1,
+        "correct": 0,
         "why": "Backoff avoids flooding, and a dead-letter queue stops one bad message from blocking the rest while keeping it for diagnosis.",
         "wrong": [
-          "Endless instant retries waste capacity and can block other messages.",
           "",
+          "Endless instant retries waste capacity and can block other messages.",
           "Deleting on first failure loses work that might succeed on a retry."
         ],
         "teaches": "how"

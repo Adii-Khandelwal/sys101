@@ -237,7 +237,7 @@ export function checkQuizPositions(quiz: Pick<LessonQuestion, "options" | "corre
  * if a listed topic already passes, so the list can only shrink.
  */
 export const QUIZ_STYLE_PENDING: readonly string[] = [
-  "load-balancing", "message-queues", "pub-sub", "rate-limiting", "replication", "sharding",
+  "replication", "sharding",
 ];
 
 /** Most questions in which the correct option may be the single longest one. */

@@ -16,6 +16,10 @@ Done. Learn pages checked against the cited pages and rewritten where a sentence
 
 Done. Quizzes reworked and removed from QUIZ_STYLE_PENDING. Learn pages: several citations pointed at pages that do not say the thing (the Lucene landing page has nothing on inverted indexes or scoring; Redis Cluster's page says it does not use consistent hashing; PostgreSQL's concepts page has nothing on the planner), so the claims were re-sourced to pages that do, or the citation was dropped and the sentence left as general explanation. Try it commands replaced with ones that appear on the cited pages. Posts: all dates agree with the pages.
 
+## Batch 4: Load Balancing, Message Queues, Pub-Sub, Rate Limiting
+
+Done. Quizzes reworked (Pub-Sub and Rate Limiting learn pages already matched their pages; only Try it warnings were added). Load Balancing cited RFC 7231, which RFC 9110 replaced, and the HAProxy docs landing page, which only lists versions; both were replaced with the HAProxy starter guide and RFC 9110. Message Queues cited an Amazon SQS page that now only redirects, and a Kafka documentation shell page; both were replaced with SQS's current pages and Kafka's design page. Try it commands now appear on the cited pages.
+
 ## Remaining
 
-Batch 4: Load Balancing, Message Queues, Pub-Sub, Rate Limiting. Batch 5: Replication, Sharding. Then: checks and rendering code, quiz rework for the 13 pending topics (as each batch lands), full build, verify:figures, search check.
+Batch 5: Replication, Sharding. Then: checks and rendering code, quiz rework for the 13 pending topics (as each batch lands), full build, verify:figures, search check.

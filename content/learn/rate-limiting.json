@@ -232,12 +232,14 @@
       {
         "command": "SET mykey \"10\"",
         "shows": "In redis-cli, stores the number 10 under a key. The INCR page shows the reply OK.",
-        "source": "redis-incr"
+        "source": "redis-incr",
+        "warning": "This writes to the key mykey. Run it only on a local or test Redis server."
       },
       {
         "command": "INCR mykey",
         "shows": "Adds one to the number atomically. The INCR page shows the reply (integer) 11.",
-        "source": "redis-incr"
+        "source": "redis-incr",
+        "warning": "This writes to the key mykey. Run it only on a local or test Redis server."
       },
       {
         "command": "GET mykey",

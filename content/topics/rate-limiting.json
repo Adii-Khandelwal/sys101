@@ -84,15 +84,15 @@
       {
         "question": "Four servers each count requests locally, and the limit is 100 per minute per client. At most how many requests per minute can one client send before any server blocks it?",
         "options": [
-          "100",
           "400",
+          "100",
           "25"
         ],
-        "correct": 1,
+        "correct": 0,
         "why": "Each server enforces 100 on its own, so four servers allow up to 400 in total.",
         "wrong": [
-          "That would hold only if all four servers shared one count.",
           "",
+          "That would hold only if all four servers shared one count.",
           "A quarter of the limit is what each server sees if traffic is spread evenly, not what it permits."
         ],
         "teaches": "why"
@@ -100,24 +100,24 @@
       {
         "question": "What does a token bucket allow that a plain count per second does not?",
         "options": [
-          "Short bursts, up to the tokens saved up while the client was quiet",
-          "Unlimited requests from clients that behave well",
-          "Counting without any shared state"
+          "Unlimited requests from clients that behave well, because the bucket never runs dry for them",
+          "Counting without any shared state, since each token is held by the client",
+          "Short bursts, up to the tokens saved up while the client was quiet"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "Tokens arrive at a steady rate and can pile up, so a quiet client can spend them at once, while the average rate stays capped.",
         "wrong": [
-          "",
           "The bucket still caps the average rate, however well a client behaves.",
-          "A bucket still keeps a token count per key; whether that count is shared is a separate decision."
+          "A bucket still keeps a token count per key; whether that count is shared is a separate decision.",
+          ""
         ],
         "teaches": "model"
       },
       {
         "question": "Why is a fixed window counter not very accurate?",
         "options": [
-          "It counts only the first request in each window",
-          "It must store a timestamp for every request",
+          "It counts only the first request in each window, so later ones are never limited",
+          "It must store a timestamp for every request, which makes it use a lot of memory",
           "A burst split across a reset can pass at twice the limit"
         ],
         "correct": 2,
@@ -148,31 +148,31 @@
       {
         "question": "Why avoid calling a remote counter store on every request?",
         "options": [
-          "Remote stores cannot count",
-          "It makes limits less strict",
-          "It adds latency to every request and is one more thing that can fail them all"
+          "It adds latency to every request and is one more thing that can fail them all",
+          "Remote stores cannot count reliably, so every limit becomes an estimate that is never exact",
+          "It makes limits less strict, because the answer is stale by the time it arrives back"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "A lookup on the hot path costs time for every request, and if the store is slow or down, every request suffers.",
         "wrong": [
+          "",
           "Remote stores can count; the cost is in asking on each request.",
-          "A remote store can give an exact count; the cost is latency and availability.",
-          ""
+          "A remote store can give an exact count; the cost is latency and availability."
         ],
         "teaches": "mistakes"
       },
       {
         "question": "A client is over its limit. How can servers avoid checking the counter for each later request?",
         "options": [
-          "Remember until when the client is blocked and skip the check until then",
           "Ask the client to slow down",
+          "Remember until when the client is blocked and skip the check until then",
           "Double the limit"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "If the end of the block is known, servers can keep it in memory and reject straight away, which saves work during an attack.",
         "wrong": [
-          "",
           "A client under attack will not cooperate; the server has to enforce the limit itself.",
+          "",
           "Raising the limit lets more traffic through, the opposite of the goal."
         ],
         "teaches": "how"

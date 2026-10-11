@@ -26,9 +26,9 @@
       "id": "basics",
       "name": "Basics",
       "body": [
-        "When one service calls another directly and waits, a slow or failed callee drags the caller down with it. A message queue breaks that tight coupling: the producer drops a message into the queue and moves on, and a consumer picks it up when it is ready. The two no longer have to be fast, or even up, at the same time [[sqs-arch]].",
-        "This buys three things. It decouples services, so each can be deployed and scaled on its own. It absorbs bursts, because the queue holds a backlog when work arrives faster than it is processed. And it adds resilience, because a message waits safely in the queue if a consumer is down rather than being lost [[sqs-arch]].",
-        "There are two broad shapes. A queue hands each message to one consumer, spreading work across a pool, which is good for tasks. Publish-subscribe delivers each message to many subscribers, which is good for broadcasting events. Knowing which shape a system needs is the first design choice [[rabbitmq-amqp]]."
+        "When one service calls another directly and waits, a slow or failed callee drags the caller down with it. A message queue breaks that tight coupling: the producer drops a message into the queue and moves on, and a consumer picks it up when it is ready. Amazon describes SQS as a hosted queue that lets you integrate and decouple distributed software systems and components [[sqs-welcome]].",
+        "This buys three things. It decouples services, so each can be deployed and scaled on its own. It absorbs bursts: SQS says it can process each buffered request independently, scaling to handle load increases or spikes. And it adds resilience: SQS says it stores messages on multiple servers, so a message waits safely in the queue if a consumer is down rather than being lost [[sqs-welcome]].",
+        "There are two broad shapes. A queue hands each message to one consumer, spreading work across a pool, which is good for tasks. Publish-subscribe delivers each message to many subscribers, which is good for broadcasting events. In AMQP, a message is published to an exchange, which distributes message copies to queues using rules called bindings, and the exchange type, such as direct or fanout, decides how [[rabbitmq-amqp]]. Knowing which shape a system needs is the first design choice."
       ],
       "terms": [
         {
@@ -54,14 +54,14 @@
       ],
       "reading": [
         {
-          "source": "sqs-arch",
-          "section": "Basic architecture, producers, consumers and the queue",
-          "what": "How putting a queue between services decouples them and absorbs bursts."
+          "source": "sqs-welcome",
+          "section": "What is Amazon Simple Queue Service? and Benefits of using Amazon SQS",
+          "what": "How putting a queue between services decouples them, and what a hosted queue promises about durability and spikes."
         },
         {
           "source": "rabbitmq-amqp",
-          "section": "Exchanges, queues and bindings overview",
-          "what": "The difference between delivering a message to one consumer and to many subscribers."
+          "section": "AMQP 0-9-1 Model in Brief, and Exchanges and Exchange Types",
+          "what": "How an exchange distributes copies of a message to queues, and the four exchange types."
         }
       ],
       "canNow": [
@@ -74,10 +74,10 @@
       "id": "how",
       "name": "How it works",
       "body": [
-        "In the AMQP model a producer does not send straight to a queue. It sends to an exchange, which routes the message to one or more queues based on rules called bindings. This indirection is what lets the same message fan out to many queues, or be routed by a key, without the producer knowing who consumes it [[rabbitmq-amqp]].",
-        "Delivery needs acknowledgement to be safe. A consumer takes a message, does the work, then acknowledges it, and only then does the broker remove it. If the consumer dies before acknowledging, the broker redelivers the message to another consumer, so work is not silently lost [[rabbitmq-amqp]].",
-        "Kafka takes a different model built on a log. Messages for a topic are appended to an ordered, durable log, and each consumer tracks an offset, its position in the log. Consumers read forward at their own pace, and because the log is retained, a consumer can replay from an earlier offset. This is closer to a durable record than a disappearing mailbox [[kafka-intro]].",
-        "Kafka scales a topic by splitting it into partitions, each an independent ordered log on possibly different machines. This is the sharding idea you already learned, applied to a message log: partitioning spreads throughput, and order is guaranteed within a partition but not across partitions [[kafka-docs]]."
+        "In the AMQP model a producer does not send straight to a queue. The RabbitMQ page says messages are published to exchanges, which then distribute message copies to queues using rules called bindings; the broker then delivers them to consumers subscribed to the queues [[rabbitmq-amqp]]. This indirection is what lets the same message fan out to many queues without the producer knowing who consumes it.",
+        "Delivery needs acknowledgement to be safe. A consumer takes a message, does the work, then acknowledges it. The RabbitMQ page says that if a consumer dies without sending an acknowledgement, the broker redelivers the message to another consumer, or waits for a consumer to register if none is available [[rabbitmq-amqp]]. SQS handles the same problem with a visibility timeout: a received message stays in the queue but is temporarily invisible to other consumers while one works on it [[sqs-visibility]].",
+        "Kafka takes a different model built on a log. Its introduction says events are stored durably and reliably for as long as you want, and its design page says a consumer specifies its offset in the log with each fetch request and can rewind it to re-consume data if needed [[kafka-design]] [[kafka-intro]]. Consumers read forward at their own pace, which is closer to a durable record than a disappearing mailbox.",
+        "Kafka scales a topic by splitting it into partitions, spread across brokers. The introduction says events with the same event key are written to the same partition, and that Kafka guarantees any consumer of a topic-partition reads that partition's events in exactly the order they were written; it makes no such promise across partitions [[kafka-intro]]. This is the sharding idea you already learned, applied to a message log."
       ],
       "terms": [
         {
@@ -104,13 +104,18 @@
       "reading": [
         {
           "source": "rabbitmq-amqp",
-          "section": "Exchanges, bindings, and acknowledgements",
+          "section": "Exchanges and Exchange Types, Bindings, and Message Acknowledgements",
           "what": "How an exchange routes messages and how acknowledgement makes delivery safe."
         },
         {
+          "source": "kafka-design",
+          "section": "The Consumer: Consumer Position",
+          "what": "How a consumer's offset in the log lets it read forward and rewind."
+        },
+        {
           "source": "kafka-intro",
-          "section": "Topics, partitions and offsets",
-          "what": "How Kafka stores messages as a retained, ordered log that consumers read by offset."
+          "section": "Main Concepts and Terminology",
+          "what": "How Kafka stores events as partitioned logs and keeps order within a partition."
         }
       ],
       "canNow": [
@@ -124,9 +129,9 @@
       "id": "deeper",
       "name": "Going deeper",
       "body": [
-        "Delivery guarantees are the heart of queue design. At-most-once may drop a message but never repeats it; at-least-once never drops but may repeat; exactly-once is the ideal but is hard and costly to achieve. Most systems choose at-least-once and make consumers handle duplicates [[kafka-docs]].",
-        "Because at-least-once means a message can arrive twice, consumers must be idempotent: processing the same message twice has the same effect as once. The usual way is to record a message's unique id and skip it if seen before, so a redelivery after a crash does no harm. This is the practical cost of safe delivery [[kafka-docs]].",
-        "Order and failure handling need explicit decisions. Kafka guarantees order only within a partition, so if two related messages must be processed in order they must share a partition, chosen by a key. And a message that keeps failing cannot block the queue forever, so it is moved aside to a dead-letter queue after some retries for a human or separate process to inspect [[sqs-arch]]."
+        "Delivery guarantees are the heart of queue design. Kafka's design page lists them: at most once, where messages may be lost but are never redelivered; at least once, where messages are never lost but may be redelivered; and exactly once, where each message is processed once and only once. It warns that many systems claim exactly-once, so you should read the fine print [[kafka-design]]. Many systems settle on at-least-once and make consumers handle duplicates.",
+        "Because at-least-once means a message can arrive twice, consumers must be idempotent: processing the same message twice has the same effect as once. The usual way is to record a message's unique id and skip it if seen before, so a redelivery after a crash does no harm. This is the practical cost of safe delivery. SQS shows the producer side of the same problem: standard queues support at-least-once delivery, and FIFO queues support exactly-once message processing [[sqs-welcome]].",
+        "Order and failure handling need explicit decisions. Kafka guarantees order only within a partition, so if two related messages must be processed in order they must share a partition, chosen by a key [[kafka-intro]]. And a message that keeps failing cannot block the queue forever. SQS lets a source queue target a dead-letter queue for messages that are not processed successfully, and a redrive policy's maxReceiveCount sets how many times a consumer can receive a message before it is moved there [[sqs-dlq]]."
       ],
       "terms": [
         {
@@ -152,14 +157,14 @@
       ],
       "reading": [
         {
-          "source": "kafka-docs",
+          "source": "kafka-design",
           "section": "Message Delivery Semantics",
-          "what": "At-most-once, at-least-once and exactly-once, and why duplicates must be handled."
+          "what": "At-most-once, at-least-once and exactly-once, and why the fine print matters."
         },
         {
-          "source": "sqs-arch",
-          "section": "Dead-letter queues and visibility timeout",
-          "what": "How failing messages are set aside and how redelivery is controlled."
+          "source": "sqs-dlq",
+          "section": "Using dead-letter queues in Amazon SQS, and Using policies for dead-letter queues",
+          "what": "How failing messages are set aside and after how many receives."
         }
       ],
       "canNow": [
@@ -172,9 +177,9 @@
       "id": "practice",
       "name": "In practice and trade-offs",
       "body": [
-        "The two models suit different jobs. A classic broker like RabbitMQ, routing through exchanges with per-message acknowledgement, fits task distribution and complex routing where each message is handled once and then gone. A log like Kafka fits high-throughput event streams and cases where many consumers, or replays, need the same ordered history. Many companies run both for different needs [[rabbitmq-amqp]].",
-        "A queue is powerful but not free. It adds a component to operate and a new failure mode: a backlog. If consumers fall behind producers for long, the queue grows, latency rises, and in a retained log old data ages out. Watching queue depth and consumer lag is as important as watching the services themselves [[kafka-docs]].",
-        "Queues also change correctness. Asynchronous processing means a result is not ready the instant a request returns, so the caller must handle \"accepted, will finish later\". Combined with at-least-once delivery and idempotent consumers, this is the standard way large systems stay decoupled and resilient, and it is why queues sit at the far end of this map, after the data topics they connect [[sqs-arch]]."
+        "The two models suit different jobs. A classic broker like RabbitMQ, routing through exchanges with per-message acknowledgement, fits task distribution and complex routing where each message is handled and then gone. A log like Kafka keeps events for as long as you choose, so many consumers, or replays, can read the same ordered history. Many companies run both for different needs.",
+        "A queue is powerful but not free. It adds a component to operate and a new failure mode: a backlog. If consumers fall behind producers for long, the queue grows and latency rises. SQS's dead-letter page suggests alarms for messages moved to a dead-letter queue and a metric for the age of the oldest message, which is the kind of signal to watch alongside the services themselves [[sqs-dlq]].",
+        "Queues also change correctness. Asynchronous processing means a result is not ready the instant a request returns, so the caller must handle \"accepted, will finish later\". Combined with at-least-once delivery and idempotent consumers, this is the standard way large systems stay decoupled and resilient, and it is why queues sit at the far end of this map, after the data topics they connect."
       ],
       "terms": [
         {
@@ -196,14 +201,14 @@
       ],
       "reading": [
         {
-          "source": "kafka-docs",
-          "section": "The intro's comparison of messaging and streaming use cases",
-          "what": "When a log fits better than a classic queue, and the lag and retention you must watch."
+          "source": "sqs-dlq",
+          "section": "Using policies for dead-letter queues",
+          "what": "How to set the retry limit and what signals to watch for a growing backlog."
         },
         {
-          "source": "rabbitmq-amqp",
-          "section": "The AMQP model summary",
-          "what": "What a routing broker is best at, as the counterpart to a log."
+          "source": "kafka-intro",
+          "section": "What is event streaming? and How does Kafka work in a nutshell?",
+          "what": "When a log that stores events durably fits better than a classic queue."
         }
       ],
       "canNow": [
@@ -216,38 +221,40 @@
   "misconceptions": [
     {
       "myth": "A queue guarantees each message is processed exactly once.",
-      "truth": "Most systems give at-least-once delivery, so a message can arrive twice and consumers must be idempotent [[kafka-docs]]."
+      "truth": "Kafka's design page lists at-most-once, at-least-once and exactly-once as different guarantees and warns that exactly-once claims often hide fine print; SQS standard queues support at-least-once delivery [[kafka-design]] [[sqs-welcome]]."
     },
     {
       "myth": "Messages always come out in the order they went in.",
-      "truth": "Kafka guarantees order only within a partition; across partitions there is no global order [[kafka-docs]]."
+      "truth": "Kafka guarantees order only within a topic-partition; events with the same key go to the same partition [[kafka-intro]]."
     },
     {
       "myth": "A producer sends straight to a specific queue.",
-      "truth": "In AMQP it sends to an exchange, which routes to queues by binding rules the producer need not know [[rabbitmq-amqp]]."
+      "truth": "In AMQP it publishes to an exchange, which distributes copies to queues by bindings [[rabbitmq-amqp]]."
     },
     {
       "myth": "Adding a queue removes failure modes.",
-      "truth": "It adds one: a backlog when consumers fall behind, so queue depth and lag must be watched [[kafka-docs]]."
+      "truth": "A message that cannot be processed needs somewhere to go; SQS offers dead-letter queues and recommends alarms on messages moved to one [[sqs-dlq]]."
     }
   ],
   "tryIt": {
-    "intro": "These use the command-line tools that ship with Kafka against a local or test cluster. Output depends on your cluster, so it is not shown here. Each tool is described in the Kafka documentation.",
+    "intro": "These use the command-line tools that ship with Apache Kafka against a local or test cluster. They are commands from the Kafka quickstart, with its example topic quickstart-events, which the page shows with Kafka 4.3.1. The page shows its own output; yours depends on your cluster.",
     "commands": [
       {
-        "command": "kafka-topics.sh --describe --topic orders --bootstrap-server localhost:9092",
-        "shows": "A topic's partitions and which broker leads each one.",
-        "source": "kafka-docs"
+        "command": "bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server localhost:9092",
+        "shows": "Creates a topic to hold events.",
+        "source": "kafka-quickstart",
+        "warning": "This creates a topic on the cluster at localhost:9092. Run it only against a test or local cluster."
       },
       {
-        "command": "kafka-console-producer.sh --topic orders --bootstrap-server localhost:9092",
-        "shows": "A simple producer: lines you type become messages on the topic.",
-        "source": "kafka-intro"
+        "command": "bin/kafka-topics.sh --describe --topic quickstart-events --bootstrap-server localhost:9092",
+        "shows": "Details of the topic, such as its partition count, as the page notes.",
+        "source": "kafka-quickstart"
       },
       {
-        "command": "kafka-consumer-groups.sh --describe --group workers --bootstrap-server localhost:9092",
-        "shows": "A consumer group's offset per partition and its lag behind the latest message.",
-        "source": "kafka-docs"
+        "command": "bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server localhost:9092",
+        "shows": "A simple producer: by default each line you enter becomes a separate event on the topic. Stop it with Ctrl-C.",
+        "source": "kafka-quickstart",
+        "warning": "This writes events to the topic. Run it only against a test or local cluster."
       }
     ]
   },
@@ -259,7 +266,7 @@
       "url": "https://www.rabbitmq.com/tutorials/amqp-concepts",
       "publisher": "RabbitMQ (Broadcom)",
       "kind": "Project documentation",
-      "year": "2024",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
     },
     {
@@ -268,26 +275,56 @@
       "url": "https://kafka.apache.org/intro",
       "publisher": "Apache Software Foundation",
       "kind": "Project documentation",
-      "year": "2024",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
     },
     {
-      "id": "kafka-docs",
-      "title": "Apache Kafka Documentation",
-      "url": "https://kafka.apache.org/documentation/",
-      "publisher": "Apache Software Foundation",
-      "kind": "Project documentation",
-      "year": "2024",
-      "verifiedOn": "2026-10-11"
-    },
-    {
-      "id": "sqs-arch",
-      "title": "Amazon SQS Developer Guide: Basic Architecture",
-      "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-basic-architecture.html",
+      "id": "sqs-welcome",
+      "title": "Amazon SQS: What is Amazon Simple Queue Service?",
+      "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html",
       "publisher": "Amazon Web Services",
       "kind": "Vendor documentation",
-      "year": "2024",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "The older address for the basic architecture page now redirects to this page."
+    },
+    {
+      "id": "sqs-visibility",
+      "title": "Amazon SQS: Visibility timeout",
+      "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "sqs-dlq",
+      "title": "Amazon SQS: Using dead-letter queues",
+      "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "kafka-design",
+      "title": "Apache Kafka: Design",
+      "url": "https://kafka.apache.org/43/design/design/",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "Kafka 4.3 documentation (the address ends in /43/)."
+    },
+    {
+      "id": "kafka-quickstart",
+      "title": "Apache Kafka: Quickstart",
+      "url": "https://kafka.apache.org/quickstart/",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "The page shows Kafka 4.3.1 and says a local Java 17 or newer is needed."
     }
   ]
 }
