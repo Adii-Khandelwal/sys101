@@ -4,7 +4,7 @@ import LearnPage from "@/components/LearnPage";
 import { getAllLearn, getLearn } from "@/lib/learn";
 import { getAllTopics, getTopic } from "@/lib/topics";
 import JsonLd from "@/components/JsonLd";
-import { breadcrumbLd, learnDescription, pageMeta } from "@/lib/site";
+import { breadcrumbLd, learnDescription, pageMeta, pageTitle } from "@/lib/site";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!topic) return {};
   return pageMeta({
     path: `/topic/${topic.slug}/learn`,
-    title: `Start from zero: ${topic.title}`,
+    title: pageTitle(topic, "Start from zero: "),
     description: learnDescription(topic.title),
   });
 }

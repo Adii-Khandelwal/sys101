@@ -28,7 +28,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 ## Learn pages (start from zero)
 
 - Every topic, current and future, has a second page at /topic/<slug>/learn, titled "Start from zero: <Topic>", teaching it from 0 to 100 for a complete beginner. Not counted in "topic read"; never touches the progress store.
-- Structure: promise line ("After this you can follow the topic page and the posts"); Before you start (link prerequisite topics plus the few terms needed); 4 stages (Basics, How it works, Going deeper, In practice and trade-offs), each with an explanation in our own words, key terms, official reading (a specific section and what to read in it), an optional original SVG diagram in the site style (same build rules as topic diagrams; usually on How it works), an optional video, and an untracked "You can now" list; then Common misconceptions, Try it (commands only if confirmed in an official source), Where to go next (back to the topic page and its posts), and Sources.
+- Structure: promise line ("After this you can follow the topic page and the posts"); Before you start (link prerequisite topics plus the few terms needed); 4 stages (Basics, How it works, Going deeper, In practice and trade-offs), each with an explanation in our own words, key terms, official reading (a specific section and what to read in it), an optional original SVG diagram in the site style (same build rules as topic diagrams; usually on How it works), an optional video, and an untracked "You can now" list; then Common misconceptions, Try it (commands only if confirmed in an official source, shown as scrollable pre blocks), Where to go next (back to the topic page and its posts), and Sources.
 - Content lives in content/learn/<slug>.json, typed in lib. Pagefind indexes it with a "Start from zero" label.
 - A new topic is not done until its learn page exists.
 
@@ -67,7 +67,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 ## SEO
 
 - One absolute canonical per page from SITE_URL in lib/site.ts (env, default https://sys101.vercel.app), no query strings. Set metadata through pageMeta(), which adds Open Graph and Twitter text tags.
-- Unique title under 60 characters (pageMeta drops the site suffix when it would reach 60) and description under 155 per page, generated from content (topic: first sentence of `concept`; learn: "Start from zero: <Topic>"). No marketing words or keyword stuffing.
+- Unique title under 60 characters, always with the " · sys101" suffix (a topic may set an optional `shortTitle`, used by pageTitle in lib/site.ts when the full title plus suffix would reach 60), and a description under 155 per page that ends at a sentence or clause boundary with no ellipsis (metaDescription in lib/site.ts; the build fails on an ellipsis), generated from content (topic: first sentence of `concept`; learn: "Start from zero: <Topic>"). No marketing words or keyword stuffing.
 - Exactly one H1 and no skipped heading levels. Content must be in the HTML and render without JavaScript.
 - app/sitemap.ts lists every indexable page with lastmod from content dates (newest verifiedOn; PAGE_DATES for About, Terms, Privacy). robots.txt allows all and points to it. /data and the 404 are noindex and left out.
 - JSON-LD only where it matches visible content: BreadcrumbList on topic and learn pages, LearningResource on topic pages. No FAQ schema.

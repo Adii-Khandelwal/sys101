@@ -88,6 +88,8 @@ export const CONCEPT_SECTION_IDS = ["why", "model", "how", "example", "mistakes"
 export type Topic = {
   slug: string;
   title: string;
+  /** A shorter name for page titles when the full title with the site name would reach 60 characters. */
+  shortTitle?: string;
   group?: Group;
   concept: string;
   prerequisites: string[];
@@ -271,6 +273,9 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
     if (`${topic.slug}.json` !== file) problems.push(`${file}: slug "${topic.slug}" does not match the file name`);
     if (slugs.has(topic.slug)) problems.push(`${file}: duplicate slug "${topic.slug}"`);
     slugs.add(topic.slug);
+    if (topic.shortTitle !== undefined && (!nonEmpty(topic.shortTitle) || topic.shortTitle.length >= topic.title.length)) {
+      problems.push(`${file}: shortTitle must be a non-empty name shorter than the title`);
+    }
     if (topic.group && !GROUPS.includes(topic.group)) problems.push(`${file}: unknown group "${topic.group}"`);
   }
 

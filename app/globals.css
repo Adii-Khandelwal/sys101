@@ -2386,16 +2386,34 @@ body {
 .learn-try li {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   padding: 10px 0;
   border-bottom: 1px solid var(--rule);
 }
 
-.learn-try code {
+/* Commands and YAML are real code blocks: they scroll sideways inside their own box and never widen the page. */
+.learn-code {
+  margin: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 10px 14px;
+  border: 1px solid var(--rule);
+  background: var(--skeleton);
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 15px;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap; /* keeps the indentation of a multi-line example */
+  font-size: 14px;
+  line-height: 1.55;
+  tab-size: 2;
+  white-space: pre;
+  -webkit-overflow-scrolling: touch;
+}
+
+.learn-code code {
+  font: inherit;
+}
+
+.learn-code:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .cite {

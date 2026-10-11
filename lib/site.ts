@@ -19,28 +19,46 @@ export const PAGE_DATES = { about: "2026-10-11", terms: "2026-10-11", privacy: "
 
 export const absoluteUrl = (path: string) => SITE_URL + (path === "/" ? "" : path);
 
-/** Shortens to max characters at a word boundary. */
-export function clip(text: string, max: number): string {
+/** A meta description must be shorter than this many characters (checked by scripts/check-seo.mjs). */
+export const DESC_MAX = 155;
+
+/**
+ * A meta description that ends at a sentence or clause boundary and is shorter than DESC_MAX, with no
+ * ellipsis. It is the first full sentence when that fits. If not, it is the text up to the last clause
+ * boundary (a comma, semicolon, colon or dash) that fits, plus a period. Only when there is no clause
+ * boundary at all does it cut at a word.
+ */
+export function metaDescription(text: string, limit = DESC_MAX): string {
+  const max = limit - 1;
   const flat = text.replace(/\s+/g, " ").trim();
-  if (flat.length <= max) return flat;
-  const cut = flat.slice(0, max - 1);
-  return cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:]$/, "") + "…";
+  const first = flat.match(/^.+?[.!?](?=\s|$)/);
+  const sentence = first ? first[0] : flat;
+  const closed = /[.!?]$/.test(sentence) ? sentence : `${sentence}.`;
+  if (closed.length <= max) return closed;
+  const body = sentence.replace(/[.!?]$/, "");
+  let cut = -1;
+  for (const m of body.matchAll(/[,;:]\s|\s[\u2013\u2014]\s/g)) if (m.index! <= max - 1) cut = m.index!;
+  if (cut > 0) return `${body.slice(0, cut)}.`;
+  const words = body.slice(0, max - 1);
+  return `${words.slice(0, words.lastIndexOf(" ")).replace(/[,;:\s]+$/, "")}.`;
 }
 
-/** First sentence of a paragraph, clipped to a meta description length. */
-export function firstSentence(text: string, max = 155): string {
-  const match = text.match(/^.+?[.!?](?=\s|$)/);
-  return clip(match ? match[0] : text, max);
+/**
+ * A page title: the full name, or the topic's shortTitle when the full title with the site suffix
+ * would reach TITLE_MAX characters. `prefix` is text before the name, such as "Start from zero: ".
+ */
+export function pageTitle(name: { title: string; shortTitle?: string }, prefix = ""): string {
+  const full = `${prefix}${name.title}`;
+  return name.shortTitle && `${full} · ${SITE_NAME}`.length >= TITLE_MAX ? `${prefix}${name.shortTitle}` : full;
 }
 
 /**
  * Per-page metadata: one canonical URL without query strings, plus Open Graph
  * and Twitter text tags. `title` is the bare page title; the layout adds the suffix.
  */
-export function pageMeta({ path, title: given, description }: { path: string; title: string | { absolute: string }; description: string }): Metadata {
+export function pageMeta({ path, title, description: raw }: { path: string; title: string | { absolute: string }; description: string }): Metadata {
   const url = absoluteUrl(path);
-  // A long title leaves no room for the site name under the 60-character limit, so it goes without.
-  const title = typeof given === "string" && `${given} · ${SITE_NAME}`.length >= TITLE_MAX ? { absolute: given } : given;
+  const description = metaDescription(raw);
   const fullTitle = typeof title === "string" ? `${title} · ${SITE_NAME}` : title.absolute;
   return {
     title,
@@ -61,7 +79,7 @@ export const learnUpdated = (learn: Pick<Learn, "sources">) => latest(learn.sour
 
 /** Learn page description, unique per topic and matching the note under its heading. */
 export const learnDescription = (title: string) =>
-  clip(`A beginner's path through ${title} in four stages, from the basics to trade-offs, built only from official sources.`, 155);
+  metaDescription(`A beginner's path through ${title} in four stages, from the basics to trade-offs, built only from official sources.`);
 
 type Crumb = { name: string; path: string };
 
@@ -80,7 +98,7 @@ export function topicLd(topic: Topic, prerequisites: Pick<Topic, "title">[]) {
     "@context": "https://schema.org",
     "@type": "LearningResource",
     name: topic.title,
-    description: firstSentence(topic.concept),
+    description: metaDescription(topic.concept),
     url: absoluteUrl(`/topic/${topic.slug}`),
     inLanguage: "en",
     learningResourceType: "Lesson",

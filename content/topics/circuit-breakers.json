@@ -1,6 +1,7 @@
 {
   "slug": "circuit-breakers",
   "title": "Circuit Breakers and Load Shedding",
+  "shortTitle": "Circuit Breakers",
   "group": "Reliability",
   "concept": "A circuit breaker stops a client from calling a failing dependency for a while, so calls fail fast instead of piling up, and load shedding makes an overloaded server reject some requests, lowest priority first, so the rest are served in time. One protects the caller and the other protects the server, and both depend on when they act and on what their probes or limits can actually see.",
   "prerequisites": [

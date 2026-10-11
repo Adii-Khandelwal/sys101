@@ -5,7 +5,7 @@ import TopicLesson from "@/components/TopicLesson";
 import { getAllTopics, getDependents, getTopic } from "@/lib/topics";
 import { getLearn } from "@/lib/learn";
 import JsonLd from "@/components/JsonLd";
-import { breadcrumbLd, firstSentence, pageMeta, topicLd } from "@/lib/site";
+import { breadcrumbLd, pageMeta, pageTitle, topicLd } from "@/lib/site";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -21,7 +21,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const topic = getTopic((await params).slug);
   if (!topic) return {};
-  return pageMeta({ path: `/topic/${topic.slug}`, title: topic.title, description: firstSentence(topic.concept) });
+  return pageMeta({ path: `/topic/${topic.slug}`, title: pageTitle(topic), description: topic.concept });
 }
 
 export default async function TopicPage({ params }: Props) {
