@@ -578,15 +578,21 @@ export default function GraphView({ nodes, edges }: Props) {
           // Opaque: the node, its whole prerequisite chain and its dependents,
           // or every node of the clicked group.
           const near = !highlighting || highlightRef.current.has(slug);
+          // A node in the highlighted set, while something is highlighting: its
+          // outline darkens and thickens so the lit nodes read as one set with
+          // the darkened edges, not just "not faded".
+          const lit = highlighting && near;
           // Ready: unread with every prerequisite read. A thicker outline and a centre dot, so it reads without colour.
           const ready = !isRead && (prereqsRef.current.get(slug) ?? []).every((p) => readRef.current.includes(p));
           const fill = isRead ? ACCENT : PAPER;
-          const border = isRead ? (isActive ? ACCENT_DARK : ACCENT) : isActive ? INK : INK_SOFT;
+          // Lit nodes take the strong ink (read: darker rust); otherwise the usual soft outline.
+          const border = isRead ? (isActive || lit ? ACCENT_DARK : ACCENT) : isActive || lit ? INK : INK_SOFT;
+          const baseSize = ready ? 3 : 1.5;
           return {
             ...data,
             color: near ? fill : fade(fill),
             borderColor: near ? border : fade(border),
-            borderSize: ready ? 3 : 1.5,
+            borderSize: lit ? baseSize + 1 : baseSize,
             dotColor: ready ? (near ? border : fade(border)) : near ? fill : fade(fill),
             labelColor: near ? INK : FADED_LABEL, // faded labels keep AA contrast
             zIndex: near ? 1 : 0,
