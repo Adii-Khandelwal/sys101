@@ -1,0 +1,272 @@
+{
+  "slug": "distributed-transactions",
+  "promise": "After this you can follow the topic page and the posts.",
+  "before": {
+    "prerequisites": [
+      "consensus",
+      "sharding"
+    ],
+    "terms": [
+      {
+        "term": "Transaction",
+        "definition": "A group of changes that must happen all-or-nothing: either all commit or none do."
+      },
+      {
+        "term": "Shard",
+        "definition": "One partition of the data, on its own machine; a distributed transaction spans several."
+      },
+      {
+        "term": "Commit and roll back",
+        "definition": "Commit makes a transaction's changes permanent; roll back discards them."
+      }
+    ],
+    "note": "Read Consensus and Sharding first: a distributed transaction coordinates changes across shards and relies on consensus to record its decision durably. The terms below are enough to begin."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "A single database hands you atomic transactions: begin, change several rows, commit, and either all the changes stick or none do. Once the data is sharded across machines, or split across services that each own a database, that guarantee disappears. A distributed transaction restores all-or-nothing across machines, so a transfer that debits one shard and credits another never leaves money debited but not credited.",
+        "There are two broad ways to get it. The strict way is a coordination protocol, classically two-phase commit, that makes every participant agree before anything becomes final. The looser way is the Saga pattern, which Microsoft describes as maintaining data consistency across services by coordinating a sequence of local transactions, each committed in its own service [[ms-saga]]. The strict way keeps strong isolation but holds locks; the saga gives that up for resilience.",
+        "Modern distributed databases offer the strict guarantee directly. CockroachDB, for example, bundles multiple SQL statements into a single all-or-nothing transaction with ACID semantics spanning arbitrary tables and rows, even when the data is distributed [[crdb-txns]]. Understanding what that costs, and when a saga is the better trade, is the point of this topic."
+      ],
+      "terms": [
+        {
+          "term": "Distributed transaction",
+          "definition": "A transaction whose changes span multiple shards or services, committed all-or-nothing."
+        },
+        {
+          "term": "Atomicity",
+          "definition": "The all-or-nothing property: either every part of the transaction commits or none does."
+        },
+        {
+          "term": "Two-phase commit",
+          "definition": "A protocol that gets every participant to agree before any change becomes final."
+        },
+        {
+          "term": "Saga",
+          "definition": "A sequence of local transactions, each with a compensating action if a later step fails."
+        }
+      ],
+      "reading": [
+        {
+          "source": "crdb-txns",
+          "section": "Transactions: ACID across distributed tables and rows",
+          "what": "What a modern distributed database promises: all-or-nothing SQL transactions even when data is sharded."
+        },
+        {
+          "source": "ms-saga",
+          "section": "Saga pattern: the looser alternative to a strict protocol",
+          "what": "How a saga keeps consistency with local transactions instead of one global commit."
+        }
+      ],
+      "canNow": [
+        "Say why sharding breaks the free single-database transaction.",
+        "Name the two broad approaches: a strict protocol and a saga.",
+        "Give an example of a database offering distributed ACID transactions."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "Two-phase commit uses a coordinator and participants. In the prepare phase the coordinator asks every participant to make its change durable and vote; in the commit phase, if all voted yes, the coordinator durably records \"commit\" and tells everyone to finalise, otherwise it records \"abort\" and everyone rolls back. The single most important moment is the commit point: the instant the decision is recorded, after which the outcome is fixed even across crashes.",
+        "That recorded decision has to survive failures, which is why distributed transactions sit on consensus: each participant's prepared state and the coordinator's decision are replicated so a crash cannot lose them. CockroachDB builds exactly this kind of protocol and keeps SERIALIZABLE isolation while a transaction is pending, isolating it from other concurrent transactions [[crdb-txns]]. The prepared-but-not-visible state is what lets isolation hold until the commit point.",
+        "A saga works differently: there is no global prepare. Each step commits locally and, if a later step fails, the saga runs compensating transactions to reverse the earlier ones. Microsoft notes that a saga has a pivot transaction, the point of no return after which steps only retry forward rather than compensate back [[ms-saga]]. So 2PC decides once and finalises; a saga commits as it goes and undoes on failure."
+      ],
+      "terms": [
+        {
+          "term": "Coordinator",
+          "definition": "The component that drives two-phase commit and records the decision."
+        },
+        {
+          "term": "Prepare phase",
+          "definition": "Each participant makes its change durable and votes yes or no, but nothing is visible yet."
+        },
+        {
+          "term": "Commit point",
+          "definition": "The instant the coordinator durably records the decision; the outcome is then final."
+        },
+        {
+          "term": "Pivot transaction",
+          "definition": "In a saga, the step after which the workflow can only go forward, not compensate back."
+        }
+      ],
+      "reading": [
+        {
+          "source": "crdb-txns",
+          "section": "Transaction semantics and SERIALIZABLE isolation",
+          "what": "How a pending distributed transaction stays isolated until it commits."
+        },
+        {
+          "source": "ms-saga",
+          "section": "Saga: local transactions, compensation, and the pivot transaction",
+          "what": "How a saga commits step by step and undoes with compensations on failure."
+        }
+      ],
+      "canNow": [
+        "Walk through the two phases of 2PC and name the commit point.",
+        "Explain why the decision must be durable, linking to consensus.",
+        "Describe how a saga differs: local commits plus compensations."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 150\" role=\"img\" aria-labelledby=\"dg-learn-dtx-how-t\" class=\"dg\"><title id=\"dg-learn-dtx-how-t\">Two-phase commit versus a saga: 2PC prepares all participants, records a durable commit point, then finalises all; a saga commits each step locally and runs compensating transactions in reverse if a later step fails.</title><defs><marker id=\"dg-learn-dtx-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"150\" y=\"20\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">2PC</text><rect x=\"60\" y=\"30\" width=\"180\" height=\"26\" class=\"dg-box\"/><text x=\"150\" y=\"47.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">prepare: all vote</text><rect x=\"60\" y=\"62\" width=\"180\" height=\"26\" class=\"dg-box dg-accent\"/><text x=\"150\" y=\"79.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">commit point (durable)</text><rect x=\"60\" y=\"94\" width=\"180\" height=\"26\" class=\"dg-box\"/><text x=\"150\" y=\"111.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">finalise all</text><path d=\"M150,56 L150,62\" class=\"dg-line\" marker-end=\"url(#dg-learn-dtx-how-a)\"/><path d=\"M150,88 L150,94\" class=\"dg-line\" marker-end=\"url(#dg-learn-dtx-how-a)\"/><text x=\"410\" y=\"20\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">saga</text><rect x=\"320\" y=\"34\" width=\"70\" height=\"26\" class=\"dg-box\"/><text x=\"355\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">step 1</text><rect x=\"320\" y=\"68\" width=\"70\" height=\"26\" class=\"dg-box\"/><text x=\"355\" y=\"85.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">step 2 fails</text><rect x=\"430\" y=\"34\" width=\"100\" height=\"26\" class=\"dg-box\"/><text x=\"480\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">compensate 1</text><path d=\"M390,47 L430,47\" class=\"dg-line\" marker-end=\"url(#dg-learn-dtx-how-a)\"/><path d=\"M355,94 L355,112 L480,112 L480,60\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-learn-dtx-how-a)\"/><text x=\"280\" y=\"140\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">2PC: decide once, hold locks; saga: commit as you go, undo with compensations</text></svg>"
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "A subtlety of two-phase commit is that participants hold their prepared changes locked from the prepare phase until they hear the decision. If the coordinator is slow or crashes, those locks are held longer, blocking other work on the same data, which is why long or wide 2PC transactions hurt throughput. CockroachDB keeps the transaction isolated with SERIALIZABLE semantics precisely so concurrent transactions never see the half-applied state, but that isolation is what the locks pay for [[crdb-txns]].",
+        "A saga avoids held locks by committing each step immediately, but it pays a different price: intermediate states are visible, and every step needs a correct compensating transaction. Microsoft stresses that compensations must be idempotent and retryable, because the saga may re-run them, and that some steps are not cleanly reversible, which is why the pivot transaction marks where you can no longer compensate and must instead retry forward [[ms-saga]]. Designing those compensations is the real work of a saga.",
+        "The hardest truth is that some operations cannot be perfectly undone. You can refund a charge, but you cannot un-send an email. Spanner's documentation frames the strict side: it offers transactions with the strongest isolation so that application code does not have to reason about anomalies [[spanner-txns]]. The choice between 2PC and a saga is really a choice about whether you can afford strict isolation and held locks, or whether you must stay lock-free and design careful compensations instead."
+      ],
+      "terms": [
+        {
+          "term": "Held lock",
+          "definition": "A prepared participant keeps its data locked until the commit decision, blocking other work."
+        },
+        {
+          "term": "Compensating transaction",
+          "definition": "An action that semantically undoes a committed saga step, such as a refund for a charge."
+        },
+        {
+          "term": "Idempotent",
+          "definition": "Safe to run more than once with the same effect, required for saga steps and compensations."
+        },
+        {
+          "term": "Serializable isolation",
+          "definition": "The strongest isolation: transactions behave as if run one at a time, hiding concurrency anomalies."
+        }
+      ],
+      "reading": [
+        {
+          "source": "crdb-txns",
+          "section": "SERIALIZABLE isolation and transaction limits",
+          "what": "What strict isolation gives you and why it implies holding state until commit."
+        },
+        {
+          "source": "ms-saga",
+          "section": "Issues and considerations: idempotent, retryable compensations",
+          "what": "Why saga compensations are the hard part and what the pivot transaction means."
+        }
+      ],
+      "canNow": [
+        "Explain why 2PC holds locks and how that affects throughput.",
+        "Say what a saga pays instead: visible intermediate states and compensations.",
+        "Recognise that some steps cannot be undone, shaping the choice."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "In practice, pick by the shape of the work. If the data lives in one distributed database that offers ACID transactions, use them: CockroachDB bundles the statements into one all-or-nothing transaction even across shards, and you get strong isolation for free [[crdb-txns]]. If the work spans independent services that each own a database and may run for a long time, a saga usually wins, because a global 2PC lock across services would cripple availability [[ms-saga]].",
+        "Watch the costs each side hides. Two-phase commit's cost is latency and locking: every participant waits for the decision, and its data is locked until then, so wide or slow transactions reduce concurrency. The topic's CockroachDB post shows one answer, pipelining the consensus rounds so the latency drops without weakening the guarantee. A saga's cost is design effort and exposure: you must write and test a compensation for every step and accept that other readers may briefly see an in-progress workflow.",
+        "The strongest practical guidance is to keep distributed transactions rare and small. Model data so that most transactions stay within a single shard or service, where a local transaction suffices; reserve 2PC or sagas for the genuinely cross-boundary cases. Spanner's docs make the same point by giving the strict guarantee but encouraging you to keep transactions tight, because the fewer participants and the shorter the transaction, the less you pay [[spanner-txns]]."
+      ],
+      "terms": [
+        {
+          "term": "Single-shard transaction",
+          "definition": "A transaction whose data all lives on one shard, so a local transaction suffices and is cheap."
+        },
+        {
+          "term": "Orchestration vs choreography",
+          "definition": "A saga driven by a central orchestrator, versus steps that trigger each other through events."
+        },
+        {
+          "term": "Transaction latency",
+          "definition": "The time to coordinate and commit, dominated by participant round trips in 2PC."
+        },
+        {
+          "term": "Blast radius",
+          "definition": "How much other work a transaction blocks; smaller, shard-local transactions keep it low."
+        }
+      ],
+      "reading": [
+        {
+          "source": "spanner-txns",
+          "section": "Transactions overview and best practices",
+          "what": "Why strong transactions are offered but kept small, and how participants drive cost."
+        },
+        {
+          "source": "ms-saga",
+          "section": "When to use the Saga pattern",
+          "what": "Which cross-service workflows suit a saga over a strict protocol."
+        }
+      ],
+      "canNow": [
+        "Choose 2PC, a saga, or a local transaction for a given workflow.",
+        "Name the hidden cost on each side: locking/latency versus compensation design.",
+        "Explain why keeping transactions shard-local and small is the best default."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "You can just write to each shard in turn and it will be fine.",
+      "truth": "A crash between writes leaves a partial result; all-or-nothing needs a commit protocol or a saga [[crdb-txns]]."
+    },
+    {
+      "myth": "Two-phase commit is free once all participants vote yes.",
+      "truth": "Participants hold locks from prepare until the decision, so wide or slow 2PC transactions block other work [[crdb-txns]]."
+    },
+    {
+      "myth": "A saga is simpler because it has no coordinator.",
+      "truth": "A saga needs a correct, idempotent compensation for every step, and some steps cannot be cleanly undone [[ms-saga]]."
+    },
+    {
+      "myth": "Strong distributed transactions mean you never think about transaction cost.",
+      "truth": "They are offered but should be kept small and shard-local, because cost grows with participants and duration [[spanner-txns]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These use the SQL shell for CockroachDB against a local or test cluster to run an all-or-nothing transaction across rows that may live on different shards. Output depends on your cluster, so it is not shown here. The statements are documented in the CockroachDB docs.",
+    "commands": [
+      {
+        "command": "BEGIN;",
+        "shows": "Starting a transaction that will commit all-or-nothing across whatever rows it touches.",
+        "source": "crdb-txns"
+      },
+      {
+        "command": "UPDATE accounts SET balance = balance - 100 WHERE id = 'x'; UPDATE accounts SET balance = balance + 100 WHERE id = 'y';",
+        "shows": "Two writes that may land on different shards but will commit together or not at all.",
+        "source": "crdb-txns"
+      },
+      {
+        "command": "COMMIT;",
+        "shows": "Reaching the commit point: both updates become durable together, coordinated across shards.",
+        "source": "crdb-txns"
+      }
+    ]
+  },
+  "next": "Go back to the Distributed Transactions topic page for the worked example and the quiz, then read the Percolator paper and CockroachDB's pipelining post for how such transactions are built and made fast. From here, Failover keeps the coordinator and participants alive, and the saga alternative connects to Message Queues and Event-driven Architecture.",
+  "sources": [
+    {
+      "id": "crdb-txns",
+      "title": "CockroachDB: Transactions",
+      "url": "https://www.cockroachlabs.com/docs/stable/transactions",
+      "publisher": "Cockroach Labs",
+      "kind": "Vendor documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "ms-saga",
+      "title": "Saga design pattern",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/saga",
+      "publisher": "Microsoft",
+      "kind": "Vendor documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "spanner-txns",
+      "title": "Cloud Spanner: Transactions",
+      "url": "https://cloud.google.com/spanner/docs/transactions",
+      "publisher": "Google Cloud",
+      "kind": "Vendor documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    }
+  ]
+}
