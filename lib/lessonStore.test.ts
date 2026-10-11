@@ -1,3 +1,4 @@
+import { optionId } from "./quizIds";
 import { describe, expect, it } from "vitest";
 import {
   CONCEPT_SECTIONS,
@@ -23,20 +24,21 @@ import {
   resetAll,
   resetTopic,
   exportName,
+  migrateAnswers,
   type LessonMeta,
   type Progress,
 } from "./lessonStore";
 
-const meta: LessonMeta = { slug: "dns", postIds: ["cloudflare-dns-builds-2022", "slack-dnssec-2021"], correct: [1, 3, 1, 1, 1, 1] };
+const meta: LessonMeta = { slug: "dns", postIds: ["cloudflare-dns-builds-2022", "slack-dnssec-2021"], correct: ["c0", "c1", "c2", "c3", "c4", "c5"] };
 
 const allConcept = (p: Progress) => CONCEPT_SECTIONS.reduce((s, id) => toggleUnit(s, meta, id), p);
-const answerAll = (p: Progress, pick: (i: number) => number) => meta.correct.reduce((s, _, i) => answer(s, "dns", i, pick(i)), p);
+const answerAll = (p: Progress, pick: (i: number) => string) => meta.correct.reduce((s, _, i) => answer(s, "dns", i, pick(i)), p);
 
 describe("derived read flag", () => {
   it("is read only with every concept section, a complete quiz and every post", () => {
     let p = allConcept(emptyProgress());
     expect(isTopicRead(p, meta)).toBe(false);
-    p = answerAll(p, () => 0); // all answered, mostly wrong: still complete
+    p = answerAll(p, () => "x"); // all answered, mostly wrong: still complete
     expect(isTopicRead(p, meta)).toBe(false);
     p = toggleUnit(p, meta, meta.postIds[0]);
     expect(isTopicRead(p, meta)).toBe(false);
@@ -79,7 +81,8 @@ describe("corrupt or missing storage", () => {
     const raw = JSON.stringify({ version: 2, posts: ["slack-dnssec-2021", 7], topics: { dns: { done: ["why", null], answers: { 0: 1, x: 2, 1: -1 } } } });
     const p = parseProgress(raw)!;
     expect(p.posts).toEqual(["slack-dnssec-2021"]);
-    expect(p.topics.dns).toEqual({ done: ["why"], visited: [], answers: { 0: 1 } });
+    // v2 stored a position; it is upgraded to the id of the option that was in that position.
+    expect(p.topics.dns).toEqual({ done: ["why"], visited: [], answers: { 0: optionId("When its cached copy's TTL runs out and it asks again") } });
   });
 });
 
@@ -101,10 +104,48 @@ describe("import validation", () => {
   });
 });
 
+describe("answers keyed by option id", () => {
+  const ttl = optionId("When its cached copy's TTL runs out and it asks again");
+
+  it("upgrades v2 positions using the old option order and drops what cannot be mapped", () => {
+    expect(migrateAnswers("dns", { 0: 1, 1: 3, 2: 9, 77: 0, x: 1, 3: -1 })).toEqual({
+      0: ttl,
+      1: optionId("The servers that are authoritative for example.com"),
+    });
+    expect(migrateAnswers("unknown-topic", { 0: 0 })).toEqual({});
+  });
+
+  it("keeps other progress when an old record is upgraded", () => {
+    const raw = JSON.stringify({ version: 2, posts: ["slack-dnssec-2021"], topics: { dns: { done: ["why", "model"], visited: ["why"], last: "model", answers: { 0: 1 } } } });
+    const p = parseProgress(raw)!;
+    expect(p.version).toBe(3);
+    expect(p.posts).toEqual(["slack-dnssec-2021"]);
+    expect(p.topics.dns).toEqual({ done: ["why", "model"], visited: ["why"], last: "model", answers: { 0: ttl } });
+  });
+
+  it("reads v3 answers as ids and ignores numbers", () => {
+    const raw = JSON.stringify({ version: 3, posts: [], topics: { dns: { done: [], visited: [], answers: { 0: ttl, 1: 2 } } } });
+    expect(parseProgress(raw)!.topics.dns.answers).toEqual({ 0: ttl });
+  });
+
+  it("imports a v2 export by upgrading its answers", () => {
+    const v2 = { app: "sys101", version: 2, exportedAt: "2026-10-01T00:00:00.000Z", read: [], progress: { version: 2, posts: [], topics: { dns: { done: [], visited: [], answers: { 0: 1 } } } } };
+    const r = validateImport(JSON.stringify(v2), { slugs: ["dns"], postIds: [] });
+    expect(r.ok && r.progress.topics.dns.answers).toEqual({ 0: ttl });
+    expect(r.ok && r.progress.version).toBe(3);
+  });
+
+  it("an option keeps its id when the options are reordered", () => {
+    const a = ["x", "y", "z"].map(optionId);
+    const b = ["z", "x", "y"].map(optionId);
+    expect(b).toEqual([a[2], a[0], a[1]]);
+  });
+});
+
 describe("quiz scoring and retry", () => {
   it("scores answers, counts complete once all are answered, and retries", () => {
-    let p = answer(emptyProgress(), "dns", 0, 1); // right
-    p = answer(p, "dns", 1, 0); // wrong
+    let p = answer(emptyProgress(), "dns", 0, "c0"); // right
+    p = answer(p, "dns", 1, "nope"); // wrong
     expect(quizScore(p, meta)).toEqual({ answered: 2, correct: 1, total: 6 });
     expect(quizComplete(p, meta)).toBe(false);
     p = answerAll(p, (i) => meta.correct[i]);
@@ -121,7 +162,7 @@ describe("progress header text", () => {
     expect(summary(p, meta)).toMatchObject({ done: 0, total: 8, action: "Start", target: "why" });
     p = toggleUnit(p, meta, "why");
     expect(summary(p, meta)).toMatchObject({ done: 1, action: "Continue", target: "model" });
-    p = answerAll(allConcept(emptyProgress()), () => 0);
+    p = answerAll(allConcept(emptyProgress()), () => "x");
     p = toggleUnit(toggleUnit(p, meta, meta.postIds[0]), meta, meta.postIds[1]);
     expect(summary(p, meta)).toMatchObject({ done: 8, action: "Review", target: "why" });
     expect(summary(p, meta).segments.map((s) => s.group)).toEqual([
@@ -135,7 +176,7 @@ describe("finish topic", () => {
     let p = markAllDone(emptyProgress(), meta);
     expect(summary(p, meta).done).toBe(7);
     expect(isTopicRead(p, meta)).toBe(false);
-    p = answerAll(p, () => 0);
+    p = answerAll(p, () => "x");
     expect(isTopicRead(p, meta)).toBe(true);
     expect(markAllDone(p, meta)).toEqual(p);
   });
@@ -151,10 +192,10 @@ describe("read marks from before lesson tracking", () => {
 });
 
 describe("your data: export, import, merge, reset", () => {
-  const lb: LessonMeta = { slug: "load-balancing", postIds: ["uber-dynamic-subsetting-2022", "dropbox-robinhood-2024"], correct: [0, 0, 1, 0, 1, 0] };
+  const lb: LessonMeta = { slug: "load-balancing", postIds: ["uber-dynamic-subsetting-2022", "dropbox-robinhood-2024"], correct: ["c0", "c1", "c2", "c3", "c4", "c5"] };
   const metas = [meta, lb];
   const known = { slugs: ["dns", "load-balancing"], postIds: [...meta.postIds, ...lb.postIds] };
-  const started = answer(toggleUnit(toggleUnit(emptyProgress(), meta, "why"), meta, "cloudflare-dns-builds-2022"), "dns", 0, 1);
+  const started = answer(toggleUnit(toggleUnit(emptyProgress(), meta, "why"), meta, "cloudflare-dns-builds-2022"), "dns", 0, "c0");
 
   it("round-trips an export through import unchanged, with a dated file name", () => {
     const file = JSON.stringify(exportFile(started, ["dns"], new Date("2026-10-11T12:00:00Z"), { dns: "2026-10-11T12:00:00.000Z" }));
@@ -169,10 +210,10 @@ describe("your data: export, import, merge, reset", () => {
   });
 
   it("merge keeps the more complete value; replace uses only the file", () => {
-    const here = answer(toggleUnit(emptyProgress(), lb, "why"), "dns", 0, 2);
+    const here = answer(toggleUnit(emptyProgress(), lb, "why"), "dns", 0, "c9");
     const merged = mergeProgress(here, started);
     expect(merged.topics.dns.done).toEqual(["why"]);
-    expect(merged.topics.dns.answers).toEqual({ 0: 2 }); // the answer already given here is kept
+    expect(merged.topics.dns.answers).toEqual({ 0: "c9" }); // the answer already given here is kept
     expect(merged.topics["load-balancing"].done).toEqual(["why"]);
     expect(merged.posts).toEqual(["cloudflare-dns-builds-2022"]);
     expect(diffSummary(here, merged, metas)).toEqual({ topics: 1, items: 2 });
@@ -181,9 +222,9 @@ describe("your data: export, import, merge, reset", () => {
 
   it("rejects invalid and wrong-version files whole, and ignores unknown topics with a count", () => {
     const good = JSON.parse(JSON.stringify(exportFile(started, ["dns"])));
-    expect(validateImport(JSON.stringify({ ...good, version: 3 }), known).ok).toBe(false);
+    expect(validateImport(JSON.stringify({ ...good, version: 9 }), known).ok).toBe(false);
     const badType = structuredClone(good);
-    badType.progress.topics.dns.answers = { 0: "one" };
+    badType.progress.topics.dns.answers = { 0: 1 };
     expect(validateImport(JSON.stringify(badType), known).ok).toBe(false);
     const badList = structuredClone(good);
     badList.progress.topics.dns.done = "why";
@@ -214,7 +255,7 @@ describe("your data: export, import, merge, reset", () => {
 
   it("treats corrupt storage as unreadable rather than throwing", () => {
     expect(parseProgress("{not json")).toBeNull();
-    expect(parseProgress(JSON.stringify({ version: 2, topics: "x" }))).toEqual({ version: 2, topics: {}, posts: [] });
+    expect(parseProgress(JSON.stringify({ version: 2, topics: "x" }))).toEqual({ version: 3, topics: {}, posts: [] });
     expect(loadProgress((k) => (k === "sys101:progress" ? "{broken" : null))).toEqual(emptyProgress());
   });
 });

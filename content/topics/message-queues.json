@@ -278,31 +278,31 @@
       {
         "question": "Why put a queue between a web request and slow work like sending notifications?",
         "options": [
-          "So the request can return at once and the work survives slowdowns",
           "To make the work run faster",
-          "To avoid storing the work anywhere"
+          "To avoid storing the work anywhere",
+          "So the request can return at once and the work survives slowdowns"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "The producer records the work and returns; consumers do it later, and a burst becomes a backlog instead of failed requests.",
         "wrong": [
-          "",
           "The work takes as long as before; it just no longer blocks the request.",
-          "A queue exists precisely to store the work until it is done."
+          "A queue exists precisely to store the work until it is done.",
+          ""
         ],
         "teaches": "why"
       },
       {
         "question": "A consumer takes a message, then crashes before acknowledging it. With at-least-once delivery, what happens?",
         "options": [
-          "The message is delivered again when its lease runs out",
           "The message is lost",
+          "The message is delivered again when its lease runs out",
           "The queue stops"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Unacknowledged messages come back after the lease, which is what makes delivery reliable.",
         "wrong": [
-          "",
           "Losing it is what at-most-once allows, not at-least-once.",
+          "",
           "The queue carries on; only that message is retried."
         ],
         "teaches": "model"
@@ -342,15 +342,15 @@
       {
         "question": "A message fails every time it is processed. What should the queue do?",
         "options": [
-          "Retry with growing delays, then set it aside after a limit",
           "Retry immediately forever",
+          "Retry with growing delays, then set it aside after a limit",
           "Delete it on the first failure"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Backoff avoids flooding, and a dead-letter queue stops one bad message from blocking the rest while keeping it for diagnosis.",
         "wrong": [
-          "",
           "Endless instant retries waste capacity and can block other messages.",
+          "",
           "Deleting on first failure loses work that might succeed on a retry."
         ],
         "teaches": "how"
@@ -358,16 +358,16 @@
       {
         "question": "Why did Slack's Redis-based queue lock up during a slowdown?",
         "options": [
-          "Its backlog lived in memory, and when memory filled it could neither add nor remove jobs",
           "Kafka was down",
-          "Workers acknowledged too early"
+          "Workers acknowledged too early",
+          "Its backlog lived in memory, and when memory filled it could neither add nor remove jobs"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "In-memory storage made a slowdown into a full outage; a durable log in front turns it into a backlog.",
         "wrong": [
-          "",
           "Kafka was what Slack added afterwards to fix this.",
-          "The failure was about memory, not acknowledgments."
+          "The failure was about memory, not acknowledgments.",
+          ""
         ],
         "teaches": "mistakes"
       }

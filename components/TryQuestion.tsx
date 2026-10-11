@@ -6,8 +6,6 @@ import type { LessonQuestion } from "@/lib/topics";
 
 type Props = { slug: string; topicTitle: string; question: Pick<LessonQuestion, "question" | "options" | "correct" | "why" | "wrong"> };
 
-const LETTERS = "ABCDEFGH";
-
 /**
  * One real quiz question as a taste of a topic. The choice lives in component
  * state only: it never touches the progress store, and a reload starts fresh.
@@ -43,11 +41,12 @@ export default function TryQuestion({ slug, topicTitle, question: q }: Props) {
         {chosen !== null && (
           <>
             <p>
-              <strong>{right ? "Right." : `Not quite: the answer is ${LETTERS[q.correct]}.`}</strong> {q.why}
+              <strong>{right ? "Right." : "Not quite."}</strong> {right ? "" : <>The answer is &ldquo;{q.options[q.correct]}&rdquo;. </>}
+              {q.why}
             </p>
             {!right && (
               <p className="try-wrong">
-                <strong>Not {LETTERS[chosen]}:</strong> {q.wrong[chosen]}
+                <strong>&ldquo;{q.options[chosen]}&rdquo; is wrong:</strong> {q.wrong[chosen]}
               </p>
             )}
             <p>

@@ -303,31 +303,31 @@
       {
         "question": "A query does not include the shard key. What happens?",
         "options": [
-          "It must go to every shard",
           "It fails",
-          "It goes to a random shard"
+          "It goes to a random shard",
+          "It must go to every shard"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "Without the key the router cannot tell which shard has the rows, so it asks them all.",
         "wrong": [
-          "",
           "It works, just at higher cost.",
-          "A random shard would miss most rows."
+          "A random shard would miss most rows.",
+          ""
         ],
         "teaches": "model"
       },
       {
         "question": "What makes a good shard key?",
         "options": [
-          "One most queries include, shared by tables queried together",
           "A timestamp",
+          "One most queries include, shared by tables queried together",
           "Any column with few values"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Queries with the key stay on one shard, and joins within a key still work.",
         "wrong": [
-          "",
           "Time keys tend to pile new writes onto one shard.",
+          "",
           "Few values means few, uneven shards."
         ],
         "teaches": "how"
@@ -335,16 +335,16 @@
       {
         "question": "After sharding, what does the database stop enforcing across shards?",
         "options": [
-          "Foreign keys, global unique indexes and cross-shard transactions",
           "Nothing changes",
-          "Column types"
+          "Column types",
+          "Foreign keys, global unique indexes and cross-shard transactions"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "Each shard only knows its own rows, so global rules must be rebuilt in the application.",
         "wrong": [
-          "",
           "These guarantees are lost unless rebuilt.",
-          "Each shard still enforces its own types."
+          "Each shard still enforces its own types.",
+          ""
         ],
         "teaches": "how"
       },
@@ -367,15 +367,15 @@
       {
         "question": "Why did Figma shard logically with views before moving data?",
         "options": [
-          "So the step could be reversed with a configuration change",
           "Views are faster than tables",
+          "So the step could be reversed with a configuration change",
           "Postgres requires it"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "The risky, less reversible physical move came only after the logical step had proved itself.",
         "wrong": [
-          "",
           "Views added up to 10% overhead.",
+          "",
           "It was Figma's choice, not a requirement."
         ],
         "teaches": "example"

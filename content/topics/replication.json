@@ -265,15 +265,15 @@
       {
         "question": "What is split brain?",
         "options": [
-          "Two machines both accepting writes as primary",
           "A replica falling behind",
+          "Two machines both accepting writes as primary",
           "A query split across replicas"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Conflicting writes on two primaries can diverge and be hard to reconcile.",
         "wrong": [
-          "",
           "That is replication lag.",
+          "",
           "That is not a failure mode."
         ],
         "teaches": "model"
@@ -297,16 +297,16 @@
       {
         "question": "Why should a failover not depend on the failed primary's cooperation?",
         "options": [
-          "A dead or cut-off machine cannot help",
           "The primary is always busy",
-          "It slows reads"
+          "It slows reads",
+          "A dead or cut-off machine cannot help"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "Designs like a shared IP that the old primary must release fail exactly when needed.",
         "wrong": [
-          "",
           "Busy is not the issue; unreachable is.",
-          "Reads are unrelated."
+          "Reads are unrelated.",
+          ""
         ],
         "teaches": "mistakes"
       },
@@ -329,31 +329,31 @@
       {
         "question": "Why keep replicas at all, beyond backups?",
         "options": [
-          "To spread reads and replace a failed primary quickly",
           "Because primaries cannot write",
-          "To make writes faster"
+          "To make writes faster",
+          "To spread reads and replace a failed primary quickly"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "Copies serve reads and are ready to take over.",
         "wrong": [
-          "",
           "The primary handles writes.",
-          "Waiting for replicas can make writes slower, not faster."
+          "Waiting for replicas can make writes slower, not faster.",
+          ""
         ],
         "teaches": "why"
       },
       {
         "question": "Meta's commits wait for 2 of 3 votes in the leader's region. Why only that region?",
         "options": [
-          "To avoid a cross-region round trip on every commit",
           "Other regions do not store data",
+          "To avoid a cross-region round trip on every commit",
           "Raft forbids more votes"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Regions are 10 to 100 ms apart; a local quorum keeps commits fast.",
         "wrong": [
-          "",
           "Other regions receive the data without voting.",
+          "",
           "Raft allows larger quorums; Meta chose a small local one."
         ],
         "teaches": "example"

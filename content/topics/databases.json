@@ -275,15 +275,15 @@
       {
         "question": "When is a change committed?",
         "options": [
-          "When its log record is safely on disk",
           "When the data file is updated",
+          "When its log record is safely on disk",
           "When a replica reads it"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "The write-ahead log is what recovery uses, so a durable log record is what makes the change safe.",
         "wrong": [
-          "",
           "Data files are updated later; the log already makes the change safe.",
+          "",
           "A commit on the primary does not wait for replicas unless configured to."
         ],
         "teaches": "model"
@@ -291,15 +291,15 @@
       {
         "question": "A database crashes after committing a change but before updating its data files. What happens on restart?",
         "options": [
-          "The change is lost",
           "It replays the log and the change is applied",
+          "The change is lost",
           "The database refuses to start"
         ],
-        "correct": 1,
+        "correct": 0,
         "why": "Recovery redoes every committed change found in the log.",
         "wrong": [
-          "The log record survived, so the change is redone.",
           "",
+          "The log record survived, so the change is redone.",
           "Recovery is exactly what the log is for."
         ],
         "teaches": "how"
@@ -307,32 +307,32 @@
       {
         "question": "Why does adding an index slow down writes?",
         "options": [
-          "Every index is another structure to update and log on each write",
           "Indexes lock the whole table",
-          "Indexes are stored on replicas only"
+          "Indexes are stored on replicas only",
+          "Every index is another structure to update and log on each write"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "An index speeds some reads but adds work to every write that touches it.",
         "wrong": [
-          "",
           "Indexes do not lock the table by themselves.",
-          "Indexes live on the primary as well."
+          "Indexes live on the primary as well.",
+          ""
         ],
         "teaches": "mistakes"
       },
       {
         "question": "What does physical replication ship to replicas?",
         "options": [
-          "Disk-level changes, so replicas are byte-for-byte copies",
           "Only SQL statements",
-          "Nothing; replicas query the primary"
+          "Nothing; replicas query the primary",
+          "Disk-level changes, so replicas are byte-for-byte copies"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "That ties replicas to the primary's version and layout, including its bugs.",
         "wrong": [
-          "",
           "That is closer to logical replication.",
-          "Replicas replay the shipped log."
+          "Replicas replay the shipped log.",
+          ""
         ],
         "teaches": "how"
       },
@@ -355,15 +355,15 @@
       {
         "question": "How did GitHub keep a way back while upgrading MySQL?",
         "options": [
-          "Old-version replicas kept receiving changes by replicating backwards from the new primary",
           "It took full backups and planned to restore",
+          "Old-version replicas kept receiving changes by replicating backwards from the new primary",
           "It upgraded every host at once"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Replication, not backups, was the practical rollback path.",
         "wrong": [
-          "",
           "A restore would lose recent writes and take hours.",
+          "",
           "That would leave no way back."
         ],
         "teaches": "example"

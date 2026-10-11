@@ -296,15 +296,15 @@
       {
         "question": "What is a cache fill?",
         "options": [
-          "Writing a value into the cache after a miss read it from the database",
           "Deleting every entry",
+          "Writing a value into the cache after a miss read it from the database",
           "Copying the database to disk"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "On a miss the server reads the source of truth and stores the result for the next reader.",
         "wrong": [
-          "",
           "That would be a flush, not a fill.",
+          "",
           "A fill copies one value into memory, not the whole database."
         ],
         "teaches": "model"
@@ -313,15 +313,15 @@
         "question": "A fill reads value A. The value changes to B and B's invalidation arrives. Then the fill writes A. What does the cache hold?",
         "options": [
           "B",
-          "A, the old value",
-          "Nothing"
+          "Nothing",
+          "A, the old value"
         ],
-        "correct": 1,
+        "correct": 2,
         "why": "The delayed fill overwrote the newer state, so the cache holds A until it is evicted or expires.",
         "wrong": [
           "The invalidation came first, so the late fill wrote A on top.",
-          "",
-          "The fill wrote A, so the entry exists."
+          "The fill wrote A, so the entry exists.",
+          ""
         ],
         "teaches": "how"
       },
@@ -345,30 +345,30 @@
         "question": "Why give entries a TTL even when you invalidate on every write?",
         "options": [
           "It makes reads faster",
-          "So a missed invalidation cannot leave an entry wrong forever",
-          "Because invalidations are never needed"
+          "Because invalidations are never needed",
+          "So a missed invalidation cannot leave an entry wrong forever"
         ],
-        "correct": 1,
+        "correct": 2,
         "why": "Invalidations can be lost or raced; expiry bounds how long a wrong value can live.",
         "wrong": [
           "Expiry causes extra misses; it does not speed reads.",
-          "",
-          "Invalidation is still the main way changes reach the cache."
+          "Invalidation is still the main way changes reach the cache.",
+          ""
         ],
         "teaches": "mistakes"
       },
       {
         "question": "Why is a cache used at all, given the staleness risk?",
         "options": [
-          "Read-heavy systems would otherwise need far more database capacity",
           "Databases cannot store data",
+          "Read-heavy systems would otherwise need far more database capacity",
           "Caches never go stale"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Serving repeated reads from memory is much cheaper than serving them from the database.",
         "wrong": [
-          "",
           "The database still holds all the data.",
+          "",
           "They can, which is the cost being accepted."
         ],
         "teaches": "why"

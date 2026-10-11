@@ -1,11 +1,16 @@
 // Progress for lesson-format topics, as pure functions over a plain object.
 // The browser glue (localStorage, events) lives in lib/progress.ts.
 
+import { LEGACY_OPTIONS } from "./legacyQuiz";
+import { optionId } from "./quizIds";
+
 export const PROGRESS_KEY = "sys101:progress";
 export const READ_KEY = "sys101:read"; // the read list the map and index use
 export const OLD_CONCEPT_KEY = "sys101:concept"; // v1: topics with the concept marked complete
 export const OLD_POSTS_KEY = "sys101:posts"; // v1: post ids marked read
-export const VERSION = 2;
+export const VERSION = 3;
+/** v2 stored quiz answers as option positions; it is still read and upgraded. */
+const OLD_VERSION = 2;
 
 /** The five concept sections every lesson topic has, in page order. */
 export const CONCEPT_SECTIONS = ["why", "model", "how", "example", "mistakes"] as const;
@@ -15,8 +20,8 @@ export type TopicProgress = {
   done: string[];
   /** Unit ids scrolled into view (sections, "check", post ids). */
   visited: string[];
-  /** Quiz answers: question index -> chosen option index. */
-  answers: Record<string, number>;
+  /** Quiz answers: question index -> id of the chosen option (see lib/quizIds.ts). */
+  answers: Record<string, string>;
   /** Last unit viewed, for "Continue where you left off". */
   last?: string;
 };
@@ -29,19 +34,37 @@ export type Progress = {
 };
 
 /** What a topic needs to be read: its posts and quiz answer key. */
-export type LessonMeta = { slug: string; postIds: string[]; correct: number[] };
+/** `correct` holds the id of the right option for each question, in question order. */
+export type LessonMeta = { slug: string; postIds: string[]; correct: string[] };
 
 export const emptyProgress = (): Progress => ({ version: VERSION, topics: {}, posts: [] });
 const emptyTopic = (): TopicProgress => ({ done: [], visited: [], answers: {} });
 
 const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
 
-function cleanTopic(v: unknown): TopicProgress {
+/**
+ * Turn v2 answers (question index -> option position) into v3 (question index -> option id), using
+ * the option order that existed when they were saved. An answer that cannot be mapped is dropped.
+ */
+export function migrateAnswers(slug: string, old: Record<string, unknown>): Record<string, string> {
+  const answers: Record<string, string> = {};
+  for (const [k, pos] of Object.entries(old)) {
+    if (!/^\d+$/.test(k) || !Number.isInteger(pos) || (pos as number) < 0) continue;
+    const text = LEGACY_OPTIONS[slug]?.[Number(k)]?.[pos as number];
+    if (text !== undefined) answers[k] = optionId(text);
+  }
+  return answers;
+}
+
+function cleanTopic(v: unknown, slug: string, version: number): TopicProgress {
   const t = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
-  const answers: Record<string, number> = {};
+  let answers: Record<string, string> = {};
   if (t.answers && typeof t.answers === "object") {
-    for (const [k, a] of Object.entries(t.answers as Record<string, unknown>)) {
-      if (/^\d+$/.test(k) && Number.isInteger(a) && (a as number) >= 0) answers[k] = a as number;
+    if (version === OLD_VERSION) answers = migrateAnswers(slug, t.answers as Record<string, unknown>);
+    else {
+      for (const [k, a] of Object.entries(t.answers as Record<string, unknown>)) {
+        if (/^\d+$/.test(k) && typeof a === "string" && a) answers[k] = a;
+      }
     }
   }
   return {
@@ -57,10 +80,10 @@ export function parseProgress(raw: string | null): Progress | null {
   if (!raw) return null;
   try {
     const v = JSON.parse(raw);
-    if (!v || typeof v !== "object" || v.version !== VERSION) return null;
+    if (!v || typeof v !== "object" || (v.version !== VERSION && v.version !== OLD_VERSION)) return null;
     const topics: Record<string, TopicProgress> = {};
     if (v.topics && typeof v.topics === "object") {
-      for (const [slug, t] of Object.entries(v.topics)) topics[slug] = cleanTopic(t);
+      for (const [slug, t] of Object.entries(v.topics)) topics[slug] = cleanTopic(t, slug, v.version);
     }
     return { version: VERSION, topics, posts: strings(v.posts) };
   } catch {
@@ -202,7 +225,7 @@ export function markVisited(p: Progress, slug: string, unit: string): Progress {
   return withTopic(p, slug, (x) => ({ ...x, visited: x.visited.includes(unit) ? x.visited : [...x.visited, unit], last: unit }));
 }
 
-export function answer(p: Progress, slug: string, question: number, option: number): Progress {
+export function answer(p: Progress, slug: string, question: number, option: string): Progress {
   return withTopic(p, slug, (t) => ({ ...t, answers: { ...t.answers, [question]: option } }));
 }
 
@@ -247,15 +270,22 @@ export type ImportResult =
 const isStrings = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === "string");
 
 /** The stored shape exactly, or a reason it is not. Nothing is repaired: a file is used whole or not at all. */
-function strictTopic(v: unknown): TopicProgress | string {
+function strictTopic(v: unknown, slug: string, version: number): TopicProgress | string {
   if (!v || typeof v !== "object" || Array.isArray(v)) return "a topic entry is not an object";
   const t = v as Record<string, unknown>;
   if (!isStrings(t.done) || !isStrings(t.visited)) return "a topic's done or visited list is not a list of names";
   if (!t.answers || typeof t.answers !== "object" || Array.isArray(t.answers)) return "a topic's quiz answers are not an object";
-  const answers: Record<string, number> = {};
-  for (const [k, a] of Object.entries(t.answers as Record<string, unknown>)) {
-    if (!/^\d+$/.test(k) || !Number.isInteger(a) || (a as number) < 0) return "a quiz answer is not a whole number";
-    answers[k] = a as number;
+  let answers: Record<string, string> = {};
+  if (version === OLD_VERSION) {
+    for (const [k, a] of Object.entries(t.answers as Record<string, unknown>)) {
+      if (!/^\d+$/.test(k) || !Number.isInteger(a) || (a as number) < 0) return "a quiz answer is not a whole number";
+    }
+    answers = migrateAnswers(slug, t.answers as Record<string, unknown>);
+  } else {
+    for (const [k, a] of Object.entries(t.answers as Record<string, unknown>)) {
+      if (!/^\d+$/.test(k) || typeof a !== "string" || !a) return "a quiz answer is not an option id";
+      answers[k] = a;
+    }
   }
   if (t.last !== undefined && typeof t.last !== "string") return "a topic's last position is not text";
   return { done: [...t.done], visited: [...t.visited], answers, ...(typeof t.last === "string" ? { last: t.last } : {}) };
@@ -275,9 +305,10 @@ export function validateImport(text: string, known?: Known): ImportResult {
   }
   const f = v as Partial<ExportFile>;
   if (!f || typeof f !== "object" || f.app !== "sys101") return { ok: false, error: "That file is not a sys101 progress export." };
-  if (f.version !== VERSION) return { ok: false, error: `This export is version ${String(f.version)}; only version ${VERSION} can be imported.` };
+  if (f.version !== VERSION && f.version !== OLD_VERSION)
+    return { ok: false, error: `This export is version ${String(f.version)}; only versions ${OLD_VERSION} and ${VERSION} can be imported.` };
   const p = f.progress as Partial<Progress> | undefined;
-  if (!p || typeof p !== "object" || p.version !== VERSION || !p.topics || typeof p.topics !== "object" || Array.isArray(p.topics))
+  if (!p || typeof p !== "object" || p.version !== f.version || !p.topics || typeof p.topics !== "object" || Array.isArray(p.topics))
     return { ok: false, error: "The progress data in that file is damaged." };
   if (!isStrings(p.posts)) return { ok: false, error: "The progress data in that file is damaged: posts is not a list of names." };
   if (!isStrings(f.read)) return { ok: false, error: "The read list in that file is damaged." };
@@ -290,7 +321,7 @@ export function validateImport(text: string, known?: Known): ImportResult {
   let ignored = 0;
   const topics: Record<string, TopicProgress> = {};
   for (const [slug, t] of Object.entries(p.topics)) {
-    const clean = strictTopic(t);
+    const clean = strictTopic(t, slug, f.version);
     if (typeof clean === "string") return { ok: false, error: `The progress data in that file is damaged: ${clean}.` };
     if (isTopic(slug)) topics[slug] = clean;
     else ignored++;

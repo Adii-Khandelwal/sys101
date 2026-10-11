@@ -305,15 +305,15 @@
       {
         "question": "A table has an index on (org_id, kind). Which filter can it serve directly?",
         "options": [
-          "org_id = 7",
           "kind = 'error'",
+          "org_id = 7",
           "Neither"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "The index is sorted by org_id first, so a filter on its leading column can jump straight to the matching keys.",
         "wrong": [
-          "",
           "kind is the second column; without org_id the matching keys are scattered through the index.",
+          "",
           "A filter on the leading column is exactly what a composite index serves."
         ],
         "teaches": "how"
@@ -321,31 +321,31 @@
       {
         "question": "You add five indexes to a busy table. What gets slower?",
         "options": [
-          "Writes, because each one must update every index",
           "Reads on unindexed columns",
-          "Nothing"
+          "Nothing",
+          "Writes, because each one must update every index"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "Every insert, update and delete now maintains five more structures.",
         "wrong": [
-          "",
           "Reads that the indexes do not cover behave as before.",
-          "Indexes always cost write work and storage."
+          "Indexes always cost write work and storage.",
+          ""
         ],
         "teaches": "mistakes"
       },
       {
         "question": "What does an inverted index store?",
         "options": [
-          "For each word or fragment, the documents that contain it",
           "Each document in reverse order",
+          "For each word or fragment, the documents that contain it",
           "Rows sorted by primary key"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "It maps tokens to posting lists, so a search intersects a few lists instead of reading documents.",
         "wrong": [
-          "",
           "The name refers to inverting document to words into word to documents.",
+          "",
           "That describes a B-tree on a primary key."
         ],
         "teaches": "model"
@@ -353,16 +353,16 @@
       {
         "question": "Why must an ngram search still check the real text of each match?",
         "options": [
-          "Matching every fragment does not mean they appear next to each other",
           "The index is always out of date",
-          "To decompress it"
+          "To decompress it",
+          "Matching every fragment does not mean they appear next to each other"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "A document can contain all the trigrams of a word in different places, so each candidate is verified.",
         "wrong": [
-          "",
           "Indexes are kept current; the issue is false positives.",
-          "Checking is about correctness, not compression."
+          "Checking is about correctness, not compression.",
+          ""
         ],
         "teaches": "how"
       },

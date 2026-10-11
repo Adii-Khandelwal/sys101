@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { optionId } from "@/lib/quizIds";
 import { formatDate, type Topic } from "@/lib/topics";
 import { PostDigest, TopicList } from "./TopicDossier";
 import { CompactProgress, FinishTopic, MarkDone, QuizBlock, ResumeLine } from "./LessonTrackers";
@@ -47,7 +48,7 @@ function Outcome({ text }: { text: string }) {
 /** Topic page in the teaching-journey format: concept first, then real-world posts. */
 export default function TopicLesson({ topic, prerequisites, dependents, titles, learnHref }: Props) {
   const l = topic.lesson!;
-  const meta: LessonMeta = { slug: topic.slug, postIds: topic.posts.map((p) => p.id!), correct: l.quiz.map((q) => q.correct) };
+  const meta: LessonMeta = { slug: topic.slug, postIds: topic.posts.map((p) => p.id!), correct: l.quiz.map((q) => optionId(q.options[q.correct])) };
   const names: Record<string, string> = {
     ...SECTION_NAMES,
     ...Object.fromEntries(topic.posts.map((p) => [p.id!, `${p.company} post`])),

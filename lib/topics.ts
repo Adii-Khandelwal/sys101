@@ -162,6 +162,37 @@ function pairs<T>(list: T[] | undefined, a: keyof T, b: keyof T) {
   return Array.isArray(list) && list.length > 0 && list.every((x) => nonEmpty(x?.[a]) && nonEmpty(x?.[b]));
 }
 
+/** A letter used to point at an option ("option B", "Not C", "(A)", or a bare B to H), which breaks once options are reordered. */
+const OPTION_LETTER = /\b(?:[Oo]ption|[Aa]nswer|[Cc]hoice|[Ll]etter)\s+\(?[A-H]\b|\bNot\s+[A-H]\b|\([A-H]\)|\b[B-H]\b(?![-\w])/;
+const LAST_ONLY = /^(?:neither|none of the above|all of the above|both of the above)\b/i;
+
+/**
+ * Where the right answer sits must vary: not every question in one place, never more than 3 in a
+ * row in the same place, and explanations may not point at options by letter. Options like
+ * "Neither" or "All of the above" must be last.
+ */
+export function checkQuizPositions(quiz: Pick<LessonQuestion, "options" | "correct" | "why" | "wrong">[]): string[] {
+  const problems: string[] = [];
+  const at = quiz.map((q) => q.correct);
+  if (quiz.length >= 2 && at.every((c) => c === at[0])) problems.push(`quiz: every correct answer is in position ${at[0] + 1}; spread them out`);
+  let run = 1;
+  for (let i = 1; i < at.length; i++) {
+    run = at[i] === at[i - 1] ? run + 1 : 1;
+    if (run === 4) problems.push(`quiz: the correct answer is in position ${at[i] + 1} for 4 questions in a row (from question ${i - 2})`);
+  }
+  quiz.forEach((q, i) => {
+    const where = `quiz ${i + 1}`;
+    [q.why, ...(q.wrong ?? [])].forEach((text) => {
+      const m = OPTION_LETTER.exec(text ?? "");
+      if (m) problems.push(`${where}: an explanation points at an option by letter ("${m[0]}"); quote the option text instead`);
+    });
+    q.options?.forEach((o, j) => {
+      if (LAST_ONLY.test(o) && j !== q.options.length - 1) problems.push(`${where}: "${o}" must be the last option`);
+    });
+  });
+  return problems;
+}
+
 /** Every lesson section filled, 5 to 8 explained questions, 2 to 3 exercises, ids on posts. */
 function checkLesson(topic: Topic): string[] {
   const l = topic.lesson!;
@@ -203,6 +234,7 @@ function checkLesson(topic: Topic): string[] {
       problems.push(`${where}: teaches "${q.teaches}", but quiz questions may only test concept sections (${CONCEPT_SECTION_IDS.join(", ")})`);
     }
   });
+  problems.push(...checkQuizPositions(l.quiz ?? []));
   if (!Array.isArray(l.exercises) || l.exercises.length < 2 || l.exercises.length > 3) problems.push("lesson.exercises needs 2 to 3");
   const order = ["apply", "design", "scale"];
   const levels = (l.exercises ?? []).map((x) => order.indexOf(x.level));

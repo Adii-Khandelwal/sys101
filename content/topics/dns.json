@@ -299,15 +299,15 @@
         "question": "A resolver has cached a record for example.com. You change the record at the authoritative servers. When does that resolver return the new value?",
         "options": [
           "Immediately, because the authoritative servers notify it",
-          "When its cached copy's TTL runs out and it asks again",
-          "Only after you flush every resolver by hand"
+          "Only after you flush every resolver by hand",
+          "When its cached copy's TTL runs out and it asks again"
         ],
-        "correct": 1,
+        "correct": 2,
         "why": "A resolver reuses its copy until the TTL expires, then asks again and gets the new value.",
         "wrong": [
           "Authoritative servers do not notify resolvers of changes; resolvers only find out when they ask again.",
-          "",
-          "Expiry makes the resolver ask again on its own; flushing only speeds it up."
+          "Expiry makes the resolver ask again on its own; flushing only speeds it up.",
+          ""
         ],
         "teaches": "model"
       },
@@ -332,15 +332,15 @@
       {
         "question": "Why does DNS cache answers at every step?",
         "options": [
-          "Because records never change",
           "So most lookups are answered nearby instead of walking the whole chain",
+          "Because records never change",
           "To encrypt the answers"
         ],
-        "correct": 1,
+        "correct": 0,
         "why": "Nearly every connection starts with a lookup, so reusing copies keeps lookups fast and keeps load off the servers higher up the chain.",
         "wrong": [
-          "Records do change, which is exactly why every answer carries a TTL.",
           "",
+          "Records do change, which is exactly why every answer carries a TTL.",
           "Caching does not encrypt anything; DNSSEC signs answers so they can be checked, which is a separate thing."
         ],
         "teaches": "why"
@@ -365,30 +365,30 @@
         "question": "Slack pulled its DS record to stop an outage, but failures went on. Why?",
         "options": [
           "The registrar ignored the change",
-          "Resolvers had cached the DS record, which .com tells them to keep for 24 hours",
-          "Browsers cache DS records"
+          "Browsers cache DS records",
+          "Resolvers had cached the DS record, which .com tells them to keep for 24 hours"
         ],
-        "correct": 1,
+        "correct": 2,
         "why": "Removing the record at the parent does not reach resolvers that already cached it; they keep it until it expires.",
         "wrong": [
           "The DS record was removed; the problem was copies already cached elsewhere.",
-          "",
-          "DS records are checked by resolvers, not browsers."
+          "DS records are checked by resolvers, not browsers.",
+          ""
         ],
         "teaches": "example"
       },
       {
         "question": "You plan to move a site to a new address next week. What should you do with the record's TTL?",
         "options": [
-          "Raise it, so the new address sticks",
           "Lower it well before the move, then raise it again afterwards",
+          "Raise it, so the new address sticks",
           "Nothing; TTLs do not affect moves"
         ],
-        "correct": 1,
+        "correct": 0,
         "why": "A short TTL before the move means caches drop the old address quickly once you switch; raising it afterwards restores caching.",
         "wrong": [
-          "A longer TTL makes caches keep the old address longer after you switch.",
           "",
+          "A longer TTL makes caches keep the old address longer after you switch.",
           "The TTL decides how long caches keep serving the old address, so it matters most during a move."
         ],
         "teaches": "mistakes"

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { lastViewedOnLoad, useLesson } from "@/lib/progress";
+import { optionId } from "@/lib/quizIds";
 import { RevealPanel } from "./Reveal";
 import {
   markAllDone,
@@ -147,13 +148,14 @@ export function QuizBlock({ meta, quiz, names }: { meta: LessonMeta; quiz: Quest
   const { progress, update } = useLesson(m);
   const answers = topicOf(progress, m.slug).answers;
   const score = quizScore(progress, m);
-  const letters = "ABCDEFGH";
   return (
     <>
       <ol className="quiz">
         {quiz.map((q, i) => {
-          const chosen = answers[i];
+          const chosen = answers[i]; // an option id
           const answered = chosen !== undefined;
+          const ids = q.options.map(optionId);
+          const right = answered && chosen === ids[q.correct];
           return (
             <li key={q.question}>
               <p>{q.question}</p>
@@ -162,28 +164,29 @@ export function QuizBlock({ meta, quiz, names }: { meta: LessonMeta; quiz: Quest
                   <li key={o}>
                     <button
                       type="button"
-                      className={`option${chosen === j ? (j === q.correct ? " is-right" : " is-wrong") : ""}`}
-                      aria-pressed={chosen === j}
+                      className={`option${chosen === ids[j] ? (j === q.correct ? " is-right" : " is-wrong") : ""}`}
+                      aria-pressed={chosen === ids[j]}
                       disabled={answered}
-                      onClick={() => update((p) => answer(p, m.slug, i, j))}
+                      onClick={() => update((p) => answer(p, m.slug, i, ids[j]))}
                     >
                       {o}
                     </button>
                     {answered && j === q.correct && <span className="verdict"> Correct answer</span>}
-                    {answered && chosen === j && j !== q.correct && <span className="verdict is-wrong"> Your answer</span>}
+                    {answered && chosen === ids[j] && j !== q.correct && <span className="verdict is-wrong"> Your answer</span>}
                   </li>
                 ))}
               </ol>
               <RevealPanel open={answered}>
                 <div className="explain" aria-live="polite">
                   <p>
-                    <strong>{answered && chosen === q.correct ? "Right." : `Not quite: the answer is ${letters[q.correct]}.`}</strong> {q.why}
+                    <strong>{right ? "Right." : "Not quite."}</strong> {right ? "" : <>The answer is &ldquo;{q.options[q.correct]}&rdquo;. </>}
+                    {q.why}
                   </p>
                   <ul className="wrong">
                     {q.options.map((_, j) =>
                       j === q.correct ? null : (
                         <li key={j}>
-                          <strong>Not {letters[j]}:</strong> {q.wrong[j]}
+                          <strong>&ldquo;{q.options[j]}&rdquo; is wrong:</strong> {q.wrong[j]}
                         </li>
                       ),
                     )}

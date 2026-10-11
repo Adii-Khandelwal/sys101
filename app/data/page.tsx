@@ -1,3 +1,4 @@
+import { optionId } from "@/lib/quizIds";
 import type { Metadata } from "next";
 import { pageMeta } from "@/lib/site";
 import DataControls from "@/components/DataControls";
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 export default function YourData() {
   const topics = getAllTopics()
     .filter((t) => t.lesson)
-    .map((t) => ({ slug: t.slug, title: t.title, postIds: t.posts.map((p) => p.id!), correct: t.lesson!.quiz.map((q) => q.correct) }));
+    .map((t) => ({ slug: t.slug, title: t.title, postIds: t.posts.map((p) => p.id!), correct: t.lesson!.quiz.map((q) => optionId(q.options[q.correct])) }));
   return (
     <article className="dossier legal">
       <h1>Your data</h1>
