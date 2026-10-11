@@ -232,7 +232,7 @@
       "company": "etcd (CNCF)",
       "verifiedOn": "2026-10-11",
       "published": "no date shown",
-      "ageNote": "This is versioned documentation (v3.5), not a dated post, and the page shows no publication date. Its benchmark table was run on etcd 3.2.0, so treat those numbers as old. It is here for what it says limits consensus commit latency: the network round trip between members and the disk sync, which are physical limits rather than release details.",
+      "ageNote": "This is versioned documentation (v3.5), not a dated post. The page shows \"Last modified June 14, 2021\", a line tied to a change in the documentation's repository, so it is shown as a last-modified date and not as a publication year. Its benchmark table was run on etcd 3.2.0, so treat those numbers as old. It is here for what it says limits consensus commit latency: the network round trip between members and the disk sync, which are physical limits rather than release details.",
       "related": [
         "replication",
         "cap"
@@ -284,7 +284,7 @@
         "failures": "The guide gives no failure account: it describes no incident, mistake or abandoned approach. It does state limits. The minimum request time is one round trip between members plus one fdatasync. A typical round trip is about 50 ms within the United States and as slow as 400 ms between continents, and a spinning disk's fdatasync is about 10 ms. Average latency usually rises as throughput rises under concurrent requests. Snapshots can double observed latency on a spinning disk, and gRPC adds latency, especially for local reads.",
         "takeaways": "Consensus latency has a floor set by the network round trip between members plus a durable disk write, so you make it faster by shrinking those, with nearby members and SSDs, and by batching requests into Raft. Knowing the two limits is what lets you place and size a consensus cluster sensibly."
       },
-      "edition": "v3.5 documentation"
+      "edition": "page shows last modified June 14, 2021, v3.5 documentation"
     },
     {
       "id": "cockroachdb-leader-leases-2026",

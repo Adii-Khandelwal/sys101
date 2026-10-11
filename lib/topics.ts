@@ -26,7 +26,7 @@ export type Post = {
   verifiedOn: string;
   /** YYYY-MM-DD: when the company published the post. Shown on the page. Versioned documentation with no date uses NO_DATE and sets `edition`. */
   published: string;
-  /** Only with an undated source: what it is instead of a date, for example "v3.5 documentation". */
+  /** Only with an undated source: the full label shown instead of a date, for example "page shows last modified June 14, 2021, v3.5 documentation". */
   edition?: string;
   /** Required for posts older than OLD_POST_YEARS: why it still passes rule 3, and what may have changed. */
   ageNote?: string;
@@ -166,9 +166,9 @@ function isPastDate(v: unknown) {
 export const NO_DATE = "no date shown";
 export const isUndated = (post: Pick<Post, "published">) => post.published === NO_DATE;
 
-/** What the page shows where it would show a date: "June 2017" or "no date shown, v3.5 documentation". */
+/** What the page shows where it would show a date: "June 2017", or for an undated source its `edition` label, such as "page shows last modified June 14, 2021, v3.5 documentation". */
 export function postWhen(post: Pick<Post, "published" | "edition">, precision: "month" | "year") {
-  if (isUndated(post)) return `${NO_DATE}, ${post.edition}`;
+  if (isUndated(post)) return post.edition ?? NO_DATE;
   return precision === "month" ? formatMonth(post.published) : post.published.slice(0, 4);
 }
 
@@ -395,7 +395,7 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
       }
       if (!isPastDate(post.verifiedOn)) problems.push(`${where}: verifiedOn must be a YYYY-MM-DD date, not in the future`);
       if (isUndated(post)) {
-        if (!nonEmpty(post.edition)) problems.push(`${where}: an undated source needs an edition such as "v3.5 documentation"`);
+        if (!nonEmpty(post.edition)) problems.push(`${where}: an undated source needs an edition label such as "no date shown, v3.5 documentation"`);
         if (!nonEmpty(post.ageNote)) problems.push(`${where}: an undated source needs an ageNote`);
       } else if (!isPastDate(post.published)) problems.push(`${where}: published must be a YYYY-MM-DD date, not in the future`);
       else if (isOld(post.published) && !nonEmpty(post.ageNote)) {
