@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Newsreader, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
+import ViewTransitions from "@/components/ViewTransitions";
 
 const serif = Newsreader({
   subsets: ["latin"],
@@ -23,7 +24,16 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${serif.variable} ${mono.variable}`}>
-      <body>{children}</body>
+      <head>
+        {/* Without JavaScript, reveals cannot open, so show their content. */}
+        <noscript>
+          <style>{`.reveal{grid-template-rows:1fr}.reveal-content{opacity:1;transform:none}.reveal-wrap>button{display:none}`}</style>
+        </noscript>
+      </head>
+      <body>
+        <ViewTransitions />
+        {children}
+      </body>
     </html>
   );
 }

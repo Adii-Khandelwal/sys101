@@ -1,13 +1,30 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type Graph from "graphology";
 import type Sigma from "sigma";
 import type { NodeLabelDrawingFunction } from "sigma/rendering";
-import { columns, edgeCurvatures, fitPositions, layers, rowCount, slotsByEdge, type Orientation } from "@/lib/graph";
+import { LABEL_START, columns, edgeCurvatures, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
 import { useReadTopics } from "@/lib/progress";
+import {
+  ACCENT,
+  ACCENT_DARK,
+  EDGE,
+  FADED_LABEL,
+  INK,
+  INK_SOFT,
+  PAPER,
+  fade,
+  highlightSet,
+  nextHighlight,
+  placeTooltip,
+  type HighlightEvent,
+} from "@/lib/graphUi";
+import { createPortal } from "react-dom";
+import { DURATION, easeInOut, prefersReducedMotion } from "@/lib/motion";
+import { navigateWithTransition } from "./ViewTransitions";
 import {
   STEP,
   clampPan,
@@ -28,18 +45,12 @@ type Props = {
   edges: GraphEdge[];
 };
 
-const INK = "#1f1b16";
-const INK_SOFT = "#5c5346";
-const EDGE = "#8a7f6c";
-const PAPER = "#f3ecdc";
-const ACCENT = "#9a3b1f";
-const ACCENT_DARK = "#7a2c15";
 
 const NODE_RADIUS = 14;
 const LABEL_SIZE = 18;
 const NARROW = "(max-width: 640px)"; // below this the map stacks top to bottom; matches the CSS
 const PADDING = 48; // px between the stage edge and the outermost nodes
-const FADE = 0.3; // non-neighbours keep 30% of their colour while a node is active
+const PADDING_TOP = 70; // node centres sit this far down, so the first row is 56px+ below the controls
 /**
  * Sigma's own wheel, drag and double-click handling stays off (it checks
  * these flags), but with them off camera.setState also ignores x/y/ratio.
@@ -56,14 +67,6 @@ function setCamera(camera: ReturnType<Sigma["getCamera"]>, state: Camera) {
 const CLICK_SLOP = 5; // px a pointer may move before a press becomes a drag
 const DOUBLE_CLICK_MS = 250; // wait this long before opening a topic, so a double-click can cancel it
 
-/** Blend `hex` toward the paper colour, keeping `amount` of the original. */
-function fade(hex: string, amount = FADE) {
-  const a = parseInt(hex.slice(1), 16);
-  const b = parseInt(PAPER.slice(1), 16);
-  const ch = (v: number, s: number) => (v >> s) & 255;
-  const mix = (s: number) => Math.round(ch(a, s) * amount + ch(b, s) * (1 - amount));
-  return `#${((mix(16) << 16) | (mix(8) << 8) | mix(0)).toString(16).padStart(6, "0")}`;
-}
 
 // Labels sit to the right of the node on a paper-coloured halo, so an edge
 // passing behind never runs through the text.
@@ -86,6 +89,10 @@ export default function GraphView({ nodes, edges }: Props) {
   const stage = useRef<HTMLDivElement>(null);
   const container = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<Sigma | null>(null);
+  const highlightRef = useRef<Set<string>>(new Set());
+  const edgesRef = useRef(edges);
+  edgesRef.current = edges;
+  const hiddenRef = useRef<{ from: string; to: string }[]>([]);
   const activeRef = useRef<string | null>(null);
   const router = useRouter();
   const read = useReadTopics();
@@ -103,8 +110,58 @@ export default function GraphView({ nodes, edges }: Props) {
     rendererRef.current?.refresh({ skipIndexation: true });
   }, [read]);
 
-  const cols = useMemo(() => columns(nodes, edges), [nodes, edges]);
-  const layered = useMemo(() => layers(nodes, edges), [nodes, edges]);
+  // Draw only the transitive reduction; the full edge set still drives
+  // neighbours, ready state and the "Also builds on" hints.
+  const drawn = useMemo(() => transitiveReduction(edges), [edges]);
+  const hidden = useMemo(() => edges.filter((e) => !drawn.includes(e)), [edges, drawn]);
+  const prereqs = useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const e of edges) m.set(e.to, [...(m.get(e.to) ?? []), e.from]);
+    return m;
+  }, [edges]);
+  const neighbours = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    for (const e of edges) {
+      m.set(e.from, (m.get(e.from) ?? new Set()).add(e.to));
+      m.set(e.to, (m.get(e.to) ?? new Set()).add(e.from));
+    }
+    return m;
+  }, [edges]);
+  const cols = useMemo(() => columns(nodes, drawn), [nodes, drawn]);
+  const layered = useMemo(() => layers(nodes, drawn), [nodes, drawn]);
+  const prereqsRef = useRef(prereqs);
+  prereqsRef.current = prereqs;
+  const neighboursRef = useRef(neighbours);
+  neighboursRef.current = neighbours;
+
+  // Columns need room for their widest label; when the stage is too narrow,
+  // stack the map instead of letting labels crowd the next node.
+  const [fits, setFits] = useState(true);
+  const effective: Orientation = orientation === "horizontal" && fits ? "horizontal" : "vertical";
+
+  // "Show all links" draws the hidden edges permanently. Remembered for the session.
+  const [showAll, setShowAll] = useState(false);
+  useEffect(() => {
+    try {
+      setShowAll(sessionStorage.getItem("sys101:showAllLinks") === "1");
+    } catch {
+      // storage blocked: default off
+    }
+  }, []);
+  const toggleShowAll = () => {
+    setShowAll((v) => {
+      try {
+        sessionStorage.setItem("sys101:showAllLinks", v ? "0" : "1");
+      } catch {
+        // storage blocked: setting lasts for this page only
+      }
+      return !v;
+    });
+  };
+
+  // Hidden edges as screen-space curves, kept in step with the camera.
+  const hiddenBends = useRef(new Map<string, number>());
+  const [extraPaths, setExtraPaths] = useState<{ from: string; to: string; d: string }[]>([]);
   const bySlug = useMemo(() => new Map(nodes.map((n) => [n.slug, n])), [nodes]);
 
   // Orientation follows the same breakpoint as the stage height in CSS.
@@ -158,10 +215,20 @@ export default function GraphView({ nodes, edges }: Props) {
         ? prev
         : next,
     );
+    const paths = hiddenRef.current.map((e) => {
+      const a = graph.getNodeAttributes(e.from);
+      const b = graph.getNodeAttributes(e.to);
+      const c = hiddenBends.current.get(`${e.from}->${e.to}`) ?? 0;
+      const ctrl = { x: (a.x + b.x) / 2 - (b.y - a.y) * c, y: (a.y + b.y) / 2 + (b.x - a.x) * c };
+      const [A, C, B] = [a, ctrl, b].map((p) => renderer.graphToViewport({ x: p.x, y: p.y }));
+      return { from: e.from, to: e.to, d: `M${A.x},${A.y} Q${C.x},${C.y} ${B.x},${B.y}` };
+    });
+    setExtraPaths((prev) => (prev.map((p) => p.d).join() === paths.map((p) => p.d).join() ? prev : paths));
   }, []);
 
   const activate = useCallback((slug: string | null) => {
     activeRef.current = slug;
+    highlightRef.current = slug ? highlightSet(slug, edgesRef.current) : new Set();
     setActive(slug);
     rendererRef.current?.refresh({ skipIndexation: true });
   }, []);
@@ -191,22 +258,21 @@ export default function GraphView({ nodes, edges }: Props) {
       const camera = rendererRef.current?.getCamera();
       if (!camera) return;
       cancelAnimation();
-      const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (!animate || still) {
+      if (!animate || prefersReducedMotion()) {
         setCamera(camera, next);
         return;
       }
       const from = camera.getState();
       const start = performance.now();
       const step = (now: number) => {
-        const t = Math.min(1, (now - start) / 200);
+        const t = Math.min(1, (now - start) / DURATION.slow);
         if (t >= 1) {
           // Land exactly on the target, so Fit all always gives the identical state.
           setCamera(camera, next);
           animFrame.current = 0;
           return;
         }
-        const e = t * (2 - t);
+        const e = easeInOut(t);
         setCamera(camera, {
           x: from.x + (next.x - from.x) * e,
           y: from.y + (next.y - from.y) * e,
@@ -391,7 +457,7 @@ export default function GraphView({ nodes, edges }: Props) {
         // the layout already keeps them apart, and every topic needs its name.
         graph.addNode(n.slug, { x: 0, y: 0, label: n.title, size: NODE_RADIUS, type: "bordered", forceLabel: true });
       }
-      for (const e of edges) {
+      for (const e of transitiveReduction(edges)) {
         if (graph.hasNode(e.from) && graph.hasNode(e.to)) graph.addEdge(e.from, e.to, { size: 1 });
       }
 
@@ -407,7 +473,7 @@ export default function GraphView({ nodes, edges }: Props) {
         nodeProgramClasses: {
           bordered: createNodeBorderProgram({
             borders: [
-              { size: { value: 1.5, mode: "pixels" }, color: { attribute: "borderColor" } },
+              { size: { attribute: "borderSize", defaultValue: 1.5, mode: "pixels" }, color: { attribute: "borderColor" } },
               { size: { fill: true }, color: { attribute: "color" } },
             ],
             drawLabel,
@@ -432,31 +498,46 @@ export default function GraphView({ nodes, edges }: Props) {
           const isRead = readRef.current.includes(slug);
           const current = activeRef.current;
           const isActive = slug === current;
-          const near =
-            !current || isActive || graph.areNeighbors(slug, current);
+          // Opaque: the node, its whole prerequisite chain and its dependents.
+          const near = !current || highlightRef.current.has(slug);
+          // Ready: unread with every prerequisite read. A thicker outline, so it reads without colour.
+          const ready = !isRead && (prereqsRef.current.get(slug) ?? []).every((p) => readRef.current.includes(p));
           const fill = isRead ? ACCENT : PAPER;
           const border = isRead ? (isActive ? ACCENT_DARK : ACCENT) : isActive ? INK : INK_SOFT;
           return {
             ...data,
             color: near ? fill : fade(fill),
             borderColor: near ? border : fade(border),
-            labelColor: near ? INK : fade(INK),
+            borderSize: ready ? 3 : 1.5,
+            labelColor: near ? INK : FADED_LABEL, // faded labels keep AA contrast
             zIndex: near ? 1 : 0,
           };
         },
         edgeReducer: (edge, data) => {
           const current = activeRef.current;
           if (!current) return data;
-          const touches = graph.source(edge) === current || graph.target(edge) === current;
-          return { ...data, color: touches ? INK_SOFT : fade(EDGE) };
+          const h = highlightRef.current;
+          const inChain = h.has(graph.source(edge)) && h.has(graph.target(edge));
+          return { ...data, color: inChain ? INK_SOFT : fade(EDGE) };
         },
       });
 
       // Open a topic on click, but not after a drag, and not if a second click follows.
+      // Move the camera to the node, then open its topic. A double-click
+      // within the window cancels the navigation.
       renderer.on("clickNode", ({ node }) => {
         if (draggedRef.current) return;
         window.clearTimeout(navTimer.current);
-        navTimer.current = window.setTimeout(() => router.push(`/topic/${node}`), DOUBLE_CLICK_MS);
+        // Start loading the topic now, so it is ready when the camera move ends.
+        router.prefetch(`/topic/${node}`);
+        const r = rendererRef.current;
+        if (r) {
+          const attr = r.getGraph().getNodeAttributes(node);
+          const at = framed(r.graphToViewport({ x: attr.x, y: attr.y }));
+          applyCamera({ ...r.getCamera().getState(), x: at.x, y: at.y }, true);
+        }
+        const wait = Math.max(DOUBLE_CLICK_MS, prefersReducedMotion() ? 0 : DURATION.slow);
+        navTimer.current = window.setTimeout(() => navigateWithTransition(router, `/topic/${node}`), wait);
       });
       renderer.on("doubleClickNode", ({ event }) => {
         window.clearTimeout(navTimer.current);
@@ -470,14 +551,18 @@ export default function GraphView({ nodes, edges }: Props) {
       renderer.on("enterNode", ({ node }) => {
         overNode.current = true;
         setCursor();
-        activate(node);
+        activate(nextHighlight(activeRef.current, { type: "enter", node }));
       });
       renderer.on("leaveNode", () => {
         overNode.current = false;
         setCursor();
-        activate(null);
+        activate(nextHighlight(activeRef.current, { type: "leave" }));
       });
-      renderer.getCamera().on("updated", (state) => setZoomPct(Math.round(zoomLevel(state, fitRef.current) * 100)));
+      renderer.getCamera().on("updated", (state) => {
+        setZoomPct(Math.round(zoomLevel(state, fitRef.current) * 100));
+        // Any zoom or pan clears the highlight and tooltip.
+        if (activeRef.current) activate(nextHighlight(activeRef.current, { type: "camera" }));
+      });
       renderer.on("afterRender", syncPoints);
 
       rendererRef.current = renderer;
@@ -499,38 +584,38 @@ export default function GraphView({ nodes, edges }: Props) {
     if (!ready || !renderer || !size.width || !size.height) return;
     const graph = renderer.getGraph();
     const width = Math.max(1, size.width - PADDING * 2);
-    const height = Math.max(1, size.height - PADDING * 2);
+    const height = Math.max(1, size.height - PADDING - PADDING_TOP);
 
-    // Room for labels to the right of the nodes that need it: the last column
-    // when horizontal, every node when stacked.
+    // Measured label widths drive the column gaps.
     const ctx = document.createElement("canvas").getContext("2d")!;
     ctx.font = `500 ${LABEL_SIZE}px ${getComputedStyle(document.body).fontFamily}`;
-    const labelled = orientation === "horizontal" ? (cols[cols.length - 1] ?? []) : cols.flat();
-    const labelRoom = NODE_RADIUS + 8 + Math.max(0, ...labelled.map((n) => ctx.measureText(n.title).width));
+    const labelWidth = new Map(cols.flat().map((n) => [n.slug, ctx.measureText(n.title).width]));
+
+    // Horizontal only when every column fits its widest label with the minimum gap.
+    if (orientation === "horizontal") {
+      const ok = fitPositions(layered, "horizontal", { width, height, labelWidth }).required <= width;
+      if (ok !== fits) return setFits(ok);
+    }
 
     // Horizontal layout reserves slots for long edges; stacked layout lists topics only.
-    const positions = fitPositions(layered, orientation, { width, height, labelRoom });
+    const { positions } = fitPositions(layered, effective, { width, height, labelWidth });
     cols.flat().forEach((n) => graph.mergeNodeAttributes(n.slug, positions.get(n.slug)!));
 
-    const labels = new Map(
-      cols.flat().map((n) => [n.slug, { start: NODE_RADIUS + 8, width: ctx.measureText(n.title).width }]),
-    );
-    const bends = edgeCurvatures(positions, edges, slotsByEdge(layered, positions), {
-      minX: -PADDING + 8,
-      maxX: width + PADDING - 8,
-      minY: -PADDING + 8,
-      maxY: height + PADDING - 8,
-    }, orientation, labels);
+    const labels = new Map(cols.flat().map((n) => [n.slug, { start: LABEL_START, width: labelWidth.get(n.slug)! }]));
+    const stageBox = { minX: -PADDING + 8, maxX: width + PADDING - 8, minY: -PADDING + 8, maxY: height + PADDING_TOP - 8 };
+    const bends = edgeCurvatures(positions, drawn, slotsByEdge(layered, positions), stageBox, effective, labels);
+    hiddenRef.current = hidden;
+    hiddenBends.current = edgeCurvatures(positions, hidden, new Map(), stageBox, effective, labels);
     graph.forEachEdge((edge, _attr, source, target) => {
       graph.setEdgeAttribute(edge, "curvature", bends.get(`${source}->${target}`) ?? 0);
     });
-    renderer.setCustomBBox({ x: [-PADDING, width + PADDING], y: [-PADDING, height + PADDING] });
+    renderer.setCustomBBox({ x: [-PADDING, width + PADDING], y: [-PADDING, height + PADDING_TOP] });
     // Forced, so a change in device pixel ratio (browser zoom, moving to
     // another display) also resizes the WebGL layers, not just the labels.
     renderer.resize(true);
 
     // The one fit ratio: recomputed here on load, resize and node-set change.
-    const fit = fitRatio(width + PADDING * 2, height + PADDING * 2, size.width, size.height);
+    const fit = fitRatio(width + PADDING * 2, height + PADDING + PADDING_TOP, size.width, size.height);
     fitRef.current = fit;
     const { min, max } = ratioLimits(fit);
     renderer.setSetting("minCameraRatio", min);
@@ -538,16 +623,57 @@ export default function GraphView({ nodes, edges }: Props) {
     cancelAnimation();
     setCamera(renderer.getCamera(), fitState(fit));
     renderer.refresh();
-  }, [ready, cols, layered, edges, orientation, size]);
+  }, [ready, cols, layered, drawn, hidden, orientation, effective, fits, size]);
+
+  // Clear the highlight on Escape, page scroll, and a touch or click outside the map.
+  useEffect(() => {
+    const clear = (event: HighlightEvent) => {
+      if (activeRef.current) activate(nextHighlight(activeRef.current, event));
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && clear({ type: "escape" });
+    const onScroll = () => clear({ type: "scroll" });
+    const onDown = (e: PointerEvent) => {
+      if (!stage.current?.contains(e.target as Node)) clear({ type: "touchOutside" });
+    };
+    const onLeave = () => clear({ type: "leave" });
+    const canvas = container.current;
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("pointerdown", onDown);
+    canvas?.addEventListener("pointerleave", onLeave);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("pointerdown", onDown);
+      canvas?.removeEventListener("pointerleave", onLeave);
+    };
+  }, [activate, ready]);
+
+  // Tooltip: rendered in a portal with fixed coordinates, so nothing clips it.
+  const tipRef = useRef<HTMLDivElement>(null);
+  const [tipPos, setTipPos] = useState<{ left: number; top: number } | null>(null);
 
   const activePoint = active ? points.find((p) => p.slug === active) : undefined;
   const activeNode = active ? bySlug.get(active) : undefined;
+
+  useLayoutEffect(() => {
+    const tip = tipRef.current;
+    const box = stage.current?.getBoundingClientRect();
+    if (!tip || !box || !activePoint) return setTipPos(null);
+    const pos = placeTooltip(
+      { x: box.left + activePoint.x, y: box.top + activePoint.y, r: activePoint.r },
+      { w: tip.offsetWidth, h: tip.offsetHeight },
+      { w: document.documentElement.clientWidth, h: window.innerHeight },
+    );
+    setTipPos((prev) => (prev && prev.left === pos.left && prev.top === pos.top ? prev : { left: pos.left, top: pos.top }));
+  }, [activePoint]);
 
   return (
     <>
       <div className="graph-toolbar">
         <p className="graph-legend label">
           <span className="legend-dot" aria-hidden="true" /> Unread
+          <span className="legend-dot is-ready" aria-hidden="true" /> Ready
           <span className="legend-dot is-read" aria-hidden="true" /> Read
         </p>
         <div className="graph-controls label">
@@ -560,6 +686,11 @@ export default function GraphView({ nodes, edges }: Props) {
           <button type="button" className="text-button" onClick={fitAll} disabled={!ready}>
             Fit all
           </button>
+          {hidden.length > 0 && (
+            <button type="button" className="text-button" aria-pressed={showAll} onClick={toggleShowAll}>
+              {showAll ? "Hide extra links" : "Show all links"}
+            </button>
+          )}
           <span className="zoom-readout" aria-live="polite">
             {zoomPct}%
           </span>
@@ -572,36 +703,60 @@ export default function GraphView({ nodes, edges }: Props) {
         role="group"
         aria-label="Topic map"
         // Stage height comes from the layout; CSS picks one per breakpoint (no shift on load).
+        data-orientation={effective}
         style={{ "--rows": rowCount(layered, "horizontal"), "--layers": rowCount(layered, "vertical") } as React.CSSProperties}
       >
         {!ready && <GraphSkeleton />}
         <div ref={container} className="graph-canvas" aria-hidden="true" />
 
+        {/* Edges implied by a longer path: faint and dashed, on hover or focus of either end, or always with "Show all links". */}
+        <svg className="graph-extra" aria-hidden="true">
+          {extraPaths
+            .filter((p) => showAll || active === p.from || active === p.to)
+            .map((p) => (
+              <path key={`${p.from}->${p.to}`} d={p.d} />
+            ))}
+        </svg>
+
         {/* Invisible links over each node: keyboard focus and screen readers. */}
         {points.map((p) => {
           const n = bySlug.get(p.slug)!;
           const isRead = read.includes(p.slug);
+          const isReady = !isRead && (prereqs.get(p.slug) ?? []).every((q) => read.includes(q));
           return (
             <Link
               key={p.slug}
               href={`/topic/${p.slug}`}
               className="graph-node-link"
               style={{ left: p.x, top: p.y, width: p.r * 2 + 6, height: p.r * 2 + 6 }}
-              aria-label={`${n.title}, ${n.posts} ${n.posts === 1 ? "post" : "posts"}, ${isRead ? "read" : "unread"}`}
-              onFocus={() => activate(p.slug)}
-              onBlur={() => activate(null)}
+              aria-label={`${n.title}, ${n.posts} ${n.posts === 1 ? "post" : "posts"}, ${isRead ? "read" : isReady ? "ready to read" : "unread"}`}
+              onFocus={() => activate(nextHighlight(activeRef.current, { type: "focus", node: p.slug }))}
+              onBlur={() => activate(nextHighlight(activeRef.current, { type: "blur" }))}
             />
           );
         })}
 
-        {activePoint && activeNode && (
-          <div className="graph-tooltip" style={{ left: activePoint.x, top: activePoint.y - activePoint.r - 10 }}>
-            <strong>{activeNode.title}</strong>
-            <span>
-              {activeNode.posts} {activeNode.posts === 1 ? "post" : "posts"}
-            </span>
-          </div>
-        )}
+        {activePoint &&
+          activeNode &&
+          createPortal(
+            <div
+              ref={tipRef}
+              className="graph-tooltip"
+              role="tooltip"
+              style={tipPos ? { left: tipPos.left, top: tipPos.top } : { left: 0, top: 0, visibility: "hidden" }}
+            >
+              <strong>{activeNode.title}</strong>
+              <span>
+                {activeNode.posts} {activeNode.posts === 1 ? "post" : "posts"}
+              </span>
+              {(prereqs.get(activeNode.slug) ?? []).length > 0 && (
+                <span>
+                  Builds on: {(prereqs.get(activeNode.slug) ?? []).map((q) => bySlug.get(q)?.title ?? q).join(", ")}
+                </span>
+              )}
+            </div>,
+            document.body,
+          )}
       </div>
     </>
   );

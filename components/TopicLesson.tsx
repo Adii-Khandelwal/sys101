@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { formatDate, type Topic } from "@/lib/topics";
 import { PostDigest, TopicList } from "./TopicDossier";
-import { CompactProgress, MarkDone, QuizBlock, ResumeLine, YourData } from "./LessonTrackers";
+import { CompactProgress, FinishTopic, MarkDone, QuizBlock, ResumeLine } from "./LessonTrackers";
 import type { LessonMeta } from "@/lib/lessonStore";
 import LessonRail from "./LessonRail";
+import Reveal from "./Reveal";
 import SiteFooter from "./SiteFooter";
 
 type Props = {
@@ -203,8 +204,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles }
                 <li key={x.prompt}>
                   <p className="label">{LEVELS[x.level]}</p>
                   <p>{x.prompt}</p>
-                  <details>
-                    <summary>Show a model answer</summary>
+                  <Reveal show="Show a model answer" hide="Hide the model answer">
                     <p>{x.answer}</p>
                     <h4>Trade-offs</h4>
                     <p>{x.tradeoffs}</p>
@@ -217,7 +217,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles }
                     <p>
                       <a href={`#${x.teaches}`}>Review: {SECTION_NAMES[x.teaches]}</a>
                     </p>
-                  </details>
+                  </Reveal>
                 </li>
               ))}
             </ol>
@@ -231,10 +231,10 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles }
               <TopicList topics={dependents} />
             </div>
           </section>
+
+          <FinishTopic meta={meta} />
         </div>
       </div>
-
-      <YourData meta={meta} title={topic.title} />
 
       <section className="sources" aria-labelledby="sources" data-pagefind-ignore>
         <h2 id="sources" className="label">

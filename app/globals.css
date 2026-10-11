@@ -6,6 +6,16 @@
   --accent: #9a3b1f;
   --skeleton: #e2d8c2;
   --edge: #8a7f6c;
+
+  /* Motion tokens: mirror lib/motion.ts (checked by lib/motion.test.ts). */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --dur-page: 160ms;
+  --dur-pulse: 1400ms;
+  --dur-reduced: 80ms;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
 }
 
 * {
@@ -175,7 +185,11 @@ a:hover {
 }
 
 .graph-legend .legend-dot + .legend-dot,
-.graph-legend .legend-dot.is-read {
+.graph-legend .legend-dot.is-ready {
+  border-width: 3px; /* ready reads by outline weight, not colour */
+}
+
+.legend-dot.is-read {
   margin-left: 12px;
 }
 
@@ -215,10 +229,32 @@ a:hover {
 
 .graph-stage {
   position: relative;
-  height: clamp(240px, calc(var(--rows, 1) * 120px + 120px), 70vh);
+  height: clamp(262px, calc(var(--rows, 1) * 120px + 142px), 70vh);
   overflow: hidden;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
+}
+
+/* Edges implied by a longer path: shown faint and dashed as a hint. */
+.graph-extra {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.graph-extra path {
+  fill: none;
+  stroke: var(--edge);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  opacity: 0.6;
+}
+
+/* Stacked when the columns' labels do not fit the stage width. */
+.graph-stage[data-orientation="vertical"] {
+  height: clamp(262px, calc(var(--layers, 1) * 120px + 142px), 70vh);
 }
 
 .graph-node-link {
@@ -234,17 +270,17 @@ a:hover {
 }
 
 .graph-tooltip {
-  position: absolute;
-  transform: translate(-50%, -100%);
+  position: fixed; /* portalled to <body>, so the map's overflow never clips it */
+  z-index: 50;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  max-width: 280px;
   padding: 6px 10px;
   background: var(--paper);
   border: 1px solid var(--ink-soft);
   pointer-events: none;
-  white-space: nowrap;
-  z-index: 2;
+  overflow-wrap: anywhere;
 }
 
 .graph-tooltip strong {
@@ -516,33 +552,18 @@ a:hover {
   color: var(--ink-soft);
 }
 
-details {
+.reveal-wrap {
   margin-top: 6px;
 }
 
-summary {
-  cursor: pointer;
-  font-family: var(--font-mono), monospace;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  text-decoration: underline;
-  text-decoration-color: var(--rule);
-  text-underline-offset: 3px;
-}
-
-summary:hover {
-  color: var(--accent);
-}
-
-details[open] summary {
-  margin-bottom: 6px;
-}
-
-details p {
-  padding-left: 12px;
+.reveal-content {
+  padding: 6px 0 0 12px;
   border-left: 1px solid var(--rule);
+}
+
+.reveal-content > p,
+.explain > p {
+  margin: 0 0 6px;
 }
 
 .sources {
@@ -662,13 +683,7 @@ details p {
 }
 
 .explain {
-  margin-top: 8px;
-  padding-left: 12px;
-  border-left: 1px solid var(--rule);
-}
-
-.explain p {
-  margin: 0 0 6px;
+  padding-top: 2px;
 }
 
 .quiz-score {
@@ -704,22 +719,38 @@ details p {
 }
 
 .seg {
+  position: relative;
   flex: 1;
   height: 4px;
+  overflow: hidden;
   background: var(--skeleton);
+}
+
+/* Completed segments fill left to right. */
+.seg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+
+.seg.is-done::after {
+  transform: scaleX(1);
 }
 
 .seg.group-start {
   margin-left: 5px;
 }
 
-.seg.is-done {
-  background: var(--accent);
-  transition: background-color 200ms ease;
-}
+
 
 .progress-tip {
-  display: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-out);
   position: absolute;
   top: 12px;
   left: 0;
@@ -732,7 +763,7 @@ details p {
 
 .progress-bar:hover .progress-tip,
 .progress-bar:focus-visible .progress-tip {
-  display: block;
+  opacity: 1;
 }
 
 /* Narrow screens: the rail becomes one sticky line in the page flow. */
@@ -762,11 +793,7 @@ details p {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .seg.is-done {
-    transition: none;
-  }
-}
+
 
 .your-data {
   margin-top: 64px;
@@ -790,6 +817,19 @@ details p {
   flex-wrap: wrap;
   gap: 8px 20px;
   margin: 0 0 8px;
+}
+
+.finish-topic {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+}
+
+.finish-note {
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-style: italic;
+  color: var(--ink-soft);
 }
 
 .mark-row {
@@ -905,6 +945,7 @@ details p {
   }
 
   .lesson-rail ol {
+    position: relative;
     list-style: none;
     margin: 0;
     padding: 0 0 0 12px;
@@ -1002,7 +1043,7 @@ details p {
     margin-top: 32px;
   }
   .graph-stage {
-    height: clamp(240px, calc(var(--layers, 1) * 120px + 120px), 70vh);
+    height: clamp(262px, calc(var(--layers, 1) * 120px + 142px), 70vh);
   }
   .index-groups {
     grid-template-columns: 1fr;
@@ -1025,6 +1066,13 @@ details p {
   position: absolute;
   inset: 0;
   touch-action: none; /* one finger pans, two pinch; the rest of the page scrolls normally */
+}
+
+/* Buttons do not inherit fonts by default; match the legend's mono small caps. */
+.graph-controls button {
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
 }
 
 .graph-controls {
@@ -1109,7 +1157,7 @@ details p {
 
 .graph-skeleton,
 .dossier[aria-busy="true"] {
-  animation: skeleton-pulse 1.4s ease-in-out infinite;
+  animation: skeleton-pulse var(--dur-pulse) var(--ease-in-out) infinite;
 }
 
 @keyframes skeleton-pulse {
@@ -1184,4 +1232,192 @@ details p {
 
 .index li.is-read span {
   color: var(--accent);
+}
+
+/* ── Motion ──────────────────────────────── */
+/* Feedback and state changes only. Transform, opacity and color are the only
+   animated properties (plus grid rows for reveals, which reserve space). */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Single fade-in on first load. body persists across client navigations,
+   so this runs once per hard load. */
+body {
+  animation: fade-in var(--dur-base) var(--ease-out);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Press feedback on buttons and text controls. */
+button,
+.text-button,
+.lesson-top a,
+.progress-head a,
+.progress-line a {
+  transition: transform var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.text-button,
+.lesson-top a,
+.progress-head a,
+.progress-line a {
+  display: inline-block;
+}
+
+button:active:not(:disabled),
+.text-button:active,
+.lesson-top a:active,
+.progress-head a:active,
+.progress-line a:active {
+  transform: scale(0.97);
+}
+
+/* Mark done: square scales in, label cross-fades. */
+.mark-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mark-square {
+  width: 9px;
+  height: 9px;
+  border: 1px solid currentColor;
+  position: relative;
+}
+
+.mark-square::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: var(--accent);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
+}
+
+.mark-done[aria-pressed="true"] .mark-square::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.swap {
+  display: inline-grid;
+}
+
+.swap > span {
+  grid-area: 1 / 1;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.swap > [data-hidden] {
+  opacity: 0;
+}
+
+/* Number cross-fade: the new value fades in when its key changes. */
+.fade-swap {
+  animation: fade-in var(--dur-fast) var(--ease-out);
+}
+
+/* Reveals: space opens with grid rows, content fades up 6px. */
+.reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-base) var(--ease-out);
+}
+
+.reveal[data-open] {
+  grid-template-rows: 1fr;
+}
+
+.reveal-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.reveal-content {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
+}
+
+.reveal[data-open] .reveal-content {
+  opacity: 1;
+  transform: none;
+}
+
+/* Quiz: chosen option changes instantly; a wrong choice gets a quick outline color change. */
+.option {
+  outline: 1px solid transparent;
+  outline-offset: 3px;
+  transition: outline-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.option.is-wrong {
+  outline-color: var(--ink-soft);
+}
+
+.option.is-right {
+  outline-color: var(--accent);
+}
+
+/* Graph tooltip: plain fade, no movement. */
+.graph-tooltip {
+  animation: fade-in var(--dur-fast) var(--ease-out);
+}
+
+/* Left rail: one marker slides to the current row. */
+.rail-marker {
+  position: absolute;
+  left: -1px;
+  top: 0;
+  width: 1px;
+  height: 18px;
+  background: var(--accent);
+  transition: transform var(--dur-base) var(--ease-in-out);
+}
+
+/* Page to page: cross-fade the content (browsers with View Transitions). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-page);
+  animation-timing-function: var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    /* Movement becomes instant; anything that still fades stays at 80ms or less. */
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+    --dur-page: 0ms;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  body,
+  .fade-swap,
+  .graph-tooltip {
+    animation-duration: var(--dur-reduced);
+  }
+
+  button:active:not(:disabled),
+  .text-button:active,
+  .lesson-top a:active,
+  .progress-head a:active,
+  .progress-line a:active {
+    transform: none;
+  }
+
+  .reveal-content {
+    transform: none;
+  }
 }

@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { lastViewedOnLoad, replaceProgress, useLesson, useReadTopics } from "@/lib/progress";
+import { RevealPanel } from "./Reveal";
 import {
+  markAllDone,
+  quizComplete,
   summary,
   counts,
   exportFile,
@@ -31,10 +34,51 @@ export function MarkDone({ meta, unit }: { meta: LessonMeta; unit: string }) {
   const done = unitStatus(progress, m, unit) === "done";
   return (
     <p className="mark-row" data-pagefind-ignore>
-      <button type="button" className="text-button label" aria-pressed={done} onClick={() => update((p) => toggleUnit(p, m, unit))}>
-        {done ? "Done" : "Mark done"}
+      <button
+        type="button"
+        className="text-button label mark-done"
+        aria-pressed={done}
+        onClick={() => update((p) => toggleUnit(p, m, unit))}
+      >
+        <span className="mark-square" aria-hidden="true" />
+        <span className="swap">
+          <span data-hidden={done || undefined} aria-hidden={done || undefined}>
+            Mark done
+          </span>
+          <span data-hidden={!done || undefined} aria-hidden={!done || undefined}>
+            Done
+          </span>
+        </span>
       </button>
     </p>
+  );
+}
+
+/** End-of-topic button: marks every section and post done in one go. */
+export function FinishTopic({ meta }: { meta: LessonMeta }) {
+  const m = useMeta(meta);
+  const { progress, update } = useLesson(m);
+  const s = summary(progress, m);
+  const quizLeft = !quizComplete(progress, m);
+  const allMarked = s.done === s.total || (quizLeft && s.done === s.total - 1);
+  return (
+    <div className="finish-topic" data-pagefind-ignore>
+      <button
+        type="button"
+        className="text-button label mark-done"
+        aria-pressed={allMarked}
+        disabled={allMarked}
+        onClick={() => update((p) => markAllDone(p, m))}
+      >
+        <span className="mark-square" aria-hidden="true" />
+        {allMarked ? "Every section is done" : "I have finished this topic"}
+      </button>
+      {quizLeft && (
+        <p className="finish-note">
+          The quiz counts once every question is answered. <a href="#check">Go to the quiz</a>
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -54,14 +98,20 @@ export function CompactProgress({ meta, variant = "rail" }: { meta: LessonMeta; 
   if (variant === "line") {
     return (
       <p className="progress-line label" aria-live="polite">
-        {s.done} of {s.total} done<span className="visually-hidden"> ({detail})</span> · {link}
+        <span key={s.done} className="fade-swap">
+          {s.done}
+        </span>{" "}
+        of {s.total} done<span className="visually-hidden"> ({detail})</span> · {link}
       </p>
     );
   }
   return (
     <div className="progress-head" aria-live="polite">
       <p className="label">
-        {s.done} of {s.total} done
+        <span key={s.done} className="fade-swap">
+          {s.done}
+        </span>{" "}
+        of {s.total} done
       </p>
       <div className="progress-bar" tabIndex={0} aria-label={`${s.done} of ${s.total} done. ${detail}`}>
         {s.segments.map((seg, i) => (
@@ -70,7 +120,7 @@ export function CompactProgress({ meta, variant = "rail" }: { meta: LessonMeta; 
             className={`seg${seg.done ? " is-done" : ""}${i > 0 && s.segments[i - 1].group !== seg.group ? " group-start" : ""}`}
           />
         ))}
-        <span className="progress-tip label" role="tooltip">
+        <span className="progress-tip label" aria-hidden="true">
           Concept {c.concept}/{c.conceptTotal} · Quiz {c.quiz.answered}/{c.quiz.total} · Posts {c.posts}/{c.postsTotal}
         </span>
       </div>
@@ -115,7 +165,7 @@ export function QuizBlock({ meta, quiz, names }: { meta: LessonMeta; quiz: Quest
                   <li key={o}>
                     <button
                       type="button"
-                      className="option"
+                      className={`option${chosen === j ? (j === q.correct ? " is-right" : " is-wrong") : ""}`}
                       aria-pressed={chosen === j}
                       disabled={answered}
                       onClick={() => update((p) => answer(p, m.slug, i, j))}
@@ -127,10 +177,10 @@ export function QuizBlock({ meta, quiz, names }: { meta: LessonMeta; quiz: Quest
                   </li>
                 ))}
               </ol>
-              {answered && (
+              <RevealPanel open={answered}>
                 <div className="explain" aria-live="polite">
                   <p>
-                    <strong>{chosen === q.correct ? "Right." : `Not quite: the answer is ${letters[q.correct]}.`}</strong> {q.why}
+                    <strong>{answered && chosen === q.correct ? "Right." : `Not quite: the answer is ${letters[q.correct]}.`}</strong> {q.why}
                   </p>
                   <ul className="wrong">
                     {q.options.map((_, j) =>
@@ -145,7 +195,7 @@ export function QuizBlock({ meta, quiz, names }: { meta: LessonMeta; quiz: Quest
                     <a href={`#${q.teaches}`}>Review: {names[q.teaches]}</a>
                   </p>
                 </div>
-              )}
+              </RevealPanel>
             </li>
           );
         })}

@@ -2,7 +2,7 @@ import GraphView from "@/components/GraphView";
 import Search from "@/components/Search";
 import SiteFooter from "@/components/SiteFooter";
 import TopicIndex from "@/components/TopicIndex";
-import { columns, depths } from "@/lib/graph";
+import { columns, depths, transitiveReduction } from "@/lib/graph";
 import { GROUPS, getAllTopics, type Group } from "@/lib/topics";
 
 // Prerendered at build time; using anything dynamic here fails the build.
@@ -20,7 +20,8 @@ export default function Home() {
   // Map order: by prerequisite depth, then position in the column. Used for
   // the index numbering and for keyboard tab order through the map.
   const depth = depths(topics, edges);
-  const ordered = columns(topics, edges).flat();
+  // Same order as the drawn map, which uses the reduced edges; data keeps all edges.
+  const ordered = columns(topics, transitiveReduction(edges)).flat();
   const nodes = ordered.map((t) => ({ slug: t.slug, title: t.title, posts: t.posts.length }));
   const entries = ordered.map((t, i) => ({
     slug: t.slug,

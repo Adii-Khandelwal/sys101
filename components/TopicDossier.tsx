@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatDate, formatMonth, isOld, type Post, type Topic } from "@/lib/topics";
 import ReadToggle from "./ReadToggle";
+import Reveal from "./Reveal";
 import SiteFooter from "./SiteFooter";
 
 type Props = {
@@ -184,10 +185,9 @@ export default function TopicDossier({ topic, prerequisites, dependents, titles 
             {topic.quiz!.map((q) => (
               <li key={q.question}>
                 <p>{q.question}</p>
-                <details>
-                  <summary>Show answer</summary>
+                <Reveal show="Show answer" hide="Hide answer">
                   <p>{q.answer}</p>
-                </details>
+                </Reveal>
               </li>
             ))}
           </ol>
@@ -196,10 +196,9 @@ export default function TopicDossier({ topic, prerequisites, dependents, titles 
         <section className="closing" aria-labelledby="exercise" data-pagefind-ignore>
           <h2 id="exercise">Design exercise</h2>
           <p>{topic.exercise!.prompt}</p>
-          <details>
-            <summary>Show a model answer</summary>
+          <Reveal show="Show a model answer" hide="Hide the model answer">
             <p>{topic.exercise!.answer}</p>
-          </details>
+          </Reveal>
         </section>
       </div>
 

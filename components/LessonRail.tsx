@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { prefersReducedMotion } from "@/lib/motion";
 import { useLesson } from "@/lib/progress";
 import { markVisited, unitStatus, type LessonMeta } from "@/lib/lessonStore";
 import { CompactProgress } from "./LessonTrackers";
@@ -46,15 +47,39 @@ export default function LessonRail({ meta, entries }: { meta: LessonMeta; entrie
     if (current && tracked.split(",").includes(current)) update((p) => markVisited(p, m.slug, current));
   }, [current, tracked, m.slug, update]);
 
+  // One marker slides (transform only) to the current row.
+  const list = useRef<HTMLOListElement>(null);
+  const [markerY, setMarkerY] = useState<number | null>(null);
+  useEffect(() => {
+    const row = list.current?.querySelector<HTMLElement>(`[data-id="${current}"]`);
+    setMarkerY(row ? row.offsetTop : null);
+  }, [current]);
+
+  /** Scroll smoothly to a section, clear of the top, and move focus to its heading without a jump. */
+  const go = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    const target = document.getElementById(id);
+    if (!target) return;
+    e.preventDefault();
+    const top = target.getBoundingClientRect().top + window.scrollY - 32;
+    window.scrollTo({ top, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    const heading = target.querySelector<HTMLElement>("h2, h3") ?? target;
+    if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1");
+    heading.focus({ preventScroll: true });
+    history.replaceState(null, "", `#${id}`);
+  };
+
   return (
     <nav className="lesson-rail" aria-label="Sections on this page" data-pagefind-ignore>
       <CompactProgress meta={m} />
-      <ol>
+      <ol ref={list}>
+        {markerY !== null && (
+          <span className="rail-marker" aria-hidden="true" style={{ transform: `translateY(${markerY}px)` }} />
+        )}
         {entries.map((e) => {
           const status = e.tracked ? unitStatus(progress, m, e.id) : null;
           return (
-            <li key={e.id} className={e.id === current ? "is-current" : undefined}>
-              <a href={`#${e.id}`} aria-current={e.id === current ? "location" : undefined}>
+            <li key={e.id} data-id={e.id} className={e.id === current ? "is-current" : undefined}>
+              <a href={`#${e.id}`} aria-current={e.id === current ? "location" : undefined} onClick={(ev) => go(ev, e.id)}>
                 {status === "done" && <span className="status is-done" aria-hidden="true" />}
                 {e.name}
                 {status === "done" && <span className="visually-hidden"> (done)</span>}

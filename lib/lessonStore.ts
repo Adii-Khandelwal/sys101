@@ -180,6 +180,12 @@ export function toggleUnit(p: Progress, meta: LessonMeta, unit: string): Progres
   return withTopic(p, meta.slug, (t) => ({ ...t, done: flip(t.done, unit) }));
 }
 
+/** Mark every concept section done and every post read. The quiz still needs answers. */
+export function markAllDone(p: Progress, meta: LessonMeta): Progress {
+  const t = withTopic(p, meta.slug, (x) => ({ ...x, done: [...new Set([...x.done, ...CONCEPT_SECTIONS])] }));
+  return { ...t, posts: [...new Set([...t.posts, ...meta.postIds])] };
+}
+
 export function markVisited(p: Progress, slug: string, unit: string): Progress {
   const t = topicOf(p, slug);
   if (t.visited.includes(unit) && t.last === unit) return p;

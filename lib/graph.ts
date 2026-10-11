@@ -24,6 +24,31 @@ export function depths(nodes: Node[], edges: Edge[]) {
   return depth;
 }
 
+/**
+ * Transitive reduction: drop an edge u -> v when v is still reachable from u
+ * through a longer path (DNS -> CDNs is implied by DNS -> Load Balancing ->
+ * Caching -> CDNs). Only the drawing uses this; prerequisite data, "Builds
+ * on" lists, ready state and build checks keep the full edge set.
+ */
+export function transitiveReduction(edges: Edge[]): Edge[] {
+  const out = new Map<string, string[]>();
+  for (const e of edges) out.set(e.from, [...(out.get(e.from) ?? []), e.to]);
+  // Is `to` reachable from `from` without using the direct edge from -> to?
+  const viaLonger = (from: string, to: string) => {
+    const seen = new Set<string>();
+    const stack = (out.get(from) ?? []).filter((n) => n !== to);
+    while (stack.length) {
+      const n = stack.pop()!;
+      if (n === to) return true;
+      if (seen.has(n)) continue;
+      seen.add(n);
+      stack.push(...(out.get(n) ?? []));
+    }
+    return false;
+  };
+  return edges.filter((e) => !viaLonger(e.from, e.to));
+}
+
 /** A placeholder in a column that a long edge passes through. Never drawn. */
 export type Slot = { slug: string; title: ""; slot: true; edge: string };
 
@@ -100,48 +125,89 @@ export type Orientation = "horizontal" | "vertical";
  * topics side by side would put one's label over the other's node.
  */
 export function rowCount(cols: (Node | Slot)[][], orientation: Orientation) {
-  return orientation === "horizontal"
-    ? Math.max(1, ...cols.map((c) => c.length))
-    : cols.flat().filter((n) => !isSlot(n)).length;
+  if (orientation === "vertical") return cols.flat().filter((n) => !isSlot(n)).length;
+  const { min, max } = rowSpan(cols);
+  return Math.round(max - min) + 1;
 }
 
 /**
- * Pixel positions that fill a `width` x `height` box (the stage minus its
- * padding). Horizontal: columns run left to right, leaving `labelRoom` on the
- * right for the last column's labels. Vertical (narrow screens): the same
- * columns stacked top to bottom, each spread across the width. Sigma's y axis
- * points up, so the first row gets the largest y.
+ * Row positions on the grid of the tallest column (slots included, so long
+ * edges keep their corridors), and the span actually used by real topics. A
+ * row that only holds corridors is not given any height.
+ */
+function rowGrid(cols: (Node | Slot)[][]) {
+  const rows = Math.max(1, ...cols.map((c) => c.length));
+  const row = new Map<string, number>();
+  cols.forEach((col) => {
+    const first = (rows - col.length) / 2;
+    col.forEach((n, i) => row.set(n.slug, first + i));
+  });
+  return row;
+}
+
+function rowSpan(cols: (Node | Slot)[][]) {
+  const row = rowGrid(cols);
+  const real = cols.flat().filter((n) => !isSlot(n)).map((n) => row.get(n.slug)!);
+  return { min: Math.min(...real), max: Math.max(...real) };
+}
+
+export const NODE_RADIUS = 14;
+/** A label starts this far right of its node's centre. */
+export const LABEL_START = NODE_RADIUS + 8;
+/** Smallest space between the end of a label and the edge of the next node. */
+export const MIN_LABEL_GAP = 16;
+
+/**
+ * Pixel positions inside a `width` x `height` box (the stage minus its
+ * padding), and the width the horizontal layout needs.
+ *
+ * Horizontal: each gap between columns is at least the widest label in the
+ * left column plus MIN_LABEL_GAP, measured from `labelWidth`; spare width is
+ * shared equally. Rows span only the rows real topics use, so there is no
+ * empty band above or below. Vertical (narrow screens): one topic per row.
+ * Sigma's y axis points up, so the first row gets the largest y.
  */
 export function fitPositions(
   cols: (Node | Slot)[][],
   orientation: Orientation,
-  box: { width: number; height: number; labelRoom: number },
+  box: { width: number; height: number; labelWidth: Map<string, number> },
 ) {
-  const { width, height, labelRoom } = box;
-  const across = Math.max(0, width - labelRoom); // width available to node centres
-  const spread = (i: number, n: number, span: number) => (n > 1 ? (i * span) / (n - 1) : span / 2);
+  const { width, height, labelWidth } = box;
+  const widest = (col: (Node | Slot)[]) =>
+    Math.max(0, ...col.filter((n) => !isSlot(n)).map((n) => labelWidth.get(n.slug) ?? 0));
   const positions = new Map<string, { x: number; y: number }>();
 
   if (orientation === "horizontal") {
-    const rows = rowCount(cols, orientation);
+    const gaps = cols.slice(0, -1).map((col) => LABEL_START + widest(col) + MIN_LABEL_GAP + NODE_RADIUS);
+    const lastRoom = LABEL_START + widest(cols[cols.length - 1] ?? []);
+    const required = gaps.reduce((a, b) => a + b, 0) + lastRoom;
+    const extra = Math.max(0, width - required);
+    const share = gaps.length ? extra / gaps.length : 0;
+    const xs = [gaps.length ? 0 : extra / 2];
+    gaps.forEach((g, i) => xs.push(xs[i] + g + share));
+
+    const row = rowGrid(cols);
+    const { min, max } = rowSpan(cols);
+    const span = max - min;
     cols.forEach((col, c) => {
-      // Centre a short column within the tallest one, on the same row grid.
-      const first = (rows - col.length) / 2;
-      col.forEach((n, i) => {
-        positions.set(n.slug, {
-          x: spread(c, cols.length, across),
-          y: height - spread(first + i, rows, height),
-        });
-      });
+      for (const n of col) {
+        const r = row.get(n.slug)!;
+        const y = span > 0 ? height - ((r - min) / span) * height : height / 2;
+        // A corridor outside the rows topics use would sit off the stage; keep it inside.
+        positions.set(n.slug, { x: xs[c], y: isSlot(n) ? Math.min(height, Math.max(0, y)) : y });
+      }
     });
-  } else {
-    // One topic per row, a little in from the left edge so edges that bend
-    // left have room, with labels running to the right.
-    const order = cols.flat().filter((n) => !isSlot(n));
-    const x = Math.min(32, across);
-    order.forEach((n, i) => positions.set(n.slug, { x, y: height - spread(i, order.length, height) }));
+    return { positions, required };
   }
-  return positions;
+
+  // One topic per row, a little in from the left edge so edges that bend
+  // left have room, with labels running to the right.
+  const order = cols.flat().filter((n) => !isSlot(n));
+  const room = LABEL_START + widest(order);
+  const x = Math.max(0, Math.min(32, width - room));
+  const spread = (i: number, n: number) => (n > 1 ? (i * height) / (n - 1) : height / 2);
+  order.forEach((n, i) => positions.set(n.slug, { x, y: height - spread(i, order.length) }));
+  return { positions, required: x + room };
 }
 
 type Point = { x: number; y: number };
@@ -234,6 +300,35 @@ export function edgeCurvatures(
     if (ok !== undefined) result.set(key, ok);
   }
   return result;
+}
+
+/** Drawn edges that touch a node they do not connect, any label, or the stage edge. For tests and checks. */
+export function edgeCollisions(
+  positions: Map<string, Point>,
+  edges: Edge[],
+  curvatures: Map<string, number>,
+  labels: Map<string, { start: number; width: number }>,
+  stage: { minX: number; maxX: number; minY: number; maxY: number },
+) {
+  const topics = [...positions].filter(([slug]) => labels.has(slug));
+  return edges
+    .filter((e) => !clear(positions.get(e.from)!, positions.get(e.to)!, curvatures.get(edgeKey(e)) ?? 0, e, topics, labels, stage))
+    .map(edgeKey);
+}
+
+/** Smallest gap between a label's end and the edge of any node to its right on the same row. */
+export function minLabelGap(positions: Map<string, Point>, labels: Map<string, { start: number; width: number }>) {
+  let min = Infinity;
+  for (const [a, p] of positions) {
+    const l = labels.get(a);
+    if (!l) continue;
+    const end = p.x + l.start + l.width;
+    for (const [b, q] of positions) {
+      if (b === a || !labels.has(b) || q.x <= p.x || Math.abs(q.y - p.y) > NODE_RADIUS + 13) continue;
+      min = Math.min(min, q.x - NODE_RADIUS - end);
+    }
+  }
+  return min;
 }
 
 /** Does the curve from a to b with curvature c stay on stage and off every other topic and label? */

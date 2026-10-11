@@ -11,6 +11,7 @@ import {
   quizComplete,
   quizScore,
   retryQuiz,
+  markAllDone,
   summary,
   syncRead,
   toggleUnit,
@@ -119,5 +120,16 @@ describe("progress header text", () => {
     expect(summary(p, meta).segments.map((s) => s.group)).toEqual([
       "concept", "concept", "concept", "concept", "concept", "quiz", "posts", "posts",
     ]);
+  });
+});
+
+describe("finish topic", () => {
+  it("marks every section and post done, leaving the quiz to be answered", () => {
+    let p = markAllDone(emptyProgress(), meta);
+    expect(summary(p, meta).done).toBe(7);
+    expect(isTopicRead(p, meta)).toBe(false);
+    p = answerAll(p, () => 0);
+    expect(isTopicRead(p, meta)).toBe(true);
+    expect(markAllDone(p, meta)).toEqual(p);
   });
 });
