@@ -1,13 +1,15 @@
 import Link from "next/link";
 import HomeView from "@/components/HomeView";
+import InsideTopic from "@/components/InsideTopic";
 import NextUp from "@/components/NextUp";
 import PostSources from "@/components/PostSources";
 import Search from "@/components/Search";
-import StartHere from "@/components/StartHere";
 import StillToCome from "@/components/StillToCome";
 import TryQuestion from "@/components/TryQuestion";
 import SiteFooter from "@/components/SiteFooter";
 import { columns, depths, transitiveReduction } from "@/lib/graph";
+import { getAllLearn } from "@/lib/learn";
+import { homeStats } from "@/lib/homeStats";
 import { getRoadmap } from "@/lib/roadmap";
 import { GROUPS, formatDate, getAllTopics, type Group } from "@/lib/topics";
 import { SITE_DESCRIPTION, pageMeta } from "@/lib/site";
@@ -64,6 +66,8 @@ export default function Home() {
     .map(([name, urls]) => ({ name, posts: urls.size }))
     .sort((a, b) => a.name.localeCompare(b.name));
   const planned = getRoadmap(topics);
+  const stats = homeStats(topics);
+  const learnSlugs = getAllLearn(topics.map((t) => t.slug)).map((l) => l.slug);
   // A topic's date is when its first post was checked; the newest of those is the latest added.
   const added = topics
     .map((t) => ({ title: t.title, date: t.posts.map((p) => p.verifiedOn).sort()[0] }))
@@ -75,12 +79,15 @@ export default function Home() {
       <header className="masthead">
         <h1>sys101</h1>
         <p className="masthead-lead">Learn system design in the order it makes sense.</p>
-        <p>
-          A guided path through the concepts behind systems at scale, built from real engineering
-          stories. <Link href="/about">Why this exists</Link>
+        <p>Each topic builds on the one before it, and every one is taught through how real engineering teams solved it.</p>
+        <p className="proof-line">
+          {stats.topics} topics, {stats.posts} posts from {stats.companies} companies. Every post is linked and dated, and last
+          checked {formatDate(stats.lastChecked)}. <Link href="/about">Why this exists</Link>
         </p>
-        <NextUp entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))} />
-        <StartHere firstSlug="dns" firstTitle="DNS" />
+        <NextUp
+          entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))}
+          learnSlugs={learnSlugs}
+        />
         <Search />
       </header>
 
@@ -104,6 +111,7 @@ export default function Home() {
         </p>
       )}
 
+      <InsideTopic topic={dns} />
       <TryQuestion slug={dns.slug} topicTitle={dns.title} question={sample} />
       <PostSources companies={companies} />
       <StillToCome planned={planned} firstNumber={topics.length + 1} />

@@ -4,11 +4,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DURATION, prefersReducedMotion } from "@/lib/motion";
 import { useReadTopics } from "@/lib/progress";
-import { readCount, readyTopics, type IndexEntry } from "@/lib/nextUp";
+import { readCount, readyTopics, startVariant, type IndexEntry } from "@/lib/nextUp";
 import { navigateWithTransition } from "./ViewTransitions";
 
-/** "Next up: <topic>" under the tagline, from what has been read in this browser. */
-export default function NextUp({ entries }: { entries: IndexEntry[] }) {
+/**
+ * The one start line under the intro, from what has been read in this browser.
+ * With nothing read it is "Start here"; once something is read it is "Next up".
+ * The two never show together.
+ */
+export default function NextUp({ entries, learnSlugs }: { entries: IndexEntry[]; learnSlugs: string[] }) {
   const read = useReadTopics();
   const router = useRouter();
   const ready = readyTopics(entries, read);
@@ -26,6 +30,49 @@ export default function NextUp({ entries }: { entries: IndexEntry[] }) {
     const wait = node && !prefersReducedMotion() ? DURATION.slow * 2 : 0;
     window.setTimeout(() => navigateWithTransition(router, href), wait);
   };
+
+  // Reveal the Map (if the reader is on Path), then scroll to it and focus the first node.
+  const exploreMap = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent("sys101:show-map"));
+    requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>(".graph-stage")?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "center" });
+      requestAnimationFrame(() => document.querySelector<HTMLElement>(".graph-node-link")?.focus({ preventScroll: true }));
+    });
+  };
+
+  const count = (
+    <span className="next-count label">
+      {done} of {entries.length} topics read
+    </span>
+  );
+
+  if (startVariant(read) === "first" && next) {
+    return (
+      <p className="next-up" data-pagefind-ignore>
+        <span>
+          Start here:{" "}
+          <Link className="start-primary" href={`/topic/${next.slug}`}>
+            {next.title}
+          </Link>
+        </span>
+        {learnSlugs.includes(next.slug) && (
+          <span className="next-also">
+            New to this? <Link href={`/topic/${next.slug}/learn`}>Start from zero</Link>
+          </span>
+        )}
+        {also && (
+          <span className="next-also">
+            Also ready: <Link href={`/topic/${also.slug}`}>{also.title}</Link>
+          </span>
+        )}
+        <a className="start-secondary next-also" href="#the-map" onClick={exploreMap}>
+          Explore the map
+        </a>
+        {count}
+      </p>
+    );
+  }
 
   return (
     <p className="next-up" data-pagefind-ignore>
@@ -48,9 +95,7 @@ export default function NextUp({ entries }: { entries: IndexEntry[] }) {
       ) : (
         "All caught up"
       )}
-      <span className="next-count label">
-        {done} of {entries.length} topics read
-      </span>
+      {count}
     </p>
   );
 }
