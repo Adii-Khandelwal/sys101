@@ -143,6 +143,9 @@ export function checkLearn(l: Learn, topicSlugs: string[]): string[] {
 
   (l.misconceptions ?? []).forEach((m) => citations(`${m.myth} ${m.truth}`).forEach((id) => known(id, "misconceptions")));
   (l.tryIt?.commands ?? []).forEach((c) => known(c.source, `try it "${c.command}"`));
+  (l.tryIt?.commands ?? []).forEach((c) => {
+    if (/^\s*[>$]\s/m.test(c.command)) problems.push(`try it "${c.command.slice(0, 40)}" starts with a prompt character; commands must be exactly what you type`);
+  });
   citations(l.next ?? "").forEach((id) => known(id, "where to go next"));
   return problems;
 }

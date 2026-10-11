@@ -269,7 +269,7 @@
         "note": "As Redis's page writes it. This one needs a Redis server and redis-cli, which the page does not install for you."
       },
       {
-        "command": "> PUBLISH second Hello",
+        "command": "PUBLISH second Hello",
         "shows": "From another client, publishes Hello to the channel second. The page shows client A receiving a message array holding message, second and Hello, again as raw protocol text.",
         "source": "redis-pubsub"
       }

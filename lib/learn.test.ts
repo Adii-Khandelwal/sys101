@@ -39,6 +39,14 @@ describe("learn pages", () => {
     expect(problems).toMatch(/unknown source id "nope"/);
   });
 
+  it("fails a Try it command that starts with a prompt character", () => {
+    for (const prompt of ["> ", "$ "]) {
+      const l = clone();
+      l.tryIt.commands[0].command = `${prompt}PUBLISH a b`;
+      expect(checkLearn(l, slugs).join()).toMatch(/prompt character/);
+    }
+  });
+
   it("fails a source missing publisher, kind, year or verifiedOn", () => {
     for (const f of ["publisher", "kind", "year", "verifiedOn"] as const) {
       const l = clone();
