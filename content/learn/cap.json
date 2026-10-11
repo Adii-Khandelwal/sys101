@@ -52,13 +52,13 @@
       "reading": [
         {
           "source": "aws-ddb-consistency",
-          "section": "Read consistency: eventually vs strongly consistent reads",
-          "what": "How one real database exposes the CAP trade-off as a per-read choice, and what each option promises."
+          "section": "Eventually consistent reads, and Strongly consistent reads",
+          "what": "How one real database exposes the consistency trade-off as a choice on each read, and what each option promises."
         },
         {
           "source": "cassandra-dynamo",
-          "section": "Dynamo: tunable consistency and consistency levels (intro)",
-          "what": "That consistency versus availability is a tradeoff you can set for each operation."
+          "section": "Tunable Consistency",
+          "what": "That Cassandra offers a per-operation tradeoff between consistency and availability through consistency levels."
         }
       ],
       "canNow": [
@@ -71,9 +71,9 @@
       "id": "how",
       "name": "How it works",
       "body": [
-        "The common way to make the CAP choice adjustable is a quorum over replicas. Apache Cassandra describes it directly: with a replication factor N, you set how many nodes must take part in reads (R) and writes (W). If you make R plus W larger than N, the read set and the write set are guaranteed to overlap, so a read reaches a replica that holds the latest acknowledged write; Cassandra calls this a quorum intersection. That is necessary but not sufficient for strong consistency, and sloppy quorums, which accept writes on stand-in nodes, do not give it [[cassandra-dynamo]].",
+        "The common way to make the CAP choice adjustable is a quorum over replicas. Apache Cassandra describes its consistency levels as a version of Dynamo's R + W > N mechanism: with a replication factor N, the operator sets how many nodes must take part in reads (R) and writes (W). The page says that when the read level contains enough nodes to guarantee a quorum intersection with the write level, writes will generally be visible to subsequent reads [[cassandra-dynamo]]. The overlap alone is not the whole of strong consistency: concurrent writes still need an order, and a sloppy quorum, which accepts writes on stand-in nodes, does not give the overlap at all.",
         "That overlap is the knob. High R and W give the overlap that strong consistency needs but require more replicas reachable, so a partition that isolates too many nodes makes the operation fail: the consistent, less-available end. Low R and W let reads and writes succeed with fewer replicas, so the system keeps answering through a partition but can return stale data: the available, less-consistent end. Cassandra lets you choose this per operation through consistency levels, without even knowing the replication factor [[cassandra-dynamo]].",
-        "The far consistent end is a system that keeps one correct global order no matter what. Google Spanner does this: it uses TrueTime to assign transaction timestamps and provides external consistency, the strictest guarantee, so transactions appear in an order that matches real time [[spanner-truetime]]. Getting there costs coordination and careful timekeeping, which is the price of the consistent choice."
+        "The far consistent end is a system that keeps one correct global order no matter what. Google Spanner does this: it uses TrueTime, a highly available distributed clock, to assign transaction timestamps, and provides external consistency, its strictest guarantee: the system behaves as if transactions ran one after another, in an order that matches the order in which they can be observed to commit [[spanner-truetime]]. The page notes that proper timestamping is trivial on a single machine and much harder to do efficiently across a widely distributed system, which is the problem TrueTime addresses."
       ],
       "terms": [
         {
@@ -86,7 +86,7 @@
         },
         {
           "term": "Quorum intersection",
-          "definition": "When R + W > N, so every read set shares a replica with every write set and reads see the latest write."
+          "definition": "Cassandra's term for a read set and a write set that share a replica, so a read reaches a replica that has the acknowledged write."
         },
         {
           "term": "Consistency level",
@@ -100,13 +100,13 @@
       "reading": [
         {
           "source": "cassandra-dynamo",
-          "section": "Tunable Consistency, and the R + W > N quorum intersection",
-          "what": "How a quorum turns the CAP choice into R and W values, and when a read is guaranteed to see a write."
+          "section": "Tunable Consistency, and Picking Consistency Levels (W + R > RF)",
+          "what": "How consistency levels stand in for R and W, and when reads are expected to see a write."
         },
         {
           "source": "spanner-truetime",
-          "section": "TrueTime and external consistency",
-          "what": "What the strongest consistency guarantee is and how a system assigns transaction timestamps to achieve it."
+          "section": "External consistency, and Timestamps and MVCC",
+          "what": "What external consistency promises and why timestamps must match the order in which transactions commit."
         }
       ],
       "canNow": [
@@ -120,8 +120,8 @@
       "id": "deeper",
       "name": "Going deeper",
       "body": [
-        "If you keep the system available during a partition, two sides can accept writes that the other never sees, so the copies diverge and must be reconciled when the partition heals. Cassandra converges replicas using mutation-timestamp versioning, so a later write wins over an earlier one [[cassandra-dynamo]]. Last-write-wins is simple but silently drops one of two concurrent edits, which is why some systems instead keep both versions and let the application merge them.",
-        "If you keep the system consistent instead, the cost moves to coordination and latency. Spanner's external consistency depends on TrueTime treating time as a bounded interval and waiting out that uncertainty before a transaction is visible, so that timestamps order correctly [[spanner-truetime]]. The reward is that application developers never see stale or out-of-order data; the price is the wait and the special timekeeping hardware behind it.",
+        "If you keep the system available during a partition, two sides can accept writes that the other never sees, so the copies diverge and must be reconciled when the partition heals. Cassandra converges replicas using mutation-timestamp versioning, so a later write wins over an earlier one [[cassandra-dynamo]]. Cassandra calls this a simpler last-write-wins model than the vector clocks of the original Dynamo paper, and the latest version is the winning value, so the other mutation does not win. Systems that cannot accept that loss can instead keep both versions and let the application merge them.",
+        "If you keep the system consistent instead, the cost moves to coordination. Spanner's page says that under external consistency the system behaves as if all transactions ran sequentially, even though they run across many servers and possibly datacenters, and that this needs timestamps assigned with TrueTime [[spanner-truetime]]. The reward is that application developers do not see states that break the order transactions committed in; the page gives no latency figures, so measure the cost on your own system.",
         "Either way, the choice is best made per piece of data, not once for the whole system. DynamoDB exposes exactly this: the same table can be read eventually consistent or strongly consistent per request, and eventually consistent reads cost half as much [[aws-ddb-consistency]]. Pick the cheaper, available mode where staleness is harmless, and the stronger mode where it is not."
       ],
       "terms": [
@@ -134,8 +134,8 @@
           "definition": "A simple conflict rule that keeps the most recent write and discards the other, which can lose data."
         },
         {
-          "term": "Clock uncertainty",
-          "definition": "How far a clock might be off; Spanner bounds it and waits it out so transaction order stays correct."
+          "term": "Proper timestamping",
+          "definition": "Spanner's term for giving transactions timestamps that match the order in which they can be observed to commit."
         },
         {
           "term": "Staleness window",
@@ -145,13 +145,13 @@
       "reading": [
         {
           "source": "cassandra-dynamo",
-          "section": "Data Versioning and conflict resolution",
-          "what": "How an available system converges diverged replicas, and the risk of last-write-wins."
+          "section": "Dataset Partitioning: Consistent Hashing (versioning and last-write-wins)",
+          "what": "How replicas that accept writes independently are reconciled, and the risk of last-write-wins."
         },
         {
           "source": "aws-ddb-consistency",
-          "section": "Cost and behaviour of eventually vs strongly consistent reads",
-          "what": "Why the trade-off is worth setting per request rather than once for the whole store."
+          "section": "Eventually consistent reads, and Strongly consistent reads",
+          "what": "Why the trade-off is worth setting per request: the cost difference and the ConsistentRead parameter."
         }
       ],
       "canNow": [
@@ -165,7 +165,7 @@
       "name": "In practice and trade-offs",
       "body": [
         "In practice the first question for any stored data is: if a partition hit right now, would you rather this request fail or return possibly stale data? A shopping cart or a product view can tolerate staleness and should stay available; a bank balance or an inventory count cannot tolerate two disagreeing truths and should refuse rather than diverge. The same database can serve both by setting the consistency level per operation [[cassandra-dynamo]].",
-        "Watch for the hidden costs on each side. On the available side, eventual consistency is cheaper and faster, but you must build and test the reconciliation path and accept a staleness window; Amazon makes the cost explicit by charging eventually consistent reads at half the price of strongly consistent ones [[aws-ddb-consistency]]. On the consistent side, you pay latency for coordination and, at global scale, you depend on infrastructure like Spanner's synchronised clocks [[spanner-truetime]].",
+        "Watch for the hidden costs on each side. On the available side, eventual consistency is cheaper and faster, but you must build and test the reconciliation path and accept a staleness window; Amazon makes the cost explicit by charging eventually consistent reads at half the price of strongly consistent ones [[aws-ddb-consistency]]. On the consistent side, you pay in coordination, and at global scale you depend on something like Spanner's TrueTime clock service [[spanner-truetime]].",
         "The deepest practical point is that CAP applies per operation and per kind of data: it is a decision about what to do during the partitions that will happen, so one database can answer differently for different data. Decide it deliberately for each kind of data, measure the staleness or the latency you are paying, and revisit it as the data's needs change."
       ],
       "terms": [
@@ -189,13 +189,13 @@
       "reading": [
         {
           "source": "cassandra-dynamo",
-          "section": "Consistency Levels in practice",
-          "what": "How to choose a per-operation level for a given data need."
+          "section": "Picking Consistency Levels",
+          "what": "How to choose a per-operation level for a given data need, including LOCAL_QUORUM and ONE."
         },
         {
           "source": "spanner-truetime",
-          "section": "Why external consistency simplifies applications",
-          "what": "What you gain for the latency you pay on the consistent side."
+          "section": "External consistency (the banking example)",
+          "what": "What you gain on the consistent side: readers never see a later transaction without the earlier one."
         }
       ],
       "canNow": [
@@ -208,38 +208,38 @@
   "misconceptions": [
     {
       "myth": "CAP means pick any two of consistency, availability, and partition tolerance.",
-      "truth": "Partitions are unavoidable on a real network, so the real choice is consistency versus availability during a partition [[cassandra-dynamo]]."
+      "truth": "Partitions are unavoidable on a real network, so the real choice is consistency versus availability while a partition is happening."
     },
     {
       "myth": "A database is permanently either consistent or available.",
-      "truth": "It is a per-operation tradeoff: the same store can be read eventually or strongly consistent per request [[aws-ddb-consistency]]."
+      "truth": "Cassandra describes a per-operation tradeoff through consistency levels [[cassandra-dynamo]], and DynamoDB lets you choose eventually or strongly consistent reads per request [[aws-ddb-consistency]]."
     },
     {
       "myth": "Eventual consistency means the data is just wrong.",
-      "truth": "Replicas converge once writes stop; the system reconciles diverged versions, for example by timestamp versioning [[cassandra-dynamo]]."
+      "truth": "DynamoDB says that repeating an eventually consistent read after a short time should eventually return the more recent item [[aws-ddb-consistency]]."
     },
     {
       "myth": "Strong consistency across the globe is free if you engineer well.",
-      "truth": "It costs coordination latency and, at Spanner's scale, synchronised-clock hardware to bound uncertainty [[spanner-truetime]]."
+      "truth": "The Spanner page says proper timestamping is much harder to do efficiently in a widely distributed system, and Spanner relies on TrueTime for it [[spanner-truetime]]."
     }
   ],
   "tryIt": {
-    "intro": "These use the cqlsh shell for Apache Cassandra against a local or test cluster, to see how a per-operation consistency level changes the CAP trade-off. Output depends on your cluster, so it is not shown here. Consistency levels are described in the Cassandra documentation.",
+    "intro": "These use cqlsh, the shell for Apache Cassandra, against a local or test cluster, to see a per-operation consistency level. CONSISTENCY is a cqlsh special command, QUORUM and ONE are levels the Cassandra pages list, and the SELECT is a query shown on the cqlsh page. Output depends on your cluster, so it is not shown here.",
     "commands": [
       {
-        "command": "CONSISTENCY QUORUM;",
-        "shows": "Setting the session to require a quorum of replicas, so reads see the latest write (the consistent end).",
-        "source": "cassandra-dynamo"
+        "command": "CONSISTENCY QUORUM",
+        "shows": "Sets the consistency level for the operations that follow to QUORUM, a majority of the replicas (the consistent end).",
+        "source": "cassandra-cqlsh"
       },
       {
-        "command": "CONSISTENCY ONE;",
-        "shows": "Dropping to one replica per operation, which stays available with fewer replicas up but may read stale data.",
-        "source": "cassandra-dynamo"
+        "command": "CONSISTENCY ONE",
+        "shows": "Sets the level to ONE, where only a single replica must respond (the available end).",
+        "source": "cassandra-cqlsh"
       },
       {
-        "command": "SELECT * FROM app.users WHERE id = 42;",
-        "shows": "A read that now answers under whichever consistency level the session is set to.",
-        "source": "cassandra-dynamo"
+        "command": "SELECT * FROM system.local;",
+        "shows": "A read of a system table, answered under whichever consistency level the session is set to.",
+        "source": "cassandra-cqlsh"
       }
     ]
   },
@@ -251,7 +251,7 @@
       "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadConsistency.html",
       "publisher": "Amazon Web Services",
       "kind": "Vendor documentation",
-      "year": "2024",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
     },
     {
@@ -260,8 +260,9 @@
       "url": "https://cassandra.apache.org/doc/stable/cassandra/architecture/dynamo.html",
       "publisher": "Apache Software Foundation",
       "kind": "Project documentation",
-      "year": "2024",
-      "verifiedOn": "2026-10-11"
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "The page was labelled as the 5.0 prerelease documentation when opened."
     },
     {
       "id": "spanner-truetime",
@@ -269,7 +270,16 @@
       "url": "https://cloud.google.com/spanner/docs/true-time-external-consistency",
       "publisher": "Google Cloud",
       "kind": "Vendor documentation",
-      "year": "2024",
+      "year": "page shows last updated 2026-10-09",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "cassandra-cqlsh",
+      "title": "Apache Cassandra: cqlsh, the CQL shell",
+      "url": "https://cassandra.apache.org/doc/stable/cassandra/managing/tools/cqlsh.html",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
     }
   ]

@@ -28,7 +28,7 @@
       "id": "basics",
       "name": "Basics",
       "body": [
-        "Failover is the mechanism that turns spare capacity into real availability. Replication gives you standby copies, but a standby does nothing until something notices the primary has failed and switches to it. Amazon frames this concretely for databases: an RDS Multi-AZ deployment keeps one or more standby instances that provide failover support, so when the primary fails a standby can take over [[aws-rds-multiaz]].",
+        "Failover is the mechanism that turns spare capacity into real availability. Replication gives you standby copies, but a standby does nothing until something notices the primary has failed and switches to it. Amazon frames this concretely for databases: an RDS Multi-AZ deployment has one or two standby instances that provide failover support, and a Multi-AZ DB instance deployment has one standby that does not serve read traffic [[aws-rds-multiaz]].",
         "The same idea applies to stateless traffic. Cloudflare's load balancer decides which endpoints can handle traffic through a system of monitors, health monitors, and pools: a monitor issues health requests at regular intervals to evaluate each endpoint in a pool, and unhealthy endpoints are dropped [[cf-lb-health]]. Whether it is a database promoting a replica or an edge dropping a sick origin, failover is the loop of detect, decide, redirect.",
         "The reason this is hard, and worth a topic, is that each step can go wrong: detection can mistake a slow node for a dead one, the decision can accidentally pick two replacements, and redirection can stall waiting for caches. Getting all three right and fast is what separates a few seconds of blip from a long outage."
       ],
@@ -53,8 +53,8 @@
       "reading": [
         {
           "source": "aws-rds-multiaz",
-          "section": "Multi-AZ deployments: standby instances and failover support",
-          "what": "How a managed database keeps standbys ready and fails over to them."
+          "section": "Configuring and managing a Multi-AZ deployment: Multi-AZ DB instance and Multi-AZ DB cluster deployments",
+          "what": "What a standby is, and the difference between a one-standby instance deployment and a two-standby cluster deployment."
         },
         {
           "source": "cf-lb-health",
@@ -72,9 +72,9 @@
       "id": "how",
       "name": "How it works",
       "body": [
-        "Detection comes first, and the naive version is dangerous. Orchestrator, the MySQL failover tool, warns that a naive monitor just probes the primary and alerts when it cannot reach it, which produces false positives when the primary is merely overloaded. Instead Orchestrator uses a holistic approach: it observes not only the server but also its replicas, and treats the primary as failed only when it cannot reach the primary and the replicas confirm they cannot see it either [[orchestrator-detection]].",
+        "Detection comes first, and the naive version is dangerous. Orchestrator, the MySQL failover tool, says a naive monitor that just probes the primary and alerts when it cannot reach it is open to false positives caused by network glitches, and that repeating the test at intervals can slow the response to a real failure. Instead Orchestrator uses a holistic approach: it observes not only the server but also its replicas, and treats the primary as failed only when it cannot reach the primary and the replicas confirm they cannot see it either [[orchestrator-detection]].",
         "Deciding on a replacement must yield exactly one winner. For a single-writer database this is a promotion, and it is backed by agreement so two replicas never both become primary. The old primary must then be fenced, prevented from accepting writes if it returns, or you get split-brain: two primaries taking conflicting writes. Cloudflare's edge case is gentler, because origins are interchangeable and stateless, so steering a request to another healthy origin carries no split-brain risk; the decision there is a health-and-threshold judgement over a pool [[cf-lb-health]].",
-        "Redirection has to be fast. If clients find the primary through DNS, they may keep using the old address until the cached record's time-to-live expires. The common fix is to redirect at a layer you control: a managed database updates its endpoint so clients reconnect to the new primary [[aws-rds-multiaz]], and an edge load balancer simply stops sending traffic to the dropped endpoint [[cf-lb-health]], neither waiting on a DNS cache."
+        "Redirection has to be fast, and how clients find the new primary matters. If they find it through DNS, they may keep using the old address until the cached record's time-to-live expires. Amazon RDS Multi-AZ failover works through DNS: the failover changes the DNS record of the DB instance to point to the standby, clients must re-establish their connections, and AWS recommends a JVM TTL of no more than 60 seconds because a JVM can cache lookups far longer, in some configurations until it restarts [[aws-rds-failover]]. A load balancer that receives the traffic can instead stop sending requests to an endpoint that has failed its health checks [[cf-lb-health]]."
       ],
       "terms": [
         {
@@ -102,24 +102,29 @@
         },
         {
           "source": "cf-lb-health",
-          "section": "How health decides routing within and across pools",
-          "what": "How a stateless tier decides to route around an unhealthy endpoint."
+          "section": "How an endpoint becomes unhealthy, and traffic distribution",
+          "what": "How monitors check endpoints and how a load balancer diverts traffic when a pool becomes unhealthy."
+        },
+        {
+          "source": "aws-rds-failover",
+          "section": "Failing over a Multi-AZ DB instance, and Setting the JVM TTL for DNS name lookups",
+          "what": "How RDS switches to the standby by changing a DNS record, and the TTL advice that follows."
         }
       ],
       "canNow": [
         "Explain why detection should corroborate across replicas.",
         "Say why database promotion needs one winner and fencing, while stateless routing does not.",
-        "Describe redirecting through a controlled layer instead of DNS."
+        "Describe how failover reaches clients: a DNS record change for RDS, or a load balancer that stops sending requests to a failed endpoint."
       ],
-      "diagram": "<svg viewBox=\"0 0 560 140\" role=\"img\" aria-labelledby=\"dg-learn-fo-how-t\" class=\"dg\"><title id=\"dg-learn-fo-how-t\">The failover loop: a monitor and the primary's replicas agree it is dead, one replica is promoted and the old primary fenced, and clients are redirected through a controlled endpoint or load balancer rather than waiting on DNS.</title><defs><marker id=\"dg-learn-fo-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"50\" width=\"104\" height=\"40\" class=\"dg-box\"/><text x=\"66\" y=\"74.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">detect (holistic)</text><rect x=\"158\" y=\"50\" width=\"104\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"210\" y=\"68\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">decide: one</text><text x=\"210\" y=\"84\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">winner + fence</text><rect x=\"302\" y=\"50\" width=\"104\" height=\"40\" class=\"dg-box\"/><text x=\"354\" y=\"68\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">redirect via</text><text x=\"354\" y=\"84\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">proxy / endpoint</text><rect x=\"446\" y=\"50\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"496\" y=\"74.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">clients served</text><path d=\"M118,70 L158,70\" class=\"dg-line\" marker-end=\"url(#dg-learn-fo-how-a)\"/><path d=\"M262,70 L302,70\" class=\"dg-line\" marker-end=\"url(#dg-learn-fo-how-a)\"/><path d=\"M406,70 L446,70\" class=\"dg-line\" marker-end=\"url(#dg-learn-fo-how-a)\"/><text x=\"280\" y=\"124\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">corroborate to avoid false positives; fence to avoid split-brain; skip DNS TTL</text></svg>"
+      "diagram": "<svg viewBox=\"0 0 560 140\" role=\"img\" aria-labelledby=\"dg-learn-fo-how-t\" class=\"dg\"><title id=\"dg-learn-fo-how-t\">The failover loop: a monitor and the primary's replicas agree it is dead, one replica is promoted and the old primary fenced, and clients are redirected, by a DNS record change or by a load balancer, to the new primary.</title><defs><marker id=\"dg-learn-fo-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"50\" width=\"104\" height=\"40\" class=\"dg-box\"/><text x=\"66\" y=\"74.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">detect (holistic)</text><rect x=\"158\" y=\"50\" width=\"104\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"210\" y=\"68\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">decide: one</text><text x=\"210\" y=\"84\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">winner + fence</text><rect x=\"302\" y=\"50\" width=\"104\" height=\"40\" class=\"dg-box\"/><text x=\"354\" y=\"68\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">redirect via</text><text x=\"354\" y=\"84\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">proxy / endpoint</text><rect x=\"446\" y=\"50\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"496\" y=\"74.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">clients served</text><path d=\"M118,70 L158,70\" class=\"dg-line\" marker-end=\"url(#dg-learn-fo-how-a)\"/><path d=\"M262,70 L302,70\" class=\"dg-line\" marker-end=\"url(#dg-learn-fo-how-a)\"/><path d=\"M406,70 L446,70\" class=\"dg-line\" marker-end=\"url(#dg-learn-fo-how-a)\"/><text x=\"280\" y=\"124\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">corroborate to avoid false positives; fence to avoid split-brain; skip DNS TTL</text></svg>"
     },
     {
       "id": "deeper",
       "name": "Going deeper",
       "body": [
-        "The deepest tension in detection is slow versus dead. Orchestrator notes that false positives can happen when the primary is overloaded rather than failed, so acting on a single probe risks failing over a database that is actually alive, an self-inflicted outage. Corroborating across the replicas reduces false positives and, Orchestrator notes, also improves response time for real failures because agreement is strong evidence [[orchestrator-detection]]. This is why failover and consensus are relatives: both decide only when a quorum agrees.",
-        "For stateful systems, the decision is a point of no return, so it must be exactly one promotion plus fencing. For stateless systems you can be more relaxed and quantitative: Cloudflare evaluates health per pool and even per region, and only when the majority of a region's data centers pass is the region considered healthy, so a few bad probes do not flip routing [[cf-lb-health]]. The threshold is a tuning knob: too twitchy steers on a transient dip, too lax leaves users on a failing endpoint.",
-        "There is also a data-loss dimension unique to databases. With synchronous standbys, a failover loses no acknowledged writes; AWS RDS Multi-AZ keeps the standby synchronously updated for exactly this reason [[aws-rds-multiaz]]. With asynchronous replication, a promoted replica may be slightly behind, so you promote the most up-to-date one and accept a small, bounded loss. Stateless failover has no equivalent, which is why edge failover can be faster and simpler than database failover."
+        "The deepest tension in detection is slow versus dead. Orchestrator describes a master that is overloaded: clients are refused connections while its replicas, which have been connected for a long time, report that it is fine. Orchestrator triages by multiple observers, the replicas, instead of by time, and says a naive monitor's repeated tests can increase the response time to a real failure [[orchestrator-detection]]. Both failover detection and consensus rely on several parties agreeing, though Orchestrator's rule is that a dead master is declared when its replicas also cannot see it.",
+        "For stateful systems, the decision is a point of no return, so it must be exactly one promotion plus fencing. For stateless systems you can be more relaxed and quantitative: Cloudflare sends health requests from three data centers in each selected region, and if the majority pass the region is healthy, so a few bad probes do not flip routing. A pool's Health Threshold sets how many endpoints must stay available, and the consecutive_up and consecutive_down settings make a status change need repeated results [[cf-lb-health]].",
+        "There is also a data-loss question unique to databases. RDS Multi-AZ keeps a synchronous standby in another Availability Zone, which the page describes as providing data redundancy, and it notes that synchronous replication can raise write and commit latency [[aws-rds-instance-multiaz]]. The page does not state how much data a failover can lose. With asynchronous replication a promoted replica may be slightly behind, so you promote the most up-to-date one. Stateless failover has no equivalent, which is why edge failover can be simpler than database failover."
       ],
       "terms": [
         {
@@ -128,7 +133,7 @@
         },
         {
           "term": "Synchronous standby",
-          "definition": "A standby kept exactly in step with the primary, so a failover loses no acknowledged writes."
+          "definition": "A standby kept in step with the primary through synchronous replication, which RDS Multi-AZ uses and describes as data redundancy."
         },
         {
           "term": "Threshold",
@@ -142,41 +147,41 @@
       "reading": [
         {
           "source": "orchestrator-detection",
-          "section": "Why holistic detection reduces false positives and improves response time",
-          "what": "The slow-versus-dead problem and how agreement across replicas resolves it."
+          "section": "Failure detection: the holistic approach, and UnreachableMasterWithLaggingReplicas",
+          "what": "Why corroborating across replicas avoids false positives, and the overloaded-master case."
         },
         {
-          "source": "aws-rds-multiaz",
-          "section": "Synchronous standby and failover behaviour",
-          "what": "How a synchronous standby bounds data loss on a database failover."
+          "source": "aws-rds-instance-multiaz",
+          "section": "Multi-AZ DB instance deployments: synchronous standby replica",
+          "what": "What the synchronous standby is for, and the extra write and commit latency it can add."
         }
       ],
       "canNow": [
         "Explain the slow-versus-dead problem and how corroboration helps.",
         "Say why stateful promotion is a point of no return but stateless steering is not.",
-        "Describe how synchronous versus asynchronous replication changes failover data loss."
+        "Describe how synchronous versus asynchronous replication changes what a promoted standby may be missing."
       ]
     },
     {
       "id": "practice",
       "name": "In practice and trade-offs",
       "body": [
-        "In practice, match the failover design to the tier. For a database, lean on a managed or consensus-backed promotion that guarantees one primary and fences the old one; AWS RDS Multi-AZ does this for you, keeping a synchronous standby and failing over automatically [[aws-rds-multiaz]]. For stateless traffic, health-check origins into pools with a failure threshold and let the edge route around unhealthy ones; Cloudflare decides per data center so a local failure is contained locally [[cf-lb-health]].",
-        "Mind the knobs that cause self-inflicted outages. Detection that is too eager flaps; Orchestrator's holistic approach exists precisely to avoid failing over an overloaded-but-alive primary [[orchestrator-detection]]. Redirection that trusts DNS is slow; prefer a layer you control. And after a failover, restore redundancy by attaching a fresh standby, or the next failure has nothing to fail over to.",
-        "The unifying lesson is that recovery time is set by the slowest of the three steps, and it is usually redirection, not detection, that dominates when teams rely on DNS. Both tiers converge on the same move: terminate at something you control, a managed endpoint or an edge, so you can switch targets in seconds. Keep failovers rare with good detection, make them safe with one-winner promotion and fencing, and make them fast by owning the redirect."
+        "In practice, match the failover design to the tier. For a database, lean on a managed or consensus-backed promotion that gives you one primary; AWS RDS Multi-AZ automates it, keeping a synchronous standby and switching to it automatically, with failover times the page gives as typically 60 to 120 seconds [[aws-rds-failover]]. For stateless traffic, health-check origins into pools with a health threshold and let the load balancer divert traffic when a pool becomes critical [[cf-lb-health]].",
+        "Mind the knobs that cause self-inflicted outages. Detection that is too eager can fail over a database that is still alive, which is what Orchestrator's multiple-observer approach is built to avoid [[orchestrator-detection]]. Redirection through DNS is slow if clients cache: RDS tells you to re-establish connections and to keep a JVM's DNS TTL at 60 seconds or less [[aws-rds-failover]]. And after a failover, make sure redundancy is back, because the next failure needs something to fail over to.",
+        "The unifying lesson is that recovery time is the sum of detecting, deciding and redirecting. The RDS page shows how much the third step can matter: failover completes in typically 60 to 120 seconds, and clients then still have to reconnect through an updated DNS record [[aws-rds-failover]]. Keep failovers rare with good detection, make them safe by deciding on one winner, and plan how clients will find the new primary."
       ],
       "terms": [
         {
           "term": "Managed failover",
-          "definition": "A provider (such as RDS Multi-AZ) handling detection, promotion and endpoint switch for you."
+          "definition": "A provider (such as RDS Multi-AZ) handling detection, promotion and the switch to the standby for you."
         },
         {
           "term": "Flapping",
           "definition": "A component repeatedly failing and recovering, which must be damped so it does not cause failover storms."
         },
         {
-          "term": "Per-location decision",
-          "definition": "Deciding failover independently at each edge location so a local failure is contained locally."
+          "term": "Health threshold",
+          "definition": "In Cloudflare Load Balancing, the number of endpoints a pool must keep available before it stops receiving traffic."
         },
         {
           "term": "Recovery time",
@@ -186,57 +191,59 @@
       "reading": [
         {
           "source": "cf-lb-health",
-          "section": "Pools, thresholds, and per-region health",
-          "what": "How to tune health thresholds so failover triggers on real failures, not dips."
+          "section": "How a pool becomes unhealthy, and fallback pools",
+          "what": "How a health threshold decides when a pool stops receiving traffic."
         },
         {
-          "source": "aws-rds-multiaz",
-          "section": "Automatic failover and restoring the standby",
-          "what": "How a managed database automates the loop and rebuilds redundancy afterwards."
+          "source": "aws-rds-failover",
+          "section": "Failing over a Multi-AZ DB instance: failover reasons and times",
+          "what": "The conditions that trigger an automatic failover, the typical failover time, and how to tell that one happened."
         }
       ],
       "canNow": [
         "Choose a failover design appropriate to a database or a stateless tier.",
-        "Name the knobs (detection sensitivity, redirect layer, rebuilding redundancy) that avoid self-inflicted outages.",
-        "Explain why redirection usually dominates recovery time."
+        "Name the knobs that avoid self-inflicted outages: detection sensitivity, how clients find the new primary, and restoring redundancy.",
+        "Explain why the time clients take to find the new primary can dominate recovery time."
       ]
     }
   ],
   "misconceptions": [
     {
       "myth": "If I have replicas, I already have high availability.",
-      "truth": "Replicas are only standbys; without failover to detect failure and switch to them, nothing takes over [[aws-rds-multiaz]]."
+      "truth": "A replica is a standby copy; RDS describes a Multi-AZ standby as providing failover support, but the failover is a separate step that switches to it [[aws-rds-multiaz]]."
     },
     {
       "myth": "Fail over the moment a monitor cannot reach the primary.",
-      "truth": "That causes false positives when the primary is just overloaded; corroborate across its replicas first [[orchestrator-detection]]."
+      "truth": "A single probe is open to false positives from network glitches; Orchestrator corroborates with the primary's replicas first [[orchestrator-detection]]."
     },
     {
-      "myth": "Lowering the DNS TTL is a good way to fail traffic over quickly.",
-      "truth": "Clients may ignore or cache short TTLs; failing over at an edge or endpoint you control is faster and reliable [[cf-lb-health]]."
+      "myth": "A managed database fails over without any DNS caching to worry about.",
+      "truth": "RDS Multi-AZ failover changes the DNS record of the DB instance, so existing connections must be re-established, and AWS recommends a JVM DNS TTL of no more than 60 seconds [[aws-rds-failover]]."
     },
     {
-      "myth": "Any replica can be promoted on failure with no data concern.",
-      "truth": "With asynchronous replication a lagging replica loses writes; a synchronous standby avoids that, which is why RDS keeps one [[aws-rds-multiaz]]."
+      "myth": "A synchronous standby means a failover can never lose anything.",
+      "truth": "RDS keeps a synchronous standby and describes it as data redundancy, but the pages say nothing about a zero-loss guarantee, and a reboot with failover interrupts the database abruptly [[aws-rds-instance-multiaz]] [[aws-rds-reboot]]."
     }
   ],
   "tryIt": {
-    "intro": "These use the AWS CLI to inspect and trigger failover on an RDS Multi-AZ database, to see managed failover in action. Output depends on your account, so it is not shown here. Each command is documented in the Amazon RDS User Guide.",
+    "intro": "These use the AWS CLI against an RDS Multi-AZ DB instance, to see a managed failover and its events. The commands are the examples on the RDS pages cited below. The page does not show output for the failover command here, and output for the others depends on your account.",
     "commands": [
       {
-        "command": "aws rds describe-db-instances --db-instance-identifier mydb --query 'DBInstances[0].MultiAZ'",
-        "shows": "Whether the instance is Multi-AZ, meaning a standby is kept ready for failover.",
-        "source": "aws-rds-multiaz"
+        "command": "aws rds reboot-db-instance --db-instance-identifier mydbinstance --force-failover",
+        "shows": "Reboots the DB instance and forces a failover to the standby in the other Availability Zone. The page says RDS then updates the DNS record for the instance, so existing connections must be re-established.",
+        "source": "aws-rds-reboot",
+        "warning": "This interrupts the database abruptly and forces a failover; the page recommends stopping transactions first to avoid possible data loss. Run only on a test instance."
       },
       {
-        "command": "aws rds reboot-db-instance --db-instance-identifier mydb --force-failover",
-        "shows": "Forcing a failover to the standby, so you can test that clients reconnect through the endpoint.",
-        "source": "aws-rds-multiaz"
+        "command": "aws rds describe-events",
+        "shows": "The RDS events from the last hour.",
+        "source": "aws-rds-events"
       },
       {
-        "command": "aws rds describe-events --source-identifier mydb --source-type db-instance",
-        "shows": "The failover events RDS recorded, including detection and promotion of the standby.",
-        "source": "aws-rds-multiaz"
+        "command": "aws rds describe-events --source-identifier test-instance --source-type db-instance --start-time 2022-03-13T22:00Z --end-time 2022-03-13T23:59Z",
+        "shows": "Events for one DB instance in a time range. The page says RDS creates an event after a reboot with failover, so this is where to look; change the instance name and times to yours.",
+        "source": "aws-rds-events",
+        "note": "The instance name and times are the page's own example values."
       }
     ]
   },
@@ -244,11 +251,11 @@
   "sources": [
     {
       "id": "aws-rds-multiaz",
-      "title": "Amazon RDS: Multi-AZ deployments",
+      "title": "Amazon RDS: Configuring and managing a Multi-AZ deployment",
       "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZ.html",
       "publisher": "Amazon Web Services",
       "kind": "Vendor documentation",
-      "year": "2024",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
     },
     {
@@ -257,7 +264,7 @@
       "url": "https://developers.cloudflare.com/load-balancing/understand-basics/health-details/",
       "publisher": "Cloudflare",
       "kind": "Vendor documentation",
-      "year": "2024",
+      "year": "page shows last updated 2026-04-16",
       "verifiedOn": "2026-10-11"
     },
     {
@@ -266,7 +273,43 @@
       "url": "https://github.com/openark/orchestrator/blob/master/docs/failure-detection.md",
       "publisher": "openark/orchestrator",
       "kind": "Project documentation",
-      "year": "2024",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "aws-rds-instance-multiaz",
+      "title": "Amazon RDS: Multi-AZ DB instance deployments",
+      "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZSingleStandby.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "aws-rds-failover",
+      "title": "Amazon RDS: Failing over a Multi-AZ DB instance",
+      "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZ.Failover.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "aws-rds-reboot",
+      "title": "Amazon RDS: Rebooting a DB instance",
+      "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_RebootInstance.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "aws-rds-events",
+      "title": "Amazon RDS: Viewing Amazon RDS events",
+      "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_ListEvents.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
     }
   ]
