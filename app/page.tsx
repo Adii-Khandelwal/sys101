@@ -68,7 +68,10 @@ export default function Home() {
       <header className="masthead">
         <h1>sys101</h1>
         <p className="masthead-lead">Learn system design in the order it makes sense.</p>
-        <p>Each topic builds on the one before it, and every one is taught through how real engineering teams solved it.</p>
+        <p>
+          Each topic builds on the one before it, and every one is taught through how real engineering teams solved it.{" "}
+          <Link href="/about">Why this exists</Link>
+        </p>
         <NextUp
           entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))}
           learnSlugs={learnSlugs}
