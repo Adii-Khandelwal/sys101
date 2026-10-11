@@ -18,6 +18,7 @@ import {
   PAPER,
   fade,
   highlightSet,
+  mapIsInteractive,
   nextHighlight,
   placeTooltip,
   type HighlightEvent,
@@ -236,6 +237,10 @@ export default function GraphView({ nodes, edges }: Props) {
   // ── Camera ────────────────────────────────────────────────────────────
   const fitRef = useRef(1);
   const [zoomPct, setZoomPct] = useState(100);
+  // Small maps fit on screen: no zoom, pan or controls until there are enough topics to need them.
+  const interactive = mapIsInteractive(nodes.length);
+  const interactiveRef = useRef(interactive);
+  interactiveRef.current = interactive;
   const animFrame = useRef(0);
   const navTimer = useRef(0);
   const draggedRef = useRef(false);
@@ -244,7 +249,13 @@ export default function GraphView({ nodes, edges }: Props) {
 
   const setCursor = useCallback(() => {
     const el = container.current;
-    if (el) el.style.cursor = dragging.current ? "grabbing" : overNode.current ? "pointer" : "grab";
+    if (el) el.style.cursor = dragging.current
+      ? "grabbing"
+      : overNode.current
+        ? "pointer"
+        : interactiveRef.current
+          ? "grab"
+          : "default";
   }, []);
 
   const cancelAnimation = useCallback(() => {
@@ -346,6 +357,7 @@ export default function GraphView({ nodes, edges }: Props) {
     const host = stage.current;
     if (!ready || !el || !host) return;
     setCursor();
+    if (!interactive) return; // fixed map: page scroll and clicks only
     const pointers = new Map<number, { x: number; y: number }>();
     let start = { x: 0, y: 0 };
     const local = (e: { clientX: number; clientY: number }) => {
@@ -433,7 +445,7 @@ export default function GraphView({ nodes, edges }: Props) {
       cancelAnimation();
       window.clearTimeout(navTimer.current);
     };
-  }, [ready, setCursor, cancelAnimation, zoomAt, panBy, zoomCenter, fitAll]);
+  }, [ready, interactive, setCursor, cancelAnimation, zoomAt, panBy, zoomCenter, fitAll]);
 
   // Create the renderer once.
   useEffect(() => {
@@ -530,6 +542,16 @@ export default function GraphView({ nodes, edges }: Props) {
         window.clearTimeout(navTimer.current);
         // Start loading the topic now, so it is ready when the camera move ends.
         router.prefetch(`/topic/${node}`);
+        if (!interactiveRef.current) {
+          // Fixed map: no camera move and no double-click to wait for. Hold the
+          // node's highlight for a beat, then cross-fade to the topic.
+          activate(node);
+          navTimer.current = window.setTimeout(
+            () => navigateWithTransition(router, `/topic/${node}`),
+            prefersReducedMotion() ? 0 : DURATION.fast,
+          );
+          return;
+        }
         const r = rendererRef.current;
         if (r) {
           const attr = r.getGraph().getNodeAttributes(node);
@@ -545,12 +567,14 @@ export default function GraphView({ nodes, edges }: Props) {
       });
       renderer.on("doubleClickStage", ({ event }) => {
         event.preventSigmaDefault();
+        if (!interactiveRef.current) return;
         const out = (event.original as MouseEvent).shiftKey;
         zoomAt(out ? 1 / 2 : 2, { x: event.x, y: event.y }, true);
       });
       renderer.on("enterNode", ({ node }) => {
         overNode.current = true;
         setCursor();
+        router.prefetch(`/topic/${node}`); // ready before the click lands
         activate(nextHighlight(activeRef.current, { type: "enter", node }));
       });
       renderer.on("leaveNode", () => {
@@ -676,25 +700,27 @@ export default function GraphView({ nodes, edges }: Props) {
           <span className="legend-dot is-ready" aria-hidden="true" /> Ready
           <span className="legend-dot is-read" aria-hidden="true" /> Read
         </p>
-        <div className="graph-controls label">
-          <button type="button" className="text-button" onClick={() => zoomCenter(STEP)} disabled={!ready}>
-            Zoom in
-          </button>
-          <button type="button" className="text-button" onClick={() => zoomCenter(1 / STEP)} disabled={!ready}>
-            Zoom out
-          </button>
-          <button type="button" className="text-button" onClick={fitAll} disabled={!ready}>
-            Fit all
-          </button>
-          {hidden.length > 0 && (
-            <button type="button" className="text-button" aria-pressed={showAll} onClick={toggleShowAll}>
-              {showAll ? "Hide extra links" : "Show all links"}
+        {interactive && (
+          <div className="graph-controls label">
+            <button type="button" className="text-button" onClick={() => zoomCenter(STEP)} disabled={!ready}>
+              Zoom in
             </button>
-          )}
-          <span className="zoom-readout" aria-live="polite">
-            {zoomPct}%
-          </span>
-        </div>
+            <button type="button" className="text-button" onClick={() => zoomCenter(1 / STEP)} disabled={!ready}>
+              Zoom out
+            </button>
+            <button type="button" className="text-button" onClick={fitAll} disabled={!ready}>
+              Fit all
+            </button>
+            {hidden.length > 0 && (
+              <button type="button" className="text-button" aria-pressed={showAll} onClick={toggleShowAll}>
+                {showAll ? "Hide extra links" : "Show all links"}
+              </button>
+            )}
+            <span className="zoom-readout" aria-live="polite">
+              {zoomPct}%
+            </span>
+          </div>
+        )}
       </div>
 
       <div
@@ -712,7 +738,7 @@ export default function GraphView({ nodes, edges }: Props) {
         {/* Edges implied by a longer path: faint and dashed, on hover or focus of either end, or always with "Show all links". */}
         <svg className="graph-extra" aria-hidden="true">
           {extraPaths
-            .filter((p) => showAll || active === p.from || active === p.to)
+            .filter((p) => (interactive && showAll) || active === p.from || active === p.to)
             .map((p) => (
               <path key={`${p.from}->${p.to}`} d={p.d} />
             ))}

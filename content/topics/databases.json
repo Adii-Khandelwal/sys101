@@ -4,9 +4,9 @@
   "group": "Foundations",
   "concept": "A database keeps data safe across crashes and lets many clients read and change it at once. Most relational databases share the same core: a change is written to a log before it touches the data files, a commit is the moment that log record is safely on disk, and copies on other machines, called replicas, stay current by replaying the primary's log.",
   "prerequisites": [],
-  "primer": "This topic has no prerequisites. It helps to know that a server keeps working data in memory, which is lost in a crash, and on disk, which survives but is slower. Databases are built around that gap: they write as little as possible, in an order that lets them recover whatever was in memory when the machine stopped.",
   "posts": [
     {
+      "id": "uber-postgres-to-mysql-2016",
       "title": "Why Uber Engineering Switched from Postgres to MySQL",
       "url": "https://www.uber.com/en-ES/blog/postgres-to-mysql-migration/",
       "company": "Uber",
@@ -87,6 +87,7 @@
       }
     },
     {
+      "id": "github-mysql-8-upgrade-2023",
       "title": "Upgrading GitHub.com to MySQL 8.0",
       "url": "https://github.blog/engineering/infrastructure/upgrading-github-com-to-mysql-8-0/",
       "company": "GitHub",
@@ -202,26 +203,214 @@
     "Holding a transaction open while doing unrelated work, such as calling another service. In Uber's account this tied up connections on the primary and could get queries on replicas cancelled.",
     "Starting a major version upgrade without a way back. GitHub kept old-version replicas fed by backward replication; without that, an upgrade is a one-way door."
   ],
-  "quiz": [
-    {
-      "question": "In Uber's Postgres 9.2 example, why did one small update cause at least four physical writes?",
-      "answer": "The update wrote a new row version at a new location, and every index pointed at row locations, so each index needed a new entry as well."
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain what a database guarantees that a plain file does not.",
+      "body": "A server keeps working data in memory, which is fast but lost in a crash, and on disk, which survives but is slower. Many clients also read and change the same data at once. Without care, a crash halfway through a change leaves data half written, and two clients can overwrite each other.\n\nA database exists to make that safe. Once it says a change is committed, the change survives a crash, and every client sees a consistent picture. Almost every other topic here, from replication to caching to sharding, is built on top of how a database does this."
     },
-    {
-      "question": "What is the difference between physical and logical replication, and why did it matter to Uber?",
-      "answer": "Physical replication ships changes to disk pages, so replicas must match the primary's exact layout and version, and a bug spreads to all of them. Logical replication ships row changes, which is smaller and lets replicas run different versions."
+    "mentalModel": {
+      "outcome": "After this you can picture what happens between a write and a crash-safe commit.",
+      "body": "Think of a database as a ledger with a diary. Before changing any data file, it writes what it is about to do in the diary, the write-ahead log. A commit is the moment that log record is safely on disk. The data files can be updated later, at leisure.\n\nIf the machine crashes, the database reads the log on restart and redoes committed changes and undoes the rest. Copies on other machines, replicas, stay current the same way: they replay the primary's log, in the same order.",
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-db-t\" class=\"dg\"><title id=\"dg-c-db-t\">A database write: the change is appended to the write-ahead log, the commit is the moment that log record is on disk, data files are updated later, and replicas replay the same log.</title><defs><marker id=\"dg-c-db-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"120\" width=\"110\" height=\"44\" class=\"dg-box\"/><text x=\"69\" y=\"147\" class=\"dg-label\" text-anchor=\"middle\">Client write</text><rect x=\"190\" y=\"30\" width=\"170\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"275\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\">Write-ahead log</text><text x=\"275\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\">append, then flush</text><path d=\"M124,132 C160,100 170,70 186,60\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-c-db-a)\"/><text x=\"262\" y=\"100\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">commit = log record on disk</text><rect x=\"190\" y=\"210\" width=\"170\" height=\"44\" class=\"dg-box\"/><text x=\"275\" y=\"237\" class=\"dg-label\" text-anchor=\"middle\">Data files</text><path d=\"M340,80 L340,206\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-c-db-a)\"/><text x=\"348\" y=\"150\" class=\"dg-note\" text-anchor=\"start\">applied later</text><rect x=\"420\" y=\"30\" width=\"120\" height=\"50\" class=\"dg-box\"/><text x=\"480\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\">Replica</text><text x=\"480\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\">replays log</text><path d=\"M360,55 L416,55\" class=\"dg-line\" marker-end=\"url(#dg-c-db-a)\"/><text x=\"470\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\">same log, same order</text><text x=\"280\" y=\"290\" class=\"dg-note\" text-anchor=\"middle\">after a crash, replaying the log restores every committed change</text></svg>"
     },
-    {
-      "question": "Why did GitHub keep 5.7 replicas running after all reads had moved to 8.0?",
-      "answer": "They were the rollback path: backward replication kept them current, so the primary could move back to 5.7 if 8.0 misbehaved."
+    "howItWorks": {
+      "outcome": "After this you can walk through a write, a crash recovery and how replicas follow.",
+      "steps": [
+        {
+          "step": "Write the log record",
+          "explanation": "A change to a row, and to every index that points at it, is appended to the write-ahead log."
+        },
+        {
+          "step": "Commit",
+          "explanation": "The log record is flushed to disk. From now on the change survives a crash."
+        },
+        {
+          "step": "Update the data later",
+          "explanation": "Pages in memory are written to the data files in the background."
+        },
+        {
+          "step": "Recover after a crash",
+          "explanation": "On restart the database replays the log, redoing committed work and rolling back work that never committed."
+        },
+        {
+          "step": "Ship the log to replicas",
+          "explanation": "Replicas receive the log and apply it. Physical replication ships disk-level changes; logical replication ships row or statement changes and lets each replica work out its own files."
+        },
+        {
+          "step": "Pay for every index",
+          "explanation": "Each index is another structure to update, and log, on every write that touches it."
+        }
+      ]
     },
-    {
-      "question": "Why was orchestrator told never to promote a 5.7 host?",
-      "answer": "An unplanned failover could otherwise pick a 5.7 replica and silently roll the cluster back to the old version."
+    "workedExample": {
+      "outcome": "After this you can trace how a database's internals shaped real decisions at two companies.",
+      "steps": [
+        {
+          "step": "One small update",
+          "explanation": "In a 2016 post about Postgres 9.2, Uber showed that updating one row wrote a new row version at a new location, so every index needed a new entry, at least 4 physical writes in its small example table."
+        },
+        {
+          "step": "Physical log, shared fate",
+          "explanation": "Postgres 9.2 shipped its log as disk changes, so each replica was a byte-for-byte copy. When a 9.2 bug corrupted replicas, the damage was in every copy's files and they had to be rebuilt."
+        },
+        {
+          "step": "Logical log, more freedom",
+          "explanation": "MySQL's binary log ships row or statement changes, so replicas work out their own index updates and can run a different version."
+        },
+        {
+          "step": "Use that freedom",
+          "explanation": "In 2023 GitHub upgraded over 1,200 MySQL hosts from 5.7 to 8.0 by upgrading replicas first and moving reads to them."
+        },
+        {
+          "step": "Keep a way back",
+          "explanation": "After failing the primary over to 8.0, GitHub kept 5.7 replicas fed by replicating backwards, and removed them only after a full 24-hour traffic cycle."
+        }
+      ]
+    },
+    "mistakesOutcome": "After this you can avoid the three most common database mistakes.",
+    "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
+    "quiz": [
+      {
+        "question": "When is a change committed?",
+        "options": [
+          "When its log record is safely on disk",
+          "When the data file is updated",
+          "When a replica reads it"
+        ],
+        "correct": 0,
+        "why": "The write-ahead log is what recovery uses, so a durable log record is what makes the change safe.",
+        "wrong": [
+          "",
+          "Data files are updated later; the log already makes the change safe.",
+          "A commit on the primary does not wait for replicas unless configured to."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "A database crashes after committing a change but before updating its data files. What happens on restart?",
+        "options": [
+          "The change is lost",
+          "It replays the log and the change is applied",
+          "The database refuses to start"
+        ],
+        "correct": 1,
+        "why": "Recovery redoes every committed change found in the log.",
+        "wrong": [
+          "The log record survived, so the change is redone.",
+          "",
+          "Recovery is exactly what the log is for."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why does adding an index slow down writes?",
+        "options": [
+          "Every index is another structure to update and log on each write",
+          "Indexes lock the whole table",
+          "Indexes are stored on replicas only"
+        ],
+        "correct": 0,
+        "why": "An index speeds some reads but adds work to every write that touches it.",
+        "wrong": [
+          "",
+          "Indexes do not lock the table by themselves.",
+          "Indexes live on the primary as well."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "What does physical replication ship to replicas?",
+        "options": [
+          "Disk-level changes, so replicas are byte-for-byte copies",
+          "Only SQL statements",
+          "Nothing; replicas query the primary"
+        ],
+        "correct": 0,
+        "why": "That ties replicas to the primary's version and layout, including its bugs.",
+        "wrong": [
+          "",
+          "That is closer to logical replication.",
+          "Replicas replay the shipped log."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why do databases write a log before touching data files?",
+        "options": [
+          "So a crash midway can be repaired from the log",
+          "Because logs are smaller than data",
+          "To make reads faster"
+        ],
+        "correct": 0,
+        "why": "Memory is lost in a crash; the log records what to redo or undo.",
+        "wrong": [
+          "",
+          "Size is not the reason.",
+          "The log is about safety, not read speed."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "How did GitHub keep a way back while upgrading MySQL?",
+        "options": [
+          "Old-version replicas kept receiving changes by replicating backwards from the new primary",
+          "It took full backups and planned to restore",
+          "It upgraded every host at once"
+        ],
+        "correct": 0,
+        "why": "Replication, not backups, was the practical rollback path.",
+        "wrong": [
+          "",
+          "A restore would lose recent writes and take hours.",
+          "That would leave no way back."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "postsOutcome": "After this you can describe how a database works underneath and how one is upgraded at scale.",
+    "differOutcome": "After this you can explain how the replication log decides how freely you can upgrade and recover.",
+    "exercisesOutcome": "After this you can apply the concept to a slow table, design an upgrade, and plan for ten times the scale.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "Writes to a busy table got slower after the team added six indexes for new reports. What do you check and change?",
+        "answer": "Check which indexes are actually used. Every index is another write and log record on each update, so drop unused ones and serve heavy reports from a replica.",
+        "tradeoffs": "Fewer indexes make some reads slower; reports on a replica see slightly old data.",
+        "wrongAnswers": [
+          "Treating indexes as free.",
+          "Adding more indexes to speed up the writes.",
+          "Running reports on the primary."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "level": "design",
+        "prompt": "Plan a major-version upgrade of a database cluster with a primary and several replicas, with a way back at every step.",
+        "answer": "Test the new version in CI, upgrade one replica and watch it, then upgrade replicas in batches while keeping enough old ones. Move reads, fail over the primary gracefully, and keep old-version replicas fed by replicating backwards until a full day of traffic, peak included, has passed.",
+        "tradeoffs": "Spare capacity for idle old replicas, older settings for a while, and a long schedule.",
+        "wrongAnswers": [
+          "Upgrading the primary in place first.",
+          "No rollback path.",
+          "Removing old replicas before peak traffic has run on the new version."
+        ],
+        "teaches": "posts"
+      },
+      {
+        "level": "scale",
+        "prompt": "The fleet grows from 5 clusters to 50. What has to change in how you run upgrades?",
+        "answer": "Automate each step, upgrade cluster by cluster, throttle writes when replicas lag, and expect long periods of mixed versions, so every tool must handle both.",
+        "tradeoffs": "Automation takes time to build; mixed versions mean testing twice.",
+        "wrongAnswers": [
+          "Doing upgrades by hand per cluster.",
+          "Assuming all clusters behave the same.",
+          "Planning for a short mixed-version window."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "Replicas replay the primary's log, but that raises new questions: how many copies must hold a change before it counts, and who takes over when the primary fails. Replication picks up from there."
     }
-  ],
-  "exercise": {
-    "prompt": "You run one primary and three replicas, and must move to a new major database version with at most a few minutes of write downtime. Using both posts, sketch the plan and the way back.",
-    "answer": "Bring up replicas on the new version first and move read traffic to them, watching errors and latency. Replicate logically, row changes rather than disk pages, since physical replication ties replicas to the primary's version in the setup Uber described. Then fail over writes to a new-version replica during a short window. Keep old-version replicas current by replicating backwards and make sure automatic failover can never pick one, so you can return if needed. Remove the old version only after a full traffic cycle, peak included, has run on the new one."
   }
 }

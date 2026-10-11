@@ -7,9 +7,9 @@
     "dns",
     "caching"
   ],
-  "primer": "DNS decides which server address a user's request goes to, and a CDN uses that step to send each user to a nearby server. Caching keeps copies of data close to the reader, at the cost of misses and stale data. A CDN applies caching across the whole internet: thousands of caches in many places, each with limited room, all in front of the same origin.",
   "posts": [
     {
+      "id": "cloudflare-pingora-2022",
       "title": "How we built Pingora, the proxy that connects Cloudflare to the Internet",
       "url": "https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/",
       "company": "Cloudflare",
@@ -89,6 +89,7 @@
       }
     },
     {
+      "id": "netflix-open-connect-popularity-2017",
       "title": "Content Popularity for Open Connect",
       "url": "https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b",
       "company": "Netflix",
@@ -208,31 +209,211 @@
     "Giving each worker process its own pool of origin connections. Every worker you add splits the pool further, so connection reuse falls exactly when traffic grows.",
     "Assuming faster code fixes slow misses. Cloudflare's old proxy already handled requests in under a millisecond; the delay came from new connections and their handshakes."
   ],
-  "quiz": [
-    {
-      "question": "Why did adding NGINX workers make Cloudflare's connections to origins worse?",
-      "answer": "Each worker kept its own connection pool, so more workers meant more, smaller pools and a lower chance that a request found an open connection to reuse."
+  "comparison": "The two posts cover different halves of a CDN and do not compete. Netflix's covers edge placement: deciding ahead of time, from predicted popularity, which files each edge cluster keeps and how many copies, so most viewers are served inside their own provider's network. Cloudflare's Pingora covers the origin link: what happens on a miss, when the edge has to fetch from the customer's server, and how sharing connection pools makes that trip cheaper. Netflix can predict demand for a catalog it owns and push files off-peak; a CDN serving other people's sites cannot predict demand as well, so cheap misses matter more.",
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why serving content from one place is slow for most users, and what a CDN changes.",
+      "body": "A server in one data center is far from most of its users. Every request crosses the internet, and every new connection pays for handshakes before the first byte arrives. For a global audience, distance alone makes the site slow, and every request lands on the same origin servers.\n\nA content delivery network keeps copies of content on servers spread close to users, so most requests are answered nearby. It is caching applied across the whole internet, with the same costs: limited room at each location, and misses that still have to go back to the origin."
     },
-    {
-      "question": "For one customer, connection reuse went from 87.1% to 99.92%. What did that change for the customer's origin servers?",
-      "answer": "They received 160 times fewer new connections, so far fewer TCP and TLS handshakes."
+    "mentalModel": {
+      "outcome": "After this you can picture where a request is answered and what happens on a miss.",
+      "body": "Picture many small caches, called edges, spread around the world, all in front of one origin that holds the real copy. DNS sends each user to a nearby edge. If the edge has the file, a hit, it answers at once over a short distance.\n\nA CDN has two separate jobs. The first is deciding what each edge keeps, since no edge has room for everything. The second is making misses cheap, because whatever the edge does not hold has to be fetched from the origin, ideally over a connection that is already open.",
+      "diagram": "<svg viewBox=\"0 0 560 304\" role=\"img\" aria-labelledby=\"dg-c-cdn-t\" class=\"dg\"><title id=\"dg-c-cdn-t\">A CDN: users connect to a nearby edge server, which answers from its cache; only misses travel back to the origin server.</title><defs><marker id=\"dg-c-cdn-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"400\" y=\"120\" width=\"140\" height=\"50\" class=\"dg-box\"/><text x=\"470\" y=\"150\" class=\"dg-label\" text-anchor=\"middle\">Origin</text><text x=\"470\" y=\"190\" class=\"dg-note\" text-anchor=\"middle\">the real copy</text><rect x=\"160\" y=\"30\" width=\"120\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"220\" y=\"55\" class=\"dg-label\" text-anchor=\"middle\">Edge 1</text><circle cx=\"50\" cy=\"50\" r=\"9\" class=\"dg-box\"/><path d=\"M60,50 L156,50\" class=\"dg-line\" marker-end=\"url(#dg-c-cdn-a)\"/><rect x=\"160\" y=\"130\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"220\" y=\"155\" class=\"dg-label\" text-anchor=\"middle\">Edge 2</text><circle cx=\"50\" cy=\"150\" r=\"9\" class=\"dg-box\"/><path d=\"M60,150 L156,150\" class=\"dg-line\" marker-end=\"url(#dg-c-cdn-a)\"/><rect x=\"160\" y=\"230\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"220\" y=\"255\" class=\"dg-label\" text-anchor=\"middle\">Edge 3</text><circle cx=\"50\" cy=\"250\" r=\"9\" class=\"dg-box\"/><path d=\"M60,250 L156,250\" class=\"dg-line\" marker-end=\"url(#dg-c-cdn-a)\"/><path d=\"M370,150 L396,148\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-c-cdn-a)\"/><path d=\"M280,50 C330,60 340,130 370,150\" class=\"dg-line dg-dashed\"/><path d=\"M280,250 C330,240 340,170 370,150\" class=\"dg-line dg-dashed\"/><text x=\"95\" y=\"290\" class=\"dg-note\" text-anchor=\"middle\">users reach a nearby edge</text><text x=\"390\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\">misses only</text><text x=\"220\" y=\"92\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">hit: served nearby</text></svg>"
     },
-    {
-      "question": "Pingora's median time to first byte fell by 5 ms and the 95th percentile by 80 ms. Where did that time come from, if the old proxy was already fast?",
-      "answer": "From skipped handshakes: reusing an open connection avoids the round trips needed to set up a new TCP and TLS connection to the origin."
+    "howItWorks": {
+      "outcome": "After this you can walk through a CDN request from lookup to response, hit or miss.",
+      "steps": [
+        {
+          "step": "Route to a nearby edge",
+          "explanation": "The user's DNS lookup returns the address of an edge close to them."
+        },
+        {
+          "step": "Check the edge cache",
+          "explanation": "The edge looks for the file. A hit is served from there, which is the fast path."
+        },
+        {
+          "step": "Fetch on a miss",
+          "explanation": "On a miss, the edge requests the file from the origin, ideally reusing an open connection to skip TCP and TLS handshakes."
+        },
+        {
+          "step": "Store and serve",
+          "explanation": "The edge keeps the file for later requests and returns it to the user."
+        },
+        {
+          "step": "Decide what stays",
+          "explanation": "With limited disk, the edge either keeps what was recently requested or is filled ahead of time with what is predicted to be popular."
+        }
+      ]
     },
-    {
-      "question": "Netflix moved from ranking whole titles to ranking individual files. What did that change?",
-      "answer": "Unpopular bitrates and profiles of a popular title no longer take up disk next to the popular ones, which gave the same caching efficiency with half the storage."
+    "workedExample": {
+      "outcome": "After this you can follow both halves of a CDN in real systems: placing content and making misses cheap.",
+      "steps": [
+        {
+          "step": "Fill before demand",
+          "explanation": "In a 2017 post, Netflix described how its Open Connect CDN decides in advance which files each edge cluster keeps, instead of waiting for requests."
+        },
+        {
+          "step": "Rank files, not titles",
+          "explanation": "One episode of The Crown is about 1,200 files, one per encoding, bitrate and language. Ranking each file separately kept unpopular bitrates off scarce disk and, from 2016, gave the same efficiency with half the storage."
+        },
+        {
+          "step": "Copy what is hot",
+          "explanation": "Popular files are stored on several servers in a cluster, so no single server is overwhelmed."
+        },
+        {
+          "step": "Make the miss cheap",
+          "explanation": "Cloudflare's old origin proxy, built on NGINX, gave each worker process its own connection pool. More workers meant smaller pools, so fewer requests found an open connection and more paid for handshakes."
+        },
+        {
+          "step": "Share one pool",
+          "explanation": "Its replacement, Pingora, uses threads sharing one pool. For one major customer, connection reuse went from 87.1% to 99.92%, and median and p95 time to first byte fell by 5 ms and 80 ms."
+        }
+      ]
     },
-    {
-      "question": "Why does Netflix keep several copies of very popular files in one cluster?",
-      "answer": "To even out load, since one copy of a hugely popular file could overwhelm its server, and so a failed server's traffic can stay in the same cluster."
+    "mistakesOutcome": "After this you can avoid the three most common ways CDN thinking goes wrong.",
+    "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
+    "quiz": [
+      {
+        "question": "What makes a CDN fast for most users?",
+        "options": [
+          "Copies of content on servers close to them",
+          "A faster origin server",
+          "Compressing every file twice"
+        ],
+        "correct": 0,
+        "why": "Most requests are answered nearby instead of crossing the internet to the origin.",
+        "wrong": [
+          "",
+          "The origin is still far away; the edge avoids the trip.",
+          "Compression helps, but distance is the main cost a CDN removes."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "What are a CDN's two jobs?",
+        "options": [
+          "Deciding what each edge keeps, and making misses to the origin cheap",
+          "Encrypting traffic and storing passwords",
+          "Replacing DNS and the origin"
+        ],
+        "correct": 0,
+        "why": "Edges have limited room, and whatever they do not hold must be fetched from the origin.",
+        "wrong": [
+          "",
+          "Those are not what a CDN is for.",
+          "A CDN relies on DNS and sits in front of the origin."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "On a miss, why does reusing an open connection to the origin matter?",
+        "options": [
+          "It skips TCP and TLS handshakes before the first byte",
+          "It makes the file smaller",
+          "It turns the miss into a hit"
+        ],
+        "correct": 0,
+        "why": "Each new connection costs round trips; reuse removes them.",
+        "wrong": [
+          "",
+          "File size does not change.",
+          "It is still a miss, just a cheaper one."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Each worker process keeps its own origin connection pool. You add workers. What happens to connection reuse?",
+        "options": [
+          "It falls, because the pool is split into smaller pools",
+          "It rises",
+          "Nothing changes"
+        ],
+        "correct": 0,
+        "why": "Smaller pools mean fewer requests find an open connection, just when traffic grows.",
+        "wrong": [
+          "",
+          "Splitting pools works against reuse.",
+          "Each worker has its own pool, so the split matters."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "Why might a CDN rank and store individual files instead of whole titles?",
+        "options": [
+          "So unpopular versions of a popular title do not take up scarce disk",
+          "Because titles cannot be cached",
+          "To make files load in order"
+        ],
+        "correct": 0,
+        "why": "Finer units let only the popular bitrates and languages stay at the edge.",
+        "wrong": [
+          "",
+          "Titles can be cached; it is just wasteful.",
+          "Order is unrelated."
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "How does a user get sent to a nearby edge?",
+        "options": [
+          "Through the DNS answer for the site's name",
+          "The origin redirects every request",
+          "The browser picks at random"
+        ],
+        "correct": 0,
+        "why": "The CDN uses the DNS lookup to return a nearby edge's address.",
+        "wrong": [
+          "",
+          "That would still send every first request to the origin.",
+          "Browsers use the address DNS returns."
+        ],
+        "teaches": "how"
+      }
+    ],
+    "postsOutcome": "After this you can describe how two companies handled the two halves of a CDN: placing content and making misses cheap.",
+    "differOutcome": "After this you can explain when to fill caches ahead of demand and when to make misses cheaper.",
+    "exercisesOutcome": "After this you can apply the concept to a slow site, design a CDN, and plan for ten times the scale.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "Your CDN reports a 95% hit rate, yet users on uncached pages see slow first bytes. Where do you look?",
+        "answer": "At the miss path: how often a miss finds an open connection to the origin, and how many new TCP and TLS handshakes it pays for. Share connection pools so reuse stays high as traffic grows.",
+        "tradeoffs": "Larger shared pools mean more connections held open to origins and more shared state in the proxy.",
+        "wrongAnswers": [
+          "Judging the CDN on hit rate alone.",
+          "Assuming faster proxy code will fix slow misses.",
+          "Adding workers that each keep a private pool."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "level": "design",
+        "prompt": "Design how a video service decides what each edge cluster holds.",
+        "answer": "Predict popularity per region from several days of smoothed history plus forecasts for new titles, rank individual files rather than titles, and push them off-peak. Store popular files on several servers in the cluster, and track both caching efficiency and daily churn.",
+        "tradeoffs": "Prediction can miss sudden spikes, so keep extra copies of mid-popularity content; pushing off-peak costs bandwidth.",
+        "wrongAnswers": [
+          "Ranking whole titles.",
+          "Predicting from yesterday alone, which churns content.",
+          "Keeping a single copy of a very popular file."
+        ],
+        "teaches": "posts"
+      },
+      {
+        "level": "scale",
+        "prompt": "Traffic grows ten times, mostly to content you cannot predict, such as customers' websites. What changes?",
+        "answer": "You cannot place content ahead of time, so misses dominate. Make the miss path cheap with shared connection pools and work stealing, so one slow request does not block others, and size edge caches for recently requested content.",
+        "tradeoffs": "Rebuilding the proxy is expensive up front; a shared pool adds coordination between threads.",
+        "wrongAnswers": [
+          "Relying on prediction for content you do not control.",
+          "Scaling with more processes that each split the pool.",
+          "Ignoring tail latency on misses."
+        ],
+        "teaches": "posts"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "Inside each Netflix cluster, copies of popular files are spread across servers with consistent hashing. If you have not read it yet, Consistent Hashing explains how many servers agree on where each key lives, and Sharding builds on it for databases."
     }
-  ],
-  "exercise": {
-    "prompt": "Your image service sits behind a CDN. Cache hit rate is 95%, but the slowest 5% of image loads are very slow, and your origin's load balancer reports thousands of new TLS connections per second from the CDN. What would you look at, and what would you change?",
-    "answer": "The slow loads are likely misses paying for new connections, so look at how often the CDN reuses connections to your origin and how its connection pools are split. Make sure the origin supports long-lived keep-alive connections and does not close them early, and prefer a CDN or proxy setup where pools are shared across workers. Then work on the hit rate separately, since even a reused connection still pays the trip to the origin."
-  },
-  "comparison": "The two posts cover different halves of a CDN and do not compete. Netflix's covers edge placement: deciding ahead of time, from predicted popularity, which files each edge cluster keeps and how many copies, so most viewers are served inside their own provider's network. Cloudflare's Pingora covers the origin link: what happens on a miss, when the edge has to fetch from the customer's server, and how sharing connection pools makes that trip cheaper. Netflix can predict demand for a catalog it owns and push files off-peak; a CDN serving other people's sites cannot predict demand as well, so cheap misses matter more."
+  }
 }

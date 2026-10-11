@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FADED_LABEL, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, type HighlightEvent } from "./graphUi";
+import { mapIsInteractive, FADED_LABEL, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, type HighlightEvent } from "./graphUi";
 
 describe("tooltip placement", () => {
   const tip = { w: 280, h: 72 };
@@ -60,5 +60,13 @@ describe("highlight clears", () => {
   it("sets on enter and focus", () => {
     expect(nextHighlight(null, { type: "enter", node: "dns" })).toBe("dns");
     expect(nextHighlight("dns", { type: "focus", node: "cdns" })).toBe("cdns");
+  });
+});
+
+describe("map controls", () => {
+  it("stay off until the map has 25 topics", () => {
+    expect(mapIsInteractive(8)).toBe(false);
+    expect(mapIsInteractive(24)).toBe(false);
+    expect(mapIsInteractive(25)).toBe(true);
   });
 });

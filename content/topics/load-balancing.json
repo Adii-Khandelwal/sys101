@@ -6,9 +6,9 @@
   "prerequisites": [
     "dns"
   ],
-  "primer": "DNS turns a service's name into addresses, and it can return several of them. Because resolvers cache answers for the length of the TTL, DNS alone cannot react quickly when one server is overloaded or down. Something closer to the traffic has to make a fresh choice for each connection or request, and that is the load balancer's job.",
   "posts": [
     {
+      "id": "uber-dynamic-subsetting-2022",
       "title": "Better Load Balancing: Real-Time Dynamic Subsetting",
       "url": "https://www.uber.com/blog/better-load-balancing-real-time-dynamic-subsetting/",
       "company": "Uber",
@@ -84,6 +84,7 @@
       }
     },
     {
+      "id": "dropbox-robinhood-2024",
       "title": "What’s new with Robinhood, our in-house load balancing service",
       "url": "https://dropbox.tech/infrastructure/robinhood-in-house-load-balancing-service",
       "company": "Dropbox",
@@ -183,26 +184,214 @@
     "Balancing on a signal that can look healthy while the server is stuck, such as CPU on a server waiting on slow disks.",
     "Letting every client connect to every server. Connection counts grow with clients times servers, so at scale each client needs a bounded subset."
   ],
-  "quiz": [
-    {
-      "question": "What did Uber change: where each request goes, or which servers each proxy may use?",
-      "answer": "Which servers each proxy may use. The subset size grows or shrinks with the proxy's share of traffic, and requests within the subset are spread as before."
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why a service needs a load balancer once it runs on more than one server.",
+      "body": "DNS can give out several addresses for a name, but resolvers cache answers for the length of the TTL, so DNS cannot react when one server is overloaded or down. Something closer to the traffic has to make a fresh choice for each connection or request.\n\nThat choice decides whether the fleet is used well. If some servers run hot while others sit idle, the hot ones get slow, and teams buy extra capacity just to stay safe. A good load balancer keeps every server about equally busy, so the fleet can be smaller and still handle the peaks."
     },
-    {
-      "question": "Why did Dropbox move balancing logic into a central service instead of the clients?",
-      "answer": "Client changes take months to roll out, while the central service can be changed and rolled back in minutes."
+    "mentalModel": {
+      "outcome": "After this you can picture who decides where a request goes and what information they use.",
+      "body": "Think of a load balancer as a dispatcher between callers and a pool of identical servers. For each connection or request it answers one question: which server now? It can answer blindly, in turn, which is round-robin, or using what it knows about each server's load and health.\n\nTwo things make this harder than it sounds. The load it sees is always a little out of date, because reports take time to arrive. And at scale no caller can connect to every server, so each caller only talks to a subset, and the balancer can only spread work within that subset.",
+      "diagram": "<svg viewBox=\"0 0 560 316\" role=\"img\" aria-labelledby=\"dg-c-lb-t\" class=\"dg\"><title id=\"dg-c-lb-t\">Load balancing: clients send traffic to a load balancer, which picks one of several servers for each connection or request using load and health information reported back by the servers.</title><defs><marker id=\"dg-c-lb-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"125\" width=\"110\" height=\"44\" class=\"dg-box\"/><text x=\"69\" y=\"152\" class=\"dg-label\" text-anchor=\"middle\">Clients</text><rect x=\"190\" y=\"113\" width=\"150\" height=\"68\" class=\"dg-box dg-accent\"/><text x=\"265\" y=\"143.5\" class=\"dg-label\" text-anchor=\"middle\">Load</text><text x=\"265\" y=\"160.5\" class=\"dg-label\" text-anchor=\"middle\">balancer</text><path d=\"M124,147 L186,147\" class=\"dg-line\" marker-end=\"url(#dg-c-lb-a)\"/><text x=\"265\" y=\"200\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">picks a server per</text><text x=\"265\" y=\"214\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">connection or request</text><rect x=\"420\" y=\"20\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"480\" y=\"45\" class=\"dg-label\" text-anchor=\"middle\">Server 1</text><path d=\"M340,147 C380,147 390,40 416,40\" class=\"dg-line\" marker-end=\"url(#dg-c-lb-a)\"/><rect x=\"420\" y=\"92\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"480\" y=\"117\" class=\"dg-label\" text-anchor=\"middle\">Server 2</text><path d=\"M340,147 C380,147 390,112 416,112\" class=\"dg-line\" marker-end=\"url(#dg-c-lb-a)\"/><rect x=\"420\" y=\"164\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"480\" y=\"189\" class=\"dg-label\" text-anchor=\"middle\">Server 3</text><path d=\"M340,147 C380,147 390,184 416,184\" class=\"dg-line\" marker-end=\"url(#dg-c-lb-a)\"/><rect x=\"420\" y=\"236\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"480\" y=\"261\" class=\"dg-label\" text-anchor=\"middle\">Server 4</text><path d=\"M340,147 C380,147 390,256 416,256\" class=\"dg-line\" marker-end=\"url(#dg-c-lb-a)\"/><text x=\"280\" y=\"304\" class=\"dg-note\" text-anchor=\"middle\">servers report load and health back to the balancer</text></svg>"
     },
-    {
-      "question": "Why did Dropbox stop balancing on CPU alone?",
-      "answer": "Servers with stalled disk I/O showed low CPU, so the controller kept sending them more traffic. Using the higher of CPU and in-flight requests catches that."
+    "howItWorks": {
+      "outcome": "After this you can walk through how a request is routed and how the balancer learns about load.",
+      "steps": [
+        {
+          "step": "Pick a subset",
+          "explanation": "Each caller, or the proxy beside it, connects to a bounded set of the service's servers instead of all of them, because connection counts grow with callers times servers."
+        },
+        {
+          "step": "Choose a server per request",
+          "explanation": "Within the subset, a rule picks the server: in turn (round-robin), in proportion to weights (weighted round-robin), or by comparing load."
+        },
+        {
+          "step": "Report load",
+          "explanation": "Servers or proxies report how busy they are, for example CPU, requests in flight, or traffic sent."
+        },
+        {
+          "step": "Adjust",
+          "explanation": "A control plane turns those reports into new subset sizes or new weights and pushes them out. The data is a few seconds old when it is used."
+        },
+        {
+          "step": "Drop unhealthy servers",
+          "explanation": "Health checks take failing servers out of rotation and bring them back when they recover."
+        }
+      ]
     },
-    {
-      "question": "Max-to-average CPU on a Dropbox cluster went from 1.26 to 1.01. What does that mean?",
-      "answer": "Before, the busiest server ran 26% above the average; after, it ran almost exactly at the average, so the load was nearly even."
+    "workedExample": {
+      "outcome": "After this you can follow how two companies evened out load on real fleets.",
+      "steps": [
+        {
+          "step": "See the imbalance",
+          "explanation": "At Dropbox, clients sent requests round-robin over the servers they knew. Because the fleet mixed hardware generations, the same request cost more on some machines, and the busiest server in a database frontend cluster ran at 1.4 times the average CPU."
+        },
+        {
+          "step": "Measure each server",
+          "explanation": "Dropbox's Robinhood service collects load reports and runs a controller per server that nudges its weight up when it is less busy than average and down when it is busier."
+        },
+        {
+          "step": "Push weights to clients",
+          "explanation": "Weights go into a routing database that pushes changes to clients, which then do weighted round-robin. The busiest server dropped to 1.05 times the average."
+        },
+        {
+          "step": "Pick a better signal",
+          "explanation": "Servers with stalled disks showed low CPU and kept getting more traffic, so Robinhood now balances on the higher of CPU and requests in flight."
+        },
+        {
+          "step": "Change the subset instead",
+          "explanation": "Uber attacked the same problem from the other side. Busy callers squeezed their traffic through the same fixed-size subset as quiet callers, so each proxy now sizes its subset from its share of the service's total traffic."
+        },
+        {
+          "step": "Reuse existing signals",
+          "explanation": "Uber's proxies already reported traffic per destination, so the totals came back within seconds without new infrastructure. On 17 of 36 large services, p99 CPU fell by 10% or more."
+        }
+      ]
+    },
+    "mistakesOutcome": "After this you can avoid the three most common ways load balancing goes wrong.",
+    "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
+    "quiz": [
+      {
+        "question": "Why can't DNS alone keep servers evenly loaded?",
+        "options": [
+          "It can only return one address",
+          "Resolvers cache its answers, so it cannot react quickly to one server being busy or down",
+          "It does not work inside a data center"
+        ],
+        "correct": 1,
+        "why": "DNS answers are reused until their TTL runs out, so a change in load is not seen in time.",
+        "wrong": [
+          "DNS can return several addresses for one name.",
+          "",
+          "Where DNS runs is not the issue; caching is."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "Round-robin sends the same number of requests to each server. Why can load still be uneven?",
+        "options": [
+          "Requests differ in cost and servers differ in hardware",
+          "Round-robin skips servers at random",
+          "It only works with two servers"
+        ],
+        "correct": 0,
+        "why": "Equal request counts are not equal work when some requests or machines are more expensive.",
+        "wrong": [
+          "",
+          "Round-robin takes servers strictly in turn.",
+          "It works with any number of servers."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "Why does each caller connect to only a subset of servers at scale?",
+        "options": [
+          "Subsets are faster to encrypt",
+          "Connecting everyone to everyone needs callers times servers connections",
+          "Servers can only accept one caller"
+        ],
+        "correct": 1,
+        "why": "Two services with 10,000 tasks each would need on the order of 100 million connections if fully meshed.",
+        "wrong": [
+          "Encryption has nothing to do with it.",
+          "",
+          "Servers accept many callers; the total connection count is the problem."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "A server's disk stalls. Its CPU drops and the balancer sends it more traffic. What went wrong?",
+        "options": [
+          "The balancer used a load signal that looks healthy while the server is stuck",
+          "Round-robin was turned off",
+          "The subset was too large"
+        ],
+        "correct": 0,
+        "why": "Low CPU looked like spare capacity. Adding requests in flight to the signal shows the server is actually stuck.",
+        "wrong": [
+          "",
+          "The problem was the signal, not the rule.",
+          "Subset size does not change what the signal reports."
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "Load reports reach the balancer a few seconds late. What does that mean in practice?",
+        "options": [
+          "Load balancing is impossible",
+          "Decisions are made on slightly stale data, so the system must tolerate some lag and imbalance",
+          "Reports must be sent on every request"
+        ],
+        "correct": 1,
+        "why": "Every balancer works from data that is a little old; good designs smooth it and accept a few seconds of lag.",
+        "wrong": [
+          "Real systems balance well with stale data, as long as they expect it.",
+          "",
+          "Per-request reporting would cost more than it saves."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "What does weighted round-robin do?",
+        "options": [
+          "Sends each server traffic in proportion to its weight",
+          "Picks a server at random",
+          "Sends everything to the heaviest server"
+        ],
+        "correct": 0,
+        "why": "Higher-weight servers get more turns, so a controller can shift load by changing weights.",
+        "wrong": [
+          "",
+          "It is deterministic in proportion, not random.",
+          "Weights share traffic out; they do not send it all to one server."
+        ],
+        "teaches": "how"
+      }
+    ],
+    "postsOutcome": "After this you can describe how two companies fixed uneven load, one by resizing subsets and one by weighting servers.",
+    "differOutcome": "After this you can explain when to change who a caller talks to and when to change how much each server gets.",
+    "exercisesOutcome": "After this you can apply the concept to a fleet, design a balancer, and plan for ten times the scale.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "Your service runs on two hardware generations and the older servers are always the hottest, even with round-robin. What do you change?",
+        "answer": "Give each server a weight and adjust it from measured load, so older servers get fewer requests. Use a signal such as the higher of CPU and requests in flight, so a stuck server cannot look idle.",
+        "tradeoffs": "Weights need a feedback loop and steady traffic to work well, and a bad signal can push traffic to the wrong place.",
+        "wrongAnswers": [
+          "Adding more servers of both kinds and keeping round-robin.",
+          "Balancing on CPU alone.",
+          "Assuming equal request counts mean equal load."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "level": "design",
+        "prompt": "Design a load balancer for a service with tens of thousands of callers and a few thousand servers.",
+        "answer": "Give each caller a bounded random subset, collect load reports in a central service, turn them into weights or subset sizes, and push those out. Clients do weighted round-robin within their subset. Keep the logic central so it can change in minutes, and handle missing reports, restarts and new servers explicitly.",
+        "tradeoffs": "Central logic is easy to change but adds a dependency and a few seconds of lag; per-client logic reacts faster but takes months to roll out.",
+        "wrongAnswers": [
+          "Full mesh between every caller and server.",
+          "Logic that only lives in clients and needs every client to redeploy.",
+          "No plan for missing load reports."
+        ],
+        "teaches": "posts"
+      },
+      {
+        "level": "scale",
+        "prompt": "Traffic grows ten times and a few callers now send most of it. What breaks and what do you do?",
+        "answer": "Fixed subsets put heavy callers on too few servers. Size each caller's subset from its share of total traffic, with a minimum for quiet callers and a cap on connections per proxy, and record a baseline before rolling out so you can prove the gain.",
+        "tradeoffs": "Bigger subsets mean more connections and memory per proxy, so the cap matters; too small is worse than too large.",
+        "wrongAnswers": [
+          "Raising one global subset size for everyone.",
+          "Hand-tuning each busy service.",
+          "Rolling out without a baseline."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "Once requests spread evenly across many servers, those servers still read from shared databases, often the same data again and again. Caching picks up from there: serving repeated reads from memory, and keeping those copies correct."
     }
-  ],
-  "exercise": {
-    "prompt": "Your API has 200 servers of three hardware generations behind clients that round-robin over a random subset of 20 servers each. Older machines regularly hit 90% CPU while newer ones sit near 40%. Propose a fix, and say how you would roll it out safely.",
-    "answer": "Measure load per server and turn it into weights, so newer machines receive more traffic, and have clients do weighted round-robin within their subset. Compute weights centrally from a signal that cannot look healthy while a server is stuck, such as the higher of CPU and in-flight requests, and push them through service discovery. Start new servers at a low weight, skip updates when many load reports are missing, and roll out by blending old and new weights behind a percentage so every client sees the same values and you can turn it back."
   }
 }

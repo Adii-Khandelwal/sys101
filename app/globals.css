@@ -1384,10 +1384,35 @@ button:active:not(:disabled),
 }
 
 /* Page to page: cross-fade the content (browsers with View Transitions). */
-::view-transition-old(root),
+/* Old page fades out quickly; the new one fades in over it and settles up by a few pixels. */
+::view-transition-old(root) {
+  animation: vt-out var(--dur-page) var(--ease-out) both;
+}
+
 ::view-transition-new(root) {
-  animation-duration: var(--dur-page);
-  animation-timing-function: var(--ease-out);
+  animation: vt-in var(--dur-slow) var(--ease-out) both;
+}
+
+@keyframes vt-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* The sticky header is the same on both pages, so it stays put instead of fading. */
+.site-header {
+  view-transition-name: site-header;
+}
+
+::view-transition-group(site-header) {
+  animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1419,5 +1444,167 @@ button:active:not(:disabled),
 
   .reveal-content {
     transform: none;
+  }
+}
+
+/* ── Site header and logo ─────────────────── */
+
+/* Sticks to the top; kept short so it never eats vertical space. */
+:root {
+  --header-h: 60px;
+}
+
+html {
+  scroll-padding-top: calc(var(--header-h) + 16px); /* anchors land below the header */
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: var(--header-h);
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+
+.site-header-inner {
+  display: flex;
+  align-items: center;
+  max-width: 1200px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+/* The narrow-screen progress line sticks just below the header. */
+.progress-sticky {
+  top: var(--header-h);
+}
+
+@media (max-width: 1179px) {
+  .lesson [id] {
+    scroll-margin-top: calc(var(--header-h) + 56px);
+  }
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.logo-word {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.logo-line {
+  fill: none;
+  stroke: var(--edge);
+  stroke-width: 1.2;
+}
+
+.logo-node {
+  fill: var(--paper);
+  stroke: var(--edge);
+  stroke-width: 1.2;
+}
+
+.logo-node.is-accent {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+/* The logo now opens every page, so pages start closer to it. */
+.home {
+  padding-top: 24px;
+}
+
+.masthead {
+  padding-top: 24px;
+}
+
+.dossier {
+  padding-top: 24px;
+}
+
+/* ── Back to top ─────────────────────────── */
+
+.back-to-top {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 16px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  /* Same mono small caps as the page's other controls, such as "Mark done". */
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-page) var(--ease-out);
+}
+
+.back-to-top.is-shown {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.back-to-top:hover,
+.back-to-top:focus-visible {
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
+
+.back-to-top svg path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --header-h: 52px;
+  }
+
+  .site-header-inner {
+    padding: 0 16px;
+  }
+
+  .logo-word {
+    font-size: 20px;
+  }
+
+  /* Arrow only on phones, so it covers as little of the text column as possible. */
+  .back-to-top {
+    right: 16px;
+    bottom: 16px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .back-to-top-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 }

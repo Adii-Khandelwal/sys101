@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Newsreader, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import ViewTransitions from "@/components/ViewTransitions";
+import Logo from "@/components/Logo";
+import BackToTop from "@/components/BackToTop";
+import { Analytics } from "@vercel/analytics/next";
 
 const serif = Newsreader({
   subsets: ["latin"],
@@ -17,7 +20,8 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "sys101",
+  title: { default: "sys101", template: "%s · sys101" },
+  icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/icon-32.png", sizes: "32x32", type: "image/png" }] },
   description: "A map of system design concepts, annotated with engineering writing from the companies that run them.",
 };
 
@@ -32,7 +36,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ViewTransitions />
+        <header className="site-header">
+          <div className="site-header-inner">
+            <Logo />
+          </div>
+        </header>
         {children}
+        <BackToTop />
+        <Analytics />
       </body>
     </html>
   );

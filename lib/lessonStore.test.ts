@@ -14,6 +14,7 @@ import {
   markAllDone,
   summary,
   syncRead,
+  markVisited,
   toggleUnit,
   validateImport,
   type LessonMeta,
@@ -131,5 +132,14 @@ describe("finish topic", () => {
     p = answerAll(p, () => 0);
     expect(isTopicRead(p, meta)).toBe(true);
     expect(markAllDone(p, meta)).toEqual(p);
+  });
+});
+
+describe("read marks from before lesson tracking", () => {
+  it("are kept until something is tracked on the topic", () => {
+    const visited = markVisited(emptyProgress(), meta.slug, "why");
+    expect(syncRead([meta.slug], visited, meta)).toEqual([meta.slug]);
+    const started = toggleUnit(visited, meta, "why");
+    expect(syncRead([meta.slug], started, meta)).toEqual([]);
   });
 });

@@ -1,19 +1,15 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import SiteFooter from "@/components/SiteFooter";
 import { CONTACT_EMAIL } from "@/lib/site";
 
 // Prerendered at build time; using anything dynamic here fails the build.
 export const dynamic = "error";
 
-export const metadata: Metadata = { title: "Terms · sys101" };
+export const metadata: Metadata = { title: "Terms" };
 
 export default function Terms() {
   return (
     <article className="dossier legal">
-      <nav className="label">
-        <Link href="/">← sys101</Link>
-      </nav>
 
       <div className="label">Last updated 11 October 2026</div>
       <h1>Terms</h1>

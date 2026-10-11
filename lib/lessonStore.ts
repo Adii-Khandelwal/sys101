@@ -158,10 +158,20 @@ export function summary(p: Progress, meta: LessonMeta) {
   return { done, total: all.length, segments, action, target: action === "Continue" ? next! : all[0] };
 }
 
-/** The read list with this topic's entry set from isTopicRead. Other topics are untouched. */
+/** Whether anything that counts toward reading this topic has been recorded. Visits alone do not count. */
+export function hasTracked(p: Progress, meta: LessonMeta) {
+  const t = topicOf(p, meta.slug);
+  return t.done.length > 0 || Object.keys(t.answers).length > 0 || meta.postIds.some((id) => p.posts.includes(id));
+}
+
+/**
+ * The read list with this topic's entry set from isTopicRead. Other topics are untouched.
+ * A topic marked read before it had lesson tracking keeps that mark until something is tracked on it.
+ */
 export function syncRead(read: string[], p: Progress, meta: LessonMeta) {
   const on = isTopicRead(p, meta);
   const has = read.includes(meta.slug);
+  if (has && !on && !hasTracked(p, meta)) return read;
   if (on === has) return read;
   return on ? [...read, meta.slug] : read.filter((s) => s !== meta.slug);
 }

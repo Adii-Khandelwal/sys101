@@ -36,7 +36,7 @@ export default function Home() {
   return (
     <main className="home">
       <header className="masthead">
-        <h1>sys101</h1>
+        <h1 className="visually-hidden">sys101</h1>
         <p>System design concepts, ordered by what you need to know first.</p>
         <Search />
       </header>

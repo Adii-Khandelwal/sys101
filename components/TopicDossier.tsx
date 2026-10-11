@@ -119,7 +119,6 @@ export default function TopicDossier({ topic, prerequisites, dependents, titles 
   return (
     <article className="dossier">
       <nav className="label" data-pagefind-ignore>
-        <Link href="/">← sys101</Link>
         <ReadToggle slug={topic.slug} />
       </nav>
 

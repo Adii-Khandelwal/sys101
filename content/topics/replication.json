@@ -6,9 +6,9 @@
   "prerequisites": [
     "databases"
   ],
-  "primer": "A database writes each change to a log before applying it, a commit is the moment that log record is safe, and replicas stay current by replaying the primary's log. Replication builds directly on that: it decides how many copies must hold a log record before a commit counts, and who becomes primary, and how clients find out, when the current one fails.",
   "posts": [
     {
+      "id": "meta-mysql-raft-2023",
       "title": "Building and deploying MySQL Raft at Meta",
       "url": "https://engineering.fb.com/2023/05/16/data-infrastructure/mysql-raft-meta/",
       "company": "Meta",
@@ -88,6 +88,7 @@
       }
     },
     {
+      "id": "github-mysql-ha-2018",
       "title": "MySQL High Availability at GitHub",
       "url": "https://github.blog/engineering/infrastructure/mysql-high-availability-at-github/",
       "company": "GitHub",
@@ -192,26 +193,214 @@
     "Building failover that needs the failed primary to cooperate, such as releasing a shared IP address. A dead or cut-off host cannot help.",
     "Expecting consensus alone to improve availability. Meta found Raft made failover correct and fast, but availability still depended on replacing failed members quickly."
   ],
-  "quiz": [
-    {
-      "question": "Why did GitHub stop using a virtual IP and DNS to find the primary?",
-      "answer": "Moving the virtual IP needed the old primary to release it, which a dead host cannot do, and DNS changes waited on clients' caches, lengthening outages."
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why one copy of a database is not enough.",
+      "body": "A single database machine is a single point of failure. If it dies, writes stop, and anything not yet on another machine may be lost. It also has a limit on how many reads it can serve.\n\nReplication keeps copies on several machines, so reads can spread out and a failed primary can be replaced. The hard part is not copying the data; it is deciding when a write counts as safe and how to switch to a new primary without two machines accepting writes at once."
     },
-    {
-      "question": "What does semi-synchronous replication with a 500 ms timeout trade off?",
-      "answer": "The primary waits up to 500 ms for a replica to confirm each write, which protects data in the normal case, then continues alone so writes stay available, which means failover is not guaranteed lossless."
+    "mentalModel": {
+      "outcome": "After this you can picture a primary, its replicas, and what happens when the primary fails.",
+      "body": "One machine, the primary, accepts writes and ships its log to replicas. A commit can count as soon as the primary has it, which is fast but can lose data in a failover, or only once some replicas confirm it, which is safer but slower.\n\nWhen the primary fails, three things must happen: someone notices, someone decides which replica becomes the new primary, and every client learns where to send writes. If two machines both think they are primary, split brain, they accept conflicting writes.",
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-repl-t\" class=\"dg\"><title id=\"dg-c-repl-t\">Replication: writes go to the primary, which ships its log to replicas; a commit can wait for some replicas to confirm; if the primary fails, a replica is promoted and clients are pointed at it.</title><defs><marker id=\"dg-c-repl-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"120\" width=\"110\" height=\"44\" class=\"dg-box\"/><text x=\"69\" y=\"147\" class=\"dg-label\" text-anchor=\"middle\">Clients</text><rect x=\"190\" y=\"110\" width=\"140\" height=\"64\" class=\"dg-box dg-accent\"/><text x=\"260\" y=\"147\" class=\"dg-label\" text-anchor=\"middle\">Primary</text><path d=\"M124,142 L186,142\" class=\"dg-line\" marker-end=\"url(#dg-c-repl-a)\"/><text x=\"155\" y=\"134\" class=\"dg-note\" text-anchor=\"middle\">writes</text><rect x=\"420\" y=\"20\" width=\"120\" height=\"44\" class=\"dg-box\"/><text x=\"480\" y=\"47\" class=\"dg-label\" text-anchor=\"middle\">Replica 1</text><rect x=\"420\" y=\"120\" width=\"120\" height=\"44\" class=\"dg-box\"/><text x=\"480\" y=\"147\" class=\"dg-label\" text-anchor=\"middle\">Replica 2</text><rect x=\"420\" y=\"220\" width=\"120\" height=\"44\" class=\"dg-box dg-dashed\"/><text x=\"480\" y=\"247\" class=\"dg-label\" text-anchor=\"middle\">Replica 3</text><path d=\"M330,128 C370,110 390,50 416,42\" class=\"dg-line\" marker-end=\"url(#dg-c-repl-a)\"/><path d=\"M330,142 L416,142\" class=\"dg-line\" marker-end=\"url(#dg-c-repl-a)\"/><text x=\"392\" y=\"108\" class=\"dg-note\" text-anchor=\"start\">log</text><text x=\"372\" y=\"160\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">ack?</text><path d=\"M480,220 L480,168\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-c-repl-a)\"/><text x=\"470\" y=\"196\" class=\"dg-note\" text-anchor=\"end\">promoted if</text><text x=\"470\" y=\"210\" class=\"dg-note\" text-anchor=\"end\">the primary fails</text><text x=\"260\" y=\"290\" class=\"dg-note\" text-anchor=\"middle\">how many copies must confirm before a commit counts?</text></svg>"
     },
-    {
-      "question": "In Meta's design, which members must confirm a commit?",
-      "answer": "Two of three members in the leader's region: the MySQL primary and two log-only members. Members in other regions receive the write but do not vote."
+    "howItWorks": {
+      "outcome": "After this you can walk through a replicated write and a failover step by step.",
+      "steps": [
+        {
+          "step": "Write to the primary",
+          "explanation": "Clients send writes to the one primary, which appends them to its log."
+        },
+        {
+          "step": "Ship the log",
+          "explanation": "Replicas receive the log and apply it in order. How far behind they are is replication lag."
+        },
+        {
+          "step": "Decide when it is safe",
+          "explanation": "Asynchronous: commit on the primary alone. Semi-synchronous: wait for at least one replica to confirm. Quorum: wait for a majority."
+        },
+        {
+          "step": "Detect a failure",
+          "explanation": "Heartbeats or a watcher notice the primary is gone."
+        },
+        {
+          "step": "Elect a new primary",
+          "explanation": "A replica with the latest data is chosen, ideally by a quorum so an isolated part of the system cannot decide alone."
+        },
+        {
+          "step": "Redirect clients",
+          "explanation": "Clients learn the new primary through service discovery or proxies. Until they do, writes fail, and a reachable old primary must be stopped from accepting writes."
+        }
+      ]
     },
-    {
-      "question": "Why does Meta's election quorum differ from its commit quorum?",
-      "answer": "Commits need to be fast, so they use a small local quorum. A new leader must still overlap the previous leader's region so it is guaranteed to have every committed write."
+    "workedExample": {
+      "outcome": "After this you can follow a failover in two real designs and see where the seconds go.",
+      "steps": [
+        {
+          "step": "Failover from outside",
+          "explanation": "In a 2018 account, GitHub ran failover outside MySQL: orchestrator detects the dead primary, and orchestrator nodes in several data centers agree through Raft."
+        },
+        {
+          "step": "Announce through proxies",
+          "explanation": "orchestrator writes the new primary to Consul, and HAProxy is rewritten to route writes there. A typical outage was 10 to 13 seconds."
+        },
+        {
+          "step": "Wait, but not forever",
+          "explanation": "GitHub's primary waited for one replica to confirm each write, but only for 500 ms, trading a little safety for availability."
+        },
+        {
+          "step": "Move it into the log",
+          "explanation": "Meta put Raft inside MySQL, so commits, elections and membership changes are all entries in the replicated log."
+        },
+        {
+          "step": "Keep commits local",
+          "explanation": "A commit waits for 2 of 3 votes in the leader's region, while an election must overlap the old leader's region so no committed data is lost. Failover dropped from 20 to 40 seconds to about 2."
+        }
+      ]
+    },
+    "mistakesOutcome": "After this you can avoid the three most common replication mistakes.",
+    "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
+    "quiz": [
+      {
+        "question": "What is split brain?",
+        "options": [
+          "Two machines both accepting writes as primary",
+          "A replica falling behind",
+          "A query split across replicas"
+        ],
+        "correct": 0,
+        "why": "Conflicting writes on two primaries can diverge and be hard to reconcile.",
+        "wrong": [
+          "",
+          "That is replication lag.",
+          "That is not a failure mode."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "With asynchronous replication, the primary dies right after a commit. What can happen?",
+        "options": [
+          "The commit may be lost if no replica received it",
+          "Nothing can be lost",
+          "The replica rejects all writes forever"
+        ],
+        "correct": 0,
+        "why": "The primary did not wait for any copy, so the newest commits may exist only on the dead machine.",
+        "wrong": [
+          "",
+          "Only waiting for confirmation protects recent commits.",
+          "A replica can be promoted and accept writes."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why should a failover not depend on the failed primary's cooperation?",
+        "options": [
+          "A dead or cut-off machine cannot help",
+          "The primary is always busy",
+          "It slows reads"
+        ],
+        "correct": 0,
+        "why": "Designs like a shared IP that the old primary must release fail exactly when needed.",
+        "wrong": [
+          "",
+          "Busy is not the issue; unreachable is.",
+          "Reads are unrelated."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "Why do failover decisions use a quorum across data centers?",
+        "options": [
+          "So an isolated data center cannot promote a primary on its own",
+          "To speed up reads",
+          "Because one vote is always wrong"
+        ],
+        "correct": 0,
+        "why": "A majority decision stops a cut-off side from creating a second primary.",
+        "wrong": [
+          "",
+          "Quorums are about safety, not read speed.",
+          "The point is agreement, not distrust of a single vote."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why keep replicas at all, beyond backups?",
+        "options": [
+          "To spread reads and replace a failed primary quickly",
+          "Because primaries cannot write",
+          "To make writes faster"
+        ],
+        "correct": 0,
+        "why": "Copies serve reads and are ready to take over.",
+        "wrong": [
+          "",
+          "The primary handles writes.",
+          "Waiting for replicas can make writes slower, not faster."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "Meta's commits wait for 2 of 3 votes in the leader's region. Why only that region?",
+        "options": [
+          "To avoid a cross-region round trip on every commit",
+          "Other regions do not store data",
+          "Raft forbids more votes"
+        ],
+        "correct": 0,
+        "why": "Regions are 10 to 100 ms apart; a local quorum keeps commits fast.",
+        "wrong": [
+          "",
+          "Other regions receive the data without voting.",
+          "Raft allows larger quorums; Meta chose a small local one."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "postsOutcome": "After this you can describe two ways to run failover: outside the database and inside its log.",
+    "differOutcome": "After this you can explain what moving failover into the replication log buys and costs.",
+    "exercisesOutcome": "After this you can apply the concept to an outage, design failover, and plan for ten times the scale.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "After a failover, clients kept writing to the old primary for a minute because they found it through a DNS name. What do you change?",
+        "answer": "Stop relying on cached DNS for the primary. Route writes through proxies that read the current primary from a store the failover updates, and make sure the old primary is fenced or set read-only.",
+        "tradeoffs": "Proxies add a hop and a component to run; fencing needs reliable access to the old host or its network.",
+        "wrongAnswers": [
+          "Lowering the DNS TTL and hoping.",
+          "Relying on the old primary to step down by itself.",
+          "Ignoring old connections that linger."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "level": "design",
+        "prompt": "Design failover for a database with replicas in three data centers.",
+        "answer": "Detect failure with heartbeats, decide by quorum across data centers, promote the most up-to-date replica, publish the new primary to a store, and route clients through proxies that follow it. Choose how many replicas must confirm a commit, and how long to wait.",
+        "tradeoffs": "Waiting for confirmations adds commit latency; a timeout trades safety for availability.",
+        "wrongAnswers": [
+          "A single watcher that can decide alone.",
+          "Failover that needs the failed primary.",
+          "No plan for a cut-off data center."
+        ],
+        "teaches": "posts"
+      },
+      {
+        "level": "scale",
+        "prompt": "You now run millions of shards across continents. What makes failover fast and correct at that size?",
+        "answer": "Put commits, elections and membership changes in the replicated log itself, use a small local quorum for commits and a wider one for elections, inject failures in testing, and replace failed members quickly.",
+        "tradeoffs": "Years of tooling work, and a local quorum that two bad members can break.",
+        "wrongAnswers": [
+          "One global quorum, which adds a cross-region round trip to every commit.",
+          "Expecting consensus alone to raise availability.",
+          "Repairing lost quorums automatically without finding the cause."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "Every replica still holds all the data, so replication cannot help a table that is too big or too busy for one machine. Sharding picks up from there, building on Consistent Hashing as well."
     }
-  ],
-  "exercise": {
-    "prompt": "You run MySQL in three regions with one primary per shard. Today failover takes about 30 seconds and once caused two primaries to accept writes. Propose changes, and say what each costs.",
-    "answer": "First stop depending on the failed primary: route writes through proxies or a discovery store that a quorum updates, so clients never wait on DNS or a shared IP. Make the failover decision by quorum across regions so a cut-off region cannot promote its own primary. For data safety, require at least one other copy to confirm commits, ideally in the same region to keep latency low. Going further, consensus inside the replication log, as Meta did, gives failover of a few seconds, but costs significant engineering and still needs fast replacement of failed members."
   }
 }

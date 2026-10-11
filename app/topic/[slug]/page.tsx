@@ -17,7 +17,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const topic = getTopic((await params).slug);
-  return { title: topic ? `${topic.title} · sys101` : "sys101" };
+  return topic ? { title: topic.title } : {};
 }
 
 export default async function TopicPage({ params }: Props) {

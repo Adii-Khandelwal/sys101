@@ -47,6 +47,10 @@ export function highlightSet(node: string, edges: { from: string; to: string }[]
   return keep;
 }
 
+/** Below this many topics the map is a fixed, fitted picture: no zoom, pan or map controls. */
+export const INTERACTIVE_MIN_NODES = 25;
+export const mapIsInteractive = (nodeCount: number) => nodeCount >= INTERACTIVE_MIN_NODES;
+
 export type HighlightEvent =
   | { type: "enter"; node: string }
   | { type: "focus"; node: string }

@@ -6,9 +6,9 @@
   "prerequisites": [
     "load-balancing"
   ],
-  "primer": "With load balancing, requests spread across many identical servers, and each one can be added or removed as traffic changes. Those servers still read from shared databases, and for read-heavy workloads the same data is requested over and over. A cache sits between the servers and the database so repeated reads are served from memory instead.",
   "posts": [
     {
+      "id": "meta-cache-consistency-2022",
       "title": "Cache made consistent",
       "url": "https://engineering.fb.com/2022/06/08/core-infra/cache-made-consistent/",
       "company": "Meta",
@@ -80,6 +80,7 @@
       }
     },
     {
+      "id": "uber-docstore-cache-2024",
       "title": "How Uber Serves Over 40 Million Reads Per Second from Online Storage Using an Integrated Cache",
       "url": "https://www.uber.com/us/en/blog/how-uber-serves-over-40-million-reads-per-second-using-an-integrated-cache",
       "company": "Uber",
@@ -218,31 +219,219 @@
     "Relying on a version check without storing the version. If the newer version is evicted, the cache can no longer tell which value wins.",
     "Treating a stale entry as harmless because it will expire. Without a TTL, or with a long one, a missed invalidation can leave it wrong indefinitely."
   ],
-  "quiz": [
-    {
-      "question": "Describe the race that leaves Meta's cache holding an old value.",
-      "answer": "A fill reads x=42, the database changes x to 43, the invalidation for 43 reaches the cache first, then the delayed fill writes 42. The cache now disagrees with the database."
+  "comparison": "Both companies cache in front of a strongly consistent database and both invalidate from the database's own stream of changes, but they spent their effort in different places. Meta's TAO cache already ran at over a quadrillion queries a day, so the hard problem was finding the rare races that left it wrong, and Meta built Polaris to measure only the inconsistencies a client could see. Uber was adding a cache to Docstore from scratch, so it designed the races out up front with row versions, made caching opt-in for flows that cannot tolerate staleness, and built a compare mode that reports its own consistency.",
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain what a cache buys you and what it costs.",
+      "body": "With load balancing, requests spread across many servers, but those servers still read from shared databases, and in read-heavy systems the same data is read again and again. Serving every read from the database means paying for a lot of database capacity.\n\nA cache keeps a copy of hot data in memory, close to the servers, so most reads skip the slow path. The price is that there are now two copies. Every write has to reach the cache too, and until it does, readers can see an old value."
     },
-    {
-      "question": "Why does Polaris recheck at one, five and ten minutes before reporting?",
-      "answer": "Replicas lag briefly after a write. Waiting separates that normal lag from real inconsistencies and keeps the metric free of false alarms."
+    "mentalModel": {
+      "outcome": "After this you can picture where reads go, where writes go, and how a copy goes stale.",
+      "body": "Think of the cache as a notebook next to a filing cabinet. To read, you check the notebook first. If the entry is there, a hit, you use it. If not, a miss, you go to the cabinet, which is the source of truth, and copy the answer into the notebook. That copying is a cache fill.\n\nWhen the cabinet changes, the notebook is out of date until its entry is crossed out, which is an invalidation, or until it expires after its TTL. Most cache bugs come from these steps happening in an unexpected order.",
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-cache-t\" class=\"dg\"><title id=\"dg-c-cache-t\">Caching: a read checks the cache first; on a hit it returns at once, on a miss it reads the database and fills the cache; a write updates the database, which then invalidates the cached copy.</title><defs><marker id=\"dg-c-cache-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"120\" width=\"110\" height=\"44\" class=\"dg-box\"/><text x=\"69\" y=\"147\" class=\"dg-label\" text-anchor=\"middle\">App</text><rect x=\"210\" y=\"30\" width=\"140\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\">Cache</text><rect x=\"210\" y=\"210\" width=\"140\" height=\"44\" class=\"dg-box\"/><text x=\"280\" y=\"237\" class=\"dg-label\" text-anchor=\"middle\">Database</text><path d=\"M124,130 C160,100 180,60 206,52\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-c-cache-a)\"/><text x=\"150\" y=\"70\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">1. read</text><text x=\"400\" y=\"46\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">hit: answer now</text><path d=\"M280,74 L280,206\" class=\"dg-line\" marker-end=\"url(#dg-c-cache-a)\"/><text x=\"288\" y=\"130\" class=\"dg-note\" text-anchor=\"start\">2. miss: read the source</text><path d=\"M262,206 L262,78\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-c-cache-a)\"/><text x=\"254\" y=\"160\" class=\"dg-note\" text-anchor=\"end\">3. fill</text><path d=\"M124,154 C160,190 180,225 206,232\" class=\"dg-line\" marker-end=\"url(#dg-c-cache-a)\"/><text x=\"150\" y=\"225\" class=\"dg-note\" text-anchor=\"middle\">write</text><path d=\"M350,220 C430,190 430,80 354,58\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-c-cache-a)\"/><text x=\"440\" y=\"140\" class=\"dg-note\" text-anchor=\"start\">invalidate</text><text x=\"280\" y=\"290\" class=\"dg-note\" text-anchor=\"middle\">every copy can be out of date until it is invalidated or expires</text></svg>"
     },
-    {
-      "question": "Why not log every cache change to catch these bugs?",
-      "answer": "At over 10 trillion cache fills a day, logging every change would turn a read-heavy system into a write-heavy one. Tracing only the race window keeps it affordable."
+    "howItWorks": {
+      "outcome": "After this you can walk through a read, a write and the race that leaves a cache wrong.",
+      "steps": [
+        {
+          "step": "Read from the cache",
+          "explanation": "The server asks the cache for the key. A hit returns at once."
+        },
+        {
+          "step": "Fill on a miss",
+          "explanation": "On a miss, the server reads the database and writes the value into the cache for the next reader."
+        },
+        {
+          "step": "Write to the database",
+          "explanation": "Writes go to the source of truth, not to the cache."
+        },
+        {
+          "step": "Invalidate",
+          "explanation": "The change is sent to the cache to remove or replace the old entry, ideally from the database's own log of committed changes."
+        },
+        {
+          "step": "Expire as a backstop",
+          "explanation": "Every entry has a TTL, so even a missed invalidation cannot leave it wrong forever."
+        },
+        {
+          "step": "Guard against races",
+          "explanation": "A slow fill can read an old value and write it after the invalidation for a newer one. Storing a version or timestamp with each entry lets the cache keep only the newer value."
+        }
+      ]
     },
-    {
-      "question": "What did the drop-cache bug teach?",
-      "answer": "Error-handling paths hide rare bugs: the handler only dropped entries with a lower version, and the stale entry already had the current version."
+    "workedExample": {
+      "outcome": "After this you can trace a stale-cache race in a real system and see how it was caught and prevented.",
+      "steps": [
+        {
+          "step": "A fill starts",
+          "explanation": "At Meta, a cache fill reads a value from the database."
+        },
+        {
+          "step": "The value changes",
+          "explanation": "Before the fill finishes, a write changes the value and the database sends an invalidation."
+        },
+        {
+          "step": "Arrivals swap order",
+          "explanation": "The invalidation for the new value reaches the cache first; then the delayed fill writes the old value. The cache is now wrong until something evicts the entry."
+        },
+        {
+          "step": "Catch it",
+          "explanation": "Meta's Polaris receives the same invalidations, asks every replica for the key, and rechecks after one, five and ten minutes before reporting, so normal lag is not counted. TAO went from six to ten nines of writes consistent within five minutes."
+        },
+        {
+          "step": "Prevent it",
+          "explanation": "Uber built its Docstore cache to avoid the race up front: Redis keeps a row only if its MySQL timestamp is newer than the one already cached."
+        },
+        {
+          "step": "Bound it",
+          "explanation": "Uber also invalidates from the MySQL binary log and expires entries after 5 minutes by default, and leaves caching off for flows that need strong consistency."
+        }
+      ]
     },
-    {
-      "question": "Uber's cache is filled by reads and also updated by Flux following the database log. What could go wrong, and how did Uber prevent it?",
-      "answer": "A slow read could write an older version of a row after Flux had written a newer one. Uber stores each row's MySQL timestamp in Redis and uses a small script that only accepts a write if it is newer."
+    "mistakesOutcome": "After this you can avoid the three most common ways caches go wrong.",
+    "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
+    "quiz": [
+      {
+        "question": "What is a cache fill?",
+        "options": [
+          "Writing a value into the cache after a miss read it from the database",
+          "Deleting every entry",
+          "Copying the database to disk"
+        ],
+        "correct": 0,
+        "why": "On a miss the server reads the source of truth and stores the result for the next reader.",
+        "wrong": [
+          "",
+          "That would be a flush, not a fill.",
+          "A fill copies one value into memory, not the whole database."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "A fill reads value A. The value changes to B and B's invalidation arrives. Then the fill writes A. What does the cache hold?",
+        "options": [
+          "B",
+          "A, the old value",
+          "Nothing"
+        ],
+        "correct": 1,
+        "why": "The delayed fill overwrote the newer state, so the cache holds A until it is evicted or expires.",
+        "wrong": [
+          "The invalidation came first, so the late fill wrote A on top.",
+          "",
+          "The fill wrote A, so the entry exists."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "How can a cache refuse a late, older write?",
+        "options": [
+          "Store a version or timestamp with each entry and keep only the newer one",
+          "Use a bigger cache",
+          "Read from the cache twice"
+        ],
+        "correct": 0,
+        "why": "Comparing versions lets the cache tell which value is newer, whatever order the writes arrive in.",
+        "wrong": [
+          "",
+          "Size does not decide which value wins.",
+          "Reading twice does not fix what is stored."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why give entries a TTL even when you invalidate on every write?",
+        "options": [
+          "It makes reads faster",
+          "So a missed invalidation cannot leave an entry wrong forever",
+          "Because invalidations are never needed"
+        ],
+        "correct": 1,
+        "why": "Invalidations can be lost or raced; expiry bounds how long a wrong value can live.",
+        "wrong": [
+          "Expiry causes extra misses; it does not speed reads.",
+          "",
+          "Invalidation is still the main way changes reach the cache."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "Why is a cache used at all, given the staleness risk?",
+        "options": [
+          "Read-heavy systems would otherwise need far more database capacity",
+          "Databases cannot store data",
+          "Caches never go stale"
+        ],
+        "correct": 0,
+        "why": "Serving repeated reads from memory is much cheaper than serving them from the database.",
+        "wrong": [
+          "",
+          "The database still holds all the data.",
+          "They can, which is the cost being accepted."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "Before reporting a stale entry, Meta's checker waits and rechecks. Why?",
+        "options": [
+          "To let normal replication lag settle, so only real inconsistencies are counted",
+          "Because checks are free",
+          "To slow down writes"
+        ],
+        "correct": 0,
+        "why": "Waiting keeps the metric free of false alarms, so people trust it.",
+        "wrong": [
+          "",
+          "Checks that hit the database are expensive, which is why they are rationed.",
+          "It does not touch the write path."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "postsOutcome": "After this you can describe how two companies kept a cache in front of a consistent database correct.",
+    "differOutcome": "After this you can explain when to measure inconsistency and when to design it out.",
+    "exercisesOutcome": "After this you can apply the concept to a bug, design a cache, and plan for ten times the scale.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "Users sometimes see an old profile picture for hours after changing it. Invalidation runs on every write. What is likely happening and what do you change?",
+        "answer": "A late fill or a lost invalidation left an old value with no expiry. Store a version with each entry and keep only the newer one, and add a TTL as a backstop.",
+        "tradeoffs": "Shorter TTLs mean more misses and database load; versions need to be stored and compared on every write.",
+        "wrongAnswers": [
+          "Assuming invalidations always arrive in order.",
+          "Clearing the whole cache on each write.",
+          "Relying on the TTL alone with a very long expiry."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "design",
+        "prompt": "Design a cache for a database that many teams share, so each team does not build its own.",
+        "answer": "Put the cache in the database's query layer, filled on reads, invalidated from the database's change log, protected by row versions, and opt-in per table or request so strongly consistent flows can skip it. Add a mode that compares cached reads against the database.",
+        "tradeoffs": "Cached reads become eventually consistent, so it must be opt-in, and the cache adds one more system to run.",
+        "wrongAnswers": [
+          "Invalidating in the write path, which cannot see which rows a conditional update touched.",
+          "No way to measure staleness.",
+          "Turning caching on for every flow."
+        ],
+        "teaches": "posts"
+      },
+      {
+        "level": "scale",
+        "prompt": "Traffic grows ten times and you add a second region that must take over during a failover. What do you plan for?",
+        "answer": "Keep the other region's cache warm by copying keys, not values, and let it fill from its own database. Shard the cache differently from the database so one cache failure does not hammer one database shard, and use timeouts and circuit breakers so a slow cache does not slow every request.",
+        "tradeoffs": "Warming costs reads in the standby region; extra protection adds tuning work.",
+        "wrongAnswers": [
+          "Failing over to a cold cache.",
+          "Copying cached values between regions with a second replication system.",
+          "No timeouts around the cache."
+        ],
+        "teaches": "posts"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "A cache next to your servers helps reads inside your data center, but users far away still wait on the network. CDNs pick up from there: caching content at the edge, close to users."
     }
-  ],
-  "exercise": {
-    "prompt": "Your product page cache uses invalidations from the database but no TTL. Customers occasionally see an old price for hours. How would you find out how often this happens, and how would you make it heal on its own?",
-    "answer": "Measure it from the outside: subscribe to the same invalidation stream, read the key from each cache replica a little later, and count entries that are still older than the database after a grace period, rechecking before reporting so normal lag is not counted. Report it as the share of writes consistent within N minutes. To make it heal, add a TTL as a backstop, store versions with entries so older fills are rejected, and review the error paths around invalidation, since that is where stale entries usually survive."
-  },
-  "comparison": "Both companies cache in front of a strongly consistent database and both invalidate from the database's own stream of changes, but they spent their effort in different places. Meta's TAO cache already ran at over a quadrillion queries a day, so the hard problem was finding the rare races that left it wrong, and Meta built Polaris to measure only the inconsistencies a client could see. Uber was adding a cache to Docstore from scratch, so it designed the races out up front with row versions, made caching opt-in for flows that cannot tolerate staleness, and built a compare mode that reports its own consistency."
+  }
 }

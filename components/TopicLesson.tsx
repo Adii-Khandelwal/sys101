@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { formatDate, type Topic } from "@/lib/topics";
 import { PostDigest, TopicList } from "./TopicDossier";
 import { CompactProgress, FinishTopic, MarkDone, QuizBlock, ResumeLine } from "./LessonTrackers";
@@ -65,9 +64,6 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles }
       <div className="progress-sticky" data-pagefind-ignore>
         <CompactProgress meta={meta} variant="line" />
       </div>
-      <nav className="label" data-pagefind-ignore>
-        <Link href="/">← sys101</Link>
-      </nav>
 
       <div data-pagefind-body>
         <div className="label" data-pagefind-ignore>

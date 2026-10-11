@@ -6,9 +6,9 @@
   "prerequisites": [
     "caching"
   ],
-  "primer": "A cache only helps if repeated reads for the same key land on the server that already holds it. Once the cache spans many servers, every client needs the same rule for mapping a key to a server. The simple rule, hash the key and take it modulo the number of servers, moves almost every key when one server is added or removed, and every moved key becomes a cache miss.",
   "posts": [
     {
+      "id": "cloudflare-ketama-ram-2026",
       "title": "Saving another 100TB of RAM with math (and Rust)",
       "url": "https://blog.cloudflare.com/saving-100-tb-of-ram-with-math/",
       "company": "Cloudflare",
@@ -88,6 +88,7 @@
       }
     },
     {
+      "id": "discord-elixir-ring-2017",
       "title": "How Discord Scaled Elixir to 5,000,000 Concurrent Users",
       "url": "https://discord.com/blog/how-discord-scaled-elixir-to-5-000-000-concurrent-users",
       "company": "Discord",
@@ -184,30 +185,214 @@
     "Giving each server a single point on the ring. Arcs end up very uneven, so some servers carry far more keys than others.",
     "Assuming more points is always better. Returns diminish quickly, memory grows linearly, and with 32-bit hashes collisions eventually add error back."
   ],
-  "quiz": [
-    {
-      "question": "Why does consistent hashing move fewer keys than hash-mod-N when a server is added?",
-      "answer": "Only keys on the arc the new server takes over change owners. With hash-mod-N, changing N changes the result for almost every key."
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why hash-mod-N breaks a cache cluster when it grows or shrinks.",
+      "body": "A cache spread over many servers only helps if every client sends the same key to the same server. The obvious rule is to hash the key and take it modulo the number of servers.\n\nThat rule falls apart when the number changes. Add or remove one server and almost every key maps somewhere new, so almost every read becomes a miss at the same moment, and the database behind the cache takes the full load. Consistent hashing exists so that a change in the number of servers moves only a small share of keys."
     },
-    {
-      "question": "Cloudflare found load varying about 99% with one point per server and about 8% with 160. Why did they still cut points by 90%?",
-      "answer": "The math showed the extra points bought very little additional balance while costing memory on every machine, so far fewer points gave nearly the same evenness."
+    "mentalModel": {
+      "outcome": "After this you can picture keys and servers on a ring and see which keys move.",
+      "body": "Hash both servers and keys onto the same circle of numbers, the ring. Each key belongs to the first server you reach going clockwise from it. When a server joins, it takes over only the keys between it and the server before it. When a server leaves, only its keys move, to the next server along.\n\nWith one point per server the arcs between servers are very uneven, so some servers own far more of the ring. The fix is to give each server many points, often called virtual nodes, which evens out the arcs at the cost of a bigger ring.",
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-ring-t\" class=\"dg\"><title id=\"dg-c-ring-t\">Consistent hashing: servers and keys are placed on the same ring; each key belongs to the next server clockwise, so adding or removing a server only moves the keys next to it.</title><defs><marker id=\"dg-c-ring-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><circle cx=\"150\" cy=\"150\" r=\"100\" class=\"dg-line\"/><rect x=\"177.2\" y=\"49.0\" width=\"14\" height=\"14\" class=\"dg-box dg-accent\"/><text x=\"192\" y=\"40\" class=\"dg-label\" text-anchor=\"middle\">A</text><rect x=\"207.3\" y=\"219.6\" width=\"14\" height=\"14\" class=\"dg-box dg-accent\"/><text x=\"228\" y=\"248\" class=\"dg-label\" text-anchor=\"middle\">B</text><rect x=\"49.0\" y=\"177.2\" width=\"14\" height=\"14\" class=\"dg-box dg-accent\"/><text x=\"35\" y=\"197\" class=\"dg-label\" text-anchor=\"middle\">C</text><circle cx=\"236.6\" cy=\"100.0\" r=\"4\" class=\"dg-dot\"/><circle cx=\"248.5\" cy=\"167.4\" r=\"4\" class=\"dg-dot\"/><circle cx=\"132.6\" cy=\"248.5\" r=\"4\" class=\"dg-dot\"/><circle cx=\"63.4\" cy=\"100.0\" r=\"4\" class=\"dg-dot\"/><circle cx=\"115.8\" cy=\"56.0\" r=\"4\" class=\"dg-dot\"/><path d=\"M242.6,106.0 Q275,180 234.6,208.3\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-c-ring-a)\"/><text x=\"380\" y=\"60\" class=\"dg-note\" text-anchor=\"middle\">servers (squares) and keys (dots)</text><text x=\"380\" y=\"76\" class=\"dg-note\" text-anchor=\"middle\">sit on the same ring</text><text x=\"380\" y=\"130\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">a key belongs to the next</text><text x=\"380\" y=\"146\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">server clockwise</text><text x=\"380\" y=\"200\" class=\"dg-note\" text-anchor=\"middle\">add or remove a server:</text><text x=\"380\" y=\"216\" class=\"dg-note\" text-anchor=\"middle\">only its neighbour&#x27;s keys move</text></svg>"
     },
-    {
-      "question": "Why did Cloudflare roll the new ring out one data center at a time?",
-      "answer": "Any ring change moves cached content. Switching everywhere at once would have invalidated most caches and flooded customers' origins."
+    "howItWorks": {
+      "outcome": "After this you can place a key, add a server, and say what moves.",
+      "steps": [
+        {
+          "step": "Place the servers",
+          "explanation": "Hash each server, many times with different suffixes, to put its points on the ring."
+        },
+        {
+          "step": "Look up a key",
+          "explanation": "Hash the key and find the next point clockwise, usually with a binary search over the sorted points. That point's server owns the key."
+        },
+        {
+          "step": "Add a server",
+          "explanation": "Its new points take over the keys just before them. Every other key stays where it was."
+        },
+        {
+          "step": "Remove a server",
+          "explanation": "Its keys pass to the next points along. Again, only those keys move."
+        },
+        {
+          "step": "Weight servers",
+          "explanation": "A bigger server gets more points, so it owns more of the ring."
+        },
+        {
+          "step": "Keep lookups cheap",
+          "explanation": "Every client needs the same ring, and lookups sit on the hot path, so the ring's memory and lookup cost matter."
+        }
+      ]
     },
-    {
-      "question": "Why was ETS not fast enough for Discord?",
-      "answer": "Reading from ETS copies the data, and copying the ring on every lookup still cost 7μs per lookup and 17.5 seconds after a restart."
+    "workedExample": {
+      "outcome": "After this you can see what a ring costs in real systems, in memory and in lookup time.",
+      "steps": [
+        {
+          "step": "Why points matter",
+          "explanation": "Cloudflare's math for 100 servers: with one point each, load varies by about 99%; with 160 points each, the default in NGINX and Pingora, about 8%."
+        },
+        {
+          "step": "Count the cost",
+          "explanation": "Cloudflare needs a ring per combination of compliance and caching features, and points multiply with disk-size weights, so some rings reached about 6GB, on every machine."
+        },
+        {
+          "step": "Cut what does not pay",
+          "explanation": "Returns diminish sharply, so Cloudflare cut the points per server by 90% and shrank each entry from 8 bytes to 6, reclaiming over 100TB of RAM."
+        },
+        {
+          "step": "Roll out gently",
+          "explanation": "Every ring change moves cached files and sends traffic to origins, so both rings ran side by side and the switch went data center by data center."
+        },
+        {
+          "step": "Make lookups free",
+          "explanation": "In a 2017 post, Discord described its ring lookups bottlenecking on one process after a restart: about 30 seconds of lookups. Compiling the ring into a shared module cut each lookup from 12μs to 0.3μs."
+        }
+      ]
     },
-    {
-      "question": "What trade did FastGlobal make?",
-      "answer": "Reads became nearly free with no copy, but changing the ring requires rebuilding a compiled module, which can take up to a second. That is fine because the ring rarely changes."
+    "mistakesOutcome": "After this you can avoid the three most common mistakes with hash rings.",
+    "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
+    "quiz": [
+      {
+        "question": "A cache cluster uses hash(key) mod N. You add one server. What happens?",
+        "options": [
+          "Almost every key maps to a different server, so most reads miss",
+          "Only the new server's keys move",
+          "Nothing; keys stay put"
+        ],
+        "correct": 0,
+        "why": "Changing N changes the result for nearly every key.",
+        "wrong": [
+          "",
+          "That is what consistent hashing achieves, not mod N.",
+          "The mapping depends on N, so it changes."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "On a hash ring, which server owns a key?",
+        "options": [
+          "The first server point clockwise from the key's hash",
+          "The server with the most keys",
+          "A random server each time"
+        ],
+        "correct": 0,
+        "why": "Every client walks clockwise to the same point, so they all agree.",
+        "wrong": [
+          "",
+          "Ownership depends on position, not load.",
+          "It must be the same server every time for the cache to help."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "A server leaves the ring. Which keys move?",
+        "options": [
+          "Only the keys that server owned",
+          "All keys",
+          "Half the keys"
+        ],
+        "correct": 0,
+        "why": "Its keys pass to the next server along; everyone else keeps theirs.",
+        "wrong": [
+          "",
+          "That is the hash-mod-N behavior.",
+          "Only the departing server's share moves."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why give each server many points on the ring?",
+        "options": [
+          "To even out how much of the ring each server owns",
+          "To encrypt keys",
+          "So lookups need no search"
+        ],
+        "correct": 0,
+        "why": "With one point each, arcs vary wildly; many points average them out.",
+        "wrong": [
+          "",
+          "Points have nothing to do with encryption.",
+          "Lookups still search the sorted points."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "Going from 160 to 1,600 points per server mostly costs you what?",
+        "options": [
+          "Ten times the memory for little extra balance",
+          "Correctness",
+          "Nothing"
+        ],
+        "correct": 0,
+        "why": "Balance improves slowly while memory grows with the point count.",
+        "wrong": [
+          "",
+          "Lookups stay correct either way.",
+          "Every point takes memory on every machine."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "Why did Discord's ring lookups take seconds after a restart?",
+        "options": [
+          "Every lookup paid for a call to the single process that owned the ring",
+          "The ring had too few points",
+          "The hash function was slow"
+        ],
+        "correct": 0,
+        "why": "Millions of lookups each paying about 12μs added up to around 30 seconds.",
+        "wrong": [
+          "",
+          "Point count was not the bottleneck.",
+          "The cost was the process hop, not hashing."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "postsOutcome": "After this you can describe how two companies cut the cost of a hash ring, in memory and in lookup time.",
+    "differOutcome": "After this you can explain when a ring's memory matters and when its lookup speed does.",
+    "exercisesOutcome": "After this you can apply the concept to a cache cluster, design a ring, and plan for ten times the scale.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "Every time you add a cache server, your database load spikes for an hour. The client uses hash mod N. What do you change?",
+        "answer": "Switch to a consistent hash ring with many points per server, so adding a server moves only about one N-th of the keys. Add servers one at a time.",
+        "tradeoffs": "The ring takes memory and every client must build it the same way.",
+        "wrongAnswers": [
+          "Adding several servers at once.",
+          "Keeping mod N and warming the whole cache by hand.",
+          "One point per server."
+        ],
+        "teaches": "why"
+      },
+      {
+        "level": "design",
+        "prompt": "Design how a load balancer routes cacheable URLs to servers in a data center, with servers of different disk sizes.",
+        "answer": "Build a ring with points weighted by disk size, pick the point count from the balance you need rather than a default, store entries compactly, and keep one ring per set of servers allowed for a request.",
+        "tradeoffs": "Fewer points means slightly less even load; separate rings per feature combination multiply memory.",
+        "wrongAnswers": [
+          "Using a default point count without checking it.",
+          "Equal points for servers of different sizes.",
+          "One ring for requests that may only go to some servers."
+        ],
+        "teaches": "posts"
+      },
+      {
+        "level": "scale",
+        "prompt": "Your fleet grows ten times and you need to change the ring's layout. How do you roll it out?",
+        "answer": "Run the old and new rings side by side, choose one per request, and move traffic location by location, small sites first, with separate controls for traffic share and location. Remove the old ring only at 100%.",
+        "tradeoffs": "Two rings double memory during the move, and the rollout is slow.",
+        "wrongAnswers": [
+          "Switching every data center at once and flooding origins with misses.",
+          "No way to roll back.",
+          "Assuming more points will fix any imbalance."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "A ring tells every client where each key lives. Sharding applies the same idea to databases, splitting data across machines by key, and it adds a new problem: moving data safely when the layout changes."
     }
-  ],
-  "exercise": {
-    "prompt": "You run a 40-server cache cluster keyed by user ID, using hash-mod-N. Adding servers during peak traffic causes a burst of database load. Redesign the mapping, and explain how you would choose the number of points per server.",
-    "answer": "Place servers on a consistent hash ring so adding a server only moves the keys on the arc it takes over, roughly one-fortieth of them, instead of nearly all. Give each server many points so arcs even out, and weight points by capacity if servers differ. Choose the count by measuring how load variation falls as points rise and stopping where extra points barely help, since memory and lookup cost keep growing. Add new servers off-peak or gradually, because even a small remap causes some misses."
   }
 }
