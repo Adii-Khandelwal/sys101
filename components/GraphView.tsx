@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type Graph from "graphology";
 import type Sigma from "sigma";
 import type { NodeLabelDrawingFunction } from "sigma/rendering";
-import { LABEL_START, chooseLayers, columns, edgeCurvatures, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
+import { LABEL_START, chooseLayers, columns, edgeCurvatures, fitLabelScale, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
 import { useReadTopics } from "@/lib/progress";
 import {
   ACCENT,
@@ -21,6 +21,8 @@ import {
   mapIsInteractive,
   nextHighlight,
   placeTooltip,
+  groupLabelSpots,
+  placeGroupLabel,
   type HighlightEvent,
 } from "@/lib/graphUi";
 import { createPortal } from "react-dom";
@@ -146,6 +148,8 @@ export default function GraphView({ nodes, edges }: Props) {
   // Columns need room for their widest label; when the stage is too narrow,
   // stack the map instead of letting labels crowd the next node.
   const [fits, setFits] = useState(true);
+  // Labels shrink a little (never below MIN_LABEL_SCALE) to keep the horizontal map on narrower stages.
+  const [labelScale, setLabelScale] = useState(1);
   const effective: Orientation = orientation === "horizontal" && fits ? "horizontal" : "vertical";
 
   // "Show all links" draws the hidden edges permanently. Remembered for the session.
@@ -637,16 +641,24 @@ export default function GraphView({ nodes, edges }: Props) {
     const width = Math.max(1, size.width - PADDING * 2);
     const height = Math.max(1, size.height - PADDING - PADDING_TOP);
 
-    // Measured label widths drive the column gaps.
+    // Measured label widths (at full size) drive the column gaps.
     const ctx = document.createElement("canvas").getContext("2d")!;
     ctx.font = `500 ${LABEL_SIZE}px ${getComputedStyle(document.body).fontFamily}`;
-    const labelWidth = new Map(cols.flat().map((n) => [n.slug, ctx.measureText(n.title).width]));
+    const baseWidth = new Map(cols.flat().map((n) => [n.slug, ctx.measureText(n.title).width]));
 
-    // Horizontal only when every column fits its widest label with the minimum gap.
+    // Horizontal only when every column fits its widest label with the minimum gap, with labels at
+    // full size or shrunk to no less than MIN_LABEL_SCALE; below that the map stacks.
+    let scale = 1;
     if (orientation === "horizontal") {
-      const ok = fitPositions(layered, "horizontal", { width, height, labelWidth, edges: drawn }).required <= width;
+      const found = fitLabelScale(layered, { width, height, edges: drawn }, baseWidth);
+      const ok = found !== null;
       if (ok !== fits) return setFits(ok);
+      scale = found ?? 1;
     }
+    if (effective === "vertical") scale = 1;
+    const labelWidth = new Map([...baseWidth].map(([slug, w]) => [slug, w * scale] as const));
+    renderer.setSetting("labelSize", LABEL_SIZE * scale);
+    setLabelScale(scale);
 
     // Horizontal layout reserves slots for long edges; stacked layout lists topics only.
     // With real label widths known, pick the column ordering that draws cleanly.
@@ -714,7 +726,7 @@ export default function GraphView({ nodes, edges }: Props) {
   const groupLabels = useMemo(() => {
     const at = new Map(points.map((p) => [p.slug, p]));
     const ctx = typeof document === "undefined" ? null : document.createElement("canvas").getContext("2d");
-    if (ctx) ctx.font = `500 ${LABEL_SIZE}px ${getComputedStyle(document.body).fontFamily}`;
+    if (ctx) ctx.font = `500 ${LABEL_SIZE * labelScale}px ${getComputedStyle(document.body).fontFamily}`;
     const title = new Map(nodes.map((n) => [n.slug, n.title]));
     const blocked = (x: number, y: number, w: number, h = 17) => {
       const [l, r, t, b] = [x - 4, x + w + 4, y - 3, y + h + 3];
@@ -731,19 +743,12 @@ export default function GraphView({ nodes, edges }: Props) {
       if (!pts.length) return [];
       const width = name.length * 7.5; // mono 11px with letter spacing
       const first = pts[0]; // first in index order
-      const oneRow = pts.every((p) => Math.abs(p.y - pts[0].y) < 1);
-      const spots = [
-        ...(oneRow ? [{ x: 8, y: first.y - 8 }] : []),
-        { x: first.x - first.r, y: first.y - first.r - 22 },
-        { x: first.x - first.r, y: first.y + first.r + 6 },
-        { x: first.x - first.r - width - 8, y: first.y - 8 },
-        { x: first.x + first.r + 8 + (ctx?.measureText(title.get(first.slug) ?? "").width ?? 0) + 16, y: first.y - 8 },
-      ];
-      const fits = (s: { x: number }) => s.x >= 0 && s.x + width <= (size.width || Infinity);
-      const spot = spots.find((s) => fits(s) && !blocked(s.x, s.y, width)) ?? spots[oneRow ? 1 : 0];
+      const spots = groupLabelSpots(first, width, ctx?.measureText(title.get(first.slug) ?? "").width ?? 0, effective === "vertical");
+      const fits = (sp: { x: number }) => sp.x >= 0 && sp.x + width <= (size.width || Infinity);
+      const spot = placeGroupLabel(spots, fits, (sp) => blocked(sp.x, sp.y, width));
       return [{ name, ...spot }];
     });
-  }, [points, nodes, edgeSamples, size.width]);
+  }, [points, nodes, edgeSamples, size.width, effective, labelScale]);
   const activeNode = active ? bySlug.get(active) : undefined;
 
   useLayoutEffect(() => {
@@ -796,6 +801,7 @@ export default function GraphView({ nodes, edges }: Props) {
         aria-label="Topic map"
         // Stage height comes from the layout; CSS picks one per breakpoint (no shift on load).
         data-orientation={effective}
+        data-label-size={Math.round(LABEL_SIZE * labelScale * 10) / 10}
         // Only an interactive map captures touch (to pan/zoom); a fixed small map
         // must let a finger scroll the page past it.
         data-interactive={interactive || undefined}

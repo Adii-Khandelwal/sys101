@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import {
   LABEL_START,
   MIN_LABEL_GAP,
+  MIN_LABEL_SCALE,
+  fitLabelScale,
   chooseLayers,
   crossings,
   drawnCrossings,
@@ -51,10 +53,10 @@ describe("transitive reduction", () => {
 
 // Lay a graph out the way GraphView does, with label widths estimated at
 // 9.2px per character (Newsreader 500 at 18px averages under 9px).
-function plan(nodes: { slug: string; title: string }[], edges: E[], stageWidth: number, orientation: Orientation, perChar = 9.2) {
+function plan(nodes: { slug: string; title: string }[], edges: E[], stageWidth: number, orientation: Orientation, perChar = 9.2, scale = 1) {
   const drawn = transitiveReduction(edges);
   const cols = layers(nodes, drawn);
-  const labelWidth = new Map(nodes.map((n) => [n.slug, n.title.length * perChar]));
+  const labelWidth = new Map(nodes.map((n) => [n.slug, n.title.length * perChar * scale]));
   const width = stageWidth - PAD * 2;
   const rows = rowCount(cols, orientation);
   const height = Math.min(rows * 120 + 158, 700) - PAD - PAD_TOP; // as the map: CSS stage height, 86px top padding
@@ -110,6 +112,36 @@ describe("layout: no edge crosses a label or node, labels keep their gap", () =>
     const r = plan(nodes, edges, 358, "vertical", 7.8);
     expect(r.collisions).toEqual([]);
     expect(r.crossed).toEqual([]);
+  });
+
+  it("from 1100px to 1400px screens: horizontal with labels at 0.8 or more, else stacked, always clean", () => {
+    const base = new Map(nodes.map((n) => [n.slug, n.title.length * 7.8]));
+    const drawn = transitiveReduction(edges);
+    const cols = layers(nodes, drawn);
+    let horizontal = 0;
+    for (let screen = 1100; screen <= 1400; screen += 25) {
+      const stage = Math.min(screen, 1400) - 80; // the home container is at most 1400px, with 40px padding
+      const width = stage - PAD * 2;
+      const scale = fitLabelScale(cols, { width, height: 300, edges: drawn }, base);
+      if (scale === null) {
+        const r = plan(nodes, edges, stage, "vertical", 7.8);
+        expect([screen, r.collisions, r.crossed]).toEqual([screen, [], []]);
+        continue;
+      }
+      horizontal++;
+      expect(scale).toBeGreaterThanOrEqual(MIN_LABEL_SCALE);
+      expect(18 * scale).toBeGreaterThanOrEqual(12); // label size in px, 18px at full size
+      const r = plan(nodes, edges, stage, "horizontal", 7.8, scale);
+      expect(r.required).toBeLessThanOrEqual(r.width);
+      expect([screen, r.collisions, r.crossed]).toEqual([screen, [], []]);
+      expect(r.gap).toBeGreaterThanOrEqual(MIN_LABEL_GAP);
+    }
+    expect(horizontal).toBeGreaterThan(0);
+  });
+
+  it("the smallest label scale keeps labels at 12px or more", () => {
+    expect(MIN_LABEL_SCALE).toBeGreaterThanOrEqual(0.8);
+    expect(18 * MIN_LABEL_SCALE).toBeGreaterThanOrEqual(12);
   });
 
   it("a 25-node fixture, at the width its labels need", () => {

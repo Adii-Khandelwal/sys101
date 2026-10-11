@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { INTERACTIVE_MIN_NODES, mapIsInteractive, FADED_LABEL, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, type HighlightEvent } from "./graphUi";
+import { INTERACTIVE_MIN_NODES, groupLabelSpots, placeGroupLabel, mapIsInteractive, FADED_LABEL, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, type HighlightEvent } from "./graphUi";
 
 describe("tooltip placement", () => {
   const tip = { w: 280, h: 72 };
@@ -71,3 +71,39 @@ describe("map controls", () => {
     expect(INTERACTIVE_MIN_NODES).toBe(12);
   });
 });
+
+describe("group labels", () => {
+  const first = { x: 800, y: 300, r: 14 };
+
+  it("sit above the first node, left edge on the node's left edge", () => {
+    const [above, below] = groupLabelSpots(first, 80, 120, false);
+    expect(above).toEqual({ x: 786, y: 264 });
+    expect(below).toEqual({ x: 786, y: 320 });
+    expect(placeGroupLabel(groupLabelSpots(first, 80, 120, false), () => true, () => false)).toEqual(above);
+  });
+
+  it("go below the node, same alignment, when above is blocked", () => {
+    const spots = groupLabelSpots(first, 80, 120, false);
+    const chosen = placeGroupLabel(spots, () => true, (s) => s.y < first.y);
+    expect(chosen).toEqual(spots[1]);
+    expect(chosen.x).toBe(first.x - first.r);
+  });
+
+  it("are never pinned to the stage's left edge, wherever the first node is", () => {
+    for (const x of [30, 400, 800, 1200]) {
+      const [spot] = groupLabelSpots({ ...first, x }, 80, 120, false);
+      expect(spot.x).toBe(x - first.r);
+    }
+  });
+
+  it("go right of the node's own label on a stacked map", () => {
+    const [spot] = groupLabelSpots(first, 80, 120, true);
+    expect(spot).toEqual({ x: first.x + first.r + 8 + 120 + 16, y: first.y - 8 });
+  });
+
+  it("use the first spot when none is free", () => {
+    const spots = groupLabelSpots(first, 80, 120, false);
+    expect(placeGroupLabel(spots, () => false, () => true)).toEqual(spots[0]);
+  });
+});
+

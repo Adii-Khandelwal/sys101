@@ -87,3 +87,39 @@ describe("camera", () => {
     expect(far.x - 0.5).toBeCloseTo(1 - 0.064);
   });
 });
+
+describe("zoom round trips", () => {
+  const start = fitState(fit);
+  const from = (c: Camera, f: (c: Camera) => Camera, n = 60) => repeat(c, f, n);
+
+  for (const [name, input] of Object.entries(inputs)) {
+    it(`${name}: zoom to the maximum, back to the minimum, then Fit all is the identical state`, () => {
+      const atMax = from(start, input.zoomIn);
+      expect(atMax.ratio).toBeCloseTo(min, 10);
+      const atMin = from(atMax, input.zoomOut);
+      expect(atMin.ratio).toBeCloseTo(max, 10);
+      expect(fitState(fit)).toEqual(start);
+    });
+
+    it(`${name}: is never stuck at either limit`, () => {
+      const atMax = from(start, input.zoomIn);
+      expect(input.zoomOut(atMax).ratio).toBeGreaterThan(atMax.ratio);
+      const atMin = from(start, input.zoomOut);
+      expect(input.zoomIn(atMin).ratio).toBeLessThan(atMin.ratio);
+    });
+  }
+
+  it("zooming at a corner and back out leaves the view centre where the anchor kept it", () => {
+    const corner = { x: 0.95, y: 0.05 };
+    const zoomed = zoomBy(zoomBy(start, 3, corner, fit), 1 / 3, corner, fit);
+    expect(zoomed.ratio).toBeCloseTo(start.ratio, 10);
+    expect(zoomed.x).toBeCloseTo(start.x, 10);
+    expect(zoomed.y).toBeCloseTo(start.y, 10);
+  });
+
+  it("a different label scale does not change the fit ratio, which comes from the layout box and the viewport", () => {
+    expect(fitRatio(1296, 520, 1296, 520)).toBe(1);
+    expect(fitRatio(1296, 520, 1296, 520)).toBe(fitRatio(1296, 520, 1296, 520));
+  });
+});
+

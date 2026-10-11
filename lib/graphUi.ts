@@ -91,3 +91,27 @@ export function placeTooltip(
   const left = Math.min(Math.max(node.x - tip.w / 2, margin), Math.max(margin, view.w - margin - tip.w));
   return { left, top, placement };
 }
+
+
+type LabelNode = { x: number; y: number; r: number };
+export type LabelSpot = { x: number; y: number };
+
+/**
+ * Where a group label may sit, best first. Every label is placed the same way, relative to its
+ * first node: on a horizontal map, directly above it with the label's left edge on the node's left
+ * edge, else directly below it the same way. A stacked map has no room above or below a row, so the
+ * label goes right of the node's own label. Left of the node and right of its label are last
+ * resorts. A label is never pinned to the stage edge.
+ */
+export function groupLabelSpots(first: LabelNode, labelWidth: number, firstTitleWidth: number, stacked: boolean): LabelSpot[] {
+  const above = { x: first.x - first.r, y: first.y - first.r - 22 };
+  const below = { x: first.x - first.r, y: first.y + first.r + 6 };
+  const left = { x: first.x - first.r - labelWidth - 8, y: first.y - 8 };
+  const right = { x: first.x + first.r + 8 + firstTitleWidth + 16, y: first.y - 8 };
+  return stacked ? [right, above, below, left] : [above, below, left, right];
+}
+
+/** The first spot that is on the stage and not blocked; else the first spot. */
+export function placeGroupLabel(spots: LabelSpot[], fits: (s: LabelSpot) => boolean, blocked: (s: LabelSpot) => boolean) {
+  return spots.find((s) => fits(s) && !blocked(s)) ?? spots[0];
+}
