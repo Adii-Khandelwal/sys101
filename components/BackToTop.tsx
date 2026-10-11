@@ -4,6 +4,21 @@ import { useEffect, useState } from "react";
 import { prefersReducedMotion } from "@/lib/motion";
 import { scrollBehavior, showBackToTop } from "@/lib/scrollTop";
 
+/**
+ * Scrolls to the top and moves focus to the page heading first. The control
+ * that was clicked hides itself (inert) on the way up, and a focused control
+ * going inert stops the smooth scroll short of the top.
+ */
+export function scrollToTop() {
+  // Native smooth scrolling stops as soon as the reader scrolls by hand.
+  const target = document.querySelector<HTMLElement>("main h1, article h1, h1") ?? document.getElementById("site-logo");
+  if (target) {
+    if (target.tagName === "H1" && !target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+    target.focus({ preventScroll: true });
+  }
+  window.scrollTo({ top: 0, behavior: scrollBehavior(prefersReducedMotion()) });
+}
+
 /** Fixed bottom-right "Back to top", shown only after scrolling well down the page. */
 export default function BackToTop() {
   const [shown, setShown] = useState(false);
@@ -19,21 +34,11 @@ export default function BackToTop() {
     };
   }, []);
 
-  const toTop = () => {
-    // Native smooth scrolling stops as soon as the reader scrolls by hand.
-    window.scrollTo({ top: 0, behavior: scrollBehavior(prefersReducedMotion()) });
-    const target = document.querySelector<HTMLElement>("main h1, article h1, h1") ?? document.getElementById("site-logo");
-    if (target) {
-      if (target.tagName === "H1" && !target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
-      target.focus({ preventScroll: true });
-    }
-  };
-
   return (
     <button
       type="button"
       className={`back-to-top label${shown ? " is-shown" : ""}`}
-      onClick={toTop}
+      onClick={scrollToTop}
       inert={!shown}
       aria-hidden={!shown}
       tabIndex={shown ? 0 : -1}

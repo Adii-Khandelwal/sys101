@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { prefersReducedMotion } from "@/lib/motion";
-import { logoScrollsInPlace, scrollBehavior } from "@/lib/scrollTop";
+import { logoScrollsInPlace } from "@/lib/scrollTop";
+import { scrollToTop } from "./BackToTop";
 
 /** Three nodes joined like a tiny prerequisite graph: two on the left, one on the right. */
 export function LogoMark({ size = 18 }: { size?: number }) {
@@ -46,7 +46,7 @@ export default function Logo() {
       onClick={(e) => {
         if (!logoScrollsInPlace(pathname)) return; // go home; the map restores its saved view
         e.preventDefault();
-        window.scrollTo({ top: 0, behavior: scrollBehavior(prefersReducedMotion()) });
+        scrollToTop();
       }}
     >
       <LogoMark />
