@@ -243,6 +243,10 @@ a:hover {
 .inside-source {
   display: block;
   margin-top: 6px;
+  font-family: inherit;
+  font-size: 16px;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .inside-source a {

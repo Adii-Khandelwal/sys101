@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { LESSON_OUTLINE, topicPreview } from "./lessonOutline";
+import { FEATURED_FIGURE, LESSON_OUTLINE, topicPreview } from "./lessonOutline";
 import { startVariant } from "./nextUp";
 import { getAllTopics } from "./topics";
 
@@ -28,6 +28,11 @@ describe("Inside a topic preview", () => {
     expect(by.check).toBe(`${dns.lesson!.quiz.length} questions`);
     expect(by.exercises).toBe(`${dns.lesson!.exercises.length} exercises`);
     expect(by.posts).toBe(`${dns.posts.length} posts`);
+  });
+
+  it("features the chosen figure, which exists in that post digest", () => {
+    expect(preview.figure!.value).toBe(FEATURED_FIGURE.value);
+    expect(dns.posts.find((p) => p.id === FEATURED_FIGURE.post)!.digest.numbers.some((n) => n.value === FEATURED_FIGURE.value)).toBe(true);
   });
 
   it("the figure exists in a post digest and carries its source", () => {

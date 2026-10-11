@@ -30,7 +30,7 @@ export default function InsideTopic({ topic }: { topic: Topic }) {
               {figure.company}, {figure.year}
               <span aria-hidden="true"> · </span>
               <a href={figure.url} target="_blank" rel="noopener noreferrer">
-                Original post
+                {figure.postTitle}
               </a>
             </span>
           </p>
