@@ -74,10 +74,10 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
                       </span>
                       {buildsOn.length > 0 ? (
                         <>
-                          <span className="path-meta-key">builds on</span> {buildsOn.join(", ")}
+                          <span className="path-meta-key">Builds on</span> {buildsOn.join(", ")}
                         </>
                       ) : (
-                        <span className="path-meta-key">a starting point</span>
+                        <span className="path-meta-key">A starting point</span>
                       )}
                       <span className="path-meta-dot" aria-hidden="true">
                         ·

@@ -628,8 +628,7 @@ a:hover {
 
 .sources-count {
   margin-left: 6px;
-  font-family: var(--font-mono), monospace;
-  font-size: 12px;
+  font-size: 16px;
   color: var(--ink-soft);
 }
 
@@ -801,11 +800,9 @@ a:hover {
   font-size: 15px;
   color: var(--ink-soft);
 }
+/* Same type as the rest of the line, so "Builds on Databases" reads as one sentence. */
 .path-meta-key {
-  font-family: var(--font-mono), monospace;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font: inherit;
 }
 .path-meta-dot {
   margin: 0 6px;
