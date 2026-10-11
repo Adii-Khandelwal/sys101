@@ -212,19 +212,25 @@ a:hover {
 /* One real figure: the number large on the left, what it means and where it is from on the right. */
 .inside-figure {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 8px 32px;
+  gap: 8px 28px;
   margin: 8px 0 0;
   padding: 20px 0;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
 }
 
+.inside-kicker {
+  flex: 0 0 100%;
+  margin: 0;
+}
+
 .inside-value {
   flex: 0 0 auto;
   margin: 0;
-  font-size: 32px;
-  line-height: 1.1;
+  font-size: 22px;
+  line-height: 1.2;
   color: var(--accent);
 }
 
@@ -551,8 +557,16 @@ a:hover {
   max-width: 68ch;
 }
 
-.home-extra h2 {
-  margin: 0 0 16px;
+/* Section titles on the homepage: serif and larger than the mono labels, so each section starts clearly. */
+.home-extra h2.label {
+  margin: 0 0 12px;
+  font-family: inherit;
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  line-height: 1.15;
+  color: var(--ink);
 }
 
 .home-extra-note {

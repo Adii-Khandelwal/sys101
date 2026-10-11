@@ -22,6 +22,7 @@ export default function InsideTopic({ topic }: { topic: Topic }) {
       </ol>
       {figure && (
         <div className="inside-figure">
+          <p className="inside-kicker label">A real figure from a post</p>
           <p className="inside-value">{figure.value}</p>
           <p className="inside-meaning">
             {figure.meaning}.
