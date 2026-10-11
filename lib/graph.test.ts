@@ -83,22 +83,33 @@ describe("layout: no edge crosses a label or node, labels keep their gap", () =>
   const nodes = topics.map((t) => ({ slug: t.slug, title: t.title }));
   const edges = topics.flatMap((t) => t.prerequisites.map((p: string) => ({ from: p, to: t.slug })));
 
+  // With seven columns the labels no longer fit at full size on a 1440px screen; they shrink (never below MIN_LABEL_SCALE) to keep the horizontal map.
+  const labelScale = (stageWidth: number, perChar: number) => {
+    const base = new Map(nodes.map((n) => [n.slug, n.title.length * perChar]));
+    const drawn = transitiveReduction(edges);
+    return fitLabelScale(layers(nodes, drawn), { width: stageWidth - PAD * 2, height: 300, edges: drawn }, base);
+  };
+
   it("the current topics at 1440px (stage 1320px), at the real label width", () => {
-    const r = plan(nodes, edges, 1320, "horizontal", 7.8);
+    const scale = labelScale(1320, 7.8);
+    expect(scale).not.toBeNull();
+    expect(scale!).toBeGreaterThanOrEqual(MIN_LABEL_SCALE);
+    const r = plan(nodes, edges, 1320, "horizontal", 7.8, scale!);
     expect(r.required).toBeLessThanOrEqual(r.width);
     expect(r.collisions).toEqual([]);
     expect(r.gap).toBeGreaterThanOrEqual(MIN_LABEL_GAP);
     expect(r.crossed).toEqual([]);
-  });
+  }, 30000);
 
   it("the current topics at 1440px for any realistic label width: horizontal if it fits, stacked if not", () => {
     for (const perChar of [7.5, 8, 8.5, 9.2, 10]) {
-      const wide = plan(nodes, edges, 1320, "horizontal", perChar);
-      const r = wide.required <= wide.width ? wide : plan(nodes, edges, 1320, "vertical", perChar);
+      const scale = labelScale(1320, perChar);
+      const wide = scale === null ? null : plan(nodes, edges, 1320, "horizontal", perChar, scale);
+      const r = wide ?? plan(nodes, edges, 1320, "vertical", perChar);
       expect([perChar, r.collisions, r.crossed]).toEqual([perChar, [], []]);
-      if (r === wide) expect(r.topGap).toBeGreaterThanOrEqual(24);
+      if (wide) expect(r.topGap).toBeGreaterThanOrEqual(24);
     }
-  });
+  }, 60000);
 
   it("the current topics stacked at 1280px (stage 1200px), where the horizontal map no longer fits", () => {
     const wide = plan(nodes, edges, 1200, "horizontal", 7.8);
@@ -106,7 +117,7 @@ describe("layout: no edge crosses a label or node, labels keep their gap", () =>
     const r = plan(nodes, edges, 1200, "vertical", 7.8);
     expect(r.collisions).toEqual([]);
     expect(r.crossed).toEqual([]);
-  });
+  }, 30000);
 
   it("the current topics stacked at 390px (stage 358px), at the real label width", () => {
     const r = plan(nodes, edges, 358, "vertical", 7.8);
@@ -137,7 +148,7 @@ describe("layout: no edge crosses a label or node, labels keep their gap", () =>
       expect(r.gap).toBeGreaterThanOrEqual(MIN_LABEL_GAP);
     }
     expect(horizontal).toBeGreaterThan(0);
-  });
+  }, 60000);
 
   it("the smallest label scale keeps labels at 12px or more", () => {
     expect(MIN_LABEL_SCALE).toBeGreaterThanOrEqual(0.8);

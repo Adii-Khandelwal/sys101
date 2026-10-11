@@ -100,7 +100,7 @@ Every post records `verifiedOn`, the date someone last opened it and checked the
 ```
 app/              routes: graph homepage, topic pages, learn pages, about, data, terms, privacy, sitemap, robots
 components/       graph view, topic lesson, learn page, index, search, progress trackers, data controls
-content/topics/   one JSON file per topic (12 topics)
+content/topics/   one JSON file per topic (13 topics)
 content/learn/    one JSON file per "start from zero" learn page (12 pages)
 lib/              content loading and build checks, graph layout, reading progress, SEO helpers, and their tests
 pipeline/         offline scripts for fetching and summarizing posts
