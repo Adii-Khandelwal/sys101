@@ -4,6 +4,7 @@
   "shortTitle": "CAP",
   "group": "Data",
   "interviewRelevance": "core",
+  "description": "How a partitioned system chooses between answering and staying consistent, and how Dynamo and Spanner made opposite choices.",
   "concept": "The CAP theorem says that when a network partition splits a distributed system, each side can either keep answering (availability) or refuse to answer stale or conflicting data (consistency), but not both. Partitions are a fact of networks, so the real choice is what to do during one: Dynamo-style systems stay available and reconcile divergent copies afterwards, while Spanner-style systems stay consistent and make the losing side wait. CAP is a per-operation trade-off between how fresh an answer must be and how often the system must answer at all, so it gets decided for each kind of data and never once for the whole system.",
   "prerequisites": [
     "replication",

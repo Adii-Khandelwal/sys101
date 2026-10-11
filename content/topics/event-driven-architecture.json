@@ -4,6 +4,7 @@
   "shortTitle": "Event-driven design",
   "group": "Messaging",
   "interviewRelevance": "common",
+  "description": "How services announce facts as events on a shared log, and what Grab and Zapier learned about running that backbone.",
   "concept": "Event-driven architecture turns a system inside out: instead of services calling each other to make things happen, each service announces facts about what already happened, and other services react on their own. The event log becomes the backbone, and state can be rebuilt by replaying it. This buys loose coupling and the freedom to add new reactions without touching the producer, but it moves the hard problems to publishing events reliably, processing them idempotently, and reasoning about a system whose steps are now spread across time.",
   "prerequisites": [
     "pub-sub"

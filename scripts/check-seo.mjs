@@ -55,6 +55,8 @@ for (const file of htmlFiles(APP)) {
     if (description.length >= 155) fail(`description is ${description.length} characters, must be under 155`);
     if (/(…|\.\.\.)\s*$/.test(description)) fail("description ends in an ellipsis; end it at a sentence or clause boundary");
     if (!/[.!?]$/.test(description)) fail("description must end with a sentence-ending mark");
+    if (description.trim().split(/\s+/).length < 8) fail("description is under 8 words; write a full sentence");
+    if (!/\.$/.test(description)) fail("description must end with a period");
     if (titles.has(title)) fail(`title also used by ${titles.get(title)}`);
     if (descriptions.has(description)) fail(`description also used by ${descriptions.get(description)}`);
     titles.set(title, route);

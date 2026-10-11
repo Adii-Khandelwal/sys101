@@ -98,7 +98,7 @@ export function topicLd(topic: Topic, prerequisites: Pick<Topic, "title">[]) {
     "@context": "https://schema.org",
     "@type": "LearningResource",
     name: topic.title,
-    description: metaDescription(topic.concept),
+    description: metaDescription(topic.description ?? topic.concept),
     url: absoluteUrl(`/topic/${topic.slug}`),
     inLanguage: "en",
     learningResourceType: "Lesson",

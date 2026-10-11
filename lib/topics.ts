@@ -112,6 +112,8 @@ export type Topic = {
   group?: Group;
   /** Optional: how often this topic appears in system design interviews. */
   interviewRelevance?: InterviewRelevance;
+  /** Optional meta description that replaces the one generated from `concept`: a complete sentence of 8 words or more, under 155 characters, ending in a period. */
+  description?: string;
   concept: string;
   prerequisites: string[];
   /** Recap of what the prerequisites taught, 2 to 4 sentences. Not used by lesson topics. */
@@ -344,6 +346,11 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
       problems.push(`${file}: shortTitle must be a non-empty name shorter than the title`);
     }
     if (topic.group && !GROUPS.includes(topic.group)) problems.push(`${file}: unknown group "${topic.group}"`);
+    if (topic.description !== undefined) {
+      const words = topic.description.trim().split(/\s+/).length;
+      if (words < 8 || !/\.$/.test(topic.description.trim())) problems.push(`${file}: description must be a sentence of at least 8 words that ends with a period`);
+      if (topic.description.length >= 155) problems.push(`${file}: description is ${topic.description.length} characters, must be under 155`);
+    }
     if (topic.interviewRelevance !== undefined && !INTERVIEW_RELEVANCE.includes(topic.interviewRelevance)) {
       problems.push(`${file}: interviewRelevance must be one of ${INTERVIEW_RELEVANCE.join(", ")}`);
     }

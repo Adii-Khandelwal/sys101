@@ -31,13 +31,16 @@ describe("meta descriptions", () => {
     expect(out.endsWith("word.")).toBe(true);
   });
 
-  it("every topic's description ends at a boundary, under the limit, with no ellipsis", () => {
+  it("every topic's description ends in a period after 8 words or more, under the limit, with no ellipsis", () => {
     for (const t of getAllTopics()) {
-      const d = metaDescription(t.concept);
+      const raw = t.description ?? t.concept;
+      const d = metaDescription(raw);
       expect(d.length, t.slug).toBeLessThan(DESC_MAX);
-      expect(d, t.slug).toMatch(/[.!?]$/);
+      expect(d, t.slug).toMatch(/\.$/);
+      expect(d.split(/\s+/).length, t.slug).toBeGreaterThanOrEqual(8);
       expect(d, t.slug).not.toMatch(/…|\.\.\./);
-      expect(pageMeta({ path: "/x", title: t.title, description: t.concept }).description, t.slug).toBe(d);
+      expect(pageMeta({ path: "/x", title: t.title, description: raw }).description, t.slug).toBe(d);
+      if (t.description) expect(d, t.slug).toBe(t.description);
     }
   });
 });
