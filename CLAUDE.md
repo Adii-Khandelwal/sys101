@@ -41,14 +41,14 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 
 ## Graph
 
-- Homepage on desktop. Layout is deterministic, left to right by prerequisite depth, and panning never moves nodes.
+- The graph is the homepage on desktop (768px and up). Under 768px the homepage defaults to the Path view (components/PathView.tsx), a linear grouped syllabus; a Map/Path toggle switches between them and an explicit choice is remembered per browser and wins at any width. Layout is deterministic, left to right by prerequisite depth, and panning never moves nodes.
 - Under 25 topics the map is fixed and fitted: no zoom, pan, or map controls, and clicking a node cross-fades to its topic. From 25 topics, all of the following switch on.
 - One fitRatio, recomputed on load, resize, and node-set change. Zoom range 0.6x to 8x of the fitted view, with identical limits for wheel, pinch, buttons, keys, and double-click. Ctrl or Cmd plus wheel zooms and plain wheel scrolls the page. Fit all always restores the identical state. 5px drag threshold. 64px pan limit.
 - Draw only the transitive reduction of prerequisites by default. Hidden edges show faintly on hover or focus, and with "Show all links" once the map is interactive. Data and build checks use the full set.
 - Node states that do not rely on color: unread (thin outline), ready (all prerequisites read, thicker outline), read (filled rust). Not-yet nodes stay clickable.
 - No edge crosses a label or node. Labels sit right of nodes with a 16px gap. Tooltips are viewport-clamped and never clipped. Unrelated items fade to no lower than 60% opacity, and highlight always clears.
 - Keyboard traversal, aria-live announcements, 44px hit areas, and a plain text index as the full fallback, including when WebGL fails. Smooth at 150 nodes.
-- Pivot trigger: past about 25 nodes or unreadable edges. Mobile Path view is planned in docs/ideas.md.
+- Pivot trigger: past about 25 nodes or unreadable edges. The Path view (the graph's fallback) and the mobile Path default under 768px are built; see docs/ideas.md ideas 5 and 6.
 
 ## Motion
 
@@ -103,7 +103,7 @@ Two content flows:
 
 ## Site feel
 
-Handcrafted, not AI-template. The graph is the homepage. Cream background, serif headings, restrained palette with one or two accents. Plain, specific copy written like a person.
+Handcrafted, not AI-template. The graph is the homepage on desktop (the Path view on mobile). Cream background, serif headings, restrained palette with one or two accents. Plain, specific copy written like a person.
 
 Never use: gradients, neon, rainbow, pastels, purple and black, pure white background, drop shadows, large radius, liquid glass, emojis, sparkle icons, loose side icons, animated arrows, hover animations everywhere, bounce or elastic easing, three-card rows, bento grids, pricing tiers, testimonials, colored stripes, terminal mockups, dot grids, radial orbs, checkmark bullets, Inter/Geist/Space Grotesk, em dashes, "It's not X, it's Y" phrasing.
 
