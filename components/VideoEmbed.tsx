@@ -30,7 +30,7 @@ export default function VideoEmbed({ video }: { video: VideoSource }) {
   const meta = (
     <span className="learn-video-meta">
       {" "}
-      {video.channel}, {video.year}, {video.length}. Not reviewed by the author.
+      {video.channel}, {video.year}, {video.length}. Not vetted line by line like the written sources.
     </span>
   );
 

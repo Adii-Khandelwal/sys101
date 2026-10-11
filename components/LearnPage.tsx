@@ -208,7 +208,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
                 {" "}
                 {s.publisher}. {isVideo(s) ? `Video, ${s.channel}, ${s.length}` : s.kind},{" "}
                 {s.year === "no date shown" ? "no date shown" : s.year}.{s.note ? ` ${s.note}` : ""} Checked on{" "}
-                {formatDate(s.verifiedOn)}.{isVideo(s) ? " Not reviewed by the author." : ""}
+                {formatDate(s.verifiedOn)}.{isVideo(s) ? " Not vetted line by line like the written sources." : ""}
               </span>
             </li>
           ))}

@@ -160,10 +160,10 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
                   </span>
                   {confirmReset === t.slug ? (
                     <span className="data-confirm" role="group" aria-label={`Reset ${t.title}?`}>
-                      Reset {t.title}? Export first if you may want it back.{" "}
+                      <span>Reset {t.title}? Export first if you may want it back.</span>
                       <button type="button" className="text-button label" onClick={() => reset(t.slug)}>
                         Yes, reset
-                      </button>{" "}
+                      </button>
                       <button type="button" className="text-button label" onClick={() => setConfirmReset(null)}>
                         Cancel
                       </button>
@@ -250,10 +250,10 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
         <p>Clears every topic&apos;s progress in this browser. It can&apos;t be undone, so export first if you may want it back.</p>
         {confirmReset === "all" ? (
           <p className="data-confirm" role="group" aria-label="Reset everything?">
-            Reset all progress?{" "}
+            <span>Reset all progress?</span>
             <button type="button" className="text-button label" onClick={() => reset("all")}>
               Yes, reset everything
-            </button>{" "}
+            </button>
             <button type="button" className="text-button label" onClick={() => setConfirmReset(null)}>
               Cancel
             </button>

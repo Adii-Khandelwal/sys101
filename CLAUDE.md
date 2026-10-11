@@ -109,7 +109,7 @@ Never use: gradients, neon, rainbow, pastels, purple and black, pure white backg
 
 Always: skeleton loaders, a real working demo, Terms and Privacy pages in the footer.
 
-Review the aesthetics of every page or UI piece before calling it done: render it, look at it at 1440px and 390px, and check it reads as part of this handcrafted whole (cream, serif headings, mono small-caps labels, one rust accent, generous whitespace, state shown by shape not colour alone). New UI must never look like bolted-on plain text or a generic template; match the vibe of the existing pages.
+Review the aesthetics of every page or UI piece before calling it done: render it, look at it at 1440px and 390px, and check it reads as part of this handcrafted whole (cream, serif headings, mono small-caps labels, one rust accent, generous whitespace, state shown by shape not colour alone). New UI must never look like bolted-on plain text or a generic template; match the vibe of the existing pages. Check spacing specifically: text and adjacent controls must never run together (e.g. "progress?Yes" or two buttons reading as one word). Prefer a flex row with a `gap` over relying on JSX `{" "}` for space between a prompt and its buttons. A spacing bug like this must be caught in development and never pushed.
 
 ## Architecture of the site itself
 
@@ -117,7 +117,7 @@ Always apply system design thinking to this site itself: static generation, CDN 
 
 Two exceptions:
 - Vercel Web Analytics (anonymous page views, no cookies). The site must work fully if it fails to load, it never receives reading progress, and the Privacy page must describe it.
-- YouTube videos on learn pages: a click-to-load embed. The facade shows title, channel, year and length ("optional, long", "not reviewed by the author") and loads nothing from YouTube until "Play here" is pressed; then the youtube-nocookie.com player loads, with the external link as a fallback that works without JavaScript. The Privacy page says YouTube receives data only after play is pressed.
+- YouTube videos on learn pages: a click-to-load embed. The facade shows title, channel, year and length ("optional, long", and "not vetted line by line like the written sources") and loads nothing from YouTube until "Play here" is pressed; then the youtube-nocookie.com player loads, with the external link as a fallback that works without JavaScript. The Privacy page says YouTube receives data only after play is pressed.
 
 ## Later ideas (do not build yet)
 

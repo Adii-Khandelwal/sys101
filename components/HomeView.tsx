@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import GraphView from "./GraphView";
 import PathView, { type PathEntry } from "./PathView";
 import TopicIndex from "./TopicIndex";
@@ -26,20 +26,39 @@ const STORAGE_KEY = "sys101:homeView";
  * redundant under the Path view, so it is hidden there.
  */
 export default function HomeView({ nodes, edges, pathEntries, indexGroups }: Props) {
-  // Server and first client render must match, so start on "map" and adopt the
-  // saved choice after mount.
+  // Server and first client render must match, so start on "map" and decide the
+  // real view after mount: an explicit saved choice wins at any width;
+  // otherwise the Path view is the default on phones (under 768px) and the
+  // graph is the default on wider screens (docs/ideas.md idea 6).
   const [view, setView] = useState<View>("map");
+  const chosenRef = useRef(false); // the reader has picked a view explicitly
+
   useEffect(() => {
+    let saved: string | null = null;
     try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
-      if (saved === "path" || saved === "map") setView(saved);
+      saved = window.localStorage.getItem(STORAGE_KEY);
     } catch {
-      // storage blocked: default to map
+      // storage blocked
     }
+    if (saved === "path" || saved === "map") {
+      setView(saved);
+      chosenRef.current = true;
+      return;
+    }
+    // No explicit choice: follow the viewport, and keep following it on resize
+    // until the reader picks one.
+    const mq = window.matchMedia("(max-width: 767px)");
+    const apply = () => {
+      if (!chosenRef.current) setView(mq.matches ? "path" : "map");
+    };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
   }, []);
 
   const choose = (v: View) => {
     setView(v);
+    chosenRef.current = true;
     try {
       window.localStorage.setItem(STORAGE_KEY, v);
     } catch {

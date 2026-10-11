@@ -49,7 +49,7 @@ type Props = {
 
 const NODE_RADIUS = 14;
 const LABEL_SIZE = 18;
-const NARROW = "(max-width: 640px)"; // below this the map stacks top to bottom; matches the CSS
+const NARROW = "(max-width: 767px)"; // below this the map stacks top to bottom; matches the CSS and the mobile Path default
 const PADDING = 48; // px between the stage edge and the outermost nodes
 const PADDING_TOP = 86; // node centres sit this far down, so the first row is 56px+ below the controls
 const TOP_CLEAR = 24; // edges stay this far below the legend and controls line
