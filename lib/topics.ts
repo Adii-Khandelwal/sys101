@@ -50,6 +50,9 @@ export type Group = (typeof GROUPS)[number];
 export const INTERVIEW_RELEVANCE = ["core", "common", "niche"] as const;
 export type InterviewRelevance = (typeof INTERVIEW_RELEVANCE)[number];
 
+/** Interview tags are hidden for now; the field stays in the content. Set to true to show them again. */
+export const SHOW_INTERVIEW_TAGS = false;
+
 /** The label shown for each interview-relevance value. */
 export const INTERVIEW_RELEVANCE_LABEL: Record<InterviewRelevance, string> = {
   core: "Core interview topic",
