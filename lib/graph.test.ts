@@ -90,11 +90,16 @@ describe("layout: no edge crosses a label or node, labels keep their gap", () =>
     return fitLabelScale(layers(nodes, drawn), { width: stageWidth - PAD * 2, height: 300, edges: drawn }, base);
   };
 
-  it("the current topics at 1440px (stage 1320px), at the real label width", () => {
-    const scale = labelScale(1320, 7.8);
-    expect(scale).not.toBeNull();
-    expect(scale!).toBeGreaterThanOrEqual(MIN_LABEL_SCALE);
-    const r = plan(nodes, edges, 1320, "horizontal", 7.8, scale!);
+  it("the current topics: a full-size horizontal map, laid out across the width it needs, is clean and wider than a 1320px stage", () => {
+    // The desktop map is always horizontal at full-size labels, laid out across the width its
+    // labels need; when that exceeds the viewport the stage renders at the content width and the
+    // wrapper scrolls sideways. That full-size layout must be clean, and here it overflows 1320px.
+    const base = new Map(nodes.map((n) => [n.slug, n.title.length * 7.8]));
+    const drawn = transitiveReduction(edges);
+    const required = fitPositions(layers(nodes, drawn), "horizontal", { width: 1320 - PAD * 2, height: 300, labelWidth: base, edges: drawn }).required;
+    expect(required).toBeGreaterThan(1320 - PAD * 2); // wider than the stage, so the wrapper scrolls
+    // Lay out across the natural width (plus stage padding), as the component does.
+    const r = plan(nodes, edges, required + PAD * 2, "horizontal", 7.8, 1);
     expect(r.required).toBeLessThanOrEqual(r.width);
     expect(r.collisions).toEqual([]);
     expect(r.gap).toBeGreaterThanOrEqual(MIN_LABEL_GAP);
@@ -125,29 +130,19 @@ describe("layout: no edge crosses a label or node, labels keep their gap", () =>
     expect(r.crossed).toEqual([]);
   });
 
-  it("from 1100px to 1400px screens: horizontal with labels at 0.8 or more, else stacked, always clean", () => {
+  it("the current topics: a full-size horizontal map laid out across its content width is clean", () => {
+    // The desktop map no longer shrinks or stacks: it is always horizontal at full-size labels,
+    // laid out across the width those labels need, and the wrapper scrolls when that exceeds the
+    // viewport. The layout at full size must be collision- and crossing-free with its gap.
     const base = new Map(nodes.map((n) => [n.slug, n.title.length * 7.8]));
     const drawn = transitiveReduction(edges);
     const cols = layers(nodes, drawn);
-    let horizontal = 0;
-    for (let screen = 1100; screen <= 1400; screen += 25) {
-      const stage = Math.min(screen, 1400) - 80; // the home container is at most 1400px, with 40px padding
-      const width = stage - PAD * 2;
-      const scale = fitLabelScale(cols, { width, height: 300, edges: drawn }, base);
-      if (scale === null) {
-        const r = plan(nodes, edges, stage, "vertical", 7.8);
-        expect([screen, r.collisions, r.crossed]).toEqual([screen, [], []]);
-        continue;
-      }
-      horizontal++;
-      expect(scale).toBeGreaterThanOrEqual(MIN_LABEL_SCALE);
-      expect(18 * scale).toBeGreaterThanOrEqual(12); // label size in px, 18px at full size
-      const r = plan(nodes, edges, stage, "horizontal", 7.8, scale);
-      expect(r.required).toBeLessThanOrEqual(r.width);
-      expect([screen, r.collisions, r.crossed]).toEqual([screen, [], []]);
-      expect(r.gap).toBeGreaterThanOrEqual(MIN_LABEL_GAP);
-    }
-    expect(horizontal).toBeGreaterThan(0);
+    const required = fitPositions(cols, "horizontal", { width: 1320 - PAD * 2, height: 300, labelWidth: base, edges: drawn }).required;
+    const r = plan(nodes, edges, required + PAD * 2, "horizontal", 7.8, 1);
+    expect(r.required).toBeLessThanOrEqual(r.width);
+    expect(r.collisions).toEqual([]);
+    expect(r.crossed).toEqual([]);
+    expect(r.gap).toBeGreaterThanOrEqual(MIN_LABEL_GAP);
   }, 60000);
 
   it("the smallest label scale keeps labels at 12px or more", () => {

@@ -1,0 +1,298 @@
+{
+  "slug": "event-driven-architecture",
+  "promise": "After this you can follow the topic page and the posts.",
+  "before": {
+    "prerequisites": [
+      "pub-sub"
+    ],
+    "terms": [
+      {
+        "term": "Event",
+        "definition": "A record that something happened, named in the past tense, such as \"OrderPlaced\"."
+      },
+      {
+        "term": "Producer and consumer",
+        "definition": "A producer emits events; a consumer reacts to them. The producer does not call the consumer directly."
+      },
+      {
+        "term": "Asynchronous",
+        "definition": "The producer emits an event and moves on, rather than waiting for the reaction to finish."
+      }
+    ],
+    "note": "Read Publish-Subscribe first: event-driven architecture is built on the fan-out it describes, and the delivery and ordering rules there carry over. The terms below are enough to begin."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "In a request-driven system, a service makes something happen by calling another service and waiting. In an event-driven system, a service instead announces that something happened and moves on. AWS describes it as using events to trigger and communicate between decoupled services, with three key components: event producers, event routers, and event consumers. A producer publishes an event to the router, which pushes it to consumers [[aws-eda]].",
+        "The payoff is decoupling. Because producer and consumer services are separated by the router, they can be scaled, updated, and deployed independently [[aws-eda]]. Microsoft frames the same style around event producers, event consumers, and event channels that carry events from one to the other, and notes that a single event is typically delivered out to many consumers [[ms-eda]].",
+        "This is the next step up from publish-subscribe. Pub-sub is the mechanism that fans one message out to many subscribers; event-driven architecture is what you design once the things on the stream are facts about the business, not commands aimed at a particular service. The shift from \"call this service\" to \"announce this fact\" is the whole idea."
+      ],
+      "terms": [
+        {
+          "term": "Event-driven architecture",
+          "definition": "A design where decoupled services communicate by producing and reacting to events through a router or channel."
+        },
+        {
+          "term": "Event producer",
+          "definition": "A service that publishes an event when something happens, without knowing who consumes it."
+        },
+        {
+          "term": "Event router or channel",
+          "definition": "The broker or ingestion layer that carries events from producers to consumers."
+        },
+        {
+          "term": "Event consumer",
+          "definition": "A service that reacts to events it subscribes to, on its own schedule."
+        }
+      ],
+      "reading": [
+        {
+          "source": "aws-eda",
+          "section": "Overview and \"How it works\" (the three components)",
+          "what": "How producers, an event router, and consumers decouple services so each scales and deploys independently."
+        },
+        {
+          "source": "ms-eda",
+          "section": "Event-driven architecture style: producers, consumers and channels",
+          "what": "How events flow from producers through channels to many consumers."
+        }
+      ],
+      "canNow": [
+        "Say how an event-driven system differs from a request-driven one.",
+        "Name the three components: producer, router/channel, consumer.",
+        "Explain why decoupling lets services scale and deploy independently."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "The strongest form of event-driven design makes the event log the source of truth. Microsoft's Event Sourcing pattern says that instead of storing only the current state, you store the full series of actions on an object in an append-only store, and that this store serves as the system of record, the authoritative source for the current state. Each entity has its own ordered event stream recording every change to it [[ms-event-sourcing]].",
+        "Because the events are kept rather than overwritten, current state is a thing you compute, not a thing you store. You rebuild it by replaying the entity's event stream from the start, and you can rewind and recompute after a bug. Microsoft contrasts this with the usual create-read-update-delete model, where an application reads data, modifies it, and overwrites the current state, typically locking the data in a transaction [[ms-event-sourcing]].",
+        "On top of this log, consumers build their own views and run processing. The pub-sub fan-out you already know is what delivers each event to every subscription; event sourcing is what lets a brand-new consumer join later and replay history to catch up. The producer never has to know those consumers exist."
+      ],
+      "terms": [
+        {
+          "term": "Append-only store",
+          "definition": "A store you only add to, never overwrite, so the full history of changes is kept."
+        },
+        {
+          "term": "Event stream",
+          "definition": "The ordered sequence of events for one entity, recording every change to it."
+        },
+        {
+          "term": "System of record",
+          "definition": "The authoritative source of truth; in event sourcing, the event store itself."
+        },
+        {
+          "term": "Rebuild and replay",
+          "definition": "Recomputing current state, or a view, by reading the event stream again from an earlier point."
+        }
+      ],
+      "reading": [
+        {
+          "source": "ms-event-sourcing",
+          "section": "Context and problem, and Solution",
+          "what": "Why storing a sequence of events as the system of record lets you rebuild and replay state."
+        },
+        {
+          "source": "aws-eda",
+          "section": "Benefits (the event store / audit and replay points)",
+          "what": "How keeping events supports adding consumers and reprocessing later."
+        }
+      ],
+      "canNow": [
+        "Explain what event sourcing stores and why.",
+        "Say how current state is derived by replaying an event stream.",
+        "Describe how a new consumer catches up by replaying history."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 150\" role=\"img\" aria-labelledby=\"dg-learn-eda-how-t\" class=\"dg\"><title id=\"dg-learn-eda-how-t\">Event sourcing: a producer appends events to an append-only event store that is the system of record; consumers replay the stream to build their own current-state views, and a new consumer can replay history to catch up.</title><defs><marker id=\"dg-learn-eda-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"52\" width=\"92\" height=\"44\" class=\"dg-box\"/><text x=\"58\" y=\"78\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Producer</text><rect x=\"132\" y=\"44\" width=\"120\" height=\"60\" class=\"dg-box dg-accent\"/><text x=\"192\" y=\"70\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Event store</text><text x=\"192\" y=\"88\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">append-only</text><rect x=\"300\" y=\"16\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"360\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">view (replay)</text><rect x=\"300\" y=\"92\" width=\"120\" height=\"40\" class=\"dg-box dg-dashed\"/><text x=\"360\" y=\"116.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">new consumer</text><path d=\"M104,74 L132,74\" class=\"dg-line\" marker-end=\"url(#dg-learn-eda-how-a)\"/><path d=\"M252,64 L300,40\" class=\"dg-line\" marker-end=\"url(#dg-learn-eda-how-a)\"/><path d=\"M252,84 L300,108\" class=\"dg-line\" marker-end=\"url(#dg-learn-eda-how-a)\"/><text x=\"470\" y=\"40\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">derive current</text><text x=\"470\" y=\"54\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">state</text><text x=\"470\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">replays history</text><text x=\"280\" y=\"146\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">the store is the system of record; views are rebuildable</text></svg>"
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "The first hard problem is publishing an event reliably. If a service writes its database row and then publishes the event as a separate step, one can succeed while the other fails, so a committed change emits no event, or a rolled-back change emits one. Microsoft's Transactional Outbox pattern avoids this by saving the events in an outbox table in the same database transaction as the business object, which guarantees no data loss; a separate worker then queries the outbox for unhandled entries, publishes them to the broker, and marks them processed [[ms-outbox]].",
+        "The second is that delivery is at-least-once, so events can arrive more than once. The outbox guidance is explicit that this reliable messaging is an important part of supporting idempotent message processing: consumers must handle the same event twice with the same effect, usually by recording the ids they have already processed [[ms-outbox]].",
+        "A common companion is CQRS, which separates write operations (commands) from read operations (queries). Microsoft advises that commands should represent specific business tasks, such as \"Book hotel room\" rather than \"set status to reserved\", which captures intent and aligns the commands with business processes. In an event-driven system those commands produce events, and the read side is a projection built from them [[ms-cqrs]]."
+      ],
+      "terms": [
+        {
+          "term": "Dual-write problem",
+          "definition": "Writing to the database and the broker as two steps that can disagree, losing or inventing events."
+        },
+        {
+          "term": "Transactional outbox",
+          "definition": "Saving the event in an outbox table in the same transaction as the state change, then shipping it separately."
+        },
+        {
+          "term": "Idempotent processing",
+          "definition": "Handling the same event twice with the same effect as once, needed under at-least-once delivery."
+        },
+        {
+          "term": "CQRS",
+          "definition": "Separating write commands from read queries, so the read side can be a projection built from events."
+        }
+      ],
+      "reading": [
+        {
+          "source": "ms-outbox",
+          "section": "Context and problem, and Solution",
+          "what": "How writing the event in the same transaction removes the dual-write risk and supports idempotency."
+        },
+        {
+          "source": "ms-cqrs",
+          "section": "Solution, and \"commands should represent business tasks\"",
+          "what": "How separating commands from queries fits an event-driven read model."
+        }
+      ],
+      "canNow": [
+        "Explain the dual-write problem and how an outbox prevents it.",
+        "Say why consumers must be idempotent and how.",
+        "Describe how CQRS splits writes from reads in an event-driven system."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "Event-driven design buys loose coupling and independent scaling, but it changes when things are \"done\". Because the producer returns after publishing and consumers react later, the system is eventually consistent: a reader may not reflect the change the instant the producer finishes. Anything that truly needs an immediate, synchronous answer, such as whether stock exists at checkout, still needs a direct call, not an event.",
+        "It also adds operational surface. There is a broker or event store to run, each consumer has its own backlog that can fall behind, and reasoning about a flow now means tracing it across several services and over time rather than reading one call stack. Microsoft notes event sourcing's own costs: current state must be reconstructed by replaying events, and the model is a shift from the familiar update-in-place approach, so it is not free to adopt [[ms-event-sourcing]].",
+        "So the pattern fits where decoupling, auditability and replay are worth that price: many independent reactions to the same facts, pipelines that aggregate or transform streams, and systems that must add new consumers without touching producers. Where a simple synchronous call would do, a plain request is still the right tool. AWS positions event-driven architecture as common in microservices precisely because it lets teams build and scale those services independently [[aws-eda]]."
+      ],
+      "terms": [
+        {
+          "term": "Eventual consistency",
+          "definition": "Readers converge on the producer's state some time after the event, not instantly."
+        },
+        {
+          "term": "Projection",
+          "definition": "A read model built from the event stream, rebuildable by replaying it."
+        },
+        {
+          "term": "Backlog",
+          "definition": "Unprocessed events waiting for a consumer; the main failure mode is a backlog growing unnoticed on one consumer."
+        },
+        {
+          "term": "Replay cost",
+          "definition": "The work of reconstructing state from events, which event sourcing trades for its auditability and flexibility."
+        }
+      ],
+      "reading": [
+        {
+          "source": "ms-event-sourcing",
+          "section": "Issues and considerations",
+          "what": "The costs of event sourcing: reconstructing state by replay and the shift from update-in-place."
+        },
+        {
+          "source": "aws-eda",
+          "section": "Benefits and \"When to use\"",
+          "what": "Which situations event-driven architecture fits, and why it suits microservices."
+        }
+      ],
+      "canNow": [
+        "Explain why an event-driven system is eventually consistent and when that is unacceptable.",
+        "Name the operational costs: a broker to run, per-consumer backlogs, cross-service tracing.",
+        "Judge when events fit a problem and when a direct call is better."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "An event is just an asynchronous way to call a specific service.",
+      "truth": "An event is a fact that any number of consumers may react to; the producer does not name or know its consumers [[aws-eda]]."
+    },
+    {
+      "myth": "Writing the row and publishing the event separately is fine.",
+      "truth": "The two can disagree; the outbox pattern saves the event in the same transaction to guarantee no data loss [[ms-outbox]]."
+    },
+    {
+      "myth": "Event sourcing just means logging what happened.",
+      "truth": "The event store is the system of record, and current state is rebuilt by replaying the stream, not stored directly [[ms-event-sourcing]]."
+    },
+    {
+      "myth": "Once the producer publishes, the whole operation is finished.",
+      "truth": "Consumers react later, so the system is eventually consistent; anything needing an instant answer still needs a direct call [[ms-event-sourcing]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These use the command-line tools that ship with Apache Kafka against a local or test cluster, to see events as an append-only log. Output depends on your cluster, so it is not shown here. Each tool is described in the Kafka documentation.",
+    "commands": [
+      {
+        "command": "kafka-topics.sh --create --topic orders --partitions 3 --bootstrap-server localhost:9092",
+        "shows": "Creating a topic to hold a stream of order events across three partitions.",
+        "source": "kafka-docs"
+      },
+      {
+        "command": "kafka-console-producer.sh --topic orders --bootstrap-server localhost:9092",
+        "shows": "Appending events: each line you type becomes an event on the log.",
+        "source": "kafka-docs"
+      },
+      {
+        "command": "kafka-console-consumer.sh --topic orders --from-beginning --bootstrap-server localhost:9092",
+        "shows": "Replaying the whole stream from the start, the way a new consumer rebuilds state.",
+        "source": "kafka-docs"
+      }
+    ]
+  },
+  "next": "Go back to the Event-driven Architecture topic page for the worked example and the quiz, then read the Grab and Zapier posts on building, publishing and running event-driven systems in production. The outbox and idempotency ideas here are exactly what those posts wrestle with at scale.",
+  "sources": [
+    {
+      "id": "aws-eda",
+      "title": "What is an Event-Driven Architecture?",
+      "url": "https://aws.amazon.com/event-driven-architecture/",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "ms-eda",
+      "title": "Event-driven architecture style",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/event-driven",
+      "publisher": "Microsoft",
+      "kind": "Vendor documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "ms-event-sourcing",
+      "title": "Event Sourcing pattern",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/event-sourcing",
+      "publisher": "Microsoft",
+      "kind": "Vendor documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "ms-cqrs",
+      "title": "CQRS pattern",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/cqrs",
+      "publisher": "Microsoft",
+      "kind": "Vendor documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "ms-outbox",
+      "title": "Transactional Outbox pattern with Azure Cosmos DB",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/best-practices/transactional-outbox-cosmos",
+      "publisher": "Microsoft",
+      "kind": "Vendor documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "kafka-docs",
+      "title": "Apache Kafka Documentation",
+      "url": "https://kafka.apache.org/documentation/",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    }
+  ]
+}

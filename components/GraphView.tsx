@@ -102,6 +102,7 @@ type Point = { slug: string; x: number; y: number; r: number };
 
 export default function GraphView({ nodes, edges }: Props) {
   const stage = useRef<HTMLDivElement>(null);
+  const scrollWrap = useRef<HTMLDivElement>(null);
   const container = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<Sigma | null>(null);
   const highlightRef = useRef<Set<string>>(new Set());
@@ -124,6 +125,9 @@ export default function GraphView({ nodes, edges }: Props) {
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [active, setActive] = useState<string | null>(null);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  // The stage's pixel width when the horizontal map is wider than the viewport
+  // (so the wrapper scrolls); 0 means it fits, and the stage fills the viewport.
+  const [contentWidth, setContentWidth] = useState(0);
   const [points, setPoints] = useState<Point[]>([]);
 
   // Reducers read this ref, so read-state changes only need a refresh.
@@ -205,11 +209,16 @@ export default function GraphView({ nodes, edges }: Props) {
   // Track the stage size so the layout can fill it.
   useEffect(() => {
     const el = stage.current;
-    if (!el) return;
-    const update = () => setSize({ width: el.clientWidth, height: el.clientHeight });
+    const wrap = scrollWrap.current;
+    if (!el || !wrap) return;
+    // Viewport width comes from the scroll wrapper (always the visible area);
+    // height comes from the stage. The stage's own width is driven by the
+    // content width, so measuring it for width would feed back on itself.
+    const update = () => setSize({ width: wrap.clientWidth, height: el.clientHeight });
     update();
     const observer = new ResizeObserver(update);
     observer.observe(el);
+    observer.observe(wrap);
     // A pixel-ratio change (browser zoom, another display) keeps the CSS size
     // but still needs the canvases resized.
     let dpr: MediaQueryList;
@@ -616,31 +625,18 @@ export default function GraphView({ nodes, edges }: Props) {
       });
 
       // Open a topic on click, but not after a drag, and not if a second click follows.
-      // Move the camera to the node, then open its topic. A double-click
-      // within the window cancels the navigation.
+      // No camera move: the map is a static, horizontally-scrolled graph, so a
+      // recentering pan on click looked like an unwanted shift. Just hold the
+      // node's highlight for a beat, then cross-fade to the topic.
       renderer.on("clickNode", ({ node }) => {
         if (draggedRef.current) return;
         window.clearTimeout(navTimer.current);
-        // Start loading the topic now, so it is ready when the camera move ends.
-        router.prefetch(`/topic/${node}`);
-        if (!interactiveRef.current) {
-          // Fixed map: no camera move and no double-click to wait for. Hold the
-          // node's highlight for a beat, then cross-fade to the topic.
-          activate(node);
-          navTimer.current = window.setTimeout(
-            () => navigateWithTransition(router, `/topic/${node}`),
-            prefersReducedMotion() ? 0 : DURATION.fast,
-          );
-          return;
-        }
-        const r = rendererRef.current;
-        if (r) {
-          const attr = r.getGraph().getNodeAttributes(node);
-          const at = framed(r.graphToViewport({ x: attr.x, y: attr.y }));
-          applyCamera({ ...r.getCamera().getState(), x: at.x, y: at.y }, true);
-        }
-        const wait = Math.max(DOUBLE_CLICK_MS, prefersReducedMotion() ? 0 : DURATION.slow);
-        navTimer.current = window.setTimeout(() => navigateWithTransition(router, `/topic/${node}`), wait);
+        router.prefetch(`/topic/${node}`); // ready when the fade ends
+        activate(node);
+        navTimer.current = window.setTimeout(
+          () => navigateWithTransition(router, `/topic/${node}`),
+          prefersReducedMotion() ? 0 : DURATION.fast,
+        );
       });
       renderer.on("doubleClickNode", ({ event }) => {
         window.clearTimeout(navTimer.current);
@@ -688,7 +684,7 @@ export default function GraphView({ nodes, edges }: Props) {
     const renderer = rendererRef.current;
     if (!ready || !renderer || !size.width || !size.height) return;
     const graph = renderer.getGraph();
-    const width = Math.max(1, size.width - PADDING * 2);
+    const viewport = Math.max(1, size.width - PADDING * 2);
     const height = Math.max(1, size.height - PADDING - PADDING_TOP);
 
     // Measured label widths (at full size) drive the column gaps.
@@ -696,28 +692,18 @@ export default function GraphView({ nodes, edges }: Props) {
     ctx.font = `500 ${LABEL_SIZE}px ${getComputedStyle(document.body).fontFamily}`;
     const baseWidth = new Map(cols.flat().map((n) => [n.slug, ctx.measureText(n.title).width]));
 
-    // Horizontal only when every column fits its widest label with the minimum gap, with labels at
-    // full size or shrunk to no less than MIN_LABEL_SCALE; below that the map stacks.
+    // Phone: vertical stack. Desktop: a static horizontal map at full-size labels,
+    // laid out across the width its labels need. If that is wider than the viewport,
+    // the stage renders at that content width and the wrapper scrolls sideways.
+    const effectiveNow: Orientation = isPhone ? "vertical" : "horizontal";
+    if ((effectiveNow === "horizontal") !== fits) setFits(effectiveNow === "horizontal");
+
     let scale = 1;
-    let localFits = fits;
-    if (orientation === "horizontal") {
-      const found = fitLabelScale(layered, { width, height, edges: drawn }, baseWidth);
-      localFits = found !== null;
-      // Keep the state in step, but do NOT return early: a bare return would
-      // leave every node at its initial {0,0} for a frame (all nodes and labels
-      // stacked on one point) until the re-run placed them. Instead place them
-      // now using the orientation this fit result implies.
-      if (localFits !== fits) setFits(localFits);
-      scale = found ?? 1;
-    }
-    // The orientation to lay out with right now, from the fresh fit result
-    // rather than the possibly-stale `fits` state.
-    const effectiveNow: Orientation = orientation === "horizontal" && localFits ? "horizontal" : "vertical";
     if (effectiveNow === "vertical") {
-      // Stacked on a narrow phone, the longest label can run past the stage edge: shrink labels
+      // Stacked on a phone, the longest label can run past the stage edge: shrink labels
       // (never below MIN_LABEL_SCALE) until each one ends inside it.
-      const probe = fitPositions(layered, "vertical", { width, height, labelWidth: baseWidth, edges: drawn }).positions;
-      const room = width + PADDING - 8;
+      const probe = fitPositions(layered, "vertical", { width: viewport, height, labelWidth: baseWidth, edges: drawn }).positions;
+      const room = viewport + PADDING - 8;
       scale = Math.max(
         MIN_LABEL_SCALE,
         Math.min(1, ...cols.flat().map((n) => (room - probe.get(n.slug)!.x - LABEL_START) / baseWidth.get(n.slug)!)),
@@ -726,6 +712,15 @@ export default function GraphView({ nodes, edges }: Props) {
     const labelWidth = new Map([...baseWidth].map(([slug, w]) => [slug, w * scale] as const));
     renderer.setSetting("labelSize", LABEL_SIZE * scale);
     setLabelScale(scale);
+
+    // The width the horizontal map needs at full size; lay out across max(viewport, needed).
+    const needed =
+      effectiveNow === "horizontal"
+        ? fitPositions(layered, "horizontal", { width: viewport, height, labelWidth, edges: drawn }).required
+        : viewport;
+    const width = Math.max(viewport, needed);
+    const overflow = effectiveNow === "horizontal" && needed > viewport;
+    setContentWidth(overflow ? width + PADDING * 2 : 0);
 
     // Horizontal layout reserves slots for long edges; stacked layout lists topics only.
     // With real label widths known, pick the column ordering that draws cleanly.
@@ -746,8 +741,10 @@ export default function GraphView({ nodes, edges }: Props) {
     // another display) also resizes the WebGL layers, not just the labels.
     renderer.resize(true);
 
-    // The one fit ratio: recomputed here on load, resize and node-set change.
-    const fit = fitRatio(width + PADDING * 2, height + PADDING + PADDING_TOP, size.width, size.height);
+    // Static map: fit the full content into the stage (which is content-width when
+    // overflowing), so no zoom or pan is needed and the wrapper scrolls sideways.
+    const stagePixelWidth = width + PADDING * 2;
+    const fit = fitRatio(stagePixelWidth, height + PADDING + PADDING_TOP, stagePixelWidth, size.height);
     fitRef.current = fit;
     const { min, max } = ratioLimits(fit);
     renderer.setSetting("minCameraRatio", min);
@@ -755,7 +752,7 @@ export default function GraphView({ nodes, edges }: Props) {
     cancelAnimation();
     setCamera(renderer.getCamera(), fitState(fit));
     renderer.refresh();
-  }, [ready, cols, layered, drawn, hidden, orientation, effective, fits, size]);
+  }, [ready, cols, layered, drawn, hidden, fits, size, isPhone]);
 
   // Clear the highlight on Escape, page scroll, and a touch or click outside the map.
   useEffect(() => {
@@ -864,19 +861,20 @@ export default function GraphView({ nodes, edges }: Props) {
         )}
       </div>
 
-      <div
-        ref={stage}
-        className="graph-stage"
-        role="group"
-        aria-label="Topic map"
-        // Stage height comes from the layout; CSS picks one per breakpoint (no shift on load).
-        data-orientation={effective}
-        data-label-size={Math.round(LABEL_SIZE * labelScale * 10) / 10}
-        // Only an interactive map captures touch (to pan/zoom); a fixed small map
-        // must let a finger scroll the page past it.
-        data-interactive={interactive || undefined}
-        style={{ "--rows": rowCount(layered, "horizontal"), "--layers": rowCount(layered, "vertical") } as React.CSSProperties}
-      >
+      <div ref={scrollWrap} className="graph-scrollwrap">
+        <div
+          ref={stage}
+          className="graph-stage"
+          role="group"
+          aria-label="Topic map"
+          // Stage height comes from the layout; CSS picks one per breakpoint (no shift on load).
+          data-orientation={effective}
+          data-label-size={Math.round(LABEL_SIZE * labelScale * 10) / 10}
+          // Only an interactive map captures touch (to pan/zoom); a fixed small map
+          // must let a finger scroll the page past it.
+          data-interactive={interactive || undefined}
+          style={{ "--rows": rowCount(layered, "horizontal"), "--layers": rowCount(layered, "vertical"), width: contentWidth || undefined } as React.CSSProperties}
+        >
         {!ready && <GraphSkeleton />}
         <div ref={container} className="graph-canvas" aria-hidden="true" />
 
@@ -960,6 +958,7 @@ export default function GraphView({ nodes, edges }: Props) {
             </div>,
             document.body,
           )}
+        </div>
       </div>
     </>
   );

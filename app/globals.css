@@ -399,8 +399,15 @@ a:hover {
   opacity: 0.5;
 }
 
+/* Wraps the map so a map wider than the viewport scrolls sideways (step 1 test). */
+.graph-scrollwrap {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 .graph-stage {
   position: relative;
+  min-width: 100%;
   height: clamp(278px, calc(var(--rows, 1) * 120px + 158px), 70vh);
   overflow: hidden;
   border-top: 1px solid var(--rule);

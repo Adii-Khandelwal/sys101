@@ -1,0 +1,453 @@
+{
+  "slug": "event-driven-architecture",
+  "title": "Event-driven Architecture",
+  "shortTitle": "Event-driven design",
+  "group": "Messaging",
+  "interviewRelevance": "common",
+  "concept": "Event-driven architecture turns a system inside out: instead of services calling each other to make things happen, each service announces facts about what already happened, and other services react on their own. The event log becomes the backbone, and state can be rebuilt by replaying it. This buys loose coupling and the freedom to add new reactions without touching the producer, but it moves the hard problems to publishing events reliably, processing them idempotently, and reasoning about a system whose steps are now spread across time.",
+  "prerequisites": [
+    "pub-sub"
+  ],
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why a system would publish events as facts instead of calling services to trigger each step.",
+      "body": "A checkout that calls payment, then inventory, then email, then analytics, in order, is only as fast and as available as the slowest, flakiest callee. The checkout service also has to know all of them, and adding a fraud check next quarter means changing and redeploying checkout.\n\nEvent-driven architecture inverts the direction. Checkout publishes one fact, \"OrderPlaced\", and returns. Payment, inventory, email, analytics and next quarter's fraud check each subscribe and react on their own schedule. The producer no longer knows or waits for its consumers. The cost is that the work is now spread across time and services: you have to make publishing the event reliable, make each consumer safe to run twice, and accept that the whole thing is eventually consistent rather than finished the moment checkout returns."
+    },
+    "mentalModel": {
+      "outcome": "After this you can picture an event log as the backbone and services as independent reactions to facts on it.",
+      "body": "Think of the system as a newspaper of record rather than a switchboard. Every time something happens, a line is appended to a shared, durable log: \"order 42 placed\", \"payment 42 captured\". The log is the source of truth. Each service reads the log at its own pace and reacts: billing reads payment facts, search reads product facts, analytics reads everything.\n\nTwo ideas fall out of this. First, event sourcing: because the log holds every change as an immutable fact, you can rebuild a service's state by replaying the log from the start, or rewind to reprocess after a bug. Second, the producer is decoupled in time: it writes a fact and moves on, and a reader that was down simply catches up later. Pub-sub is how one fact fans out to every interested reader; event-driven architecture is what you build on top of that fan-out once facts, not commands, are the unit.",
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-eda-model-t\" class=\"dg\"><title id=\"dg-c-eda-model-t\">Event-driven architecture: producers append facts to a durable event log; independent consumer services each read the log at their own position and react, and state can be rebuilt by replaying the log.</title><defs><marker id=\"dg-c-eda-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"40\" width=\"110\" height=\"38\" class=\"dg-box\"/><text x=\"69\" y=\"63.5\" class=\"dg-label\" text-anchor=\"middle\">Checkout</text><rect x=\"14\" y=\"130\" width=\"110\" height=\"38\" class=\"dg-box\"/><text x=\"69\" y=\"153.5\" class=\"dg-label\" text-anchor=\"middle\">Payments</text><path d=\"M124,59 L186,120\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-model-a)\"/><path d=\"M124,149 L186,140\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-model-a)\"/><rect x=\"190\" y=\"96\" width=\"150\" height=\"88\" class=\"dg-box dg-accent\"/><text x=\"265\" y=\"130\" class=\"dg-label\" text-anchor=\"middle\">Event log</text><text x=\"265\" y=\"150\" class=\"dg-label\" text-anchor=\"middle\">append-only facts</text><text x=\"265\" y=\"80\" class=\"dg-note\" text-anchor=\"middle\">source of truth</text><path d=\"M340,120 L402,58\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-model-a)\"/><path d=\"M340,140 L402,140\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-model-a)\"/><path d=\"M340,160 L402,222\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-model-a)\"/><rect x=\"406\" y=\"38\" width=\"140\" height=\"40\" class=\"dg-box\"/><text x=\"476\" y=\"62.5\" class=\"dg-label\" text-anchor=\"middle\">Email</text><rect x=\"406\" y=\"120\" width=\"140\" height=\"40\" class=\"dg-box\"/><text x=\"476\" y=\"144.5\" class=\"dg-label\" text-anchor=\"middle\">Analytics</text><rect x=\"406\" y=\"202\" width=\"140\" height=\"40\" class=\"dg-box dg-dashed\"/><text x=\"476\" y=\"226.5\" class=\"dg-label\" text-anchor=\"middle\">Fraud check (added later)</text><text x=\"280\" y=\"278\" class=\"dg-note\" text-anchor=\"middle\">readers react on their own; replay the log to rebuild state</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can walk through producing a fact reliably, fanning it out, reacting idempotently, and replaying.",
+      "steps": [
+        {
+          "step": "Produce a fact, not a command",
+          "explanation": "A service records that something happened in its past tense: OrderPlaced, PaymentCaptured. It describes a fact, so many readers can interpret it differently, rather than ordering one receiver to do a thing."
+        },
+        {
+          "step": "Publish it reliably alongside the state change",
+          "explanation": "The event must be published if and only if the local database change committed. Writing to the database and to the broker as two separate steps can succeed on one and fail on the other, losing or inventing events. The usual fix is a transactional outbox: write the event into an outbox table in the same transaction, then a separate process ships it to the log."
+        },
+        {
+          "step": "Append to a durable log and fan out",
+          "explanation": "The event lands on a durable, ordered log, usually partitioned by a key. Every subscription gets its own copy, so a new consumer can be added without touching the producer, which is the pub-sub fan-out underneath."
+        },
+        {
+          "step": "React idempotently",
+          "explanation": "Delivery is at-least-once, so a consumer can see the same event twice. Each consumer must be idempotent, usually by recording the event id it has handled, so a redelivery after a crash does no harm."
+        },
+        {
+          "step": "Derive state and views",
+          "explanation": "Consumers build their own read models from the stream: a materialised view, a search index, a time-windowed aggregate. The log is the source of truth; these are rebuildable projections of it."
+        },
+        {
+          "step": "Replay to rebuild or fix",
+          "explanation": "Because the log retains the facts, a consumer can rewind and reprocess from an earlier point to rebuild a view or recover from a bug, as long as its processing is idempotent."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-eda-how-t\" class=\"dg\"><title id=\"dg-c-eda-how-t\">How an event flows: a service commits a state change and an event to an outbox in one transaction; a relay ships it to the durable log; consumers read it, deduplicate by id, and build read models, and can rewind to replay.</title><defs><marker id=\"dg-c-eda-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"110\" width=\"96\" height=\"56\" class=\"dg-box\"/><text x=\"62\" y=\"134\" class=\"dg-label\" text-anchor=\"middle\">Service</text><text x=\"62\" y=\"151\" class=\"dg-label\" text-anchor=\"middle\">+ outbox</text><text x=\"62\" y=\"100\" class=\"dg-note\" text-anchor=\"middle\">one transaction</text><path d=\"M110,138 L160,138\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-how-a)\"/><rect x=\"164\" y=\"112\" width=\"80\" height=\"52\" class=\"dg-box\"/><text x=\"204\" y=\"142.5\" class=\"dg-label\" text-anchor=\"middle\">Relay</text><path d=\"M244,138 L294,138\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-how-a)\"/><rect x=\"298\" y=\"104\" width=\"110\" height=\"68\" class=\"dg-box dg-accent\"/><text x=\"353\" y=\"134\" class=\"dg-label\" text-anchor=\"middle\">Event log</text><text x=\"353\" y=\"151\" class=\"dg-label\" text-anchor=\"middle\">durable</text><path d=\"M408,120 L458,70\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-how-a)\"/><path d=\"M408,156 L458,206\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-how-a)\"/><rect x=\"462\" y=\"50\" width=\"88\" height=\"40\" class=\"dg-box\"/><text x=\"506\" y=\"74.5\" class=\"dg-label\" text-anchor=\"middle\">read model</text><rect x=\"462\" y=\"186\" width=\"88\" height=\"40\" class=\"dg-box\"/><text x=\"506\" y=\"210.5\" class=\"dg-label\" text-anchor=\"middle\">index</text><path d=\"M353,172 L353,238 L298,238\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-c-eda-how-a)\"/><text x=\"330\" y=\"258\" class=\"dg-note\" text-anchor=\"middle\">rewind to replay</text><text x=\"495\" y=\"120\" class=\"dg-note\" text-anchor=\"middle\">dedupe by event id</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can trace one order through an event-driven checkout and see where reliability, replay and duplicates show up.",
+      "steps": [
+        {
+          "step": "Checkout commits and emits",
+          "explanation": "In one database transaction, checkout writes the order row and an OrderPlaced row in its outbox table. If the transaction rolls back, neither exists; the event can never disagree with the order."
+        },
+        {
+          "step": "A relay ships the event",
+          "explanation": "A separate relay reads unshipped outbox rows and appends them to the event log, marking them shipped. If the relay crashes mid-batch, it re-ships on restart, which is why consumers must tolerate duplicates."
+        },
+        {
+          "step": "Three services react",
+          "explanation": "Email, analytics and a warehouse service each have their own subscription and read OrderPlaced independently. The slow one builds its own backlog without delaying the others."
+        },
+        {
+          "step": "A duplicate arrives",
+          "explanation": "The relay re-ships one event after a crash, so the warehouse sees OrderPlaced twice. It has already recorded that order id as handled, so it ignores the second copy. The reservation is made once."
+        },
+        {
+          "step": "Analytics rebuilds a window",
+          "explanation": "A bug is found in the hourly revenue aggregate. Analytics rewinds its consumer to the start of the day and replays, recomputing the window from the retained facts, with no cooperation from checkout."
+        },
+        {
+          "step": "A new reaction is added",
+          "explanation": "A loyalty service is introduced months later. It subscribes to OrderPlaced and, if needed, replays history to backfill. Checkout is never changed or redeployed."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-eda-ex-t\" class=\"dg\"><title id=\"dg-c-eda-ex-t\">Worked example: checkout writes an order and an OrderPlaced event to its outbox in one transaction; a relay ships it to the log; email, analytics and warehouse react independently; the warehouse deduplicates a re-shipped event; a loyalty service is added later by replaying history.</title><defs><marker id=\"dg-c-eda-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"120\" width=\"104\" height=\"56\" class=\"dg-box\"/><text x=\"66\" y=\"144\" class=\"dg-label\" text-anchor=\"middle\">Checkout</text><text x=\"66\" y=\"161\" class=\"dg-label\" text-anchor=\"middle\">order + outbox</text><path d=\"M118,148 L176,148\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-ex-a)\"/><rect x=\"180\" y=\"118\" width=\"130\" height=\"60\" class=\"dg-box dg-accent\"/><text x=\"245\" y=\"144\" class=\"dg-label\" text-anchor=\"middle\">OrderPlaced</text><text x=\"245\" y=\"161\" class=\"dg-label\" text-anchor=\"middle\">on the log</text><path d=\"M310,135 L366,70\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-ex-a)\"/><path d=\"M310,148 L366,148\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-ex-a)\"/><path d=\"M310,161 L366,226\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-ex-a)\"/><rect x=\"370\" y=\"50\" width=\"120\" height=\"38\" class=\"dg-box\"/><text x=\"430\" y=\"73.5\" class=\"dg-label\" text-anchor=\"middle\">Email</text><rect x=\"370\" y=\"128\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"430\" y=\"152.5\" class=\"dg-label\" text-anchor=\"middle\">Analytics</text><rect x=\"370\" y=\"208\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"430\" y=\"232.5\" class=\"dg-label\" text-anchor=\"middle\">Warehouse</text><text x=\"430\" y=\"202\" class=\"dg-note\" text-anchor=\"middle\">dedupe duplicate</text><text x=\"430\" y=\"118\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">rewind + replay</text><text x=\"245\" y=\"214\" class=\"dg-note\" text-anchor=\"middle\">loyalty added later, no checkout change</text></svg>"
+    },
+    "mistakesOutcome": "After this you can avoid the three mistakes that most often break event-driven systems.",
+    "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
+    "quiz": [
+      {
+        "question": "What distinguishes an event in event-driven architecture from a normal service call?",
+        "options": [
+          "An event is a fact about something that already happened, which any number of services may react to",
+          "An event is a command telling one named service to do something",
+          "An event is a synchronous request that blocks until every consumer replies"
+        ],
+        "correct": 0,
+        "why": "Events describe facts in the past tense, so the producer does not know or wait for its consumers, and new reactions can be added later.",
+        "wrong": [
+          "",
+          "A command names its receiver and tells it what to do; an event just states what happened and leaves interpretation to readers.",
+          "The producer appends the fact and moves on; it does not block waiting for consumers to reply."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "A service writes its database row and then publishes the event in a separate step. The publish fails after the commit succeeds. What has gone wrong?",
+        "options": [
+          "Nothing, the event will be inferred automatically from the row",
+          "The state changed but no event was published, so downstream services never learn of it",
+          "The database automatically rolls back when a publish fails"
+        ],
+        "correct": 1,
+        "why": "Writing to the database and the broker as two steps can succeed on one and fail on the other; here the change is committed but the event is lost. A transactional outbox fixes this by writing the event in the same transaction.",
+        "wrong": [
+          "Nothing reads a committed row and emits an event on its own; the event has to be published deliberately.",
+          "",
+          "A failed publish after a separate commit does not undo that commit; the two are not in one transaction."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why must a consumer in an event-driven system usually be idempotent?",
+        "options": [
+          "Because the log guarantees exactly-once delivery",
+          "Because events are delivered in random order on purpose",
+          "Because delivery is at-least-once, so the same event can arrive more than once"
+        ],
+        "correct": 2,
+        "why": "At-least-once delivery means a crash before acknowledgement causes a redelivery, so handling the same event twice must have the same effect as once.",
+        "wrong": [
+          "Exactly-once is the costly exception, not the baseline; most logs give at-least-once, which is why duplicates happen.",
+          "Order is kept within a partition, not deliberately randomised; the reason for idempotency is duplicates, not shuffling.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "What does storing changes as an immutable event log let you do that updating rows in place does not?",
+        "options": [
+          "Rebuild a service's state by replaying the log, and rewind to reprocess after a bug",
+          "Avoid ever having to think about duplicates",
+          "Guarantee every consumer sees a single global order across the whole system"
+        ],
+        "correct": 0,
+        "why": "Because every change is kept as a fact, state is a projection of the log, so it can be recomputed by replaying from any point.",
+        "wrong": [
+          "",
+          "An append-only log does not remove duplicates; at-least-once delivery still means consumers must deduplicate.",
+          "A log keeps order within a partition, not one global order across the whole system."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "A team adds a new fraud-check service that must react to every order. In a well-built event-driven system, what do they change in the checkout service?",
+        "options": [
+          "Add a direct call from checkout to the fraud service",
+          "Nothing: the fraud service subscribes to the existing order events",
+          "Give checkout a list of every consumer to notify"
+        ],
+        "correct": 1,
+        "why": "The producer publishes facts without knowing its consumers, so a new reaction is just a new subscription, often backfilled by replaying history.",
+        "wrong": [
+          "A direct call re-couples checkout to the new service and brings back the fan-out problem event-driven design removes.",
+          "",
+          "Keeping a list of consumers in the producer is exactly the coupling the pattern avoids."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "In event-driven architecture, when is the overall business operation \"finished\" from the caller's point of view?",
+        "options": [
+          "Only once every consumer has finished reacting, synchronously",
+          "As soon as the database row is written, before any event exists",
+          "The moment the producer publishes the event; the reactions complete afterwards, eventually"
+        ],
+        "correct": 2,
+        "why": "The producer returns after publishing the fact; downstream reactions happen on their own schedule, so the system is eventually consistent.",
+        "wrong": [
+          "Waiting synchronously for every consumer would recreate the tight coupling and the slowest-callee problem the pattern avoids.",
+          "The event must be published, not just the row written, or downstream services never learn of the change.",
+          ""
+        ],
+        "teaches": "why"
+      }
+    ],
+    "postsOutcome": "After this you can describe how three teams built, published and ran event-driven systems in production, and what each one leaves out.",
+    "differOutcome": "After this you can tell apart the architecture, the reliable-publishing and the operating-cost problems of event-driven systems.",
+    "exercisesOutcome": "After this you can apply events to a coupled flow, design a platform for many event pipelines, and plan for the cost and failure of the backbone at scale.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A signup flow calls an email service, a CRM and an analytics service in turn, and signups are timing out because the CRM is slow. Rework it with events.",
+        "answer": "Have signup commit the user and publish a UserSignedUp fact, then return. Email, CRM and analytics each subscribe and react on their own. Publish the event with a transactional outbox so it cannot be lost if the broker is briefly down, and make each consumer idempotent because delivery is at-least-once. Signup no longer waits on the CRM.",
+        "tradeoffs": "The CRM and analytics now lag behind signup, so the system is eventually consistent. You run a log and three consumers, and anything signup must know immediately still needs a direct call.",
+        "wrongAnswers": [
+          "Just raise the timeout on the CRM call.",
+          "Publish the event in a separate step after the commit, risking a committed user with no event.",
+          "Assume each consumer sees the event exactly once and skip deduplication."
+        ],
+        "teaches": "why"
+      },
+      {
+        "level": "design",
+        "prompt": "Many teams want to run their own event pipelines (filter, aggregate over time windows, join two streams, write to a datastore) on a shared event log. Design a platform so they do not each reinvent it.",
+        "answer": "Offer event sourcing plus a stream-processing framework: standard operators for filter, map, windowed aggregation and join, with idempotent reprocessing so pipelines can rewind and replay. Deploy each pipeline as an isolated, multi-tenant unit with its own identity, uptime and cost accounting, and give it a metastore for deduplication and windowed results. Let teams define a pipeline through configuration rather than bespoke infrastructure, as Grab's platform does.",
+        "tradeoffs": "A shared platform must offer explicit processing guarantees and let teams trade completeness against delay and cost. Multi-tenancy adds isolation and accounting overhead, but amortises the platform's cost across many pipelines.",
+        "wrongAnswers": [
+          "Let every team hand-roll its own consumers with no shared framework or guarantees.",
+          "Promise exactly-once everywhere regardless of cost.",
+          "Share one pipeline deployment across all teams with no isolation."
+        ],
+        "teaches": "model"
+      },
+      {
+        "level": "scale",
+        "prompt": "Your event backbone now carries hundreds of billions of events a week across three availability zones, and the cloud bill is dominated by network traffic. Where is the cost and what do you do?",
+        "answer": "By default Kafka clients talk to the partition leader, which is in a different AZ most of the time, and most traffic is on the consuming side because a topic has many consumers. That cross-AZ traffic can be about half the platform's cost. Make the cluster rack-aware and let consumers fetch from the closest (same-AZ) replica, so reads stay in-zone. Keep the producer and replication paths correct, since those cross-AZ transfers are unavoidable and comparatively small.",
+        "tradeoffs": "Closest-replica reads need broker and consumer configuration and a Kafka version that supports it, and a same-AZ replica may lag the leader slightly. The saving is large because consumer traffic scales with the number of consumers.",
+        "wrongAnswers": [
+          "Collapse to a single AZ to avoid cross-AZ traffic, losing fault tolerance.",
+          "Assume producer traffic is the main cost and optimise that first.",
+          "Add more consumers without realising each one multiplies cross-AZ traffic."
+        ],
+        "teaches": "how"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can choose where to go once you understand event-driven design.",
+      "body": "Event-driven systems lean on everything earlier in Messaging: Message Queues for the buffer and Publish-Subscribe for the fan-out. When a consumer falls behind or a producer is overwhelmed, Rate Limiting and Circuit Breakers protect the backbone. On the data side, the read models built from the stream are where Indexing and Search and Database Replication come back in."
+    }
+  },
+  "posts": [
+    {
+      "id": "grab-plumbing-at-scale-2020",
+      "title": "Plumbing At Scale",
+      "url": "https://engineering.grab.com/plumbing-at-scale",
+      "company": "Grab",
+      "verifiedOn": "2026-10-11",
+      "published": "2020-01-06",
+      "ageNote": "From January 2020, about six years old. It is here for a fundamental that has not changed: how an event-sourcing and stream-processing platform is structured, with pipelines as isolated tenants, idempotent replay, and explicit trade-offs between completeness, delay and cost. The specific figures, such as 300 billion events a week, and the Go-plugin implementation detail may well have changed since; the post itself describes the plan to move from Go plugins to plugins over RPC.",
+      "related": [
+        "pub-sub",
+        "message-queues"
+      ],
+      "digest": {
+        "problem": "Grab's Go backend teams kept hitting the same shape of problem: filter and map one stream into another, aggregate events into time windows and materialise them to databases, and generally process events reliably. Rather than every team reinventing this, the Coban team set out to build an event-sourcing platform with a stream-processing framework on top, similar in spirit to Netflix's Keystone, and scale it to Grab's event volume.",
+        "constraints": "The platform serves many teams at once, so it needs workload isolation, independent uptime guarantees per pipeline, and resource and cost accounting, which pushes it toward multi-tenancy. Pipelines need guarantees on uptime and data completeness, upper bounds on processing delay, alerting, and self-healing, and teams need to trade these off consciously against cost.",
+        "walkthrough": [
+          {
+            "step": "Make the event log the source of truth",
+            "explanation": "Event sourcing stores changes as a sequence of immutable events that can be replayed, recomputed and queried for state at any time. The event log is a set of critical Kafka clusters that pipelines poll for incoming events."
+          },
+          {
+            "step": "Run each pipeline as an isolated deployment",
+            "explanation": "Every pipeline is its own deployment with an identity, holding the domain logic and the orchestration the user defined through the Stream Processing Framework, and can connect to upstream and downstream sinks, including the event log itself."
+          },
+          {
+            "step": "Offer standard stream operators",
+            "explanation": "The framework provides filtering and mapping, windowed aggregation (sum, average, max, min), windowing (tumbling, sliding and session windows) and joins of two streams on a key within a window, so teams compose pipelines instead of building them."
+          },
+          {
+            "step": "Give pipelines a metastore",
+            "explanation": "Some pipelines need storage for deduplication and for materialised results of time-windowed aggregations; these use clusters of ScyllaDB reached through the framework's interfaces."
+          },
+          {
+            "step": "Make reprocessing safe",
+            "explanation": "Deduplication lets pipelines idempotently reprocess data during rewinds and replays, and the platform offers processing guarantees within a time window for use cases such as sinking to datastores. A pipeline can be rewound a few hours through configuration."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-grab-plumb-t\" class=\"dg\"><title id=\"dg-grab-plumb-t\">Grab's Coban platform: Kafka clusters hold the event log; each stream-processing pipeline is an isolated deployment running filter, window, aggregate and join operators, using a ScyllaDB metastore for deduplication and windowed results, and can rewind to replay.</title><defs><marker id=\"dg-grab-plumb-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"110\" width=\"110\" height=\"70\" class=\"dg-box dg-accent\"/><text x=\"69\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\">Kafka</text><text x=\"69\" y=\"157\" class=\"dg-label\" text-anchor=\"middle\">event log</text><path d=\"M124,135 L186,100\" class=\"dg-line\" marker-end=\"url(#dg-grab-plumb-a)\"/><path d=\"M124,155 L186,200\" class=\"dg-line\" marker-end=\"url(#dg-grab-plumb-a)\"/><rect x=\"190\" y=\"70\" width=\"180\" height=\"52\" class=\"dg-box\"/><text x=\"280\" y=\"92\" class=\"dg-label\" text-anchor=\"middle\">Pipeline A (tenant)</text><text x=\"280\" y=\"110\" class=\"dg-label\" text-anchor=\"middle\">filter, window, aggregate</text><rect x=\"190\" y=\"176\" width=\"180\" height=\"52\" class=\"dg-box\"/><text x=\"280\" y=\"198\" class=\"dg-label\" text-anchor=\"middle\">Pipeline B (tenant)</text><text x=\"280\" y=\"216\" class=\"dg-label\" text-anchor=\"middle\">join on key in window</text><path d=\"M370,96 L430,130\" class=\"dg-line\" marker-end=\"url(#dg-grab-plumb-a)\"/><path d=\"M370,202 L430,166\" class=\"dg-line\" marker-end=\"url(#dg-grab-plumb-a)\"/><rect x=\"434\" y=\"120\" width=\"112\" height=\"56\" class=\"dg-box\"/><text x=\"490\" y=\"144\" class=\"dg-label\" text-anchor=\"middle\">ScyllaDB</text><text x=\"490\" y=\"161\" class=\"dg-label\" text-anchor=\"middle\">metastore</text><path d=\"M240,228 L240,260 L100,260 L100,180\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-grab-plumb-a)\"/><text x=\"300\" y=\"278\" class=\"dg-note\" text-anchor=\"middle\">rewind a few hours to replay; dedupe keeps it idempotent</text></svg>",
+        "numbers": [
+          {
+            "value": "over 300 billion",
+            "meaning": "Events a week the platform was scaled to service"
+          },
+          {
+            "value": "terabytes per hour",
+            "meaning": "Data ingress the Coban team's platform handles"
+          },
+          {
+            "value": "hundreds",
+            "meaning": "Pipelines the platform scaled to support, driving the need for multi-tenancy"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "An event-sourcing platform with a reusable stream-processing framework, pipelines as isolated multi-tenant deployments, a ScyllaDB metastore, and idempotent rewind and replay.",
+          "rejected": "Letting each team build its own stream processing ad hoc, and (as a current limitation) Go-only processing logic via Go plugins.",
+          "why": "Common event-processing patterns kept recurring across teams, so standardising scaffolding, configuration and deployment, with explicit processing guarantees, lets teams trade completeness against delay and cost consciously rather than each solving it alone. The post names a planned move from Go plugins to plugins over RPC, HashiCorp-style, to allow non-Go languages."
+        },
+        "failures": "The post is candid that correct processing has to be bought: pipelines must declare guarantees on uptime and completeness, bounds on delay, alerting and self-healing, and the platform exists partly because getting these right per team is hard. A stated limitation is that processing logic was tied to Go plugins, with a plan to move to plugins over RPC so other languages can be used.",
+        "takeaways": "Event sourcing plus a stream-processing framework turns ad hoc event handling into a platform: standard operators, isolated multi-tenant pipelines, a metastore for deduplication and windowed state, and idempotent replay. The hard parts are not the happy path but the guarantees, isolation and cost accounting around it. Being six years old, treat the figures as of 2020."
+      }
+    },
+    {
+      "id": "zapier-outbox-2026",
+      "title": "Lessons from using the outbox pattern at scale",
+      "url": "https://zapier.com/blog/lessons-from-using-outbox-pattern-at-scale/",
+      "company": "Zapier",
+      "verifiedOn": "2026-10-11",
+      "published": "2026-03-30",
+      "related": [
+        "pub-sub",
+        "databases"
+      ],
+      "digest": {
+        "problem": "Zapier's Events API, a high-throughput Go service, published events straight to a large managed Kafka cluster in AWS. Producer latency would spike during security updates and cluster upgrades, which made Kafka a single point of failure: if it went down, critical events could be lost. The team introduced a transactional outbox so a state change and its event are recorded together locally first, and the event is shipped to Kafka afterwards.",
+        "constraints": "The delivery goal stayed at-least-once, as before. Kafka infrastructure was mid-transition, and the team did not want the events service coupled to that work. The service already let teams produce events to Kafka in Avro through a simple API, which the outbox had to preserve.",
+        "walkthrough": [
+          {
+            "step": "Write the event locally, not straight to Kafka",
+            "explanation": "After adopting the outbox, each event was written to a local SQLite table (on an EBS-backed volume attached to each Kubernetes StatefulSet pod) instead of being emitted to Kafka directly, so a Kafka blip no longer lost events."
+          },
+          {
+            "step": "Ship from the outbox separately",
+            "explanation": "Kafka emission happened later, only for rows that were successfully written to the outbox. An early version used a scheduled job that scanned the outbox for in-progress events and retried emitting them."
+          },
+          {
+            "step": "Enable WAL for concurrency",
+            "explanation": "The default rollback journal mode gave immediate SQLITE_BUSY errors under concurrent reads and writes, so the team switched to write-ahead logging, which lets writers append while readers work on a stable snapshot."
+          },
+          {
+            "step": "Shard the SQLite database",
+            "explanation": "One outbox could not take the event volume, so the main database was split into 50 files per pod, each with its own file, writer lock and WAL. Hashing picked the shard and spread writes, and the hash could later route related events to the same shard to preserve ordering."
+          },
+          {
+            "step": "Lock per shard in the app",
+            "explanation": "Because two requests can still hash to the same file and SQLite allows only one writer per database, the team added a per-shard mutex in the service on top of the 50 shards, as SQLite recommends handling with application-level locks."
+          },
+          {
+            "step": "Keep disk under control",
+            "explanation": "The EBS volume kept growing under heavy traffic, so they set journal_size_limit = 0 to truncate the WAL after a checkpoint, and used auto_vacuum = FULL plus a VACUUM on startup to compact the database files."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-zapier-outbox-t\" class=\"dg\"><title id=\"dg-zapier-outbox-t\">Zapier's events service writes each event to a sharded local SQLite outbox (50 files per pod, each with its own WAL and a per-shard mutex) on an EBS volume, and a separate shipper emits successfully written rows to Kafka at-least-once; the team later moved away from this design.</title><defs><marker id=\"dg-zapier-outbox-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"118\" width=\"104\" height=\"56\" class=\"dg-box\"/><text x=\"66\" y=\"142\" class=\"dg-label\" text-anchor=\"middle\">Events API</text><text x=\"66\" y=\"159\" class=\"dg-label\" text-anchor=\"middle\">(Go)</text><path d=\"M118,146 L172,146\" class=\"dg-line\" marker-end=\"url(#dg-zapier-outbox-a)\"/><rect x=\"176\" y=\"96\" width=\"150\" height=\"100\" class=\"dg-box dg-accent\"/><text x=\"251\" y=\"120\" class=\"dg-label\" text-anchor=\"middle\">SQLite outbox</text><text x=\"251\" y=\"138\" class=\"dg-label\" text-anchor=\"middle\">50 shards / pod</text><text x=\"251\" y=\"156\" class=\"dg-label\" text-anchor=\"middle\">WAL + mutex</text><text x=\"251\" y=\"186\" class=\"dg-note\" text-anchor=\"middle\">on EBS</text><path d=\"M326,146 L380,146\" class=\"dg-line\" marker-end=\"url(#dg-zapier-outbox-a)\"/><rect x=\"384\" y=\"118\" width=\"90\" height=\"56\" class=\"dg-box\"/><text x=\"429\" y=\"150.5\" class=\"dg-label\" text-anchor=\"middle\">Shipper</text><path d=\"M474,146 L520,146\" class=\"dg-line\" marker-end=\"url(#dg-zapier-outbox-a)\"/><rect x=\"500\" y=\"118\" width=\"52\" height=\"56\" class=\"dg-box\"/><text x=\"526\" y=\"150.5\" class=\"dg-label\" text-anchor=\"middle\">Kafka</text><text x=\"300\" y=\"242\" class=\"dg-note\" text-anchor=\"middle\">write locally first, ship later: a Kafka blip no longer loses events</text><text x=\"300\" y=\"262\" class=\"dg-note\" text-anchor=\"middle\">at-least-once; the team later decided to move away from this design</text></svg>",
+        "numbers": [
+          {
+            "value": "50",
+            "meaning": "SQLite shard files per pod the outbox was split into to take the write volume"
+          },
+          {
+            "value": "1 writer per database",
+            "meaning": "SQLite's limit, which forced a per-shard mutex on top of the 50 shards"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A transactional outbox backed by local, sharded SQLite on EBS, with WAL, per-shard mutexes and aggressive vacuuming, shipping to Kafka at-least-once.",
+          "rejected": "Publishing directly to Kafka from the service, and (for the outbox store) a traditional RDS setup rather than local SQLite.",
+          "why": "Direct publishing made Kafka a single point of failure whose latency spikes during upgrades could lose critical events. Local SQLite kept the outbox independent of the in-transition Kafka infrastructure and avoided coupling to a separate database. The post is explicit that this was not the textbook transactional outbox, and that the team has since decided to move away from it."
+        },
+        "failures": "The first version did not scale: one SQLite outbox gave immediate SQLITE_BUSY errors, fixed by WAL mode, then by sharding into 50 files, then by per-shard mutexes because SQLite still allows only one writer per file. The EBS volume grew under load until they tuned journal_size_limit, auto_vacuum and startup VACUUM. The honest headline is the ending: having run it in production, the team decided to move away from this approach.",
+        "takeaways": "Reliable publishing is the hard half of event-driven systems: a plain write-to-db-then-publish can lose events, and an outbox fixes that by committing the event with the state change. But an outbox is not free, and a local-database outbox brings its own scaling pain (concurrency limits, sharding, disk growth). Weigh it against the failure it prevents, and be willing to walk it back, as Zapier did."
+      }
+    },
+    {
+      "id": "grab-zero-traffic-cost-2023",
+      "title": "Zero traffic cost for Kafka consumers",
+      "url": "https://engineering.grab.com/zero-traffic-cost",
+      "company": "Grab",
+      "verifiedOn": "2026-10-11",
+      "published": "2023-07-07",
+      "related": [
+        "pub-sub"
+      ],
+      "digest": {
+        "problem": "Grab runs Kafka on AWS in one region across three availability zones, with clusters set up to be rack-aware so a topic's three replicas sit in three different AZs. By default Kafka clients talk only to the partition leader, which has a 67% chance of being in a different AZ, so the design generated large cross-AZ network traffic, billed under AWS's pricing. That cross-AZ traffic amounted to about half the total cost of Grab's Kafka platform.",
+        "constraints": "Fault tolerance requires replicas spread across AZs, so the AZ spread cannot be removed. The cost had to come down without collapsing to a single AZ. The fix had to work within AWS's cross-AZ traffic pricing and Kafka's replication model.",
+        "walkthrough": [
+          {
+            "step": "Find where the traffic is",
+            "explanation": "Cross-AZ traffic breaks into producing, replication and consuming. Producing crosses an AZ at most once per message, so it is minimal. Consuming is the bulk, because a topic has many consumers and, on average, two-thirds of them are in a different AZ from the leader."
+          },
+          {
+            "step": "Let consumers read the closest replica",
+            "explanation": "Instead of every consumer reading from the leader, the target design has each consumer fetch from the replica in its own AZ, so most read traffic stays in-zone."
+          },
+          {
+            "step": "Configure rack-awareness end to end",
+            "explanation": "Making this work requires rack-awareness and extra configuration on both the Kafka brokers and the consumers, so each consumer is matched to a same-AZ replica to fetch from."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-grab-ztc-t\" class=\"dg\"><title id=\"dg-grab-ztc-t\">Grab's cross-AZ cost fix: by default consumers fetch from the partition leader, which is usually in another AZ, generating cross-AZ traffic for most of the many consumers; the target design makes consumers fetch from the replica in their own availability zone.</title><defs><marker id=\"dg-grab-ztc-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"150\" y=\"28\" class=\"dg-note\" text-anchor=\"middle\">Before: read the leader</text><text x=\"410\" y=\"28\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">After: read closest replica</text><rect x=\"40\" y=\"50\" width=\"96\" height=\"38\" class=\"dg-box dg-accent\"/><text x=\"88\" y=\"73.5\" class=\"dg-label\" text-anchor=\"middle\">leader AZ-a</text><rect x=\"40\" y=\"150\" width=\"96\" height=\"36\" class=\"dg-box\"/><text x=\"88\" y=\"172.5\" class=\"dg-label\" text-anchor=\"middle\">consumer AZ-b</text><rect x=\"40\" y=\"210\" width=\"96\" height=\"36\" class=\"dg-box\"/><text x=\"88\" y=\"232.5\" class=\"dg-label\" text-anchor=\"middle\">consumer AZ-c</text><path d=\"M88,150 L88,88\" class=\"dg-line\" marker-end=\"url(#dg-grab-ztc-a)\"/><path d=\"M100,210 L96,88\" class=\"dg-line\" marker-end=\"url(#dg-grab-ztc-a)\"/><text x=\"150\" y=\"120\" class=\"dg-note\" text-anchor=\"middle\">cross-AZ</text><rect x=\"320\" y=\"150\" width=\"96\" height=\"36\" class=\"dg-box\"/><text x=\"368\" y=\"172.5\" class=\"dg-label\" text-anchor=\"middle\">consumer AZ-b</text><rect x=\"420\" y=\"150\" width=\"110\" height=\"36\" class=\"dg-box\"/><text x=\"475\" y=\"172.5\" class=\"dg-label\" text-anchor=\"middle\">replica AZ-b</text><path d=\"M420,168 L416,168\" class=\"dg-line\" marker-end=\"url(#dg-grab-ztc-a)\"/><rect x=\"320\" y=\"210\" width=\"96\" height=\"36\" class=\"dg-box\"/><text x=\"368\" y=\"232.5\" class=\"dg-label\" text-anchor=\"middle\">consumer AZ-c</text><rect x=\"420\" y=\"210\" width=\"110\" height=\"36\" class=\"dg-box\"/><text x=\"475\" y=\"232.5\" class=\"dg-label\" text-anchor=\"middle\">replica AZ-c</text><path d=\"M420,228 L416,228\" class=\"dg-line\" marker-end=\"url(#dg-grab-ztc-a)\"/><text x=\"420\" y=\"278\" class=\"dg-note\" text-anchor=\"middle\">in-zone reads: no cross-AZ charge</text></svg>",
+        "numbers": [
+          {
+            "value": "about 67%",
+            "meaning": "Chance the partition leader is in a different AZ from a client, under three-AZ rack-awareness"
+          },
+          {
+            "value": "about half",
+            "meaning": "Share of the total Kafka platform cost that cross-AZ traffic accounted for"
+          },
+          {
+            "value": "about two-thirds",
+            "meaning": "Fraction of consumers, on average, in a different AZ from the leader, which is why consuming dominates the cross-AZ traffic"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Keep three replicas across three AZs for fault tolerance, but let consumers fetch from the closest same-AZ replica to cut cross-AZ read traffic.",
+          "rejected": "The default of every consumer reading from the partition leader, and (implicitly) reducing AZ spread to avoid cross-AZ traffic.",
+          "why": "The AZ spread is needed for fault tolerance, so it stays; the saving comes from the consuming side, which dominates cross-AZ traffic because a topic has many consumers. Closest-replica fetch keeps most read traffic in-zone while preserving the replica layout."
+        },
+        "failures": "The post frames the default design's weakness plainly: communicating only with the leader means about 67% of client traffic crosses an AZ, and with many consumers per topic the consuming side alone was about half the platform's cost. Enabling closest-replica fetch is not automatic; it needs rack-awareness and extra configuration on both brokers and consumers.",
+        "takeaways": "Running the event backbone has a cost that is easy to miss: cross-AZ network traffic, dominated by consumers reading a far leader, can be about half the bill. Fetching from the closest replica keeps reads in-zone without giving up cross-AZ fault tolerance. The lesson generalises: at scale, the economics of the messaging layer are a design concern, not an afterthought."
+      }
+    }
+  ],
+  "comparison": "All three posts are about the same backbone, an append-only event log on Kafka, but they answer three different questions, so read them as architecture, then delivery, then economics rather than as three versions of one story. Grab's Plumbing At Scale is about the architecture: how to turn recurring event processing into an event-sourcing platform with a stream-processing framework, isolated multi-tenant pipelines, and idempotent replay. Zapier's outbox post is about getting events onto that backbone reliably in the first place, and Grab's zero-traffic-cost post is about what it costs to run the backbone once it carries everything.\n\nWhere they diverge is in the hard problem each one owns. Grab's platform post owns processing guarantees and multi-tenancy: letting many teams trade completeness against delay and cost on shared infrastructure. Zapier owns the dual-write problem: a write to the database and a publish to Kafka can disagree, so it commits the event with the state change in a local outbox, and is honest that its SQLite implementation hit concurrency and disk limits and was ultimately walked back. Grab's cost post owns the cloud bill: by default consumers read a leader that is usually in another AZ, so cross-AZ traffic became about half the platform cost until consumers were pointed at the closest replica.\n\nThe evidence is correspondingly different. Grab's platform post gives scale (over 300 billion events a week, terabytes an hour, hundreds of pipelines) but few delivery guarantees; it is a 2020 post, so treat its figures as of then. Zapier gives mechanism and a candid failure arc rather than throughput numbers (50 SQLite shards per pod, per-shard mutexes, a decision to move away). Grab's cost post gives the economic figures that the other two leave out (about 67% of client traffic crossing an AZ, consuming traffic about half the bill). Together they say event-driven design is not one technique but three concerns that each need their own answer.",
+  "glossary": [
+    {
+      "term": "Event",
+      "definition": "A record of a fact that already happened, named in the past tense, that any number of services may react to."
+    },
+    {
+      "term": "Event-driven architecture",
+      "definition": "A design where services communicate by publishing and reacting to events instead of calling each other directly."
+    },
+    {
+      "term": "Event sourcing",
+      "definition": "Storing state as a sequence of immutable events, so state can be rebuilt by replaying the log and rewound to reprocess."
+    },
+    {
+      "term": "Event log",
+      "definition": "The durable, ordered, append-only record of events that acts as the source of truth."
+    },
+    {
+      "term": "Transactional outbox",
+      "definition": "Writing an event into an outbox table in the same transaction as the state change, then shipping it to the log separately, so the two never disagree."
+    },
+    {
+      "term": "Dual-write problem",
+      "definition": "The risk that writing to the database and publishing to the broker as two steps succeeds on one and fails on the other, losing or inventing events."
+    },
+    {
+      "term": "Projection or read model",
+      "definition": "A view a consumer builds from the event stream, such as a materialised table, index or aggregate, that can be rebuilt by replaying."
+    },
+    {
+      "term": "Replay",
+      "definition": "Rewinding a consumer to an earlier point in the log and reprocessing, to rebuild a view or recover from a bug."
+    },
+    {
+      "term": "Idempotent consumer",
+      "definition": "A consumer for which handling the same event twice has the same effect as once, needed because delivery is at-least-once."
+    },
+    {
+      "term": "Stream processing",
+      "definition": "Transforming the event stream with operators such as filter, map, windowed aggregation and join."
+    },
+    {
+      "term": "Eventual consistency",
+      "definition": "The property that readers converge on the producer's state some time after the event is published, not instantly."
+    }
+  ],
+  "mistakes": [
+    "Publishing the event in a step separate from the database commit. The two can disagree, so a committed change may emit no event or a rolled-back change may emit one; a transactional outbox ties them together.",
+    "Treating events as commands aimed at a known receiver. That re-couples the producer to its consumers; an event should state a fact and let any number of readers interpret it, so new reactions can be added without touching the producer.",
+    "Assuming exactly-once delivery and in-order, instant processing. Delivery is at-least-once so consumers must be idempotent, order holds only within a partition, and the system is eventually consistent rather than finished when the producer returns."
+  ]
+}
