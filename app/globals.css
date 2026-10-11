@@ -554,11 +554,22 @@ a:hover {
   margin-top: 56px;
   padding-top: 24px;
   border-top: 1px solid var(--rule);
+}
+
+/* Dividers run the full width; reading text stays at a comfortable measure. */
+.home-extra > p,
+.home-extra > ol,
+.home-extra > ul {
   max-width: 68ch;
 }
 
+.home-extra > .inside-sequence {
+  max-width: none;
+}
+
 /* Section titles on the homepage: serif and larger than the mono labels, so each section starts clearly. */
-.home-extra h2.label {
+.home-extra h2.label,
+.index > h2.label {
   margin: 0 0 12px;
   font-family: inherit;
   font-size: 28px;
@@ -575,12 +586,8 @@ a:hover {
   color: var(--ink-soft);
 }
 
-.home-extra.inside-topic {
-  max-width: none;
-}
-
 .try-source {
-  margin: 0 0 6px;
+  margin: 0 0 12px;
 }
 
 .try-question {
