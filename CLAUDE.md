@@ -53,7 +53,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - The map is the homepage on desktop (768px and up); under 768px the Path view is the default, and a Map/Path toggle remembers an explicit choice.
 - Layout is deterministic and static. Draw only the transitive reduction by default. No edge crosses a label or node.
 - Node states never rely on color alone (unread thin outline, ready thicker outline, read filled rust). Not-yet nodes stay clickable.
-- Zoom and pan are desktop-only and start at INTERACTIVE_MIN_NODES topics; a phone always gets the fixed, non-interactive map. Keep a plain text index and keyboard use as the fallback.
+- Pan is desktop-only and starts at INTERACTIVE_MIN_NODES topics; zoom is keyboard-only (`+`/`-`/`0`). The on-screen Zoom/Fit all/Show all links buttons were removed (camera and edge-filter state stay). A phone gets the fixed map. Keep a plain text index and keyboard use as the fallback.
 - After adding a topic, check the map at 1280px, 1440px, and 390px for zero crossings and overlaps. At 1280px also test that sideways page scroll and map pan do not conflict.
 - Read docs/graph.md before editing graph code.
 
@@ -129,7 +129,8 @@ Apply system design thinking to this site: static generation, CDN caching, decou
 - `npm run dev`, `npm run build` (production check), `npx tsc --noEmit`. Pushing to `main` deploys to Vercel.
 - Topics live in `content/topics/<slug>.json`; the schema in lib/topics.ts is checked by the build. Keep it in sync with this file.
 - The build fails on an empty section or quiz, a missing prerequisite, a prerequisite cycle, missing attribution or verifiedOn, or a bad diagram (gradients, filters, scripts, no `<title>`).
-- `npm run verify:figures` fetches every source with curl (PDFs through pdftotext or pypdf, blocked pages through the Internet Archive, marked in the log) and writes docs/verification-log.md (figure, URL, nearest heading, found or NOT FOUND). Needs the network, so it never runs in the build.
+- `npm run verify:figures` fetches every source with curl (PDFs through pdftotext or pypdf, blocked pages through the Wayback CDX API, marked "(archive copy)") and writes docs/verification-log.md (figure, URL, nearest heading, found or NOT FOUND). Needs the network, so it never runs in the build.
+- `scripts/check-diagram-overflow.mjs` runs after the build (and as `npm run check:diagrams`): it renders each diagram SVG in headless Chromium and fails if a label's box spills past its rect. It skips when Chromium is absent (`npx playwright install chromium`); Playwright is a devDependency.
 - `npm run build` also builds the Pagefind index into `public/pagefind` (git-ignored). Under `npm run dev`, run `npm run search:index` instead.
 
 ## Keeping CLAUDE.md current

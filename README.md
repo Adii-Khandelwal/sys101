@@ -39,7 +39,7 @@ Years are shown for posts more than five years old; each topic page explains why
 
 ## How it works
 
-1. **The graph is the homepage.** Each node is a topic, and arrows point from what you should read first to what builds on it. A hollow node is unread, a node with a dot is ready to read (all its prerequisites are done), and a filled node is read. Once you have read something, "Next up" suggests where to go, preferring topics that continue what you already read and that open up more of the map. Under 768px the homepage defaults to a linear Path view, and a Map/Path toggle remembers your choice; on a phone the map is always fixed, so a finger scrolls the page past it and a tap opens a topic. On desktop the map is a full-size horizontal graph; when it is wider than the screen (as it is once there are enough topics) the map section scrolls sideways with a scrollbar, rather than shrinking the labels or stacking. Zoom, pan, and Fit all are also available. Below the map are a short "Inside a topic" outline with a figure of the day taken from the posts, a "Try a question" that rotates through real quiz questions, and a plain list of where the posts come from. Press `/` to jump to search.
+1. **The graph is the homepage.** Each node is a topic, and arrows point from what you should read first to what builds on it. A hollow node is unread, a node with a dot is ready to read (all its prerequisites are done), and a filled node is read. Once you have read something, "Next up" suggests where to go, preferring topics that continue what you already read and that open up more of the map. Under 768px the homepage defaults to a linear Path view, and a Map/Path toggle remembers your choice; on a phone the map is always fixed, so a finger scrolls the page past it and a tap opens a topic. On desktop the map is a full-size horizontal graph; when it is wider than the screen (as it is once there are enough topics) the map section scrolls sideways with a scrollbar, rather than shrinking the labels or stacking. Pan with a drag and zoom with the trackpad or the `+`/`-`/`0` keys are available on desktop (the on-screen zoom and fit buttons were removed; the keyboard shortcuts remain). Below the map are a short "Inside a topic" outline with a figure of the day taken from the posts, a "Try a question" that rotates through real quiz questions, and a plain list of where the posts come from. Press `/` to jump to search.
 2. **Each topic page is a lesson.** It has two halves. First the idea: why the concept exists, a mental model with a diagram, how it works step by step, a worked example, the common mistakes, a self-check quiz with explained answers, and a "skip to the posts" link for people who already know it. Then the real world: a digest of each company post (problem, constraints, walkthrough, diagram, numbers, trade-offs, what failed, takeaways), a comparison when there are two or more posts, and design exercises that rise in difficulty (apply, design, scale) with model answers.
 3. **"Start from zero" learn pages** give an absolute beginner a staged path through a topic (Basics, How it works, Going deeper, In practice and trade-offs), built only from official sources: standards, vendor and project docs, university course pages, and recognized conference talks. Each stage cites its sources inline, points to the exact section to read, and ends with what you can now do. Videos are click-to-load and labelled as optional and not reviewed by the author. Every topic has one at `/topic/<slug>/learn`, and commands and config in "Try it" are shown as scrollable code blocks.
 4. **Reading progress is stored in your browser only.** Nothing is sent to a server, and there are no accounts. Section-level, post-level and quiz progress are tracked per topic, with a progress bar on each page. Quiz answers are saved by option, not by position, so options can be reordered without losing them, and older saves are upgraded. You can export, import, or reset it on the `/data` page.
@@ -54,7 +54,7 @@ A post is included only if it passes most of these:
 4. **Credible.** Written by the engineering team that runs the system at scale. No listicles or marketing posts.
 5. **Transferable.** Teaches something that applies to a concept in the graph.
 
-A peer-reviewed paper by a company's engineering team can count as a post, labelled "paper", under the same rules. Every figure is checked against the raw page text (not a summary of it) before it is used, and figures that cannot be found are dropped.
+A peer-reviewed paper by a company's engineering team can count as a post, labelled "paper", under the same rules. Every figure is checked against the raw page text (not a summary of it) before it is used, and figures that cannot be found are dropped. `npm run verify:figures` automates this: it fetches each source with curl, reads PDFs through pdftotext or pypdf, and for pages that block curl reads the Internet Archive, resolving a real captured snapshot through the Wayback CDX API and marking those rows "(archive copy)" in `docs/verification-log.md`.
 
 ## Architecture
 
@@ -86,6 +86,8 @@ Content is validated during static generation (`lib/topics.ts`, `lib/learn.ts`);
 
 A separate SEO check (`scripts/check-seo.mjs`) runs after `next build` and fails on: duplicate or over-length titles and descriptions, a description that ends in an ellipsis, a page without exactly one `<h1>`, headings that skip a level, a missing or wrong canonical, a page that should be `noindex` but is not (`/data`, 404), a sitemap that does not match the indexable pages or the files in `content/`, JSON-LD that does not parse, images without alt/width/height, and content streamed in a hidden chunk that needs JavaScript.
 
+A diagram overflow check (`scripts/check-diagram-overflow.mjs`) also runs after `next build`. It renders every diagram SVG in headless Chromium with the site's real fonts (Newsreader, IBM Plex Mono) and uses `getComputedTextLength()` to measure each label; if a label's rendered box spills past the box drawn around it, the build fails. It skips with a notice when Chromium is not installed (so CI without the browser is unaffected); run `npx playwright install chromium` once to enable it, or run it on its own with `npm run check:diagrams`.
+
 The unit tests also scan the homepage source so that no count or date is hardcoded, and check the graph layout for crossings and overlaps at 1440px, 1280px and 390px.
 
 ## Link checks
@@ -99,6 +101,7 @@ Every post records `verifiedOn`, the date someone last opened it and checked the
 - Pagefind for search, built into static files at build time
 - Vercel for hosting and Vercel Analytics for traffic
 - Vitest for the unit tests in `lib/`
+- Playwright (headless Chromium) for the diagram overflow check, run after the build
 - Pipeline in Node with rss-parser, Cheerio and Gemini Flash (`@google/genai`); scaffolded, not yet in use
 
 ## Project structure
@@ -110,7 +113,7 @@ content/topics/   one JSON file per topic (18 topics)
 content/learn/    one JSON file per "start from zero" learn page (18 pages)
 lib/              content loading and build checks, graph layout, reading progress, SEO helpers, and their tests
 pipeline/         offline scripts for fetching and summarizing posts
-scripts/          weekly source link check and the postbuild SEO check
+scripts/          weekly source link check, the postbuild SEO and diagram-overflow checks, and the figure verifier
 .github/          the scheduled link-check workflow
 public/           static files; public/pagefind is generated by the build
 docs/             images and design notes for this project
