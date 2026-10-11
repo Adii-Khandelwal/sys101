@@ -1,9 +1,8 @@
 import Link from "next/link";
-import GraphView from "@/components/GraphView";
+import HomeView from "@/components/HomeView";
 import NextUp from "@/components/NextUp";
 import Search from "@/components/Search";
 import SiteFooter from "@/components/SiteFooter";
-import TopicIndex from "@/components/TopicIndex";
 import { columns, depths, transitiveReduction } from "@/lib/graph";
 import { GROUPS, getAllTopics, type Group } from "@/lib/topics";
 import { SITE_DESCRIPTION, pageMeta } from "@/lib/site";
@@ -59,9 +58,19 @@ export default function Home() {
         <Search />
       </header>
 
-      <GraphView nodes={nodes} edges={edges} />
-
-      <TopicIndex groups={groups} />
+      <HomeView
+        nodes={nodes}
+        edges={edges}
+        indexGroups={groups}
+        pathEntries={ordered.map((t, i) => ({
+          slug: t.slug,
+          title: t.title,
+          number: String(i + 1).padStart(2, "0"),
+          group: t.group ?? groupFromDepth(depth.get(t.slug) ?? 0),
+          posts: t.posts.length,
+          prerequisites: t.prerequisites,
+        }))}
+      />
 
       <SiteFooter />
     </main>

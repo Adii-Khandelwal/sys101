@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Fragment } from "react";
 import SiteFooter from "./SiteFooter";
 import LearnRail, { type LearnEntry } from "./LearnRail";
+import VideoEmbed from "./VideoEmbed";
 import type { Learn, Source, VideoSource } from "@/lib/learn";
 import type { Topic } from "@/lib/topics";
 import { formatDate } from "@/lib/topics";
@@ -31,21 +32,6 @@ function Cited({ text, number }: { text: string; number: Map<string, number> }) 
 }
 
 /** Plain text link to a video: nothing loads from YouTube unless the reader follows it. */
-function VideoLink({ video }: { video: VideoSource }) {
-  return (
-    <p className="learn-video">
-      <span className="label">Video, optional and long</span>{" "}
-      <a href={video.url} target="_blank" rel="noopener noreferrer">
-        {video.title}
-      </a>
-      <span className="learn-video-meta">
-        {" "}
-        {video.channel}, {video.year}, {video.length}. Opens on YouTube. Not reviewed by the author.
-      </span>
-    </p>
-  );
-}
-
 /** "Start from zero": a beginner's path through one topic, built from official sources. */
 export default function LearnPage({ topic, learn, titles }: Props) {
   const number = new Map(learn.sources.map((s, i) => [s.id, i + 1]));
@@ -149,7 +135,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
                 ))}
               </ul>
 
-              {video && isVideo(video) && <VideoLink video={video} />}
+              {video && isVideo(video) && <VideoEmbed video={video} />}
 
               <h3>You can now</h3>
               <ul className="learn-can">

@@ -45,6 +45,16 @@ export default function Privacy() {
         you across sites; visits are counted anonymously. Your reading progress is never part of it.
       </p>
 
+      <h2>Videos</h2>
+      <p>
+        Some &ldquo;Start from zero&rdquo; pages list an optional video hosted on YouTube. Nothing loads
+        from YouTube until you press &ldquo;Play here&rdquo;. Until then the page only shows the video&apos;s
+        title and details, and no request reaches YouTube or Google. When you press play, the video loads
+        from youtube-nocookie.com, YouTube&apos;s privacy-friendly player, and from that point YouTube
+        receives data under its own privacy policy. You can always open the video on YouTube directly
+        instead.
+      </p>
+
       <h2>Links to other sites</h2>
       <p>
         The posts we link to live on other companies&apos; sites. When you click through, their
