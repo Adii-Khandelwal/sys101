@@ -59,3 +59,22 @@ Personal progress/maturity per concept, interview-relevance tags, staleness flag
 - The build fails on an empty section, a missing prerequisite, a prerequisite cycle, or a diagram with gradients, filters, scripts, or no `<title>`.
 - `npm run build` also builds the Pagefind search index into `public/pagefind` (git-ignored). Under `npm run dev`, run `npm run search:index` to build the index without touching the dev server's `.next`.
 - Pushing to `main` on GitHub deploys to Vercel.
+
+## Token discipline
+
+Work style:
+- Do the task. Don't restate it, don't plan out loud, and don't narrate steps.
+- Read only the files the task needs. Search with grep or glob before opening anything, and read line ranges instead of whole files. Never re-read a file you just edited.
+- Make the smallest change that meets the task. Don't refactor, reformat, or touch unrelated files.
+- Don't spawn subagents unless asked.
+- Run only the checks relevant to what changed: tests for the touched code, then one final build. Don't run the full suite after every edit.
+- Don't browse the web or fetch posts again for content already verified in content/topics/. Only open sources for new posts.
+
+Output:
+- Final reply max 8 lines: what changed (file names), what couldn't be verified, and the next decision needed.
+- No code listings, diffs, or file contents in the reply unless asked. Show the diff only for risky changes.
+- Ask at most one question at a time, and only when blocked. Otherwise pick the sensible default, state it in one line, and continue.
+- Show candidates in tables of at most 6 columns, with figures only. No prose summaries of posts.
+
+Safety stays on:
+- Keep all CLAUDE.md rules: honesty, post selection, design, approval before saving new posts. Saving tokens never means skipping verification.
