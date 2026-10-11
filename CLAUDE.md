@@ -58,7 +58,8 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - Node states that do not rely on color: unread (thin outline), ready (all prerequisites read, thicker outline), read (filled rust). Not-yet nodes stay clickable.
 - No edge crosses a label or node. Labels sit right of nodes with a 16px gap. Tooltips are viewport-clamped and never clipped. Unrelated items fade to no lower than 60% opacity, and highlight always clears.
 - Keyboard traversal, aria-live announcements, 44px hit areas, and a plain text index as the full fallback, including when WebGL fails. Smooth at 150 nodes.
-- Pivot trigger: past about 25 nodes or unreadable edges (the Path view is the fallback). The Path view (the graph's fallback) and the mobile Path default under 768px are built; see docs/ideas.md ideas 5 and 6.
+- Pivot trigger: when the graph stops being readable (crowded nodes or unreadable edges), the Path view is the fallback. The Path view and the mobile Path default under 768px are built; see docs/ideas.md ideas 5 and 6. (The separate zoom/pan interactivity threshold is INTERACTIVE_MIN_NODES, currently 12; see above.)
+- Touch: on an interactive map one finger pans (the drag follows the finger) and two fingers pinch to zoom; a fixed, non-interactive map captures no touch so the page scrolls past it, and the page allows pull to refresh.
 
 ## Motion
 
