@@ -227,13 +227,13 @@
   },
   "posts": [
     {
-      "id": "github-mysql-ha-2020",
+      "id": "github-mysql-ha-failover-2018",
       "title": "MySQL High Availability at GitHub",
       "url": "https://github.blog/engineering/infrastructure/mysql-high-availability-at-github/",
       "company": "GitHub",
       "verifiedOn": "2026-10-11",
       "published": "2018-06-20",
-      "ageNote": "From 2018, about eight years old, included for a fundamental that has not changed: how to fail a single-writer database over in seconds by detecting failure holistically, promoting with consensus, and redirecting clients through a controlled layer instead of DNS. GitHub's exact stack has evolved since, so treat the figures (such as 10 to 13 seconds) as of the post and the detect-promote-redirect design as the lasting lesson.",
+      "ageNote": "From June 2018 (the page also shows an update in May 2020), about eight years old, included for a fundamental that has not changed: how to fail a single-writer database over in seconds by detecting failure holistically, promoting with consensus, and redirecting clients through a controlled layer instead of DNS. GitHub's exact stack has evolved since, so treat the figures (such as 10 to 13 seconds) as of the post and the detect-promote-redirect design as the lasting lesson.",
       "related": [
         "replication",
         "consensus",
@@ -289,12 +289,12 @@
       }
     },
     {
-      "id": "cloudflare-traffic-manager-2026",
+      "id": "cloudflare-traffic-manager-2016",
       "title": "Cloudflare Traffic Manager: The Details",
       "url": "https://blog.cloudflare.com/cloudflare-traffic-manager-the-details/",
       "company": "Cloudflare",
       "verifiedOn": "2026-10-11",
-      "published": "2024-09-26",
+      "published": "2016-09-29",
       "related": [
         "circuit-breakers",
         "replication"
@@ -346,7 +346,8 @@
         },
         "failures": "The post is explicit that DNS-based failover's weakness, clients ignoring or caching short TTLs, is exactly what pushed the decision to the edge. It also makes clear failover is a judgement: the customer must define what healthy means and how many unhealthy pool members should trigger steering, since too twitchy a threshold would steer on a transient dip and too lax a one would leave users on a failing origin.",
         "takeaways": "Failover applies beyond databases: at the edge it means health-checking origins and routing around unhealthy ones faster than DNS can propagate. Terminating the connection at a layer you control, and deciding per location, is what lets failover happen in seconds, the same lesson as GitHub's move off DNS, applied to global traffic instead of a single database."
-      }
+      },
+      "ageNote": "From September 2016, about ten years old. It is here for a fundamental: why failover for proxied traffic is decided at the edge from health-checked origin pools instead of waiting on DNS caches. The figures, including the number of data centers, are as of 2016, and Cloudflare's product has changed since, so treat the details as dated and the edge-failover idea as the lesson."
     }
   ],
   "comparison": "Both posts solve failover, the detect-decide-redirect loop, and both reach the same core conclusion: do not let client-side DNS caching set your recovery time. But they operate at different tiers, which is why they teach different things together. GitHub is failover of a stateful single-writer database: the hard parts are promoting exactly one replica and losing as little data as possible. Cloudflare is failover of stateless traffic at the edge: the hard part is deciding, per location and in seconds, which healthy origin to use.\n\nWhere they diverge is what \"decide\" means. For GitHub the decision is a consensus-backed promotion, because electing two primaries would corrupt data, so it runs orchestrator on Raft and corroborates failure across the primary's replicas before acting. For Cloudflare the decision is a health-and-threshold judgement over a pool of interchangeable origins, made independently at each of its many data centers, because routing a request to a different healthy origin has no split-brain risk. Statefulness is the difference: a promoted database primary is a point of no return; a re-routed request is not.\n\nThe evidence reflects the tiers. GitHub reports total outage of 10 to 13 seconds in most cases, up to 20 to 25 in rarer ones, with the win coming from Consul-plus-proxy discovery replacing VIP and DNS. Cloudflare reports failover within seconds for proxied records across 100-plus data centers, with the win coming from the edge choosing the origin rather than trusting sub-60-second TTLs. Read together, they show failover as one pattern applied at two layers, and that redirect speed, not just detection, is what determines how long users feel an outage.",

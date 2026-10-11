@@ -259,3 +259,18 @@ describe("your data: export, import, merge, reset", () => {
     expect(loadProgress((k) => (k === "sys101:progress" ? "{broken" : null))).toEqual(emptyProgress());
   });
 });
+
+describe("renamed post ids", () => {
+  it("keeps progress saved under an old post id", () => {
+    const saved = JSON.stringify({
+      version: 3,
+      topics: { failover: { done: ["github-mysql-ha-2020", "check"], visited: ["cloudflare-traffic-manager-2026"], answers: {}, last: "github-mysql-ha-2020" } },
+      posts: ["github-mysql-ha-2020", "cloudflare-traffic-manager-2026"],
+    });
+    const p = parseProgress(saved)!;
+    expect(p.posts).toEqual(["github-mysql-ha-failover-2018", "cloudflare-traffic-manager-2016"]);
+    expect(p.topics.failover.done).toEqual(["github-mysql-ha-failover-2018", "check"]);
+    expect(p.topics.failover.visited).toEqual(["cloudflare-traffic-manager-2016"]);
+    expect(p.topics.failover.last).toBe("github-mysql-ha-failover-2018");
+  });
+});

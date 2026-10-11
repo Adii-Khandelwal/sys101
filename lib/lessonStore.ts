@@ -40,7 +40,15 @@ export type LessonMeta = { slug: string; postIds: string[]; correct: string[] };
 export const emptyProgress = (): Progress => ({ version: VERSION, topics: {}, posts: [] });
 const emptyTopic = (): TopicProgress => ({ done: [], visited: [], answers: {} });
 
-const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+/** Post ids that were renamed (the id carried a wrong year), so saved progress under the old id still counts. */
+export const POST_ID_ALIASES: Record<string, string> = {
+  "github-mysql-ha-2020": "github-mysql-ha-failover-2018",
+  "cloudflare-traffic-manager-2026": "cloudflare-traffic-manager-2016",
+};
+const current = (id: string) => POST_ID_ALIASES[id] ?? id;
+
+const strings = (v: unknown): string[] =>
+  Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === "string").map(current))] : [];
 
 /**
  * Turn v2 answers (question index -> option position) into v3 (question index -> option id), using
@@ -71,7 +79,7 @@ function cleanTopic(v: unknown, slug: string, version: number): TopicProgress {
     done: strings(t.done),
     visited: strings(t.visited),
     answers,
-    ...(typeof t.last === "string" ? { last: t.last } : {}),
+    ...(typeof t.last === "string" ? { last: current(t.last) } : {}),
   };
 }
 
