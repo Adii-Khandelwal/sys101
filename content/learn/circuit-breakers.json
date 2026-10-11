@@ -1,0 +1,397 @@
+{
+  "slug": "circuit-breakers",
+  "promise": "After this you can follow the topic page and the posts.",
+  "before": {
+    "prerequisites": [
+      "rate-limiting"
+    ],
+    "terms": [
+      {
+        "term": "Service",
+        "definition": "A program that answers requests from other programs."
+      },
+      {
+        "term": "Dependency",
+        "definition": "A service that another service calls in order to do its own work."
+      },
+      {
+        "term": "Timeout",
+        "definition": "How long a caller waits for an answer before giving up."
+      }
+    ],
+    "note": "Read Rate Limiting first: it caps how much one client may send, while this topic covers what to do when a dependency is failing or a server has too much work. The terms below are enough to begin."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "When a service calls another service and the call starts to fail or hang, the caller can make things worse by trying again and again. A circuit breaker is a guard around such a call. Microsoft's architecture guidance describes it as stopping an application from repeatedly trying an operation that is likely to fail, while still letting the application notice when the fault is resolved [[azure-circuit-breaker]].",
+        "The guidance describes it as a state machine with three states, named after the breaker in an electrical panel. While Closed, requests go through and the breaker counts recent failures. If they pass a threshold within a time period, it becomes Open and starts a timeout timer. While Open, requests fail immediately with an error. When the timer ends it becomes Half-Open, where a limited number of requests are let through: if they succeed the breaker closes and the failure counter resets, and if any fail it opens again and restarts the timer [[azure-circuit-breaker]]. The page says the Half-Open state helps stop a recovering service from being flooded with requests [[azure-circuit-breaker]].",
+        "The other side of the problem is a server that has too much work. HTTP has a status code for a server that cannot handle a request for now: 503 Service Unavailable, for a temporary overload or scheduled maintenance that will likely be alleviated after some delay. The server may add a Retry-After header to suggest how long to wait [[rfc9110]]. A breaker protects a caller from a failing dependency. Turning requests away with a 503 is one way a server protects itself, which the topic page calls load shedding."
+      ],
+      "terms": [
+        {
+          "term": "Circuit breaker",
+          "definition": "A guard around a call that stops making it for a while after enough failures, so it fails at once instead of waiting."
+        },
+        {
+          "term": "Closed, Open, Half-Open",
+          "definition": "The breaker's three states in Microsoft's description: requests flow and failures are counted, requests fail immediately, and a limited number of requests test whether the fault is fixed."
+        },
+        {
+          "term": "Fail fast",
+          "definition": "Returning an error at once instead of waiting for a call that is likely to fail."
+        },
+        {
+          "term": "503 Service Unavailable",
+          "definition": "The HTTP status code for a server that cannot handle a request for now because of a temporary overload or maintenance."
+        },
+        {
+          "term": "Retry-After",
+          "definition": "An HTTP header a server may send with a 503 to suggest how long a client should wait before retrying."
+        }
+      ],
+      "reading": [
+        {
+          "source": "azure-circuit-breaker",
+          "section": "Circuit Breaker pattern, the description of the Closed, Open and Half-Open states",
+          "what": "What a breaker does in each state and how it moves between them."
+        },
+        {
+          "source": "rfc9110",
+          "section": "15.6.4 503 Service Unavailable",
+          "what": "When a server uses 503 and the optional Retry-After header."
+        }
+      ],
+      "canNow": [
+        "Say what a circuit breaker does and why it fails calls at once.",
+        "Name the three states and what moves a breaker between them.",
+        "Say what an HTTP 503 tells a client."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "A breaker is only one of three things around a call. First, how long to wait. gRPC calls this a deadline: a point in time after which the client is unwilling to wait for a response. Some APIs use a timeout instead, the longest a call may take, and a timeout becomes a deadline by adding it to the current time [[grpc-deadlines]]. gRPC does not set a deadline by default, so a client can wait effectively forever. Its guide says to always set a realistic one, starting from what you know about network latency and server processing time and checking it with load testing [[grpc-deadlines]].",
+        "A server gives up on a call once the client's deadline has passed, but the application has to stop any work it started [[grpc-deadlines]]. When a server calls another server, the deadline can be passed on as a timeout with the time already used taken off, so a chain of calls shares one budget [[grpc-deadlines]].",
+        "Second, whether to try again. A retry replaces a failed call with a new one. gRPC's guide says retries help applications get past temporary problems, and recommends knowing which failures are suitable to retry, using exponential backoff to space the attempts, limiting how many there are, and watching retry metrics [[grpc-retry]]. Retries are on by default, but there is no default retry policy: without one, only a few low-level failures are retried, and only when gRPC is certain the server never processed the call [[grpc-retry]].",
+        "Third, when to stop calling at all, which is the breaker's job. Microsoft's page says the circuit breaker pattern serves a different purpose from retries. They can be combined, with the retry logic stopping when the breaker reports that the fault is not transient [[azure-circuit-breaker]]."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 190\" role=\"img\" aria-labelledby=\"dg-learn-cb-how-t\" class=\"dg\"><title id=\"dg-learn-cb-how-t\">Three questions about one call: how long to wait, whether to try again, and when to stop calling. A deadline answers the first, a retry policy the second, and a circuit breaker the third.</title><defs><marker id=\"dg-learn-cb-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"40\" width=\"110\" height=\"52\" class=\"dg-box\"/><text x=\"67\" y=\"62.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Call with a</text><text x=\"67\" y=\"78.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">deadline</text><rect x=\"160\" y=\"40\" width=\"110\" height=\"52\" class=\"dg-box\"/><text x=\"215\" y=\"62.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Fails or</text><text x=\"215\" y=\"78.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">times out</text><rect x=\"308\" y=\"40\" width=\"110\" height=\"52\" class=\"dg-box\"/><text x=\"363\" y=\"62.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Retry with</text><text x=\"363\" y=\"78.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">backoff</text><rect x=\"446\" y=\"40\" width=\"102\" height=\"52\" class=\"dg-box dg-accent\"/><text x=\"497\" y=\"62.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Breaker counts</text><text x=\"497\" y=\"78.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">failures</text><path d=\"M122,66 L160,66\" class=\"dg-line\" marker-end=\"url(#dg-learn-cb-how-a)\"/><path d=\"M270,66 L308,66\" class=\"dg-line\" marker-end=\"url(#dg-learn-cb-how-a)\"/><path d=\"M418,66 L446,66\" class=\"dg-line\" marker-end=\"url(#dg-learn-cb-how-a)\"/><text x=\"67\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">how long to wait</text><text x=\"363\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">whether to try again</text><text x=\"497\" y=\"112\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">when to stop calling</text><text x=\"280\" y=\"150\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">A retry policy limits attempts; a breaker, past its threshold, opens and calls fail at once.</text><text x=\"280\" y=\"172\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">gRPC documents the deadline and the retry; the Azure page documents the breaker.</text></svg>",
+      "terms": [
+        {
+          "term": "Deadline",
+          "definition": "In gRPC, a point in time after which the client is unwilling to wait for a response."
+        },
+        {
+          "term": "Deadline propagation",
+          "definition": "Passing a client's deadline on to the calls a server makes, as a timeout with the elapsed time taken off."
+        },
+        {
+          "term": "Retry",
+          "definition": "Replacing a failed call with a new one."
+        },
+        {
+          "term": "Exponential backoff",
+          "definition": "Spacing retries further and further apart. gRPC's guide recommends defining backoff parameters."
+        },
+        {
+          "term": "Retry policy",
+          "definition": "The rules for which failures to retry, how many attempts to make, and how long to wait between them."
+        }
+      ],
+      "reading": [
+        {
+          "source": "grpc-deadlines",
+          "section": "Deadlines on the Client, Deadlines on the Server, and Deadline Propagation",
+          "what": "Why a deadline is always set, and how it carries through a chain of calls."
+        },
+        {
+          "source": "grpc-retry",
+          "section": "How gRPC client retry works, and Retry configuration",
+          "what": "What a retry is, what is retried without a policy, and what a policy adds."
+        }
+      ],
+      "canNow": [
+        "Explain a deadline and why a client sets one.",
+        "Explain how a retry policy limits attempts and spaces them out.",
+        "Say how a deadline, a retry and a breaker answer different questions."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "Not everything called a circuit breaker is the state machine from Stage 1. In Envoy's documentation, circuit breaking means resource limits, not the Closed, Open, Half-Open state machine: caps on the number of connections to a cluster, of requests waiting for a connection, of requests outstanding, of retries active at once, and of connection pools. Each limit is tracked per upstream cluster and per priority, and when one overflows a counter goes up. The page says it is nearly always better to fail quickly and apply back pressure downstream [[envoy-circuit-breaking]].",
+        "Envoy enforces these limits at the network level, so each application need not code them, and they are fully distributed, not coordinated: threads share the limits, but because the implementation is eventually consistent, a race can let a limit be exceeded a little [[envoy-circuit-breaking]]. The page shows modest defaults, for example 1024 connections per cluster. That is what it shows on 2026-10-11 and it may change [[envoy-circuit-breaking]].",
+        "A fixed limit has to be chosen by hand. Envoy also has an adaptive concurrency filter that adjusts how many requests may be outstanding to a cluster, calculated from latency samples of completed requests compared with the expected latency [[envoy-adaptive-concurrency]]. Its gradient controller uses an ideal round-trip time that it measures periodically [[envoy-adaptive-concurrency]]. The page gives the filter no status label such as experimental or stable, so none is claimed here.",
+        "Google's chapter on handling overload, from its SRE book (2017, guidance, not a specification), describes two ideas that match the topic page's load shedding. One is criticality: each request carries one of four values, from the most critical to the most sheddable, and an overloaded task rejects lower criticalities sooner [[google-sre-overload]]. The other is client-side throttling: a client that sees a significant share of its recent requests rejected by the backend as out of quota starts rejecting some itself, using counts of its requests and the backend's accepts over the last two minutes [[google-sre-overload]].",
+        "On the topic page, the [Uber post](/topic/circuit-breakers#uber-cinnamon-load-shedder-2023) describes a shedder that ranks requests by priority. It never mentions circuit breakers."
+      ],
+      "terms": [
+        {
+          "term": "Resource limit",
+          "definition": "In Envoy, a cap on connections, pending requests, outstanding requests, active retries or connection pools, which Envoy calls circuit breaking."
+        },
+        {
+          "term": "Back pressure",
+          "definition": "Pushing back on senders when work cannot be taken, so the problem is dealt with as early as possible."
+        },
+        {
+          "term": "Adaptive concurrency",
+          "definition": "Adjusting the number of requests allowed in flight from measured latency instead of a hand-set number."
+        },
+        {
+          "term": "Criticality",
+          "definition": "In Google's SRE chapter, how critical a request is, from the most critical to the most sheddable, which decides what an overloaded task rejects first."
+        },
+        {
+          "term": "Client-side throttling",
+          "definition": "A client rejecting some of its own requests when a significant share of its recent ones were rejected by the backend as out of quota."
+        }
+      ],
+      "reading": [
+        {
+          "source": "envoy-circuit-breaking",
+          "section": "Circuit breaking",
+          "what": "What Envoy limits, how the limits are tracked, and why they are not the Closed, Open, Half-Open state machine."
+        },
+        {
+          "source": "envoy-adaptive-concurrency",
+          "section": "Overview and Gradient Controller",
+          "what": "How a concurrency limit can be adjusted from measured latency."
+        },
+        {
+          "source": "google-sre-overload",
+          "section": "Client-Side Throttling and Criticality",
+          "what": "Two ways a large system sheds load, in Google's own words, as guidance and not a specification."
+        }
+      ],
+      "video": "cncf-lyft-adaptive-circuit-breaking-2020",
+      "canNow": [
+        "Say what Envoy means by circuit breaking and how it differs from the state machine.",
+        "Explain why a fixed limit goes stale and what adaptive concurrency changes.",
+        "Describe criticality and client-side throttling in your own words."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "A breaker has costs. AWS's builders' library article says, as AWS's own view, that circuit breakers are widely promoted to limit the extra load retries create, but that they bring modal behavior into a system that can be hard to test and can add significant time to recovery. AWS says it instead limits retries locally with a token bucket [[aws-timeouts-retries]]. That is AWS's view, not a general rule.",
+        "AWS also describes retries as selfish: when failures come from overload, they add load and can delay recovery. Its example is a stack where each of five layers retries three times, which it says multiplies the load on the database by 243 [[aws-timeouts-retries]]. AWS prefers backoff, jitter and retrying at a single point in the stack, again as its own practice [[aws-timeouts-retries]].",
+        "Hystrix, a well-known breaker library from Netflix, says in its own README that it is in maintenance mode and no longer in active development [[hystrix-readme]].",
+        "Istio shows how a mesh configures this. Its task puts connection limits and outlier detection in one DestinationRule and sets the limits to 1, so that its own test can trip them [[istio-circuit-breaking]]. In the run printed on its page, 17 of 20 calls with two concurrent connections returned 200 and 3 returned 503, and with three connections 11 of 30 returned 200 [[istio-circuit-breaking]]. Those numbers are Istio's sample output, and another run will differ.",
+        "Why a breaker's probes can mislead is on the topic page. Microsoft's page says Half-Open exists so a recovering service is not flooded [[azure-circuit-breaker]], and the [Zalando post](/topic/circuit-breakers#zalando-circuit-breaker-herd-2026) shows a breaker whose healthy probes closed it, after which the full load arrived at once."
+      ],
+      "terms": [
+        {
+          "term": "Modal behavior",
+          "definition": "AWS's phrase for a system that behaves differently depending on a hidden state, such as a breaker being open, which can be hard to test."
+        },
+        {
+          "term": "Token bucket",
+          "definition": "In AWS's description of retries: all calls may retry while there are tokens, and once the tokens are used up, retries continue at a fixed rate."
+        },
+        {
+          "term": "Jitter",
+          "definition": "A random amount of time added before a request or retry, so that clients do not all act at the same moment."
+        },
+        {
+          "term": "Maintenance mode",
+          "definition": "A project that is no longer in active development, as Hystrix's README says of itself."
+        }
+      ],
+      "reading": [
+        {
+          "source": "aws-timeouts-retries",
+          "section": "Introduction, and Retries and backoff",
+          "what": "AWS's view of timeouts, retries, backoff and why it limits retries instead of using breakers."
+        },
+        {
+          "source": "hystrix-readme",
+          "section": "The Hystrix Status section of the README",
+          "what": "The maintenance-mode statement."
+        },
+        {
+          "source": "istio-circuit-breaking",
+          "section": "Configuring the circuit breaker and Tripping the circuit breaker",
+          "what": "One mesh's configuration and a deliberately tiny example that trips it."
+        }
+      ],
+      "video": "aws-reinvent-netflix-load-shedding-2021",
+      "canNow": [
+        "Give AWS's reasons for limiting retries instead of using breakers, as AWS's view.",
+        "Explain why retries stack up through layers.",
+        "Say where to see why a breaker's probes can mislead."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "A circuit breaker is one mechanism with one meaning.",
+      "truth": "Microsoft describes a state machine of Closed, Open and Half-Open [[azure-circuit-breaker]], while Envoy's circuit breaking means limits on connections, pending requests, requests and retries [[envoy-circuit-breaking]]."
+    },
+    {
+      "myth": "Retrying a failed call is always safe and helps.",
+      "truth": "AWS says retries add load, which can make an overload worse and delay recovery [[aws-timeouts-retries]], and gRPC's guide recommends limiting attempts and using backoff [[grpc-retry]]."
+    },
+    {
+      "myth": "A call with no deadline will fail on its own sooner or later.",
+      "truth": "gRPC does not set a deadline by default, so a client can wait effectively forever [[grpc-deadlines]]."
+    },
+    {
+      "myth": "A 503 means a server is gone for good.",
+      "truth": "HTTP defines 503 for a temporary overload or scheduled maintenance that will likely be alleviated after some delay [[rfc9110]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These are read-only examples from Istio's circuit breaking task, because running them needs a Kubernetes cluster with Istio installed [[istio-circuit-breaking]]. The numbers in the rule are Istio's own example values, deliberately tiny so a small test trips them. The results are as printed on Istio's page, and another run will differ.",
+    "commands": [
+      {
+        "command": "apiVersion: networking.istio.io/v1\nkind: DestinationRule\nmetadata:\n  name: httpbin\nspec:\n  host: httpbin\n  trafficPolicy:\n    connectionPool:\n      tcp:\n        maxConnections: 1\n      http:\n        http1MaxPendingRequests: 1\n        maxRequestsPerConnection: 1\n    outlierDetection:\n      consecutive5xxErrors: 1\n      interval: 1s\n      baseEjectionTime: 3m\n      maxEjectionPercent: 100",
+        "shows": "The rule the task applies with kubectl: connection limits and outlier detection for the httpbin service. Istio's page applies it with a heredoc given to kubectl apply -f -.",
+        "source": "istio-circuit-breaking",
+        "note": "Istio's example values."
+      },
+      {
+        "command": "kubectl exec \"$FORTIO_POD\" -c fortio -- /usr/bin/fortio load -c 2 -qps 0 -n 20 -loglevel Warning http://httpbin:8000/get",
+        "shows": "Sends 20 calls over two concurrent connections. Istio's page prints Code 200: 17 (85.0 %) and Code 503: 3 (15.0 %), and notes that the proxy allows some leeway.",
+        "source": "istio-circuit-breaking"
+      },
+      {
+        "command": "kubectl exec \"$FORTIO_POD\" -c fortio -- /usr/bin/fortio load -c 3 -qps 0 -n 30 -loglevel Warning http://httpbin:8000/get",
+        "shows": "Sends 30 calls over three concurrent connections. Istio's page prints Code 200: 11 (36.7 %) and Code 503: 19 (63.3 %).",
+        "source": "istio-circuit-breaking"
+      }
+    ]
+  },
+  "next": "Go back to the Circuit Breakers and Load Shedding topic page for the worked example and the quiz, then read the two posts: [Zalando](/topic/circuit-breakers#zalando-circuit-breaker-herd-2026) on a breaker whose healthy probes closed it into a burst of traffic, and [Uber](/topic/circuit-breakers#uber-cinnamon-load-shedder-2023) on a load shedder that ranks requests by priority.",
+  "sources": [
+    {
+      "id": "azure-circuit-breaker",
+      "title": "Circuit Breaker pattern (Azure Architecture Center)",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker",
+      "publisher": "Microsoft",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "rfc9110",
+      "title": "RFC 9110: HTTP Semantics",
+      "url": "https://www.rfc-editor.org/rfc/rfc9110",
+      "publisher": "IETF",
+      "kind": "RFC",
+      "year": "2022",
+      "verifiedOn": "2026-10-11",
+      "note": "Section 15.6.4."
+    },
+    {
+      "id": "grpc-deadlines",
+      "title": "Deadlines (gRPC guides)",
+      "url": "https://grpc.io/docs/guides/deadlines/",
+      "publisher": "gRPC",
+      "kind": "Project documentation",
+      "year": "2025",
+      "verifiedOn": "2026-10-11",
+      "note": "The page shows it was last modified on 7 July 2025."
+    },
+    {
+      "id": "grpc-retry",
+      "title": "Retry (gRPC guides)",
+      "url": "https://grpc.io/docs/guides/retry/",
+      "publisher": "gRPC",
+      "kind": "Project documentation",
+      "year": "2025",
+      "verifiedOn": "2026-10-11",
+      "note": "The page shows it was last modified on 26 November 2025."
+    },
+    {
+      "id": "envoy-circuit-breaking",
+      "title": "Circuit breaking (Envoy architecture overview)",
+      "url": "https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/circuit_breaking",
+      "publisher": "Envoy project",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "Read in the development version of the documentation (1.40.0-dev). Defaults shown on the page may change."
+    },
+    {
+      "id": "envoy-adaptive-concurrency",
+      "title": "Adaptive Concurrency (Envoy HTTP filter)",
+      "url": "https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/adaptive_concurrency_filter",
+      "publisher": "Envoy project",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "Read in the development version of the documentation (1.40.0-dev). The page gives the filter no status label."
+    },
+    {
+      "id": "google-sre-overload",
+      "title": "Handling Overload (Site Reliability Engineering, chapter 21)",
+      "url": "https://sre.google/sre-book/handling-overload/",
+      "publisher": "Google",
+      "kind": "Google SRE book chapter (guidance, not a specification)",
+      "year": "2017",
+      "verifiedOn": "2026-10-11",
+      "note": "Paraphrased and linked only; none of its text is copied."
+    },
+    {
+      "id": "aws-timeouts-retries",
+      "title": "Timeouts, retries, and backoff with jitter (Amazon Builders' Library)",
+      "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor article",
+      "year": "no year recorded",
+      "verifiedOn": "2026-10-11",
+      "note": "The date on the page looks republished, so no year is recorded. Every claim taken from it is AWS's view."
+    },
+    {
+      "id": "hystrix-readme",
+      "title": "Hystrix: Latency and Fault Tolerance for Distributed Systems (README)",
+      "url": "https://github.com/Netflix/Hystrix",
+      "publisher": "Netflix",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "Used only for its maintenance-mode statement."
+    },
+    {
+      "id": "istio-circuit-breaking",
+      "title": "Circuit Breaking (Istio task)",
+      "url": "https://istio.io/latest/docs/tasks/traffic-management/circuit-breaking/",
+      "publisher": "Istio project",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "Istio's example values and sample output. The task needs a cluster."
+    },
+    {
+      "id": "cncf-lyft-adaptive-circuit-breaking-2020",
+      "title": "Envoy, Take the Wheel: Real-time Adaptive Circuit Breaking (Tony Allen, Lyft)",
+      "url": "https://www.youtube.com/watch?v=CQvmSXlnyeQ",
+      "publisher": "Cloud Native Computing Foundation",
+      "kind": "video",
+      "channel": "CNCF",
+      "year": "2020",
+      "length": "34:06",
+      "verifiedOn": "2026-10-11",
+      "tag": "company talk, advanced"
+    },
+    {
+      "id": "aws-reinvent-netflix-load-shedding-2021",
+      "title": "AWS re:Invent 2021: Keeping Netflix reliable using prioritized load shedding",
+      "url": "https://www.youtube.com/watch?v=TmNiHbh-6Wg",
+      "publisher": "Amazon Web Services",
+      "kind": "video",
+      "channel": "AWS Events",
+      "year": "2021",
+      "length": "38:21",
+      "verifiedOn": "2026-10-11",
+      "tag": "company talk, advanced"
+    }
+  ]
+}

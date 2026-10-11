@@ -67,7 +67,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 ## SEO
 
 - One absolute canonical per page from SITE_URL in lib/site.ts (env, default https://sys101.vercel.app), no query strings. Set metadata through pageMeta(), which adds Open Graph and Twitter text tags.
-- Unique title under 60 characters and description under 155 per page, generated from content (topic: first sentence of `concept`; learn: "Start from zero: <Topic>"). No marketing words or keyword stuffing.
+- Unique title under 60 characters (pageMeta drops the site suffix when it would reach 60) and description under 155 per page, generated from content (topic: first sentence of `concept`; learn: "Start from zero: <Topic>"). No marketing words or keyword stuffing.
 - Exactly one H1 and no skipped heading levels. Content must be in the HTML and render without JavaScript.
 - app/sitemap.ts lists every indexable page with lastmod from content dates (newest verifiedOn; PAGE_DATES for About, Terms, Privacy). robots.txt allows all and points to it. /data and the 404 are noindex and left out.
 - JSON-LD only where it matches visible content: BreadcrumbList on topic and learn pages, LearningResource on topic pages. No FAQ schema.

@@ -2395,6 +2395,7 @@ body {
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 15px;
   overflow-wrap: anywhere;
+  white-space: pre-wrap; /* keeps the indentation of a multi-line example */
 }
 
 .cite {

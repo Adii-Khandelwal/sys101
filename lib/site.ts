@@ -9,6 +9,8 @@ export const REPORT_EMAIL = CONTACT_EMAIL;
 /** Origin for canonical URLs, the sitemap, and JSON-LD. No trailing slash. */
 export const SITE_URL = (process.env.SITE_URL || "https://sys101.vercel.app").replace(/\/+$/, "");
 export const SITE_NAME = "sys101";
+/** A page title must be shorter than this many characters (checked by scripts/check-seo.mjs). */
+export const TITLE_MAX = 60;
 export const SITE_DESCRIPTION =
   "A system design course in prerequisite order, taught through how real engineering teams built their systems.";
 
@@ -35,8 +37,10 @@ export function firstSentence(text: string, max = 155): string {
  * Per-page metadata: one canonical URL without query strings, plus Open Graph
  * and Twitter text tags. `title` is the bare page title; the layout adds the suffix.
  */
-export function pageMeta({ path, title, description }: { path: string; title: string | { absolute: string }; description: string }): Metadata {
+export function pageMeta({ path, title: given, description }: { path: string; title: string | { absolute: string }; description: string }): Metadata {
   const url = absoluteUrl(path);
+  // A long title leaves no room for the site name under the 60-character limit, so it goes without.
+  const title = typeof given === "string" && `${given} · ${SITE_NAME}`.length >= TITLE_MAX ? { absolute: given } : given;
   const fullTitle = typeof title === "string" ? `${title} · ${SITE_NAME}` : title.absolute;
   return {
     title,

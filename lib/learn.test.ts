@@ -110,3 +110,49 @@ describe("Before you start label", () => {
   });
 });
 
+describe("circuit breakers learn page", () => {
+  const cb = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../content/learn/circuit-breakers.json"), "utf8")) as Learn;
+  const paras = cb.stages.flatMap((st) => st.body);
+  const src = (id: string) => cb.sources.find((x) => x.id === id)!;
+
+  it("passes every rule", () => {
+    expect(checkLearn(cb, slugs)).toEqual([]);
+    expect(getAllLearn(slugs).map((l) => l.slug)).toContain("circuit-breakers");
+  });
+
+  it("labels every claim from the AWS article as AWS's view and records no year", () => {
+    expect(src("aws-timeouts-retries").year).toBe("no year recorded");
+    for (const p of paras.filter((x) => x.includes("[[aws-timeouts-retries]]"))) expect(p).toMatch(/AWS/);
+    expect(src("aws-timeouts-retries").note).toMatch(/AWS's view/);
+  });
+
+  it("says Envoy's circuit breaking is not the state machine, and dates its default", () => {
+    const text = cb.stages[2].body.join(" ");
+    expect(text).toMatch(/circuit breaking means resource limits, not the Closed, Open, Half-Open state machine/);
+    expect(text).toMatch(/1024 connections per cluster. That is what it shows on 2026-10-11 and it may change/);
+    expect(cb.misconceptions.map((m) => m.truth).join(" ")).toContain("[[envoy-circuit-breaking]]");
+  });
+
+  it("says the adaptive concurrency page gives no status label", () => {
+    expect(cb.stages[2].body.join(" ")).toMatch(/gives the filter no status label/);
+  });
+
+  it("labels the Google chapter as guidance and never copies it", () => {
+    expect(src("google-sre-overload").kind).toMatch(/guidance, not a specification/);
+    expect(src("google-sre-overload").year).toBe("2017");
+  });
+
+  it("places and labels the two approved videos", () => {
+    expect(cb.stages.map((st) => st.video)).toEqual([undefined, undefined, "cncf-lyft-adaptive-circuit-breaking-2020", "aws-reinvent-netflix-load-shedding-2021"]);
+    const v = (id: string) => src(id) as VideoSource;
+    expect([v("cncf-lyft-adaptive-circuit-breaking-2020").channel, v("cncf-lyft-adaptive-circuit-breaking-2020").year, v("cncf-lyft-adaptive-circuit-breaking-2020").length]).toEqual(["CNCF", "2020", "34:06"]);
+    expect([v("aws-reinvent-netflix-load-shedding-2021").channel, v("aws-reinvent-netflix-load-shedding-2021").year, v("aws-reinvent-netflix-load-shedding-2021").length]).toEqual(["AWS Events", "2021", "38:21"]);
+    expect(v("cncf-lyft-adaptive-circuit-breaking-2020").tag).toBe("company talk, advanced");
+  });
+
+  it("links to the posts on the topic page and drops Resilience4j", () => {
+    expect([...paras, cb.next].join(" ")).toContain("](/topic/circuit-breakers#zalando-circuit-breaker-herd-2026)");
+    expect(JSON.stringify(cb)).not.toMatch(/resilience4j/i);
+  });
+});
+
