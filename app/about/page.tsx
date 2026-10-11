@@ -34,6 +34,7 @@ export default function About() {
         from companies that run it at scale, what each one did, and why their choices differed. Design
         exercises at the end let you try it yourself.
       </p>
+      <p>New to a topic? Every topic has a Start from zero page with official sources.</p>
 
       <h2>How to use it</h2>
       <p>

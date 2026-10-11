@@ -207,7 +207,7 @@
       "name": "In practice and trade-offs",
       "body": [
         "The root has to stay up for everyone, so each root server name is served by many machines in many places that share the same address. Network routing sends you to a nearby one, a technique called anycast. If one copy fails, traffic flows to another, and the list of root servers never has to change [[cs168]].",
-        "Caching is what makes DNS fast, and it is also what makes changes slow. A resolver keeps a record until its time to live runs out, so after you change a record, people can still get the old answer until their resolver's copy expires. A long time to live means fewer queries and steadier performance; a short one means changes are seen sooner but your servers answer more questions. Lowering it well before a planned change, then raising it again afterwards, is the usual compromise.",
+        "Caching is what makes DNS fast, and it is also what makes changes slow. A resolver keeps a record until its time to live runs out, so after you change a record, people can still get the old answer until their resolver's copy expires. A long time to live means fewer queries and steadier performance; a short one means changes are seen sooner but your servers answer more questions. Lowering it well before a planned change, then raising it again afterwards, is the usual compromise. This is common practice, not from a standard.",
         "Most people use a recursive resolver chosen for them, by their internet provider or their network, and you can choose a different public one. Because resolvers serve many users, a popular answer is usually already cached, which is why most lookups finish without walking the tree at all [[cs168]]."
       ],
       "terms": [
