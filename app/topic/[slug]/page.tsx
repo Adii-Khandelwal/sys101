@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import TopicDossier from "@/components/TopicDossier";
+import TopicLesson from "@/components/TopicLesson";
 import { getAllTopics, getDependents, getTopic } from "@/lib/topics";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -28,8 +29,10 @@ export default async function TopicPage({ params }: Props) {
     .map((s) => getTopic(s))
     .filter((t) => t !== undefined);
 
+  // Lesson-format topics (piloted on DNS) use the teaching-journey template.
+  const Template = topic.lesson ? TopicLesson : TopicDossier;
   return (
-    <TopicDossier
+    <Template
       topic={topic}
       prerequisites={prerequisites}
       dependents={getDependents(slug)}

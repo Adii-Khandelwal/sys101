@@ -4,9 +4,9 @@
   "group": "Foundations",
   "concept": "The Domain Name System maps human-readable names to the addresses machines route on. It is a hierarchical, distributed database: resolvers walk from the root to top-level domains to authoritative servers, and caching at every layer, bounded by each record's TTL, keeps the system fast at the cost of propagation delay.",
   "prerequisites": [],
-  "primer": "Every machine on the internet is reached by an IP address, and a request travels from a client to a server at that address. People and programs prefer names, so something has to turn a name into an address before the request can start. That lookup happens before almost every connection, which is why it has to be fast and why answers get cached along the way.",
   "posts": [
     {
+      "id": "cloudflare-dns-builds-2022",
       "title": "How we improved DNS record build speed by more than 4,000x",
       "url": "https://blog.cloudflare.com/dns-build-improvement/",
       "company": "Cloudflare",
@@ -86,6 +86,7 @@
       }
     },
     {
+      "id": "slack-dnssec-2021",
       "title": "The Case of the Recursive Resolvers (What Happened During Slack’s DNSSEC Rollout)",
       "url": "https://slack.engineering/what-happened-during-slacks-dnssec-rollout/",
       "company": "Slack",
@@ -216,31 +217,225 @@
     "Setting very long TTLs on records you may need to change quickly, such as before a migration. Lower the TTL well before the change, then raise it again.",
     "Treating DNS as a load balancer. It can hand out several addresses, but cached answers mean it cannot react quickly when one server fails or gets overloaded."
   ],
-  "quiz": [
-    {
-      "question": "Why did one record edit take tens of seconds at Cloudflare before this change?",
-      "answer": "The Zone Builder rebuilt the whole zone for any edit, reading and comparing every record, so the cost grew with the size of the zone instead of the size of the change."
+  "comparison": "Both posts are about how long a DNS change takes to take effect, seen from opposite ends. Cloudflare controlled the slow part, its own pipeline from a customer's edit to its edge, so it rebuilt that pipeline to apply one record in milliseconds instead of rebuilding a zone in tens of seconds. Slack's slow part was outside its control: resolvers across the internet held its DS record for up to 24 hours and read its signed answers in different ways, so even its rollback could not take effect faster than those caches expired.",
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain what problem DNS solves and why it has to be fast.",
+      "body": "Machines reach each other by IP address, but people and programs use names, and the address behind a name changes whenever a service moves. Something has to turn a name into an address before almost every connection starts.\n\nBecause that lookup sits in front of nearly everything, it has to be fast and it has to keep working when parts of the internet fail. That is why DNS is not one big directory: it is split across many servers, each responsible for its own part of the name space, with answers copied and cached all along the way."
     },
-    {
-      "question": "What stops a slow full rebuild from overwriting a newer per-record change?",
-      "answer": "A lock between the full-zone scheduler and the per-record scheduler, so they never write the same zone at once."
+    "mentalModel": {
+      "outcome": "After this you can picture where an answer comes from and where copies of it are kept.",
+      "body": "Think of DNS as a chain of referrals with a cache at every step. Your device asks a recursive resolver. If the resolver has no copy, it asks a root server, which refers it to the servers for the top-level domain, such as .com, which refer it to the servers that are authoritative for the domain itself. Those give the real answer.\n\nEvery answer carries a TTL, a time to live that says how long anyone may reuse it. The authoritative servers hold the truth; everyone else holds copies that can be up to one TTL old. A change is therefore never seen everywhere at once: it spreads as old copies expire.",
+      "diagram": "<svg viewBox=\"0 0 560 330\" role=\"img\" aria-labelledby=\"dg-dns-lookup-t\" class=\"dg\"><title id=\"dg-dns-lookup-t\">A DNS lookup: the device asks a recursive resolver; on a cache miss the resolver asks a root server, then the .com servers, then the domain&#x27;s authoritative servers, and caches each answer for its TTL.</title><defs><marker id=\"dg-dns-lookup-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"130\" width=\"110\" height=\"44\" class=\"dg-box\"/><text x=\"69\" y=\"157\" class=\"dg-label\" text-anchor=\"middle\">Your device</text><rect x=\"190\" y=\"118\" width=\"150\" height=\"68\" class=\"dg-box dg-accent\"/><text x=\"265\" y=\"148.5\" class=\"dg-label\" text-anchor=\"middle\">Recursive</text><text x=\"265\" y=\"165.5\" class=\"dg-label\" text-anchor=\"middle\">resolver</text><text x=\"265\" y=\"204\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">cache: keeps each answer</text><text x=\"265\" y=\"218\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">until its TTL runs out</text><path d=\"M124,152 L186,152\" class=\"dg-line\" marker-end=\"url(#dg-dns-lookup-a)\"/><rect x=\"420\" y=\"14\" width=\"130\" height=\"40\" class=\"dg-box\"/><text x=\"485\" y=\"39\" class=\"dg-label\" text-anchor=\"middle\">Root</text><rect x=\"420\" y=\"108\" width=\"130\" height=\"40\" class=\"dg-box\"/><text x=\"485\" y=\"133\" class=\"dg-label\" text-anchor=\"middle\">.com servers</text><rect x=\"420\" y=\"202\" width=\"130\" height=\"56\" class=\"dg-box\"/><text x=\"485\" y=\"226.5\" class=\"dg-label\" text-anchor=\"middle\">Authoritative</text><text x=\"485\" y=\"243.5\" class=\"dg-label\" text-anchor=\"middle\">for the domain</text><path d=\"M340,130 C380,100 390,50 416,36\" class=\"dg-line\" marker-end=\"url(#dg-dns-lookup-a)\"/><text x=\"372\" y=\"70\" class=\"dg-note\" text-anchor=\"middle\">1</text><path d=\"M340,145 C370,140 390,130 416,128\" class=\"dg-line\" marker-end=\"url(#dg-dns-lookup-a)\"/><text x=\"380\" y=\"124\" class=\"dg-note\" text-anchor=\"middle\">2</text><path d=\"M340,170 C370,190 390,225 416,230\" class=\"dg-line\" marker-end=\"url(#dg-dns-lookup-a)\"/><text x=\"372\" y=\"208\" class=\"dg-note\" text-anchor=\"middle\">3</text><text x=\"485\" y=\"72\" class=\"dg-note\" text-anchor=\"middle\">points to .com</text><text x=\"485\" y=\"166\" class=\"dg-note\" text-anchor=\"middle\">points to the domain</text><text x=\"485\" y=\"276\" class=\"dg-note\" text-anchor=\"middle\">gives the answer</text><text x=\"280\" y=\"316\" class=\"dg-note\" text-anchor=\"middle\">only a cache miss walks the chain; everyone else reuses a copy</text></svg>"
     },
-    {
-      "question": "What went wrong with the first per-record design, and how was it fixed?",
-      "answer": "Update events carried only the new record, so a renamed record's old name stayed in Quicksilver. Updates are now sent as a delete plus a create."
+    "howItWorks": {
+      "outcome": "After this you can walk through a lookup step by step and say which steps a cache can skip.",
+      "steps": [
+        {
+          "step": "Check nearby caches",
+          "explanation": "The device and the resolver first look for an unexpired copy of the answer. Most lookups end here."
+        },
+        {
+          "step": "Ask a root server",
+          "explanation": "On a miss, the resolver asks a root server, which does not know the answer but names the servers for the top-level domain."
+        },
+        {
+          "step": "Ask the top-level domain",
+          "explanation": "The .com servers name the domain's authoritative servers. For a signed domain they also return a DS record that vouches for the domain's signing key."
+        },
+        {
+          "step": "Ask the authoritative servers",
+          "explanation": "They return the record, for example an address, along with its TTL. If the domain is signed, the resolver checks the signature against the DS record."
+        },
+        {
+          "step": "Cache and answer",
+          "explanation": "The resolver keeps each answer, including the referrals and DS record, for its TTL, and hands the address back to the device."
+        },
+        {
+          "step": "Change a record",
+          "explanation": "The owner edits the record at the authoritative servers. Each cache keeps serving its old copy until that copy's TTL runs out, so the change spreads gradually."
+        }
+      ]
     },
-    {
-      "question": "Why can't Cloudflare remove full builds entirely?",
-      "answer": "Some zone settings, like nameserver and DNSSEC controls, depend on the whole zone, so about 13% of builds still need it."
+    "workedExample": {
+      "outcome": "After this you can trace a real lookup and predict how long a change, or an undo, takes to be seen.",
+      "steps": [
+        {
+          "step": "Look up slack.com",
+          "explanation": "A browser asks its resolver, say Google Public DNS. With no copy cached, the resolver walks root, then .com."
+        },
+        {
+          "step": "Collect the DS record",
+          "explanation": "Because Slack signed slack.com, .com returns a DS record along with the referral. The .com zone asks resolvers to keep it for 24 hours; Google's resolver caps that at 6 hours."
+        },
+        {
+          "step": "Get a signed answer",
+          "explanation": "Route 53, which served Slack's zones, returns signed records. The resolver checks them against the cached DS record and caches the answer."
+        },
+        {
+          "step": "Undo at the parent",
+          "explanation": "In Slack's incident the team pulled the DS record at the registrar. Resolvers that already had it cached kept expecting signatures for up to 24 hours, 6 on Google's resolver."
+        },
+        {
+          "step": "Undo at the domain too",
+          "explanation": "When Slack then removed signing, those resolvers could no longer validate any answer and returned SERVFAIL until their cached DS record expired."
+        },
+        {
+          "step": "Compare an ordinary edit",
+          "explanation": "A record edit at Cloudflare after its rebuild takes 8 ms or less to build, against about 34 seconds before for a million-record zone. After that, caches still serve the old copy until its TTL expires."
+        },
+        {
+          "step": "Add it up",
+          "explanation": "The time until everyone sees a change is roughly the provider's pipeline plus the longest TTL on any record in the path, and records cached at the parent zone, like the DS record, can hold on much longer than the record you changed."
+        }
+      ]
     },
-    {
-      "question": "Slack pulled its DS record to stop the outage, then removed signing. Why did removing signing make things worse for some users?",
-      "answer": "Resolvers had cached the DS record for up to 24 hours, so they still expected slack.com to be signed. Once the signatures were gone, those resolvers could not validate any answer and returned SERVFAIL until their cached DS record expired."
+    "mistakesOutcome": "After this you can avoid the three most common ways DNS changes go wrong.",
+    "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
+    "quiz": [
+      {
+        "question": "A resolver has cached a record for example.com. You change the record at the authoritative servers. When does that resolver return the new value?",
+        "options": [
+          "Immediately, because the authoritative servers notify it",
+          "When its cached copy's TTL runs out and it asks again",
+          "Only after you flush every resolver by hand"
+        ],
+        "correct": 1,
+        "why": "A resolver reuses its copy until the TTL expires, then asks again and gets the new value.",
+        "wrong": [
+          "Authoritative servers do not notify resolvers of changes; resolvers only find out when they ask again.",
+          "",
+          "Expiry makes the resolver ask again on its own; flushing only speeds it up."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "Which servers hold the real answer for app.example.com?",
+        "options": [
+          "Your recursive resolver",
+          "The root servers",
+          "The .com servers",
+          "The servers that are authoritative for example.com"
+        ],
+        "correct": 3,
+        "why": "The authoritative servers for a domain hold its records; everyone else holds referrals or cached copies.",
+        "wrong": [
+          "The resolver holds cached copies, which can be up to one TTL old.",
+          "Root servers only refer the resolver to the top-level domain servers.",
+          "The .com servers only refer the resolver to example.com's servers.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why does DNS cache answers at every step?",
+        "options": [
+          "Because records never change",
+          "So most lookups are answered nearby instead of walking the whole chain",
+          "To encrypt the answers"
+        ],
+        "correct": 1,
+        "why": "Nearly every connection starts with a lookup, so reusing copies keeps lookups fast and keeps load off the servers higher up the chain.",
+        "wrong": [
+          "Records do change, which is exactly why every answer carries a TTL.",
+          "",
+          "Caching does not encrypt anything; DNSSEC signs answers so they can be checked, which is a separate thing."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "At Cloudflare, an edit to one record in a million-record zone used to take about 34 seconds to build. Why?",
+        "options": [
+          "Resolvers across the internet were slow to update",
+          "The Zone Builder rebuilt the whole zone for any edit",
+          "Root servers were overloaded"
+        ],
+        "correct": 1,
+        "why": "Every edit triggered a full rebuild that read and compared every record, so cost grew with the size of the zone, not the size of the change.",
+        "wrong": [
+          "Resolver caching happens after the build and was not what the 34 seconds measured.",
+          "",
+          "Root servers play no part in a provider building its own zone."
+        ],
+        "teaches": "posts"
+      },
+      {
+        "question": "Slack pulled its DS record to stop an outage, but failures went on. Why?",
+        "options": [
+          "The registrar ignored the change",
+          "Resolvers had cached the DS record, which .com tells them to keep for 24 hours",
+          "Browsers cache DS records"
+        ],
+        "correct": 1,
+        "why": "Removing the record at the parent does not reach resolvers that already cached it; they keep it until it expires.",
+        "wrong": [
+          "The DS record was removed; the problem was copies already cached elsewhere.",
+          "",
+          "DS records are checked by resolvers, not browsers."
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "You plan to move a site to a new address next week. What should you do with the record's TTL?",
+        "options": [
+          "Raise it, so the new address sticks",
+          "Lower it well before the move, then raise it again afterwards",
+          "Nothing; TTLs do not affect moves"
+        ],
+        "correct": 1,
+        "why": "A short TTL before the move means caches drop the old address quickly once you switch; raising it afterwards restores caching.",
+        "wrong": [
+          "A longer TTL makes caches keep the old address longer after you switch.",
+          "",
+          "The TTL decides how long caches keep serving the old address, so it matters most during a move."
+        ],
+        "teaches": "mistakes"
+      }
+    ],
+    "postsOutcome": "After this you can describe how two companies dealt with how long DNS changes take, from opposite ends.",
+    "differOutcome": "After this you can explain which part of a DNS change you control and which you do not.",
+    "exercisesOutcome": "After this you can apply the concept to a change, design a pipeline, and plan for ten times the scale.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "You must move api.example.com to a new address tomorrow, and its record has a long TTL. Plan the change so users switch quickly.",
+        "answer": "Lower the TTL now, at least one old TTL before the move, so every cache has picked up the short value by the time you switch. Change the address, keep the old server running until the short TTL has passed, then raise the TTL again.",
+        "tradeoffs": "A short TTL sends more queries to your authoritative servers while it is in place, and keeping the old server up costs a little extra.",
+        "wrongAnswers": [
+          "Changing the address and expecting everyone to switch at once.",
+          "Lowering the TTL at the same moment as the move, while caches still hold the long one.",
+          "Turning off the old server right after the change."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "level": "design",
+        "prompt": "Design how a DNS provider applies one customer's record edit so it reaches its servers quickly, even in zones with millions of records.",
+        "answer": "Emit an event per changed record that carries the record itself, apply events per zone in order, and write only that record to the store the edge servers read. Keep a full rebuild for settings that depend on the whole zone, lock it against the per-record path so it never writes stale data over a newer edit, and send renames as a delete plus a create.",
+        "tradeoffs": "More moving parts, a second build path to keep correct, and edits that cannot be batched, in exchange for a cost that stays flat as zones grow.",
+        "wrongAnswers": [
+          "Rebuilding the whole zone for every edit.",
+          "Sending only the new value of an edited record, which leaves the old name behind after a rename.",
+          "Letting full rebuilds and per-record writes run without a lock."
+        ],
+        "teaches": "posts"
+      },
+      {
+        "level": "scale",
+        "prompt": "Your main domain now carries ten times the traffic and has to be signed with DNSSEC. It has many subdomains, including a wildcard. Plan the rollout and the way back.",
+        "answer": "Test signing on a domain shaped like the main one, wildcard included, and watch several public resolvers. Sign, validate, wait, and publish the DS record last. Plan the rollback around the parent's DS TTL: once published, removing the DS record does not take effect until cached copies expire, so keep signing in place and never delete keys until those caches have cleared.",
+        "tradeoffs": "A slower rollout and more testing, against an outage that cannot be undone faster than other people's caches expire.",
+        "wrongAnswers": [
+          "Assuming DS records are not cached.",
+          "Removing signing straight after pulling the DS record.",
+          "Testing only on simple domains without wildcards."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "DNS can hand out several addresses for a name, but cached answers mean it cannot react quickly when one server is overloaded or down. Load Balancing picks up from there: making a fresh choice for every connection or request, close to the traffic."
     }
-  ],
-  "exercise": {
-    "prompt": "Your search index rebuilds itself from scratch whenever any document changes, and rebuilds now take minutes for large customers. Sketch an incremental design, and say what could go wrong when incremental updates and the occasional full rebuild run side by side.",
-    "answer": "Emit an event per changed document that carries the document's ID and new content, consume those events in order, and update only the affected entries. Keep the full rebuild for schema changes and repairs. The risk is a full rebuild that started earlier finishing later and writing stale data over newer incremental updates, so either lock the two paths per customer or version every entry and refuse older writes. Also make deletes and renames explicit events, or old entries will linger."
-  },
-  "comparison": "Both posts are about how long a DNS change takes to take effect, seen from opposite ends. Cloudflare controlled the slow part, its own pipeline from a customer's edit to its edge, so it rebuilt that pipeline to apply one record in milliseconds instead of rebuilding a zone in tens of seconds. Slack's slow part was outside its control: resolvers across the internet held its DS record for up to 24 hours and read its signed answers in different ways, so even its rollback could not take effect faster than those caches expired."
+  }
 }

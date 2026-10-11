@@ -11,7 +11,7 @@ type Props = {
   titles: Map<string, string>;
 };
 
-function TopicList({ topics }: { topics: Topic[] }) {
+export function TopicList({ topics }: { topics: Topic[] }) {
   if (topics.length === 0) return <p className="none">None</p>;
   return (
     <ul>
@@ -25,7 +25,7 @@ function TopicList({ topics }: { topics: Topic[] }) {
 }
 
 /** One post, rewritten: context, walkthrough, diagram, numbers, trade-offs, then what went wrong. */
-function PostDigest({ post, index, titles }: { post: Post; index: number; titles: Map<string, string> }) {
+export function PostDigest({ post, index, titles }: { post: Post; index: number; titles: Map<string, string> }) {
   const d = post.digest;
   const id = `post-${index + 1}`;
   const old = isOld(post.published);
@@ -181,7 +181,7 @@ export default function TopicDossier({ topic, prerequisites, dependents, titles 
         <section className="closing" aria-labelledby="check" data-pagefind-ignore>
           <h2 id="check">Check yourself</h2>
           <ol className="quiz">
-            {topic.quiz.map((q) => (
+            {topic.quiz!.map((q) => (
               <li key={q.question}>
                 <p>{q.question}</p>
                 <details>
@@ -195,10 +195,10 @@ export default function TopicDossier({ topic, prerequisites, dependents, titles 
 
         <section className="closing" aria-labelledby="exercise" data-pagefind-ignore>
           <h2 id="exercise">Design exercise</h2>
-          <p>{topic.exercise.prompt}</p>
+          <p>{topic.exercise!.prompt}</p>
           <details>
             <summary>Show a model answer</summary>
-            <p>{topic.exercise.answer}</p>
+            <p>{topic.exercise!.answer}</p>
           </details>
         </section>
       </div>
