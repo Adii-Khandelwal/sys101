@@ -18,12 +18,19 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 
 ## Topic pages
 
-- Order: Part A concept (Why it exists, Mental model, How it works, Worked example, Common mistakes, Check yourself), Part B real world (one section per post, then Where they differ), then Design exercises, What to learn next, Original posts. Each section opens with one line "After this you can ...". A "Skip to the posts" link sits at the top.
+- Order: Part A concept (Why it exists, Mental model, How it works, Worked example, Common mistakes, Check yourself), Part B real world (one section per post, then Where they differ), then Design exercises, What to learn next, Original posts. Each section opens with one line "After this you can ...". A "Skip to the posts" link sits at the top, with one quiet "Start from zero" text link beside it to the learn page. The Original posts section stays.
 - Concept text may come from general knowledge, but every figure or company claim must come from a verified post in the JSON. Never invent numbers.
 - Check yourself: 5 to 8 questions. Each answer explains why it is right and why the others are wrong, and links back to the teaching section. Design exercises: 2 to 3 in rising difficulty (apply, design, scale 10x) with model answers hidden until clicked.
 - Diagrams are original inline SVG in the site style. Never copy or embed a blog's diagram. Link to an original figure only if verified it exists. Every diagram has a title and alt text.
 - Original posts lists each source with company, year, and "Checked on" date. Links open in a new tab with rel="noopener noreferrer". Missing attribution fields fail the build.
 - No data controls on topic pages. They live on /data.
+
+## Learn pages (start from zero)
+
+- Every topic, current and future, has a second page at /topic/<slug>/learn, titled "Start from zero: <Topic>", teaching it from 0 to 100 for a complete beginner. Not counted in "topic read"; never touches the progress store.
+- Structure: promise line ("After this you can follow the topic page and the posts"); Before you start (link prerequisite topics plus the few terms needed); 4 stages (Basics, How it works, Going deeper, In practice and trade-offs), each with an explanation in our own words, key terms, official reading (a specific section and what to read in it), an optional video, and an untracked "You can now" list; then Common misconceptions, Try it (commands only if confirmed in an official source), Where to go next (back to the topic page and its posts), and Sources.
+- Content lives in content/learn/<slug>.json, typed in lib. Pagefind indexes it with a "Start from zero" label.
+- A new topic is not done until its learn page exists.
 
 ## Progress tracking
 
@@ -75,6 +82,15 @@ Two content flows:
 - If a post fails the selection rules, say so and find another.
 - Before saving any new post, show the user the URL, the company, and why it passed.
 
+### Official sources (learn pages)
+
+- Learn pages use only official sources: standards and specs (IETF, W3C, ISO), a project's or vendor's own documentation, a university's own course pages; for video, the official channel of one of those, or a recognized conference or university.
+- Open every source before use. Record publisher, kind, year, and verifiedOn. Never invent a URL, video, or quote. Never copy docs text: paraphrase and link.
+- Any specific number, default, limit, or command must be confirmed in an opened official source and cite its source id. If not confirmed, state it generally or leave it out.
+- Claude cannot watch videos. Show each candidate video (title, channel, year, length, why it fits) and get approval before saving. Label every video with channel, length, and year.
+- Show candidate sources in a table and wait for approval before writing, as with posts.
+- Build fails on: an empty stage, a stage with no official source, an unknown source id, a missing publisher, kind, year or verifiedOn, or a video without channel, length or year. The weekly link check covers these URLs too.
+
 ## Site feel
 
 Handcrafted, not AI-template. The graph is the homepage. Cream background, serif headings, restrained palette with one or two accents. Plain, specific copy written like a person.
@@ -87,7 +103,9 @@ Always: skeleton loaders, a real working demo, Terms and Privacy pages in the fo
 
 Always apply system design thinking to this site itself: static generation, CDN caching, decoupled offline pipeline, idempotent jobs, cached outputs, no runtime dependency on third parties, graceful degradation. Justify architecture choices in these terms.
 
-One exception: Vercel Web Analytics (anonymous page views, no cookies). The site must work fully if it fails to load, it never receives reading progress, and the Privacy page must describe it.
+Two exceptions:
+- Vercel Web Analytics (anonymous page views, no cookies). The site must work fully if it fails to load, it never receives reading progress, and the Privacy page must describe it.
+- YouTube videos on learn pages, click to load only. Show a plain card (title, channel, length, year, "Play here", "Watch on YouTube"); nothing loads from YouTube until "Play here" is pressed, then the youtube-nocookie.com player replaces the card. The link works without JavaScript or if the player fails; videos with embedding disabled show the link only. The Privacy page must say YouTube receives data only after play is pressed. Ship the component and the Privacy section with the first learn page that has a video.
 
 ## Later ideas (do not build yet)
 
@@ -101,6 +119,12 @@ Interview-relevance tags, LLM pipeline (Gemini Flash) to summarize and compare p
 - The build fails on an empty section, an empty quiz, a missing prerequisite, a prerequisite cycle, missing attribution, a missing verifiedOn date, or a diagram with gradients, filters, scripts, or no `<title>`.
 - `npm run build` also builds the Pagefind search index into `public/pagefind` (git-ignored). Under `npm run dev`, run `npm run search:index` to build the index without touching the dev server's `.next`.
 - Pushing to `main` on GitHub deploys to Vercel.
+
+## Keeping CLAUDE.md current
+
+- At the end of any task that adds or changes a standing rule, page type, schema, route, or convention, update the matching section here in the same commit. Edit existing text instead of appending; never duplicate a rule.
+- Do not record one-off task details or temporary state. Keep this file under about 200 lines by moving detail into docs/ and linking it.
+- Final reply says, in one line: "CLAUDE.md: updated <section>" or "CLAUDE.md: no change".
 
 ## Token discipline
 
