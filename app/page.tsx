@@ -1,3 +1,4 @@
+import Link from "next/link";
 import GraphView from "@/components/GraphView";
 import NextUp from "@/components/NextUp";
 import Search from "@/components/Search";
@@ -42,8 +43,11 @@ export default function Home() {
   return (
     <main className="home">
       <header className="masthead">
-        <h1 className="visually-hidden">sys101</h1>
-        <p>System design concepts, ordered by what you need to know first.</p>
+        <h1>sys101</h1>
+        <p>
+          Learn system design from how real companies built it, one topic at a time, in the order they
+          build on each other. <Link href="/about">Why this exists</Link>
+        </p>
         <NextUp entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))} />
         <Search />
       </header>
