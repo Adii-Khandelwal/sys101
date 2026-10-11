@@ -21,14 +21,14 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - Order: Part A concept (Why it exists, Mental model, How it works, Worked example, Common mistakes, Check yourself), Part B real world (one section per post, then Where they differ), then Design exercises, What to learn next, Original posts. Each section opens with one line "After this you can ...". A "Skip to the posts" link sits at the top, with one quiet "Start from zero" text link beside it to the learn page. The Original posts section stays.
 - Concept text may come from general knowledge, but every figure or company claim must come from a verified post in the JSON. Never invent numbers.
 - Check yourself: 5 to 8 questions. Each answer explains why it is right and why the others are wrong, and links back to the teaching section. Design exercises: 2 to 3 in rising difficulty (apply, design, scale 10x) with model answers hidden until clicked.
-- Diagrams are original inline SVG in the site style. Never copy or embed a blog's diagram. Link to an original figure only if verified it exists. Every diagram has a title and alt text.
+- Diagrams are original inline SVG in the site style. Never copy or embed a blog's diagram. Link to an original figure only if verified it exists. Every diagram has a title and alt text. The build requires a diagram on the Mental model, How it works and Worked example concept sections, and on every post digest.
 - Original posts lists each source with company, year, and "Checked on" date. Links open in a new tab with rel="noopener noreferrer". Missing attribution fields fail the build.
 - No data controls on topic pages. They live on /data.
 
 ## Learn pages (start from zero)
 
 - Every topic, current and future, has a second page at /topic/<slug>/learn, titled "Start from zero: <Topic>", teaching it from 0 to 100 for a complete beginner. Not counted in "topic read"; never touches the progress store.
-- Structure: promise line ("After this you can follow the topic page and the posts"); Before you start (link prerequisite topics plus the few terms needed); 4 stages (Basics, How it works, Going deeper, In practice and trade-offs), each with an explanation in our own words, key terms, official reading (a specific section and what to read in it), an optional video, and an untracked "You can now" list; then Common misconceptions, Try it (commands only if confirmed in an official source), Where to go next (back to the topic page and its posts), and Sources.
+- Structure: promise line ("After this you can follow the topic page and the posts"); Before you start (link prerequisite topics plus the few terms needed); 4 stages (Basics, How it works, Going deeper, In practice and trade-offs), each with an explanation in our own words, key terms, official reading (a specific section and what to read in it), an optional original SVG diagram in the site style (same build rules as topic diagrams; usually on How it works), an optional video, and an untracked "You can now" list; then Common misconceptions, Try it (commands only if confirmed in an official source), Where to go next (back to the topic page and its posts), and Sources.
 - Content lives in content/learn/<slug>.json, typed in lib. Pagefind indexes it with a "Start from zero" label.
 - A new topic is not done until its learn page exists.
 

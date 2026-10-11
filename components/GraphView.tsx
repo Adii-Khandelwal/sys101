@@ -789,6 +789,9 @@ export default function GraphView({ nodes, edges }: Props) {
         aria-label="Topic map"
         // Stage height comes from the layout; CSS picks one per breakpoint (no shift on load).
         data-orientation={effective}
+        // Only an interactive map captures touch (to pan/zoom); a fixed small map
+        // must let a finger scroll the page past it.
+        data-interactive={interactive || undefined}
         style={{ "--rows": rowCount(layered, "horizontal"), "--layers": rowCount(layered, "vertical") } as React.CSSProperties}
       >
         {!ready && <GraphSkeleton />}

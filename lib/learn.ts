@@ -36,6 +36,8 @@ export type Stage = {
   body: string[];
   terms: Term[];
   reading: Reading[];
+  /** Optional original SVG diagram in the site style, same rules as topic diagrams. */
+  diagram?: string;
   /** Optional video: a source id of kind "video". */
   video?: string;
   /** Untracked checklist: what the reader can now do. */
@@ -64,6 +66,17 @@ const CITE = /\[\[([a-z0-9-]+)\]\]/g;
 
 /** Source ids cited inline in a piece of text. */
 export const citations = (text: string) => [...text.matchAll(CITE)].map((m) => m[1]);
+
+/** Diagrams are hand-written SVG; enforce the site's design rules (same as topic diagrams). */
+function checkDiagram(svg: string | undefined): string[] {
+  if (!nonEmpty(svg)) return ["is empty"];
+  const problems: string[] = [];
+  if (!/^<svg[\s>]/.test(svg!.trim())) problems.push("must start with <svg");
+  if (!/viewBox=/.test(svg!)) problems.push("needs a viewBox so it scales");
+  if (!/<title[^>]*>[^<]+<\/title>/.test(svg!)) problems.push("needs a <title> for screen readers");
+  if (/gradient|<filter|drop-shadow|<script|\son\w+=/i.test(svg!)) problems.push("uses gradients, filters, shadows or scripts");
+  return problems;
+}
 
 /** Every rule the build enforces on a learn page. Returns the problems found. */
 export function checkLearn(l: Learn, topicSlugs: string[]): string[] {
@@ -102,6 +115,7 @@ export function checkLearn(l: Learn, topicSlugs: string[]): string[] {
     });
     const official = (st.reading ?? []).some((r) => ids.has(r.source) && !isVideo(ids.get(r.source)!));
     if (!official) problems.push(`${where} has no official written source`);
+    if (st.diagram !== undefined) problems.push(...checkDiagram(st.diagram).map((p) => `${where} diagram ${p}`));
     if (st.video) {
       known(st.video, `${where} video`);
       if (ids.has(st.video) && !isVideo(ids.get(st.video)!)) problems.push(`${where}: "${st.video}" is not a video`);

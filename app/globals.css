@@ -813,6 +813,34 @@ a:hover {
   margin-left: 5px;
 }
 
+/* Smooth reading-progress bar on learn pages: one fill scales with scroll. */
+.learn-progress-track {
+  position: relative;
+  display: block;
+  width: 168px;
+  height: 4px;
+  margin: 6px 0;
+  overflow: hidden;
+  background: var(--skeleton);
+  outline-offset: 3px;
+}
+
+.learn-progress-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform-origin: left center;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+/* On the narrow sticky line the track sits inline before "Contents". */
+.progress-line .learn-progress-track {
+  display: inline-block;
+  width: 96px;
+  margin: 0 10px 0 0;
+  vertical-align: middle;
+}
+
 
 
 .progress-tip {
@@ -1192,7 +1220,13 @@ a:hover {
 .graph-canvas {
   position: absolute;
   inset: 0;
-  touch-action: none; /* one finger pans, two pinch; the rest of the page scrolls normally */
+  /* A fixed small map does not pan, so let a finger scroll the page past it. */
+  touch-action: auto;
+}
+
+/* Only an interactive map captures touch: one finger pans, two pinch, the rest of the page scrolls normally. */
+.graph-stage[data-interactive] .graph-canvas {
+  touch-action: none;
 }
 
 /* Buttons do not inherit fonts by default; match the legend's mono small caps. */

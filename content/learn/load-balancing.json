@@ -1,0 +1,296 @@
+{
+  "slug": "load-balancing",
+  "promise": "After this you can follow the topic page and the posts.",
+  "before": {
+    "prerequisites": [
+      "dns"
+    ],
+    "terms": [
+      {
+        "term": "Client and server",
+        "definition": "The client sends a request; the server receives it and sends back a response."
+      },
+      {
+        "term": "Request and response",
+        "definition": "One round trip: a question sent to a server and the answer it returns."
+      },
+      {
+        "term": "Backend",
+        "definition": "One of the servers that actually does the work behind a single public address."
+      }
+    ],
+    "note": "Read DNS first: a load balancer sits behind a name, and DNS is one of the ways traffic is spread. The terms below are enough to begin."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "One server can only handle so many requests before it slows down or falls over. A load balancer is a server that sits in front of a group of backends and spreads incoming requests across them, so no single machine is overwhelmed and the group together can serve far more traffic than any one of them [[nginx-lb]].",
+        "The second job is just as important: availability. If one backend stops responding, the load balancer stops sending it traffic and routes around it, so a single failure does not take the whole service down [[nginx-glossary]].",
+        "Because the load balancer answers on one address and the backends are hidden behind it, clients never need to know how many servers there are. You can add or remove backends without clients noticing, which is the foundation for scaling horizontally [[nginx-glossary]]."
+      ],
+      "terms": [
+        {
+          "term": "Load balancer",
+          "definition": "A server that distributes incoming requests across a pool of backends."
+        },
+        {
+          "term": "Upstream pool",
+          "definition": "The group of backend servers a load balancer sends traffic to."
+        },
+        {
+          "term": "Horizontal scaling",
+          "definition": "Handling more load by adding more servers, rather than making one server bigger."
+        },
+        {
+          "term": "Availability",
+          "definition": "The share of time a service is up and answering requests."
+        },
+        {
+          "term": "Virtual IP",
+          "definition": "The single front address clients connect to, standing in for the whole pool."
+        }
+      ],
+      "reading": [
+        {
+          "source": "nginx-lb",
+          "section": "HTTP Load Balancing, Overview",
+          "what": "What a load balancer is and why spreading requests across backends raises capacity."
+        },
+        {
+          "source": "nginx-glossary",
+          "section": "The definition and \"Benefits\" section",
+          "what": "The two goals in plain terms: spreading load and keeping the service available when a backend fails."
+        }
+      ],
+      "canNow": [
+        "Say the two jobs a load balancer does: spread load and route around failures.",
+        "Explain why clients only see one address, not the pool.",
+        "Define horizontal scaling in one sentence."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "When a request arrives, the load balancer picks a backend using a method. The simplest is round robin, which sends each new request to the next backend in turn. Others include least connections, which picks the backend with the fewest active requests, and a hash of the client's address, which keeps a given client going to the same backend [[nginx-lb]].",
+        "Not all backends are equal, so each can be given a weight: a more powerful machine gets a larger share of the traffic. Weighted round robin and weighted least connections let the pool be a mix of machine sizes without one small server drowning [[nginx-lb]].",
+        "The load balancer only sends traffic to backends it believes are healthy. It runs health checks, quietly probing each backend, and takes an unhealthy one out of rotation until it passes again. This is what turns \"a server crashed\" into \"a few requests retried\" rather than an outage [[nginx-lb]].",
+        "Load balancing happens at different layers. A layer 4 balancer forwards raw TCP connections and is fast but blind to the content. A layer 7 balancer understands HTTP, so it can route by URL path or host and reuse connections to the backends, at the cost of doing more work per request [[rfc7231]]."
+      ],
+      "terms": [
+        {
+          "term": "Round robin",
+          "definition": "Sending each new request to the next backend in order, then starting over."
+        },
+        {
+          "term": "Least connections",
+          "definition": "Sending the next request to the backend currently handling the fewest."
+        },
+        {
+          "term": "Weight",
+          "definition": "A number that gives a stronger backend a larger share of the traffic."
+        },
+        {
+          "term": "Health check",
+          "definition": "A periodic probe that decides whether a backend is fit to receive traffic."
+        },
+        {
+          "term": "Layer 4 vs layer 7",
+          "definition": "Layer 4 balances raw connections; layer 7 understands HTTP and can route by path or host."
+        }
+      ],
+      "reading": [
+        {
+          "source": "nginx-lb",
+          "section": "Choosing a Load-Balancing Method and Server Weights",
+          "what": "Round robin, least connections and hashing, and how weights bias the choice."
+        },
+        {
+          "source": "nginx-lb",
+          "section": "Health Checks",
+          "what": "How probing backends lets the balancer take a failed one out of rotation automatically."
+        },
+        {
+          "source": "rfc7231",
+          "section": "Section 2, Resources and Representations",
+          "what": "What an HTTP request carries, which is what a layer 7 balancer reads to route by path or host."
+        }
+      ],
+      "canNow": [
+        "Name three ways a balancer chooses a backend and when each fits.",
+        "Explain what a weight changes.",
+        "Say the difference between layer 4 and layer 7 balancing."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 153\" role=\"img\" aria-labelledby=\"dg-learn-lb-how-t\" class=\"dg\"><title id=\"dg-learn-lb-how-t\">A balanced request: the balancer picks a backend by a method, weights stronger machines, and uses health checks to keep failed backends out of rotation.</title><defs><marker id=\"dg-learn-lb-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"55\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Request</text><text x=\"55\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">arrives</text><rect x=\"124\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"167\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Pick a</text><text x=\"167\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">method</text><text x=\"167\" y=\"116\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">round robin, least conn</text><rect x=\"236\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"279\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Apply</text><text x=\"279\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">weights</text><rect x=\"348\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box dg-accent\"/><text x=\"391\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Health</text><text x=\"391\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">check</text><text x=\"391\" y=\"116\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">drop failed</text><rect x=\"460\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"503\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Forward</text><text x=\"503\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">to</text><text x=\"503\" y=\"90.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">backend</text><path d=\"M98,68.5 L124,68.5\" class=\"dg-line\" marker-end=\"url(#dg-learn-lb-how-a)\"/><path d=\"M210,68.5 L236,68.5\" class=\"dg-line\" marker-end=\"url(#dg-learn-lb-how-a)\"/><path d=\"M322,68.5 L348,68.5\" class=\"dg-line\" marker-end=\"url(#dg-learn-lb-how-a)\"/><path d=\"M434,68.5 L460,68.5\" class=\"dg-line\" marker-end=\"url(#dg-learn-lb-how-a)\"/><text x=\"280\" y=\"143\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Each request is placed on a healthy backend; failures leave the rotation.</text></svg>"
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "Many applications keep per-user state on the server, such as a session. If the load balancer sends a user to a different backend on each request, that state may be missing. Session persistence, also called sticky sessions, ties a user to one backend so their state stays reachable [[haproxy]].",
+        "Stickiness has a cost. It unbalances the pool, because popular users pin load to particular backends, and it makes failure worse: if the backend holding a user's session dies, that session is gone. The better long-term fix is to keep session state outside the backends, in a shared store, so any backend can serve any user. That is one reason caching and shared data stores come later on the map [[haproxy]].",
+        "A single load balancer is itself a single point of failure. Production setups run more than one, and traffic is shared across them, often with DNS pointing at several balancer addresses or with the balancers sharing an address. This is where DNS and load balancing meet: DNS can do a coarse first split across balancers, and each balancer does the fine-grained split across backends [[nginx-glossary]]."
+      ],
+      "terms": [
+        {
+          "term": "Session persistence",
+          "definition": "Keeping a given client bound to the same backend across requests. Also called sticky sessions."
+        },
+        {
+          "term": "Session state",
+          "definition": "Per-user data a server keeps between requests, such as a login or a shopping cart."
+        },
+        {
+          "term": "Shared session store",
+          "definition": "Keeping session data in one external store so any backend can serve any user."
+        },
+        {
+          "term": "Single point of failure",
+          "definition": "A component whose failure takes down the whole system, such as a lone load balancer."
+        }
+      ],
+      "reading": [
+        {
+          "source": "haproxy",
+          "section": "Searching the manual for \"stick-table\" and \"persistence\"",
+          "what": "How a balancer pins a client to a backend, and the state it must keep to do so."
+        },
+        {
+          "source": "nginx-glossary",
+          "section": "The \"Benefits\" and reliability discussion",
+          "what": "Why one balancer is a single point of failure and why setups run more than one."
+        }
+      ],
+      "canNow": [
+        "Explain why sticky sessions exist and what they cost.",
+        "Say why keeping session state outside the backends is usually better.",
+        "Describe how a lone load balancer is itself a risk and how it is addressed."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "Choosing a method is a trade-off. Round robin is simple and even when requests cost about the same, but it ignores that some requests are far heavier than others. Least connections adapts to uneven request costs but needs the balancer to track live state. A hash keeps a client on one backend, which helps caches on that backend stay warm, but it rebalances poorly when backends are added or removed [[nginx-lb]].",
+        "That last problem, how a hash reshuffles when the pool changes, is exactly what the Consistent Hashing topic solves, which is why it sits right after this one. For now the lesson is that plain hashing by backend count is fragile when the count changes.",
+        "Layer 7 balancing enables more than routing. Because it terminates HTTP, it can also handle TLS once, retry an idempotent request on another backend, and apply limits per path. These features are why most public services put a layer 7 balancer at the edge, accepting the extra per-request cost for the control it gives [[rfc7231]]."
+      ],
+      "terms": [
+        {
+          "term": "Request cost",
+          "definition": "How much work one request takes; uneven costs make simple round robin unfair."
+        },
+        {
+          "term": "TLS termination",
+          "definition": "Decrypting HTTPS at the balancer so backends can speak plain HTTP behind it."
+        },
+        {
+          "term": "Idempotent request",
+          "definition": "A request that has the same effect whether it runs once or twice, so it is safe to retry."
+        },
+        {
+          "term": "Rebalancing",
+          "definition": "Reassigning which backend handles what when servers are added or removed."
+        }
+      ],
+      "reading": [
+        {
+          "source": "nginx-lb",
+          "section": "Choosing a Load-Balancing Method",
+          "what": "The trade-offs between round robin, least connections and hashing, in the project's own words."
+        },
+        {
+          "source": "rfc7231",
+          "section": "Section 4.2.2, Idempotent Methods",
+          "what": "Which HTTP methods are safe to retry, which is what lets a layer 7 balancer retry on another backend."
+        }
+      ],
+      "canNow": [
+        "Pick a balancing method for a workload and justify it.",
+        "Explain why plain hashing is fragile when the backend count changes.",
+        "List what terminating HTTP at a layer 7 balancer makes possible."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "A load balancer just splits traffic evenly.",
+      "truth": "It also removes failed backends from rotation using health checks, which is half of why it exists [[nginx-lb]]."
+    },
+    {
+      "myth": "Round robin is always the fair choice.",
+      "truth": "It assumes every request costs about the same; when costs differ, least connections or weights are fairer [[nginx-lb]]."
+    },
+    {
+      "myth": "Sticky sessions are a clean way to scale.",
+      "truth": "They unbalance the pool and lose a user's session if their backend dies; a shared session store is usually better [[haproxy]]."
+    },
+    {
+      "myth": "A load balancer removes every single point of failure.",
+      "truth": "The balancer itself is one, so production runs more than one with traffic shared across them [[nginx-glossary]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These inspect a load-balanced service from a terminal. Output depends on the service, so it is not shown here. The methods and health checks they reveal are described in the NGINX documentation.",
+    "commands": [
+      {
+        "command": "curl -sI https://example.com",
+        "shows": "The response headers, which often name the balancer or edge server that answered.",
+        "source": "nginx-glossary"
+      },
+      {
+        "command": "for i in $(seq 1 5); do curl -s https://example.com/ -o /dev/null -w '%{remote_ip}\\n'; done",
+        "shows": "Repeated requests, to see whether they land on different backend addresses.",
+        "source": "nginx-lb",
+        "note": "The address shown is the edge the balancer presents, not necessarily each backend."
+      },
+      {
+        "command": "dig example.com +short",
+        "shows": "Whether a name resolves to one address or several, a coarse first split before the balancer.",
+        "source": "nginx-glossary"
+      }
+    ]
+  },
+  "next": "Go back to the Load Balancing topic page for the worked example and the quiz, then read the two company posts on balancing real traffic. The hashing problem raised here is picked up next in Consistent Hashing, and shared session state leads into Caching.",
+  "sources": [
+    {
+      "id": "nginx-lb",
+      "title": "NGINX Admin Guide: HTTP Load Balancing",
+      "url": "https://docs.nginx.com/nginx/admin-guide/load-balancer/http-load-balancer/",
+      "publisher": "F5 NGINX",
+      "kind": "Project documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "nginx-glossary",
+      "title": "What Is Load Balancing?",
+      "url": "https://www.nginx.com/resources/glossary/load-balancing/",
+      "publisher": "F5 NGINX",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "haproxy",
+      "title": "HAProxy Documentation",
+      "url": "https://docs.haproxy.org/",
+      "publisher": "HAProxy",
+      "kind": "Project documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11",
+      "note": "The configuration manual covers stick-tables and persistence; pick the version that matches your HAProxy."
+    },
+    {
+      "id": "rfc7231",
+      "title": "RFC 7231: HTTP/1.1 Semantics and Content",
+      "url": "https://www.rfc-editor.org/rfc/rfc7231",
+      "publisher": "IETF",
+      "kind": "Proposed standard",
+      "year": "2014",
+      "verifiedOn": "2026-10-11"
+    }
+  ]
+}

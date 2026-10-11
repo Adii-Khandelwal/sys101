@@ -67,6 +67,7 @@ Content is validated during static generation (`lib/topics.ts`, `lib/learn.ts`);
 - any section is empty, including each post's digest, the glossary, or a lesson section;
 - a lesson's quiz has fewer than 5 or more than 8 questions, or an answer does not explain each wrong option; a lesson needs 2 to 3 exercises rising in difficulty;
 - a classic (non-lesson) topic's quiz has fewer than 3 or more than 5 questions, or has no exercise;
+- a lesson is missing a diagram on its Mental model, How it works or Worked example section, or any post digest has no diagram;
 - a diagram uses gradients, filters, shadows or scripts, or lacks a `viewBox` and a `<title>`;
 - `verifiedOn` or `published` is missing or in the future, or a post over five years old has no `ageNote`;
 - a learn page is missing its four stages, cites an unknown source, or has a stage with no official written source.
@@ -127,8 +128,8 @@ Create `content/topics/<slug>.json`. Topics use the lesson format (`why`, `menta
   "lesson": {
     "why": { "outcome": "After this you can ...", "body": "..." },
     "mentalModel": { "outcome": "After this you can ...", "body": "...", "diagram": "<svg viewBox=\"0 0 560 300\"><title>...</title>...</svg>" },
-    "howItWorks": { "outcome": "After this you can ...", "steps": [{ "step": "...", "explanation": "..." }] },
-    "workedExample": { "outcome": "After this you can ...", "steps": [{ "step": "...", "explanation": "..." }] },
+    "howItWorks": { "outcome": "After this you can ...", "steps": [{ "step": "...", "explanation": "..." }], "diagram": "<svg viewBox=\"0 0 560 300\"><title>...</title>...</svg>" },
+    "workedExample": { "outcome": "After this you can ...", "steps": [{ "step": "...", "explanation": "..." }], "diagram": "<svg viewBox=\"0 0 560 300\"><title>...</title>...</svg>" },
     "mistakesOutcome": "After this you can ...",
     "checkOutcome": "After this you can ...",
     "quiz": [{ "question": "...", "options": ["..."], "correct": 0, "why": "...", "wrong": ["..."], "teaches": "why" }],

@@ -68,8 +68,8 @@ export type LessonExercise = {
 export type Lesson = {
   why: LessonSection;
   mentalModel: LessonSection & { diagram: string };
-  howItWorks: { outcome: string; steps: { step: string; explanation: string }[] };
-  workedExample: { outcome: string; steps: { step: string; explanation: string }[] };
+  howItWorks: { outcome: string; steps: { step: string; explanation: string }[]; diagram: string };
+  workedExample: { outcome: string; steps: { step: string; explanation: string }[]; diagram: string };
   mistakesOutcome: string;
   checkOutcome: string;
   quiz: LessonQuestion[];
@@ -182,6 +182,8 @@ function checkLesson(topic: Topic): string[] {
   for (const name of ["howItWorks", "workedExample"] as const) {
     outcome(name, l[name]?.outcome);
     if (!pairs(l[name]?.steps, "step", "explanation")) problems.push(`lesson.${name} needs steps`);
+    // A flow or worked walk-through needs a diagram beside its steps (docs/ideas.md idea 3).
+    problems.push(...checkDiagram(l[name]?.diagram).map((p) => `lesson.${name} diagram ${p}`));
   }
   for (const name of ["mistakesOutcome", "checkOutcome", "postsOutcome", "differOutcome", "exercisesOutcome"] as const) {
     outcome(name, l[name]);

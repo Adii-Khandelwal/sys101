@@ -1,0 +1,285 @@
+{
+  "slug": "caching",
+  "promise": "After this you can follow the topic page and the posts.",
+  "before": {
+    "prerequisites": [
+      "load-balancing"
+    ],
+    "terms": [
+      {
+        "term": "Latency",
+        "definition": "How long one request takes to get an answer, usually measured in milliseconds."
+      },
+      {
+        "term": "Origin",
+        "definition": "The authoritative source of the data, such as the database, which a cache sits in front of."
+      },
+      {
+        "term": "Key and value",
+        "definition": "A cache stores a value under a key and hands it back when you ask for that key."
+      }
+    ],
+    "note": "Read Load Balancing first: caches often sit behind the balancer and in front of the origin. The terms below are enough to begin."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "Some answers are expensive to compute or slow to fetch, and the same answer is asked for again and again. A cache keeps a copy of a recent answer close by so the next request can be served from the copy instead of redoing the work. The copy lives in fast memory, so a cache hit is far quicker than going to the origin [[memcached-about]].",
+        "The core idea is a key-value store held in memory. You look up a key; if the value is present that is a hit, and if it is absent that is a miss and you fall back to the origin, then usually store the result for next time. A system like Memcached is deliberately simple: it holds small chunks of data in RAM and nothing more [[memcached-about]].",
+        "Because memory is limited and the origin can change, a cached copy is only a bet that the answer is still good and still worth keeping. Managing that bet, when to expire a copy and what to throw out when memory is full, is the whole craft of caching [[redis-eviction]]."
+      ],
+      "terms": [
+        {
+          "term": "Cache",
+          "definition": "A fast store of copies of answers, kept to avoid redoing slow work."
+        },
+        {
+          "term": "Hit and miss",
+          "definition": "A hit finds the value in the cache; a miss does not and must go to the origin."
+        },
+        {
+          "term": "Hit ratio",
+          "definition": "The share of lookups that are hits; higher means the cache is doing more good."
+        },
+        {
+          "term": "In-memory store",
+          "definition": "Data kept in RAM for speed, as opposed to on disk."
+        },
+        {
+          "term": "Origin",
+          "definition": "The authoritative source the cache stands in front of, such as a database."
+        }
+      ],
+      "reading": [
+        {
+          "source": "memcached-about",
+          "section": "The whole page",
+          "what": "What a cache is for and why a simple in-memory key-value store is so fast."
+        },
+        {
+          "source": "redis-eviction",
+          "section": "The introduction before the policy list",
+          "what": "Why a cache has limited room, so it must decide what to keep and what to drop."
+        }
+      ],
+      "canNow": [
+        "Say what a cache is and why it is faster than the origin.",
+        "Define a hit, a miss and the hit ratio.",
+        "Explain why a cached copy is only a bet on freshness."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "The common pattern is cache-aside: the application checks the cache first; on a miss it reads the origin, stores the result in the cache, and returns it. The cache does not know about the database; the application wires them together. This keeps the cache simple and is why a plain store like Memcached is enough for it [[memcached-about]].",
+        "Entries do not live forever. Each can carry a time to live, after which it expires and the next lookup is a miss that refills it. A short time to live keeps data fresh but lowers the hit ratio; a long one does the opposite. This is the same freshness-versus-load trade-off that DNS caching had, now under your control per key [[redis-eviction]].",
+        "Memory fills up, so a cache needs an eviction policy to decide what to drop. Redis offers several, including evicting the least recently used key, the least frequently used key, or a random key, and it can apply these only to keys that have a time to live or to all keys. The default, when no policy is set, is to stop accepting new writes rather than evict [[redis-eviction]].",
+        "For HTTP responses the web has a shared, standard caching language. Headers such as Cache-Control and max-age tell caches how long a response may be reused and whether it may be stored at all, and validators let a cache ask the origin \"is my copy still good?\" without refetching the whole thing [[rfc9111]]."
+      ],
+      "terms": [
+        {
+          "term": "Cache-aside",
+          "definition": "The app checks the cache, and on a miss reads the origin and fills the cache itself."
+        },
+        {
+          "term": "TTL (time to live)",
+          "definition": "How long a cached entry may be reused before it expires and must be refetched."
+        },
+        {
+          "term": "Eviction policy",
+          "definition": "The rule for which entry to drop when the cache is full, such as least recently used."
+        },
+        {
+          "term": "Cache-Control",
+          "definition": "The HTTP header that tells caches whether and how long a response may be stored."
+        },
+        {
+          "term": "Validator",
+          "definition": "A tag like an ETag that lets a cache check with the origin whether its copy is still current."
+        }
+      ],
+      "reading": [
+        {
+          "source": "redis-eviction",
+          "section": "The policy list, including allkeys-lru, allkeys-lfu and the noeviction default",
+          "what": "The named eviction policies and which one applies when none is set."
+        },
+        {
+          "source": "rfc9111",
+          "section": "Section 5.2, Cache-Control, and Section 4.3, Validation",
+          "what": "How HTTP tells caches what may be stored, for how long, and how to revalidate a copy."
+        }
+      ],
+      "canNow": [
+        "Walk through a cache-aside read on a hit and on a miss.",
+        "Explain the trade-off a time to live sets.",
+        "Name a few eviction policies and say when each fits."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 153\" role=\"img\" aria-labelledby=\"dg-learn-cache-how-t\" class=\"dg\"><title id=\"dg-learn-cache-how-t\">Cache-aside: the app checks the cache; a hit returns fast, a miss reads the origin and fills the cache, and each entry expires by its TTL or is evicted when memory is full.</title><defs><marker id=\"dg-learn-cache-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box dg-accent\"/><text x=\"55\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Check</text><text x=\"55\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">cache</text><rect x=\"124\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"167\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Hit</text><text x=\"167\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">returns</text><text x=\"167\" y=\"90.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">fast</text><rect x=\"236\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"279\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Miss</text><text x=\"279\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">reads</text><text x=\"279\" y=\"90.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">origin</text><rect x=\"348\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"391\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Fill</text><text x=\"391\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">cache</text><rect x=\"460\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"503\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Expire or</text><text x=\"503\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">evict</text><text x=\"503\" y=\"116\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">TTL / policy</text><path d=\"M98,68.5 L124,68.5\" class=\"dg-line\" marker-end=\"url(#dg-learn-cache-how-a)\"/><path d=\"M210,68.5 L236,68.5\" class=\"dg-line\" marker-end=\"url(#dg-learn-cache-how-a)\"/><path d=\"M322,68.5 L348,68.5\" class=\"dg-line\" marker-end=\"url(#dg-learn-cache-how-a)\"/><path d=\"M434,68.5 L460,68.5\" class=\"dg-line\" marker-end=\"url(#dg-learn-cache-how-a)\"/><text x=\"280\" y=\"143\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">A hit skips the origin; a miss fills the cache for next time.</text></svg>"
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "The hardest part of caching is invalidation: when the origin changes, copies in the cache are now wrong until they expire or are removed. Short time-to-live limits how long a stale copy can live but costs hit ratio. Explicitly deleting the key on a write keeps data fresh but needs the write path to know every key it affects. Most systems blend the two [[rfc9111]].",
+        "A subtle failure is the stampede, also called a cache miss storm. A single hot key expires, and a flood of requests all miss at once and hit the origin together, which can knock the origin over just when the cache was supposed to protect it. The usual defences are letting only one request refill a key while others wait, or refreshing a key slightly before it expires.",
+        "Eviction policy choice matters more than it looks. Least recently used suits data with clear hot and cold items; least frequently used suits items that are popular over a long time but accessed in bursts. Redis also distinguishes evicting only keys with a time to live from evicting any key, which changes what happens to data you meant to keep [[redis-eviction]]."
+      ],
+      "terms": [
+        {
+          "term": "Invalidation",
+          "definition": "Removing or updating a cached copy once the origin's value has changed."
+        },
+        {
+          "term": "Stale data",
+          "definition": "A cached value that no longer matches the origin."
+        },
+        {
+          "term": "Cache stampede",
+          "definition": "Many requests missing the same expired key at once and all hitting the origin together."
+        },
+        {
+          "term": "LRU vs LFU",
+          "definition": "Least recently used drops what has not been touched lately; least frequently used drops what is asked for least often."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rfc9111",
+          "section": "Section 4.4, Invalidating Stored Responses",
+          "what": "When a stored response must be treated as no longer fresh, the heart of invalidation."
+        },
+        {
+          "source": "redis-eviction",
+          "section": "The LRU and LFU policy descriptions",
+          "what": "How the two main eviction strategies differ and which access pattern each suits."
+        }
+      ],
+      "canNow": [
+        "Explain why cache invalidation is hard and name two strategies.",
+        "Describe a cache stampede and a way to prevent it.",
+        "Match an eviction policy to an access pattern."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "Caching speeds reads at the cost of freshness. Every cache decision is really a choice about how stale an answer you can tolerate: a price page can be seconds old, a bank balance usually cannot. Setting the time to live and the invalidation strategy per kind of data, rather than one global rule, is what separates a cache that helps from one that serves wrong answers [[rfc9111]].",
+        "Caches also change failure modes. If the cache is down, every request becomes a miss and pours onto the origin, so the origin must be sized to survive without the cache or the cache must fail gracefully. A cache that is required for the origin to stay up has quietly become part of the critical path [[redis-eviction]].",
+        "Where you cache matters as much as whether you do. A cache close to the application cuts database load; a cache close to the user, at the edge, cuts network latency as well. That second idea, pushing cached copies out to the network edge, is exactly what CDNs do, which is why CDNs come right after caching on the map [[rfc9111]]."
+      ],
+      "terms": [
+        {
+          "term": "Freshness",
+          "definition": "How up to date a cached answer is compared with the origin."
+        },
+        {
+          "term": "Critical path",
+          "definition": "The components a request must pass through; if the cache is on it, a cache outage is an outage."
+        },
+        {
+          "term": "Write-through",
+          "definition": "Writing to the cache and the origin together, so the cache is never behind the origin."
+        },
+        {
+          "term": "Edge cache",
+          "definition": "A cache placed close to users to cut network distance as well as origin load."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rfc9111",
+          "section": "Section 1, Overview, and Section 5.2 directives",
+          "what": "How the standard frames the freshness trade-off and the controls for it."
+        },
+        {
+          "source": "redis-eviction",
+          "section": "The noeviction behaviour",
+          "what": "What a full cache does by default, and why that affects your origin's load."
+        }
+      ],
+      "canNow": [
+        "Set a caching policy by naming how stale the data may be.",
+        "Explain how a cache outage can overload the origin.",
+        "See why edge caching leads into the CDN topic."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "Caching is free performance with no downside.",
+      "truth": "It trades freshness for speed; a cached copy can be stale until it expires or is invalidated [[rfc9111]]."
+    },
+    {
+      "myth": "A cache remembers everything you put in it.",
+      "truth": "Memory is limited, so an eviction policy drops entries, and by default a full Redis refuses new writes [[redis-eviction]]."
+    },
+    {
+      "myth": "The cache keeps itself in sync with the database.",
+      "truth": "In cache-aside the application wires them together; the cache does not know about the origin [[memcached-about]]."
+    },
+    {
+      "myth": "A longer time to live is always better.",
+      "truth": "It raises the hit ratio but lets stale data live longer; the right value depends on how fresh the data must be [[rfc9111]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These use redis-cli, the client that ships with Redis, against a local or test server. Output depends on your data, so it is not shown here. Each command and setting is described in the Redis documentation.",
+    "commands": [
+      {
+        "command": "SET greeting hello EX 60",
+        "shows": "Storing a value with a 60 second time to live.",
+        "source": "redis-eviction"
+      },
+      {
+        "command": "TTL greeting",
+        "shows": "How many seconds are left before the key expires.",
+        "source": "redis-eviction"
+      },
+      {
+        "command": "CONFIG GET maxmemory-policy",
+        "shows": "The eviction policy the server will apply when memory is full.",
+        "source": "redis-eviction"
+      },
+      {
+        "command": "INFO stats",
+        "shows": "Counters including keyspace hits and misses, from which you compute the hit ratio.",
+        "source": "redis-eviction"
+      }
+    ]
+  },
+  "next": "Go back to the Caching topic page for the worked example and the quiz, then read the two company posts on caching at scale. The edge-caching idea here opens straight into CDNs, and consistent hashing explains how a cache cluster spreads keys.",
+  "sources": [
+    {
+      "id": "memcached-about",
+      "title": "About Memcached",
+      "url": "https://memcached.org/about",
+      "publisher": "Memcached",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "redis-eviction",
+      "title": "Redis Documentation: Key Eviction",
+      "url": "https://redis.io/docs/latest/develop/reference/eviction/",
+      "publisher": "Redis",
+      "kind": "Project documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "rfc9111",
+      "title": "RFC 9111: HTTP Caching",
+      "url": "https://www.rfc-editor.org/rfc/rfc9111",
+      "publisher": "IETF",
+      "kind": "Internet standard",
+      "year": "2022",
+      "verifiedOn": "2026-10-11"
+    }
+  ]
+}

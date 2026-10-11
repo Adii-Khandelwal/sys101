@@ -1,0 +1,282 @@
+{
+  "slug": "consistent-hashing",
+  "promise": "After this you can follow the topic page and the posts.",
+  "before": {
+    "prerequisites": [
+      "caching"
+    ],
+    "terms": [
+      {
+        "term": "Hash function",
+        "definition": "A function that turns any input into a fixed-size number, spreading inputs evenly across the range."
+      },
+      {
+        "term": "Modulo",
+        "definition": "The remainder after division; hashing a key and taking it modulo N picks one of N slots."
+      },
+      {
+        "term": "Node",
+        "definition": "One server in a group, such as one cache or one database shard."
+      }
+    ],
+    "note": "Read Caching first: consistent hashing is how a cache or data cluster decides which node holds each key. The terms below are enough to begin."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "When data is spread across several nodes, something has to decide which node holds each key. The obvious way is to hash the key and take it modulo the number of nodes. That works until the number of nodes changes: add or remove one, and almost every key now maps to a different node, so nearly all the data has to move at once [[karger]].",
+        "Consistent hashing was designed to fix exactly this. It arranges both the keys and the nodes on the same circle of hash values, and a key is owned by the first node found going around the circle. When a node joins or leaves, only the keys near it change hands; the rest stay put [[karger]].",
+        "The payoff is a precise bound: on average only about one over the number of nodes of the keys move when the node set changes, instead of nearly all of them. That is what makes it possible to grow or shrink a cluster without a storm of data movement, and it is why real distributed caches and databases use it [[dynamo]]."
+      ],
+      "terms": [
+        {
+          "term": "Hash ring",
+          "definition": "A circle of hash values on which both keys and nodes are placed."
+        },
+        {
+          "term": "Key ownership",
+          "definition": "The rule that a key belongs to the first node clockwise from the key's point on the ring."
+        },
+        {
+          "term": "Rehashing",
+          "definition": "Recomputing which node owns which keys; plain modulo hashing rehashes almost everything on a change."
+        },
+        {
+          "term": "Node churn",
+          "definition": "Nodes joining and leaving the cluster over time."
+        },
+        {
+          "term": "Key movement",
+          "definition": "How many keys change owners when the node set changes; the thing consistent hashing minimizes."
+        }
+      ],
+      "reading": [
+        {
+          "source": "karger",
+          "section": "Section 4, Consistent Hashing, the definition and properties",
+          "what": "The ring construction and the property that few keys move when nodes change."
+        },
+        {
+          "source": "dynamo",
+          "section": "Section 4.2, Partitioning",
+          "what": "How a production system uses consistent hashing to spread keys and limit movement."
+        }
+      ],
+      "canNow": [
+        "Explain why plain modulo hashing moves almost all keys when a node is added.",
+        "Describe how a hash ring assigns a key to a node.",
+        "State roughly how many keys move when the node set changes."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "Picture the hash values as points around a circle. Each node is hashed to a point on the circle. To place a key, hash it to its own point, then walk clockwise until you meet a node; that node owns the key. Looking up a key means hashing it and finding that same next node [[karger]].",
+        "Adding a node drops a new point on the circle. It takes over only the keys that fall between it and the previous node going backwards; every other key is untouched. Removing a node hands its keys to the next node clockwise, and again nothing else moves. This locality is the whole point [[karger]].",
+        "A plain ring can be lumpy: with few nodes, the gaps between their points are uneven, so some nodes own far more of the circle, and more keys, than others. The fix is virtual nodes, giving each physical node many points on the ring. With many small arcs each, the load evens out and removing one physical node spreads its keys across many others rather than dumping them all on one neighbour [[dynamo]].",
+        "The quality of the spread depends on the hash function being well distributed. A good hash scatters both keys and node points evenly around the circle, which is what keeps each node's share close to its fair fraction [[karger]]."
+      ],
+      "terms": [
+        {
+          "term": "Clockwise lookup",
+          "definition": "Finding a key's owner by moving around the ring from the key to the next node."
+        },
+        {
+          "term": "Virtual node",
+          "definition": "One of many ring points assigned to a single physical node to even out load."
+        },
+        {
+          "term": "Arc",
+          "definition": "The span of the ring between two adjacent node points; the keys in it belong to the node ahead."
+        },
+        {
+          "term": "Load distribution",
+          "definition": "How evenly keys are spread across nodes; virtual nodes make it more even."
+        },
+        {
+          "term": "Rebalance",
+          "definition": "The limited movement of keys to new owners when a node joins or leaves."
+        }
+      ],
+      "reading": [
+        {
+          "source": "karger",
+          "section": "Section 4, the ring and the use of multiple points per node",
+          "what": "Walking the ring to find an owner, and why several points per node smooth the load."
+        },
+        {
+          "source": "dynamo",
+          "section": "Section 4.2, virtual nodes",
+          "what": "How assigning many virtual nodes per machine evens out load and spreads a departing node's keys."
+        }
+      ],
+      "canNow": [
+        "Trace a key to its owning node on the ring.",
+        "Explain what happens to keys when a node is added or removed.",
+        "Say why virtual nodes make the load more even."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 136\" role=\"img\" aria-labelledby=\"dg-learn-ch-how-t\" class=\"dg\"><title id=\"dg-learn-ch-how-t\">On the ring: hash a key to a point and walk clockwise to the owning node; adding a node takes only nearby keys, and virtual nodes even out the load.</title><defs><marker id=\"dg-learn-ch-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"69\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Hash the key</text><rect x=\"152\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"209\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Walk</text><text x=\"209\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">clockwise</text><text x=\"209\" y=\"99\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">to the owner</text><rect x=\"292\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"349\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Add a node</text><text x=\"349\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">takes nearby keys</text><rect x=\"432\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"489\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Virtual nodes</text><text x=\"489\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">even the load</text><path d=\"M126,60 L152,60\" class=\"dg-line\" marker-end=\"url(#dg-learn-ch-how-a)\"/><path d=\"M266,60 L292,60\" class=\"dg-line\" marker-end=\"url(#dg-learn-ch-how-a)\"/><path d=\"M406,60 L432,60\" class=\"dg-line\" marker-end=\"url(#dg-learn-ch-how-a)\"/><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Only keys near a change move; virtual points keep the spread even.</text></svg>"
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "Consistent hashing is usually paired with replication. A key is not only stored on its owning node but also on the next few nodes clockwise, so if the owner fails the data is still reachable. The ring doubles as the way to find the backups: they are simply the following nodes [[dynamo]].",
+        "Where the ring is managed differs by system. Dynamo-style systems let every node know the ring and route requests themselves, with no central coordinator. Redis Cluster takes a related but different approach: it divides the key space into a fixed number of hash slots and assigns slots to nodes, which keeps the mapping explicit and easy to move slot by slot [[redis-cluster]].",
+        "Even with virtual nodes, load can be uneven if some keys are far hotter than others, a hot key problem the ring alone does not solve. A single wildly popular key still lands on one node. Handling that needs extra tactics such as replicating or splitting the hot key, which is a caching and sharding concern layered on top of the ring [[redis-cluster]]."
+      ],
+      "terms": [
+        {
+          "term": "Replication factor",
+          "definition": "How many nodes hold a copy of each key, found by continuing clockwise from the owner."
+        },
+        {
+          "term": "Hash slot",
+          "definition": "A fixed partition of the key space; Redis Cluster assigns slots to nodes rather than hashing to a point directly."
+        },
+        {
+          "term": "Gossip",
+          "definition": "Nodes sharing cluster state with each other so every node can route without a central map."
+        },
+        {
+          "term": "Hot key",
+          "definition": "A single key so popular that its one owning node is overloaded even with even hashing."
+        }
+      ],
+      "reading": [
+        {
+          "source": "dynamo",
+          "section": "Section 4.3, Replication",
+          "what": "How copies of a key live on the next nodes clockwise, using the ring to find them."
+        },
+        {
+          "source": "redis-cluster",
+          "section": "Hash slots and the key-to-slot mapping",
+          "what": "A different, slot-based way to assign keys to nodes and move them in fixed units."
+        }
+      ],
+      "canNow": [
+        "Explain how the ring is reused to place replicas of a key.",
+        "Contrast a pure ring with Redis Cluster's fixed hash slots.",
+        "Say why a single hot key is not solved by consistent hashing alone."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "The main trade-off is between even load and simplicity. More virtual nodes per machine give a smoother spread but cost more memory and bookkeeping to track all the ring points. Fixed hash slots, as in Redis Cluster, trade some of that smoothness for a mapping that is explicit and simple to reason about and migrate [[redis-cluster]].",
+        "Consistent hashing shines when the node set changes often, which is the normal state of a large cache or store: machines fail, get replaced, and are added as traffic grows. If your node set never changed, plain modulo hashing would be fine; the technique earns its complexity precisely because real clusters are always churning [[karger]].",
+        "This idea connects the map. It is how a cache cluster, the previous topic, decides which cache holds a key, and it is one of the ways a sharded database, a later topic, decides which shard holds a row. Learning it here means replication and sharding will reuse the same ring rather than introduce it fresh [[dynamo]]."
+      ],
+      "terms": [
+        {
+          "term": "Bookkeeping cost",
+          "definition": "The memory and tracking needed to keep many virtual-node points, the price of smoother load."
+        },
+        {
+          "term": "Partition key",
+          "definition": "The field hashed to place a row or value, deciding which node or shard owns it."
+        },
+        {
+          "term": "Migration",
+          "definition": "Moving keys to new owners when the cluster changes; consistent hashing keeps this small."
+        },
+        {
+          "term": "Churn tolerance",
+          "definition": "How well a scheme copes with nodes constantly joining and leaving."
+        }
+      ],
+      "reading": [
+        {
+          "source": "redis-cluster",
+          "section": "The resharding and slot-migration discussion",
+          "what": "How a slot-based cluster moves data when nodes change, the practical face of rebalancing."
+        },
+        {
+          "source": "karger",
+          "section": "Section 4, the balance and monotonicity properties",
+          "what": "The guarantees that make the technique worth its complexity when nodes churn."
+        }
+      ],
+      "canNow": [
+        "Weigh virtual nodes against fixed slots for load evenness and simplicity.",
+        "Say when consistent hashing is worth it and when plain hashing suffices.",
+        "See how the same ring underlies cache clusters and sharded stores."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "Consistent hashing spreads keys perfectly evenly.",
+      "truth": "A plain ring can be lumpy with few nodes; evenness comes from giving each node many virtual points [[dynamo]]."
+    },
+    {
+      "myth": "Adding a node reshuffles all the data.",
+      "truth": "Only the keys near the new node move; on average about one over the node count, not nearly all [[karger]]."
+    },
+    {
+      "myth": "The ring removes hot spots entirely.",
+      "truth": "A single very popular key still lands on one node, so hot keys need extra handling [[redis-cluster]]."
+    },
+    {
+      "myth": "Every system places keys by walking a continuous ring.",
+      "truth": "Redis Cluster instead uses a fixed set of hash slots assigned to nodes, a related but different design [[redis-cluster]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These explore how a real cluster maps keys to nodes. Output depends on your cluster, so it is not shown here. The slot model they reveal is described in the Redis Cluster documentation.",
+    "commands": [
+      {
+        "command": "redis-cli -c CLUSTER KEYSLOT user:42",
+        "shows": "The hash slot a given key falls into.",
+        "source": "redis-cluster"
+      },
+      {
+        "command": "redis-cli -c CLUSTER SHARDS",
+        "shows": "Which nodes own which ranges of slots.",
+        "source": "redis-cluster"
+      },
+      {
+        "command": "redis-cli -c CLUSTER NODES",
+        "shows": "Every node and the slot ranges assigned to it.",
+        "source": "redis-cluster"
+      }
+    ]
+  },
+  "next": "Go back to the Consistent Hashing topic page for the worked example and the quiz, then read the two company posts on using it in production. The ring reappears in Replication, which places copies, and in Sharding, which splits data across nodes.",
+  "sources": [
+    {
+      "id": "karger",
+      "title": "Consistent Hashing and Random Trees (Karger et al.)",
+      "url": "https://www.cs.princeton.edu/courses/archive/fall09/cos518/papers/chash.pdf",
+      "publisher": "Hosted by Princeton University (COS 518)",
+      "kind": "Academic paper",
+      "year": "1997",
+      "verifiedOn": "2026-10-11",
+      "note": "The original STOC 1997 paper that introduced consistent hashing, provided as a course reading."
+    },
+    {
+      "id": "dynamo",
+      "title": "Dynamo: Amazon's Highly Available Key-value Store",
+      "url": "https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf",
+      "publisher": "Amazon (Werner Vogels, allthingsdistributed.com)",
+      "kind": "Academic paper",
+      "year": "2007",
+      "verifiedOn": "2026-10-11",
+      "note": "The SOSP 2007 Dynamo paper, hosted on the Amazon CTO's site."
+    },
+    {
+      "id": "redis-cluster",
+      "title": "Redis Documentation: Scale with Redis Cluster",
+      "url": "https://redis.io/docs/latest/operate/oss_and_stack/management/scaling/",
+      "publisher": "Redis",
+      "kind": "Project documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    }
+  ]
+}

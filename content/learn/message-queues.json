@@ -1,0 +1,293 @@
+{
+  "slug": "message-queues",
+  "promise": "After this you can follow the topic page and the posts.",
+  "before": {
+    "prerequisites": [
+      "sharding"
+    ],
+    "terms": [
+      {
+        "term": "Producer and consumer",
+        "definition": "A producer sends messages; a consumer receives and processes them."
+      },
+      {
+        "term": "Message",
+        "definition": "A unit of data passed between systems, such as \"order 42 was placed\"."
+      },
+      {
+        "term": "Synchronous vs asynchronous",
+        "definition": "Synchronous waits for a reply before continuing; asynchronous hands off work and moves on."
+      }
+    ],
+    "note": "Read Sharding first: queues often sit between sharded services, and partitioning returns here as the way a log scales. The terms below are enough to begin."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "When one service calls another directly and waits, a slow or failed callee drags the caller down with it. A message queue breaks that tight coupling: the producer drops a message into the queue and moves on, and a consumer picks it up when it is ready. The two no longer have to be fast, or even up, at the same time [[sqs-arch]].",
+        "This buys three things. It decouples services, so each can be deployed and scaled on its own. It absorbs bursts, because the queue holds a backlog when work arrives faster than it is processed. And it adds resilience, because a message waits safely in the queue if a consumer is down rather than being lost [[sqs-arch]].",
+        "There are two broad shapes. A queue hands each message to one consumer, spreading work across a pool, which is good for tasks. Publish-subscribe delivers each message to many subscribers, which is good for broadcasting events. Knowing which shape a system needs is the first design choice [[rabbitmq-amqp]]."
+      ],
+      "terms": [
+        {
+          "term": "Message queue",
+          "definition": "A buffer that holds messages between producers and consumers so they need not run in lockstep."
+        },
+        {
+          "term": "Producer",
+          "definition": "A sender that puts messages into the queue."
+        },
+        {
+          "term": "Consumer",
+          "definition": "A receiver that takes messages out and processes them."
+        },
+        {
+          "term": "Decoupling",
+          "definition": "Letting services run, fail and scale independently by communicating through a queue."
+        },
+        {
+          "term": "Publish-subscribe",
+          "definition": "A pattern where each message is delivered to many subscribers, not just one consumer."
+        }
+      ],
+      "reading": [
+        {
+          "source": "sqs-arch",
+          "section": "Basic architecture, producers, consumers and the queue",
+          "what": "How putting a queue between services decouples them and absorbs bursts."
+        },
+        {
+          "source": "rabbitmq-amqp",
+          "section": "Exchanges, queues and bindings overview",
+          "what": "The difference between delivering a message to one consumer and to many subscribers."
+        }
+      ],
+      "canNow": [
+        "Say what problem a queue solves between two services.",
+        "List the three benefits: decoupling, buffering bursts, resilience.",
+        "Distinguish a work queue from publish-subscribe."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "In the AMQP model a producer does not send straight to a queue. It sends to an exchange, which routes the message to one or more queues based on rules called bindings. This indirection is what lets the same message fan out to many queues, or be routed by a key, without the producer knowing who consumes it [[rabbitmq-amqp]].",
+        "Delivery needs acknowledgement to be safe. A consumer takes a message, does the work, then acknowledges it, and only then does the broker remove it. If the consumer dies before acknowledging, the broker redelivers the message to another consumer, so work is not silently lost [[rabbitmq-amqp]].",
+        "Kafka takes a different model built on a log. Messages for a topic are appended to an ordered, durable log, and each consumer tracks an offset, its position in the log. Consumers read forward at their own pace, and because the log is retained, a consumer can replay from an earlier offset. This is closer to a durable record than a disappearing mailbox [[kafka-intro]].",
+        "Kafka scales a topic by splitting it into partitions, each an independent ordered log on possibly different machines. This is the sharding idea you already learned, applied to a message log: partitioning spreads throughput, and order is guaranteed within a partition but not across partitions [[kafka-docs]]."
+      ],
+      "terms": [
+        {
+          "term": "Broker",
+          "definition": "The server that stores messages and delivers them between producers and consumers."
+        },
+        {
+          "term": "Exchange and binding",
+          "definition": "In AMQP, an exchange routes a message to queues according to binding rules."
+        },
+        {
+          "term": "Acknowledgement",
+          "definition": "A consumer's signal that a message was handled, after which the broker can drop it."
+        },
+        {
+          "term": "Offset",
+          "definition": "A consumer's position in a Kafka log, which it advances as it reads."
+        },
+        {
+          "term": "Partition",
+          "definition": "One independent, ordered log a Kafka topic is split into, to spread throughput."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rabbitmq-amqp",
+          "section": "Exchanges, bindings, and acknowledgements",
+          "what": "How an exchange routes messages and how acknowledgement makes delivery safe."
+        },
+        {
+          "source": "kafka-intro",
+          "section": "Topics, partitions and offsets",
+          "what": "How Kafka stores messages as a retained, ordered log that consumers read by offset."
+        }
+      ],
+      "canNow": [
+        "Describe how an exchange routes a message to queues.",
+        "Explain how acknowledgement prevents lost work.",
+        "Say how Kafka's log and offsets differ from a classic queue."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 136\" role=\"img\" aria-labelledby=\"dg-learn-mq-how-t\" class=\"dg\"><title id=\"dg-learn-mq-how-t\">A message through a broker: a producer sends to an exchange that routes to a queue; a consumer acknowledges after work, or in Kafka reads a durable log by offset.</title><defs><marker id=\"dg-learn-mq-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box\"/><text x=\"55\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Producer</text><rect x=\"124\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box\"/><text x=\"167\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Exchange</text><text x=\"167\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">routes</text><text x=\"167\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">AMQP</text><rect x=\"236\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box\"/><text x=\"279\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Queue</text><rect x=\"348\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"391\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Consumer</text><text x=\"391\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">acks</text><text x=\"391\" y=\"99\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">or retry</text><rect x=\"460\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box\"/><text x=\"503\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Kafka log</text><text x=\"503\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">read by offset</text><path d=\"M98,60 L124,60\" class=\"dg-line\" marker-end=\"url(#dg-learn-mq-how-a)\"/><path d=\"M210,60 L236,60\" class=\"dg-line\" marker-end=\"url(#dg-learn-mq-how-a)\"/><path d=\"M322,60 L348,60\" class=\"dg-line\" marker-end=\"url(#dg-learn-mq-how-a)\"/><path d=\"M434,60 L460,60\" class=\"dg-line\" marker-end=\"url(#dg-learn-mq-how-a)\"/><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">A routed, acknowledged message is retried until done; a log is replayable.</text></svg>"
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "Delivery guarantees are the heart of queue design. At-most-once may drop a message but never repeats it; at-least-once never drops but may repeat; exactly-once is the ideal but is hard and costly to achieve. Most systems choose at-least-once and make consumers handle duplicates [[kafka-docs]].",
+        "Because at-least-once means a message can arrive twice, consumers must be idempotent: processing the same message twice has the same effect as once. The usual way is to record a message's unique id and skip it if seen before, so a redelivery after a crash does no harm. This is the practical cost of safe delivery [[kafka-docs]].",
+        "Order and failure handling need explicit decisions. Kafka guarantees order only within a partition, so if two related messages must be processed in order they must share a partition, chosen by a key. And a message that keeps failing cannot block the queue forever, so it is moved aside to a dead-letter queue after some retries for a human or separate process to inspect [[sqs-arch]]."
+      ],
+      "terms": [
+        {
+          "term": "At-least-once delivery",
+          "definition": "A message is never lost but may be delivered more than once, so consumers must cope with duplicates."
+        },
+        {
+          "term": "Idempotent consumer",
+          "definition": "A consumer where handling the same message twice has the same effect as once."
+        },
+        {
+          "term": "Ordering guarantee",
+          "definition": "Whether messages are delivered in order; in Kafka, only within one partition."
+        },
+        {
+          "term": "Partition key",
+          "definition": "The value that decides a message's partition, used to keep related messages ordered together."
+        },
+        {
+          "term": "Dead-letter queue",
+          "definition": "A side queue for messages that keep failing, so they do not block the main queue."
+        }
+      ],
+      "reading": [
+        {
+          "source": "kafka-docs",
+          "section": "Message Delivery Semantics",
+          "what": "At-most-once, at-least-once and exactly-once, and why duplicates must be handled."
+        },
+        {
+          "source": "sqs-arch",
+          "section": "Dead-letter queues and visibility timeout",
+          "what": "How failing messages are set aside and how redelivery is controlled."
+        }
+      ],
+      "canNow": [
+        "Name the three delivery guarantees and their trade-offs.",
+        "Explain why consumers must be idempotent and how.",
+        "Say how ordering and dead-letter queues are handled."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "The two models suit different jobs. A classic broker like RabbitMQ, routing through exchanges with per-message acknowledgement, fits task distribution and complex routing where each message is handled once and then gone. A log like Kafka fits high-throughput event streams and cases where many consumers, or replays, need the same ordered history. Many companies run both for different needs [[rabbitmq-amqp]].",
+        "A queue is powerful but not free. It adds a component to operate and a new failure mode: a backlog. If consumers fall behind producers for long, the queue grows, latency rises, and in a retained log old data ages out. Watching queue depth and consumer lag is as important as watching the services themselves [[kafka-docs]].",
+        "Queues also change correctness. Asynchronous processing means a result is not ready the instant a request returns, so the caller must handle \"accepted, will finish later\". Combined with at-least-once delivery and idempotent consumers, this is the standard way large systems stay decoupled and resilient, and it is why queues sit at the far end of this map, after the data topics they connect [[sqs-arch]]."
+      ],
+      "terms": [
+        {
+          "term": "Consumer lag",
+          "definition": "How far behind the latest message the consumers are; growing lag signals a backlog."
+        },
+        {
+          "term": "Backpressure",
+          "definition": "Slowing or buffering producers when consumers cannot keep up, so the system does not fall over."
+        },
+        {
+          "term": "Retention",
+          "definition": "How long a log keeps messages; after it, old messages age out whether read or not."
+        },
+        {
+          "term": "Eventual processing",
+          "definition": "Work finishing some time after the request returns, which callers must be designed for."
+        }
+      ],
+      "reading": [
+        {
+          "source": "kafka-docs",
+          "section": "The intro's comparison of messaging and streaming use cases",
+          "what": "When a log fits better than a classic queue, and the lag and retention you must watch."
+        },
+        {
+          "source": "rabbitmq-amqp",
+          "section": "The AMQP model summary",
+          "what": "What a routing broker is best at, as the counterpart to a log."
+        }
+      ],
+      "canNow": [
+        "Choose a broker or a log for a given job and justify it.",
+        "Explain the backlog failure mode and what to monitor.",
+        "Describe how asynchronous processing changes a caller's design."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "A queue guarantees each message is processed exactly once.",
+      "truth": "Most systems give at-least-once delivery, so a message can arrive twice and consumers must be idempotent [[kafka-docs]]."
+    },
+    {
+      "myth": "Messages always come out in the order they went in.",
+      "truth": "Kafka guarantees order only within a partition; across partitions there is no global order [[kafka-docs]]."
+    },
+    {
+      "myth": "A producer sends straight to a specific queue.",
+      "truth": "In AMQP it sends to an exchange, which routes to queues by binding rules the producer need not know [[rabbitmq-amqp]]."
+    },
+    {
+      "myth": "Adding a queue removes failure modes.",
+      "truth": "It adds one: a backlog when consumers fall behind, so queue depth and lag must be watched [[kafka-docs]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These use the command-line tools that ship with Kafka against a local or test cluster. Output depends on your cluster, so it is not shown here. Each tool is described in the Kafka documentation.",
+    "commands": [
+      {
+        "command": "kafka-topics.sh --describe --topic orders --bootstrap-server localhost:9092",
+        "shows": "A topic's partitions and which broker leads each one.",
+        "source": "kafka-docs"
+      },
+      {
+        "command": "kafka-console-producer.sh --topic orders --bootstrap-server localhost:9092",
+        "shows": "A simple producer: lines you type become messages on the topic.",
+        "source": "kafka-intro"
+      },
+      {
+        "command": "kafka-consumer-groups.sh --describe --group workers --bootstrap-server localhost:9092",
+        "shows": "A consumer group's offset per partition and its lag behind the latest message.",
+        "source": "kafka-docs"
+      }
+    ]
+  },
+  "next": "Go back to the Message Queues topic page for the worked example and the quiz, then read the two company posts on running queues at scale. This is the far end of the current map; the delivery and idempotency ideas here recur throughout distributed systems.",
+  "sources": [
+    {
+      "id": "rabbitmq-amqp",
+      "title": "RabbitMQ: AMQP 0-9-1 Model Explained",
+      "url": "https://www.rabbitmq.com/tutorials/amqp-concepts",
+      "publisher": "RabbitMQ (Broadcom)",
+      "kind": "Project documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "kafka-intro",
+      "title": "Apache Kafka: Introduction",
+      "url": "https://kafka.apache.org/intro",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "kafka-docs",
+      "title": "Apache Kafka Documentation",
+      "url": "https://kafka.apache.org/documentation/",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "sqs-arch",
+      "title": "Amazon SQS Developer Guide: Basic Architecture",
+      "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-basic-architecture.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    }
+  ]
+}

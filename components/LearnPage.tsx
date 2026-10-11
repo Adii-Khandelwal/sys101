@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Fragment } from "react";
 import SiteFooter from "./SiteFooter";
+import LearnRail, { type LearnEntry } from "./LearnRail";
 import type { Learn, Source, VideoSource } from "@/lib/learn";
 import type { Topic } from "@/lib/topics";
 import { formatDate } from "@/lib/topics";
@@ -51,8 +52,22 @@ export default function LearnPage({ topic, learn, titles }: Props) {
   const byId = new Map(learn.sources.map((s) => [s.id, s]));
   const name = (id: string) => byId.get(id)?.title ?? id;
 
+  // Contents of the page, in order, for the rail and the narrow-screen line.
+  const entries: LearnEntry[] = [
+    { id: "before", name: "Before you start" },
+    ...learn.stages.map((st) => ({ id: st.id, name: st.name })),
+    { id: "myths", name: "Common misconceptions" },
+    { id: "try", name: "Try it" },
+    { id: "next", name: "Where to go next" },
+  ];
+
   return (
-    <article className="dossier learn">
+    <article className="dossier learn lesson">
+      <LearnRail entries={entries} />
+      <div className="progress-sticky" data-pagefind-ignore>
+        <LearnRail entries={entries} variant="line" />
+      </div>
+
       <nav className="label" data-pagefind-ignore>
         <Link href={`/topic/${topic.slug}`}>Back to {topic.title}</Link>
       </nav>
@@ -68,7 +83,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
           progress on the topic page.
         </p>
 
-        <section className="learn-section" aria-labelledby="before-h">
+        <section id="before" className="learn-section" aria-labelledby="before-h">
           <h2 id="before-h">Before you start</h2>
           {learn.before.note && <p>{learn.before.note}</p>}
           {learn.before.prerequisites.length > 0 && (
@@ -104,6 +119,8 @@ export default function LearnPage({ topic, learn, titles }: Props) {
                   <Cited text={p} number={number} />
                 </p>
               ))}
+
+              {st.diagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: st.diagram }} />}
 
               <h3>Key terms</h3>
               <dl className="learn-terms">
@@ -144,7 +161,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
           );
         })}
 
-        <section className="learn-section" aria-labelledby="myths-h">
+        <section id="myths" className="learn-section" aria-labelledby="myths-h">
           <h2 id="myths-h">Common misconceptions</h2>
           <dl className="learn-myths">
             {learn.misconceptions.map((m) => (
@@ -158,7 +175,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
           </dl>
         </section>
 
-        <section className="learn-section" aria-labelledby="try-h">
+        <section id="try" className="learn-section" aria-labelledby="try-h">
           <h2 id="try-h">Try it</h2>
           <p>
             <Cited text={learn.tryIt.intro} number={number} />
@@ -181,7 +198,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
           </ul>
         </section>
 
-        <section className="learn-section" aria-labelledby="next-h">
+        <section id="next" className="learn-section" aria-labelledby="next-h">
           <h2 id="next-h">Where to go next</h2>
           <p>
             <Cited text={learn.next} number={number} />

@@ -1,0 +1,329 @@
+{
+  "slug": "databases",
+  "promise": "After this you can follow the topic page and the posts.",
+  "before": {
+    "prerequisites": [],
+    "terms": [
+      {
+        "term": "Record (row)",
+        "definition": "One item of data, such as a single user or a single order, with its fields filled in."
+      },
+      {
+        "term": "Query",
+        "definition": "A request to read or change data, usually written in a query language such as SQL."
+      },
+      {
+        "term": "Disk and memory",
+        "definition": "Disk keeps data when the power is off and is slow; memory is fast but is lost when the process stops."
+      }
+    ],
+    "note": "Databases are a starting point on this map, with no prerequisite topics. If the three terms below are familiar, you are ready."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "A database is a program whose whole job is to store data safely and answer questions about it, so your application does not have to. Instead of writing files by hand and hoping nothing is lost, you hand the data to the database and ask it questions. The most common kind is the relational database, where data is kept in tables of rows and columns and you ask for it in SQL [[pg-concepts]].",
+        "The reason a database is more than a file is a promise about correctness. A relational database groups the work you want done into a transaction, a set of changes that either all happen or none happen. If the power fails in the middle, the database makes sure you never see half of a change [[sqlite-transactional]].",
+        "A real database is built from a few cooperating parts: something that understands the query, something that decides how to run it, and something that reads and writes the actual bytes on disk through a cache in memory. Reading how these parts fit together is the fastest way to stop treating the database as a black box [[sqlite-arch]]."
+      ],
+      "terms": [
+        {
+          "term": "Table",
+          "definition": "A named collection of rows, all with the same columns, like a spreadsheet the database understands."
+        },
+        {
+          "term": "Schema",
+          "definition": "The definition of the tables and their columns, which the database enforces."
+        },
+        {
+          "term": "SQL",
+          "definition": "The language used to ask a relational database to read or change data."
+        },
+        {
+          "term": "Transaction",
+          "definition": "A group of changes that the database applies all together or not at all."
+        },
+        {
+          "term": "Primary key",
+          "definition": "A column whose value uniquely identifies each row in a table."
+        }
+      ],
+      "reading": [
+        {
+          "source": "pg-concepts",
+          "section": "Chapter 2: The SQL Language, Concepts",
+          "what": "What a table, a row and a relational database are, in the project's own words."
+        },
+        {
+          "source": "sqlite-transactional",
+          "section": "The whole page",
+          "what": "What it means for changes to be atomic: all of a transaction happens, or none of it does."
+        },
+        {
+          "source": "cmu15445",
+          "section": "The schedule and lecture list on the course home page",
+          "what": "The set of topics a database systems course covers, to see the shape of the field."
+        }
+      ],
+      "canNow": [
+        "Say what a database gives you that a plain file does not.",
+        "Explain what a transaction is in one sentence.",
+        "Name the main tables-and-rows model and the language used to query it."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "When you send a query, the database first parses it into a form it understands, then plans how to run it, then executes that plan against the stored data. In SQLite the documentation lays this out as a pipeline: the SQL compiler turns your text into a program of small steps, and a virtual machine runs those steps against the storage below [[sqlite-arch]].",
+        "The data itself does not sit loose. It is kept in fixed-size pages, and the database keeps recently used pages in a cache in memory so that common reads do not touch the disk at all. A write changes a page in memory first; getting that change safely onto disk is the hard part the database handles for you [[sqlite-arch]].",
+        "To keep a transaction all-or-nothing even across a crash, the database writes a durable record of what it is about to do before it changes the real data. If the machine dies mid-write, on restart it uses that record to either finish the change or undo it, so the stored data is never left half-updated [[sqlite-transactional]].",
+        "A transaction is meant to have four properties together, known as ACID: atomic (all or nothing), consistent (it leaves the data valid), isolated (concurrent transactions do not corrupt each other), and durable (once committed, it survives a crash). The isolation part is the subtle one, and it is the subject of the next stage [[pg-mvcc]]."
+      ],
+      "terms": [
+        {
+          "term": "Query planner",
+          "definition": "The part that decides how to run a query, such as which index to use and in what order."
+        },
+        {
+          "term": "Page",
+          "definition": "A fixed-size block of storage the database reads and writes as one unit."
+        },
+        {
+          "term": "Buffer cache",
+          "definition": "Pages kept in memory so common reads and writes avoid the slow disk."
+        },
+        {
+          "term": "Write-ahead log",
+          "definition": "A durable record of a change written before the change itself, used to recover after a crash."
+        },
+        {
+          "term": "ACID",
+          "definition": "Atomic, Consistent, Isolated, Durable: the four promises a transaction is meant to keep."
+        },
+        {
+          "term": "Commit and rollback",
+          "definition": "Commit makes a transaction's changes permanent; rollback throws them away."
+        }
+      ],
+      "reading": [
+        {
+          "source": "sqlite-arch",
+          "section": "SQL Compiler, Virtual Machine, and B-Tree / Pager / OS Interface",
+          "what": "The parts a query passes through, from parsing to reading pages off the disk."
+        },
+        {
+          "source": "sqlite-transactional",
+          "section": "The whole page",
+          "what": "Why a durable record of intended changes lets the database recover a half-finished transaction."
+        },
+        {
+          "source": "pg-mvcc",
+          "section": "13.1 Introduction",
+          "what": "The four letters of ACID named, and why isolation needs special machinery."
+        }
+      ],
+      "canNow": [
+        "Trace a query from text to a plan to pages on disk.",
+        "Explain why a database writes a log before it writes the data.",
+        "Say what each letter of ACID means."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 132\" role=\"img\" aria-labelledby=\"dg-learn-db-how-t\" class=\"dg\"><title id=\"dg-learn-db-how-t\">A query&#x27;s path: the database parses it, plans it, runs it against pages in a memory cache, and writes the write-ahead log before the data so a crash can be recovered.</title><defs><marker id=\"dg-learn-db-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"86\" height=\"44\" class=\"dg-box\"/><text x=\"55\" y=\"62\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Parse query</text><rect x=\"124\" y=\"36\" width=\"86\" height=\"44\" class=\"dg-box\"/><text x=\"167\" y=\"62\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Plan</text><rect x=\"236\" y=\"36\" width=\"86\" height=\"44\" class=\"dg-box\"/><text x=\"279\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Run on</text><text x=\"279\" y=\"69.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">pages</text><text x=\"279\" y=\"95\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">memory cache</text><rect x=\"348\" y=\"36\" width=\"86\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"391\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Write-ahead</text><text x=\"391\" y=\"69.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">log</text><text x=\"391\" y=\"95\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">before the data</text><rect x=\"460\" y=\"36\" width=\"86\" height=\"44\" class=\"dg-box\"/><text x=\"503\" y=\"62\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Commit</text><path d=\"M98,58 L124,58\" class=\"dg-line\" marker-end=\"url(#dg-learn-db-how-a)\"/><path d=\"M210,58 L236,58\" class=\"dg-line\" marker-end=\"url(#dg-learn-db-how-a)\"/><path d=\"M322,58 L348,58\" class=\"dg-line\" marker-end=\"url(#dg-learn-db-how-a)\"/><path d=\"M434,58 L460,58\" class=\"dg-line\" marker-end=\"url(#dg-learn-db-how-a)\"/><text x=\"280\" y=\"122\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The log is written before the data, so a crash can finish or undo the change.</text></svg>"
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "When many transactions run at once, they can step on each other: one reads a half-finished change from another, or two reads of the same row inside one transaction disagree. The database controls this with isolation levels, which trade strictness for speed. The SQL standard names four levels and defines them by which anomalies they forbid, such as dirty reads and phantom reads [[pg-iso]].",
+        "The old way to isolate transactions was locking: block anyone from touching a row you are using. Many modern databases instead use multiversion concurrency control, MVCC. Each writer makes a new version of a row rather than overwriting it, so readers keep seeing a consistent snapshot and almost never have to wait for writers [[pg-mvcc]].",
+        "The important and surprising point is that the top isolation level is not the default. PostgreSQL's default is Read Committed, not Serializable, because stricter isolation costs performance and can force transactions to be retried. Picking a level is a real trade-off, not a setting you can leave on maximum for free [[pg-iso]]."
+      ],
+      "terms": [
+        {
+          "term": "Isolation level",
+          "definition": "How much one running transaction can see of another's unfinished work."
+        },
+        {
+          "term": "Dirty read",
+          "definition": "Reading a change made by a transaction that has not committed yet and might be undone."
+        },
+        {
+          "term": "MVCC",
+          "definition": "Keeping multiple versions of a row so readers see a consistent snapshot without blocking writers."
+        },
+        {
+          "term": "Snapshot",
+          "definition": "A consistent view of the data as it stood at one moment, used for the length of a transaction."
+        },
+        {
+          "term": "Serializable",
+          "definition": "The strictest level: the result is as if transactions ran one after another."
+        }
+      ],
+      "reading": [
+        {
+          "source": "pg-iso",
+          "section": "13.2 Transaction Isolation",
+          "what": "The four isolation levels, the anomalies each one forbids, and why the default is not the strictest."
+        },
+        {
+          "source": "pg-mvcc",
+          "section": "13.1 Introduction",
+          "what": "How keeping multiple row versions lets readers avoid blocking on writers."
+        }
+      ],
+      "canNow": [
+        "Name an anomaly that a weaker isolation level allows.",
+        "Explain how MVCC lets readers and writers avoid blocking each other.",
+        "Say why the strictest isolation level is usually not the default."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "The practical levers on a single-machine database are the ones from the last stage: pick an isolation level that matches how much concurrency anomaly you can tolerate, and let MVCC or locking do the rest. PostgreSQL spells out that the choice is a trade-off between strictness and the cost of blocking or retrying, which is why the default is a middle level rather than the strictest one [[pg-iso]].",
+        "Isolation also depends on how the database applies changes safely in the first place. Keeping the write-ahead log and MVCC versions in order is what lets one transaction take a consistent snapshot while others keep writing, so you get a clean view without freezing the whole table [[pg-mvcc]].",
+        "These single-node ideas are the foundation for everything later on the map. The moment data no longer fits on one machine, it has to be copied and split, and replication, sharding and consistent hashing are all about keeping these same transaction and isolation promises once there is more than one copy and more than one machine [[pg-iso]]."
+      ],
+      "terms": [
+        {
+          "term": "Snapshot isolation",
+          "definition": "Each transaction reads from a consistent snapshot taken when it began, unaffected by later writes."
+        },
+        {
+          "term": "Phantom read",
+          "definition": "A re-run of the same query returns extra rows because another transaction inserted some in between."
+        },
+        {
+          "term": "Serialization failure",
+          "definition": "The database aborts a transaction rather than allow a result that strict isolation forbids, asking you to retry."
+        },
+        {
+          "term": "Concurrency",
+          "definition": "Many transactions in progress at the same time, which isolation levels keep from corrupting each other."
+        }
+      ],
+      "reading": [
+        {
+          "source": "pg-iso",
+          "section": "13.2.3 Serializable Isolation Level",
+          "what": "What the strictest guarantee gives you, when it makes a transaction retry, and the trade-off against speed."
+        },
+        {
+          "source": "pg-mvcc",
+          "section": "13.1 Introduction",
+          "what": "How snapshots let one transaction read a consistent view while others keep writing."
+        }
+      ],
+      "canNow": [
+        "Choose an isolation level by naming the anomaly you cannot allow.",
+        "Explain what a serialization failure is and why your code may need to retry.",
+        "See why replication and sharding are the next topics after single-node databases."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "A database is just a fancy file.",
+      "truth": "A database adds transactions, concurrency control and crash recovery, so changes are all-or-nothing and survive a crash [[sqlite-transactional]]."
+    },
+    {
+      "myth": "The strictest isolation level is the safe default to always use.",
+      "truth": "Stricter isolation costs performance and can force retries, so databases such as PostgreSQL default to a weaker level [[pg-iso]]."
+    },
+    {
+      "myth": "A query always runs the way you wrote it.",
+      "truth": "A planner rewrites the query into an execution plan, choosing indexes and join order; EXPLAIN shows the plan it picked [[pg-concepts]]."
+    },
+    {
+      "myth": "Readers always block writers and the other way around.",
+      "truth": "With MVCC each writer makes a new row version, so readers see a snapshot and rarely wait for writers [[pg-mvcc]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These use psql, the terminal client that ships with PostgreSQL, against any database you can connect to. The output depends on your data, so it is not shown here. Each statement is defined in the PostgreSQL documentation.",
+    "commands": [
+      {
+        "command": "BEGIN; UPDATE accounts SET balance = balance - 10 WHERE id = 1; ROLLBACK;",
+        "shows": "A transaction you throw away: the balance is unchanged after the rollback.",
+        "source": "pg-mvcc"
+      },
+      {
+        "command": "SHOW default_transaction_isolation;",
+        "shows": "The isolation level your transactions use by default.",
+        "source": "pg-iso"
+      },
+      {
+        "command": "BEGIN ISOLATION LEVEL SERIALIZABLE; SELECT count(*) FROM orders; COMMIT;",
+        "shows": "A transaction running at the strictest level.",
+        "source": "pg-iso"
+      },
+      {
+        "command": "EXPLAIN SELECT * FROM orders WHERE id = 42;",
+        "shows": "The plan the query planner chose, before running the query.",
+        "source": "pg-concepts"
+      }
+    ]
+  },
+  "next": "Go back to the Databases topic page for the worked example and the quiz, then read the two company posts on how a real database was run and scaled. From here the map splits toward replication and sharding, which keep these promises across many machines.",
+  "sources": [
+    {
+      "id": "pg-concepts",
+      "title": "PostgreSQL Documentation: The SQL Language, Concepts",
+      "url": "https://www.postgresql.org/docs/current/tutorial-concepts.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11",
+      "note": "The \"current\" docs track the latest released major version."
+    },
+    {
+      "id": "pg-mvcc",
+      "title": "PostgreSQL Documentation: Concurrency Control, Introduction",
+      "url": "https://www.postgresql.org/docs/current/mvcc-intro.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "pg-iso",
+      "title": "PostgreSQL Documentation: Transaction Isolation",
+      "url": "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "sqlite-arch",
+      "title": "Architecture of SQLite",
+      "url": "https://sqlite.org/arch.html",
+      "publisher": "SQLite",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "sqlite-transactional",
+      "title": "SQLite Is Transactional",
+      "url": "https://sqlite.org/transactional.html",
+      "publisher": "SQLite",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "cmu15445",
+      "title": "CMU 15-445/645: Database Systems (Fall 2024)",
+      "url": "https://15445.courses.cs.cmu.edu/fall2024/",
+      "publisher": "Carnegie Mellon University",
+      "kind": "University course page",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    }
+  ]
+}

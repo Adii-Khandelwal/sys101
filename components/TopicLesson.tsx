@@ -142,6 +142,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 </li>
               ))}
             </ol>
+            <figure className="diagram" dangerouslySetInnerHTML={{ __html: l.howItWorks.diagram }} />
             <MarkDone meta={meta} unit="how" />
           </section>
 
@@ -155,6 +156,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 </li>
               ))}
             </ol>
+            <figure className="diagram" dangerouslySetInnerHTML={{ __html: l.workedExample.diagram }} />
             <MarkDone meta={meta} unit="example" />
           </section>
 
