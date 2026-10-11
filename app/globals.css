@@ -735,8 +735,18 @@ a:hover {
   color: var(--rule);
 }
 
+/* The Map / Path buttons must read as the same mono small-caps label as "View";
+   buttons do not inherit font or text-transform from the container, so set them. */
 .home-view-toggle .text-button {
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--ink-soft);
   text-decoration: none;
+}
+
+.home-view-toggle .text-button:hover {
+  color: var(--ink);
 }
 
 .home-view-toggle .text-button[aria-pressed="true"] {
