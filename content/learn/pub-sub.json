@@ -7,301 +7,391 @@
     ],
     "terms": [
       {
-        "term": "Producer and consumer",
-        "definition": "A producer sends messages; a consumer receives and processes them. In pub-sub the producer is often called a publisher."
+        "term": "Message",
+        "definition": "A piece of data one program sends to another."
       },
       {
-        "term": "Topic",
-        "definition": "A named stream that publishers send messages to, without knowing who will read it."
+        "term": "Broker",
+        "definition": "A server that receives messages and hands them to the programs that want them."
       },
       {
-        "term": "Asynchronous",
-        "definition": "The sender hands off a message and moves on, instead of waiting for the receiver to finish."
+        "term": "Consumer",
+        "definition": "A program that takes messages and does something with them."
       }
     ],
-    "note": "Read Message Queues first: pub-sub is the one-to-many shape of the same idea, and the delivery and ordering rules you learned there return here. The terms below are enough to begin."
+    "note": "Read Message Queues first: a queue gives each message to one consumer, and pub-sub changes that. The terms here are enough to begin."
   },
   "stages": [
     {
       "id": "basics",
       "name": "Basics",
       "body": [
-        "A message queue hands each message to one consumer. Publish-subscribe is the other shape: a publisher sends a message to a topic, and the topic delivers a copy to every interested reader. The publisher does not know, and does not need to know, who those readers are. Google describes its Pub/Sub service as an asynchronous messaging service that decouples the services producing messages from the services processing them [[gcp-pubsub-overview]].",
-        "The point of this is loose coupling. When one order event matters to billing, email and analytics all at once, calling each system in turn ties them together: the order service must know every reader, and a slow reader slows the order. Publishing one message to a topic instead lets each reader take its own copy at its own pace, and lets you add a new reader later without touching the publisher [[sns-dg]].",
-        "Delivering one message to many endpoints is called fan-out. Amazon's SNS puts it plainly: a topic acts as a logical access point, and a fanout scenario is when a message published to a topic is replicated and pushed to multiple endpoints such as queues, functions and HTTP endpoints [[sns-dg]]. That one-to-many delivery is the whole difference from a plain queue."
+        "A program often has to tell other programs that something happened, such as an order being placed. If it calls each one directly, it has to know all of them and wait for them. Google's documentation describes the alternative its Pub/Sub service offers: a messaging service between the services that produce messages and the services that process them, so they talk asynchronously instead of through remote procedure calls [[gcp-overview]].",
+        "In that description the sender is a publisher and the receiver is a subscriber. Publishers send events to the service without regard to how or when they will be processed, and the service delivers them to all the services that react to them [[gcp-overview]]. The page names topic, publisher and subscriber as its core terms [[gcp-overview]].",
+        "The RabbitMQ tutorial draws the line against what you already know from Message Queues. In a work queue, each task is delivered to exactly one worker. In publish/subscribe, a message is delivered to many consumers, and every running copy of the tutorial's receiver program gets the messages [[rabbit-pubsub]]. Google's page adds that its service can also be used as a queue, to spread tasks across workers [[gcp-overview]]."
       ],
       "terms": [
         {
-          "term": "Publish-subscribe",
-          "definition": "A pattern where each message sent to a topic is delivered to every interested subscriber, not just one consumer."
-        },
-        {
           "term": "Publisher",
-          "definition": "The sender that puts a message on a topic without knowing who reads it."
+          "definition": "The part of a system that sends a message without choosing who receives it."
         },
         {
           "term": "Subscriber",
-          "definition": "A reader that registers interest in a topic and receives its messages."
+          "definition": "A part of a system that has asked to receive messages and gets its own copy of each one."
         },
         {
-          "term": "Fan-out",
-          "definition": "Delivering one published message to many endpoints at once."
+          "term": "Topic",
+          "definition": "A named place that publishers send to and subscribers read from."
         },
         {
-          "term": "Decoupling",
-          "definition": "Letting the publisher and its readers run, fail and scale independently by communicating through a topic."
+          "term": "Asynchronous",
+          "definition": "The sender does not wait for the receiver to finish before carrying on."
         }
       ],
       "reading": [
         {
-          "source": "gcp-pubsub-overview",
-          "section": "What is Pub/Sub? and the core concepts (topic, publisher, subscriber)",
-          "what": "How publishing to a topic decouples the services that produce messages from those that process them."
+          "source": "gcp-overview",
+          "section": "The opening section and Common use cases",
+          "what": "What Google's service is for, and the uses it lists, including distributing events to many applications and spreading tasks across workers."
         },
         {
-          "source": "sns-dg",
-          "section": "What is Amazon SNS? and the common scenarios (fanout)",
-          "what": "How one message published to a topic is replicated to many endpoints."
+          "source": "rabbit-pubsub",
+          "section": "What This Tutorial Focuses On",
+          "what": "How the tutorial separates a work queue, where each task goes to one worker, from publish/subscribe, where a message goes to many consumers."
         }
       ],
+      "video": "gcp-video-overview",
       "canNow": [
-        "Say how pub-sub differs from a one-consumer queue.",
-        "Explain what a topic, publisher and subscriber are.",
-        "Describe fan-out and why it decouples the publisher from its readers."
+        "Say in a sentence what a publisher and a subscriber are.",
+        "Explain how publish/subscribe differs from a work queue.",
+        "Name two things a pub-sub service is used for."
       ]
     },
     {
       "id": "how",
       "name": "How it works",
       "body": [
-        "Readers attach to a topic through a subscription. Each subscription is one reader's own view of the topic, with its own position and its own backlog, and every subscription receives every message. Google Pub/Sub splits the two ways a subscriber can get messages: in a pull subscription the subscriber asks for messages, and in a push subscription the service sends each message to an endpoint the subscriber gave [[gcp-pubsub-sub]].",
-        "Inside a single subscription, several workers can share the load, so each message goes to just one of them. This is the queue behaviour living inside pub-sub: separate subscriptions each get a full copy, while workers in one subscription divide that subscription's messages. It is how you broadcast to many systems and still scale any one of them.",
-        "Delivery is confirmed by acknowledgement. A subscriber receives a message, does the work, and acknowledges it; if it does not acknowledge in time, the message is delivered again. Because a crash between work and acknowledgement causes a repeat, the default is at-least-once delivery, and subscribers must be safe to process the same message twice. Google Pub/Sub offers an exactly-once option, but the baseline every design should assume is at-least-once [[gcp-pubsub-sub]].",
-        "Order is not global. Kafka keeps order only inside one partition: it guarantees that any consumer of a given topic-partition reads that partition's events in exactly the same order they were written [[kafka-intro]]. Google Pub/Sub reaches the same place with ordering keys: an ordering key is a string identifying related messages that should be ordered, such as a customer ID, and messages with an empty ordering key are not ordered [[gcp-pubsub-order]]. Either way, if two events must stay in sequence, give them the same key."
+        "Each product builds the idea its own way, so the stage describes three of them as theirs. In RabbitMQ, a producer never sends straight to a queue. It sends to an exchange, and a fanout exchange broadcasts every message it receives to all the queues it knows about. A binding is the link that tells an exchange to send to a queue [[rabbit-pubsub]]. In the tutorial's logging example, a message sent when no queue is bound yet is simply discarded, which the tutorial calls fine for that example [[rabbit-pubsub]].",
+        "In Kafka, topics are multi-producer and multi-subscriber, and events are not deleted after they are read [[kafka-intro]]. Kafka's design page says a topic is divided into ordered partitions, and each partition is consumed by exactly one consumer within each subscribing consumer group at any given time [[kafka-design]]. So each group sees every message, and consumers inside one group share the work. The diagram draws that.",
+        "Google's service uses subscriptions. Its ordering page describes two subscriptions attached to the same topic, both receiving the same set of messages [[gcp-order]]. Google also says its service leases individual messages to subscriber clients and tracks whether each was processed, rather than assigning partitions [[gcp-overview]]."
       ],
+      "diagram": "<svg viewBox=\"0 0 560 270\" role=\"img\" aria-labelledby=\"dg-l-pubsub-t\" class=\"dg\"><title id=\"dg-l-pubsub-t\">Kafka's model: a producer writes to a topic split into partitions; each consumer group receives every message, and inside a group each partition is read by one consumer at a time.</title><defs><marker id=\"dg-l-pubsub-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"90\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"64\" y=\"114.5\" class=\"dg-label\" text-anchor=\"middle\">Producer</text><path d=\"M114,110 L166,110\" class=\"dg-line\" marker-end=\"url(#dg-l-pubsub-a)\"/><rect x=\"170\" y=\"70\" width=\"120\" height=\"80\" class=\"dg-box dg-accent\"/><text x=\"230\" y=\"106\" class=\"dg-label\" text-anchor=\"middle\">Topic</text><text x=\"230\" y=\"123\" class=\"dg-label\" text-anchor=\"middle\">two partitions</text><path d=\"M290,95 L346,56\" class=\"dg-line\" marker-end=\"url(#dg-l-pubsub-a)\"/><path d=\"M290,125 L346,164\" class=\"dg-line\" marker-end=\"url(#dg-l-pubsub-a)\"/><rect x=\"350\" y=\"26\" width=\"200\" height=\"60\" class=\"dg-box\"/><text x=\"450\" y=\"52\" class=\"dg-label\" text-anchor=\"middle\">Group A</text><text x=\"450\" y=\"69\" class=\"dg-label\" text-anchor=\"middle\">two consumers</text><rect x=\"350\" y=\"134\" width=\"200\" height=\"60\" class=\"dg-box\"/><text x=\"450\" y=\"160\" class=\"dg-label\" text-anchor=\"middle\">Group B</text><text x=\"450\" y=\"177\" class=\"dg-label\" text-anchor=\"middle\">one consumer</text><text x=\"280\" y=\"232\" class=\"dg-note\" text-anchor=\"middle\">each group gets every message</text><text x=\"280\" y=\"250\" class=\"dg-note\" text-anchor=\"middle\">inside a group, a partition goes to one consumer</text></svg>",
       "terms": [
         {
-          "term": "Subscription",
-          "definition": "One reader's view of a topic, with its own position and backlog; every subscription gets every message."
+          "term": "Exchange (RabbitMQ)",
+          "definition": "Where a RabbitMQ producer sends messages. It decides which queues get them."
         },
         {
-          "term": "Push vs pull",
-          "definition": "In a pull subscription the subscriber requests messages; in a push subscription the service delivers them to an endpoint."
+          "term": "Binding (RabbitMQ)",
+          "definition": "The link between an exchange and a queue."
         },
         {
-          "term": "Acknowledgement",
-          "definition": "A subscriber's signal that it finished a message; without one in time, the message is redelivered."
+          "term": "Consumer group (Kafka)",
+          "definition": "Consumers that share a topic's partitions, so each partition is read by one of them at a time."
         },
         {
-          "term": "At-least-once delivery",
-          "definition": "Every message arrives, possibly more than once, so subscribers must be idempotent."
+          "term": "Partition (Kafka)",
+          "definition": "One ordered slice of a Kafka topic."
         },
         {
-          "term": "Ordering key",
-          "definition": "A value that keeps related messages in order by routing them together; messages with no key are unordered."
+          "term": "Subscription (Google Pub/Sub)",
+          "definition": "A subscriber's attachment to a topic. Two subscriptions on one topic both receive its messages."
         }
       ],
       "reading": [
         {
-          "source": "gcp-pubsub-sub",
-          "section": "Subscription overview and Choose a subscription type (pull vs push)",
-          "what": "How a subscription is one reader's view of the topic, and how pull and push delivery differ."
+          "source": "rabbit-pubsub",
+          "section": "Exchanges, Temporary queues and Bindings",
+          "what": "How a fanout exchange sends one message to every bound queue."
         },
         {
           "source": "kafka-intro",
-          "section": "Topics and partitions, the ordering guarantee",
-          "what": "Why order is kept only within a partition, not across a whole topic."
+          "section": "Main Concepts and Terminology",
+          "what": "Topics as multi-producer, multi-subscriber logs, and partitions."
         },
         {
-          "source": "gcp-pubsub-order",
-          "section": "Receive messages in order, ordering keys",
-          "what": "How an ordering key keeps related messages in sequence and what an empty key means."
+          "source": "kafka-design",
+          "section": "The Consumer",
+          "what": "How a partition is assigned to one consumer inside each consumer group."
         }
       ],
+      "video": "confluent-consumers-2025",
       "canNow": [
-        "Explain what a subscription is and how push differs from pull.",
-        "Say why workers in one subscription share work while separate subscriptions each get a copy.",
-        "Describe acknowledgement, at-least-once delivery, and keeping order with a key."
-      ],
-      "diagram": "<svg viewBox=\"0 0 560 150\" role=\"img\" aria-labelledby=\"dg-learn-pubsub-how-t\" class=\"dg\"><title id=\"dg-learn-pubsub-how-t\">A publisher sends one message to a topic; the topic gives each subscription its own copy; workers inside one subscription share that subscription's messages, acknowledging each one.</title><defs><marker id=\"dg-learn-pubsub-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"52\" width=\"86\" height=\"44\" class=\"dg-box\"/><text x=\"55\" y=\"78\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Publisher</text><rect x=\"132\" y=\"52\" width=\"92\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"178\" y=\"78\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Topic</text><rect x=\"276\" y=\"16\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"336\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">subscription A</text><rect x=\"276\" y=\"92\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"336\" y=\"116.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">subscription B</text><rect x=\"430\" y=\"6\" width=\"74\" height=\"30\" class=\"dg-box\"/><text x=\"467\" y=\"25.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">worker</text><rect x=\"430\" y=\"40\" width=\"74\" height=\"30\" class=\"dg-box\"/><text x=\"467\" y=\"59.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">worker</text><rect x=\"430\" y=\"92\" width=\"74\" height=\"40\" class=\"dg-box\"/><text x=\"467\" y=\"116.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">worker</text><path d=\"M98,74 L132,74\" class=\"dg-line\" marker-end=\"url(#dg-learn-pubsub-how-a)\"/><path d=\"M224,66 L276,42\" class=\"dg-line\" marker-end=\"url(#dg-learn-pubsub-how-a)\"/><path d=\"M224,82 L276,108\" class=\"dg-line\" marker-end=\"url(#dg-learn-pubsub-how-a)\"/><path d=\"M396,32 L430,22\" class=\"dg-line\" marker-end=\"url(#dg-learn-pubsub-how-a)\"/><path d=\"M396,40 L430,52\" class=\"dg-line\" marker-end=\"url(#dg-learn-pubsub-how-a)\"/><path d=\"M396,112 L430,112\" class=\"dg-line\" marker-end=\"url(#dg-learn-pubsub-how-a)\"/><text x=\"336\" y=\"148\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">each subscription gets a copy; workers in one subscription share it</text></svg>"
+        "Describe how RabbitMQ, Kafka and Google each make one message reach many readers, as three different designs.",
+        "Explain what a consumer group is in Kafka.",
+        "Say what happens to a message in the tutorial's fanout exchange if no queue is bound."
+      ]
     },
     {
       "id": "deeper",
       "name": "Going deeper",
       "body": [
-        "A message that cannot be processed must not block the ones behind it. The usual fix is a dead-letter queue: after a set number of failed deliveries the message is set aside for inspection or replay. Amazon SNS defines it as an Amazon SQS queue that a subscription can target for messages that can't be delivered successfully, and says that once the retries in the retry policy are exhausted, SNS discards the message unless such a dead-letter queue is attached [[sns-dg]].",
-        "Because delivery is at-least-once, duplicates are a fact of life, so subscribers should be idempotent: handling the same message twice has the same effect as once. The common technique is to record each message's unique id and skip one you have already handled. Google Pub/Sub can be configured for exactly-once delivery, but it is the stronger, more expensive mode; the safe default is to design the subscriber to tolerate a repeat [[gcp-pubsub-sub]].",
-        "Ordering is a trade-off, not a free guarantee. Keeping related messages in order means routing them to the same partition or ordering key, which limits how much you can parallelise them, since one key's messages are processed in sequence. Unrelated messages, with different keys, still run in parallel. So you order only what truly needs it and let everything else fan out freely [[gcp-pubsub-order]]."
+        "Two questions decide how much a subscriber can rely on: how many times it may see a message, and in what order. The answers belong to each product. Kafka's design page lists three possible guarantees: at most once, where messages may be lost but are never redelivered; at least once, where they are never lost but may be redelivered; and exactly once, where each is processed once and only once. It also warns that exactly-once claims need reading with care [[kafka-design]]. In Kafka, which one a consumer gets depends on when it saves its position: saving before processing risks losing work after a crash, and processing before saving risks repeating it [[kafka-design]].",
+        "Redis says its Pub/Sub is at-most-once: a message is delivered once if at all, and if the subscriber cannot handle it, it is lost for good. For stronger guarantees it points to Redis Streams [[redis-pubsub]]. Google says its service delivers each message at least once, so it might redeliver [[gcp-order]].",
+        "Order is likewise per product. Kafka writes events with the same key to the same partition, and a consumer reads a partition in the order it was written [[kafka-intro]]. Google orders messages that share an ordering key, only on subscriptions where ordering is turned on. Messages with different keys are not expected to arrive in order, and a redelivery of one message triggers redelivery of the later ones for that key [[gcp-order]]. Redis says subscribers receive messages in the order they were published [[redis-pubsub]].",
+        "A message that keeps failing needs somewhere to go. Google can forward a message it cannot get acknowledged to a dead-letter topic after about a configured number of delivery attempts. The count is approximate, because forwarding is best-effort [[gcp-dlq]]."
       ],
       "terms": [
         {
-          "term": "Dead-letter queue",
-          "definition": "A place a message is moved to after repeated failures, so it stops blocking the messages behind it."
+          "term": "At most once",
+          "definition": "Kafka's wording: messages may be lost but are never redelivered."
         },
         {
-          "term": "Retry policy",
-          "definition": "The rule for how many times, and how often, a failed delivery is retried before the message is dropped or dead-lettered."
+          "term": "At least once",
+          "definition": "Kafka's wording: messages are never lost but may be redelivered."
         },
         {
-          "term": "Idempotent subscriber",
-          "definition": "A subscriber for which handling the same message twice has the same effect as handling it once."
+          "term": "Exactly once",
+          "definition": "Kafka's wording: each message is processed once and only once."
         },
         {
-          "term": "Exactly-once delivery",
-          "definition": "A stronger, costlier mode that removes duplicates; most designs instead assume at-least-once and deduplicate."
+          "term": "Ordering key (Google)",
+          "definition": "A string, such as a customer ID, that marks messages that should be received in order."
         },
         {
-          "term": "Head-of-line blocking",
-          "definition": "One stuck message holding up every message behind it until it is parked or dropped."
+          "term": "Dead-letter topic (Google)",
+          "definition": "A topic that receives messages a subscriber could not acknowledge."
         }
       ],
       "reading": [
         {
-          "source": "sns-dg",
-          "section": "Amazon SNS dead-letter queues (how messages are moved and redriven)",
-          "what": "How failing messages are set aside after retries instead of being lost or blocking others."
+          "source": "kafka-design",
+          "section": "Message Delivery Semantics",
+          "what": "The three guarantees, and how a consumer's save-then-process or process-then-save order picks between them."
         },
         {
-          "source": "gcp-pubsub-sub",
-          "section": "Exactly-once delivery, and acknowledgement behaviour",
-          "what": "Why duplicates can occur under at-least-once delivery and what exactly-once costs."
+          "source": "gcp-order",
+          "section": "Overview of message ordering and Considerations when using ordered messaging",
+          "what": "Ordering keys, what is and is not ordered, and what redelivery does."
+        },
+        {
+          "source": "gcp-dlq",
+          "section": "How dead-letter topics work",
+          "what": "When a message is forwarded and why the attempt count is approximate."
+        },
+        {
+          "source": "redis-pubsub",
+          "section": "Delivery semantics",
+          "what": "Why Redis calls its Pub/Sub at-most-once and where it points for stronger guarantees."
         }
       ],
+      "video": "confluent-partitions-2025",
       "canNow": [
-        "Explain what a dead-letter queue is and when a message reaches it.",
-        "Say why subscribers must be idempotent and how to make them so.",
-        "Describe the trade-off between ordering and parallelism."
+        "Tell at most once from at least once, and say which one Redis Pub/Sub uses.",
+        "Explain what an ordering key or a Kafka key buys you, and what it does not.",
+        "Say what a dead-letter topic is for."
       ]
     },
     {
       "id": "practice",
       "name": "In practice and trade-offs",
       "body": [
-        "The two mental models in the field map onto two product shapes. A log like Kafka keeps a retained, ordered record per partition, so many subscribers can read, re-read and replay the same history at their own offsets [[kafka-intro]]. A managed topic like Google Pub/Sub or Amazon SNS pushes or serves copies to subscriptions and endpoints and handles retries and dead-lettering for you [[sns-dg]]. Both are pub-sub; they differ in whether the history is a durable log you seek within or a stream you acknowledge and move past.",
-        "Pub-sub is powerful but adds operational surface. Each subscription is its own backlog that can fall behind, each needs its own alerting, and a topic with hundreds of event types becomes something to name, monitor and clean up. The failure mode is rarely a lost message; it is a quietly growing backlog on one subscription while the others look fine, so per-subscription lag is the thing to watch.",
-        "Correctness changes too. Publishing an event means the work finishes some time after the publisher returns, so anything the publisher must know immediately, such as whether stock exists, still needs a direct call. Combined with at-least-once delivery, idempotent subscribers and a dead-letter queue for poison messages, this is the standard way large systems broadcast events while staying decoupled, which is why pub-sub sits at the messaging end of this map, just past queues [[gcp-pubsub-overview]]."
+        "Every subscriber has its own pace and its own backlog. Kafka keeps events after they are read [[kafka-intro]], while Redis does not keep a message once it has been sent [[redis-pubsub]], so a slow or absent reader loses very different things in the two. Asking what happens when a subscriber is slow, down or crashes halfway through is the first question to put to any system.",
+        "Google's overview describes a trade-off it made. Systems that scale with partitions force subscribers to process each partition in order and limit concurrent clients to the number of partitions, while its per-message leasing allows more parallelism [[gcp-overview]]. That is one vendor's view, and Google's ordering page shows what it costs: order is kept only per key and only where it is switched on [[gcp-order]]. The Uber post on the topic page is about the same partition limit in Kafka, and how one company worked around it.",
+        "Scope matters too. Google's overview says its service is meant for service-to-service communication, not for end-user or IoT clients, and points to other products for those and for asynchronous service calls [[gcp-overview]]. It is a hosted service, while the Kafka quickstart starts a server on your own machine [[kafka-quickstart]]. The Spotify post on the topic page shows a company that chose a managed pub-sub service and split its events into one topic per type."
       ],
       "terms": [
         {
-          "term": "Offset",
-          "definition": "A subscriber's position in a log such as Kafka, which it advances as it reads and can rewind to replay."
+          "term": "Backlog",
+          "definition": "Messages a subscriber has not yet processed."
         },
         {
-          "term": "Replay",
-          "definition": "Reading a retained log again from an earlier position, which a durable log allows but a plain acknowledged stream does not."
-        },
-        {
-          "term": "Subscription lag",
-          "definition": "How far behind the latest message a subscription is; growing lag signals a backlog on that reader alone."
-        },
-        {
-          "term": "Eventual processing",
-          "definition": "Work finishing after the publisher returns, which callers that need an immediate answer must design around."
+          "term": "Managed service",
+          "definition": "A service another company runs for you, such as Google's Pub/Sub."
         }
       ],
       "reading": [
         {
-          "source": "kafka-intro",
-          "section": "The event streaming / use cases overview",
-          "what": "When a retained, replayable log fits better than a stream you acknowledge and move past."
+          "source": "gcp-overview",
+          "section": "Comparing Pub/Sub to other messaging technologies, and Compare service-to-service and service-to-client communication",
+          "what": "Google's account of per-message processing versus partitions, and what the service is not meant for."
         },
         {
-          "source": "sns-dg",
-          "section": "Common Amazon SNS scenarios and reliability features",
-          "what": "What a managed topic handles for you: fan-out, retries and dead-lettering."
+          "source": "redis-pubsub",
+          "section": "Delivery semantics",
+          "what": "What Redis says about messages that are not kept and where it points for persistence."
+        },
+        {
+          "source": "kafka-intro",
+          "section": "Main Concepts and Terminology",
+          "what": "That events stay after consumption and can be read as often as needed."
         }
       ],
       "canNow": [
-        "Choose between a durable log and a managed topic for a given job.",
-        "Name the main pub-sub failure mode and what to monitor.",
-        "Explain how eventual processing changes a publisher's design."
+        "List the questions to ask about any pub-sub system: delivery, order, backlog, replay.",
+        "Explain one vendor's trade-off between order and parallelism, as that vendor's.",
+        "Say when a hosted service or one you run yourself fits better, using the two examples."
       ]
     }
   ],
   "misconceptions": [
     {
-      "myth": "Every subscriber shares one copy of each message, like a queue.",
-      "truth": "Every subscription receives every message; only workers inside one subscription share its messages [[gcp-pubsub-sub]]."
+      "myth": "Pub-sub always delivers every message to every subscriber, reliably.",
+      "truth": "It depends on the product. Redis calls its Pub/Sub at-most-once, so a message can be lost [[redis-pubsub]]. Google delivers at least once, so a message can repeat [[gcp-order]]. In Kafka, whether work is lost or repeated depends on when the consumer saves its position [[kafka-design]]."
     },
     {
       "myth": "Messages always arrive in the order they were published.",
-      "truth": "Order is kept only within a partition, or for messages with the same ordering key; an empty ordering key means no order [[gcp-pubsub-order]]."
+      "truth": "Kafka keeps order inside a partition, and the same key goes to the same partition [[kafka-intro]]. Google keeps order per ordering key, and only when ordering is on for the subscription [[gcp-order]]. Redis says subscribers receive messages in publish order [[redis-pubsub]]. Check what your system promises."
     },
     {
-      "myth": "A topic guarantees each message is processed exactly once.",
-      "truth": "The default is at-least-once delivery, so a message can arrive twice and subscribers must be idempotent [[gcp-pubsub-sub]]."
+      "myth": "A queue and pub-sub are two different things you must choose between.",
+      "truth": "Google's overview says its pub-sub service can also be used as a queue to spread tasks across workers [[gcp-overview]]. In Kafka, consumers in one group share a partition's work while each group sees everything [[kafka-design]]. The RabbitMQ tutorial shows both patterns in one broker [[rabbit-pubsub]]."
     },
     {
-      "myth": "A message that keeps failing just gets retried until it works.",
-      "truth": "After the retry policy is exhausted the message is dropped unless a dead-letter queue is attached to catch it [[sns-dg]]."
+      "myth": "Once a subscriber has read a message, it is gone.",
+      "truth": "Kafka does not delete events after they are consumed, and they can be read as often as needed [[kafka-intro]]. Redis does not resend a message once it has been sent [[redis-pubsub]]."
     }
   ],
   "tryIt": {
-    "intro": "These use the gcloud CLI against a Google Cloud project with Pub/Sub enabled. Output depends on your project, so it is not shown here. Each command is documented in the Pub/Sub guides.",
+    "intro": "These come from the Kafka quickstart and from Redis's Pub/sub page. The Kafka commands need a running Kafka server, which the quickstart sets up in its first two steps. The page says your machine needs Java 17 or newer, and it shows Kafka 4.3.1 [[kafka-quickstart]]. Run the producer and the consumer in separate terminals. Output is shown only where the official page prints it.",
     "commands": [
       {
-        "command": "gcloud pubsub topics create orders",
-        "shows": "Creating a topic that publishers send messages to.",
-        "source": "gcp-pubsub-overview"
+        "command": "bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server localhost:9092",
+        "shows": "Creates a topic called quickstart-events. The page prints no output for this command.",
+        "source": "kafka-quickstart",
+        "note": "Needs the server from the quickstart's second step, and a second terminal."
       },
       {
-        "command": "gcloud pubsub subscriptions create billing --topic=orders",
-        "shows": "Adding one subscription; a second subscription on the same topic would get its own copy of every message.",
-        "source": "gcp-pubsub-sub"
+        "command": "bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server localhost:9092",
+        "shows": "Starts a producer: each line you type becomes one event. The page shows the lines \"This is my first event\" and \"This is my second event\" typed at the > prompt, and stops it with Ctrl-C.",
+        "source": "kafka-quickstart"
       },
       {
-        "command": "gcloud pubsub subscriptions pull billing --auto-ack --limit=10",
-        "shows": "Pulling and acknowledging messages from a pull subscription.",
-        "source": "gcp-pubsub-sub"
+        "command": "bin/kafka-console-consumer.sh --topic quickstart-events --from-beginning --bootstrap-server localhost:9092",
+        "shows": "Reads the topic from the start. The page shows This is my first event and This is my second event, and says new lines typed in the producer terminal appear here at once.",
+        "source": "kafka-quickstart",
+        "note": "Open it in another terminal. Stop it with Ctrl-C."
+      },
+      {
+        "command": "SUBSCRIBE first second",
+        "shows": "Client A subscribes to the channels first and second. Redis's page shows the reply as raw protocol text, not as redis-cli prints it, and notes that redis-cli accepts no other commands while subscribed.",
+        "source": "redis-pubsub",
+        "note": "As Redis's page writes it. This one needs a Redis server and redis-cli, which the page does not install for you."
+      },
+      {
+        "command": "> PUBLISH second Hello",
+        "shows": "From another client, publishes Hello to the channel second. The page shows client A receiving a message array holding message, second and Hello, again as raw protocol text.",
+        "source": "redis-pubsub"
       }
     ]
   },
-  "next": "Go back to the Publish-Subscribe topic page for the worked example and the quiz, then read the Spotify and Uber posts on running pub-sub at scale. The delivery, ordering and dead-letter ideas here are the base for event-driven design, planned next on the map.",
+  "next": "Go back to the [Publish-Subscribe topic page](/topic/pub-sub) for the worked example and the quiz, then read the two posts: [Spotify](/topic/pub-sub#spotify-event-delivery-2019) on giving every event type its own topic and pipeline, and [Uber](/topic/pub-sub#uber-consumer-proxy-2021) on a proxy between Kafka and the services that read from it.",
   "sources": [
     {
-      "id": "gcp-pubsub-overview",
+      "id": "gcp-overview",
       "title": "What is Pub/Sub?",
-      "url": "https://cloud.google.com/pubsub/docs/overview",
+      "url": "https://docs.cloud.google.com/pubsub/docs/overview",
       "publisher": "Google Cloud",
       "kind": "Vendor documentation",
-      "year": "2024",
-      "verifiedOn": "2026-10-11"
+      "year": "page shows last updated 2026-10-09",
+      "verifiedOn": "2026-10-11",
+      "note": "About Google's Pub/Sub service, not pub-sub in general."
     },
     {
-      "id": "gcp-pubsub-sub",
-      "title": "Pub/Sub: Subscription overview",
-      "url": "https://cloud.google.com/pubsub/docs/subscriber",
-      "publisher": "Google Cloud",
+      "id": "rabbit-pubsub",
+      "title": "RabbitMQ tutorial 3: Publish/Subscribe (Python)",
+      "url": "https://www.rabbitmq.com/tutorials/tutorial-three-python",
+      "publisher": "RabbitMQ",
       "kind": "Vendor documentation",
-      "year": "2024",
-      "verifiedOn": "2026-10-11"
-    },
-    {
-      "id": "gcp-pubsub-order",
-      "title": "Pub/Sub: Receive messages in order",
-      "url": "https://cloud.google.com/pubsub/docs/ordering",
-      "publisher": "Google Cloud",
-      "kind": "Vendor documentation",
-      "year": "2024",
-      "verifiedOn": "2026-10-11"
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "About RabbitMQ's exchanges and queues."
     },
     {
       "id": "kafka-intro",
-      "title": "Apache Kafka: Introduction",
-      "url": "https://kafka.apache.org/intro",
-      "publisher": "Apache Software Foundation",
+      "title": "Introduction",
+      "url": "https://kafka.apache.org/intro/",
+      "publisher": "Apache Kafka",
       "kind": "Project documentation",
-      "year": "2024",
-      "verifiedOn": "2026-10-11"
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "Section: Main Concepts and Terminology. About Kafka."
     },
     {
-      "id": "sns-dg",
-      "title": "Amazon SNS Developer Guide: What is Amazon SNS?",
-      "url": "https://docs.aws.amazon.com/sns/latest/dg/welcome.html",
-      "publisher": "Amazon Web Services",
+      "id": "kafka-design",
+      "title": "Design",
+      "url": "https://kafka.apache.org/43/design/design/",
+      "publisher": "Apache Kafka",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "Kafka 4.3 documentation (the address ends in /43/). Describes Kafka's behavior."
+    },
+    {
+      "id": "gcp-order",
+      "title": "Order messages",
+      "url": "https://docs.cloud.google.com/pubsub/docs/ordering",
+      "publisher": "Google Cloud",
       "kind": "Vendor documentation",
+      "year": "page shows last updated 2026-10-09",
+      "verifiedOn": "2026-10-11",
+      "note": "About Google's Pub/Sub service."
+    },
+    {
+      "id": "gcp-dlq",
+      "title": "Dead-letter topics",
+      "url": "https://docs.cloud.google.com/pubsub/docs/dead-letter-topics",
+      "publisher": "Google Cloud",
+      "kind": "Vendor documentation",
+      "year": "page shows last updated 2026-10-09",
+      "verifiedOn": "2026-10-11",
+      "note": "About Google's Pub/Sub service."
+    },
+    {
+      "id": "redis-pubsub",
+      "title": "Redis Pub/sub",
+      "url": "https://redis.io/docs/latest/develop/pubsub/",
+      "publisher": "Redis",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "About Redis channels."
+    },
+    {
+      "id": "kafka-quickstart",
+      "title": "Quickstart",
+      "url": "https://kafka.apache.org/quickstart/",
+      "publisher": "Apache Kafka",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-11",
+      "note": "The page shows Kafka 4.3.1 and says a local Java 17 or newer is needed."
+    },
+    {
+      "id": "gcp-video-overview",
+      "title": "Cloud Pub/Sub Overview",
+      "url": "https://www.youtube.com/watch?v=5NjH6ikuoLo",
+      "publisher": "Google Cloud",
+      "kind": "video",
+      "channel": "Google Cloud",
       "year": "2024",
-      "verifiedOn": "2026-10-11"
+      "length": "6:28",
+      "verifiedOn": "2026-10-11",
+      "tag": "vendor channel (Google Cloud)"
+    },
+    {
+      "id": "confluent-consumers-2025",
+      "title": "Consumers, Apache Kafka 101 (2025 Edition)",
+      "url": "https://www.youtube.com/watch?v=mHaVGVLyfB4",
+      "publisher": "Confluent",
+      "kind": "video",
+      "channel": "Confluent Developer",
+      "year": "2025",
+      "length": "9:20",
+      "verifiedOn": "2026-10-11",
+      "tag": "vendor channel (Confluent), not the Apache project"
+    },
+    {
+      "id": "confluent-partitions-2025",
+      "title": "Partitions, Apache Kafka 101 (2025 Edition)",
+      "url": "https://www.youtube.com/watch?v=8L-1HSTf97E",
+      "publisher": "Confluent",
+      "kind": "video",
+      "channel": "Confluent Developer",
+      "year": "2025",
+      "length": "3:57",
+      "verifiedOn": "2026-10-11",
+      "tag": "vendor channel (Confluent), not the Apache project"
     }
   ]
 }
