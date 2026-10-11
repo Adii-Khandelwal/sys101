@@ -59,9 +59,9 @@ const edgeKey = (e: Edge) => `${e.from}->${e.to}`;
  * (the usual trick for drawing layered graphs). Slots keep a corridor free,
  * so the edge can be drawn through it instead of across other topics.
  *
- * Within a column, entries are ordered by the average position of what feeds
- * them in the previous column (fewer crossings), then by title, so the result
- * is the same on every load.
+ * Within a column, entries are ordered by barycenter sweeps to cut edge
+ * crossings, with ties broken by input order, so the result is the same on
+ * every load.
  */
 export function layers<T extends Node>(nodes: T[], edges: Edge[]): (T | Slot)[][] {
   const depth = depths(nodes, edges);
@@ -84,18 +84,110 @@ export function layers<T extends Node>(nodes: T[], edges: Edge[]): (T | Slot)[][
     link(prev, e.to);
   }
 
-  const rank = new Map<string, number>();
-  return cols.map((col) => {
+  // Start in input (index) order, then barycenter sweeps: each entry moves to
+  // the average grid row of its neighbours in the column before (down sweeps)
+  // or after (up sweeps). Ties keep the current order, and the ordering with
+  // the fewest crossings wins, so the result is identical on every load.
+  const index = new Map(nodes.map((n, i) => [n.slug, i]));
+  const sourceIndex = (n: T | Slot) => index.get(isSlot(n) ? n.edge.split("->")[0] : n.slug) ?? 0;
+  const succ = new Map<string, string[]>();
+  for (const [to, froms] of feeds) for (const f of froms) succ.set(f, [...(succ.get(f) ?? []), to]);
+  // Dead ends (nothing leads on) sort after entries that continue, so edges
+  // passing through a column stay together instead of running past a dead end.
+  const deadEnd = (n: T | Slot) => (succ.has(n.slug) ? 0 : 1);
+
+  // First pass, left to right: barycenter of predecessors, then dead ends last, then input order.
+  let order: (T | Slot)[][] = [];
+  cols.forEach((col, c) => {
+    const row = rowGrid(order);
     const score = (n: T | Slot) => {
-      const ps = (feeds.get(n.slug) ?? []).filter((p) => rank.has(p)).map((p) => rank.get(p)!);
+      const ps = (feeds.get(n.slug) ?? []).filter((p) => row.has(p)).map((p) => row.get(p)!);
       return ps.length ? ps.reduce((a, b) => a + b, 0) / ps.length : 0;
     };
-    const sorted = [...col].sort(
-      (a, b) => score(a) - score(b) || a.title.localeCompare(b.title) || a.slug.localeCompare(b.slug),
+    order[c] = [...col].sort(
+      (a, b) => (c > 0 ? score(a) - score(b) : 0) || deadEnd(a) - deadEnd(b) || sourceIndex(a) - sourceIndex(b),
     );
-    sorted.forEach((n, i) => rank.set(n.slug, i));
-    return sorted;
   });
+
+  let best = order;
+  let bestCount = countCrossings(order, feeds);
+  for (let pass = 0; pass < 8 && bestCount > 0; pass++) {
+    const down = pass % 2 === 0;
+    const next = order.map((c) => [...c]);
+    const range = down ? next.map((_, c) => c).slice(1) : next.map((_, c) => c).slice(0, -1).reverse();
+    for (const c of range) {
+      const row = rowGrid(next);
+      const ref = down ? feeds : succ;
+      const score = (n: T | Slot) => {
+        const ns = (ref.get(n.slug) ?? []).filter((m) => row.has(m)).map((m) => row.get(m)!);
+        return ns.length ? ns.reduce((a, b) => a + b, 0) / ns.length : row.get(n.slug)!;
+      };
+      const scores = new Map(next[c].map((n) => [n.slug, score(n)]));
+      next[c].sort((a, b) => scores.get(a.slug)! - scores.get(b.slug)!); // stable: ties keep order
+    }
+    order = next;
+    const count = countCrossings(order, feeds);
+    if (count < bestCount) [best, bestCount] = [order, count];
+  }
+  return best;
+}
+
+/**
+ * Order for the stacked (one per row) map: a topological order that keeps
+ * each prerequisite chain together, so the edges, which all bend to the left,
+ * nest instead of crossing. After placing a topic, the next one is the ready
+ * topic whose prerequisite was placed most recently; ties go to input order.
+ */
+function stackOrder<T extends Node>(topics: T[], edges: Edge[]): T[] {
+  const preds = new Map(topics.map((t) => [t.slug, edges.filter((e) => e.to === t.slug).map((e) => e.from)]));
+  const placed = new Map<string, number>();
+  const out: T[] = [];
+  while (out.length < topics.length) {
+    const ready = topics.filter((t) => !placed.has(t.slug) && preds.get(t.slug)!.every((p) => placed.has(p) || !preds.has(p)));
+    const recency = (t: T) => Math.max(-1, ...preds.get(t.slug)!.map((p) => placed.get(p) ?? -1));
+    // Most recent prerequisite first; on a tie, a dead end first, so its edge closes before others open.
+    const leads = (t: T) => edges.some((e) => e.from === t.slug);
+    const next = ready.reduce((best, t) => {
+      const d = recency(t) - recency(best);
+      return d > 0 || (d === 0 && !leads(t) && leads(best)) ? t : best;
+    }, ready[0]);
+    placed.set(next.slug, out.length);
+    out.push(next);
+  }
+  return out;
+}
+
+/** Pairs of drawn segments (slots included) that cross between adjacent columns. */
+function countCrossings(cols: (Node | Slot)[][], feeds: Map<string, string[]>) {
+  const row = rowGrid(cols);
+  let count = 0;
+  for (let c = 1; c < cols.length; c++) {
+    const segs = cols[c].flatMap((n) => (feeds.get(n.slug) ?? []).filter((f) => row.has(f)).map((f) => [row.get(f)!, row.get(n.slug)!]));
+    for (let i = 0; i < segs.length; i++) {
+      for (let j = i + 1; j < segs.length; j++) {
+        if ((segs[i][0] - segs[j][0]) * (segs[i][1] - segs[j][1]) < 0) count++;
+      }
+    }
+  }
+  return count;
+}
+
+/** Edge crossings in the drawn layout of these edges. */
+export function crossings<T extends Node>(nodes: T[], edges: Edge[]) {
+  const cols = layers(nodes, edges);
+  const col = new Map(cols.flatMap((c, i) => c.map((n) => [n.slug, i] as const)));
+  const feeds = new Map<string, string[]>();
+  const link = (from: string, to: string) => feeds.set(to, [...(feeds.get(to) ?? []), from]);
+  for (const e of edges) {
+    if (!col.has(e.from) || !col.has(e.to)) continue;
+    let prev = e.from;
+    for (let d = col.get(e.from)! + 1; d < col.get(e.to)!; d++) {
+      link(prev, `${edgeKey(e)}#${d}`);
+      prev = `${edgeKey(e)}#${d}`;
+    }
+    link(prev, e.to);
+  }
+  return countCrossings(cols, feeds);
 }
 
 const isSlot = (n: Node | Slot): n is Slot => "slot" in n;
@@ -170,7 +262,7 @@ export const MIN_LABEL_GAP = 16;
 export function fitPositions(
   cols: (Node | Slot)[][],
   orientation: Orientation,
-  box: { width: number; height: number; labelWidth: Map<string, number> },
+  box: { width: number; height: number; labelWidth: Map<string, number>; edges?: Edge[] },
 ) {
   const { width, height, labelWidth } = box;
   const widest = (col: (Node | Slot)[]) =>
@@ -202,7 +294,7 @@ export function fitPositions(
 
   // One topic per row, a little in from the left edge so edges that bend
   // left have room, with labels running to the right.
-  const order = cols.flat().filter((n) => !isSlot(n));
+  const order = stackOrder(cols.flat().filter((n) => !isSlot(n)), box.edges ?? []);
   const room = LABEL_START + widest(order);
   const x = Math.max(0, Math.min(32, width - room));
   const spread = (i: number, n: number) => (n > 1 ? (i * height) / (n - 1) : height / 2);
@@ -299,7 +391,61 @@ export function edgeCurvatures(
     const ok = candidates.find((c) => Math.abs(c) <= 0.8 && clear(a, b, c, e, topics, labels, stage));
     if (ok !== undefined) result.set(key, ok);
   }
+
+  // Then, where a clear bend crosses another edge, prefer a clear bend that does not.
+  const curve = (e: Edge) => sample(positions.get(e.from)!, positions.get(e.to)!, result.get(edgeKey(e))!);
+  const drawn = edges.filter((e) => result.has(edgeKey(e)));
+  for (const e of drawn) {
+    const others = drawn.filter((o) => o !== e && o.from !== e.from && o.from !== e.to && o.to !== e.from && o.to !== e.to);
+    const crosses = (c: number) => {
+      const mine = sample(positions.get(e.from)!, positions.get(e.to)!, c);
+      return others.some((o) => polylinesCross(mine, curve(o)));
+    };
+    const key = edgeKey(e);
+    if (!crosses(result.get(key)!)) continue;
+    const a = positions.get(e.from)!;
+    const b = positions.get(e.to)!;
+    const base = result.get(key)!;
+    const candidates: number[] = [];
+    for (let k = 1; k <= 80; k++) candidates.push(base + 0.02 * k, base - 0.02 * k);
+    const better = candidates.find((c) => Math.abs(c) <= 1 && clear(a, b, c, e, topics, labels, stage) && !crosses(c));
+    if (better !== undefined) result.set(key, better);
+  }
   return result;
+}
+
+/** Points along the quadratic curve Sigma draws for curvature c. */
+function sample(a: Point, b: Point, c: number, steps = 40) {
+  const ctrl = { x: (a.x + b.x) / 2 - (b.y - a.y) * c, y: (a.y + b.y) / 2 + (b.x - a.x) * c };
+  return Array.from({ length: steps + 1 }, (_, i) => {
+    const t = i / steps;
+    return { x: (1 - t) ** 2 * a.x + 2 * t * (1 - t) * ctrl.x + t ** 2 * b.x, y: (1 - t) ** 2 * a.y + 2 * t * (1 - t) * ctrl.y + t ** 2 * b.y };
+  });
+}
+
+function polylinesCross(p: Point[], q: Point[]) {
+  const side = (a: Point, b: Point, c: Point) => Math.sign((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
+  for (let i = 1; i < p.length; i++) {
+    for (let j = 1; j < q.length; j++) {
+      const [a, b, c, d] = [p[i - 1], p[i], q[j - 1], q[j]];
+      if (side(a, b, c) * side(a, b, d) < 0 && side(c, d, a) * side(c, d, b) < 0) return true;
+    }
+  }
+  return false;
+}
+
+/** Pairs of drawn edges (not sharing a topic) whose curves cross. */
+export function drawnCrossings(positions: Map<string, Point>, edges: Edge[], curvatures: Map<string, number>) {
+  const drawn = edges.filter((e) => curvatures.has(edgeKey(e)) && positions.has(e.from) && positions.has(e.to));
+  const curve = (e: Edge) => sample(positions.get(e.from)!, positions.get(e.to)!, curvatures.get(edgeKey(e))!);
+  const out: string[] = [];
+  drawn.forEach((e, i) =>
+    drawn.slice(i + 1).forEach((o) => {
+      if ([e.from, e.to].some((s) => s === o.from || s === o.to)) return;
+      if (polylinesCross(curve(e), curve(o))) out.push(`${edgeKey(e)} x ${edgeKey(o)}`);
+    }),
+  );
+  return out;
 }
 
 /** Drawn edges that touch a node they do not connect, any label, or the stage edge. For tests and checks. */
@@ -359,4 +505,43 @@ function clear(
     }
   }
   return true;
+}
+
+/**
+ * The column ordering to draw, given real label widths: tries every ordering
+ * within columns (only while there are few), keeps those with the same number
+ * of rows, and returns the first with no edge touching a label or node and no
+ * crossing; the barycenter ordering is tried first and is the fallback. Same
+ * inputs, same result, so the map is identical on every load.
+ */
+export function chooseLayers<T extends Node>(
+  base: (T | Slot)[][],
+  edges: Edge[],
+  box: { width: number; height: number; labelWidth: Map<string, number> },
+  stage: { minX: number; maxX: number; minY: number; maxY: number },
+  limit = 720,
+) {
+  const perms = <U,>(a: U[]): U[][] =>
+    a.length <= 1 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map((p) => [x, ...p]));
+  const count = base.reduce((n, col) => n * [...Array(col.length)].reduce((f, _, i) => f * (i + 1), 1), 1);
+  if (count > limit) return base;
+  const rows = rowCount(base, "horizontal");
+  const labels = new Map([...box.labelWidth].map(([slug, width]) => [slug, { start: LABEL_START, width }]));
+  const score = (cols: (T | Slot)[][]) => {
+    const { positions } = fitPositions(cols, "horizontal", box);
+    const bends = edgeCurvatures(positions, edges, slotsByEdge(cols, positions), stage, "horizontal", labels);
+    const real = new Map([...positions].filter(([s]) => labels.has(s)));
+    return edgeCollisions(real, edges, bends, labels, stage).length * 1000 + drawnCrossings(real, edges, bends).length;
+  };
+  let best = base;
+  let bestScore = score(base);
+  if (bestScore === 0) return base;
+  const combos = base.reduce<(T | Slot)[][][]>((acc, col) => acc.flatMap((a) => perms(col).map((p) => [...a, p])), [[]]);
+  for (const cols of combos) {
+    if (rowCount(cols, "horizontal") !== rows) continue;
+    const s = score(cols);
+    if (s < bestScore) [best, bestScore] = [cols, s];
+    if (s === 0) break;
+  }
+  return best;
 }

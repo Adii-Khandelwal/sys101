@@ -3,13 +3,16 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { containsAll, finishedWords } from "@/lib/searchMatch";
 
 type Result = { url: string; title: string; section?: string; excerpt: string };
 
 type SubResult = { url: string; title: string; excerpt: string; locations: number[] };
 type Pagefind = {
   debouncedSearch: (q: string, opts?: object, ms?: number) => Promise<{
-    results: { data: () => Promise<{ url: string; meta: { title?: string }; excerpt: string; sub_results: SubResult[] }> }[];
+    results: {
+      data: () => Promise<{ url: string; content: string; meta: { title?: string }; excerpt: string; sub_results: SubResult[] }>;
+    }[];
   } | null>;
 };
 
@@ -57,7 +60,10 @@ export default function Search() {
     if (!pagefind.current) return setSearching(false);
     const found = await pagefind.current.debouncedSearch(q, {}, 150);
     if (!found || id !== latest.current) return; // a newer keystroke owns the results now
-    const pages = await Promise.all(found.results.slice(0, 8).map((r) => r.data()));
+    const words = finishedWords(q);
+    const pages = (await Promise.all(found.results.slice(0, 8).map((r) => r.data()))).filter((page) =>
+      containsAll(`${page.meta.title ?? ""} ${page.content}`, words),
+    );
     if (id !== latest.current) return;
     setResults(
       pages.map((page) => {

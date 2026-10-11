@@ -1,4 +1,5 @@
 import GraphView from "@/components/GraphView";
+import NextUp from "@/components/NextUp";
 import Search from "@/components/Search";
 import SiteFooter from "@/components/SiteFooter";
 import TopicIndex from "@/components/TopicIndex";
@@ -22,7 +23,12 @@ export default function Home() {
   const depth = depths(topics, edges);
   // Same order as the drawn map, which uses the reduced edges; data keeps all edges.
   const ordered = columns(topics, transitiveReduction(edges)).flat();
-  const nodes = ordered.map((t) => ({ slug: t.slug, title: t.title, posts: t.posts.length }));
+  const nodes = ordered.map((t) => ({
+    slug: t.slug,
+    title: t.title,
+    posts: t.posts.length,
+    group: t.group ?? groupFromDepth(depth.get(t.slug) ?? 0),
+  }));
   const entries = ordered.map((t, i) => ({
     slug: t.slug,
     title: t.title,
@@ -38,6 +44,7 @@ export default function Home() {
       <header className="masthead">
         <h1 className="visually-hidden">sys101</h1>
         <p>System design concepts, ordered by what you need to know first.</p>
+        <NextUp entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))} />
         <Search />
       </header>
 

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type Graph from "graphology";
 import type Sigma from "sigma";
 import type { NodeLabelDrawingFunction } from "sigma/rendering";
-import { LABEL_START, columns, edgeCurvatures, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
+import { LABEL_START, chooseLayers, columns, edgeCurvatures, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
 import { useReadTopics } from "@/lib/progress";
 import {
   ACCENT,
@@ -38,7 +38,7 @@ import {
   type Camera,
 } from "@/lib/camera";
 
-type GraphNode = { slug: string; title: string; posts: number };
+type GraphNode = { slug: string; title: string; posts: number; group?: string };
 type GraphEdge = { from: string; to: string };
 
 type Props = {
@@ -162,6 +162,7 @@ export default function GraphView({ nodes, edges }: Props) {
 
   // Hidden edges as screen-space curves, kept in step with the camera.
   const hiddenBends = useRef(new Map<string, number>());
+  const [edgeSamples, setEdgeSamples] = useState<{ key: string; points: { x: number; y: number }[] }>({ key: "", points: [] });
   const [extraPaths, setExtraPaths] = useState<{ from: string; to: string; d: string }[]>([]);
   const bySlug = useMemo(() => new Map(nodes.map((n) => [n.slug, n])), [nodes]);
 
@@ -225,6 +226,21 @@ export default function GraphView({ nodes, edges }: Props) {
       return { from: e.from, to: e.to, d: `M${A.x},${A.y} Q${C.x},${C.y} ${B.x},${B.y}` };
     });
     setExtraPaths((prev) => (prev.map((p) => p.d).join() === paths.map((p) => p.d).join() ? prev : paths));
+    // Drawn edges as screen points, so group labels can sit where no edge passes.
+    const samples: { x: number; y: number }[] = [];
+    graph.forEachEdge((_edge, attr, source, target) => {
+      const a = graph.getNodeAttributes(source);
+      const b = graph.getNodeAttributes(target);
+      const c = (attr.curvature as number) ?? 0;
+      const ctrl = { x: (a.x + b.x) / 2 - (b.y - a.y) * c, y: (a.y + b.y) / 2 + (b.x - a.x) * c };
+      const [A, C, B] = [a, ctrl, b].map((p) => renderer.graphToViewport({ x: p.x, y: p.y }));
+      for (let i = 0; i <= 40; i++) {
+        const t = i / 40;
+        samples.push({ x: (1 - t) ** 2 * A.x + 2 * t * (1 - t) * C.x + t ** 2 * B.x, y: (1 - t) ** 2 * A.y + 2 * t * (1 - t) * C.y + t ** 2 * B.y });
+      }
+    });
+    const key = samples.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join();
+    setEdgeSamples((prev) => (prev.key === key ? prev : { key, points: samples }));
   }, []);
 
   const activate = useCallback((slug: string | null) => {
@@ -486,7 +502,9 @@ export default function GraphView({ nodes, edges }: Props) {
           bordered: createNodeBorderProgram({
             borders: [
               { size: { attribute: "borderSize", defaultValue: 1.5, mode: "pixels" }, color: { attribute: "borderColor" } },
-              { size: { fill: true }, color: { attribute: "color" } },
+              { size: { value: 0.55, mode: "relative" }, color: { attribute: "color" } },
+              // Centre dot: shown only on ready nodes (same colour as the fill otherwise).
+              { size: { fill: true }, color: { attribute: "dotColor" } },
             ],
             drawLabel,
             drawHover: drawLabel,
@@ -512,7 +530,7 @@ export default function GraphView({ nodes, edges }: Props) {
           const isActive = slug === current;
           // Opaque: the node, its whole prerequisite chain and its dependents.
           const near = !current || highlightRef.current.has(slug);
-          // Ready: unread with every prerequisite read. A thicker outline, so it reads without colour.
+          // Ready: unread with every prerequisite read. A thicker outline and a centre dot, so it reads without colour.
           const ready = !isRead && (prereqsRef.current.get(slug) ?? []).every((p) => readRef.current.includes(p));
           const fill = isRead ? ACCENT : PAPER;
           const border = isRead ? (isActive ? ACCENT_DARK : ACCENT) : isActive ? INK : INK_SOFT;
@@ -521,6 +539,7 @@ export default function GraphView({ nodes, edges }: Props) {
             color: near ? fill : fade(fill),
             borderColor: near ? border : fade(border),
             borderSize: ready ? 3 : 1.5,
+            dotColor: ready ? (near ? border : fade(border)) : near ? fill : fade(fill),
             labelColor: near ? INK : FADED_LABEL, // faded labels keep AA contrast
             zIndex: near ? 1 : 0,
           };
@@ -617,17 +636,19 @@ export default function GraphView({ nodes, edges }: Props) {
 
     // Horizontal only when every column fits its widest label with the minimum gap.
     if (orientation === "horizontal") {
-      const ok = fitPositions(layered, "horizontal", { width, height, labelWidth }).required <= width;
+      const ok = fitPositions(layered, "horizontal", { width, height, labelWidth, edges: drawn }).required <= width;
       if (ok !== fits) return setFits(ok);
     }
 
     // Horizontal layout reserves slots for long edges; stacked layout lists topics only.
-    const { positions } = fitPositions(layered, effective, { width, height, labelWidth });
+    // With real label widths known, pick the column ordering that draws cleanly.
+    const stageBox = { minX: -PADDING + 8, maxX: width + PADDING - 8, minY: -PADDING + 8, maxY: height + PADDING_TOP - 8 };
+    const lay = effective === "horizontal" ? chooseLayers(layered, drawn, { width, height, labelWidth }, stageBox) : layered;
+    const { positions } = fitPositions(lay, effective, { width, height, labelWidth, edges: drawn });
     cols.flat().forEach((n) => graph.mergeNodeAttributes(n.slug, positions.get(n.slug)!));
 
     const labels = new Map(cols.flat().map((n) => [n.slug, { start: LABEL_START, width: labelWidth.get(n.slug)! }]));
-    const stageBox = { minX: -PADDING + 8, maxX: width + PADDING - 8, minY: -PADDING + 8, maxY: height + PADDING_TOP - 8 };
-    const bends = edgeCurvatures(positions, drawn, slotsByEdge(layered, positions), stageBox, effective, labels);
+    const bends = edgeCurvatures(positions, drawn, slotsByEdge(lay, positions), stageBox, effective, labels);
     hiddenRef.current = hidden;
     hiddenBends.current = edgeCurvatures(positions, hidden, new Map(), stageBox, effective, labels);
     graph.forEachEdge((edge, _attr, source, target) => {
@@ -678,6 +699,43 @@ export default function GraphView({ nodes, edges }: Props) {
   const [tipPos, setTipPos] = useState<{ left: number; top: number } | null>(null);
 
   const activePoint = active ? points.find((p) => p.slug === active) : undefined;
+
+  // Group labels: pinned to the stage's left edge on their row when the group
+  // has one row, otherwise above (or else below) its first node, always where
+  // no edge, node or label is.
+  const groupLabels = useMemo(() => {
+    const at = new Map(points.map((p) => [p.slug, p]));
+    const ctx = typeof document === "undefined" ? null : document.createElement("canvas").getContext("2d");
+    if (ctx) ctx.font = `500 ${LABEL_SIZE}px ${getComputedStyle(document.body).fontFamily}`;
+    const title = new Map(nodes.map((n) => [n.slug, n.title]));
+    const blocked = (x: number, y: number, w: number, h = 17) => {
+      const [l, r, t, b] = [x - 4, x + w + 4, y - 3, y + h + 3];
+      if (edgeSamples.points.some((p) => p.x > l && p.x < r && p.y > t && p.y < b)) return true;
+      return points.some((p) => {
+        const lw = ctx?.measureText(title.get(p.slug) ?? "").width ?? 0;
+        const boxes = [[p.x - p.r, p.y - p.r, p.x + p.r, p.y + p.r], [p.x + p.r + 8, p.y - 11, p.x + p.r + 8 + lw, p.y + 11]];
+        return boxes.some(([bl, bt, br, bb]) => l < br && r > bl && t < bb && b > bt);
+      });
+    };
+    const names = [...new Set(nodes.map((n) => n.group).filter((g): g is string => !!g))];
+    return names.flatMap((name) => {
+      const pts = nodes.filter((n) => n.group === name).map((n) => at.get(n.slug)).filter((p): p is Point => !!p);
+      if (!pts.length) return [];
+      const width = name.length * 7.5; // mono 11px with letter spacing
+      const first = pts[0]; // first in index order
+      const oneRow = pts.every((p) => Math.abs(p.y - pts[0].y) < 1);
+      const spots = [
+        ...(oneRow ? [{ x: 8, y: first.y - 8 }] : []),
+        { x: first.x - first.r, y: first.y - first.r - 22 },
+        { x: first.x - first.r, y: first.y + first.r + 6 },
+        { x: first.x - first.r - width - 8, y: first.y - 8 },
+        { x: first.x + first.r + 8 + (ctx?.measureText(title.get(first.slug) ?? "").width ?? 0) + 16, y: first.y - 8 },
+      ];
+      const fits = (s: { x: number }) => s.x >= 0 && s.x + width <= (size.width || Infinity);
+      const spot = spots.find((s) => fits(s) && !blocked(s.x, s.y, width)) ?? spots[oneRow ? 1 : 0];
+      return [{ name, ...spot }];
+    });
+  }, [points, nodes, edgeSamples, size.width]);
   const activeNode = active ? bySlug.get(active) : undefined;
 
   useLayoutEffect(() => {
@@ -696,9 +754,9 @@ export default function GraphView({ nodes, edges }: Props) {
     <>
       <div className="graph-toolbar">
         <p className="graph-legend label">
-          <span className="legend-dot" aria-hidden="true" /> Unread
-          <span className="legend-dot is-ready" aria-hidden="true" /> Ready
-          <span className="legend-dot is-read" aria-hidden="true" /> Read
+          <LegendMark state="unread" /> Unread
+          <LegendMark state="ready" /> Ready
+          <LegendMark state="read" /> Read
         </p>
         {interactive && (
           <div className="graph-controls label">
@@ -734,6 +792,13 @@ export default function GraphView({ nodes, edges }: Props) {
       >
         {!ready && <GraphSkeleton />}
         <div ref={container} className="graph-canvas" aria-hidden="true" />
+
+        {/* Faint group names: pinned to the left of a group's row, or above its first node. */}
+        {groupLabels.map((g) => (
+          <span key={g.name} className="graph-group label" aria-hidden="true" style={{ left: g.x, top: g.y }}>
+            {g.name}
+          </span>
+        ))}
 
         {/* Edges implied by a longer path: faint and dashed, on hover or focus of either end, or always with "Show all links". */}
         <svg className="graph-extra" aria-hidden="true">
@@ -785,6 +850,20 @@ export default function GraphView({ nodes, edges }: Props) {
           )}
       </div>
     </>
+  );
+}
+
+/** Legend icons drawn like the nodes: thin ring, thick ring with a centre dot, filled rust. */
+function LegendMark({ state }: { state: "unread" | "ready" | "read" }) {
+  return (
+    <svg className="legend-mark" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+      {state === "read" ? (
+        <circle cx="8" cy="8" r="7" fill={ACCENT} />
+      ) : (
+        <circle cx="8" cy="8" r={state === "ready" ? 5.5 : 6.25} fill={PAPER} stroke={INK_SOFT} strokeWidth={state === "ready" ? 3 : 1.5} />
+      )}
+      {state === "ready" && <circle cx="8" cy="8" r="1.6" fill={INK_SOFT} />}
+    </svg>
   );
 }
 

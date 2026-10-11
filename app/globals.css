@@ -235,6 +235,46 @@ a:hover {
   border-bottom: 1px solid var(--rule);
 }
 
+/* "Next up" under the tagline. */
+.masthead .next-up {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  margin: 12px 0 0;
+  font-size: 18px;
+  font-style: normal;
+  color: var(--ink);
+}
+
+.next-also {
+  color: var(--ink-soft);
+}
+
+.next-count {
+  margin-left: auto;
+}
+
+/* Group names on the map: faint, never interactive. */
+.graph-group {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  white-space: nowrap;
+  color: var(--ink-soft);
+  opacity: 0.8;
+}
+
+.legend-mark {
+  vertical-align: -2px;
+  margin-right: 2px;
+}
+
+
+.graph-legend svg ~ svg {
+  margin-left: 12px;
+}
+
 /* Edges implied by a longer path: shown faint and dashed as a hint. */
 .graph-extra {
   position: absolute;
@@ -1458,13 +1498,18 @@ html {
   scroll-padding-top: calc(var(--header-h) + 16px); /* anchors land below the header */
 }
 
+/* No rubber-band pull at the ends of the page, so the header never drifts. */
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
 .site-header {
   position: sticky;
   top: 0;
   z-index: 30;
   height: var(--header-h);
-  background: var(--paper);
-  border-bottom: 1px solid var(--rule);
+  background: var(--paper); /* no rule: only the logo shows, content passes under it */
 }
 
 .site-header-inner {
@@ -1532,6 +1577,33 @@ html {
 
 .dossier {
   padding-top: 24px;
+}
+
+/* Topic name beside the logo once the page heading scrolls away. */
+.header-topic {
+  margin-left: 14px;
+  padding-left: 14px;
+  border-left: 1px solid var(--rule);
+  overflow: hidden;
+  font-size: 18px;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ink-soft);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.header-topic.is-shown {
+  opacity: 1;
+}
+
+@media (max-width: 640px) {
+  .header-topic {
+    margin-left: 10px;
+    padding-left: 10px;
+    font-size: 16px;
+  }
 }
 
 /* ── Back to top ─────────────────────────── */
