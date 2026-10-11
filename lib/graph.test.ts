@@ -36,7 +36,7 @@ describe("transitive reduction", () => {
     const topics = fs.readdirSync(dir).map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")));
     const edges = topics.flatMap((t) => t.prerequisites.map((p: string) => ({ from: p, to: t.slug })));
     const reduced = transitiveReduction(edges);
-    expect(keys(edges).filter((k) => !keys(reduced).includes(k)).sort()).toEqual(["caching->rate-limiting", "databases->indexing", "dns->cdns", "replication->cap"]);
+    expect(keys(edges).filter((k) => !keys(reduced).includes(k)).sort()).toEqual(["caching->rate-limiting", "databases->indexing", "dns->cdns", "replication->cap", "replication->consensus"]);
   });
 
   it("leaves a graph with no redundant edges unchanged", () => {

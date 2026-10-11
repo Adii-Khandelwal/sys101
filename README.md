@@ -12,7 +12,7 @@ Learning system design from engineering blogs is hard because nothing tells you 
 
 ## Topics
 
-Fifteen topics across five groups. Each topic lists what it builds on and the company posts digested on its page.
+Sixteen topics across five groups. Each topic lists what it builds on and the company posts digested on its page.
 
 | Group | Topic | Builds on | Posts from |
 |---|---|---|---|
@@ -26,13 +26,14 @@ Fifteen topics across five groups. Each topic lists what it builds on and the co
 | Data | Sharding and Partitioning | Database Replication, Consistent Hashing | Figma, Notion |
 | Data | Indexing and Search | Databases, Sharding | GitHub, Discord |
 | Data | CAP Theorem | Database Replication, Sharding and Partitioning | Amazon (2007, paper), Google (2012, paper) |
+| Data | Consensus | CAP Theorem, Database Replication | etcd (CNCF), Cockroach Labs (2026) |
 | Messaging | Message Queues | Sharding | Slack (2017), Meta |
 | Messaging | Publish-Subscribe | Message Queues | Spotify (2019), Uber (2021) |
 | Messaging | Event-driven Architecture | Publish-Subscribe | Grab (2020), Zapier, Grab (2023) |
 | Reliability | Rate Limiting | Caching, Consistent Hashing | Cloudflare (2017), Databricks |
 | Reliability | Circuit Breakers and Load Shedding | Rate Limiting | Zalando, Uber |
 
-Years are shown for posts more than five years old; each topic page explains why they still apply. Next in the plan: Consensus, once there are posts with measured results.
+Years are shown for posts more than five years old; each topic page explains why they still apply. Next in the plan: distributed transactions.
 
 ## How it works
 
@@ -103,8 +104,8 @@ Every post records `verifiedOn`, the date someone last opened it and checked the
 ```
 app/              routes: graph homepage, topic pages, learn pages, about, data, terms, privacy, sitemap, robots
 components/       graph view, topic lesson, learn page, index, search, progress trackers, data controls
-content/topics/   one JSON file per topic (15 topics)
-content/learn/    one JSON file per "start from zero" learn page (15 pages)
+content/topics/   one JSON file per topic (16 topics)
+content/learn/    one JSON file per "start from zero" learn page (16 pages)
 lib/              content loading and build checks, graph layout, reading progress, SEO helpers, and their tests
 pipeline/         offline scripts for fetching and summarizing posts
 scripts/          weekly source link check and the postbuild SEO check
@@ -186,7 +187,7 @@ Every post belongs to its authors. The digests are original write-ups of what ea
 
 ## Roadmap
 
-- Consensus, once there are posts with measured results
+- Distributed transactions, then failover
 - Sync reading progress across devices
 - Interview-relevance tags on topics
 - Staleness review driven by link-check results and post age

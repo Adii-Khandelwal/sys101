@@ -1,0 +1,281 @@
+{
+  "slug": "consensus",
+  "promise": "After this you can follow the topic page and the posts.",
+  "before": {
+    "prerequisites": [
+      "cap",
+      "replication"
+    ],
+    "terms": [
+      {
+        "term": "Replica",
+        "definition": "One of several copies of the data, each on a different node."
+      },
+      {
+        "term": "Majority / quorum",
+        "definition": "More than half of the nodes; the smallest group allowed to make a decision."
+      },
+      {
+        "term": "Leader and follower",
+        "definition": "The one node that accepts writes (leader) and the others that copy from it (followers)."
+      }
+    ],
+    "note": "Read CAP and Replication first: consensus is how replicas stay in agreement so a system can be strongly consistent while a quorum survives. The terms below are enough to begin."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "Consensus is the problem of getting a group of machines to agree on a single value, or a single order of values, even when some crash and messages are lost or delayed. It is the foundation under strongly consistent stores: etcd, the key-value store behind Kubernetes, replicates all its data within one consistent replication group and commits each change through a consensus protocol [[etcd-why]].",
+        "The classic academic solution is Paxos, which is famously hard to understand. Raft was designed as an equivalent protocol that is easier to follow; its authors say they hope Raft will make consensus available to a wider audience so people can build higher-quality consensus-based systems [[raft]]. Because Raft is both widely used and understandable, it is the one most new systems adopt and the one worth learning first.",
+        "The heart of every such protocol is the majority. A cluster records a decision only once more than half of its nodes have stored it, and because any two majorities share at least one node, the group can never agree to two conflicting decisions. That single idea is what lets a consensus system keep going while a minority of nodes is down, and stop safely rather than disagree when it cannot reach a majority."
+      ],
+      "terms": [
+        {
+          "term": "Consensus",
+          "definition": "Agreeing on one value or order across replicas despite crashes and lost messages."
+        },
+        {
+          "term": "Paxos",
+          "definition": "The original consensus algorithm: correct but notoriously hard to understand."
+        },
+        {
+          "term": "Raft",
+          "definition": "A consensus algorithm designed for understandability, equivalent in power to Paxos."
+        },
+        {
+          "term": "Replication group",
+          "definition": "The set of replicas that run consensus together to agree on one log of changes."
+        }
+      ],
+      "reading": [
+        {
+          "source": "etcd-why",
+          "section": "Using etcd for metadata (single consistent replication group)",
+          "what": "How a real coordination store commits each change through one consensus group."
+        },
+        {
+          "source": "raft",
+          "section": "The Raft site intro and \"Why should I care about Raft?\"",
+          "what": "What consensus is for and why Raft exists as an understandable form of it."
+        }
+      ],
+      "canNow": [
+        "Say what consensus agrees on and why it is needed.",
+        "Explain why Raft is usually preferred over Paxos for learning and building.",
+        "State why a majority prevents two conflicting decisions."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "Raft runs with one leader and several followers, all holding an identical append-only log. Clients send commands to the leader; the leader appends each to its log and replicates it to the followers so every log is the same sequence in the same order [[raft]]. This single-leader, single-log shape is what makes the protocol easy to reason about.",
+        "Time is divided into terms, each with at most one leader. A follower that stops hearing the leader's heartbeats times out, becomes a candidate, and asks the others for votes; a candidate that collects a majority becomes the leader for a new term. A node only grants its vote to a candidate whose log is at least as up to date as its own, which guarantees a new leader never lacks a committed entry [[raft]].",
+        "An entry becomes committed once the leader has stored it on a majority of nodes, after which it is applied and acknowledged. etcd describes the practical consequence: a modification only needs to go through the Raft protocol once to commit within its single replication group, so the cost of a write is one agreement round among the members [[etcd-why]]."
+      ],
+      "terms": [
+        {
+          "term": "Replicated log",
+          "definition": "The ordered, append-only list of commands every replica keeps identical."
+        },
+        {
+          "term": "Term",
+          "definition": "A span of time with at most one leader; a new election begins a new term."
+        },
+        {
+          "term": "Leader election",
+          "definition": "A timed-out follower becomes a candidate and wins a majority of votes to lead."
+        },
+        {
+          "term": "Commit",
+          "definition": "An entry is committed once a majority has stored it, then applied in order everywhere."
+        }
+      ],
+      "reading": [
+        {
+          "source": "raft",
+          "section": "The Raft overview: leader election and log replication",
+          "what": "How a leader is chosen and how it keeps every replica's log identical."
+        },
+        {
+          "source": "etcd-why",
+          "section": "How a modification commits through Raft in one replication group",
+          "what": "What a committed write actually costs: one agreement round among the members."
+        }
+      ],
+      "canNow": [
+        "Describe the leader, followers, and the replicated log.",
+        "Walk through how a new leader is elected after a failure.",
+        "Say when an entry is committed and why that is safe."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 140\" role=\"img\" aria-labelledby=\"dg-learn-cons-how-t\" class=\"dg\"><title id=\"dg-learn-cons-how-t\">Raft: a client sends a command to the leader, which appends it to its log and replicates to followers; once a majority has stored it the entry is committed and applied in the same order on every replica.</title><defs><marker id=\"dg-learn-cons-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"52\" width=\"80\" height=\"40\" class=\"dg-box\"/><text x=\"52\" y=\"76\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><rect x=\"132\" y=\"48\" width=\"110\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"187\" y=\"68\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Leader</text><text x=\"187\" y=\"85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">log</text><rect x=\"300\" y=\"16\" width=\"120\" height=\"36\" class=\"dg-box\"/><text x=\"360\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Follower (log)</text><rect x=\"300\" y=\"88\" width=\"120\" height=\"36\" class=\"dg-box\"/><text x=\"360\" y=\"110.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Follower (log)</text><path d=\"M92,72 L132,72\" class=\"dg-line\" marker-end=\"url(#dg-learn-cons-how-a)\"/><path d=\"M242,62 L300,38\" class=\"dg-line\" marker-end=\"url(#dg-learn-cons-how-a)\"/><path d=\"M242,82 L300,104\" class=\"dg-line\" marker-end=\"url(#dg-learn-cons-how-a)\"/><text x=\"470\" y=\"38\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">majority</text><text x=\"470\" y=\"52\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">stores = commit</text><text x=\"280\" y=\"138\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">every replica applies the same log in the same order</text></svg>"
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "The subtle part of consensus is reads, not writes. A leader that just lost an election during a partition might still think it is the leader and serve stale data. A fully safe read therefore has to confirm with a majority that the node is still the leader, which costs a round trip. etcd's own analysis lists this directly: linearizable reads cost a network round trip plus a disk sync, which is why naive strong reads are not free [[etcd-perf]].",
+        "The common optimisation is a leader lease: the leader is granted leadership for a bounded time, so while the lease holds it can answer reads from local state without checking a majority each time. The lease must be tied to the real leadership and bounded by a clock, so two nodes never both believe they lead. The topic's CockroachDB post shows this taken to scale, folding the lease into Raft leadership to cut its overhead.",
+        "Sizing follows from the majority rule. To tolerate f failures a cluster needs 2f+1 nodes: three to survive one, five to survive two. An even number buys nothing extra, since four nodes tolerate the same single failure as three but need a larger majority to agree. So consensus clusters are almost always three or five nodes, chosen for the failure budget you need, not for raw capacity [[kube-etcd]]."
+      ],
+      "terms": [
+        {
+          "term": "Linearizable read",
+          "definition": "A read guaranteed to see the latest committed write, which naively needs a majority round trip."
+        },
+        {
+          "term": "Leader lease",
+          "definition": "A bounded grant of leadership that lets the leader serve reads locally without checking a majority."
+        },
+        {
+          "term": "2f+1",
+          "definition": "The cluster size to survive f failures: three for one, five for two."
+        },
+        {
+          "term": "Split brain",
+          "definition": "Two nodes both acting as leader; consensus and leases are designed to make this impossible."
+        }
+      ],
+      "reading": [
+        {
+          "source": "etcd-perf",
+          "section": "Understanding performance: linearizable reads cost RTT plus fsync",
+          "what": "Why a safe strong read is not free, and what a lease avoids."
+        },
+        {
+          "source": "kube-etcd",
+          "section": "Operating etcd clusters for Kubernetes (cluster size and quorum)",
+          "what": "How a cluster is sized for a failure budget, and why odd sizes are used."
+        }
+      ],
+      "canNow": [
+        "Explain why a safe read may need a majority round trip.",
+        "Say what a leader lease is and the risk it must avoid.",
+        "Size a cluster for a given number of tolerated failures."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "The headline trade-off is latency for agreement. etcd's performance guide is explicit that consensus commit latency is limited by two physical costs: network round-trip time between members and the disk sync on each member, with a typical US round trip around 50 ms and up to 400 ms between continents, and a disk sync around 10 ms on a spinning disk versus under 1 ms on an SSD [[etcd-perf]]. You make consensus faster by shrinking those, with SSDs and co-located members, and by batching requests, not by removing the round trip.",
+        "Placement is the other practical lever. Because every commit needs a majority, a cluster whose majority is spread across continents pays a cross-region round trip on every write. The usual answer is to keep the majority, and the leader, near where the writes come from, keep a minority elsewhere for survival, and split data into separate consensus groups so each has its leader close to its writers [[etcd-perf]].",
+        "Finally, consensus is where availability meets correctness from CAP. As long as a majority of the cluster is reachable, the system stays both consistent and available; lose the majority and it blocks rather than serve possibly-wrong data. That is the deliberate choice consensus encodes: it would rather stop than disagree, which is exactly what you want for the metadata and coordination jobs etcd and its peers are trusted with [[etcd-why]]."
+      ],
+      "terms": [
+        {
+          "term": "Commit latency",
+          "definition": "The time to agree and durably store a write, bounded by network and disk."
+        },
+        {
+          "term": "Batching",
+          "definition": "Grouping many requests into one consensus round to raise throughput."
+        },
+        {
+          "term": "Consensus group per shard",
+          "definition": "Splitting data so each piece has its own replication group and nearby leader."
+        },
+        {
+          "term": "Quorum loss",
+          "definition": "Losing a majority, after which the cluster blocks rather than risk disagreement."
+        }
+      ],
+      "reading": [
+        {
+          "source": "etcd-perf",
+          "section": "Understanding performance: the network and disk limits",
+          "what": "The two physical costs that set consensus latency, and how to shrink them."
+        },
+        {
+          "source": "etcd-why",
+          "section": "Why etcd chooses strong consistency for coordination",
+          "what": "Why a consensus store would rather block than serve unsafe data."
+        }
+      ],
+      "canNow": [
+        "Name the two physical limits on consensus latency and how to reduce them.",
+        "Place a consensus cluster sensibly across regions.",
+        "Explain how consensus encodes the CAP choice of correctness over availability on quorum loss."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "A two-node cluster is a cheap way to get fault tolerance.",
+      "truth": "A majority of two is two, so losing either node stops progress; you need 2f+1 nodes, three to survive one [[kube-etcd]]."
+    },
+    {
+      "myth": "The leader can always answer reads from its own memory for free.",
+      "truth": "A safe read may need a majority round trip to confirm leadership; a lease is what makes local reads safe [[etcd-perf]]."
+    },
+    {
+      "myth": "Consensus is slow because the code is unoptimised.",
+      "truth": "Its latency floor is physical: a network round trip to a majority plus a durable disk sync [[etcd-perf]]."
+    },
+    {
+      "myth": "Paxos and Raft give different guarantees.",
+      "truth": "They solve the same problem; Raft was designed to be understandable, not more powerful [[raft]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These use etcdctl against a local or test etcd cluster to see leadership and the consensus members. Output depends on your cluster, so it is not shown here. Each command is documented in the etcd and Kubernetes docs.",
+    "commands": [
+      {
+        "command": "etcdctl member list -w table",
+        "shows": "The members of the consensus cluster, so you can see it is sized 3 or 5 for a failure budget.",
+        "source": "kube-etcd"
+      },
+      {
+        "command": "etcdctl endpoint status -w table",
+        "shows": "Each endpoint's status including which member is currently the Raft leader.",
+        "source": "etcd-perf"
+      },
+      {
+        "command": "etcdctl put /app/leader node-1",
+        "shows": "A write that is committed only once a majority of members has stored it via Raft.",
+        "source": "etcd-why"
+      }
+    ]
+  },
+  "next": "Go back to the Consensus topic page for the worked example and the quiz, then read the etcd performance guide and CockroachDB's leader-leases post. Consensus leads into Distributed transactions, where shards must agree to commit together, and into Failover, which is leader election under another name.",
+  "sources": [
+    {
+      "id": "raft",
+      "title": "The Raft Consensus Algorithm",
+      "url": "https://raft.github.io/",
+      "publisher": "raft.github.io (Diego Ongaro and John Ousterhout, Stanford)",
+      "kind": "Project / academic reference",
+      "year": "2014",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "etcd-why",
+      "title": "etcd: Why etcd",
+      "url": "https://etcd.io/docs/v3.5/learning/why/",
+      "publisher": "etcd (CNCF)",
+      "kind": "Project documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "etcd-perf",
+      "title": "etcd: Performance",
+      "url": "https://etcd.io/docs/v3.5/op-guide/performance/",
+      "publisher": "etcd (CNCF)",
+      "kind": "Project documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "kube-etcd",
+      "title": "Operating etcd clusters for Kubernetes",
+      "url": "https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/",
+      "publisher": "Kubernetes",
+      "kind": "Project documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    }
+  ]
+}
