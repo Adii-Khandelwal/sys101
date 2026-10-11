@@ -84,7 +84,6 @@ export default function Home() {
           title: t.title,
           number: String(i + 1).padStart(2, "0"),
           group: t.group ?? groupFromDepth(depth.get(t.slug) ?? 0),
-          posts: t.posts.length,
           prerequisites: t.prerequisites,
         }))}
       />

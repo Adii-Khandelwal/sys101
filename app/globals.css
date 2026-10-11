@@ -804,11 +804,6 @@ a:hover {
 .path-meta-key {
   font: inherit;
 }
-.path-meta-dot {
-  margin: 0 6px;
-  color: var(--rule);
-}
-
 .visually-hidden {
   position: absolute;
   width: 1px;

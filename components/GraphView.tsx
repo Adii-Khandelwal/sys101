@@ -858,7 +858,7 @@ export default function GraphView({ nodes, edges }: Props) {
                 return (
                   <>
                     <span className="tip-status">
-                      {status} · {activeNode.posts} {activeNode.posts === 1 ? "post" : "posts"}
+                      {status}
                     </span>
                     {pre.length > 0 && (
                       <span>

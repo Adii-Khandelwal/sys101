@@ -9,7 +9,6 @@ export type PathEntry = {
   title: string;
   number: string;
   group: string;
-  posts: number;
   prerequisites: string[];
 };
 
@@ -22,7 +21,7 @@ type Props = {
 
 /**
  * A linear syllabus: topics in prerequisite order, grouped, each showing its
- * state (unread, ready, read), what it builds on, and how many posts it has.
+ * state (unread, ready, read), and what it builds on.
  * Reads the same browser read-state as the graph, so the two stay in step.
  * This is the graph's fallback and the mobile homepage (docs/ideas.md ideas 5, 6).
  */
@@ -79,10 +78,6 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
                       ) : (
                         <span className="path-meta-key">A starting point</span>
                       )}
-                      <span className="path-meta-dot" aria-hidden="true">
-                        ·
-                      </span>
-                      {e.posts} {e.posts === 1 ? "post" : "posts"}
                     </span>
                   </span>
                 </li>
