@@ -177,16 +177,6 @@ export default function GraphView({ nodes, edges }: Props) {
       // storage blocked: default off
     }
   }, []);
-  const toggleShowAll = () => {
-    setShowAll((v) => {
-      try {
-        sessionStorage.setItem("sys101:showAllLinks", v ? "0" : "1");
-      } catch {
-        // storage blocked: setting lasts for this page only
-      }
-      return !v;
-    });
-  };
 
   // Hidden edges as screen-space curves, kept in step with the camera.
   const hiddenBends = useRef(new Map<string, number>());
@@ -838,27 +828,6 @@ export default function GraphView({ nodes, edges }: Props) {
           <LegendMark state="ready" /> Ready
           <LegendMark state="read" /> Read
         </p>
-        {interactive && (
-          <div className="graph-controls label">
-            <button type="button" className="text-button" onClick={() => zoomCenter(STEP)} disabled={!ready}>
-              Zoom in
-            </button>
-            <button type="button" className="text-button" onClick={() => zoomCenter(1 / STEP)} disabled={!ready}>
-              Zoom out
-            </button>
-            <button type="button" className="text-button" onClick={fitAll} disabled={!ready}>
-              Fit all
-            </button>
-            {hidden.length > 0 && (
-              <button type="button" className="text-button" aria-pressed={showAll} onClick={toggleShowAll}>
-                {showAll ? "Hide extra links" : "Show all links"}
-              </button>
-            )}
-            <span className="zoom-readout" aria-live="polite">
-              {zoomPct}%
-            </span>
-          </div>
-        )}
       </div>
 
       <div ref={scrollWrap} className="graph-scrollwrap">
