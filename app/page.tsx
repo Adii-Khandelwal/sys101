@@ -9,7 +9,7 @@ import TryQuestion from "@/components/TryQuestion";
 import SiteFooter from "@/components/SiteFooter";
 import { columns, depths, transitiveReduction } from "@/lib/graph";
 import { getRoadmap } from "@/lib/roadmap";
-import { GROUPS, getAllTopics, type Group } from "@/lib/topics";
+import { GROUPS, formatDate, getAllTopics, type Group } from "@/lib/topics";
 import { SITE_DESCRIPTION, pageMeta } from "@/lib/site";
 
 // Prerendered at build time; using anything dynamic here fails the build.
@@ -64,6 +64,11 @@ export default function Home() {
     .map(([name, urls]) => ({ name, posts: urls.size }))
     .sort((a, b) => a.name.localeCompare(b.name));
   const planned = getRoadmap(topics);
+  // A topic's date is when its first post was checked; the newest of those is the latest added.
+  const added = topics
+    .map((t) => ({ title: t.title, date: t.posts.map((p) => p.verifiedOn).sort()[0] }))
+    .filter((t) => t.date)
+    .sort((a, b) => b.date.localeCompare(a.date) || a.title.localeCompare(b.title))[0];
 
   return (
     <main className="home">
@@ -92,6 +97,12 @@ export default function Home() {
           prerequisites: t.prerequisites,
         }))}
       />
+
+      {added && (
+        <p className="latest-added label">
+          Latest added: {added.title}, checked {formatDate(added.date)}
+        </p>
+      )}
 
       <TryQuestion slug={dns.slug} topicTitle={dns.title} question={sample} />
       <PostSources companies={companies} />

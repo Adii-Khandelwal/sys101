@@ -3,6 +3,8 @@ import type { Topic } from "./topics";
 import type { Learn } from "./learn";
 
 export const CONTACT_EMAIL = "aditya01khandelwal@gmail.com";
+/** Where "Report a mistake" mail goes. Placeholder: replace with the real address. */
+export const REPORT_EMAIL = "mistakes@example.com";
 
 /** Origin for canonical URLs, the sitemap, and JSON-LD. No trailing slash. */
 export const SITE_URL = (process.env.SITE_URL || "https://sys101.vercel.app").replace(/\/+$/, "");

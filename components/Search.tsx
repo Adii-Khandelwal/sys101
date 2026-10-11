@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { containsAll, finishedWords } from "@/lib/searchMatch";
@@ -25,6 +25,7 @@ const clean = (url: string) => url.replace(/\.html(?=#|$)/, "");
 
 export default function Search() {
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
   const pagefind = useRef<Pagefind | null>(null);
   const loading = useRef<Promise<void> | null>(null);
   const latest = useRef(0); // id of the newest search; older responses are dropped
@@ -81,9 +82,23 @@ export default function Search() {
     setSearching(false);
   };
 
+  // "/" jumps to the box, unless the reader is already typing somewhere or holds a shortcut key.
+  useEffect(() => {
+    const onSlash = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+      e.preventDefault();
+      inputRef.current?.focus();
+    };
+    window.addEventListener("keydown", onSlash);
+    return () => window.removeEventListener("keydown", onSlash);
+  }, []);
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
       search("");
+      e.currentTarget.blur();
     } else if (e.key === "Enter" && results?.length && !searching) {
       router.push(results[0].url);
     }
@@ -96,7 +111,9 @@ export default function Search() {
       <label htmlFor="site-search" className="visually-hidden">
         Search topics
       </label>
+      <div className="search-field">
       <input
+        ref={inputRef}
         id="site-search"
         type="search"
         placeholder="Search topics, companies, terms"
@@ -108,7 +125,12 @@ export default function Search() {
         onKeyDown={onKeyDown}
         disabled={status === "unavailable"}
         aria-describedby="search-status"
+        aria-keyshortcuts="/"
       />
+      <kbd className="search-hint" aria-hidden="true">
+        /
+      </kbd>
+      </div>
 
       <div id="search-status" aria-live="polite">
         {status === "unavailable" && (

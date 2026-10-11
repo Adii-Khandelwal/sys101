@@ -10,7 +10,7 @@ export default function PostSources({ companies }: Props) {
       <ul className="sources-list">
         {companies.map((c) => (
           <li key={c.name}>
-            {c.name} <span className="sources-count">{c.posts === 1 ? "1 post" : `${c.posts} posts`}</span>
+            {c.name} <span className="sources-count">{c.posts} {c.posts === 1 ? "post" : "posts"}</span>
           </li>
         ))}
       </ul>
