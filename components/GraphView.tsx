@@ -112,6 +112,10 @@ export default function GraphView({ nodes, edges }: Props) {
 
   const [ready, setReady] = useState(false);
   const [orientation, setOrientation] = useState<Orientation>("horizontal");
+  // Phones get a fixed, non-interactive map so a finger scrolls the page past
+  // it and a tap opens the topic. Starts false (desktop-first) to match SSR,
+  // then follows the NARROW media query. See the orientation effect below.
+  const [isPhone, setIsPhone] = useState(false);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [active, setActive] = useState<string | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
@@ -183,7 +187,10 @@ export default function GraphView({ nodes, edges }: Props) {
   // Orientation follows the same breakpoint as the stage height in CSS.
   useEffect(() => {
     const query = window.matchMedia(NARROW);
-    const update = () => setOrientation(query.matches ? "vertical" : "horizontal");
+    const update = () => {
+      setOrientation(query.matches ? "vertical" : "horizontal");
+      setIsPhone(query.matches);
+    };
     update();
     query.addEventListener("change", update);
     return () => query.removeEventListener("change", update);
@@ -267,8 +274,10 @@ export default function GraphView({ nodes, edges }: Props) {
   // ── Camera ────────────────────────────────────────────────────────────
   const fitRef = useRef(1);
   const [zoomPct, setZoomPct] = useState(100);
-  // Small maps fit on screen: no zoom, pan or controls until there are enough topics to need them.
-  const interactive = mapIsInteractive(nodes.length);
+  // Small maps fit on screen: no zoom, pan or controls until there are enough
+  // topics to need them. Phones always get the fixed map, whatever the count,
+  // so a finger scrolls the page past it and a tap opens the topic.
+  const interactive = mapIsInteractive(nodes.length) && !isPhone;
   const interactiveRef = useRef(interactive);
   interactiveRef.current = interactive;
   const animFrame = useRef(0);

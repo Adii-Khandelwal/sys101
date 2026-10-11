@@ -1,0 +1,307 @@
+{
+  "slug": "pub-sub",
+  "promise": "After this you can follow the topic page and the posts.",
+  "before": {
+    "prerequisites": [
+      "message-queues"
+    ],
+    "terms": [
+      {
+        "term": "Producer and consumer",
+        "definition": "A producer sends messages; a consumer receives and processes them. In pub-sub the producer is often called a publisher."
+      },
+      {
+        "term": "Topic",
+        "definition": "A named stream that publishers send messages to, without knowing who will read it."
+      },
+      {
+        "term": "Asynchronous",
+        "definition": "The sender hands off a message and moves on, instead of waiting for the receiver to finish."
+      }
+    ],
+    "note": "Read Message Queues first: pub-sub is the one-to-many shape of the same idea, and the delivery and ordering rules you learned there return here. The terms below are enough to begin."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "A message queue hands each message to one consumer. Publish-subscribe is the other shape: a publisher sends a message to a topic, and the topic delivers a copy to every interested reader. The publisher does not know, and does not need to know, who those readers are. Google describes its Pub/Sub service as an asynchronous messaging service that decouples the services producing messages from the services processing them [[gcp-pubsub-overview]].",
+        "The point of this is loose coupling. When one order event matters to billing, email and analytics all at once, calling each system in turn ties them together: the order service must know every reader, and a slow reader slows the order. Publishing one message to a topic instead lets each reader take its own copy at its own pace, and lets you add a new reader later without touching the publisher [[sns-dg]].",
+        "Delivering one message to many endpoints is called fan-out. Amazon's SNS puts it plainly: a topic acts as a logical access point, and a fanout scenario is when a message published to a topic is replicated and pushed to multiple endpoints such as queues, functions and HTTP endpoints [[sns-dg]]. That one-to-many delivery is the whole difference from a plain queue."
+      ],
+      "terms": [
+        {
+          "term": "Publish-subscribe",
+          "definition": "A pattern where each message sent to a topic is delivered to every interested subscriber, not just one consumer."
+        },
+        {
+          "term": "Publisher",
+          "definition": "The sender that puts a message on a topic without knowing who reads it."
+        },
+        {
+          "term": "Subscriber",
+          "definition": "A reader that registers interest in a topic and receives its messages."
+        },
+        {
+          "term": "Fan-out",
+          "definition": "Delivering one published message to many endpoints at once."
+        },
+        {
+          "term": "Decoupling",
+          "definition": "Letting the publisher and its readers run, fail and scale independently by communicating through a topic."
+        }
+      ],
+      "reading": [
+        {
+          "source": "gcp-pubsub-overview",
+          "section": "What is Pub/Sub? and the core concepts (topic, publisher, subscriber)",
+          "what": "How publishing to a topic decouples the services that produce messages from those that process them."
+        },
+        {
+          "source": "sns-dg",
+          "section": "What is Amazon SNS? and the common scenarios (fanout)",
+          "what": "How one message published to a topic is replicated to many endpoints."
+        }
+      ],
+      "canNow": [
+        "Say how pub-sub differs from a one-consumer queue.",
+        "Explain what a topic, publisher and subscriber are.",
+        "Describe fan-out and why it decouples the publisher from its readers."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "Readers attach to a topic through a subscription. Each subscription is one reader's own view of the topic, with its own position and its own backlog, and every subscription receives every message. Google Pub/Sub splits the two ways a subscriber can get messages: in a pull subscription the subscriber asks for messages, and in a push subscription the service sends each message to an endpoint the subscriber gave [[gcp-pubsub-sub]].",
+        "Inside a single subscription, several workers can share the load, so each message goes to just one of them. This is the queue behaviour living inside pub-sub: separate subscriptions each get a full copy, while workers in one subscription divide that subscription's messages. It is how you broadcast to many systems and still scale any one of them.",
+        "Delivery is confirmed by acknowledgement. A subscriber receives a message, does the work, and acknowledges it; if it does not acknowledge in time, the message is delivered again. Because a crash between work and acknowledgement causes a repeat, the default is at-least-once delivery, and subscribers must be safe to process the same message twice. Google Pub/Sub offers an exactly-once option, but the baseline every design should assume is at-least-once [[gcp-pubsub-sub]].",
+        "Order is not global. Kafka keeps order only inside one partition: it guarantees that any consumer of a given topic-partition reads that partition's events in exactly the same order they were written [[kafka-intro]]. Google Pub/Sub reaches the same place with ordering keys: an ordering key is a string identifying related messages that should be ordered, such as a customer ID, and messages with an empty ordering key are not ordered [[gcp-pubsub-order]]. Either way, if two events must stay in sequence, give them the same key."
+      ],
+      "terms": [
+        {
+          "term": "Subscription",
+          "definition": "One reader's view of a topic, with its own position and backlog; every subscription gets every message."
+        },
+        {
+          "term": "Push vs pull",
+          "definition": "In a pull subscription the subscriber requests messages; in a push subscription the service delivers them to an endpoint."
+        },
+        {
+          "term": "Acknowledgement",
+          "definition": "A subscriber's signal that it finished a message; without one in time, the message is redelivered."
+        },
+        {
+          "term": "At-least-once delivery",
+          "definition": "Every message arrives, possibly more than once, so subscribers must be idempotent."
+        },
+        {
+          "term": "Ordering key",
+          "definition": "A value that keeps related messages in order by routing them together; messages with no key are unordered."
+        }
+      ],
+      "reading": [
+        {
+          "source": "gcp-pubsub-sub",
+          "section": "Subscription overview and Choose a subscription type (pull vs push)",
+          "what": "How a subscription is one reader's view of the topic, and how pull and push delivery differ."
+        },
+        {
+          "source": "kafka-intro",
+          "section": "Topics and partitions, the ordering guarantee",
+          "what": "Why order is kept only within a partition, not across a whole topic."
+        },
+        {
+          "source": "gcp-pubsub-order",
+          "section": "Receive messages in order, ordering keys",
+          "what": "How an ordering key keeps related messages in sequence and what an empty key means."
+        }
+      ],
+      "canNow": [
+        "Explain what a subscription is and how push differs from pull.",
+        "Say why workers in one subscription share work while separate subscriptions each get a copy.",
+        "Describe acknowledgement, at-least-once delivery, and keeping order with a key."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 150\" role=\"img\" aria-labelledby=\"dg-learn-pubsub-how-t\" class=\"dg\"><title id=\"dg-learn-pubsub-how-t\">A publisher sends one message to a topic; the topic gives each subscription its own copy; workers inside one subscription share that subscription's messages, acknowledging each one.</title><defs><marker id=\"dg-learn-pubsub-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"52\" width=\"86\" height=\"44\" class=\"dg-box\"/><text x=\"55\" y=\"78\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Publisher</text><rect x=\"132\" y=\"52\" width=\"92\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"178\" y=\"78\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Topic</text><rect x=\"276\" y=\"16\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"336\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">subscription A</text><rect x=\"276\" y=\"92\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"336\" y=\"116.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">subscription B</text><rect x=\"430\" y=\"6\" width=\"74\" height=\"30\" class=\"dg-box\"/><text x=\"467\" y=\"25.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">worker</text><rect x=\"430\" y=\"40\" width=\"74\" height=\"30\" class=\"dg-box\"/><text x=\"467\" y=\"59.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">worker</text><rect x=\"430\" y=\"92\" width=\"74\" height=\"40\" class=\"dg-box\"/><text x=\"467\" y=\"116.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">worker</text><path d=\"M98,74 L132,74\" class=\"dg-line\" marker-end=\"url(#dg-learn-pubsub-how-a)\"/><path d=\"M224,66 L276,42\" class=\"dg-line\" marker-end=\"url(#dg-learn-pubsub-how-a)\"/><path d=\"M224,82 L276,108\" class=\"dg-line\" marker-end=\"url(#dg-learn-pubsub-how-a)\"/><path d=\"M396,32 L430,22\" class=\"dg-line\" marker-end=\"url(#dg-learn-pubsub-how-a)\"/><path d=\"M396,40 L430,52\" class=\"dg-line\" marker-end=\"url(#dg-learn-pubsub-how-a)\"/><path d=\"M396,112 L430,112\" class=\"dg-line\" marker-end=\"url(#dg-learn-pubsub-how-a)\"/><text x=\"336\" y=\"148\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">each subscription gets a copy; workers in one subscription share it</text></svg>"
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "A message that cannot be processed must not block the ones behind it. The usual fix is a dead-letter queue: after a set number of failed deliveries the message is set aside for inspection or replay. Amazon SNS defines it as an Amazon SQS queue that a subscription can target for messages that can't be delivered successfully, and says that once the retries in the retry policy are exhausted, SNS discards the message unless such a dead-letter queue is attached [[sns-dg]].",
+        "Because delivery is at-least-once, duplicates are a fact of life, so subscribers should be idempotent: handling the same message twice has the same effect as once. The common technique is to record each message's unique id and skip one you have already handled. Google Pub/Sub can be configured for exactly-once delivery, but it is the stronger, more expensive mode; the safe default is to design the subscriber to tolerate a repeat [[gcp-pubsub-sub]].",
+        "Ordering is a trade-off, not a free guarantee. Keeping related messages in order means routing them to the same partition or ordering key, which limits how much you can parallelise them, since one key's messages are processed in sequence. Unrelated messages, with different keys, still run in parallel. So you order only what truly needs it and let everything else fan out freely [[gcp-pubsub-order]]."
+      ],
+      "terms": [
+        {
+          "term": "Dead-letter queue",
+          "definition": "A place a message is moved to after repeated failures, so it stops blocking the messages behind it."
+        },
+        {
+          "term": "Retry policy",
+          "definition": "The rule for how many times, and how often, a failed delivery is retried before the message is dropped or dead-lettered."
+        },
+        {
+          "term": "Idempotent subscriber",
+          "definition": "A subscriber for which handling the same message twice has the same effect as handling it once."
+        },
+        {
+          "term": "Exactly-once delivery",
+          "definition": "A stronger, costlier mode that removes duplicates; most designs instead assume at-least-once and deduplicate."
+        },
+        {
+          "term": "Head-of-line blocking",
+          "definition": "One stuck message holding up every message behind it until it is parked or dropped."
+        }
+      ],
+      "reading": [
+        {
+          "source": "sns-dg",
+          "section": "Amazon SNS dead-letter queues (how messages are moved and redriven)",
+          "what": "How failing messages are set aside after retries instead of being lost or blocking others."
+        },
+        {
+          "source": "gcp-pubsub-sub",
+          "section": "Exactly-once delivery, and acknowledgement behaviour",
+          "what": "Why duplicates can occur under at-least-once delivery and what exactly-once costs."
+        }
+      ],
+      "canNow": [
+        "Explain what a dead-letter queue is and when a message reaches it.",
+        "Say why subscribers must be idempotent and how to make them so.",
+        "Describe the trade-off between ordering and parallelism."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "The two mental models in the field map onto two product shapes. A log like Kafka keeps a retained, ordered record per partition, so many subscribers can read, re-read and replay the same history at their own offsets [[kafka-intro]]. A managed topic like Google Pub/Sub or Amazon SNS pushes or serves copies to subscriptions and endpoints and handles retries and dead-lettering for you [[sns-dg]]. Both are pub-sub; they differ in whether the history is a durable log you seek within or a stream you acknowledge and move past.",
+        "Pub-sub is powerful but adds operational surface. Each subscription is its own backlog that can fall behind, each needs its own alerting, and a topic with hundreds of event types becomes something to name, monitor and clean up. The failure mode is rarely a lost message; it is a quietly growing backlog on one subscription while the others look fine, so per-subscription lag is the thing to watch.",
+        "Correctness changes too. Publishing an event means the work finishes some time after the publisher returns, so anything the publisher must know immediately, such as whether stock exists, still needs a direct call. Combined with at-least-once delivery, idempotent subscribers and a dead-letter queue for poison messages, this is the standard way large systems broadcast events while staying decoupled, which is why pub-sub sits at the messaging end of this map, just past queues [[gcp-pubsub-overview]]."
+      ],
+      "terms": [
+        {
+          "term": "Offset",
+          "definition": "A subscriber's position in a log such as Kafka, which it advances as it reads and can rewind to replay."
+        },
+        {
+          "term": "Replay",
+          "definition": "Reading a retained log again from an earlier position, which a durable log allows but a plain acknowledged stream does not."
+        },
+        {
+          "term": "Subscription lag",
+          "definition": "How far behind the latest message a subscription is; growing lag signals a backlog on that reader alone."
+        },
+        {
+          "term": "Eventual processing",
+          "definition": "Work finishing after the publisher returns, which callers that need an immediate answer must design around."
+        }
+      ],
+      "reading": [
+        {
+          "source": "kafka-intro",
+          "section": "The event streaming / use cases overview",
+          "what": "When a retained, replayable log fits better than a stream you acknowledge and move past."
+        },
+        {
+          "source": "sns-dg",
+          "section": "Common Amazon SNS scenarios and reliability features",
+          "what": "What a managed topic handles for you: fan-out, retries and dead-lettering."
+        }
+      ],
+      "canNow": [
+        "Choose between a durable log and a managed topic for a given job.",
+        "Name the main pub-sub failure mode and what to monitor.",
+        "Explain how eventual processing changes a publisher's design."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "Every subscriber shares one copy of each message, like a queue.",
+      "truth": "Every subscription receives every message; only workers inside one subscription share its messages [[gcp-pubsub-sub]]."
+    },
+    {
+      "myth": "Messages always arrive in the order they were published.",
+      "truth": "Order is kept only within a partition, or for messages with the same ordering key; an empty ordering key means no order [[gcp-pubsub-order]]."
+    },
+    {
+      "myth": "A topic guarantees each message is processed exactly once.",
+      "truth": "The default is at-least-once delivery, so a message can arrive twice and subscribers must be idempotent [[gcp-pubsub-sub]]."
+    },
+    {
+      "myth": "A message that keeps failing just gets retried until it works.",
+      "truth": "After the retry policy is exhausted the message is dropped unless a dead-letter queue is attached to catch it [[sns-dg]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These use the gcloud CLI against a Google Cloud project with Pub/Sub enabled. Output depends on your project, so it is not shown here. Each command is documented in the Pub/Sub guides.",
+    "commands": [
+      {
+        "command": "gcloud pubsub topics create orders",
+        "shows": "Creating a topic that publishers send messages to.",
+        "source": "gcp-pubsub-overview"
+      },
+      {
+        "command": "gcloud pubsub subscriptions create billing --topic=orders",
+        "shows": "Adding one subscription; a second subscription on the same topic would get its own copy of every message.",
+        "source": "gcp-pubsub-sub"
+      },
+      {
+        "command": "gcloud pubsub subscriptions pull billing --auto-ack --limit=10",
+        "shows": "Pulling and acknowledging messages from a pull subscription.",
+        "source": "gcp-pubsub-sub"
+      }
+    ]
+  },
+  "next": "Go back to the Publish-Subscribe topic page for the worked example and the quiz, then read the Spotify and Uber posts on running pub-sub at scale. The delivery, ordering and dead-letter ideas here are the base for event-driven design, planned next on the map.",
+  "sources": [
+    {
+      "id": "gcp-pubsub-overview",
+      "title": "What is Pub/Sub?",
+      "url": "https://cloud.google.com/pubsub/docs/overview",
+      "publisher": "Google Cloud",
+      "kind": "Vendor documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "gcp-pubsub-sub",
+      "title": "Pub/Sub: Subscription overview",
+      "url": "https://cloud.google.com/pubsub/docs/subscriber",
+      "publisher": "Google Cloud",
+      "kind": "Vendor documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "gcp-pubsub-order",
+      "title": "Pub/Sub: Receive messages in order",
+      "url": "https://cloud.google.com/pubsub/docs/ordering",
+      "publisher": "Google Cloud",
+      "kind": "Vendor documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "kafka-intro",
+      "title": "Apache Kafka: Introduction",
+      "url": "https://kafka.apache.org/intro",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    },
+    {
+      "id": "sns-dg",
+      "title": "Amazon SNS Developer Guide: What is Amazon SNS?",
+      "url": "https://docs.aws.amazon.com/sns/latest/dg/welcome.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "2024",
+      "verifiedOn": "2026-10-11"
+    }
+  ]
+}
