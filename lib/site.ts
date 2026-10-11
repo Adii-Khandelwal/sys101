@@ -15,7 +15,7 @@ export const SITE_DESCRIPTION =
   "A system design course in prerequisite order, taught through how real engineering teams built their systems.";
 
 /** Content dates for pages with no JSON behind them. Shown on the page and used as sitemap lastmod. */
-export const PAGE_DATES = { about: "2026-10-11", terms: "2026-10-11", privacy: "2026-10-11" } as const;
+export const PAGE_DATES = { about: "2026-10-11", terms: "2026-10-11", privacy: "2026-10-11", glossary: "2026-10-12" } as const;
 
 export const absoluteUrl = (path: string) => SITE_URL + (path === "/" ? "" : path);
 

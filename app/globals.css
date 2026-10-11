@@ -2451,22 +2451,40 @@ html {
 }
 
 .learn-terms,
+.glossary-terms,
 .learn-myths {
   margin: 0;
 }
 
+.glossary-topic {
+  margin-top: 32px;
+}
+.glossary-topic h2 {
+  margin-bottom: 4px;
+}
+.glossary-search {
+  margin-top: 20px;
+}
+.glossary-count {
+  margin: 10px 0 0;
+  color: var(--ink-soft);
+}
+
 .learn-terms div,
+.glossary-terms div,
 .learn-myths div {
   padding: 8px 0;
   border-bottom: 1px solid var(--rule);
 }
 
 .learn-terms dt,
+.glossary-terms dt,
 .learn-myths dt {
   font-weight: 600;
 }
 
 .learn-terms dd,
+.glossary-terms dd,
 .learn-myths dd {
   margin: 2px 0 0;
 }

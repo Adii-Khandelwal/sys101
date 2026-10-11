@@ -17,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...topics.map((t, i) => entry(`/topic/${t.slug}`, topicDates[i])),
     ...learn.map((l) => entry(`/topic/${l.slug}/learn`, learnUpdated(l))),
     entry("/about", PAGE_DATES.about),
+    entry("/glossary", PAGE_DATES.glossary),
     entry("/terms", PAGE_DATES.terms),
     entry("/privacy", PAGE_DATES.privacy),
   ];

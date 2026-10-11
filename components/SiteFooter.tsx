@@ -6,6 +6,8 @@ export default function SiteFooter() {
     <footer className="site-footer">
       <Link href="/about">About</Link>
       <span aria-hidden="true">·</span>
+      <Link href="/glossary">Glossary</Link>
+      <span aria-hidden="true">·</span>
       <Link href="/terms">Terms</Link>
       <span aria-hidden="true">·</span>
       <Link href="/privacy">Privacy</Link>
