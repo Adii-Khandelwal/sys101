@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useReadTopics } from "@/lib/progress";
+import { useInProgressTopics, useReadTopics } from "@/lib/progress";
 import { readyTopics, type IndexEntry } from "@/lib/nextUp";
 
 export type PathEntry = {
@@ -27,6 +27,7 @@ type Props = {
  */
 export default function PathView({ entries, headingId = "path-heading" }: Props) {
   const read = useReadTopics();
+  const inProgress = new Set(useInProgressTopics());
   const indexEntries: IndexEntry[] = entries.map((e) => ({ slug: e.slug, title: e.title, prerequisites: e.prerequisites }));
   const ready = new Set(readyTopics(indexEntries, read).map((e) => e.slug));
   const titleOf = new Map(entries.map((e) => [e.slug, e.title]));
@@ -38,7 +39,9 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
     g.items.push(e);
   }
 
-  const state = (slug: string) => (read.includes(slug) ? "read" : ready.has(slug) ? "ready" : "unread");
+  // In progress (started, not finished) takes priority over ready, matching the map.
+  const state = (slug: string) =>
+    read.includes(slug) ? "read" : inProgress.has(slug) ? "progress" : ready.has(slug) ? "ready" : "unread";
 
   return (
     <section className="path" aria-labelledby={headingId}>
@@ -66,10 +69,11 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
                     <Link href={`/topic/${e.slug}`} className="path-title">
                       {e.title}
                       {st === "ready" && <span className="path-ready-tag"> · ready</span>}
+                      {st === "progress" && <span className="path-progress-tag"> · in progress</span>}
                     </Link>
                     <span className="path-meta">
                       <span className="visually-hidden">
-                        {st === "read" ? "read. " : st === "ready" ? "ready to read. " : "unread. "}
+                        {st === "read" ? "read. " : st === "progress" ? "in progress. " : st === "ready" ? "ready to read. " : "unread. "}
                       </span>
                       {buildsOn.length > 0 ? (
                         <>

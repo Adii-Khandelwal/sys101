@@ -7,7 +7,7 @@ import type Graph from "graphology";
 import type Sigma from "sigma";
 import type { NodeLabelDrawingFunction } from "sigma/rendering";
 import { LABEL_START, MIN_LABEL_SCALE, chooseLayers, columns, edgeCurvatures, fitLabelScale, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
-import { useReadTopics } from "@/lib/progress";
+import { useInProgressTopics, useReadTopics } from "@/lib/progress";
 import {
   ACCENT,
   ACCENT_DARK,
@@ -136,6 +136,14 @@ export default function GraphView({ nodes, edges }: Props) {
     readRef.current = read;
     rendererRef.current?.refresh({ skipIndexation: true });
   }, [read]);
+
+  // Topics started but not finished, for the "in progress" node marker.
+  const inProgress = useInProgressTopics();
+  const inProgressRef = useRef(inProgress);
+  useEffect(() => {
+    inProgressRef.current = inProgress;
+    rendererRef.current?.refresh({ skipIndexation: true });
+  }, [inProgress]);
 
   // Draw only the transitive reduction; the full edge set still drives
   // neighbours, ready state and the "Also builds on" hints.
@@ -583,19 +591,37 @@ export default function GraphView({ nodes, edges }: Props) {
           const lit = highlighting && near;
           // Ready: unread with every prerequisite read. A thicker outline and a centre dot, so it reads without colour.
           const ready = !isRead && (prereqsRef.current.get(slug) ?? []).every((p) => readRef.current.includes(p));
+          // In progress: started but not finished. A rust outline and a rust centre dot on a hollow node,
+          // so it sits between unread (soft outline) and read (solid fill): "yours, but not full yet".
+          const inProg = !isRead && inProgressRef.current.includes(slug);
           const fill = isRead ? ACCENT : PAPER;
           // Lit nodes take the strong ink (read: darker rust); otherwise the usual soft outline.
-          const border = isRead ? (isActive || lit ? ACCENT_DARK : ACCENT) : isActive || lit ? INK : INK_SOFT;
-          const baseSize = ready ? 3 : 1.5;
+          // In progress uses the rust accent on the outline even when not read.
+          const border = isRead
+            ? isActive || lit
+              ? ACCENT_DARK
+              : ACCENT
+            : inProg
+              ? isActive || lit
+                ? ACCENT_DARK
+                : ACCENT
+              : isActive || lit
+                ? INK
+                : INK_SOFT;
+          // Ready and in-progress both carry a centre dot (shape signal); size matches "ready".
+          const dotted = ready || inProg;
+          const baseSize = dotted ? 3 : 1.5;
           // The lit set thickens by 1; the single hovered/focused node thickens
           // a little more, so you still see exactly which node you are on.
           const borderSize = isActive ? baseSize + 1.5 : lit ? baseSize + 1 : baseSize;
+          // Centre dot colour: in-progress gets the rust border colour; ready keeps the soft outline colour.
+          const dot = dotted ? (near ? border : fade(border)) : near ? fill : fade(fill);
           return {
             ...data,
             color: near ? fill : fade(fill),
             borderColor: near ? border : fade(border),
             borderSize,
-            dotColor: ready ? (near ? border : fade(border)) : near ? fill : fade(fill),
+            dotColor: dot,
             labelColor: near ? INK : FADED_LABEL, // faded labels keep AA contrast
             zIndex: near ? 1 : 0,
           };
@@ -826,6 +852,7 @@ export default function GraphView({ nodes, edges }: Props) {
         <p className="graph-legend label">
           <LegendMark state="unread" /> Unread
           <LegendMark state="ready" /> Ready
+          <LegendMark state="progress" /> In progress
           <LegendMark state="read" /> Read
         </p>
       </div>
@@ -934,15 +961,18 @@ export default function GraphView({ nodes, edges }: Props) {
 }
 
 /** Legend icons drawn like the nodes: thin ring, thick ring with a centre dot, filled rust. */
-function LegendMark({ state }: { state: "unread" | "ready" | "read" }) {
+function LegendMark({ state }: { state: "unread" | "ready" | "progress" | "read" }) {
   return (
     <svg className="legend-mark" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
       {state === "read" ? (
         <circle cx="8" cy="8" r="7" fill={ACCENT} />
+      ) : state === "progress" ? (
+        <circle cx="8" cy="8" r="5.5" fill={PAPER} stroke={ACCENT} strokeWidth="3" />
       ) : (
         <circle cx="8" cy="8" r={state === "ready" ? 5.5 : 6.25} fill={PAPER} stroke={INK_SOFT} strokeWidth={state === "ready" ? 3 : 1.5} />
       )}
       {state === "ready" && <circle cx="8" cy="8" r="1.6" fill={INK_SOFT} />}
+      {state === "progress" && <circle cx="8" cy="8" r="1.6" fill={ACCENT} />}
     </svg>
   );
 }

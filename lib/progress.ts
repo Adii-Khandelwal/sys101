@@ -240,3 +240,16 @@ function getData(): DataState {
 export function useAllProgress() {
   return useSyncExternalStore(subscribe, getData, () => SERVER_DATA);
 }
+
+/** Topics with some progress (a section done, a unit visited, or a quiz answer) that are not yet read. */
+export function inProgressSlugs(progress: Progress, read: readonly string[]): string[] {
+  return Object.entries(progress.topics)
+    .filter(([slug, t]) => !read.includes(slug) && (t.done.length > 0 || t.visited.length > 0 || Object.keys(t.answers).length > 0))
+    .map(([slug]) => slug);
+}
+
+/** Live set of in-progress topic slugs, for the map's "currently reading" marker. */
+export function useInProgressTopics(): string[] {
+  const { progress, read } = useAllProgress();
+  return inProgressSlugs(progress, read);
+}

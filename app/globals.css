@@ -446,6 +446,17 @@ a:hover {
   color: var(--ink-soft);
 }
 
+/* Resume line: sits just below the masthead, above the map. Quiet, with space
+   so it reads as its own line, and fades in once local progress is known. */
+.home-resume {
+  margin: 20px 0 0;
+  color: var(--ink-soft);
+  animation: fade-in var(--dur-base) var(--ease-out);
+}
+.home-resume a {
+  color: var(--accent);
+}
+
 .next-count {
   margin-left: auto;
 }
@@ -900,6 +911,19 @@ a:hover {
   background: var(--accent);
   border-color: var(--accent);
 }
+/* In progress: a hollow marker ringed in rust with a small rust centre, so it
+   matches the map's in-progress node and reads as "started, not full". */
+.path-item.is-progress .path-marker {
+  border-width: 2.5px;
+  border-color: var(--accent);
+}
+.path-item.is-progress .path-marker::after {
+  content: "";
+  position: absolute;
+  inset: 2.5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
 
 .path-body {
   display: flex;
@@ -925,6 +949,13 @@ a:hover {
 }
 
 .path-ready-tag {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.path-progress-tag {
   font-family: var(--font-mono), monospace;
   font-size: 11px;
   letter-spacing: 0.06em;
