@@ -43,44 +43,54 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
 
   return (
     <section className="path" aria-labelledby={headingId}>
-      <h2 id={headingId} className="label">
+      <h2 id={headingId} className="visually-hidden">
         The path
       </h2>
-      <ol className="path-groups">
-        {groups.map((g) => (
-          <li key={g.name} className="path-group">
-            <h3 className="label path-group-name">{g.name}</h3>
-            <ol className="path-list">
-              {g.items.map((e) => {
-                const st = state(e.slug);
-                const buildsOn = e.prerequisites.map((p) => titleOf.get(p) ?? p);
-                return (
-                  <li key={e.slug} className={`path-item is-${st}`}>
-                    <span className="path-number" aria-hidden="true">
-                      {e.number}
-                    </span>
-                    <span className="path-marker" aria-hidden="true" />
-                    <span className="path-body">
-                      <Link href={`/topic/${e.slug}`} className="path-title">
-                        {e.title}
-                      </Link>
-                      <span className="path-meta label">
-                        <span className="visually-hidden">
-                          {st === "read" ? "read. " : st === "ready" ? "ready to read. " : "unread. "}
-                        </span>
-                        {buildsOn.length > 0 ? `Builds on ${buildsOn.join(", ")}` : "No prerequisites"}
-                        {" · "}
-                        {e.posts} {e.posts === 1 ? "post" : "posts"}
-                        {st === "ready" && <span className="path-ready-tag"> · ready</span>}
+      {groups.map((g) => (
+        <div key={g.name} className="path-group">
+          <h3 className="label path-group-name">
+            <span>{g.name}</span>
+          </h3>
+          <ol className="path-list">
+            {g.items.map((e) => {
+              const st = state(e.slug);
+              const buildsOn = e.prerequisites.map((p) => titleOf.get(p) ?? p);
+              return (
+                <li key={e.slug} className={`path-item is-${st}`}>
+                  <span className="path-number" aria-hidden="true">
+                    {e.number}
+                  </span>
+                  <span className="path-rail" aria-hidden="true">
+                    <span className="path-marker" />
+                  </span>
+                  <span className="path-body">
+                    <Link href={`/topic/${e.slug}`} className="path-title">
+                      {e.title}
+                      {st === "ready" && <span className="path-ready-tag"> · ready</span>}
+                    </Link>
+                    <span className="path-meta">
+                      <span className="visually-hidden">
+                        {st === "read" ? "read. " : st === "ready" ? "ready to read. " : "unread. "}
                       </span>
+                      {buildsOn.length > 0 ? (
+                        <>
+                          <span className="path-meta-key">builds on</span> {buildsOn.join(", ")}
+                        </>
+                      ) : (
+                        <span className="path-meta-key">a starting point</span>
+                      )}
+                      <span className="path-meta-dot" aria-hidden="true">
+                        ·
+                      </span>
+                      {e.posts} {e.posts === 1 ? "post" : "posts"}
                     </span>
-                  </li>
-                );
-              })}
-            </ol>
-          </li>
-        ))}
-      </ol>
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      ))}
     </section>
   );
 }

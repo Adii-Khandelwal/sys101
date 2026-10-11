@@ -385,74 +385,133 @@ a:hover {
 }
 
 /* ── Home view toggle (Map / Path) ───────── */
+.home-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 48px 0 0;
+  padding-bottom: 10px;
+}
+
+.home-toolbar-label {
+  color: var(--ink-soft);
+}
+
 .home-view-toggle {
   display: flex;
   align-items: baseline;
-  gap: 16px;
-  margin: 48px 0 8px;
+  gap: 8px;
+}
+
+.home-view-toggle-lead {
+  color: var(--ink-soft);
+  margin-right: 2px;
+}
+
+.home-view-sep {
+  color: var(--rule);
+}
+
+.home-view-toggle .text-button {
+  text-decoration: none;
 }
 
 .home-view-toggle .text-button[aria-pressed="true"] {
   color: var(--accent);
+  text-decoration: underline;
   text-decoration-color: var(--accent);
+  text-underline-offset: 4px;
 }
 
-/* ── Path view (linear syllabus) ─────────── */
+/* ── Path view: a syllabus drawn as a timeline ─────────── */
 .path {
+  margin-top: 8px;
+  border-top: 1px solid var(--rule);
+  padding-top: 8px;
+}
+
+.path-group {
+  margin-top: 36px;
+}
+.path-group:first-of-type {
   margin-top: 24px;
 }
 
-.path > h2 {
-  margin: 0 0 20px;
+/* Group name as a mono small-caps marker with a rule running to the edge. */
+.path-group-name {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 4px;
+  color: var(--ink-soft);
+}
+.path-group-name::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
 }
 
-.path-groups,
 .path-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.path-group + .path-group {
-  margin-top: 32px;
-}
-
-.path-group-name {
-  margin: 0 0 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--rule);
-}
-
+/* Each row: number gutter | spine with marker | body. The spine's vertical
+   line connects the markers into one path, echoing the graph's edges. */
 .path-item {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--rule);
+  display: grid;
+  grid-template-columns: 2.4ch 22px 1fr;
+  align-items: start;
+  column-gap: 14px;
+  padding: 14px 0;
 }
 
 .path-number {
   font-family: var(--font-mono), monospace;
   font-size: 12px;
+  line-height: 1.9;
   color: var(--ink-soft);
-  min-width: 2ch;
+  text-align: right;
 }
 
-/* State by outline weight and fill, never colour alone (matches the graph). */
+.path-rail {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  justify-content: center;
+}
+/* The connecting line: runs the full height, trimmed at the first and last. */
+.path-rail::before {
+  content: "";
+  position: absolute;
+  top: -14px;
+  bottom: -14px;
+  width: 1px;
+  background: var(--rule);
+}
+.path-list .path-item:first-child .path-rail::before {
+  top: 14px;
+}
+.path-list .path-item:last-child .path-rail::before {
+  bottom: calc(100% - 14px);
+}
+
 .path-marker {
-  flex: none;
-  align-self: center;
-  width: 10px;
-  height: 10px;
+  position: relative;
+  z-index: 1;
+  margin-top: 7px;
+  width: 11px;
+  height: 11px;
   border: 1.5px solid var(--ink-soft);
   border-radius: 50%;
+  background: var(--paper);
 }
-
 .path-item.is-ready .path-marker {
-  border-width: 3px;
+  border-width: 2.5px;
   border-color: var(--ink);
 }
-
 .path-item.is-read .path-marker {
   background: var(--accent);
   border-color: var(--accent);
@@ -461,23 +520,47 @@ a:hover {
 .path-body {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  min-width: 0;
 }
 
 .path-title {
-  font-size: 19px;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 22px;
+  line-height: 1.2;
+  text-decoration: none;
+  width: fit-content;
 }
-
+.path-title:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+}
 .path-item.is-read .path-title {
   color: var(--ink-soft);
 }
 
-.path-meta {
-  color: var(--ink-soft);
+.path-ready-tag {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
-.path-ready-tag {
-  color: var(--accent);
+.path-meta {
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+.path-meta-key {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.path-meta-dot {
+  margin: 0 6px;
+  color: var(--rule);
 }
 
 .visually-hidden {

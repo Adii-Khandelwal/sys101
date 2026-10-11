@@ -49,13 +49,24 @@ export default function HomeView({ nodes, edges, pathEntries, indexGroups }: Pro
 
   return (
     <>
-      <div className="home-view-toggle label" role="group" aria-label="Choose how to view the topics">
-        <button type="button" className="text-button" aria-pressed={view === "map"} onClick={() => choose("map")}>
-          Map
-        </button>
-        <button type="button" className="text-button" aria-pressed={view === "path"} onClick={() => choose("path")}>
-          Path
-        </button>
+      <div className="home-toolbar">
+        <span className="home-toolbar-label label">
+          {view === "map" ? "The map" : "The path"}
+        </span>
+        <div className="home-view-toggle label" role="group" aria-label="Choose how to view the topics">
+          <span className="home-view-toggle-lead" aria-hidden="true">
+            View
+          </span>
+          <button type="button" className="text-button" aria-pressed={view === "map"} onClick={() => choose("map")}>
+            Map
+          </button>
+          <span className="home-view-sep" aria-hidden="true">
+            /
+          </span>
+          <button type="button" className="text-button" aria-pressed={view === "path"} onClick={() => choose("path")}>
+            Path
+          </button>
+        </div>
       </div>
 
       {view === "map" ? (

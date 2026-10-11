@@ -109,6 +109,8 @@ Never use: gradients, neon, rainbow, pastels, purple and black, pure white backg
 
 Always: skeleton loaders, a real working demo, Terms and Privacy pages in the footer.
 
+Review the aesthetics of every page or UI piece before calling it done: render it, look at it at 1440px and 390px, and check it reads as part of this handcrafted whole (cream, serif headings, mono small-caps labels, one rust accent, generous whitespace, state shown by shape not colour alone). New UI must never look like bolted-on plain text or a generic template; match the vibe of the existing pages.
+
 ## Architecture of the site itself
 
 Always apply system design thinking to this site itself: static generation, CDN caching, decoupled offline pipeline, idempotent jobs, cached outputs, no runtime dependency on third parties, graceful degradation. Justify architecture choices in these terms.
