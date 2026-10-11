@@ -9,7 +9,8 @@ export type Digest = {
   /** Inline SVG markup drawn for this post, styled by the dg-* classes in globals.css. */
   diagram: string;
   numbers: { value: string; meaning: string }[];
-  tradeoffs: { chosen: string; rejected: string; why: string };
+  /** `rejected` is left out when the source names no alternative. */
+  tradeoffs: { chosen: string; rejected?: string; why: string };
   failures: string;
   takeaways: string;
 };
@@ -23,8 +24,10 @@ export type Post = {
   company: string;
   /** YYYY-MM-DD: when someone last opened the post and checked the digest against it. */
   verifiedOn: string;
-  /** YYYY-MM-DD: when the company published the post. Shown on the page. */
+  /** YYYY-MM-DD: when the company published the post. Shown on the page. Versioned documentation with no date uses NO_DATE and sets `edition`. */
   published: string;
+  /** Only with an undated source: what it is instead of a date, for example "v3.5 documentation". */
+  edition?: string;
   /** Required for posts older than OLD_POST_YEARS: why it still passes rule 3, and what may have changed. */
   ageNote?: string;
   /** A newer source, opened by us, that still points to this post. */
@@ -152,6 +155,16 @@ function isPastDate(v: unknown) {
   // UTC build machine, so allow one day of slack.
   const tomorrow = Date.now() + 24 * 60 * 60 * 1000;
   return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(v) && date.getTime() <= tomorrow;
+}
+
+/** The `published` value for a source that shows no date, such as versioned documentation. */
+export const NO_DATE = "no date shown";
+export const isUndated = (post: Pick<Post, "published">) => post.published === NO_DATE;
+
+/** What the page shows where it would show a date: "June 2017" or "no date shown, v3.5 documentation". */
+export function postWhen(post: Pick<Post, "published" | "edition">, precision: "month" | "year") {
+  if (isUndated(post)) return `${NO_DATE}, ${post.edition}`;
+  return precision === "month" ? formatMonth(post.published) : post.published.slice(0, 4);
 }
 
 /** Posts older than this must explain why they still pass rule 3 (see CLAUDE.md). */
@@ -374,7 +387,10 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
         if (!nonEmpty(post[field])) problems.push(`${where}: ${field} is empty`);
       }
       if (!isPastDate(post.verifiedOn)) problems.push(`${where}: verifiedOn must be a YYYY-MM-DD date, not in the future`);
-      if (!isPastDate(post.published)) problems.push(`${where}: published must be a YYYY-MM-DD date, not in the future`);
+      if (isUndated(post)) {
+        if (!nonEmpty(post.edition)) problems.push(`${where}: an undated source needs an edition such as "v3.5 documentation"`);
+        if (!nonEmpty(post.ageNote)) problems.push(`${where}: an undated source needs an ageNote`);
+      } else if (!isPastDate(post.published)) problems.push(`${where}: published must be a YYYY-MM-DD date, not in the future`);
       else if (isOld(post.published) && !nonEmpty(post.ageNote)) {
         problems.push(`${where}: published ${post.published}, over ${OLD_POST_YEARS} years ago, so it needs an ageNote (CLAUDE.md rule 3)`);
       }
@@ -391,8 +407,8 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
       }
       if (!pairs(d.walkthrough, "step", "explanation")) problems.push(`${where}: digest.walkthrough needs steps`);
       if (!pairs(d.numbers, "value", "meaning")) problems.push(`${where}: digest.numbers needs {value, meaning} entries`);
-      if (!nonEmpty(d.tradeoffs?.chosen) || !nonEmpty(d.tradeoffs?.rejected) || !nonEmpty(d.tradeoffs?.why)) {
-        problems.push(`${where}: digest.tradeoffs needs chosen, rejected and why`);
+      if (!nonEmpty(d.tradeoffs?.chosen) || (d.tradeoffs?.rejected !== undefined && !nonEmpty(d.tradeoffs.rejected)) || !nonEmpty(d.tradeoffs?.why)) {
+        problems.push(`${where}: digest.tradeoffs needs chosen and why, and rejected only if the source names an alternative`);
       }
       problems.push(...checkDiagram(d.diagram).map((p) => `${where}: diagram ${p}`));
     });

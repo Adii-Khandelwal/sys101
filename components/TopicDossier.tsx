@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatDate, formatMonth, isOld, type Post, type Topic } from "@/lib/topics";
+import { formatDate, isOld, isUndated, postWhen, type Post, type Topic } from "@/lib/topics";
 import ReadToggle from "./ReadToggle";
 import InterviewTag from "./InterviewTag";
 import Reveal from "./Reveal";
@@ -30,17 +30,17 @@ export function TopicList({ topics }: { topics: Topic[] }) {
 export function PostDigest({ post, index, titles }: { post: Post; index: number; titles: Map<string, string> }) {
   const d = post.digest;
   const id = `post-${index + 1}`;
-  const old = isOld(post.published);
+  const old = isUndated(post) || isOld(post.published);
   return (
     <section className="post" aria-labelledby={`${id}-title`}>
       <div className="label">
-        {post.company} · {formatMonth(post.published)}
+        {post.company} · {postWhen(post, "month")}
       </div>
       <h2 id={`${id}-title`}>{post.title}</h2>
 
       {old && (
         <aside className="age-note">
-          <p className="age-year">Written in {post.published.slice(0, 4)}</p>
+          <p className="age-year">{isUndated(post) ? `Date: ${postWhen(post, "year")}` : `Written in ${post.published.slice(0, 4)}`}</p>
           <p>{post.ageNote}</p>
           {post.stillCitedBy && (
             <p>
@@ -92,7 +92,12 @@ export function PostDigest({ post, index, titles }: { post: Post; index: number;
       <h3>Trade-offs</h3>
       <dl className="tradeoffs">
         {/* The {" "} text nodes keep terms and definitions apart in the search index. */}
-        <dt>Chosen</dt> <dd>{d.tradeoffs.chosen}</dd> <dt>Rejected</dt> <dd>{d.tradeoffs.rejected}</dd>{" "}
+        <dt>Chosen</dt> <dd>{d.tradeoffs.chosen}</dd>{" "}
+        {d.tradeoffs.rejected && (
+          <>
+            <dt>Rejected</dt> <dd>{d.tradeoffs.rejected}</dd>{" "}
+          </>
+        )}
         <dt>Why</dt> <dd>{d.tradeoffs.why}</dd>
       </dl>
 
@@ -216,7 +221,7 @@ export default function TopicDossier({ topic, prerequisites, dependents, titles 
                 {post.title}
               </a>{" "}
               <span className="label">
-                {post.company} · {post.published.slice(0, 4)}
+                {post.company} · {postWhen(post, "year")}
               </span>
               <span className="checked">Checked on {formatDate(post.verifiedOn)}</span>
             </li>

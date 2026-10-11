@@ -325,30 +325,30 @@
           },
           {
             "step": "Keep the same guarantees",
-            "explanation": "Pipelining changes only when the system waits for replication, not what it ultimately commits, so the transaction's ACID guarantees and isolation are unchanged."
+            "explanation": "Pipelining changes when the system waits for replication, not what it commits. Statements that touch the same rows get a pipeline dependency, so a later one waits for the earlier one's write to be proven; this pipeline stall keeps read-your-writes correct."
           }
         ],
         "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-crdb-tx-t\" class=\"dg\"><title id=\"dg-crdb-tx-t\">CockroachDB transaction pipelining: instead of each statement waiting for its own Raft consensus round in series (O(n) rounds), the transaction issues the writes and lets their consensus rounds run concurrently, then waits once for all of them at commit (O(1) rounds), with the committed result unchanged.</title><defs><marker id=\"dg-crdb-tx-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"150\" y=\"24\" class=\"dg-note\" text-anchor=\"middle\">before: serial, O(n) rounds</text><rect x=\"40\" y=\"40\" width=\"80\" height=\"30\" class=\"dg-box\"/><text x=\"80\" y=\"60\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">w1 wait</text><rect x=\"40\" y=\"80\" width=\"80\" height=\"30\" class=\"dg-box\"/><text x=\"80\" y=\"100\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">w2 wait</text><rect x=\"40\" y=\"120\" width=\"80\" height=\"30\" class=\"dg-box\"/><text x=\"80\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">w3 wait</text><path d=\"M80,70 L80,80\" class=\"dg-line\" marker-end=\"url(#dg-crdb-tx-a)\"/><path d=\"M80,110 L80,120\" class=\"dg-line\" marker-end=\"url(#dg-crdb-tx-a)\"/><text x=\"420\" y=\"24\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">after: pipelined, O(1) rounds</text><rect x=\"320\" y=\"40\" width=\"80\" height=\"30\" class=\"dg-box dg-accent\"/><text x=\"360\" y=\"60\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">w1</text><rect x=\"320\" y=\"76\" width=\"80\" height=\"30\" class=\"dg-box dg-accent\"/><text x=\"360\" y=\"96\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">w2</text><rect x=\"320\" y=\"112\" width=\"80\" height=\"30\" class=\"dg-box dg-accent\"/><text x=\"360\" y=\"132\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">w3</text><rect x=\"440\" y=\"76\" width=\"90\" height=\"30\" class=\"dg-box\"/><text x=\"485\" y=\"96\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">wait once</text><path d=\"M400,55 L440,88\" class=\"dg-line\" marker-end=\"url(#dg-crdb-tx-a)\"/><path d=\"M400,91 L440,91\" class=\"dg-line\" marker-end=\"url(#dg-crdb-tx-a)\"/><path d=\"M400,127 L440,94\" class=\"dg-line\" marker-end=\"url(#dg-crdb-tx-a)\"/><text x=\"280\" y=\"180\" class=\"dg-note\" text-anchor=\"middle\">rounds overlap instead of stacking; commit waits once for all to replicate</text><text x=\"280\" y=\"210\" class=\"dg-note\" text-anchor=\"middle\">built on Raft; the committed result and isolation are unchanged</text><text x=\"280\" y=\"236\" class=\"dg-note\" text-anchor=\"middle\">protocol inspired by Google Percolator</text></svg>",
         "numbers": [
           {
             "value": "O(n) to O(1)",
-            "meaning": "Transaction latency measured in distributed-consensus rounds drops from one per statement to a single wait at commit"
+            "meaning": "Transaction latency, counted in distributed-consensus rounds, no longer grows with the number of DML statements n"
           },
           {
-            "value": "n = statements",
-            "meaning": "n is the number of DML SQL statements in the transaction; pipelining removes the per-statement serial wait"
+            "value": "slope 6 vs slope 2",
+            "meaning": "In the TPC-C New-Order experiment, each extra millisecond of inter-node latency added 6 ms of transaction latency without pipelining and 2 ms with it"
           },
           {
-            "value": "Raft per write",
-            "meaning": "Each write's durability is a Raft consensus round to a majority, the replication latency the model is built on"
+            "value": "a little under half a millisecond",
+            "meaning": "What each additional DML statement still cost with pipelining in the post's second experiment, up to 256 statements, so scaling was not perfectly constant"
           }
         ],
         "tradeoffs": {
           "chosen": "Pipeline the per-statement consensus rounds so they run concurrently and are proven once at commit, reducing latency from O(n) to O(1) rounds while keeping ACID.",
-          "rejected": "Running each statement's consensus round serially (simple but O(n) latency), and weakening transaction semantics to avoid the rounds.",
-          "why": "The consistency CockroachDB promises requires replicating each write by Raft, and the dominant cost of a multi-statement transaction was waiting for those rounds in series. Overlapping them attacks the latency without touching the guarantee, which is preferable to giving up consistency for speed."
+          "rejected": "Parallel statement execution (clients add RETURNING NOTHING and get a fake result) and buffering all writes until commit (large buffers, size limits, more aborts at serializable isolation).",
+          "why": "The post says the buffering prototype caused a large uptick in transaction aborts under TPC-C at serializable isolation, and writing intents early is what sequences conflicting transactions. Pipelining keeps eager intent writes and starts consensus for them without waiting, then proves them all before commit, so the post reports the latency model matched its experiments."
         },
-        "failures": "The post is clear that pipelining reduces latency, not total work: the final commit still waits for the slowest outstanding replication round, and the system must now track in-flight writes and handle one failing or needing to abort cleanly. It is an optimisation on top of a protocol inspired by Percolator, and the post previews further work (such as parallel commits) because this step alone does not remove every round.",
+        "failures": "The post describes earlier failures and its own limits. Parallel statement execution, from v1.0, made clients add RETURNING NOTHING and returned a fake result, so the real row count was lost and a failed write's error arrived later in the transaction. A prototype that buffered all writes until commit was rejected: it needed large buffers on the coordinator and size limits, and it caused more aborts at serializable isolation. Pipelining still has limits: statements touching the same rows cause a pipeline stall, and in the worst case latency returns to the serial model. Each extra statement still cost a little under half a millisecond in its experiment, and commit still takes two consensus rounds, so parallel commits is previewed to cut that to one.",
         "takeaways": "On a consensus-replicated store, distributed transaction latency is dominated by how many synchronous replication rounds you force in series. Pipelining them, so they overlap and are confirmed once at commit, turns an O(n) cost into O(1) rounds with the same guarantees, a reminder that you often buy performance by removing coordination from the critical path rather than by weakening correctness."
       }
     }

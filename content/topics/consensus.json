@@ -231,15 +231,15 @@
       "url": "https://etcd.io/docs/v3.5/op-guide/performance/",
       "company": "etcd (CNCF)",
       "verifiedOn": "2026-10-11",
-      "published": "2021-06-14",
-      "ageNote": "etcd's performance guide is versioned documentation (v3.5) rather than a dated post; it is maintained and current for that release line. It is included for the fundamentals it states about what limits consensus latency, which are physical and have not changed, rather than for a specific benchmark number tied to one release.",
+      "published": "no date shown",
+      "ageNote": "This is versioned documentation (v3.5), not a dated post, and the page shows no publication date. Its benchmark table was run on etcd 3.2.0, so treat those numbers as old. It is here for what it says limits consensus commit latency: the network round trip between members and the disk sync, which are physical limits rather than release details.",
       "related": [
         "replication",
         "cap"
       ],
       "digest": {
-        "problem": "etcd is the strongly consistent key-value store that backs Kubernetes and many other systems, so its users need to understand what governs its speed. The performance guide explains why a consensus system behaves the way it does under load, so operators can size clusters and set expectations rather than be surprised by latency.",
-        "constraints": "etcd uses the Raft consensus algorithm to replicate requests among members and reach agreement, so every committed write must be durably stored by a majority. That ties its performance to two physical limits that no amount of code can remove: the time to send messages between members, and the time to persist to disk.",
+        "problem": "The guide explains what defines etcd's performance, latency and throughput, and why commit latency is limited by two physical constraints, so a reader can see what a consensus system costs before sizing or placing a cluster.",
+        "constraints": "etcd uses the Raft consensus algorithm to replicate requests among members and reach agreement. The guide says commit latency is limited by network IO latency and disk IO latency: the minimum time to finish a request is the round trip between members plus the time fdatasync needs to commit data to permanent storage.",
         "walkthrough": [
           {
             "step": "Define performance as latency and throughput",
@@ -247,11 +247,11 @@
           },
           {
             "step": "Replicate through Raft",
-            "explanation": "Requests are replicated among members and agreed via Raft, so a write is not done until a majority has it, which means a committed write includes a round of communication plus a durable write on those members."
+            "explanation": "Requests are replicated among members and agreed through the Raft consensus algorithm, so each request pays for communication between members and for writing to disk."
           },
           {
             "step": "Pay the network round trip",
-            "explanation": "Reaching a majority costs a network round trip between members. A typical round-trip time within the United States is around 50 ms, and can be as slow as 400 ms between continents, so a geographically spread cluster commits more slowly."
+            "explanation": "The minimum time to finish a request includes the network round trip between members. The guide gives a typical round trip of about 50 ms within the United States and as slow as 400 ms between continents, and says a round trip within a datacenter can be several hundred microseconds."
           },
           {
             "step": "Pay the disk sync",
@@ -262,7 +262,7 @@
             "explanation": "To get high throughput despite these per-operation costs, etcd batches multiple requests together and submits them to Raft as a group, amortising the round trip and the sync over many entries."
           }
         ],
-        "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-etcd-t\" class=\"dg\"><title id=\"dg-etcd-t\">etcd commit latency is bounded by two physical costs: a network round trip to a majority of members (about 50 ms within the US, up to 400 ms between continents) and a durable disk sync on each member (about 10 ms on a spinning disk, under 1 ms on SSD); batching many requests into one Raft round raises throughput.</title><defs><marker id=\"dg-etcd-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"120\" width=\"120\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"80\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\">member (leader)</text><text x=\"80\" y=\"157\" class=\"dg-label\" text-anchor=\"middle\">batch of requests</text><path d=\"M140,135 L200,90\" class=\"dg-line\" marker-end=\"url(#dg-etcd-a)\"/><path d=\"M140,155 L200,200\" class=\"dg-line\" marker-end=\"url(#dg-etcd-a)\"/><rect x=\"204\" y=\"70\" width=\"130\" height=\"40\" class=\"dg-box\"/><text x=\"269\" y=\"94.5\" class=\"dg-label\" text-anchor=\"middle\">member (disk sync)</text><rect x=\"204\" y=\"180\" width=\"130\" height=\"40\" class=\"dg-box\"/><text x=\"269\" y=\"204.5\" class=\"dg-label\" text-anchor=\"middle\">member (disk sync)</text><text x=\"180\" y=\"50\" class=\"dg-note\" text-anchor=\"middle\">network RTT: ~50 ms US, up to 400 ms intercontinental</text><text x=\"269\" y=\"245\" class=\"dg-note\" text-anchor=\"middle\">disk fdatasync: ~10 ms spinning, &lt;1 ms SSD</text><path d=\"M334,90 L380,90\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-etcd-a)\"/><path d=\"M334,200 L380,200\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-etcd-a)\"/><text x=\"430\" y=\"86\" class=\"dg-note\" text-anchor=\"start\">ack</text><text x=\"430\" y=\"196\" class=\"dg-note\" text-anchor=\"start\">ack</text><text x=\"280\" y=\"282\" class=\"dg-note\" text-anchor=\"middle\">committed when a majority has stored it; batching amortises both costs</text></svg>",
+        "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-etcd-t\" class=\"dg\"><title id=\"dg-etcd-t\">etcd commit latency is bounded by two physical costs: a network round trip between members (about 50 ms within the US, up to 400 ms between continents) and a durable disk sync on each member (about 10 ms on a spinning disk, under 1 ms on SSD); batching many requests into one Raft round raises throughput.</title><defs><marker id=\"dg-etcd-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"120\" width=\"120\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"80\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\">member (leader)</text><text x=\"80\" y=\"157\" class=\"dg-label\" text-anchor=\"middle\">batch of requests</text><path d=\"M140,135 L200,90\" class=\"dg-line\" marker-end=\"url(#dg-etcd-a)\"/><path d=\"M140,155 L200,200\" class=\"dg-line\" marker-end=\"url(#dg-etcd-a)\"/><rect x=\"204\" y=\"70\" width=\"130\" height=\"40\" class=\"dg-box\"/><text x=\"269\" y=\"94.5\" class=\"dg-label\" text-anchor=\"middle\">member (disk sync)</text><rect x=\"204\" y=\"180\" width=\"130\" height=\"40\" class=\"dg-box\"/><text x=\"269\" y=\"204.5\" class=\"dg-label\" text-anchor=\"middle\">member (disk sync)</text><text x=\"180\" y=\"50\" class=\"dg-note\" text-anchor=\"middle\">network RTT: ~50 ms US, up to 400 ms intercontinental</text><text x=\"269\" y=\"245\" class=\"dg-note\" text-anchor=\"middle\">disk fdatasync: ~10 ms spinning, &lt;1 ms SSD</text><path d=\"M334,90 L380,90\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-etcd-a)\"/><path d=\"M334,200 L380,200\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-etcd-a)\"/><text x=\"430\" y=\"86\" class=\"dg-note\" text-anchor=\"start\">ack</text><text x=\"430\" y=\"196\" class=\"dg-note\" text-anchor=\"start\">ack</text><text x=\"280\" y=\"282\" class=\"dg-note\" text-anchor=\"middle\">minimum time = one round trip + one fdatasync; batching amortises both</text></svg>",
         "numbers": [
           {
             "value": "~50 ms US, up to 400 ms intercontinental",
@@ -270,21 +270,21 @@
           },
           {
             "value": "~10 ms spinning, <1 ms SSD",
-            "meaning": "Typical fdatasync (durable disk write) latency per member, the second limit"
+            "meaning": "Typical fdatasync (durable disk write) latency, the second limit; for SSDs the guide says it is often under 1 ms"
           },
           {
-            "value": "majority",
-            "meaning": "A write is committed only once a majority of members has durably stored it via Raft"
+            "value": "over 30,000 requests per second",
+            "meaning": "What a three-member cluster can complete under heavy load in common cloud environments; under light load it finishes a request in under 1 ms"
           }
         ],
         "tradeoffs": {
-          "chosen": "Strong consistency via Raft, accepting that each committed write pays a network round trip to a majority plus a durable disk sync, with batching to recover throughput.",
-          "rejected": "Weaker, faster schemes that answer without a majority, which etcd does not do because its whole purpose is to be the consistent source of truth.",
-          "why": "etcd is used precisely where correctness matters more than raw speed, such as cluster coordination, so it pays the consensus round trip. The guide's honesty is in naming the two physical floors, latency of the network and of the disk, so operators optimise the right things, for example SSDs and co-located members, rather than expecting the impossible."
+          "chosen": "Raft consensus to replicate requests among members, with batching: etcd groups multiple requests and submits them to Raft together so it keeps high throughput under heavy load.",
+          "why": "The guide says commit latency is limited by network and disk latency, so the minimum time for a request is one round trip plus one fdatasync. It says batching is what lets etcd reach high throughput despite heavy load. It names no alternative design that was considered."
         },
-        "failures": "The guide is candid that performance is bounded by physics, not just code: a cluster spread across continents will have high commit latency because of the round-trip time, and a cluster on slow disks will be limited by fdatasync. It also notes that average latency climbs as throughput rises under concurrency, so a cluster near its limit degrades rather than failing cleanly.",
-        "takeaways": "Consensus is not slow by accident; its latency floor is a network round trip to a majority plus a durable disk write, so you make it faster by shrinking those (SSDs, nearby members) and by batching, not by wishing the round trip away. Knowing the two physical limits is what lets you size and place a consensus cluster sensibly."
-      }
+        "failures": "The guide gives no failure account: it describes no incident, mistake or abandoned approach. It does state limits. The minimum request time is one round trip between members plus one fdatasync. A typical round trip is about 50 ms within the United States and as slow as 400 ms between continents, and a spinning disk's fdatasync is about 10 ms. Average latency usually rises as throughput rises under concurrent requests. Snapshots can double observed latency on a spinning disk, and gRPC adds latency, especially for local reads.",
+        "takeaways": "Consensus latency has a floor set by the network round trip between members plus a durable disk write, so you make it faster by shrinking those, with nearby members and SSDs, and by batching requests into Raft. Knowing the two limits is what lets you place and size a consensus cluster sensibly."
+      },
+      "edition": "v3.5 documentation"
     },
     {
       "id": "cockroachdb-leader-leases-2026",
@@ -299,7 +299,7 @@
       ],
       "digest": {
         "problem": "CockroachDB splits data into many Ranges, each replicated and kept consistent by Raft. To serve reads quickly without coordinating with the other replicas on every request, each Range designates one replica, the leaseholder, as the authoritative source. But every leaseholder must continually renew its lease and be health-checked, and as a cluster grows to hundreds of thousands or millions of Ranges, that constant renewal traffic becomes a substantial CPU cost.",
-        "constraints": "The system must keep strong consistency (so a lease must never let two replicas both think they are authoritative) while cutting the per-Range overhead. The design has to avoid both a single point of failure and the CPU cost of constant lease renewals, across a very large number of Ranges.",
+        "constraints": "Each Range needs one replica holding a lease to serve reads without coordinating on every request, and a large cluster has hundreds of thousands or even millions of Ranges. The two earlier lease types each fail one way: expiration leases cost a Raft write per renewal, and centralized leases depend on a single Range.",
         "walkthrough": [
           {
             "step": "Use a leaseholder for fast reads",
@@ -318,8 +318,8 @@
             "explanation": "Leader Leases combine decentralized health checks with that tighter Raft integration, aiming for the low cost of centralized leases without a single point of failure, and the reliability of expiration leases without the CPU overhead of constant renewals."
           },
           {
-            "step": "Keep the safety property",
-            "explanation": "Because leadership and lease ownership move together under Raft's rules, there is still only one authoritative replica at a time, preserving strong consistency while removing the separate renewal chatter."
+            "step": "Check the safety claim",
+            "explanation": "The post says the safety properties of the Liveness Fabric are formally verified in TLA+, and that Leader Fortification prevents a leader from losing leadership unexpectedly, so the leaseholder can always be the Raft leader. It also reports recovery within seconds from node crashes, network partitions and disk stalls."
           }
         ],
         "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-crdb-t\" class=\"dg\"><title id=\"dg-crdb-t\">CockroachDB Leader Leases: each Range has a Raft group; instead of tracking a separately renewed leaseholder lease (constant renewal traffic, high CPU at millions of Ranges), lease ownership is tied to Raft leadership with decentralized health checks, cutting lease-maintenance CPU by up to 85% at scale.</title><defs><marker id=\"dg-crdb-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"60\" width=\"230\" height=\"90\" class=\"dg-box\"/><text x=\"135\" y=\"82\" class=\"dg-label\" text-anchor=\"middle\">Before: separate lease</text><text x=\"135\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\">leaseholder renews constantly</text><text x=\"135\" y=\"124\" class=\"dg-note\" text-anchor=\"middle\">x millions of Ranges</text><text x=\"135\" y=\"142\" class=\"dg-note\" text-anchor=\"middle\">= substantial CPU</text><path d=\"M250,105 L306,105\" class=\"dg-line\" marker-end=\"url(#dg-crdb-a)\"/><rect x=\"310\" y=\"60\" width=\"230\" height=\"90\" class=\"dg-box dg-accent\"/><text x=\"425\" y=\"82\" class=\"dg-label\" text-anchor=\"middle\">After: Leader Leases</text><text x=\"425\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\">lease tied to Raft leadership</text><text x=\"425\" y=\"124\" class=\"dg-note\" text-anchor=\"middle\">decentralized health checks</text><text x=\"425\" y=\"142\" class=\"dg-note\" text-anchor=\"middle\">no constant renewals</text><text x=\"280\" y=\"196\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">lease-maintenance CPU reduced by up to 85% at scale</text><text x=\"280\" y=\"230\" class=\"dg-note\" text-anchor=\"middle\">still exactly one authoritative replica: strong consistency preserved</text></svg>",
@@ -329,7 +329,7 @@
             "meaning": "Reduction in lease-maintenance CPU usage at scale from Leader Leases, the post's headline result"
           },
           {
-            "value": "hundreds of thousands to millions",
+            "value": "hundreds of thousands or millions",
             "meaning": "Ranges in a large cluster, each previously renewing its own lease, which is why the renewal CPU added up"
           },
           {
@@ -340,14 +340,14 @@
         "tradeoffs": {
           "chosen": "Tie lease ownership to Raft leadership and use decentralized health checks, so the leaseholder's fast local reads are kept without a separate stream of lease-renewal messages.",
           "rejected": "Centralized leases (a single point of failure) and plain expiration leases renewed constantly (reliable but CPU-heavy at scale).",
-          "why": "At hundreds of thousands or millions of Ranges, the constant per-Range renewal traffic was a real, measurable CPU cost. Folding the lease into Raft leadership removes that separate chatter while keeping the single-authoritative-replica guarantee, giving the reliability of expiration leases without their renewal overhead."
+          "why": "The post says expiration leases cost CPU through constant renewals and centralized leases concentrate a critical dependency in one Range. Leader Leases are presented as the low cost of centralized leases without the single point of failure, and the reliability of expiration leases without the renewal overhead."
         },
-        "failures": "The post frames the honest tension: centralized leases are cheap but a single point of failure; expiration leases are reliable but their constant renewals cost CPU that grows with the number of Ranges. Leader Leases exist precisely because neither extreme was acceptable at CockroachDB's scale, and the design is the compromise that keeps strong consistency while removing the renewal tax.",
-        "takeaways": "Consensus in production is not just the core algorithm but everything around it, like how a leader proves it is still the leader to serve reads. Tying the read lease to the consensus leadership, rather than maintaining it separately, removed a per-Range overhead that only showed up at scale and cut lease-maintenance CPU by up to 85%, without weakening the consistency guarantee."
+        "failures": "The post gives no failure account of Leader Leases: it announces a paper and describes no incident or abandoned design of its own. It does state limits of the two earlier lease types. Expiration-based leases are reliable, but each renewal is a Raft write, so the cost adds up across hundreds of thousands or even millions of Ranges. Centralized leases are much cheaper, but if the one Range holding every node's health status becomes slow or unavailable, every centralized lease is affected.",
+        "takeaways": "Consensus in production includes how a leader proves it is still the leader so it can serve reads. Merging the leader and leaseholder roles into one replica, and moving health checks to the node level, removed a per-Range overhead that only showed at scale; the post reports up to 85% less lease-maintenance CPU in its experiments."
       }
     }
   ],
-  "comparison": "Both posts are about leader-based consensus at scale, but one explains its unavoidable costs and the other removes an avoidable one, so they read well together as the floor and then the optimisation. etcd's performance guide is the fundamentals: why a Raft commit costs a network round trip to a majority plus a durable disk sync, with real figures for each. CockroachDB's leader-leases post is the engineering on top: how to keep the fast-read benefit of a leader without paying a separate stream of lease-renewal messages for every one of millions of Ranges.\n\nWhere they diverge is which cost they target. etcd's limits are physical, the speed of the network and the disk, and the guide's advice is to shrink them (SSDs, nearby members) and batch, not to eliminate the round trip. CockroachDB's cost is one the software created for itself, lease renewal traffic, and the fix is architectural: fold lease ownership into Raft leadership and decentralise health checks so the renewals go away. One post says \"here is the floor you cannot beat\"; the other says \"here is overhead above the floor that you can.\"\n\nThe evidence matches that split. etcd gives the physical numbers, a round-trip time of about 50 ms within the US and up to 400 ms between continents, and a disk sync of about 10 ms on a spinning disk versus under 1 ms on an SSD. CockroachDB gives an engineering result, lease-maintenance CPU cut by up to 85% at scale across hundreds of thousands or millions of Ranges. Together they show consensus performance is part physics you must plan around and part overhead you can design away, as long as you keep the one-authoritative-leader guarantee intact.",
+  "comparison": "Both posts are about leader-based consensus at scale, but one explains its unavoidable costs and the other removes an avoidable one, so they read well together as the floor and then the optimisation. etcd's performance guide is the fundamentals: why a Raft commit costs a network round trip between members plus a durable disk sync, with figures for each. CockroachDB's leader-leases post is the engineering on top: how to keep the fast-read benefit of a leader without paying a separate stream of lease-renewal messages for every one of millions of Ranges.\n\nWhere they diverge is which cost they target. etcd's limits are physical, the speed of the network and the disk, and the guide's advice is to shrink them (SSDs, nearby members) and batch, not to eliminate the round trip. CockroachDB's cost is one the software created for itself, lease renewal traffic, and the fix is architectural: fold lease ownership into Raft leadership and decentralise health checks so the renewals go away. One post says \"here is the floor you cannot beat\"; the other says \"here is overhead above the floor that you can.\"\n\nThe evidence matches that split. etcd gives the physical numbers, a round-trip time of about 50 ms within the US and up to 400 ms between continents, and a disk sync of about 10 ms on a spinning disk versus under 1 ms on an SSD. CockroachDB gives an engineering result, lease-maintenance CPU cut by up to 85% at scale across hundreds of thousands or millions of Ranges. Together they show consensus performance is part physics you must plan around and part overhead you can design away, as long as you keep the one-authoritative-leader guarantee intact.",
   "glossary": [
     {
       "term": "Consensus",

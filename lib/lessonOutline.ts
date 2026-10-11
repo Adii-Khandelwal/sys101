@@ -1,4 +1,4 @@
-import type { Topic } from "./topics";
+import { postWhen, type Topic } from "./topics";
 
 /** The headings of a lesson topic page, in page order (checked against components/TopicLesson.tsx). */
 export const LESSON_OUTLINE = [
@@ -53,6 +53,6 @@ export function featuredFigures(topics: Topic[]): Figure[] {
     const post = posts.find((p) => p.id === id);
     const n = post?.digest.numbers.find((x) => x.value === value && x.meaning.trim());
     if (!post || !n) throw new Error(`Featured figure "${value}" was not found in post "${id}"`);
-    return { value: n.value, meaning: n.meaning, company: post.company, year: post.published.slice(0, 4), url: post.url, postTitle: post.title };
+    return { value: n.value, meaning: n.meaning, company: post.company, year: postWhen(post, "year"), url: post.url, postTitle: post.title };
   });
 }

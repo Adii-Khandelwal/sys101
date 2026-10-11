@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { optionId } from "@/lib/quizIds";
-import { formatDate, type Topic } from "@/lib/topics";
+import { formatDate, postWhen, type Topic } from "@/lib/topics";
 import { PostDigest, TopicList } from "./TopicDossier";
 import { CompactProgress, FinishTopic, MarkDone, QuizBlock, ResumeLine } from "./LessonTrackers";
 import type { LessonMeta } from "@/lib/lessonStore";
@@ -265,7 +265,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 {post.title}
               </a>{" "}
               <span className="label">
-                {post.company} · {post.published.slice(0, 4)}
+                {post.company} · {postWhen(post, "year")}
               </span>
               <span className="checked">Checked on {formatDate(post.verifiedOn)}</span>
             </li>
