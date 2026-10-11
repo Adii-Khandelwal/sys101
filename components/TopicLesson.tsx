@@ -206,7 +206,9 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             <section id="differ" className="closing" aria-labelledby="differ-h">
               <h2 id="differ-h">Where they differ</h2>
               <Outcome text={l.differOutcome} />
-              <p>{topic.comparison}</p>
+              {topic.comparison.split("\n\n").map((para) => (
+                <p key={para.slice(0, 40)}>{para}</p>
+              ))}
             </section>
           )}
 

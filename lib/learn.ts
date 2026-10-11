@@ -62,6 +62,12 @@ export type Learn = {
   sources: Source[];
 };
 
+/**
+ * The label before the prerequisite links. When the note says the prerequisites are not needed to
+ * follow the page, they are for later, so "Read first:" would contradict it.
+ */
+export const prerequisiteLabel = (note?: string) => (/\b(do not|don't) need\b/i.test(note ?? "") ? "Later, on the topic page:" : "Read first:");
+
 export const STAGE_NAMES = ["Basics", "How it works", "Going deeper", "In practice and trade-offs"] as const;
 
 const LEARN_DIR = path.join(process.cwd(), "content", "learn");

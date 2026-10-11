@@ -167,7 +167,7 @@
       }
     }
   ],
-  "comparison": "Read together, the two posts are how a database works and how one is run at scale. Uber's 2016 account explains the machinery: a write-ahead log, indexes that point at row locations, and Postgres 9.2 shipping that log to replicas as physical disk changes, which tied every replica to the primary's version and spread a bug to all of them. GitHub's 2023 post shows the operational side: MySQL replicas apply a log of row or statement changes rather than disk pages, and GitHub relied on replicating that log, even backwards from 8.0 to 5.7, to run both versions side by side and keep a path back, though that broke within hours on some clusters. The common thread is that the replication log decides how freely you can upgrade, recover and roll back.",
+  "comparison": "Read together, the two posts are how a database works and how one is run at scale.\n\nUber's 2016 account explains the machinery: a write-ahead log, indexes that point at row locations, and Postgres 9.2 shipping that log to replicas as physical disk changes, which tied every replica to the primary's version and spread a bug to all of them. GitHub's 2023 post shows the operational side: MySQL replicas apply a log of row or statement changes rather than disk pages, and GitHub relied on replicating that log, even backwards from 8.0 to 5.7, to run both versions side by side and keep a path back, though that broke within hours on some clusters.\n\nThe common thread is that the replication log decides how freely you can upgrade, recover and roll back.",
   "glossary": [
     {
       "term": "Primary",

@@ -158,7 +158,7 @@
       }
     }
   ],
-  "comparison": "Both queues exist to absorb work that cannot be done immediately, and both keep it in durable storage so a backlog survives, but they started from different places. Slack's job queue was already in production on Redis and had failed by running out of memory, so in 2017 Slack added Kafka in front as a durable buffer with the smallest possible change, keeping Redis and its workers for execution. Meta built FOQS in 2021 as a general queue for many teams, so it designed the delivery contract itself: priorities, delays, leases, acks and nacks, on sharded MySQL with replicas in other regions. Slack's post is concrete about its cluster and rollout; Meta's is concrete about the delivery model but gives no latency numbers.",
+  "comparison": "Both queues exist to absorb work that cannot be done immediately, and both keep it in durable storage so a backlog survives, but they started from different places.\n\nSlack's job queue was already in production on Redis and had failed by running out of memory, so in 2017 Slack added Kafka in front as a durable buffer with the smallest possible change, keeping Redis and its workers for execution. Meta built FOQS in 2021 as a general queue for many teams, so it designed the delivery contract itself: priorities, delays, leases, acks and nacks, on sharded MySQL with replicas in other regions.\n\nSlack's post is concrete about its cluster and rollout; Meta's is concrete about the delivery model but gives no latency numbers.",
   "glossary": [
     {
       "term": "Producer",

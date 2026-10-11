@@ -113,6 +113,13 @@ else {
   for (const route of indexable) if (!listed.includes(route)) problems.push(`sitemap is missing ${route}`);
   for (const route of listed) if (!indexable.includes(route)) problems.push(`sitemap lists ${route}, which is not an indexable page`);
   if (new Set(listed).size !== listed.length) problems.push("sitemap lists a page twice");
+  // The sitemap must also match the content files, so a topic or learn file can never be left out.
+  const slugsIn = (dir) => {
+    const d = path.join(process.cwd(), "content", dir);
+    return fs.existsSync(d) ? fs.readdirSync(d).filter((f) => f.endsWith(".json")).map((f) => f.replace(/\.json$/, "")) : [];
+  };
+  for (const slug of slugsIn("topics")) if (!listed.includes(`/topic/${slug}`)) problems.push(`sitemap is missing /topic/${slug}, which has a file in content/topics`);
+  for (const slug of slugsIn("learn")) if (!listed.includes(`/topic/${slug}/learn`)) problems.push(`sitemap is missing /topic/${slug}/learn, which has a file in content/learn`);
   if (/<lastmod>\s*<\/lastmod>/.test(fs.readFileSync(sitemapFile, "utf8"))) problems.push("sitemap has an empty lastmod");
 }
 

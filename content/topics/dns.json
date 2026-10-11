@@ -217,7 +217,7 @@
     "Setting very long TTLs on records you may need to change quickly, such as before a migration. Lower the TTL well before the change, then raise it again.",
     "Treating DNS as a load balancer. It can hand out several addresses, but cached answers mean it cannot react quickly when one server fails or gets overloaded."
   ],
-  "comparison": "Both posts are about how long a DNS change takes to take effect, seen from opposite ends. Cloudflare controlled the slow part, its own pipeline from a customer's edit to its edge, so it rebuilt that pipeline to apply one record in milliseconds instead of rebuilding a zone in tens of seconds. Slack's slow part was outside its control: resolvers across the internet held its DS record for up to 24 hours and read its signed answers in different ways, so even its rollback could not take effect faster than those caches expired.",
+  "comparison": "Both posts are about how long a DNS change takes to take effect, seen from opposite ends.\n\nCloudflare controlled the slow part, its own pipeline from a customer's edit to its edge, so it rebuilt that pipeline to apply one record in milliseconds instead of rebuilding a zone in tens of seconds.\n\nSlack's slow part was outside its control: resolvers across the internet held its DS record for up to 24 hours and read its signed answers in different ways, so even its rollback could not take effect faster than those caches expired.",
   "lesson": {
     "why": {
       "outcome": "After this you can explain what problem DNS solves and why it has to be fast.",

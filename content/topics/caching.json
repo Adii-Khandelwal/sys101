@@ -219,7 +219,7 @@
     "Relying on a version check without storing the version. If the newer version is evicted, the cache can no longer tell which value wins.",
     "Treating a stale entry as harmless because it will expire. Without a TTL, or with a long one, a missed invalidation can leave it wrong indefinitely."
   ],
-  "comparison": "Both companies cache in front of a strongly consistent database and both invalidate from the database's own stream of changes, but they spent their effort in different places. Meta's TAO cache already ran at over a quadrillion queries a day, so the hard problem was finding the rare races that left it wrong, and Meta built Polaris to measure only the inconsistencies a client could see. Uber was adding a cache to Docstore from scratch, so it designed the races out up front with row versions, made caching opt-in for flows that cannot tolerate staleness, and built a compare mode that reports its own consistency.",
+  "comparison": "Both companies cache in front of a strongly consistent database and both invalidate from the database's own stream of changes, but they spent their effort in different places.\n\nMeta's TAO cache already ran at over a quadrillion queries a day, so the hard problem was finding the rare races that left it wrong, and Meta built Polaris to measure only the inconsistencies a client could see.\n\nUber was adding a cache to Docstore from scratch, so it designed the races out up front with row versions, made caching opt-in for flows that cannot tolerate staleness, and built a compare mode that reports its own consistency.",
   "lesson": {
     "why": {
       "outcome": "After this you can explain what a cache buys you and what it costs.",

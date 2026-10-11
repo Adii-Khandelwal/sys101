@@ -153,7 +153,7 @@
       }
     }
   ],
-  "comparison": "Both companies kept consistent hashing and attacked the cost of the ring itself, but they hit different limits. Discord's problem was lookup speed on a hot path, with every user session needing ring lookups after a restart, so it moved the ring into compiled module memory and accepted slow rebuilds because the ring rarely changes. Cloudflare's problem was memory, with dozens of large weighted rings in its load balancer, so it shrank the ring with fewer points and a tighter layout, accepting slightly less even balance and a slow rollout because any ring change moves cached files.",
+  "comparison": "Both companies kept consistent hashing and attacked the cost of the ring itself, but they hit different limits.\n\nDiscord's problem was lookup speed on a hot path, with every user session needing ring lookups after a restart, so it moved the ring into compiled module memory and accepted slow rebuilds because the ring rarely changes.\n\nCloudflare's problem was memory, with dozens of large weighted rings in its load balancer, so it shrank the ring with fewer points and a tighter layout, accepting slightly less even balance and a slow rollout because any ring change moves cached files.",
   "glossary": [
     {
       "term": "Hash ring",

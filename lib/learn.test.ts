@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { checkLearn, citations, getAllLearn, type Learn, type VideoSource } from "./learn";
+import { checkLearn, citations, getAllLearn, prerequisiteLabel, type Learn, type VideoSource } from "./learn";
 
 const dir = path.resolve(__dirname, "../content/topics");
 const slugs = fs.readdirSync(dir).map((f) => f.replace(/\.json$/, ""));
@@ -93,6 +93,20 @@ describe("rate limiting learn page", () => {
     expect([v("aws-reinvent-rate-limiting-2022").channel, v("aws-reinvent-rate-limiting-2022").year, v("aws-reinvent-rate-limiting-2022").length]).toEqual(["AWS Events", "2022", "52:27"]);
     expect([v("cncf-tinder-envoy-rate-limiting-2020").channel, v("cncf-tinder-envoy-rate-limiting-2020").year, v("cncf-tinder-envoy-rate-limiting-2020").length]).toEqual(["CNCF", "2020", "10:20"]);
     expect([v("cncf-spotify-envoy-rate-limiter-2025").channel, v("cncf-spotify-envoy-rate-limiter-2025").year, v("cncf-spotify-envoy-rate-limiter-2025").length]).toEqual(["CNCF", "2025", "27:15"]);
+  });
+});
+
+describe("Before you start label", () => {
+  it('says "Later, on the topic page:" only where the note says the prerequisites are not needed', () => {
+    expect(prerequisiteLabel("You do not need Caching or Consistent Hashing for the stages below.")).toBe("Later, on the topic page:");
+    expect(prerequisiteLabel("Read Load Balancing first: caches often sit behind the balancer.")).toBe("Read first:");
+    expect(prerequisiteLabel(undefined)).toBe("Read first:");
+  });
+
+  it("matches the pages: no page both says it is not needed and says Read first", () => {
+    for (const l of getAllLearn(slugs)) {
+      if (/\b(do not|don't) need\b/i.test(l.before.note ?? "")) expect(prerequisiteLabel(l.before.note), l.slug).toBe("Later, on the topic page:");
+    }
   });
 });
 

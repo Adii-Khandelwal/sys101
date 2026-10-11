@@ -3,7 +3,7 @@ import { Fragment } from "react";
 import SiteFooter from "./SiteFooter";
 import LearnRail, { type LearnEntry } from "./LearnRail";
 import VideoEmbed from "./VideoEmbed";
-import type { Learn, Source, VideoSource } from "@/lib/learn";
+import { prerequisiteLabel, type Learn, type Source, type VideoSource } from "@/lib/learn";
 import type { Topic } from "@/lib/topics";
 import { formatDate } from "@/lib/topics";
 
@@ -78,7 +78,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
           {learn.before.note && <p>{learn.before.note}</p>}
           {learn.before.prerequisites.length > 0 && (
             <p>
-              Read first:{" "}
+              {prerequisiteLabel(learn.before.note)}{" "}
               {learn.before.prerequisites.map((s, i) => (
                 <Fragment key={s}>
                   {i > 0 && ", "}

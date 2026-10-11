@@ -154,7 +154,9 @@ export default function TopicDossier({ topic, prerequisites, dependents, titles 
         {topic.posts.length >= 2 && topic.comparison && (
           <section className="closing" aria-labelledby="differ">
             <h2 id="differ">Where they differ</h2>
-            <p>{topic.comparison}</p>
+            {topic.comparison.split("\n\n").map((para) => (
+              <p key={para.slice(0, 40)}>{para}</p>
+            ))}
           </section>
         )}
 

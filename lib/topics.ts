@@ -287,6 +287,10 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
     if ((topic.posts?.length ?? 0) >= 2 && !nonEmpty(topic.comparison)) {
       problems.push(`${file}: has ${topic.posts.length} posts but no comparison`);
     }
+    if (nonEmpty(topic.comparison)) {
+      const paras = topic.comparison!.split("\n\n").filter(nonEmpty).length;
+      if (paras < 2 || paras > 3) problems.push(`${file}: comparison has ${paras} paragraphs; break it into 2 to 3 short ones (shared ground, where they diverge, the evidence)`);
+    }
     if (!pairs(topic.glossary, "term", "definition")) problems.push(`${file}: glossary needs entries with term and definition`);
     if (!Array.isArray(topic.mistakes) || topic.mistakes.length !== 3 || !topic.mistakes.every(nonEmpty)) {
       problems.push(`${file}: mistakes needs exactly 3 items`);

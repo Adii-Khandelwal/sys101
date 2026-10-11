@@ -173,7 +173,7 @@
       }
     }
   ],
-  "comparison": "Both companies built search on an inverted index and both had to choose how to shard it, but they chose opposite ways for opposite queries. GitHub shards code by content, using each file's blob ID, which spreads data evenly and stores each file once, so every query has to visit every shard and the query service merges the results. Discord shards by the thing people search inside, a guild or a user's DMs, so almost every query touches a single node and only the largest guilds get several shards. GitHub's searches span all of GitHub, so it accepts fan-out; Discord's are scoped to one place, so it avoids it. The GitHub figures are from its 2023 beta; Discord's are from 2025.",
+  "comparison": "Both companies built search on an inverted index and both had to choose how to shard it, but they chose opposite ways for opposite queries.\n\nGitHub shards code by content, using each file's blob ID, which spreads data evenly and stores each file once, so every query has to visit every shard and the query service merges the results. Discord shards by the thing people search inside, a guild or a user's DMs, so almost every query touches a single node and only the largest guilds get several shards.\n\nGitHub's searches span all of GitHub, so it accepts fan-out; Discord's are scoped to one place, so it avoids it. The GitHub figures are from its 2023 beta; Discord's are from 2025.",
   "glossary": [
     {
       "term": "Index",

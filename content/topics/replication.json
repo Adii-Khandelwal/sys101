@@ -161,7 +161,7 @@
       }
     }
   ],
-  "comparison": "Both companies run MySQL with one primary per dataset and copies in several places, and both wait for another copy to confirm a write before treating it as safe, GitHub only up to a 500 ms timeout. GitHub's 2018 setup, the older approach, kept MySQL's replication as it was and handled failover from outside: orchestrator detects the failure, agrees with Raft across data centers, and announces the new primary through Consul and HAProxy, with outages of 10 to 13 seconds. Meta moved the decision inside the replication log with Raft, so commits, elections and membership changes are all entries in one log, cutting failover to about 2 seconds, at the cost of years of automation work and a local quorum that two bad members can break.",
+  "comparison": "Both companies run MySQL with one primary per dataset and copies in several places, and both wait for another copy to confirm a write before treating it as safe, GitHub only up to a 500 ms timeout.\n\nGitHub's 2018 setup, the older approach, kept MySQL's replication as it was and handled failover from outside: orchestrator detects the failure, agrees with Raft across data centers, and announces the new primary through Consul and HAProxy, with outages of 10 to 13 seconds.\n\nMeta moved the decision inside the replication log with Raft, so commits, elections and membership changes are all entries in one log, cutting failover to about 2 seconds, at the cost of years of automation work and a local quorum that two bad members can break.",
   "glossary": [
     {
       "term": "Semi-synchronous replication",

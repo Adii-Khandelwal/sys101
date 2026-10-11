@@ -179,7 +179,7 @@
       }
     }
   ],
-  "comparison": "Neither Figma nor Notion uses a consistent hash ring, which is the useful contrast with the topic before this one. Notion fixed the number of logical shards at 480 up front and moves whole shards between hosts, and Figma assigns each shard a fixed range of hashed keys; both get the ring's main benefit, adding machines without reshuffling every key, from a fixed set of shards instead. Where they differ is circumstance: Notion, under pressure from a failing database in 2021, put routing in its application and accepted five minutes of downtime, while Figma, with many more tables to move, built a proxy that understands SQL so the application barely changed, and split the work into a reversible logical step and a physical one.",
+  "comparison": "Neither Figma nor Notion uses a consistent hash ring, which is the useful contrast with the topic before this one.\n\nNotion fixed the number of logical shards at 480 up front and moves whole shards between hosts, and Figma assigns each shard a fixed range of hashed keys; both get the ring's main benefit, adding machines without reshuffling every key, from a fixed set of shards instead.\n\nWhere they differ is circumstance: Notion, under pressure from a failing database in 2021, put routing in its application and accepted five minutes of downtime, while Figma, with many more tables to move, built a proxy that understands SQL so the application barely changed, and split the work into a reversible logical step and a physical one.",
   "glossary": [
     {
       "term": "Shard",
