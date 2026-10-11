@@ -10,7 +10,7 @@ export default function InsideTopic({ topic }: { topic: Topic }) {
       <h2 id="inside-heading" className="label">
         Inside a topic
       </h2>
-      <p className="home-extra-note">What a topic page holds, shown for {topic.title}.</p>
+      <p className="home-extra-note">What every topic page holds.</p>
       <ol className="inside-sequence">
         {sections.map((s, i) => (
           <li key={s.id}>
