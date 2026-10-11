@@ -297,47 +297,47 @@
       {
         "question": "What is a cache fill?",
         "options": [
-          "Deleting every entry",
-          "Writing a value into the cache after a miss read it from the database",
-          "Copying the database to disk"
+          "Deleting every entry from the cache so the next reads all have to start from scratch again",
+          "Copying the whole database onto disk as a backup that the cache can restore from",
+          "Writing a value into the cache after a miss read it from the database"
         ],
-        "correct": 1,
+        "correct": 2,
         "why": "On a miss the server reads the source of truth and stores the result for the next reader.",
         "wrong": [
           "That would be a flush, not a fill.",
-          "",
-          "A fill copies one value into memory, not the whole database."
+          "A fill copies one value into memory, not the whole database.",
+          ""
         ],
         "teaches": "model"
       },
       {
         "question": "A fill reads value A. The value changes to B and B's invalidation arrives. Then the fill writes A. What does the cache hold?",
         "options": [
-          "B",
-          "Nothing",
-          "A, the old value"
+          "A, the old value",
+          "B, the newer value, because the invalidation arrived before the delayed fill did",
+          "Nothing, because the invalidation removed the entry and the late fill was rejected"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "The delayed fill overwrote the newer state, so the cache holds A until it is evicted or expires.",
         "wrong": [
+          "",
           "The invalidation came first, so the late fill wrote A on top.",
-          "The fill wrote A, so the entry exists.",
-          ""
+          "The fill wrote A, so the entry exists."
         ],
         "teaches": "how"
       },
       {
         "question": "How can a cache refuse a late, older write?",
         "options": [
+          "Use a bigger cache so older and newer values can sit side by side without clashing",
           "Store a version or timestamp with each entry and keep only the newer one",
-          "Use a bigger cache",
-          "Read from the cache twice"
+          "Read from the cache twice and compare the two answers before trusting either one"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Comparing versions lets the cache tell which value is newer, whatever order the writes arrive in.",
         "wrong": [
-          "",
           "Size does not decide which value wins.",
+          "",
           "Reading twice does not fix what is stored."
         ],
         "teaches": "how"
@@ -345,32 +345,32 @@
       {
         "question": "Why give entries a TTL even when you invalidate on every write?",
         "options": [
-          "It makes reads faster",
-          "Because invalidations are never needed",
-          "So a missed invalidation cannot leave an entry wrong forever"
+          "It makes reads faster because expired entries are skipped without being checked",
+          "So a missed invalidation cannot leave an entry wrong forever",
+          "Because invalidations are never needed once every entry has an expiry time set"
         ],
-        "correct": 2,
+        "correct": 1,
         "why": "Invalidations can be lost or raced; expiry bounds how long a wrong value can live.",
         "wrong": [
           "Expiry causes extra misses; it does not speed reads.",
-          "Invalidation is still the main way changes reach the cache.",
-          ""
+          "",
+          "Invalidation is still the main way changes reach the cache."
         ],
         "teaches": "mistakes"
       },
       {
         "question": "Why is a cache used at all, given the staleness risk?",
         "options": [
-          "Databases cannot store data",
-          "Read-heavy systems would otherwise need far more database capacity",
-          "Caches never go stale"
+          "Databases cannot store data at the volumes and speeds that modern services need",
+          "Caches never go stale because every write also updates the copy straight away",
+          "Read-heavy systems would otherwise need far more database capacity"
         ],
-        "correct": 1,
+        "correct": 2,
         "why": "Serving repeated reads from memory is much cheaper than serving them from the database.",
         "wrong": [
           "The database still holds all the data.",
-          "",
-          "They can, which is the cost being accepted."
+          "They can, which is the cost being accepted.",
+          ""
         ],
         "teaches": "why"
       },

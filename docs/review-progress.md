@@ -8,6 +8,10 @@ Done. Learn pages rewritten where the cited pages did not support a claim; sourc
 
 Failover learn page: the RDS Multi-AZ failover page says failover changes the DNS record of the DB instance and AWS recommends a JVM DNS TTL of no more than 60 seconds. The learn page wrongly said a managed database avoids DNS caching; fixed.
 
+## Batch 2: Event-driven, Caching, CDNs, Circuit Breakers
+
+Done. Learn pages checked against the cited pages and rewritten where a sentence carried a citation the page does not support (for example Memcached's page does not describe cache-aside, and Redis's page does not state a default eviction policy). Caching, CDNs and Circuit Breakers quizzes reworked and removed from QUIZ_STYLE_PENDING. Microsoft Learn dates are rendered by script, so they were read in a browser. Posts: all dates agree with the pages.
+
 ## Remaining
 
-Batch 2: Event-driven, Caching, CDNs, Circuit Breakers. Batch 3: Consistent Hashing, Databases, DNS, Indexing. Batch 4: Load Balancing, Message Queues, Pub-Sub, Rate Limiting. Batch 5: Replication, Sharding. Then: checks and rendering code, quiz rework for the 13 pending topics (as each batch lands), full build, verify:figures, search check.
+Batch 3: Consistent Hashing, Databases, DNS, Indexing. Batch 4: Load Balancing, Message Queues, Pub-Sub, Rate Limiting. Batch 5: Replication, Sharding. Then: checks and rendering code, quiz rework for the 13 pending topics (as each batch lands), full build, verify:figures, search check.

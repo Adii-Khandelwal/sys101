@@ -84,41 +84,41 @@
       {
         "question": "A dependency starts answering very slowly. What does a circuit breaker on the client do?",
         "options": [
+          "Stops calling it for a while, so calls fail at once instead of waiting",
           "Makes the dependency answer faster",
-          "Retries every call until one succeeds",
-          "Stops calling it for a while, so calls fail at once instead of waiting"
+          "Retries every call until one succeeds"
         ],
-        "correct": 2,
+        "correct": 0,
         "why": "The breaker trips open after enough failures, which frees the caller's threads and connections and gives the dependency room to recover.",
         "wrong": [
+          "",
           "A breaker only controls the caller; it cannot speed up a dependency.",
-          "Retrying every call adds load to a dependency that is already struggling.",
-          ""
+          "Retrying every call adds load to a dependency that is already struggling."
         ],
         "teaches": "why"
       },
       {
         "question": "In the half-open state, what does the breaker allow?",
         "options": [
-          "A small number of probe calls, to see whether the dependency has recovered",
           "Every call, with no counting",
-          "No calls at all until an operator resets it"
+          "No calls at all until an operator resets it",
+          "A small number of probe calls, to see whether the dependency has recovered"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "Probes test the dependency cheaply: if they succeed the breaker closes, and if they fail it opens again.",
         "wrong": [
-          "",
           "Letting everything through with no counting would be the closed state without protection.",
-          "That describes the open state; half-open exists so recovery can be detected automatically."
+          "That describes the open state; half-open exists so recovery can be detected automatically.",
+          ""
         ],
         "teaches": "model"
       },
       {
         "question": "What is the main job of load shedding?",
         "options": [
-          "Slowing every request equally so none is rejected",
+          "Slowing every request equally so none is rejected, which keeps latency fair for all callers",
           "Rejecting some requests, lowest priority first, so the rest are served in time",
-          "Retrying rejected requests on the client"
+          "Retrying rejected requests on the client until the server has room for them again"
         ],
         "correct": 1,
         "why": "When a server cannot do everything, it is better to serve the important requests well than to serve all of them late.",
@@ -132,31 +132,31 @@
       {
         "question": "In Zalando's incident, why did the service handle the half-open probes well but fail once the breaker closed?",
         "options": [
-          "The probes were slow, so the breaker closed by mistake",
-          "The probes went to a different service",
-          "The probes were few and the service had scaled down, then the full load arrived at once on too few pods"
+          "The probes were slow, so the breaker closed by mistake before the service had recovered",
+          "The probes were few and the service had scaled down, then full load hit too few pods",
+          "The probes went to a different service from the one that later received the full traffic"
         ],
-        "correct": 2,
+        "correct": 1,
         "why": "A handful of probes cannot show how the service copes with its real load, so a quick, healthy probe phase said nothing about the avalanche that followed.",
         "wrong": [
           "The probes were fast: 15, 10 and 2 milliseconds in the post.",
-          "The probes reached the same service; the difference was how much traffic arrived.",
-          ""
+          "",
+          "The probes reached the same service; the difference was how much traffic arrived."
         ],
         "teaches": "example"
       },
       {
         "question": "Why can unlimited retries make an outage worse?",
         "options": [
-          "Retries make failures less likely to be noticed",
           "Each retry adds load to a dependency that is already struggling",
-          "Retries always return stale data"
+          "Retries make failures less likely to be noticed, so the dependency gets no alerts",
+          "Retries always return stale data, which hides how badly the dependency is doing"
         ],
-        "correct": 1,
+        "correct": 0,
         "why": "Retried calls come on top of the normal traffic, so a dependency that is failing from load receives even more of it.",
         "wrong": [
-          "Failures are still counted and noticed; the problem is the extra load.",
           "",
+          "Failures are still counted and noticed; the problem is the extra load.",
           "A retry repeats the call; whether data is stale depends on the dependency, not on retrying."
         ],
         "teaches": "mistakes"
@@ -164,16 +164,16 @@
       {
         "question": "What is the difference in what a circuit breaker and a load shedder protect?",
         "options": [
-          "A breaker protects a caller from a failing dependency, and a shedder protects a server from overload",
           "A breaker protects a server from overload, and a shedder protects a caller from a failing dependency",
-          "Both protect only the database"
+          "Both protect only the database",
+          "A breaker protects a caller from a failing dependency, and a shedder protects a server from overload"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "The breaker lives in the caller and reacts to the health of what it calls; the shedder lives in the server and reacts to its own load.",
         "wrong": [
-          "",
           "That swaps them: the shedder sits in the server and the breaker in the caller.",
-          "Neither is specific to databases; they protect any dependency or any server."
+          "Neither is specific to databases; they protect any dependency or any server.",
+          ""
         ],
         "teaches": "model"
       }

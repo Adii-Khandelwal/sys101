@@ -279,47 +279,47 @@
       {
         "question": "What makes a CDN fast for most users?",
         "options": [
-          "A faster origin server",
-          "Compressing every file twice",
-          "Copies of content on servers close to them"
+          "A faster origin server that can answer every distant request in less time",
+          "Copies of content on servers close to them",
+          "Compressing every file twice so each response is smaller on the wire"
         ],
-        "correct": 2,
+        "correct": 1,
         "why": "Most requests are answered nearby instead of crossing the internet to the origin.",
         "wrong": [
           "The origin is still far away; the edge avoids the trip.",
-          "Compression helps, but distance is the main cost a CDN removes.",
-          ""
+          "",
+          "Compression helps, but distance is the main cost a CDN removes."
         ],
         "teaches": "why"
       },
       {
         "question": "What are a CDN's two jobs?",
         "options": [
-          "Deciding what each edge keeps, and making misses to the origin cheap",
-          "Encrypting traffic and storing passwords",
-          "Replacing DNS and the origin"
+          "Encrypting traffic and storing passwords for the sites it serves, so origins need not",
+          "Replacing DNS and the origin, so that sites no longer need servers of their own",
+          "Deciding what each edge keeps, and making misses to the origin cheap"
         ],
-        "correct": 0,
+        "correct": 2,
         "why": "Edges have limited room, and whatever they do not hold must be fetched from the origin.",
         "wrong": [
-          "",
           "Those are not what a CDN is for.",
-          "A CDN relies on DNS and sits in front of the origin."
+          "A CDN relies on DNS and sits in front of the origin.",
+          ""
         ],
         "teaches": "model"
       },
       {
         "question": "On a miss, why does reusing an open connection to the origin matter?",
         "options": [
-          "It makes the file smaller",
           "It skips TCP and TLS handshakes before the first byte",
-          "It turns the miss into a hit"
+          "It makes the file smaller because the connection compresses what it carries",
+          "It turns the miss into a hit, since the origin now remembers the connection"
         ],
-        "correct": 1,
+        "correct": 0,
         "why": "Each new connection costs round trips; reuse removes them.",
         "wrong": [
-          "File size does not change.",
           "",
+          "File size does not change.",
           "It is still a miss, just a cheaper one."
         ],
         "teaches": "how"
@@ -327,15 +327,15 @@
       {
         "question": "Each worker process keeps its own origin connection pool. You add workers. What happens to connection reuse?",
         "options": [
-          "It rises",
           "It falls, because the pool is split into smaller pools",
-          "Nothing changes"
+          "It rises, because more workers means more open connections to reuse",
+          "Nothing changes, because every worker already reuses connections the same way"
         ],
-        "correct": 1,
+        "correct": 0,
         "why": "Smaller pools mean fewer requests find an open connection, just when traffic grows.",
         "wrong": [
-          "Splitting pools works against reuse.",
           "",
+          "Splitting pools works against reuse.",
           "Each worker has its own pool, so the split matters."
         ],
         "teaches": "mistakes"
@@ -343,15 +343,15 @@
       {
         "question": "Why might a CDN rank and store individual files instead of whole titles?",
         "options": [
-          "So unpopular versions of a popular title do not take up scarce disk",
           "Because titles cannot be cached",
+          "So unpopular versions of a popular title do not take up scarce disk",
           "To make files load in order"
         ],
-        "correct": 0,
+        "correct": 1,
         "why": "Finer units let only the popular bitrates and languages stay at the edge.",
         "wrong": [
-          "",
           "Titles can be cached; it is just wasteful.",
+          "",
           "Order is unrelated."
         ],
         "teaches": "example"

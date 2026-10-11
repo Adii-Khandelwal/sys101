@@ -27,9 +27,9 @@
       "id": "basics",
       "name": "Basics",
       "body": [
-        "Distance costs time. A user in one country fetching from a server in another pays for every round trip across the network. A content delivery network, a CDN, is a large set of servers spread around the world that keep copies of your content close to users, so most requests are answered from nearby instead of from a far-off origin [[webdev-cdn]].",
-        "At its heart a CDN is a cache, the topic you just read, placed at the network edge rather than next to your application. The same ideas apply: a hit is served locally and fast, a miss fetches from the origin and stores a copy for next time. What is new is where the cache lives and how users are steered to it [[webdev-cdn]].",
-        "The result is lower latency for users, and less load on the origin, because the many edge servers absorb most of the traffic. A CDN also helps absorb sudden spikes and some attacks, since the load is spread across the whole network rather than landing on one origin [[webdev-cdn]]."
+        "Distance costs time. A user in one country fetching from a server in another pays for every round trip across the network. web.dev describes a content delivery network, a CDN, as a network of servers optimised to deliver resources, located closer to users than the origin so they have a shorter round-trip time, with caches that eliminate the need for a request to travel to the origin at all [[webdev-cdn]].",
+        "At its heart a CDN is a cache, the topic you just read, placed away from your application and near users. MDN lists CDNs among managed caches, which service developers deploy explicitly to offload the origin and deliver content efficiently, and says you can usually control them through the Cache-Control header and your own configuration [[mdn-caching]]. The same ideas apply: a hit is served locally and fast, a miss fetches from the origin, and web.dev says a CDN's cache is built up over time as additional uncached resources are requested [[webdev-cdn]].",
+        "The result is lower latency for users and less load on the origin. web.dev says that because CDNs reduce server load they reduce server costs and are well suited to handling traffic spikes [[webdev-cdn]]."
       ],
       "terms": [
         {
@@ -56,13 +56,13 @@
       "reading": [
         {
           "source": "webdev-cdn",
-          "section": "What is a CDN? and the overview of benefits",
+          "section": "Overview, and Resource delivery",
           "what": "Why serving content from nearby cuts latency and offloads the origin."
         },
         {
           "source": "mdn-caching",
-          "section": "Overview of what a cache is and shared caches",
-          "what": "The caching foundation a CDN builds on, framed as a shared cache many users hit."
+          "section": "Types of caches: Private caches, Shared cache, and managed caches",
+          "what": "Where a CDN fits among HTTP caches, as a managed shared cache."
         }
       ],
       "canNow": [
@@ -75,10 +75,10 @@
       "id": "how",
       "name": "How it works",
       "body": [
-        "The first job is steering each user to a nearby edge. CDNs commonly do this through DNS: when you resolve the CDN's name, you are handed the address of an edge close to you, often using anycast so one address reaches whichever edge is nearest. This is the direct link to the DNS topic you already read [[webdev-cdn]].",
-        "Once at the edge, the request is a cache lookup. On a hit the edge returns its stored copy. On a miss it fetches from the origin, stores the result, and serves it, so the next nearby user gets a hit. The edge decides how long to keep a copy from the response's HTTP caching headers [[mdn-caching]].",
+        "The first job is getting each user to the CDN. web.dev's setup steps are to sign up with a CDN provider and update your CNAME DNS record to point at it; as a result of that DNS change, traffic to your site is routed through the CDN [[webdev-cdn]]. This is the direct link to the DNS topic you already read. How a CDN then picks an edge close to the user is not described on that page; many CDNs use the DNS answer or anycast addressing for it.",
+        "Once at the edge, the request is a cache lookup. On a hit the edge returns its stored copy. On a miss it fetches from the origin, stores the result, and serves it, so the next nearby user gets a hit. You steer how long the edge keeps a copy through HTTP caching headers such as Cache-Control [[mdn-caching]].",
         "Those headers are the standard contract between the origin and every cache in the path, including the CDN. Cache-Control with max-age sets how long a response stays fresh, and directives like public, private and no-store say whether a shared cache such as a CDN may store it at all [[rfc9111]].",
-        "Content splits into two kinds. Static content, like images, scripts and video segments, caches well because it rarely changes. Dynamic content, personalised per user, is harder to cache and is often passed through to the origin or cached only briefly. Knowing which is which is most of configuring a CDN well [[mdn-caching]]."
+        "Content splits into kinds that cache differently. web.dev says whether a resource should be cached depends on whether it is public or private, and static or dynamic. Private resources, which contain data for a single user, should not be cached by a CDN, while public resources can be, for a length of time that depends on how often the asset changes. It also says dynamic content that changes frequently can still be cached for very short periods, for example during heavy traffic [[webdev-cdn]]."
       ],
       "terms": [
         {
@@ -105,8 +105,8 @@
       "reading": [
         {
           "source": "webdev-cdn",
-          "section": "How CDNs decide what to cache and routing users to an edge",
-          "what": "How users reach a nearby edge and how the edge serves hits and fills misses."
+          "section": "How to setup and configure a CDN, and Cacheable resources",
+          "what": "How traffic reaches the CDN through a DNS change, and which resources a CDN should cache."
         },
         {
           "source": "rfc9111",
@@ -125,9 +125,9 @@
       "id": "deeper",
       "name": "Going deeper",
       "body": [
-        "The invalidation problem from caching gets harder across a worldwide network. When content changes, every edge that holds an old copy is now stale. CDNs offer two levers: expiry, letting copies age out by their max-age, and purging, actively telling edges to drop a copy now. Purging is faster but must reach every edge [[mdn-caching]].",
-        "A common pattern avoids purging altogether: give files that never change a content hash in their name, like app.9f2a.js, and cache them for a very long time. When the content changes the name changes, so users fetch a new URL and the old one simply ages out. This is why build tools fingerprint asset filenames [[rfc9111]].",
-        "Validators let an edge refresh cheaply. With an ETag or Last-Modified value, an edge can ask the origin \"has this changed?\" and get a small not-modified reply if not, revalidating a stale copy without transferring the whole object again. This keeps freshness high without paying full fetch cost on every expiry [[rfc9111]]."
+        "The invalidation problem from caching gets harder across a worldwide network. When content changes, every cache that holds an old copy is stale. web.dev describes purging, also called cache invalidation, as removing a resource from a CDN's caches without waiting for it to expire or be evicted, typically through an API [[webdev-cdn]]. MDN adds that with a CDN that supports purging you can use a more aggressive caching strategy, storing the main resource and purging it only when the server updates it [[mdn-caching]].",
+        "A common pattern avoids purging altogether. MDN calls it cache busting: resources that work best with caching are static immutable files, and for resources that change it is a common best practice to change the URL each time the content changes, using a version number or hash value in the name, so the URL can be cached for a longer period [[mdn-caching]]. That is why build tools put a hash in asset filenames.",
+        "Validators let a cache refresh cheaply. MDN describes validation as a way to turn a stale response into a fresh one by asking the origin, using a conditional request with If-Modified-Since or If-None-Match, where an ETag is a value generated by the server such as a hash of the body [[mdn-caching]]. The standard rules for validation are in RFC 9111 section 4.3 [[rfc9111]]."
       ],
       "terms": [
         {
@@ -153,14 +153,14 @@
       ],
       "reading": [
         {
-          "source": "mdn-caching",
-          "section": "Cache validation, ETag and If-None-Match",
-          "what": "How an edge revalidates a copy with the origin instead of refetching it whole."
+          "source": "webdev-cdn",
+          "section": "Caching: Removing resources from the cache (eviction and purging)",
+          "what": "How a CDN removes resources, and how purging differs from waiting for expiry."
         },
         {
-          "source": "rfc9111",
-          "section": "Section 4.3, Validation, and Section 4.4, Invalidation",
-          "what": "The standard rules for revalidating and invalidating stored responses across caches."
+          "source": "mdn-caching",
+          "section": "Validation (ETag/If-None-Match), and Common caching patterns: Cache Busting",
+          "what": "How a cache revalidates with the origin, and how changing a URL avoids stale copies."
         }
       ],
       "canNow": [
@@ -173,9 +173,9 @@
       "id": "practice",
       "name": "In practice and trade-offs",
       "body": [
-        "The central trade-off is freshness against reach. A long max-age gives a high hit ratio and the most offload, but a change takes longer to appear everywhere unless you purge. A short max-age keeps content fresh but sends more traffic back to the origin. Tuning this per content type, long for fingerprinted assets, short or none for personalised pages, is the real work [[rfc9111]].",
-        "A CDN changes failure and cost too. With most traffic absorbed at the edge, the origin can be smaller and a traffic spike is less dangerous. But a misconfigured cache can serve private data to the wrong user if a per-user response is marked public, which is why the public and private directives matter so much [[rfc9111]].",
-        "A CDN only helps what it can cache. Highly dynamic, per-request content still travels to the origin, so the gain depends on how much of your traffic is cacheable. This is the same lesson as plain caching, now measured across the whole network: know what fraction of requests can be served from a copy [[mdn-caching]]."
+        "The central trade-off is freshness against reach, and web.dev adds a second one: a CDN's performance strategy is a tradeoff between minimising latency and maximising cache hit ratio, because a CDN with many points of presence can deliver lower latency but may see lower hit ratios as traffic is split across more caches [[webdev-cdn]]. A long max-age gives a high hit ratio, but a change takes longer to appear unless you purge; a short one keeps content fresh but sends more traffic back to the origin.",
+        "A CDN changes failure and cost too. With most traffic absorbed at the edge, the origin can be smaller and a traffic spike is less dangerous. But a misconfigured cache can serve personal data to the wrong user: MDN warns that it would be problematic if a personalised response is visible to other users of a cache, and says the private directive keeps it stored only with that client [[mdn-caching]].",
+        "A CDN only helps what it can cache. web.dev's conclusion is to cache content as aggressively as possible, static and dynamic, for varying durations, and to audit your site periodically to make sure you are caching optimally [[webdev-cdn]]. This is the same lesson as plain caching, now measured across the whole network: know what fraction of requests can be served from a copy."
       ],
       "terms": [
         {
@@ -197,14 +197,14 @@
       ],
       "reading": [
         {
-          "source": "rfc9111",
-          "section": "Section 5.2.2 directives, especially private and no-store",
-          "what": "Why marking per-user content as cacheable is dangerous, and how to prevent it."
+          "source": "webdev-cdn",
+          "section": "Performance, and Improving cache hit ratio",
+          "what": "The trade-off between latency and cache hit ratio, and how to audit and tune your hit ratio."
         },
         {
-          "source": "webdev-cdn",
-          "section": "Measuring and improving cache hit ratio",
-          "what": "Why the cacheable fraction of traffic sets the ceiling on what a CDN can do."
+          "source": "mdn-caching",
+          "section": "Don't cache: Do not share with others",
+          "what": "Why personalised responses must be marked private so a shared cache does not leak them."
         }
       ],
       "canNow": [
@@ -217,38 +217,28 @@
   "misconceptions": [
     {
       "myth": "A CDN is something different from a cache.",
-      "truth": "It is a cache placed at the network edge; the same hit, miss and freshness rules apply [[webdev-cdn]]."
+      "truth": "MDN lists CDNs among managed caches, and web.dev describes CDN caches that answer requests without going to the origin [[mdn-caching]] [[webdev-cdn]]."
     },
     {
       "myth": "A CDN speeds up everything.",
-      "truth": "It only helps cacheable content; per-user dynamic responses still go to the origin [[mdn-caching]]."
+      "truth": "It helps what it can cache. web.dev says private resources, which contain data for one user, should not be cached by a CDN [[webdev-cdn]]."
     },
     {
       "myth": "Changing content updates every edge instantly.",
-      "truth": "Edges hold copies until they expire or are purged, so a change can take time to appear everywhere [[rfc9111]]."
+      "truth": "A cache can keep a stored response until it expires or is purged, so web.dev describes purging as the way to remove a resource without waiting for it to expire [[webdev-cdn]]."
     },
     {
       "myth": "It is safe to cache any response at the edge.",
-      "truth": "Per-user responses must be marked private; marking them public can leak one user's data to another [[rfc9111]]."
+      "truth": "MDN says a personalised response visible to other users of a cache is a problem, and that the private directive prevents it [[mdn-caching]]."
     }
   ],
   "tryIt": {
-    "intro": "These inspect CDN behaviour from a terminal. Output depends on the site, so it is not shown here. The headers they reveal are defined in the HTTP caching standard and MDN.",
+    "intro": "This uses curl, the command-line tool, to look at the response headers a site sends. The command is the one in the curl manual; replace the address with a site you know is served through a CDN to see headers such as Cache-Control and Age, which MDN describes. The address https://example.com is the manual's own example. Output depends on the site, so it is not shown here.",
     "commands": [
       {
-        "command": "curl -sI https://example.com/logo.png",
-        "shows": "Response headers, often including Cache-Control, an age, and a hit-or-miss marker from the CDN.",
-        "source": "mdn-caching"
-      },
-      {
-        "command": "curl -sI https://example.com/logo.png | grep -i cache-control",
-        "shows": "Just the Cache-Control directives, such as public and max-age.",
-        "source": "rfc9111"
-      },
-      {
-        "command": "curl -sI https://example.com/logo.png | grep -i -E 'age|etag'",
-        "shows": "How long the edge has held the copy, and its validator tag.",
-        "source": "mdn-caching"
+        "command": "curl -I https://example.com",
+        "shows": "Fetches the headers only, using an HTTP HEAD request, as the manual describes for -I. Look for Cache-Control and Age.",
+        "source": "curl-manpage"
       }
     ]
   },
@@ -260,7 +250,7 @@
       "url": "https://web.dev/articles/content-delivery-networks",
       "publisher": "web.dev (Google)",
       "kind": "Vendor documentation",
-      "year": "2023",
+      "year": "page shows last updated 2023-12-05",
       "verifiedOn": "2026-10-11"
     },
     {
@@ -269,7 +259,7 @@
       "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching",
       "publisher": "MDN Web Docs (Mozilla)",
       "kind": "Vendor documentation",
-      "year": "2024",
+      "year": "page shows last updated 2026-08-14",
       "verifiedOn": "2026-10-11"
     },
     {
@@ -279,6 +269,16 @@
       "publisher": "IETF",
       "kind": "Internet standard",
       "year": "2022",
+      "verifiedOn": "2026-10-11",
+      "note": "The RFC shows its date as June 2022."
+    },
+    {
+      "id": "curl-manpage",
+      "title": "curl: command line tool manual (curl.1)",
+      "url": "https://curl.se/docs/manpage.html",
+      "publisher": "curl project",
+      "kind": "Project documentation",
+      "year": "no date shown",
       "verifiedOn": "2026-10-11"
     }
   ]

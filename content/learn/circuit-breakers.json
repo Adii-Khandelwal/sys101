@@ -254,17 +254,20 @@
         "command": "apiVersion: networking.istio.io/v1\nkind: DestinationRule\nmetadata:\n  name: httpbin\nspec:\n  host: httpbin\n  trafficPolicy:\n    connectionPool:\n      tcp:\n        maxConnections: 1\n      http:\n        http1MaxPendingRequests: 1\n        maxRequestsPerConnection: 1\n    outlierDetection:\n      consecutive5xxErrors: 1\n      interval: 1s\n      baseEjectionTime: 3m\n      maxEjectionPercent: 100",
         "shows": "The rule the task applies with kubectl: connection limits and outlier detection for the httpbin service. Istio's page applies it with a heredoc given to kubectl apply -f -.",
         "source": "istio-circuit-breaking",
-        "note": "Istio's example values."
+        "note": "Istio's example values.",
+        "warning": "Applying this rule changes the traffic policy for the httpbin service in a cluster. Run it only on a test cluster."
       },
       {
         "command": "kubectl exec \"$FORTIO_POD\" -c fortio -- /usr/bin/fortio load -c 2 -qps 0 -n 20 -loglevel Warning http://httpbin:8000/get",
         "shows": "Sends 20 calls over two concurrent connections. Istio's page prints Code 200: 17 (85.0 %) and Code 503: 3 (15.0 %), and notes that the proxy allows some leeway.",
-        "source": "istio-circuit-breaking"
+        "source": "istio-circuit-breaking",
+        "warning": "This sends 20 test requests to the httpbin service in your cluster. Run it only on a test cluster."
       },
       {
         "command": "kubectl exec \"$FORTIO_POD\" -c fortio -- /usr/bin/fortio load -c 3 -qps 0 -n 30 -loglevel Warning http://httpbin:8000/get",
         "shows": "Sends 30 calls over three concurrent connections. Istio's page prints Code 200: 11 (36.7 %) and Code 503: 19 (63.3 %).",
-        "source": "istio-circuit-breaking"
+        "source": "istio-circuit-breaking",
+        "warning": "This sends 30 test requests to the httpbin service in your cluster. Run it only on a test cluster."
       }
     ]
   },
@@ -276,7 +279,7 @@
       "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker",
       "publisher": "Microsoft",
       "kind": "Vendor documentation",
-      "year": "no date shown",
+      "year": "page shows last updated 2025-03-21",
       "verifiedOn": "2026-10-11"
     },
     {
@@ -295,9 +298,8 @@
       "url": "https://grpc.io/docs/guides/deadlines/",
       "publisher": "gRPC",
       "kind": "Project documentation",
-      "year": "2025",
-      "verifiedOn": "2026-10-11",
-      "note": "The page shows it was last modified on 7 July 2025."
+      "year": "page shows last updated 2025-07-07",
+      "verifiedOn": "2026-10-11"
     },
     {
       "id": "grpc-retry",
@@ -305,9 +307,8 @@
       "url": "https://grpc.io/docs/guides/retry/",
       "publisher": "gRPC",
       "kind": "Project documentation",
-      "year": "2025",
-      "verifiedOn": "2026-10-11",
-      "note": "The page shows it was last modified on 26 November 2025."
+      "year": "page shows last updated 2025-11-26",
+      "verifiedOn": "2026-10-11"
     },
     {
       "id": "envoy-circuit-breaking",
@@ -337,7 +338,7 @@
       "kind": "Google SRE book chapter (guidance, not a specification)",
       "year": "2017",
       "verifiedOn": "2026-10-11",
-      "note": "Paraphrased and linked only; none of its text is copied."
+      "note": "The page shows a 2017 copyright line. Paraphrased and linked only; none of its text is copied."
     },
     {
       "id": "aws-timeouts-retries",
@@ -345,9 +346,9 @@
       "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
       "publisher": "Amazon Web Services",
       "kind": "Vendor article",
-      "year": "no year recorded",
+      "year": "page shows last updated 2026-06-15",
       "verifiedOn": "2026-10-11",
-      "note": "The date on the page looks republished, so no year is recorded. Every claim taken from it is AWS's view."
+      "note": "The page shows Published Jun 12, 2026 and Last modified Jun 15, 2026. Every claim taken from it is AWS's view."
     },
     {
       "id": "hystrix-readme",
