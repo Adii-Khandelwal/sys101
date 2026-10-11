@@ -294,7 +294,6 @@ export default function GraphView({ nodes, edges }: Props) {
     const onDown = (e: PointerEvent) => {
       if (e.button !== 0 && e.pointerType === "mouse") return;
       cancelAnimation();
-      el.setPointerCapture(e.pointerId);
       const p = local(e);
       pointers.set(e.pointerId, p);
       if (pointers.size === 1) {
@@ -320,6 +319,9 @@ export default function GraphView({ nodes, edges }: Props) {
       if (!dragging.current) {
         dragging.current = true;
         draggedRef.current = true;
+        // Capture only once it is a drag: capturing on press would send the
+        // click to this wrapper instead of Sigma's canvas, so nodes stop opening.
+        el.setPointerCapture(e.pointerId);
         setCursor();
       }
       panBy(prev.x - p.x, prev.y - p.y);
