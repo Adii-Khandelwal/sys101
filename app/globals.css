@@ -440,6 +440,7 @@ a:hover {
 }
 
 .relations .none {
+  margin: 4px 0 0;
   color: var(--ink-soft);
   font-style: italic;
 }
@@ -670,13 +671,40 @@ a:hover {
 
 /* ── Lesson format ───────────────────────── */
 
+/* Resume line (when there is progress) above the two jump links, all left-aligned. */
 .lesson-top {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.lesson-jump {
+  display: flex;
   flex-wrap: wrap;
-  margin-top: 16px;
+  align-items: center;
+  gap: 0 12px;
+  margin: 0;
+}
+
+/* 44px touch targets without extra visible space. */
+.lesson-top .lesson-jump a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+}
+
+/* On phones the two links stack, so the separator goes. */
+@media (max-width: 520px) {
+  .lesson-jump {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .lesson-jump > span {
+    display: none;
+  }
 }
 
 .lesson-top p {
@@ -1008,7 +1036,7 @@ a:hover {
   margin: 0 0 4px;
 }
 
-.exercises h4 {
+.exercises h3 {
   margin: 12px 0 4px;
   font-size: 16px;
   font-weight: 500;
@@ -1339,12 +1367,6 @@ a:hover {
 
 html {
   scroll-behavior: smooth;
-}
-
-/* Single fade-in on first load. body persists across client navigations,
-   so this runs once per hard load. */
-body {
-  animation: fade-in var(--dur-base) var(--ease-out);
 }
 
 @keyframes fade-in {
@@ -1839,8 +1861,4 @@ body {
 
 .cite a {
   text-decoration: none;
-}
-
-.lesson-top .learn-link {
-  margin-left: 20px;
 }

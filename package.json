@@ -9,7 +9,7 @@
     "lint": "next lint",
     "pipeline:fetch": "node pipeline/fetch-rss.mjs",
     "pipeline:summarize": "node pipeline/summarize.mjs",
-    "postbuild": "pagefind --site .next/server/app --output-path public/pagefind",
+    "postbuild": "node scripts/check-seo.mjs && pagefind --site .next/server/app --output-path public/pagefind",
     "search:index": "NEXT_DIST_DIR=.next-search next build && pagefind --site .next-search/server/app --output-path public/pagefind",
     "test": "vitest run"
   },

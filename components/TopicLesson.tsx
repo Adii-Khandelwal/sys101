@@ -89,14 +89,21 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
         <div className="lesson-top" data-pagefind-ignore>
           <ResumeLine meta={meta} names={names} />
 
-          <a className="text-button label" href="#posts">
-            Skip to the posts
-          </a>
-          {learnHref && (
-            <Link className="text-button label learn-link" href={learnHref}>
-              New to this? Start from zero
-            </Link>
-          )}
+          <p className="lesson-jump">
+            <a className="text-button label" href="#posts">
+              Skip to the posts
+            </a>
+            {learnHref && (
+              <>
+                <span className="label" aria-hidden="true">
+                  ·
+                </span>
+                <Link className="text-button label" href={learnHref}>
+                  New to this? Start from zero
+                </Link>
+              </>
+            )}
+          </p>
         </div>
 
         <div id="concept" className="part">
@@ -210,9 +217,9 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                   <p>{x.prompt}</p>
                   <Reveal show="Show a model answer" hide="Hide the model answer">
                     <p>{x.answer}</p>
-                    <h4>Trade-offs</h4>
+                    <h3>Trade-offs</h3>
                     <p>{x.tradeoffs}</p>
-                    <h4>Common wrong answers</h4>
+                    <h3>Common wrong answers</h3>
                     <ul className="wrong">
                       {x.wrongAnswers.map((w) => (
                         <li key={w}>{w}</li>

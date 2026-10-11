@@ -52,12 +52,22 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 
 ## Motion
 
-- One tokens file: 120ms fast, 200ms base, 320ms slow. Ease-out cubic-bezier(0.23, 1, 0.32, 1) for entering or responding, ease-in-out for on-screen movement. Animate only transform, opacity, and color. No bounce or elastic, no layout shift, no staggered or scroll-triggered effects. Press feedback scale 0.97. Under prefers-reduced-motion, change instantly or fade in 80ms or less.
+- One tokens file: 120ms fast, 200ms base, 320ms slow. Ease-out cubic-bezier(0.23, 1, 0.32, 1) for entering or responding, ease-in-out for on-screen movement. Animate only transform, opacity, and color. No bounce or elastic, no layout shift, no staggered or scroll-triggered effects. Press feedback scale 0.97. Under prefers-reduced-motion, change instantly or fade in 80ms or less. Never fade in the page itself on load: it delays LCP.
+
+## SEO
+
+- One absolute canonical per page from SITE_URL in lib/site.ts (env, default https://sys101.vercel.app), no query strings. Set metadata through pageMeta(), which adds Open Graph and Twitter text tags.
+- Unique title under 60 characters and description under 155 per page, generated from content (topic: first sentence of `concept`; learn: "Start from zero: <Topic>"). No marketing words or keyword stuffing.
+- Exactly one H1 and no skipped heading levels. Content must be in the HTML and render without JavaScript.
+- app/sitemap.ts lists every indexable page with lastmod from content dates (newest verifiedOn; PAGE_DATES for About, Terms, Privacy). robots.txt allows all and points to it. /data and the 404 are noindex and left out.
+- JSON-LD only where it matches visible content: BreadcrumbList on topic and learn pages, LearningResource on topic pages. No FAQ schema.
+- No raster image without alt, width, and height. SVGs need role="img" and a name, or aria-hidden.
+- scripts/check-seo.mjs runs after every build and fails it on any of these.
 
 ## Accessibility and chrome
 
-- WCAG AA contrast, visible focus rings, full keyboard use, 44px touch targets, real buttons, aria-live for results. Verify at 1440px and 390px. Skeleton loaders match the final size.
-- Shared header with the sys101 wordmark and three-node mark linking home. Footer links: Terms, Privacy, Your data. A "Back to top" text button appears after about 1.5 screens.
+- WCAG AA contrast, visible focus rings, full keyboard use, 44px touch targets, real buttons, aria-live for results. Verify at 1440px and 390px. Skeleton loaders match the final size, and only stand in for client-loaded parts, never around server-rendered page content (no loading.tsx on content routes).
+- Shared header with the sys101 wordmark and three-node mark linking home. Footer links: About, Terms, Privacy, Your data. A "Back to top" text button appears after about 1.5 screens.
 
 ## Post selection (strict, never use just any post)
 

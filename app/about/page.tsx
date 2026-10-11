@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
+import { CONTACT_EMAIL, pageMeta } from "@/lib/site";
 import Link from "next/link";
 import SiteFooter from "@/components/SiteFooter";
-import { CONTACT_EMAIL } from "@/lib/site";
 
 // Prerendered at build time; using anything dynamic here fails the build.
 export const dynamic = "error";
 
-export const metadata: Metadata = { title: "About" };
+export const metadata: Metadata = pageMeta({ path: "/about", title: "About", description: "Why sys101 exists, how the map of topics works, how to use it, and how the engineering posts on each topic are picked." });
 
 export default function About() {
   return (

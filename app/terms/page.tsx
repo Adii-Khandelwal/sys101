@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
+import { CONTACT_EMAIL, PAGE_DATES, pageMeta } from "@/lib/site";
+import { formatDate } from "@/lib/topics";
 import SiteFooter from "@/components/SiteFooter";
-import { CONTACT_EMAIL } from "@/lib/site";
 
 // Prerendered at build time; using anything dynamic here fails the build.
 export const dynamic = "error";
 
-export const metadata: Metadata = { title: "Terms" };
+export const metadata: Metadata = pageMeta({ path: "/terms", title: "Terms", description: "Terms of use for sys101: the site is provided as is, blog content belongs to its authors, write-ups can be wrong, and how to ask for a takedown." });
 
 export default function Terms() {
   return (
     <article className="dossier legal">
 
-      <div className="label">Last updated 11 October 2026</div>
+      <div className="label">Last updated {formatDate(PAGE_DATES.terms)}</div>
       <h1>Terms</h1>
 
       <p>

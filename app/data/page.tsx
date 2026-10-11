@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/site";
 import DataControls from "@/components/DataControls";
 import SiteFooter from "@/components/SiteFooter";
 import { getAllTopics } from "@/lib/topics";
@@ -6,7 +7,10 @@ import { getAllTopics } from "@/lib/topics";
 // Prerendered at build time; using anything dynamic here fails the build.
 export const dynamic = "error";
 
-export const metadata: Metadata = { title: "Your data" };
+export const metadata: Metadata = {
+  ...pageMeta({ path: "/data", title: "Your data", description: "Export, import, or reset the reading progress that sys101 keeps in this browser." }),
+  robots: { index: false, follow: true },
+};
 
 export default function YourData() {
   const topics = getAllTopics()

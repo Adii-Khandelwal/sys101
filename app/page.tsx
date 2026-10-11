@@ -6,9 +6,16 @@ import SiteFooter from "@/components/SiteFooter";
 import TopicIndex from "@/components/TopicIndex";
 import { columns, depths, transitiveReduction } from "@/lib/graph";
 import { GROUPS, getAllTopics, type Group } from "@/lib/topics";
+import { SITE_DESCRIPTION, pageMeta } from "@/lib/site";
 
 // Prerendered at build time; using anything dynamic here fails the build.
 export const dynamic = "error";
+
+export const metadata = pageMeta({
+  path: "/",
+  title: { absolute: "sys101: system design from how real systems work" },
+  description: SITE_DESCRIPTION,
+});
 
 /** Fallback when a topic has no `group`: shallow topics are foundations, deep ones data. */
 function groupFromDepth(depth: number): Group {
@@ -54,7 +61,7 @@ export default function Home() {
 
       <GraphView nodes={nodes} edges={edges} />
 
-      <TopicIndex groups={groups} total={entries.length} />
+      <TopicIndex groups={groups} />
 
       <SiteFooter />
     </main>

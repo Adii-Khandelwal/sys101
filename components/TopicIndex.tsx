@@ -4,16 +4,15 @@ import Link from "next/link";
 import { useReadTopics } from "@/lib/progress";
 
 type Entry = { slug: string; title: string; number: string };
-type Props = { groups: { name: string; entries: Entry[] }[]; total: number };
+type Props = { groups: { name: string; entries: Entry[] }[] };
 
-export default function TopicIndex({ groups, total }: Props) {
+export default function TopicIndex({ groups }: Props) {
   const read = useReadTopics();
-  const count = groups.flatMap((g) => g.entries).filter((e) => read.includes(e.slug)).length;
 
   return (
     <section className="index" aria-labelledby="index-heading">
       <h2 id="index-heading" className="label">
-        All topics · {count} of {total} read
+        All topics
       </h2>
       <div className="index-groups">
         {groups.map((g) => (
