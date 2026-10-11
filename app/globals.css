@@ -496,7 +496,9 @@ a:hover {
 
 /* Stacked when the columns' labels do not fit the stage width. */
 .graph-stage[data-orientation="vertical"] {
-  height: clamp(278px, calc(var(--layers, 1) * 120px + 158px), 70vh);
+  /* Stacked: grow to fit every node at full spacing (no 70vh cap), so a long
+     list of topics does not crush the rows together; the page scrolls it. */
+  height: calc(var(--layers, 1) * 120px + 158px);
 }
 
 .graph-node-link {
@@ -1717,7 +1719,8 @@ a:hover {
     align-self: center;
   }
   .graph-stage {
-    height: clamp(278px, calc(var(--layers, 1) * 120px + 158px), 70vh);
+    /* Stacked on a phone: grow to fit all nodes; the page scrolls past it. */
+    height: calc(var(--layers, 1) * 120px + 158px);
   }
   .index-groups {
     grid-template-columns: 1fr;

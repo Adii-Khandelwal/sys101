@@ -1,0 +1,398 @@
+{
+  "slug": "failover",
+  "title": "Failover",
+  "group": "Reliability",
+  "interviewRelevance": "common",
+  "concept": "Failover is how a system keeps serving when a component dies: detect the failure, promote or route to a healthy stand-in, and send clients to the new target, all fast enough that users barely notice. The hard parts are detecting a real failure without being fooled by a slow network, choosing exactly one replacement so you never end up with two primaries (split-brain), and redirecting traffic without waiting on slow caches or DNS. Failover spans tiers: a database promotes a replica to primary, and the edge routes around an unhealthy origin, but both are the same loop of detect, decide, redirect.",
+  "prerequisites": [
+    "circuit-breakers"
+  ],
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why redundancy alone is not availability, and what failover adds.",
+      "body": "Replication gives you spare copies, but spares do not help if nothing switches to them. If a database has one primary that takes writes and the primary dies, the replicas are useless for writing until one is promoted. If a service has three origins and one goes down, traffic keeps hitting the dead one until something stops sending it there. Redundancy is potential availability; failover is what turns it into actual availability.\n\nFailover is a loop with three steps: detect that a component has failed, decide on a healthy replacement, and redirect work to it. Each step is harder than it sounds. Detection must distinguish a truly dead node from a slow or briefly unreachable one, or it will fail over needlessly and cause the outage it meant to prevent. The decision must pick exactly one replacement, because two nodes both believing they are the primary, split-brain, can corrupt data. And redirection must take effect quickly, which is hard when clients cache the old address. Getting all three right, fast, is the whole topic."
+    },
+    "mentalModel": {
+      "outcome": "After this you can picture the detect, decide, redirect loop and where split-brain threatens it.",
+      "body": "Picture a primary and its replicas, plus a watcher observing them. The watcher continuously health-checks the primary. When checks fail, the watcher must answer: is the primary really dead, or just slow? To avoid being fooled, good systems do not trust a single missed check or a single observer; they ask several vantage points and act only when they agree, which is why failover and consensus are close relatives.\n\nOnce the watcher is confident, it promotes one replica to primary. This is a leader election, and it must yield exactly one winner, so it is typically backed by a quorum: only a replacement that a majority agrees on is allowed to take over, which prevents two primaries. Finally, clients must find the new primary. If they rely on DNS with a time-to-live, they may keep using the old address until the cache expires, so fast systems redirect at a layer they control, a load balancer or proxy, rather than waiting on a cache. The fencing of the old primary, making sure it cannot still accept writes, is the subtle safety step that stops split-brain.",
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-fo-model-t\" class=\"dg\"><title id=\"dg-c-fo-model-t\">Failover loop: a watcher health-checks the primary, confirms a real failure with several observers, promotes one replica by quorum (so there is never a second primary), fences the old primary, and updates a proxy so clients reach the new primary without waiting on DNS caches.</title><defs><marker id=\"dg-c-fo-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"40\" width=\"110\" height=\"40\" class=\"dg-box\"/><text x=\"75\" y=\"64.5\" class=\"dg-label\" text-anchor=\"middle\">Watcher</text><rect x=\"20\" y=\"130\" width=\"110\" height=\"40\" class=\"dg-box\" opacity=\"0.5\"/><text x=\"75\" y=\"154.5\" class=\"dg-label\" text-anchor=\"middle\">Primary (dead)</text><path d=\"M75,80 L75,130\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-c-fo-model-a)\"/><text x=\"82\" y=\"108\" class=\"dg-note\" text-anchor=\"start\">health check fails</text><rect x=\"20\" y=\"210\" width=\"110\" height=\"36\" class=\"dg-box dg-accent\"/><text x=\"75\" y=\"232.5\" class=\"dg-label\" text-anchor=\"middle\">Replica -&gt; new primary</text><path d=\"M130,60 L200,228 L130,228\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-model-a)\"/><text x=\"214\" y=\"150\" class=\"dg-note\" text-anchor=\"start\">promote by quorum</text><text x=\"214\" y=\"168\" class=\"dg-note\" text-anchor=\"start\">(exactly one winner)</text><rect x=\"360\" y=\"120\" width=\"110\" height=\"40\" class=\"dg-box\"/><text x=\"415\" y=\"144.5\" class=\"dg-label\" text-anchor=\"middle\">Proxy / LB</text><path d=\"M130,224 L360,150\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-model-a)\"/><rect x=\"360\" y=\"40\" width=\"110\" height=\"40\" class=\"dg-box\"/><text x=\"415\" y=\"64.5\" class=\"dg-label\" text-anchor=\"middle\">Clients</text><path d=\"M415,120 L415,80\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-model-a)\"/><text x=\"300\" y=\"286\" class=\"dg-note\" text-anchor=\"middle\">fence the old primary so it cannot still accept writes: no split-brain</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can walk through detection, promotion, fencing, and client redirection, and why each guards against a failure mode.",
+      "steps": [
+        {
+          "step": "Health-check continuously",
+          "explanation": "A monitor probes each component on an interval, checking not just that the process is up but that it is actually serving. What counts as healthy is defined per system, for example a successful query or an HTTP 200."
+        },
+        {
+          "step": "Confirm the failure with multiple observers",
+          "explanation": "To avoid acting on a slow network or a single bad vantage point, treat a failure as real only when several observers agree, for example when all of a primary's replicas report they cannot reach it. This is holistic detection."
+        },
+        {
+          "step": "Elect exactly one replacement",
+          "explanation": "Promote one replica to primary through a decision that cannot pick two, usually a quorum or consensus leader. Choosing the most up-to-date replica minimises data loss when replication was asynchronous."
+        },
+        {
+          "step": "Fence the old primary",
+          "explanation": "Ensure the failed primary cannot still accept writes if it comes back or was only partitioned, by revoking its lease, taking its address, or stopping it. Without fencing, two primaries can accept conflicting writes: split-brain."
+        },
+        {
+          "step": "Redirect clients fast",
+          "explanation": "Point clients at the new target through a layer you control, a proxy or load balancer, rather than relying on DNS time-to-live, so traffic moves in seconds instead of waiting for caches to expire."
+        },
+        {
+          "step": "Rebuild redundancy and dampen flapping",
+          "explanation": "Attach a fresh replica to restore the failure budget, and rate-limit repeated failovers so a flapping component does not trigger a storm of promotions."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-fo-how-t\" class=\"dg\"><title id=\"dg-c-fo-how-t\">The failover sequence: continuous health checks, failure confirmed by multiple observers, promotion of one replica by quorum, fencing the old primary against split-brain, fast client redirection through a proxy, and rebuilding redundancy while damping repeated failovers.</title><defs><marker id=\"dg-c-fo-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"18\" y=\"60\" width=\"96\" height=\"44\" class=\"dg-box\"/><text x=\"66\" y=\"84.5\" class=\"dg-label\" text-anchor=\"middle\">health check</text><path d=\"M114,82 L150,82\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-how-a)\"/><rect x=\"154\" y=\"60\" width=\"104\" height=\"44\" class=\"dg-box\"/><text x=\"206\" y=\"78\" class=\"dg-label\" text-anchor=\"middle\">confirm with</text><text x=\"206\" y=\"95\" class=\"dg-label\" text-anchor=\"middle\">many observers</text><path d=\"M258,82 L294,82\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-how-a)\"/><rect x=\"298\" y=\"60\" width=\"104\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"350\" y=\"78\" class=\"dg-label\" text-anchor=\"middle\">promote one</text><text x=\"350\" y=\"95\" class=\"dg-label\" text-anchor=\"middle\">by quorum</text><path d=\"M350,104 L350,140\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-how-a)\"/><rect x=\"298\" y=\"144\" width=\"104\" height=\"44\" class=\"dg-box\"/><text x=\"350\" y=\"162\" class=\"dg-label\" text-anchor=\"middle\">fence old</text><text x=\"350\" y=\"179\" class=\"dg-label\" text-anchor=\"middle\">primary</text><path d=\"M298,166 L154,166\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-how-a)\"/><rect x=\"50\" y=\"144\" width=\"104\" height=\"44\" class=\"dg-box\"/><text x=\"102\" y=\"162\" class=\"dg-label\" text-anchor=\"middle\">redirect via</text><text x=\"102\" y=\"179\" class=\"dg-label\" text-anchor=\"middle\">proxy / LB</text><text x=\"280\" y=\"232\" class=\"dg-note\" text-anchor=\"middle\">fencing prevents split-brain; a proxy avoids waiting on DNS TTL</text><text x=\"280\" y=\"262\" class=\"dg-note\" text-anchor=\"middle\">then attach a fresh replica and rate-limit repeated failovers</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can trace a database primary failure through promotion and redirection, and see where split-brain is prevented.",
+      "steps": [
+        {
+          "step": "A primary and its replicas",
+          "explanation": "A MySQL cluster has one primary taking writes and several replicas replaying its changes and serving reads, spread across data centers."
+        },
+        {
+          "step": "The primary stops responding",
+          "explanation": "A monitor's health checks to the primary start failing. Rather than acting on its own view, it treats the primary as failed only when the replicas also agree they cannot reach it."
+        },
+        {
+          "step": "Promote the best replica",
+          "explanation": "A failover controller, backed by consensus so only one decision is made, promotes the most up-to-date replica to primary. Because replication was asynchronous, picking the furthest-ahead replica minimises lost writes."
+        },
+        {
+          "step": "Fence and redirect",
+          "explanation": "The old primary is fenced so it cannot accept writes if it returns, and the new primary's identity is published to a proxy layer. Clients, which only ever knew a name routed through the proxy, now reach the new primary without a DNS wait."
+        },
+        {
+          "step": "Measure the outage",
+          "explanation": "From detection to clients writing again is on the order of ten seconds, not minutes, because detection is quorum-based and redirection is through a controlled proxy rather than DNS TTL expiry."
+        },
+        {
+          "step": "A slow network, not a death",
+          "explanation": "If instead the primary were merely slow for two seconds, requiring agreement across observers prevents a needless failover, avoiding the self-inflicted outage of promoting while the real primary is still alive."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-fo-ex-t\" class=\"dg\"><title id=\"dg-c-fo-ex-t\">A MySQL primary failure: the monitor and replicas agree the primary is unreachable, a consensus-backed controller promotes the most up-to-date replica, fences the old primary, and publishes the new primary to a proxy so clients reconnect in seconds without a DNS wait.</title><defs><marker id=\"dg-c-fo-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"40\" width=\"120\" height=\"38\" class=\"dg-box\" opacity=\"0.5\"/><text x=\"80\" y=\"63.5\" class=\"dg-label\" text-anchor=\"middle\">primary (dead)</text><rect x=\"20\" y=\"100\" width=\"120\" height=\"34\" class=\"dg-box dg-accent\"/><text x=\"80\" y=\"121.5\" class=\"dg-label\" text-anchor=\"middle\">replica (ahead)</text><rect x=\"20\" y=\"144\" width=\"120\" height=\"34\" class=\"dg-box\"/><text x=\"80\" y=\"165.5\" class=\"dg-label\" text-anchor=\"middle\">replica (behind)</text><rect x=\"210\" y=\"90\" width=\"130\" height=\"50\" class=\"dg-box\"/><text x=\"275\" y=\"110\" class=\"dg-label\" text-anchor=\"middle\">controller</text><text x=\"275\" y=\"127\" class=\"dg-label\" text-anchor=\"middle\">(consensus)</text><path d=\"M140,112 L210,114\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-ex-a)\"/><text x=\"175\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\">all agree: dead</text><path d=\"M275,140 L120,170 L140,160\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-ex-a)\"/><text x=\"275\" y=\"160\" class=\"dg-note\" text-anchor=\"middle\">promote the ahead replica</text><rect x=\"410\" y=\"90\" width=\"120\" height=\"50\" class=\"dg-box\"/><text x=\"470\" y=\"110\" class=\"dg-label\" text-anchor=\"middle\">proxy</text><text x=\"470\" y=\"127\" class=\"dg-label\" text-anchor=\"middle\">clients</text><path d=\"M340,115 L410,115\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-ex-a)\"/><text x=\"375\" y=\"107\" class=\"dg-note\" text-anchor=\"middle\">publish new primary</text><text x=\"280\" y=\"214\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">~10 seconds to recover: quorum detection + proxy redirect, no DNS wait</text><text x=\"280\" y=\"244\" class=\"dg-note\" text-anchor=\"middle\">fencing stops the old primary taking writes; a 2s slow blip triggers nothing</text></svg>"
+    },
+    "mistakesOutcome": "After this you can avoid the three most common failover mistakes.",
+    "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
+    "quiz": [
+      {
+        "question": "Why is replication alone not enough for high availability?",
+        "options": [
+          "Spare copies do nothing unless something detects a failure and switches traffic to them",
+          "Replication already handles failover automatically",
+          "Replicas are only for backups, never for serving"
+        ],
+        "correct": 0,
+        "why": "Redundancy is only potential availability; failover is the mechanism that detects the failure and promotes or routes to a healthy copy, turning spares into real availability.",
+        "wrong": [
+          "",
+          "Replication copies data but does not by itself detect failure or redirect clients; that is what failover adds.",
+          "Replicas commonly serve reads and become the new primary on failover, so they are not only backups."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "Why confirm a failure with multiple observers before failing over?",
+        "options": [
+          "To make the health checks run faster",
+          "To avoid being fooled by a slow or briefly unreachable node and failing over needlessly",
+          "Because one observer cannot send a health check"
+        ],
+        "correct": 1,
+        "why": "A single missed check can mean a slow network, not a dead node; requiring several vantage points to agree prevents a needless failover that would cause its own outage.",
+        "wrong": [
+          "More observers do not speed up checks; they raise confidence that the failure is real.",
+          "",
+          "One observer can check fine; the point is that one observer's view is not trustworthy enough to act on."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "What is split-brain, and what prevents it during failover?",
+        "options": [
+          "Two replicas falling behind; fixed by faster replication",
+          "The monitor crashing; fixed by more monitors",
+          "Two nodes both acting as primary and taking conflicting writes; prevented by electing one winner and fencing the old primary"
+        ],
+        "correct": 2,
+        "why": "If the old primary keeps accepting writes while a new one is promoted, both diverge; a quorum picks exactly one and fencing stops the old one from writing.",
+        "wrong": [
+          "Split-brain is about two primaries, not lagging replicas.",
+          "A crashed monitor is a different problem; split-brain is specifically two active primaries.",
+          ""
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "Why do fast systems redirect clients through a proxy or load balancer instead of DNS?",
+        "options": [
+          "Because DNS cannot store IP addresses",
+          "Because clients may cache a DNS record until its TTL expires, delaying the switch to the new target",
+          "Because proxies are cheaper than DNS"
+        ],
+        "correct": 1,
+        "why": "DNS answers are cached for their time-to-live, so clients can keep using the dead address for seconds or minutes; a controlled proxy layer moves traffic immediately.",
+        "wrong": [
+          "DNS does store addresses; the problem is caching and TTLs, not capability.",
+          "",
+          "Cost is not the reason; the reason is avoiding the delay of waiting for cached DNS to expire."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "During an asynchronous-replication failover, which replica should be promoted to minimise data loss?",
+        "options": [
+          "The most up-to-date replica, the one furthest ahead in applying the primary's changes",
+          "Any replica at random",
+          "The one with the least traffic"
+        ],
+        "correct": 0,
+        "why": "With asynchronous replication some replicas lag; promoting the furthest-ahead one loses the fewest acknowledged writes.",
+        "wrong": [
+          "",
+          "A random replica might be far behind, losing more writes than necessary.",
+          "Traffic level does not indicate how current a replica's data is."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why rate-limit or dampen repeated failovers?",
+        "options": [
+          "To make failover slower on purpose",
+          "Because failover is only allowed once per cluster ever",
+          "So a flapping component that fails and recovers repeatedly does not trigger a storm of promotions"
+        ],
+        "correct": 2,
+        "why": "A node that flaps up and down could cause back-to-back failovers, each disruptive; an anti-flapping delay lets things settle before failing over again.",
+        "wrong": [
+          "The aim is stability, not slowness for its own sake; a real failure still fails over promptly.",
+          "Failover can happen many times over a cluster's life; it is just damped against flapping.",
+          ""
+        ],
+        "teaches": "how"
+      }
+    ],
+    "postsOutcome": "After this you can describe how a database tier and an edge traffic tier each do failover, and the numbers they achieve.",
+    "differOutcome": "After this you can tell apart promoting a database primary and routing around an unhealthy origin at the edge.",
+    "exercisesOutcome": "After this you can design detection that avoids false positives, prevent split-brain, and plan cross-region failover.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A single-primary database fails over whenever one monitor misses two health checks, and it keeps failing over during brief network blips, causing more downtime than the blips would. Fix the detection.",
+        "answer": "Stop acting on a single observer. Require agreement from multiple vantage points, for example the primary's own replicas reporting they cannot reach it, before declaring a failure (holistic detection). Add a short confirmation window and an anti-flapping cooldown so a recovered node does not immediately trigger another failover. A true death still fails over quickly, but a two-second blip no longer does.",
+        "tradeoffs": "Requiring agreement adds a little detection latency before a real failover, in exchange for far fewer false positives. The cooldown briefly blocks a second failover, which is almost always what you want.",
+        "wrongAnswers": [
+          "Shorten the health-check interval so it reacts even faster to blips.",
+          "Fail over on the first missed check from any single monitor.",
+          "Disable failover entirely to stop the flapping."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "design",
+        "prompt": "Design failover for a single-writer database so that a promotion never results in two primaries, even if the old primary was only network-partitioned and later returns.",
+        "answer": "Make promotion a single, quorum-backed decision: only a replacement a majority agrees on may take over, so two primaries can never both be elected. Fence the old primary before or as the new one takes writes, by revoking its lease, removing its proxy entry, or stopping its write port, so a returning partitioned primary cannot accept writes. Route clients through a proxy whose backend is the elected primary, so a stale primary is simply not reachable as the write target.",
+        "tradeoffs": "Quorum promotion means a failover needs a majority reachable, so a cluster that has lost its majority will not promote, blocking writes rather than risking split-brain. Fencing adds a step and must itself be reliable, but it is the price of never corrupting data.",
+        "wrongAnswers": [
+          "Let any replica promote itself when it stops hearing the primary.",
+          "Skip fencing and assume the old primary stays down.",
+          "Rely on DNS TTL to eventually stop traffic to the old primary."
+        ],
+        "teaches": "model"
+      },
+      {
+        "level": "scale",
+        "prompt": "You serve from origins in several regions behind a global edge. A whole region's origins go unhealthy. How do you fail over in seconds for users worldwide without waiting on DNS?",
+        "answer": "Health-check each origin from the edge and group origins into pools per region, with a rule for how many unhealthy members trigger steering away. When a region's pool is unhealthy, the edge routes those users to the next-nearest healthy region automatically, deciding per edge location rather than globally. Because the edge terminates the connection and chooses the origin, you do not depend on clients honouring short DNS TTLs, so failover takes effect in seconds, as Cloudflare's Traffic Manager does.",
+        "tradeoffs": "Steering users to a farther region raises their latency until the home region recovers, and edge health checks add probing load. In return, failover is near-immediate and fine-grained, not gated on DNS caches. You must define what unhealthy means per pool to avoid steering on a transient dip.",
+        "wrongAnswers": [
+          "Lower DNS TTLs to a few seconds and hope every resolver respects them.",
+          "Fail over the entire globe when any one region dips.",
+          "Route all traffic to one region to simplify, losing geo-locality and that region's headroom."
+        ],
+        "teaches": "how"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can see how failover ties the reliability topics together.",
+      "body": "Failover builds directly on Replication, which provides the stand-ins, and on Circuit Breakers and health checks, which decide what counts as failed. Its promotion step is Consensus and leader election in practice, and its detection must respect the same slow-versus-dead ambiguity that Rate Limiting and Load Shedding handle. Together these are how a system stays available through failure."
+    }
+  },
+  "posts": [
+    {
+      "id": "github-mysql-ha-2020",
+      "title": "MySQL High Availability at GitHub",
+      "url": "https://github.blog/engineering/infrastructure/mysql-high-availability-at-github/",
+      "company": "GitHub",
+      "verifiedOn": "2026-10-11",
+      "published": "2018-06-20",
+      "ageNote": "From 2018, about eight years old, included for a fundamental that has not changed: how to fail a single-writer database over in seconds by detecting failure holistically, promoting with consensus, and redirecting clients through a controlled layer instead of DNS. GitHub's exact stack has evolved since, so treat the figures (such as 10 to 13 seconds) as of the post and the detect-promote-redirect design as the lasting lesson.",
+      "related": [
+        "replication",
+        "consensus",
+        "circuit-breakers"
+      ],
+      "digest": {
+        "problem": "GitHub runs multiple MySQL clusters in a classic primary-replicas setup: one primary accepts writes, replicas replay its changes asynchronously and serve reads. If the primary fails, writes stop until a replica is promoted, so GitHub needed automated failover that is fast, loses little or no data, works across data centers, and never produces two primaries.",
+        "constraints": "The previous design used Orchestrator for detection and failover but VIP and DNS for clients to find the primary, which had bad failure modes: VIP reassignment can split-brain, waiting to contact the dead primary to release its VIP wastes time, and DNS time-to-live means clients keep resolving the old address. The new design had to remove the DNS and VIP dependency and work cleanly across data centers.",
+        "walkthrough": [
+          {
+            "step": "Detect failure holistically",
+            "explanation": "Orchestrator does not trust a single probe. It triages by multiple observers, the replication topology servers themselves; when all of a primary's replicas agree they cannot contact it, the topology is broken de-facto and a failover is justified."
+          },
+          {
+            "step": "Run the controller on consensus",
+            "explanation": "GitHub runs a cross-data-center orchestrator/raft setup: the Orchestrator nodes communicate by Raft consensus, so failover is driven by the single raft leader and the decision is agreed, not made independently by many actors."
+          },
+          {
+            "step": "Promote a replica",
+            "explanation": "On a confirmed primary failure the orchestrator/raft leader promotes a replica to primary and begins fixing the replication tree beneath it."
+          },
+          {
+            "step": "Discover the new primary through Consul",
+            "explanation": "Instead of VIP and DNS, GitHub uses HashiCorp Consul for service discovery. Orchestrator writes the new primary's identity into Consul's key-value store, and propagates that change to all its nodes via Raft so every data center learns it."
+          },
+          {
+            "step": "Route clients through GLB",
+            "explanation": "Applications connect to write nodes through GLB/HAProxy, so discovery, as far as the apps are concerned, ends at the proxy. When Consul is updated, the proxy backends change; clients never need to re-resolve a name or wait for a DNS cache."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-ghmy-t\" class=\"dg\"><title id=\"dg-ghmy-t\">GitHub MySQL failover: an orchestrator/raft cluster detects a dead primary when its replicas agree they cannot reach it, the raft leader promotes a replica, writes the new primary into Consul and propagates it by raft, and apps reach the primary through GLB/HAProxy so no DNS TTL wait is needed; total outage is typically 10 to 13 seconds.</title><defs><marker id=\"dg-ghmy-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"18\" y=\"120\" width=\"120\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"78\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\">orchestrator</text><text x=\"78\" y=\"157\" class=\"dg-label\" text-anchor=\"middle\">/raft leader</text><rect x=\"18\" y=\"40\" width=\"120\" height=\"40\" class=\"dg-box\" opacity=\"0.5\"/><text x=\"78\" y=\"64.5\" class=\"dg-label\" text-anchor=\"middle\">primary (dead)</text><rect x=\"18\" y=\"210\" width=\"120\" height=\"38\" class=\"dg-box\"/><text x=\"78\" y=\"233.5\" class=\"dg-label\" text-anchor=\"middle\">replica -&gt; primary</text><path d=\"M78,120 L78,80\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-ghmy-a)\"/><text x=\"86\" y=\"104\" class=\"dg-note\" text-anchor=\"start\">replicas agree: dead</text><path d=\"M78,168 L78,210\" class=\"dg-line\" marker-end=\"url(#dg-ghmy-a)\"/><text x=\"86\" y=\"192\" class=\"dg-note\" text-anchor=\"start\">promote</text><rect x=\"230\" y=\"120\" width=\"110\" height=\"48\" class=\"dg-box\"/><text x=\"285\" y=\"150.5\" class=\"dg-label\" text-anchor=\"middle\">Consul KV</text><path d=\"M138,140 L230,142\" class=\"dg-line\" marker-end=\"url(#dg-ghmy-a)\"/><text x=\"184\" y=\"132\" class=\"dg-note\" text-anchor=\"middle\">write primary</text><rect x=\"410\" y=\"120\" width=\"120\" height=\"48\" class=\"dg-box\"/><text x=\"470\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\">GLB / HAProxy</text><text x=\"470\" y=\"157\" class=\"dg-label\" text-anchor=\"middle\">apps connect here</text><path d=\"M340,144 L410,144\" class=\"dg-line\" marker-end=\"url(#dg-ghmy-a)\"/><text x=\"280\" y=\"284\" class=\"dg-note\" text-anchor=\"middle\">no VIP, no DNS TTL wait: typically 10 to 13 seconds of total outage</text></svg>",
+        "numbers": [
+          {
+            "value": "10 to 13 seconds",
+            "meaning": "Total outage time in most failover cases with the orchestrator/raft plus Consul plus GLB design"
+          },
+          {
+            "value": "up to 20-25 seconds",
+            "meaning": "Total outage in less frequent (20s) and extreme (25s) cases"
+          },
+          {
+            "value": "one primary",
+            "meaning": "The single write node per cluster; failover must promote exactly one replacement to avoid split-brain"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Holistic, replica-corroborated failure detection; a cross-DC orchestrator/raft consensus controller for promotion; Consul plus GLB/HAProxy for client discovery, removing VIP and DNS.",
+          "rejected": "The earlier VIP-and-DNS discovery, which risked split-brain on VIP reassignment, wasted time contacting the dead primary, and left clients waiting on DNS time-to-live.",
+          "why": "VIP and DNS tied failover speed to cache expiry and to co-locating servers, and could leave two hosts claiming one VIP. Moving discovery into Consul fed by orchestrator/raft lets GitHub fail over across data centers without a DNS wait and with a single agreed decision, bringing most failovers to 10 to 13 seconds."
+        },
+        "failures": "The post is candid about the old design's failure modes it set out to kill: VIP reassignment split-brain, the wasted step of asking a dead primary to release its VIP, and DNS TTL delaying client cutover, with cross-DC failover especially slow. The new design still has limits it names, including that failover is not instantaneous and that split-brain mitigation is partly still in the works.",
+        "takeaways": "Fast database failover is three problems, not one: detect without false positives (corroborate across replicas), decide once (consensus-backed promotion), and redirect without waiting on caches (a proxy fed by service discovery, not DNS). Doing all three is what takes GitHub's outage window down to around ten seconds, and it is why failover leans on both replication and consensus."
+      }
+    },
+    {
+      "id": "cloudflare-traffic-manager-2026",
+      "title": "Cloudflare Traffic Manager: The Details",
+      "url": "https://blog.cloudflare.com/cloudflare-traffic-manager-the-details/",
+      "company": "Cloudflare",
+      "verifiedOn": "2026-10-11",
+      "published": "2024-09-26",
+      "related": [
+        "circuit-breakers",
+        "replication"
+      ],
+      "digest": {
+        "problem": "Cloudflare sits in front of customers' origin servers and needs to steer traffic away from origins that become unavailable, fast, without the customer re-architecting. The challenge is doing this at the edge for users worldwide: detecting unhealthy origins and failing over in seconds, rather than depending on DNS changes that clients may cache.",
+        "constraints": "Traffic Manager had three scenarios in mind: load balancing, failover, and geo-steering. It must make failover decisions at a per-data-center level across Cloudflare's many locations, and it must not rely on clients respecting short DNS time-to-live values, which they often do not.",
+        "walkthrough": [
+          {
+            "step": "Define what healthy means with health checks",
+            "explanation": "The system is underpinned by health-checking functionality that lets the customer define what a healthy origin means to them, for example an expected status code, so detection matches the real service, not just a reachable port."
+          },
+          {
+            "step": "Group origins into pools",
+            "explanation": "Origins are organised into pools with a rule for the failure mode: given a pool of five servers you might sustain two unhealthy ones, but a third failure triggers steering traffic to the next data center."
+          },
+          {
+            "step": "Fail over at the edge within seconds",
+            "explanation": "For proxied (orange-clouded) records, Cloudflare can fail over within seconds. Connecting clients do not wait for recursive DNS caches to expire or need to trust sub-60-second TTLs, because the edge, not DNS, chooses the origin."
+          },
+          {
+            "step": "Decide per data center",
+            "explanation": "At 100 data centers and growing, Cloudflare assesses origin availability and makes fine-grained failover decisions at a per-data-center level, so a failure is routed around locally rather than globally."
+          },
+          {
+            "step": "Geo-steer and balance load",
+            "explanation": "Beyond failover, Traffic Manager directs traffic to the nearest origin by region (geo-steering) and spreads load across healthy servers (active-active round robin), so healthy capacity is used well, not just as a cold spare."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-cftm-t\" class=\"dg\"><title id=\"dg-cftm-t\">Cloudflare Traffic Manager: edge data centers health-check origin pools; when a pool crosses its unhealthy threshold the edge steers users to the next-nearest healthy region within seconds for proxied records, deciding per data center rather than waiting on DNS caches.</title><defs><marker id=\"dg-cftm-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"18\" y=\"120\" width=\"120\" height=\"48\" class=\"dg-box\"/><text x=\"78\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\">user</text><text x=\"78\" y=\"157\" class=\"dg-label\" text-anchor=\"middle\">(a region)</text><path d=\"M138,144 L198,144\" class=\"dg-line\" marker-end=\"url(#dg-cftm-a)\"/><rect x=\"202\" y=\"112\" width=\"130\" height=\"64\" class=\"dg-box dg-accent\"/><text x=\"267\" y=\"138\" class=\"dg-label\" text-anchor=\"middle\">edge data center</text><text x=\"267\" y=\"156\" class=\"dg-label\" text-anchor=\"middle\">health-checks pools</text><path d=\"M332,130 L392,70\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-cftm-a)\"/><path d=\"M332,158 L392,218\" class=\"dg-line\" marker-end=\"url(#dg-cftm-a)\"/><rect x=\"396\" y=\"50\" width=\"150\" height=\"40\" class=\"dg-box\" opacity=\"0.5\"/><text x=\"471\" y=\"74.5\" class=\"dg-label\" text-anchor=\"middle\">home pool (unhealthy)</text><rect x=\"396\" y=\"198\" width=\"150\" height=\"40\" class=\"dg-box\"/><text x=\"471\" y=\"222.5\" class=\"dg-label\" text-anchor=\"middle\">next region (healthy)</text><text x=\"267\" y=\"202\" class=\"dg-note\" text-anchor=\"middle\">threshold crossed</text><text x=\"280\" y=\"270\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">steer within seconds for proxied records; no DNS TTL wait</text><text x=\"280\" y=\"290\" class=\"dg-note\" text-anchor=\"middle\">decision made per data center, across 100+ locations</text></svg>",
+        "numbers": [
+          {
+            "value": "within seconds",
+            "meaning": "Failover time for proxied (orange-clouded) records, without waiting for DNS caches to expire"
+          },
+          {
+            "value": "sub-60s TTLs not trusted",
+            "meaning": "Clients need not respect short DNS time-to-live values, because the edge chooses the origin"
+          },
+          {
+            "value": "100+ data centers",
+            "meaning": "Locations from which Cloudflare assesses origin availability and makes per-data-center failover decisions"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Edge-driven failover: health-checked origin pools with per-pool failure thresholds, decisions per data center, and steering within seconds for proxied traffic, plus geo-steering and active-active load balancing.",
+          "rejected": "Relying on DNS failover, where clients may cache the old answer for the TTL and keep hitting a dead origin.",
+          "why": "Because clients cannot be trusted to honour short TTLs, DNS-based failover is slow and unreliable. Making the edge terminate the connection and choose the origin lets Cloudflare react in seconds and at a fine, per-data-center granularity, and reuse the same machinery for load balancing and geo-steering."
+        },
+        "failures": "The post is explicit that DNS-based failover's weakness, clients ignoring or caching short TTLs, is exactly what pushed the decision to the edge. It also makes clear failover is a judgement: the customer must define what healthy means and how many unhealthy pool members should trigger steering, since too twitchy a threshold would steer on a transient dip and too lax a one would leave users on a failing origin.",
+        "takeaways": "Failover is not only a database concern; at the edge it means health-checking origins and routing around unhealthy ones faster than DNS can propagate. Terminating the connection at a layer you control, and deciding per location, is what lets failover happen in seconds, the same lesson as GitHub's move off DNS, applied to global traffic instead of a single database."
+      }
+    }
+  ],
+  "comparison": "Both posts solve failover, the detect-decide-redirect loop, and both reach the same core conclusion: do not let client-side DNS caching set your recovery time. But they operate at different tiers, which is why they teach different things together. GitHub is failover of a stateful single-writer database: the hard parts are promoting exactly one replica and losing as little data as possible. Cloudflare is failover of stateless traffic at the edge: the hard part is deciding, per location and in seconds, which healthy origin to use.\n\nWhere they diverge is what \"decide\" means. For GitHub the decision is a consensus-backed promotion, because electing two primaries would corrupt data, so it runs orchestrator on Raft and corroborates failure across the primary's replicas before acting. For Cloudflare the decision is a health-and-threshold judgement over a pool of interchangeable origins, made independently at each of its many data centers, because routing a request to a different healthy origin has no split-brain risk. Statefulness is the difference: a promoted database primary is a point of no return; a re-routed request is not.\n\nThe evidence reflects the tiers. GitHub reports total outage of 10 to 13 seconds in most cases, up to 20 to 25 in rarer ones, with the win coming from Consul-plus-proxy discovery replacing VIP and DNS. Cloudflare reports failover within seconds for proxied records across 100-plus data centers, with the win coming from the edge choosing the origin rather than trusting sub-60-second TTLs. Read together, they show failover as one pattern applied at two layers, and that redirect speed, not just detection, is what determines how long users feel an outage.",
+  "glossary": [
+    {
+      "term": "Failover",
+      "definition": "Detecting a failed component and switching to a healthy stand-in so the system keeps serving."
+    },
+    {
+      "term": "Health check",
+      "definition": "A periodic probe that decides whether a component is actually serving, not just running."
+    },
+    {
+      "term": "Promotion",
+      "definition": "Turning a replica into the new primary when the old primary fails."
+    },
+    {
+      "term": "Split-brain",
+      "definition": "Two nodes both acting as primary and taking conflicting writes; failover must prevent it."
+    },
+    {
+      "term": "Fencing",
+      "definition": "Ensuring a failed or partitioned primary cannot still accept writes, by revoking its lease or address."
+    },
+    {
+      "term": "Holistic detection",
+      "definition": "Declaring a failure only when multiple observers (such as the primary's replicas) agree, to avoid false positives."
+    },
+    {
+      "term": "Service discovery",
+      "definition": "A system (such as Consul) that tells clients, via a proxy, which node is currently the primary."
+    },
+    {
+      "term": "DNS TTL",
+      "definition": "How long a DNS answer is cached; relying on it makes failover wait for caches to expire."
+    },
+    {
+      "term": "Origin pool",
+      "definition": "A group of interchangeable origin servers with a rule for how many may be unhealthy before steering away."
+    },
+    {
+      "term": "Geo-steering",
+      "definition": "Routing each user to the nearest healthy region, and to the next-nearest on failure."
+    }
+  ],
+  "mistakes": [
+    "Failing over on a single missed health check. A slow or briefly unreachable node looks dead to one observer; acting on that alone causes needless failovers, so confirm with multiple observers before promoting.",
+    "Forgetting to fence the old primary. If the failed primary returns or was only partitioned and keeps accepting writes while a new one is promoted, you get split-brain and divergent data; promotion must be a single quorum-backed decision plus fencing.",
+    "Relying on DNS time-to-live to redirect clients. Clients cache DNS answers and may ignore short TTLs, so traffic keeps hitting the dead target; redirect through a proxy or edge you control instead."
+  ]
+}

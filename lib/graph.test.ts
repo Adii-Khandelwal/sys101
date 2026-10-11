@@ -59,7 +59,10 @@ function plan(nodes: { slug: string; title: string }[], edges: E[], stageWidth: 
   const labelWidth = new Map(nodes.map((n) => [n.slug, n.title.length * perChar * scale]));
   const width = stageWidth - PAD * 2;
   const rows = rowCount(cols, orientation);
-  const height = Math.min(rows * 120 + 158, 700) - PAD - PAD_TOP; // as the map: CSS stage height, 86px top padding
+  // Horizontal keeps the CSS stage-height cap; vertical (stacked) grows to fit every
+  // node at full spacing, matching the uncapped .graph-stage[data-orientation="vertical"].
+  const rawHeight = rows * 120 + 158;
+  const height = (orientation === "horizontal" ? Math.min(rawHeight, 700) : rawHeight) - PAD - PAD_TOP;
   const stage = { minX: -PAD + 8, maxX: width + PAD - 8, minY: -PAD + 8, maxY: height + PAD_TOP - 24 };
   const lay = orientation === "horizontal" ? chooseLayers(cols, drawn, { width, height, labelWidth }, stage) : cols;
   const { positions, required } = fitPositions(lay, orientation, { width, height, labelWidth, edges: drawn });
