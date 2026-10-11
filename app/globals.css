@@ -434,6 +434,75 @@ a:hover {
   height: 8px;
 }
 
+/* ── Homepage extras: Try a question, sources, Still to come ── */
+.home-extra {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+  max-width: 68ch;
+}
+
+.home-extra h2 {
+  margin: 0 0 16px;
+}
+
+.home-extra-note {
+  margin: 12px 0 0;
+  font-size: 16px;
+  color: var(--ink-soft);
+}
+
+.home-extra.planned {
+  max-width: none;
+}
+
+.home-extra.planned .home-extra-note {
+  margin: 0 0 20px;
+}
+
+.try-source {
+  margin: 0 0 6px;
+}
+
+.try-question {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.5;
+}
+
+.try-options li {
+  padding: 2px 0;
+}
+
+.try-options .option {
+  min-height: 44px;
+}
+
+.try-result p {
+  margin: 10px 0 0;
+}
+
+.try-wrong {
+  color: var(--ink-soft);
+}
+
+.sources-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  font-size: 18px;
+}
+
+.sources-count {
+  margin-left: 6px;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
 /* ── Home view toggle (Map / Path) ───────── */
 .home-toolbar {
   display: flex;

@@ -39,6 +39,14 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - Display: "x of N done", a thin segmented bar, and a Continue link. Detail on hover and for screen readers.
 - /data (linked in the footer): export, import with validation first, reset.
 
+## Homepage
+
+- Order: masthead (Next up, Start here, search), the map or Path view with the "All topics" index (Inside a topic), Try a question, Where the posts come from, Still to come. Thin dividers, no cards, icons, or images.
+- Every homepage number, name, and excerpt is computed from data at build time (topics, quiz, posts, content/roadmap.json). Never hardcode them.
+- Try a question: the first DNS lesson quiz question. Component state only; never reads or writes the progress store.
+- Where the posts come from: companies alphabetical with post counts, plain text.
+- Still to come: content/roadmap.json (typed in lib/roadmap.ts), planned topics in curriculum order with a group, not clickable. The build fails on duplicates or a planned topic that already exists; delete its entry when a topic is written.
+
 ## Graph
 
 - The graph is the homepage on desktop (768px and up). Under 768px the homepage defaults to the Path view (components/PathView.tsx), a linear grouped syllabus; a Map/Path toggle switches between them and an explicit choice is remembered per browser and wins at any width. Layout is deterministic, left to right by prerequisite depth, and panning never moves nodes.

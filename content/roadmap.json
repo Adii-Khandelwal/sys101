@@ -1,0 +1,11 @@
+[
+  { "title": "CAP Theorem", "group": "Data" },
+  { "title": "Consensus", "group": "Data" },
+  { "title": "Distributed Transactions", "group": "Data" },
+  { "title": "Pub-Sub", "group": "Messaging" },
+  { "title": "Event-Driven Design", "group": "Messaging" },
+  { "title": "Rate Limiting", "group": "Reliability" },
+  { "title": "Circuit Breakers", "group": "Reliability" },
+  { "title": "Failover", "group": "Reliability" },
+  { "title": "Capstone Case Studies", "group": "Case studies" }
+]
