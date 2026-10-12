@@ -3,7 +3,7 @@
 Read this first in any session and continue from RESUME. Use scripts/topic-brief.mjs instead of reading topic JSON. One build at the end of each phase.
 
 ## Phase A (feature and Caching pilot, then STOP)
-- [ ] A1 Schema, rendering, checks, tests (empty allowlist structure)
+- [x] A1 Schema, rendering, checks, tests (empty allowlist structure)
 - [ ] A2 Pilot candidates for Caching shown as a table, STOP for approval (write nothing before approval)
 - [ ] A3 After approval: write items, verify:news, build, tests, SEO, search index, CLAUDE.md, commit, stop
 
@@ -18,4 +18,4 @@ Read this first in any session and continue from RESUME. Use scripts/topic-brief
 - NEWS_MODE is a constant in lib/site.ts ("review" default). Change it together with the auto-merge variable.
 - The news section sits outside the main data-pagefind-body div (Original posts is outside it too), so it has its own data-pagefind-body; its heading "What's new in <Topic>" is the search label.
 
-RESUME: start A1.
+RESUME: A1 committed. Do A2: find up to 3 Caching candidates from the last 12 months (today 2026-10-12), show the table, STOP for approval; write nothing before approval. Visual check at 1440/390 happens in A3 with real items.

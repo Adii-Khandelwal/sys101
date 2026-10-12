@@ -1,0 +1,11 @@
+export const KINDS: string[];
+export const MAX_ITEMS: number;
+export const NO_DATE: string;
+export function isDate(v: unknown): boolean;
+export function isDateShown(v: unknown): boolean;
+export function latestDay(dateShown: string): string | null;
+export function olderThan12Months(dateShown: string, today: string): boolean;
+export function normalizeUrl(u: string): string;
+export function hostAllowed(url: string, domains: string[]): boolean;
+export function checkSummary(summary: string, evidence: string): string[];
+export function validateNews(data: unknown, ctx: { allowedDomains: string[]; originalUrls: string[]; today: string }): { errors: string[]; warnings: string[] };

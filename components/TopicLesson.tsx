@@ -9,6 +9,8 @@ import LessonRail from "./LessonRail";
 import InterviewTag from "./InterviewTag";
 import Reveal from "./Reveal";
 import SiteFooter from "./SiteFooter";
+import WhatsNew from "./WhatsNew";
+import type { News } from "@/lib/news";
 
 type Props = {
   topic: Topic;
@@ -17,6 +19,8 @@ type Props = {
   titles: Map<string, string>;
   /** Link to the topic's "Start from zero" page, when it has one. */
   learnHref?: string;
+  /** Recent items from approved sources, shown after What to learn next. */
+  news?: News | null;
 };
 
 const SECTION_NAMES: Record<string, string> = {
@@ -79,7 +83,7 @@ function InShort({ topic }: { topic: Topic }) {
 }
 
 /** Topic page in the teaching-journey format: concept first, then real-world posts. */
-export default function TopicLesson({ topic, prerequisites, dependents, titles, learnHref }: Props) {
+export default function TopicLesson({ topic, prerequisites, dependents, titles, learnHref, news }: Props) {
   const l = topic.lesson!;
   const meta: LessonMeta = { slug: topic.slug, postIds: topic.posts.map((p) => p.id!), correct: l.quiz.map((q) => optionId(q.options[q.correct])) };
   const names: Record<string, string> = {
@@ -287,6 +291,8 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
           <FinishTopic meta={meta} />
         </div>
       </div>
+
+      <WhatsNew title={topic.title} news={news ?? null} />
 
       <section className="sources" aria-labelledby="sources" data-pagefind-ignore>
         <h2 id="sources" className="label">

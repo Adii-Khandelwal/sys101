@@ -2837,3 +2837,42 @@ html {
     margin-left: auto;
   }
 }
+
+/* "What's new in <Topic>": after What to learn next, before Original posts. */
+.whats-new {
+  margin-top: 64px;
+}
+.whats-new h2 {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+.whats-new ul {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+}
+.whats-new li {
+  margin: 0 0 20px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+}
+.whats-new li p {
+  margin: 0 0 4px;
+}
+.whats-new-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+}
+.whats-new li a {
+  display: inline-block;
+  min-height: 44px;
+  padding: 8px 0;
+  font-size: 19px;
+}
+.whats-new-note {
+  margin: 0;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
