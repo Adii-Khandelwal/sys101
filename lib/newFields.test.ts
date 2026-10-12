@@ -92,3 +92,16 @@ describe("summary figure lines", () => {
     }
   });
 });
+
+describe("summary figure labels against the post", () => {
+  it("only use numbers that exist in the post's digest or header", () => {
+    const nums = (t: string) => t.match(/\d[\d,.]*\d|\d/g) ?? [];
+    for (const t of getAllTopics()) {
+      for (const f of t.summary?.figures ?? []) {
+        const p = t.posts.find((x) => x.id === f.postId)!;
+        const source = JSON.stringify([p.digest, p.title, p.company, p.published, p.edition]);
+        for (const n of nums(f.label)) expect(source, `${t.slug} ${f.postId}: "${n}" in "${f.label}"`).toContain(n);
+      }
+    }
+  });
+});

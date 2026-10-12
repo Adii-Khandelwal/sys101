@@ -44,7 +44,7 @@
       ],
       "figures": [
         { "postId": "meta-mysql-raft-2023", "row": 0, "label": "typical failover about 2 s with Raft, 20 to 40 s with semi-synchronous replication" },
-        { "postId": "github-mysql-ha-2018", "row": 3, "label": "primary waits 500 ms for a replica to confirm a write before moving on" }
+        { "postId": "meta-mysql-raft-2023", "row": 4, "label": "typical planned promotion takes about 300 ms" }
       ]
     },
     "prerequisiteReasons": {

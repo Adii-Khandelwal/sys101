@@ -41,7 +41,7 @@
       ],
       "figures": [
         { "postId": "cloudflare-dns-builds-2022", "row": 5, "label": "150x average speedup of per-record builds over full zone builds" },
-        { "postId": "slack-dnssec-2021", "row": 0, "label": "under 1% of Slack's online users were affected by the DNSSEC outage" }
+        { "postId": "slack-dnssec-2021", "row": 0, "label": "less than 1% of Slack's online user base was affected by the DNSSEC outage" }
       ]
     }
   },

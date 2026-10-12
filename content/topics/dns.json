@@ -21,7 +21,7 @@
       {
         "postId": "slack-dnssec-2021",
         "row": 0,
-        "label": "under 1% of Slack's online users were affected by the DNSSEC outage"
+        "label": "less than 1% of Slack's online user base was affected by the DNSSEC outage"
       }
     ]
   },
