@@ -29,7 +29,7 @@ export default function Background() {
         <h1 data-pagefind-meta="title">Background</h1>
         <p className="background-lead">
           The posts on each topic assume a few things the topic itself does not teach. They are listed here, each with the sentence that
-          assumes it. A concept taught later in the course gets a one-line gist and a link forward, and the gist is enough for now.
+          assumes it. A concept marked Taught later comes up in a later topic, and its one-line gist is enough for now.
         </p>
 
         {files.map((b) => {

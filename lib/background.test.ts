@@ -99,7 +99,7 @@ describe("the /background page", () => {
     const caching = getBackground("caching")!;
     const later = caching.items.filter((i) => isTaughtLater(i, "caching", numbers)).map((i) => i.id);
     expect(later.sort()).toEqual(["circuit-breaker", "consensus", "eventual-and-strong-consistency", "publish-subscribe", "sharding"]);
-    expect(html.match(/Taught later/g)).toHaveLength(later.length);
+    expect(html.match(/class="label bg-later">Taught later</g)).toHaveLength(later.length);
     // Databases comes before Caching, so it is not "later", and the page says nothing about where it is taught.
     expect(isTaughtLater({ topicPage: "databases" }, "caching", numbers)).toBe(false);
     expect(html).not.toMatch(/Taught earlier|topic 01/);
@@ -125,6 +125,11 @@ describe("the /background page", () => {
     expect(displayQuote("we don\u2019t")).toBe("we don\u2019t");
     expect(html).not.toContain("\u201C\u201C");
     expect(html).not.toMatch(/<q>[^<]*\u201C/);
+  });
+
+  it("intro says what the page does now: no link forward", () => {
+    expect(html).toContain("A concept marked Taught later comes up in a later topic, and its one-line gist is enough for now.");
+    expect(html).not.toMatch(/link forward/i);
   });
 
   it("uses no emoji and no em dash", () => {
