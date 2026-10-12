@@ -10,6 +10,8 @@ export type PathEntry = {
   number: string;
   group: string;
   prerequisites: string[];
+  /** Why each prerequisite comes first, by prerequisite id. */
+  reasons?: Record<string, string>;
 };
 
 type Props = {
@@ -96,9 +98,22 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
                         {st === "read" ? "read. " : st === "progress" ? "in progress. " : st === "ready" ? "ready to read. " : "unread. "}
                       </span>
                       {buildsOn.length > 0 ? (
-                        <>
-                          <span className="path-meta-key">Builds on</span> {buildsOn.join(", ")}
-                        </>
+                        e.reasons ? (
+                          <>
+                            <span className="path-meta-key">Builds on</span>
+                            <span className="path-reasons">
+                              {e.prerequisites.map((p) => (
+                                <span key={p}>
+                                  {titleOf.get(p) ?? p}: {e.reasons?.[p]}
+                                </span>
+                              ))}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="path-meta-key">Builds on</span> {buildsOn.join(", ")}
+                          </>
+                        )
                       ) : (
                         <span className="path-meta-key">A starting point</span>
                       )}

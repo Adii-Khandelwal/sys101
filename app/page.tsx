@@ -92,6 +92,7 @@ export default function Home() {
           number: formatNumber(numbers.get(t.slug)!),
           group: t.group ?? groupFromDepth(depth.get(t.slug) ?? 0),
           prerequisites: t.prerequisites,
+          reasons: t.prerequisiteReasons,
         }))}
       />
 

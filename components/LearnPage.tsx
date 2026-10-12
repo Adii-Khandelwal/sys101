@@ -90,6 +90,18 @@ export default function LearnPage({ topic, learn, titles }: Props) {
               .
             </p>
           )}
+          {learn.before.prerequisites.some((s) => topic.prerequisiteReasons?.[s]) && (
+            <ul className="relation-reasons">
+              {learn.before.prerequisites.map(
+                (s) =>
+                  topic.prerequisiteReasons?.[s] && (
+                    <li key={s}>
+                      {titles.get(s) ?? s}: {topic.prerequisiteReasons[s]}
+                    </li>
+                  ),
+              )}
+            </ul>
+          )}
           <dl className="learn-terms">
             {learn.before.terms.map((t) => (
               <div key={t.term}>

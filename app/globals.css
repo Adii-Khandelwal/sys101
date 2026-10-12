@@ -2811,3 +2811,17 @@ html {
   font-size: 15px;
   color: var(--ink-soft);
 }
+.path-reasons {
+  display: block;
+  margin-top: 2px;
+}
+.path-reasons > span {
+  display: block;
+  margin-top: 2px;
+}
+.relation-reasons {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
