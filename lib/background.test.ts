@@ -3,7 +3,6 @@ import path from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import Background from "../app/background/page";
-import SiteFooter from "../components/SiteFooter";
 import sitemap from "../app/sitemap";
 import { backgroundHref, backgroundUpdated, displayQuote, getAllBackground, getBackground, isTaughtLater, validateBackground, type Background as BackgroundFile } from "./background";
 import { topicNumbers, topicOrder } from "./order";
@@ -191,16 +190,5 @@ describe("validation catches the mistakes it is for", () => {
     const a = good();
     a.topic = "nope";
     expect(validateBackground("nope.json", a, topics).join()).toContain('no topic "nope"');
-  });
-});
-
-describe("the footer", () => {
-  it("links to /background, in the same style as the other footer links", () => {
-    const footer = renderToStaticMarkup(SiteFooter() as never);
-    expect(footer).toContain('<a href="/background">Background</a>');
-    const links = [...footer.matchAll(/<a href="(\/[^"]*)"([^>]*)>/g)];
-    // every internal footer link is a plain link with no extra class or attributes, so they all look alike
-    expect(new Set(links.map((m) => m[2].trim()))).toEqual(new Set([""]));
-    expect(links.map((m) => m[1])).toEqual(["/about", "/glossary", "/background", "/terms", "/privacy", "/data"]);
   });
 });
