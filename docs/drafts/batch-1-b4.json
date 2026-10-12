@@ -1,0 +1,72 @@
+{
+  "pub-sub": {
+    "summary": {
+      "points": [
+        "Publish-subscribe lets a producer announce that something happened without knowing who needs to hear it: every subscription gets its own copy of each message.",
+        "A queue hands each message to one consumer; pub-sub hands it to every subscription, and only inside a subscription do consumers share the work.",
+        "Spotify gives each kind of message its own topic and pipeline, so a noisy or blocked kind delays only itself.",
+        "Uber's Consumer Proxy gives up order inside a partition so any worker can take any message, which suits only work where order does not matter."
+      ],
+      "figures": [
+        { "postId": "spotify-event-delivery-2019", "row": 2, "label": "over 8M events per second global peak at the end of Q1 2019" },
+        { "postId": "uber-consumer-proxy-2021", "row": 1, "label": "over 300 microservices use Kafka for pub-sub message queueing" }
+      ]
+    },
+    "prerequisiteReasons": {
+      "message-queues": "Publish-subscribe takes from message queues the lease, the acknowledgement and at-least-once delivery, now applied to each subscription separately."
+    }
+  },
+  "rate-limiting": {
+    "summary": {
+      "points": [
+        "Rate limiting caps how many requests a client can make in a window of time, so one noisy caller cannot use up shared capacity.",
+        "Counting is easy on one machine and hard across many, so real systems trade a little accuracy for speed and keep the shared count off the request path.",
+        "Cloudflare chooses the counting algorithm by what its store can do atomically and cheaply, and keeps the block decision as a small flag servers can cache.",
+        "Databricks counts locally, reports in batches and lets each key's owner answer with a time to reject until, accepting some overshoot."
+      ],
+      "figures": [
+        { "postId": "cloudflare-rate-limiting-2017", "row": 1, "label": "0.003% of requests wrongly allowed or limited in the accuracy test" },
+        { "postId": "databricks-ratelimiting-2025", "row": 1, "label": "tail latency improvement of up to 10x in some cases" }
+      ]
+    },
+    "prerequisiteReasons": {
+      "caching": "Rate limiting takes from caching the idea of keeping a small piece of state close to the request, and of tolerating a slightly stale copy.",
+      "consistent-hashing": "Rate limiting takes from consistent hashing the way to send every request for one key to the same owner of its counter."
+    }
+  },
+  "replication": {
+    "summary": {
+      "points": [
+        "Replication keeps copies of a database on several machines so reads can spread out and a failed primary can be replaced.",
+        "The hard questions are when a write counts as safe, and how to pick and announce a new primary without two machines accepting writes at once.",
+        "Meta put promotions and membership changes into the replication log, which removes a whole class of coordination bugs.",
+        "GitHub gives each part one job, decides by quorum across data centers, and never depends on the failed node to help."
+      ],
+      "figures": [
+        { "postId": "meta-mysql-raft-2023", "row": 0, "label": "typical failover about 2 s with Raft, 20 to 40 s with semi-synchronous replication" },
+        { "postId": "github-mysql-ha-2018", "row": 0, "label": "10 to 13 s typical total outage during a failover" }
+      ]
+    },
+    "prerequisiteReasons": {
+      "databases": "Replication takes from databases the write-ahead log, since replicas stay current by replaying the primary's log in the same order."
+    }
+  },
+  "sharding": {
+    "summary": {
+      "points": [
+        "Sharding splits one large dataset across many databases by a key, so each database stores and serves only part of it.",
+        "The key decides which queries stay on one shard and which must visit all of them, and the layout decides how hard adding machines later is.",
+        "Figma gives each shard a fixed range of hashed keys instead of a hash ring, and splits the move into a logical step and a physical one.",
+        "Notion fixes the number of shards and grows by moving whole shards between hosts, choosing a shard count with many divisors."
+      ],
+      "figures": [
+        { "postId": "figma-postgres-sharding-2024", "row": 0, "label": "almost 100x growth of Figma's database stack since 2020" },
+        { "postId": "notion-postgres-sharding-2021", "row": 1, "label": "32 physical databases at launch, 15 shards each" }
+      ]
+    },
+    "prerequisiteReasons": {
+      "replication": "Sharding takes from replication the idea of data spread over several machines, and the question of which machine holds which data.",
+      "consistent-hashing": "Sharding takes from consistent hashing the idea of mapping a key to a machine, and the contrast with a fixed range of hashed keys per shard."
+    }
+  }
+}

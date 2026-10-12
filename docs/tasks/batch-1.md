@@ -15,8 +15,8 @@ Read this first in any session and continue from RESUME. (TaskCreate/TaskUpdate 
 ## Phase B (after the user says "continue"): batches of 4 topics
 Per-topic status (todo / drafted / applied):
 caching: pilot | consensus: pilot
-cap: applied | cdns: applied | circuit-breakers: applied | consistent-hashing: applied | databases: applied | distributed-transactions: applied | dns: applied | event-driven-architecture: applied | failover: applied | indexing: applied | load-balancing: applied | message-queues: applied | pub-sub: todo | rate-limiting: todo | replication: todo | sharding: todo
-- [ ] After the last batch: set REQUIRE_NEW_FIELDS = true, full build, tests, SEO check, list every figure referenced.
+cap: applied | cdns: applied | circuit-breakers: applied | consistent-hashing: applied | databases: applied | distributed-transactions: applied | dns: applied | event-driven-architecture: applied | failover: applied | indexing: applied | load-balancing: applied | message-queues: applied | pub-sub: applied | rate-limiting: applied | replication: applied | sharding: applied
+- [x] After the last batch: set REQUIRE_NEW_FIELDS = true, full build, tests, SEO check, list every figure referenced.
 
 ## Decisions
 - Map tooltip reasons skipped: graph code is out of scope for this batch and the tooltip already carries concept, status, builds-on and a pending line; failover has 3 prerequisites, so it would not stay under 20 lines.
@@ -24,4 +24,4 @@ cap: applied | cdns: applied | circuit-breakers: applied | consistent-hashing: a
 - Ordering: topicOrder() in lib/order.ts = columns() of the transitive reduction, flattened (the existing Map index order). Numbers are global 1..N.
 - Context passes about 70%: stop at a batch boundary, update RESUME, tell the user to /clear and paste "Continue batch 1 from docs/tasks/batch-1.md."
 
-RESUME: batches 1 to 3 applied. Next: batch 4 (pub-sub, rate-limiting, replication, sharding), then final steps (REQUIRE_NEW_FIELDS = true, full build, tests, SEO, list figures, CLAUDE.md).
+RESUME: all 18 topics filled, REQUIRE_NEW_FIELDS = true. Only the final full build, tests, SEO check and search index remain (see git log for the result); then done.

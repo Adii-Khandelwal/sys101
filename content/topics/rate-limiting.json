@@ -8,6 +8,30 @@
     "caching",
     "consistent-hashing"
   ],
+  "summary": {
+    "points": [
+      "Rate limiting caps how many requests a client can make in a window of time, so one noisy caller cannot use up shared capacity.",
+      "Counting is easy on one machine and hard across many, so real systems trade a little accuracy for speed and keep the shared count off the request path.",
+      "Cloudflare chooses the counting algorithm by what its store can do atomically and cheaply, and keeps the block decision as a small flag servers can cache.",
+      "Databricks counts locally, reports in batches and lets each key's owner answer with a time to reject until, accepting some overshoot."
+    ],
+    "figures": [
+      {
+        "postId": "cloudflare-rate-limiting-2017",
+        "row": 1,
+        "label": "0.003% of requests wrongly allowed or limited in the accuracy test"
+      },
+      {
+        "postId": "databricks-ratelimiting-2025",
+        "row": 1,
+        "label": "tail latency improvement of up to 10x in some cases"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "caching": "Rate limiting takes from caching the idea of keeping a small piece of state close to the request, and of tolerating a slightly stale copy.",
+    "consistent-hashing": "Rate limiting takes from consistent hashing the way to send every request for one key to the same owner of its counter."
+  },
   "lesson": {
     "why": {
       "outcome": "After this you can explain why a service limits requests per client and what makes counting hard.",

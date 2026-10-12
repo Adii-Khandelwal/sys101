@@ -70,7 +70,7 @@ describe("summary figure lines", () => {
   it("marks the company's own headline or target figures", () => {
     expect(figureLine(post("Median latency, the post's headline"), { row: 0, label: "x" })).toMatch(/\(company's own figure\)$/);
     expect(figureLine(post("A target for latency"), { row: 0, label: "x" })).toMatch(/own figure/);
-    expect(figureLine(post("Measured latency"), { row: 0, label: "x" })).toBe("x, Acme June 2022");
+    expect(figureLine(post("Measured latency"), { row: 0, label: "x" })).toBe("X, Acme June 2022");
   });
   it("shows every figure's date exactly as the post header does, and as the year in Original posts", () => {
     for (const t of getAllTopics()) {

@@ -7,6 +7,29 @@
   "prerequisites": [
     "message-queues"
   ],
+  "summary": {
+    "points": [
+      "Publish-subscribe lets a producer announce that something happened without knowing who needs to hear it: every subscription gets its own copy of each message.",
+      "A queue hands each message to one consumer; pub-sub hands it to every subscription, and only inside a subscription do consumers share the work.",
+      "Spotify gives each kind of message its own topic and pipeline, so a noisy or blocked kind delays only itself.",
+      "Uber's Consumer Proxy gives up order inside a partition so any worker can take any message, which suits only work where order does not matter."
+    ],
+    "figures": [
+      {
+        "postId": "spotify-event-delivery-2019",
+        "row": 2,
+        "label": "over 8M events per second global peak at the end of Q1 2019"
+      },
+      {
+        "postId": "uber-consumer-proxy-2021",
+        "row": 1,
+        "label": "over 300 microservices use Kafka for pub-sub message queueing"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "message-queues": "Publish-subscribe takes from message queues the lease, the acknowledgement and at-least-once delivery, now applied to each subscription separately."
+  },
   "posts": [
     {
       "id": "spotify-event-delivery-2019",

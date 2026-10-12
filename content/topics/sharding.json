@@ -8,6 +8,30 @@
     "replication",
     "consistent-hashing"
   ],
+  "summary": {
+    "points": [
+      "Sharding splits one large dataset across many databases by a key, so each database stores and serves only part of it.",
+      "The key decides which queries stay on one shard and which must visit all of them, and the layout decides how hard adding machines later is.",
+      "Figma gives each shard a fixed range of hashed keys instead of a hash ring, and splits the move into a logical step and a physical one.",
+      "Notion fixes the number of shards and grows by moving whole shards between hosts, choosing a shard count with many divisors."
+    ],
+    "figures": [
+      {
+        "postId": "figma-postgres-sharding-2024",
+        "row": 0,
+        "label": "almost 100x growth of Figma's database stack since 2020"
+      },
+      {
+        "postId": "notion-postgres-sharding-2021",
+        "row": 1,
+        "label": "32 physical databases at launch, 15 shards each"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "replication": "Sharding takes from replication the idea of data spread over several machines, and the question of which machine holds which data.",
+    "consistent-hashing": "Sharding takes from consistent hashing the idea of mapping a key to a machine, and the contrast with a fixed range of hashed keys per shard."
+  },
   "posts": [
     {
       "id": "figma-postgres-sharding-2024",

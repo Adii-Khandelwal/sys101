@@ -118,7 +118,7 @@ export const isOwnClaim = (row: { meaning: string }) => /headline|\btarget\b|\bg
 
 /** The line a summary figure renders as: label, company, date string, and a note when the number is the company's own claim. */
 export function figureLine(post: Post, f: { row: number; label: string }) {
-  return `${f.label}, ${post.company} ${postDateLabel(post)}${isOwnClaim(post.digest.numbers[f.row]) ? " (company's own figure)" : ""}`;
+  return `${f.label[0].toUpperCase()}${f.label.slice(1)}, ${post.company} ${postDateLabel(post)}${isOwnClaim(post.digest.numbers[f.row]) ? " (company's own figure)" : ""}`;
 }
 
 export type Topic = {
@@ -133,7 +133,7 @@ export type Topic = {
   description?: string;
   concept: string;
   prerequisites: string[];
-  /** In short: 3 to 5 plain sentences and 0 to 3 digest figures. Required on every topic once REQUIRE_NEW_FIELDS is true. */
+  /** In short: 3 to 5 plain sentences and 0 to 3 digest figures. Required on every topic (REQUIRE_NEW_FIELDS). */
   summary?: Summary;
   /** Why each prerequisite comes first: one sentence per prerequisite id, hidden edges included. */
   prerequisiteReasons?: Record<string, string>;
@@ -341,8 +341,8 @@ function checkLesson(topic: Topic): string[] {
   return problems;
 }
 
-/** Flip to true when every topic has `summary` and `prerequisiteReasons` (docs/tasks/batch-1.md). Until then they are checked only where present. */
-export const REQUIRE_NEW_FIELDS = false;
+/** Every topic must have `summary`, and `prerequisiteReasons` when it has prerequisites. Set to false only while backfilling a new field. */
+export const REQUIRE_NEW_FIELDS = true;
 
 const wordCount = (v: string) => v.trim().split(/\s+/).length;
 /** Phrasing the site never uses: em dashes and the "it's not X, it's Y" pattern. */

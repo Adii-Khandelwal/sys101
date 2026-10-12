@@ -7,6 +7,29 @@
   "prerequisites": [
     "databases"
   ],
+  "summary": {
+    "points": [
+      "Replication keeps copies of a database on several machines so reads can spread out and a failed primary can be replaced.",
+      "The hard questions are when a write counts as safe, and how to pick and announce a new primary without two machines accepting writes at once.",
+      "Meta put promotions and membership changes into the replication log, which removes a whole class of coordination bugs.",
+      "GitHub gives each part one job, decides by quorum across data centers, and never depends on the failed node to help."
+    ],
+    "figures": [
+      {
+        "postId": "meta-mysql-raft-2023",
+        "row": 0,
+        "label": "typical failover about 2 s with Raft, 20 to 40 s with semi-synchronous replication"
+      },
+      {
+        "postId": "github-mysql-ha-2018",
+        "row": 0,
+        "label": "10 to 13 s typical total outage during a failover"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "databases": "Replication takes from databases the write-ahead log, since replicas stay current by replaying the primary's log in the same order."
+  },
   "posts": [
     {
       "id": "meta-mysql-raft-2023",
