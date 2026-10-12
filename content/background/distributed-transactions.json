@@ -1,0 +1,86 @@
+{
+  "topic": "distributed-transactions",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "mapreduce",
+      "name": "MapReduce",
+      "explanation": "A way to process a huge dataset in large batches: many machines each handle a slice, then the results are combined. Every step finishes over the whole dataset before the next begins.",
+      "assumedBy": [
+        {
+          "postId": "google-percolator-2010",
+          "quote": "The MapReduces must be run again over the entire repository, that is, over both the new pages and the old pages."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Apache Hadoop MapReduce Tutorial",
+          "publisher": "Apache Hadoop",
+          "url": "https://hadoop.apache.org/docs/stable/hadoop-mapreduce-client/hadoop-mapreduce-client-core/MapReduceTutorial.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "bigtable",
+      "name": "Bigtable",
+      "explanation": "Google's distributed storage system for structured data. It scales to huge tables but does not give programmers multi-row transactions, which Percolator adds on top.",
+      "assumedBy": [
+        {
+          "postId": "google-percolator-2010",
+          "quote": "Distributed storage systems like Bigtable [9] can scale to the size of our repository"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Bigtable: A Distributed Storage System for Structured Data",
+          "publisher": "Google Research",
+          "url": "https://research.google/pubs/bigtable-a-distributed-storage-system-for-structured-data/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "isolation-levels",
+      "name": "Isolation levels and SERIALIZABLE",
+      "explanation": "An isolation level says how much concurrent transactions can see of each other. Serializable is the strictest: the result is as if they ran one at a time.",
+      "assumedBy": [
+        {
+          "postId": "cockroachdb-transaction-pipelining-2019",
+          "quote": "In fact, CockroachDB provides the strongest level of isolation, SERIALIZABLE, so that the integrity of your data is always preserved."
+        }
+      ],
+      "sources": [
+        {
+          "title": "PostgreSQL docs: Transaction Isolation",
+          "publisher": "PostgreSQL Global Development Group",
+          "url": "https://www.postgresql.org/docs/current/transaction-iso.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "rocksdb",
+      "name": "RocksDB",
+      "explanation": "An embedded key-value database that a program links in and uses as its storage engine. It writes bytes to disk so committed data survives a restart.",
+      "assumedBy": [
+        {
+          "postId": "cockroachdb-transaction-pipelining-2019",
+          "quote": "CockroachDB uses RocksDB, an embedded key-value database maintained by Facebook, as its storage engine."
+        }
+      ],
+      "sources": [
+        {
+          "title": "RocksDB: A persistent key-value store",
+          "publisher": "RocksDB",
+          "url": "https://rocksdb.org/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    }
+  ]
+}
