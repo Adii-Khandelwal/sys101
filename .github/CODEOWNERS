@@ -1,5 +1,6 @@
-# Anything that can change what runs, what is checked or what the site teaches needs my review.
-# Needs the branch protection setting "Require review from Code Owners" (docs/routines/README.md, section 1).
+# Who owns what (a record, not a gate): code that can change what runs, what is checked or what the site teaches.
+# With one owner this protects nothing and must NOT be required for review (docs/routines/README.md, section 1): GitHub
+# does not let an author approve their own pull request, and routine pull requests carry the owner's identity.
 # The routine's pull requests touch only content/news/** and docs/news-state.json, which are not listed here.
 /.github/**               @Adii-Khandelwal
 /scripts/**               @Adii-Khandelwal

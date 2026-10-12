@@ -14,6 +14,7 @@ Read this first in any session and continue from RESUME. Use scripts/topic-brief
 - [x] B4 allowedDomains table for all 18 topics, STOP for approval, then write docs/news-state.json, run checks, commit
 
 ## Decisions
+- pathPattern (anchored, validated regex) is allowed only in docs/news-state.json; Uber uses one pattern for all locales. CODEOWNERS is a record only: do not require code-owner review or approvals (sole owner, routine PRs carry the owner's identity).
 - Allowlist entries are { host, pathPrefix?, publisher, kinds? }; item publisher must equal the entry publisher. Dropped by the user: allthingsdistributed.com, elastic.co/blog, databricks.com/blog, mongodb.com. zapier.com/engineering/ exists only as a redirect to /blog/categories/engineering-insights/ (article URLs are under /blog/), so it would match nothing and was dropped.
 - The workflow runs on pull_request_target from base code; PR files are read as data only; claude/ branches may not change allowedDomains.
 - Approved Caching items: Valkey 9.1 memory post, CloudFront invalidation by cache tag. Valkey 9.1 release post dropped. No third item.
@@ -22,4 +23,4 @@ Read this first in any session and continue from RESUME. Use scripts/topic-brief
 - NEWS_MODE is a constant in lib/site.ts ("review" default). Change it together with the auto-merge variable.
 - The news section sits outside the main data-pagefind-body div (Original posts is outside it too), so it has its own data-pagefind-body; its heading "What's new in <Topic>" is the search label.
 
-RESUME: Both phases done and committed (allowlists, then hardening). Nothing is pushed. Next for the user: merge the hardening to main, run the test PR in docs/routines/README.md section 7, then create the routine.
+RESUME: All done and committed locally; nothing pushed. The user follows docs/routines/README.md "Setup order".
