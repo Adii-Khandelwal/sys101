@@ -25,7 +25,8 @@ export default function WhatsNew({ title, news }: { title: string; news: News | 
         ))}
       </ul>
       <p className="whats-new-note">
-        Added by an automated routine after automated checks{NEWS_MODE === "review" ? " and reviewed by me before publishing" : ""}.
+        {news.items.every((i) => i.origin === "routine") ? "Added by an automated routine after automated checks" : "Selected and checked with automated tools"}
+        {NEWS_MODE === "review" ? " and reviewed by me before publishing" : ""}.
       </p>
     </section>
   );

@@ -4,24 +4,34 @@
     {
       "id": "valkey-9-1-memory-overhead",
       "kind": "engineering-post",
+      "origin": "manual",
       "title": "Reducing Memory Overhead in Valkey 9.1",
       "publisher": "Valkey project",
       "url": "https://valkey.io/blog/9.1-memory-efficiency/",
       "dateShown": "2026-08-13",
-      "summary": "The Valkey project says its latest release trims per-key memory overhead for strings and sorted sets, so a cache may fit more data and hit more often.",
-      "evidence": "your cache may achieve a higher hit rate without requiring any changes",
+      "summary": "The Valkey project says Valkey 9.1 trims per-key memory overhead for strings and sorted sets, so a cache may achieve a higher hit rate.",
+      "evidence": [
+        "Valkey 9.1 introduces three optimizations that reduce the per-key memory overhead",
+        "reduce the memory required to store strings and sorted sets",
+        "your cache may achieve a higher hit rate without requiring any changes"
+      ],
       "addedOn": "2026-10-12",
       "verifiedOn": "2026-10-12"
     },
     {
       "id": "cloudfront-invalidation-by-cache-tag",
       "kind": "engineering-post",
+      "origin": "manual",
       "title": "Manage caches with precision using Amazon CloudFront Invalidation by Cache Tag",
       "publisher": "Amazon Web Services",
       "url": "https://aws.amazon.com/blogs/networking-and-content-delivery/manage-caches-with-precision-using-amazon-cloudfront-invalidation-by-cache-tag/",
       "dateShown": "2026-05-04",
       "summary": "Amazon Web Services describes invalidating CloudFront objects by cache tag so related content can be purged together, and reports that invalidations take effect in under 5 seconds at P95.",
-      "evidence": "invalidations take effect in under 5 seconds at P95",
+      "evidence": [
+        "Amazon CloudFront is launching Invalidation by Cache Tag",
+        "you can invalidate groups of related cached objects using a single invalidation request",
+        "invalidations take effect in under 5 seconds at P95"
+      ],
       "addedOn": "2026-10-12",
       "verifiedOn": "2026-10-12"
     }

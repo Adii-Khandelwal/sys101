@@ -11,12 +11,13 @@ const summary = "The project added a new eviction policy that frees memory by re
 const item = (extra: object = {}) => ({
   id: "redis-eviction",
   kind: "docs",
+  origin: "routine",
   title: "Key eviction",
   publisher: "Redis",
   url: "https://redis.io/docs/latest/develop/reference/eviction/",
   dateShown: "2026-08-01",
   summary,
-  evidence: "removes the least recently used keys first",
+  evidence: ["removes the least recently used keys first", "frees memory by removing older entries"],
   addedOn: "2026-10-12",
   verifiedOn: "2026-10-12",
   ...extra,
@@ -51,34 +52,56 @@ describe("validateNews", () => {
     expect(check([item({ dateShown: "2025-01-01" })]).warnings.join()).toMatch(/older than 12 months/);
     expect(check([item({ dateShown: "no date shown" })]).errors).toEqual([]);
   });
-  it("limits evidence to 15 words", () => {
-    expect(check([item({ evidence: "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen" })]).errors.join()).toMatch(/at most 15/);
+  it("limits evidence to 1 to 3 different phrases of at most 15 words", () => {
+    const long = "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen";
+    expect(check([item({ evidence: [long] })]).errors.join()).toMatch(/phrase 1 is 16 words, at most 15/);
+    expect(check([item({ evidence: [] })]).errors.join()).toMatch(/1 to 3 phrases/);
+    expect(check([item({ evidence: "a single string" })]).errors.join()).toMatch(/1 to 3 phrases/);
+    expect(check([item({ evidence: ["a b", "c d", "e f", "g h"] })]).errors.join()).toMatch(/1 to 3 phrases/);
+    expect(check([item({ evidence: ["The same phrase", "the same phrase"] })]).errors.join()).toMatch(/different from each other/);
+  });
+  it("needs a known origin", () => {
+    expect(check([item({ origin: "manual" })]).errors).toEqual([]);
+    expect(check([item({ origin: "bot" })]).errors.join()).toMatch(/origin must be one of manual, routine/);
+    const { origin: _o, ...without } = item();
+    expect(check([without]).errors.join()).toMatch(/origin must be/);
   });
 });
 
 describe("checkSummary", () => {
   it("needs 12 to 30 words in one sentence", () => {
-    expect(checkSummary("Too short.", "")).toEqual(expect.arrayContaining([expect.stringMatching(/needs 12 to 30/)]));
-    expect(checkSummary(`${summary} And a second one follows it here.`, "").join()).toMatch(/one sentence/);
+    expect(checkSummary("Too short.", [])).toEqual(expect.arrayContaining([expect.stringMatching(/needs 12 to 30/)]));
+    expect(checkSummary(`${summary} And a second one follows it here.`, []).join()).toMatch(/one sentence/);
   });
   it("rejects em dashes and not-but phrasing", () => {
-    expect(checkSummary(summary.replace("that", "— that"), "").join()).toMatch(/banned/);
-    expect(checkSummary("The release is not a rewrite but a change to how the cache frees memory under pressure.", "").join()).toMatch(/banned/);
+    expect(checkSummary(summary.replace("that", "— that"), ["x"]).join()).toMatch(/banned/);
+    expect(checkSummary("The release is not a rewrite but a change to how the cache frees memory under pressure.", ["x"]).join()).toMatch(/banned/);
   });
   it("allows a figure only when the evidence has it", () => {
     const withFigure = "Redis says the release cut memory use for large caches by about 30 percent in the maintainers' own benchmark.";
-    expect(checkSummary(withFigure, "memory down 30 percent", "Redis").join()).toBe("");
-    expect(checkSummary(withFigure, "memory went down", "Redis").join()).toMatch(/"30"/);
+    expect(checkSummary(withFigure, ["memory down 30 percent", "release cut memory use"], "Redis").join()).toBe("");
+    expect(checkSummary(withFigure, ["memory went down", "release cut memory use"], "Redis").join()).toMatch(/"30"/);
+  });
+  it("needs one evidence phrase for every 15 words of summary", () => {
+    const short = "The project changed how it stores small strings and keeps each key in a single block of memory."; // 18 words
+    expect(checkSummary(short, ["one phrase"]).join()).toMatch(/needs at least 2 evidence phrases.*found 1/);
+    expect(checkSummary(short, ["one phrase", "two phrases"])).toEqual([]);
+    const twelve = "The project changed how it stores small strings in one block."; // 11 words, so padded below
+    const exactly15 = "The project changed how it stores small strings and keeps each key in one block.";
+    expect(exactly15.split(" ").length).toBe(15);
+    expect(checkSummary(exactly15, ["one phrase"])).toEqual([]);
+    expect(checkSummary(`${exactly15.slice(0, -1)} again.`, ["one phrase"]).join()).toMatch(/needs at least 2/);
+    expect(twelve.split(" ").length).toBeLessThan(12);
   });
   it("credits the source for any figure or comparison", () => {
     const plain = "The project changed how it stores small strings so that each key carries more data than before.";
-    expect(checkSummary(plain, "", "Valkey project").join()).toMatch(/attribution/);
-    expect(checkSummary("The project changed how it stores small strings and keeps each key in a single block of memory.", "", "Valkey project").join()).toBe("");
+    expect(checkSummary(plain, ["a", "b"], "Valkey project").join()).toMatch(/attribution/);
+    expect(checkSummary("The project changed how it stores small strings and keeps each key in a single block of memory.", ["a", "b"], "Valkey project").join()).toBe("");
     const faster = "The release makes string lookups faster by keeping small values next to their header in memory.";
-    expect(checkSummary(faster, "", "Valkey project").join()).toMatch(/attribution/);
-    expect(checkSummary(faster.replace("The release", "The Valkey project says the release"), "", "Valkey project").join()).toBe("");
-    expect(checkSummary(faster.replace("The release", "The project says the release"), "", "Valkey project").join()).toMatch(/naming "Valkey"/);
-    expect(checkSummary(faster.replace("The release makes", "Valkey describes how the release makes"), "", "Valkey project").join()).toBe("");
+    expect(checkSummary(faster, ["a", "b"], "Valkey project").join()).toMatch(/attribution/);
+    expect(checkSummary(faster.replace("The release", "The Valkey project says the release"), ["a", "b"], "Valkey project").join()).toBe("");
+    expect(checkSummary(faster.replace("The release", "The project says the release"), ["a", "b"], "Valkey project").join()).toMatch(/naming "Valkey"/);
+    expect(checkSummary(faster.replace("The release makes", "Valkey describes how the release makes"), ["a", "b"], "Valkey project").join()).toBe("");
   });
 });
 
@@ -179,10 +202,21 @@ describe("What's new section", () => {
     expect(out).toContain(summary);
     expect(out).not.toContain("least recently used keys first");
   });
+  it("says 'automated routine' only when every item came from the routine", () => {
+    const routine = html({ asOf: today, items: [item() as unknown as NewsItem] });
+    expect(routine).toContain("Added by an automated routine after automated checks");
+    const manual = html({ asOf: today, items: [item({ origin: "manual" }) as unknown as NewsItem] });
+    expect(manual).toContain("Selected and checked with automated tools");
+    expect(manual).not.toContain("automated routine");
+    const mixed = html({ asOf: today, items: [item() as unknown as NewsItem, item({ id: "b", origin: "manual" }) as unknown as NewsItem] });
+    expect(mixed).toContain("Selected and checked with automated tools");
+    expect(mixed).not.toContain("automated routine");
+  });
   it("claims review only in review mode", () => {
-    const out = html({ asOf: today, items: [item() as unknown as NewsItem] });
-    expect(out.includes("reviewed by me")).toBe(NEWS_MODE === "review");
-    expect(out).toContain("Added by an automated routine after automated checks");
+    for (const origin of ["routine", "manual"]) {
+      const out = html({ asOf: today, items: [item({ origin }) as unknown as NewsItem] });
+      expect(out.includes("and reviewed by me before publishing")).toBe(NEWS_MODE === "review");
+    }
   });
 });
 

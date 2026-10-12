@@ -1,7 +1,7 @@
 // Opens every What's new URL and confirms what the file claims. Needs the network, so it is not in the build.
 //   npm run verify:news
 // For each item: fetch the page raw (the Wayback Machine copy when the site blocks us, and it says so),
-// confirm the evidence phrase is in the page text, confirm dateShown matches a date the page shows, and fail
+// confirm every evidence phrase is in the page text, confirm dateShown matches a date the page shows, and fail
 // any item older than 12 months. Any miss fails the run.
 import fs from "node:fs";
 import path from "node:path";
@@ -56,7 +56,8 @@ for (const f of files) {
     try {
       const { html, archive } = await fetchPage(it.url, state.allowedDomains?.[f.replace(/\.json$/, "")] ?? []);
       if (archive) note = " (verified from archive copy)";
-      if (!evidenceFound(pageText(html), it.evidence)) problems.push(`evidence not found in the page text: "${it.evidence}"`);
+      const text = pageText(html);
+      for (const phrase of it.evidence) if (!evidenceFound(text, phrase)) problems.push(`evidence not found in the page text: "${phrase}"`);
       const shown = datesShown(html);
       if (!dateMatches(it.dateShown, shown)) {
         problems.push(shown.length ? `dateShown ${it.dateShown} matches none of the dates on the page` : `dateShown ${it.dateShown} but the page shows no date`);

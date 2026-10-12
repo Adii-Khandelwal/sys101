@@ -4,7 +4,10 @@
 export const KINDS = ["release", "engineering-post", "standard", "docs"];
 export const MAX_ITEMS = 3;
 export const NO_DATE = "no date shown";
-const ITEM_KEYS = ["id", "kind", "title", "publisher", "url", "dateShown", "summary", "evidence", "addedOn", "verifiedOn"];
+const ITEM_KEYS = ["id", "kind", "origin", "title", "publisher", "url", "dateShown", "summary", "evidence", "addedOn", "verifiedOn"];
+export const ORIGINS = ["manual", "routine"];
+export const MAX_EVIDENCE = 3;
+export const WORDS_PER_EVIDENCE = 15;
 
 const words = (t) => t.trim().split(/\s+/).filter(Boolean).length;
 const nonEmpty = (v) => typeof v === "string" && v.trim().length > 0;
@@ -143,16 +146,24 @@ const BANNED = /—|\bnot\b[^.]{0,60}\bbut\b|\bit['’]s not\b|\bisn['’]t just
 const COMPARATIVE = /\b(faster|higher|lower|more|less|better|improves?|improved)\b/i;
 const ATTRIBUTION = /\b(says|reports|claims|describes)\b/i;
 
-/** Rules for one item's summary. `publisher` names the source the summary must credit. Returns problems. */
+/**
+ * Rules for one item's summary. `evidence` is the list of phrases copied from the page. The summary needs at least one
+ * phrase per 15 words (a longer summary makes more claims), and any digit in it must appear in a phrase. `publisher`
+ * names the source the summary must credit. Returns problems.
+ */
 export function checkSummary(summary, evidence, publisher = "") {
   if (!nonEmpty(summary)) return ["summary is empty"];
   const out = [];
+  const list = Array.isArray(evidence) ? evidence : [];
+  const joined = list.join(" ");
   const n = words(summary);
   if (n < 12 || n > 30) out.push(`summary is ${n} words, needs 12 to 30`);
   if (!/[.!?]$/.test(summary.trim()) || /[.!?]\s+\S/.test(summary.trim())) out.push("summary must be one sentence ending with a full stop");
   if (BANNED.test(summary)) out.push('summary has banned phrasing (em dash or "not X but Y")');
+  const needed = Math.ceil(n / WORDS_PER_EVIDENCE);
+  if (list.length < needed) out.push(`summary is ${n} words, so it needs at least ${needed} evidence phrases (one per ${WORDS_PER_EVIDENCE} words), found ${list.length}`);
   for (const d of summary.match(/\d[\d,.]*\d|\d/g) ?? []) {
-    if (!String(evidence ?? "").includes(d)) out.push(`summary figure "${d}" does not appear in the evidence`);
+    if (!joined.includes(d)) out.push(`summary figure "${d}" does not appear in the evidence`);
   }
   // A figure or a comparison is the source's claim: the sentence says so and names the source.
   if (/\d/.test(summary) || COMPARATIVE.test(summary)) {
@@ -186,7 +197,16 @@ export function validateNews(data, ctx) {
     const err = (m) => errors.push(`${where}: ${m}`);
     if (!it || typeof it !== "object") return err("must be an object");
     for (const k of Object.keys(it)) if (!ITEM_KEYS.includes(k)) err(`unknown field "${k}"`);
-    for (const k of ["id", "title", "publisher", "url", "summary", "evidence"]) if (!nonEmpty(it[k])) err(`${k} is empty`);
+    for (const k of ["id", "title", "publisher", "url", "summary"]) if (!nonEmpty(it[k])) err(`${k} is empty`);
+    if (!ORIGINS.includes(it.origin)) err(`origin must be one of ${ORIGINS.join(", ")}`);
+    if (!Array.isArray(it.evidence) || it.evidence.length < 1 || it.evidence.length > MAX_EVIDENCE) err(`evidence must be a list of 1 to ${MAX_EVIDENCE} phrases`);
+    else {
+      it.evidence.forEach((e, j) => {
+        if (!nonEmpty(e)) err(`evidence phrase ${j + 1} is empty`);
+        else if (words(e) > 15) err(`evidence phrase ${j + 1} is ${words(e)} words, at most 15`);
+      });
+      if (new Set(it.evidence.map((e) => String(e).trim().toLowerCase())).size !== it.evidence.length) err("evidence phrases must be different from each other");
+    }
     if (nonEmpty(it.id)) {
       if (!/^[a-z0-9][a-z0-9-]*$/.test(it.id)) err("id must be lowercase letters, digits and hyphens");
       if (ids.has(it.id)) err("duplicate id");
@@ -204,7 +224,6 @@ export function validateNews(data, ctx) {
     else if (olderThan12Months(it.dateShown, ctx.today)) warnings.push(`${where}: dateShown ${it.dateShown} is older than 12 months`);
     else if (it.dateShown !== NO_DATE && latestDay(it.dateShown) > ctx.today) err("dateShown is in the future");
     checkSummary(it.summary, it.evidence, it.publisher).forEach(err);
-    if (nonEmpty(it.evidence) && words(it.evidence) > 15) err(`evidence is ${words(it.evidence)} words, at most 15`);
     for (const k of ["addedOn", "verifiedOn"]) {
       if (!isDate(it[k])) err(`${k} must be a YYYY-MM-DD date`);
       else if (it[k] > ctx.today) err(`${k} is in the future`);

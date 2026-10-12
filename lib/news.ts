@@ -11,8 +11,10 @@ export type NewsItem = {
   /** YYYY-MM-DD, YYYY-MM, YYYY or "no date shown": exactly what the source page shows. */
   dateShown: string;
   summary: string;
-  /** A phrase copied from the source page. Only the checkers read it; it is never displayed. */
-  evidence: string;
+  /** 1 to 3 phrases copied from the source page, at least one per 15 summary words. Only the checkers read them; never displayed. */
+  evidence: string[];
+  /** "manual": picked and written in a working session. "routine": added by the scheduled routine. Decides the note under the section. */
+  origin: "manual" | "routine";
   addedOn: string;
   verifiedOn: string;
 };
