@@ -97,7 +97,7 @@ The unit tests also scan the homepage source so that no count or date is hardcod
 
 ## Link checks
 
-Every post records `verifiedOn`, the date someone last opened it and checked the digest, and each source link shows "Checked on <date>". A GitHub Action (`.github/workflows/link-check.yml`) requests every source URL each Monday and keeps one "Source links failing" issue in sync: it opens the issue, rewrites it on later runs, and closes it once every link passes, so reruns never duplicate it. Pages never fetch sources at runtime, so a dead link only affects the outbound link. Run it locally with `node scripts/check-links.mjs`.
+Every post records `verifiedOn`, the date someone last opened it and checked the digest, and each page ends with one "Page last updated <date>" line derived from those dates. A GitHub Action (`.github/workflows/link-check.yml`) requests every source URL each Monday and keeps one "Source links failing" issue in sync: it opens the issue, rewrites it on later runs, and closes it once every link passes, so reruns never duplicate it. Pages never fetch sources at runtime, so a dead link only affects the outbound link. Run it locally with `node scripts/check-links.mjs`.
 
 ## Stack
 

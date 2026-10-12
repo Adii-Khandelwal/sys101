@@ -110,15 +110,13 @@ export const CONCEPT_SECTION_IDS = ["why", "model", "how", "example", "mistakes"
 /** The "In short" block under the concept paragraph. Figures point at rows of a post's digest.numbers, so values never drift. */
 export type Summary = { points: string[]; figures: { postId: string; row: number; label: string }[] };
 
-/** The date string a post shows in its header (and, as a year, in Original posts); a summary figure repeats it exactly. */
-export const postDateLabel = (post: Pick<Post, "published" | "edition">) => postWhen(post, "month");
 
 /** A digest row the company itself calls a headline result, or a target rather than a measurement. */
 export const isOwnClaim = (row: { meaning: string }) => /headline|\btarget\b|\bgoal\b/i.test(row.meaning);
 
 /** The line a summary figure renders as: label, company, date string, and a note when the number is the company's own claim. */
 export function figureLine(post: Post, f: { row: number; label: string }) {
-  return `${f.label[0].toUpperCase()}${f.label.slice(1)}, ${post.company} ${postDateLabel(post)}${isOwnClaim(post.digest.numbers[f.row]) ? " (company's own figure)" : ""}`;
+  return `${f.label[0].toUpperCase()}${f.label.slice(1)}, ${companyWhen(post, "month", " ")}${isOwnClaim(post.digest.numbers[f.row]) ? " (company's own figure)" : ""}`;
 }
 
 export type Topic = {
@@ -183,6 +181,27 @@ function isPastDate(v: unknown) {
 /** The `published` value for a source that shows no date, such as versioned documentation. */
 export const NO_DATE = "no date shown";
 export const isUndated = (post: Pick<Post, "published">) => post.published === NO_DATE;
+
+/** An edition label that says nothing about a date. Such a source shows no date at all. */
+const NO_DATE_LABEL = /^(date unknown|no date shown)$/i;
+
+/**
+ * The date text to show for a source, or null when there is nothing to say: a source with no date shows none, unless
+ * its `edition` label gives a date the page shows ("page shows last modified June 14, 2021, v3.5 documentation").
+ */
+export function postDateShown(post: Pick<Post, "published" | "edition">, precision: "month" | "year"): string | null {
+  if (isUndated(post)) {
+    const e = post.edition?.trim();
+    return e && !NO_DATE_LABEL.test(e) ? e : null;
+  }
+  return precision === "month" ? formatMonth(post.published) : post.published.slice(0, 4);
+}
+
+/** "Meta · June 2022", or just "Meta" when the source has no date to show. `sep` goes between the two. */
+export function companyWhen(post: Pick<Post, "company" | "published" | "edition">, precision: "month" | "year", sep = " · ") {
+  const when = postDateShown(post, precision);
+  return when ? `${post.company}${sep}${when}` : post.company;
+}
 
 /** What the page shows where it would show a date: "June 2017", or for an undated source its `edition` label, such as "page shows last modified June 14, 2021, v3.5 documentation". */
 export function postWhen(post: Pick<Post, "published" | "edition">, precision: "month" | "year") {

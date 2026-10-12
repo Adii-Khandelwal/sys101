@@ -7,7 +7,7 @@ import { getLearn } from "@/lib/learn";
 import { getNews } from "@/lib/news";
 import { backgroundHref } from "@/lib/background";
 import JsonLd from "@/components/JsonLd";
-import { breadcrumbLd, pageMeta, pageTitle, topicLd } from "@/lib/site";
+import { breadcrumbLd, pageMeta, pageTitle, topicLd, topicPageUpdated } from "@/lib/site";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -52,6 +52,7 @@ export default async function TopicPage({ params }: Props) {
         dependents={getDependents(slug)}
         titles={new Map(getAllTopics().map((t) => [t.slug, t.title]))}
         news={getNews(slug)}
+        updated={topicPageUpdated(topic, getNews(slug))}
         backgroundHref={backgroundHref(slug)}
         learnHref={getLearn(slug, getAllTopics().map((t) => t.slug)) ? `/topic/${slug}/learn` : undefined}
       />

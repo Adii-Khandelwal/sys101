@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CONTACT_EMAIL, PAGE_DATES, pageMeta } from "@/lib/site";
-import { formatDate } from "@/lib/topics";
+import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
 
 // Prerendered at build time; using anything dynamic here fails the build.
@@ -12,7 +12,6 @@ export default function Terms() {
   return (
     <article className="dossier legal">
 
-      <div className="label">Last updated {formatDate(PAGE_DATES.terms)}</div>
       <h1>Terms</h1>
 
       <p>
@@ -47,6 +46,7 @@ export default function Terms() {
         <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> and I&apos;ll deal with it promptly.
       </p>
 
+      <PageUpdated date={PAGE_DATES.terms} />
       <SiteFooter />
     </article>
   );

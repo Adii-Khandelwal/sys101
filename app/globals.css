@@ -1307,13 +1307,6 @@ a:hover {
   margin-top: 24px;
 }
 
-.sources .checked {
-  display: block;
-  font-size: 14px;
-  font-style: italic;
-  color: var(--ink-soft);
-}
-
 /* ── Lesson format ───────────────────────── */
 
 /* Resume line (when there is progress) above the two jump links, all left-aligned. */
@@ -3015,4 +3008,13 @@ html {
 .bg-source-meta {
   font-size: 15px;
   color: var(--ink-soft);
+}
+
+/* The one date a page carries, just above the footer. */
+.page-updated {
+  margin: 48px 0 0;
+}
+
+.page-updated + .site-footer {
+  margin-top: 16px;
 }

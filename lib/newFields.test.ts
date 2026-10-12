@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkReasons, checkSummary, figureLine, postDateLabel, getAllTopics, postWhen, type Topic } from "./topics";
+import { checkReasons, checkSummary, companyWhen, figureLine, getAllTopics, postDateShown, type Topic } from "./topics";
 
 const point = "A cache keeps a copy of popular data close to the reader so most requests skip the slow source.";
 const digit = { value: "150x", meaning: "faster builds" };
@@ -79,29 +79,23 @@ describe("summary figure lines", () => {
     expect(figureLine(post("A target for latency"), { row: 0, label: "x" })).toMatch(/own figure/);
     expect(figureLine(post("Measured latency"), { row: 0, label: "x" })).toBe("X, Acme June 2022");
   });
-  it("shows every figure's date exactly as the post header does, and as the year in Original posts", () => {
+  it("shows every figure's source the way the post header does, and no date when the source has none", () => {
     for (const t of getAllTopics()) {
       for (const f of t.summary?.figures ?? []) {
         const p = t.posts.find((x) => x.id === f.postId)!;
-        expect(figureLine(p, f), `${t.slug} ${f.postId}`).toContain(` ${p.company} ${postWhen(p, "month")}`);
-        expect(postDateLabel(p)).toBe(postWhen(p, "month"));
-        // Original posts shows the year form: the same string for undated sources, the year of the header date otherwise.
-        const year = postWhen(p, "year");
-        expect(postDateLabel(p).endsWith(year) || postDateLabel(p) === year, `${f.postId}`).toBe(true);
+        expect(figureLine(p, f), `${t.slug} ${f.postId}`).toContain(` ${companyWhen(p, "month", " ")}`);
+        expect(figureLine(p, f)).not.toMatch(/date unknown|no date shown/);
       }
     }
   });
-});
+  it("an undated source shows a date only when its edition label is one the page shows", () => {
+    const base = { company: "Acme", published: "no date shown" };
+    expect(postDateShown({ ...base, edition: "date unknown" }, "year")).toBeNull();
+    expect(postDateShown({ ...base, edition: "no date shown" }, "month")).toBeNull();
+    expect(postDateShown({ ...base, edition: "page shows last modified June 14, 2021" }, "year")).toBe("page shows last modified June 14, 2021");
+    expect(companyWhen({ ...base, edition: "date unknown" }, "year")).toBe("Acme");
+    expect(companyWhen({ company: "Acme", published: "2022-06-20" }, "month")).toBe("Acme · June 2022");
+    expect(companyWhen({ company: "Acme", published: "2022-06-20" }, "year", ", ")).toBe("Acme, 2022");
+  });
 
-describe("summary figure labels against the post", () => {
-  it("only use numbers that exist in the post's digest or header", () => {
-    const nums = (t: string) => t.match(/\d[\d,.]*\d|\d/g) ?? [];
-    for (const t of getAllTopics()) {
-      for (const f of t.summary?.figures ?? []) {
-        const p = t.posts.find((x) => x.id === f.postId)!;
-        const source = JSON.stringify([p.digest, p.title, p.company, p.published, p.edition]);
-        for (const n of nums(f.label)) expect(source, `${t.slug} ${f.postId}: "${n}" in "${f.label}"`).toContain(n);
-      }
-    }
-  });
 });

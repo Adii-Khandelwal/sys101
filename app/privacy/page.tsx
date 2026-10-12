@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PAGE_DATES, pageMeta } from "@/lib/site";
-import { formatDate } from "@/lib/topics";
 import Link from "next/link";
+import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
 
 // Prerendered at build time; using anything dynamic here fails the build.
@@ -13,7 +13,6 @@ export default function Privacy() {
   return (
     <article className="dossier legal">
 
-      <div className="label">Last updated {formatDate(PAGE_DATES.privacy)}</div>
       <h1>Privacy</h1>
 
       <p>Short version: sys101 doesn&apos;t know who you are and doesn&apos;t try to find out.</p>
@@ -67,6 +66,7 @@ export default function Privacy() {
         privacy policies apply, not this one.
       </p>
 
+      <PageUpdated date={PAGE_DATES.privacy} />
       <SiteFooter />
     </article>
   );

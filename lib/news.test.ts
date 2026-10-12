@@ -195,11 +195,17 @@ describe("What's new section", () => {
   it("shows date, publisher, summary and a safe new-tab link, but never the evidence", () => {
     const out = html({ asOf: today, items: [item() as unknown as NewsItem] });
     expect(out).toContain("What&#x27;s new in Caching");
-    expect(out).toContain("As of 12 October 2026");
+    expect(out).not.toMatch(/As of|Checked on/);
     expect(out).toContain("1 August 2026");
     expect(out).toContain('target="_blank" rel="noopener noreferrer"');
     expect(out).toContain(summary);
     expect(out).not.toContain("least recently used keys first");
+  });
+  it("shows no date for an item whose page shows none", () => {
+    const out = html({ asOf: today, items: [item({ dateShown: "no date shown" }) as unknown as NewsItem] });
+    expect(out).not.toMatch(/no date shown/);
+    expect(out).toContain(">Redis<");
+    expect(out).not.toContain("<span></span>");
   });
   it("shows no note about how the items were chosen or reviewed", () => {
     for (const origin of ["routine", "manual"]) {

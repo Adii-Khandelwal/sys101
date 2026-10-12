@@ -204,6 +204,7 @@ describe("the link on a topic page", () => {
         dependents: getDependents("caching"),
         titles: new Map(topics.map((t) => [t.slug, t.title])),
         backgroundHref,
+        updated: "2026-10-12",
       }) as never,
     );
 

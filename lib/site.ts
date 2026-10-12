@@ -82,6 +82,8 @@ const latest = (dates: string[]) => dates.reduce((a, b) => (b > a ? b : a), "");
 export const topicUpdated = (topic: Pick<Topic, "posts">) => latest(topic.posts.map((p) => p.verifiedOn));
 
 /** Same for a learn page and its official sources. */
+/** When a topic page was last edited: its newest post entry or its What's new file, whichever is later. */
+export const topicPageUpdated = (topic: Pick<Topic, "posts">, news?: { asOf: string } | null) => latest([topicUpdated(topic), news?.asOf ?? ""]);
 export const learnUpdated = (learn: Pick<Learn, "sources">) => latest(learn.sources.map((s) => s.verifiedOn));
 
 /** Learn page description, unique per topic and matching the note under its heading. */

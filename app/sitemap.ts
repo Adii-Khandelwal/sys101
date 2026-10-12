@@ -4,7 +4,7 @@ import { getAllTopics } from "@/lib/topics";
 import { getAllLearn } from "@/lib/learn";
 import { getNews } from "@/lib/news";
 import { backgroundUpdated, getAllBackground } from "@/lib/background";
-import { PAGE_DATES, absoluteUrl, learnUpdated, topicUpdated } from "@/lib/site";
+import { PAGE_DATES, absoluteUrl, learnUpdated, topicPageUpdated } from "@/lib/site";
 
 // Built once at build time from the content files, like every page.
 export const dynamic = "force-static";
@@ -14,7 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const topics = topicOrder(getAllTopics());
   const learn = getAllLearn(topics.map((t) => t.slug));
   // A topic's What's new "asOf" counts as a content change too.
-  const topicDates = topics.map((t) => [topicUpdated(t), getNews(t.slug)?.asOf ?? ""].reduce((a, b) => (b > a ? b : a)));
+  const topicDates = topics.map((t) => topicPageUpdated(t, getNews(t.slug)));
   const entry = (path: string, date: string) => ({ url: absoluteUrl(path), lastModified: date });
   return [
     entry("/", topicDates.reduce((a, b) => (b > a ? b : a))),

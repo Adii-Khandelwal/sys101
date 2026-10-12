@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { CONTACT_EMAIL, NEWS_MODE, pageMeta } from "@/lib/site";
+import { CONTACT_EMAIL, NEWS_MODE, PAGE_DATES, pageMeta } from "@/lib/site";
 import Link from "next/link";
+import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
 
 // Prerendered at build time; using anything dynamic here fails the build.
@@ -93,6 +94,7 @@ export default function About() {
         <Link href="/data">Your data</Link> and <Link href="/privacy">Privacy</Link>.
       </p>
 
+      <PageUpdated date={PAGE_DATES.about} />
       <SiteFooter />
     </article>
   );

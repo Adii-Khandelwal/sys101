@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { formatDate, isOld, isUndated, postWhen, type Post, type Topic } from "@/lib/topics";
+import { companyWhen, isOld, isUndated, postDateShown, type Post, type Topic } from "@/lib/topics";
 import ReadToggle from "./ReadToggle";
 import InterviewTag from "./InterviewTag";
 import Reveal from "./Reveal";
+import PageUpdated from "./PageUpdated";
 import SiteFooter from "./SiteFooter";
 
 type Props = {
@@ -11,6 +12,8 @@ type Props = {
   dependents: Topic[];
   /** slug -> title, for related-topic links. */
   titles: Map<string, string>;
+  /** When the page was last edited, shown once at the bottom. */
+  updated: string;
 };
 
 export function TopicList({ topics, reasons }: { topics: Topic[]; reasons?: Record<string, string> }) {
@@ -34,14 +37,14 @@ export function PostDigest({ post, index, titles }: { post: Post; index: number;
   const old = isUndated(post) || isOld(post.published);
   return (
     <section className="post" aria-labelledby={`${id}-title`}>
-      <div className="label">
-        {post.company} · {postWhen(post, "month")}
-      </div>
+      <div className="label">{companyWhen(post, "month")}</div>
       <h2 id={`${id}-title`}>{post.title}</h2>
 
       {old && (
         <aside className="age-note">
-          <p className="age-year">{isUndated(post) ? `Date: ${postWhen(post, "year")}` : `Written in ${post.published.slice(0, 4)}`}</p>
+          {(isUndated(post) ? postDateShown(post, "year") : post.published) && (
+            <p className="age-year">{isUndated(post) ? `Date: ${postDateShown(post, "year")}` : `Written in ${post.published.slice(0, 4)}`}</p>
+          )}
           <p>{post.ageNote}</p>
           {post.stillCitedBy && (
             <p>
@@ -122,7 +125,7 @@ export function PostDigest({ post, index, titles }: { post: Post; index: number;
   );
 }
 
-export default function TopicDossier({ topic, prerequisites, dependents, titles }: Props) {
+export default function TopicDossier({ topic, prerequisites, dependents, titles, updated }: Props) {
   return (
     <article className="dossier">
       <nav className="label" data-pagefind-ignore>
@@ -221,15 +224,13 @@ export default function TopicDossier({ topic, prerequisites, dependents, titles 
               <a href={post.url} target="_blank" rel="noopener noreferrer">
                 {post.title}
               </a>{" "}
-              <span className="label">
-                {post.company} · {postWhen(post, "year")}
-              </span>
-              <span className="checked">Checked on {formatDate(post.verifiedOn)}</span>
+              <span className="label">{companyWhen(post, "year")}</span>
             </li>
           ))}
         </ul>
       </section>
 
+      <PageUpdated date={updated} />
       <SiteFooter />
     </article>
   );

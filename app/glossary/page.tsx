@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { pageMeta } from "@/lib/site";
+import { PAGE_DATES, pageMeta } from "@/lib/site";
 import { getAllTopics } from "@/lib/topics";
 import GlossaryFilter from "@/components/GlossaryFilter";
+import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
 
 // Prerendered at build time; using anything dynamic here fails the build.
@@ -26,6 +27,7 @@ export default function Glossary() {
         <GlossaryFilter groups={groups} />
       </div>
 
+      <PageUpdated date={PAGE_DATES.glossary} />
       <SiteFooter />
     </article>
   );

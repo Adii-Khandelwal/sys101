@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import HighlightTarget from "@/components/HighlightTarget";
 import SiteFooter from "@/components/SiteFooter";
-import { displayQuote, getAllBackground, isTaughtLater } from "@/lib/background";
-import { formatDate, getAllTopics, postWhen } from "@/lib/topics";
+import PageUpdated from "@/components/PageUpdated";
+import { backgroundUpdated, displayQuote, getAllBackground, isTaughtLater } from "@/lib/background";
+import { companyWhen, getAllTopics } from "@/lib/topics";
 import { formatNumber, topicNumbers, topicOrder } from "@/lib/order";
 import { pageMeta } from "@/lib/site";
 
@@ -57,9 +58,7 @@ export default function Background() {
                             const post = topic.posts.find((p) => p.id === a.postId)!;
                             return (
                               <li key={a.postId}>
-                                <Link href={`/topic/${b.topic}#${a.postId}`}>
-                                  {post.company}, {postWhen(post, "year")}
-                                </Link>
+                                <Link href={`/topic/${b.topic}#${a.postId}`}>{companyWhen(post, "year", ", ")}</Link>
                                 <q>{displayQuote(a.quote)}</q>
                               </li>
                             );
@@ -82,9 +81,7 @@ export default function Background() {
                               <a href={s.url} target="_blank" rel="noopener noreferrer">
                                 {s.title}
                               </a>
-                              <span className="bg-source-meta">
-                                {s.publisher}, {s.year}. Checked on {formatDate(s.verifiedOn)}.
-                              </span>
+                              <span className="bg-source-meta">{s.year === "no date shown" ? s.publisher : `${s.publisher}, ${s.year}`}</span>
                             </li>
                           ))}
                         </ul>
@@ -99,6 +96,7 @@ export default function Background() {
       </div>
 
       <HighlightTarget selector="section.bg-section" />
+      <PageUpdated date={backgroundUpdated()} />
       <SiteFooter />
     </article>
   );

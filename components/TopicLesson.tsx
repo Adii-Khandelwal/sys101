@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { optionId } from "@/lib/quizIds";
-import { figureLine, formatDate, postWhen, type Topic } from "@/lib/topics";
+import { companyWhen, figureLine, type Topic } from "@/lib/topics";
 import { readingLabel } from "@/lib/readingTime";
 import { PostDigest, TopicList } from "./TopicDossier";
 import { CompactProgress, FinishTopic, MarkDone, QuizBlock, ResumeLine } from "./LessonTrackers";
@@ -8,6 +8,7 @@ import type { LessonMeta } from "@/lib/lessonStore";
 import LessonRail from "./LessonRail";
 import InterviewTag from "./InterviewTag";
 import Reveal from "./Reveal";
+import PageUpdated from "./PageUpdated";
 import SiteFooter from "./SiteFooter";
 import WhatsNew from "./WhatsNew";
 import type { News } from "@/lib/news";
@@ -23,6 +24,8 @@ type Props = {
   news?: News | null;
   /** Link to this topic's section of /background, when it has one. */
   backgroundHref?: string;
+  /** When the page was last edited, shown once at the bottom. */
+  updated: string;
 };
 
 const SECTION_NAMES: Record<string, string> = {
@@ -85,7 +88,7 @@ function InShort({ topic }: { topic: Topic }) {
 }
 
 /** Topic page in the teaching-journey format: concept first, then real-world posts. */
-export default function TopicLesson({ topic, prerequisites, dependents, titles, learnHref, news, backgroundHref }: Props) {
+export default function TopicLesson({ topic, prerequisites, dependents, titles, learnHref, news, backgroundHref, updated }: Props) {
   const l = topic.lesson!;
   const meta: LessonMeta = { slug: topic.slug, postIds: topic.posts.map((p) => p.id!), correct: l.quiz.map((q) => optionId(q.options[q.correct])) };
   const names: Record<string, string> = {
@@ -313,15 +316,13 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
               <a href={post.url} target="_blank" rel="noopener noreferrer">
                 {post.title}
               </a>{" "}
-              <span className="label">
-                {post.company} · {postWhen(post, "year")}
-              </span>
-              <span className="checked">Checked on {formatDate(post.verifiedOn)}</span>
+              <span className="label">{companyWhen(post, "year")}</span>
             </li>
           ))}
         </ul>
       </section>
 
+      <PageUpdated date={updated} />
       <SiteFooter />
     </article>
   );

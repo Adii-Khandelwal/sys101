@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Fragment } from "react";
+import PageUpdated from "./PageUpdated";
 import SiteFooter from "./SiteFooter";
 import LearnRail, { type LearnEntry } from "./LearnRail";
 import VideoEmbed from "./VideoEmbed";
 import { prerequisiteLabel, type Learn, type Source, type VideoSource } from "@/lib/learn";
 import type { Topic } from "@/lib/topics";
-import { formatDate } from "@/lib/topics";
+import { learnUpdated } from "@/lib/site";
 import { learnReadingLabel } from "@/lib/readingTime";
 
 type Props = { topic: Topic; learn: Learn; titles: Map<string, string> };
@@ -234,15 +235,16 @@ export default function LearnPage({ topic, learn, titles }: Props) {
               </a>
               <span className="learn-source-meta">
                 {" "}
-                {s.publisher}. {isVideo(s) ? `Video, ${s.channel}, ${s.length}` : s.kind},{" "}
-                {s.year === "no date shown" ? "no date shown" : s.year}.{s.note ? ` ${s.note}` : ""} Checked on{" "}
-                {formatDate(s.verifiedOn)}.{isVideo(s) ? " Not vetted line by line like the written sources." : ""}
+                {s.publisher}. {isVideo(s) ? `Video, ${s.channel}, ${s.length}` : s.kind}
+                {s.year === "no date shown" ? "" : `, ${s.year}`}.{s.note ? ` ${s.note}` : ""}
+                {isVideo(s) ? " Not vetted line by line like the written sources." : ""}
               </span>
             </li>
           ))}
         </ol>
       </section>
 
+      <PageUpdated date={learnUpdated(learn)} />
       <SiteFooter />
     </article>
   );
