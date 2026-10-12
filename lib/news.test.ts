@@ -3,7 +3,6 @@ import { dateMatches, datesShown, evidenceFound, fetchAllowed, pageText } from "
 import { checkSummary, isAllowEntry, itemAllowedProblems, patternProblems, urlAllowed, latestDay, normalizeUrl, olderThan12Months, validateNews } from "../scripts/news-rules.mjs";
 import { renderToStaticMarkup } from "react-dom/server";
 import WhatsNew from "../components/WhatsNew";
-import { NEWS_MODE } from "./site";
 import { newsDate, type NewsItem } from "./news";
 
 const today = "2026-10-12";
@@ -202,20 +201,10 @@ describe("What's new section", () => {
     expect(out).toContain(summary);
     expect(out).not.toContain("least recently used keys first");
   });
-  it("says 'automated routine' only when every item came from the routine", () => {
-    const routine = html({ asOf: today, items: [item() as unknown as NewsItem] });
-    expect(routine).toContain("Added by an automated routine after automated checks");
-    const manual = html({ asOf: today, items: [item({ origin: "manual" }) as unknown as NewsItem] });
-    expect(manual).toContain("Selected and checked with automated tools");
-    expect(manual).not.toContain("automated routine");
-    const mixed = html({ asOf: today, items: [item() as unknown as NewsItem, item({ id: "b", origin: "manual" }) as unknown as NewsItem] });
-    expect(mixed).toContain("Selected and checked with automated tools");
-    expect(mixed).not.toContain("automated routine");
-  });
-  it("claims review only in review mode", () => {
+  it("shows no note about how the items were chosen or reviewed", () => {
     for (const origin of ["routine", "manual"]) {
       const out = html({ asOf: today, items: [item({ origin }) as unknown as NewsItem] });
-      expect(out.includes("and reviewed by me before publishing")).toBe(NEWS_MODE === "review");
+      expect(out).not.toMatch(/automated|reviewed|checked with|routine/i);
     }
   });
 });

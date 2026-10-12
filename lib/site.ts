@@ -20,7 +20,7 @@ export const PAGE_DATES = { about: "2026-10-11", terms: "2026-10-11", privacy: "
 /**
  * How "What's new" items reach the site: "review" means I read each pull request before it merges, "auto" means
  * checked pull requests merge on their own. Change it together with the NEWS_AUTOMERGE repository variable
- * (docs/routines/README.md). The pages and About say "reviewed by me" only in "review".
+ * (docs/routines/README.md). About says "I read the change" only in "review".
  */
 export const NEWS_MODE: "review" | "auto" = "review";
 

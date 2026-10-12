@@ -2872,12 +2872,6 @@ html {
   padding: 8px 0;
   font-size: 19px;
 }
-.whats-new-note {
-  margin: 0;
-  font-size: 14px;
-  font-style: italic;
-  color: var(--ink-soft);
-}
 
 /* ── Background page: what the posts of each topic assume ── */
 :root {

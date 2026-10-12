@@ -1,4 +1,3 @@
-import { NEWS_MODE } from "../lib/site";
 import { newsDate, type News } from "../lib/news";
 
 /** "What's new in <Topic>": up to three recent pages from approved sources. Renders nothing without items. Not tracked in progress. */
@@ -24,10 +23,6 @@ export default function WhatsNew({ title, news }: { title: string; news: News | 
           </li>
         ))}
       </ul>
-      <p className="whats-new-note">
-        {news.items.every((i) => i.origin === "routine") ? "Added by an automated routine after automated checks" : "Selected and checked with automated tools"}
-        {NEWS_MODE === "review" ? " and reviewed by me before publishing" : ""}.
-      </p>
     </section>
   );
 }

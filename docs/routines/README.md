@@ -14,7 +14,7 @@ Do these in order. Each step needs the one before it.
 6. **Run now**, by hand, with the schedule still off. You see one real run before any unattended one.
 7. **Read the whole run and the pull request.** Every page it opened, every page it skipped and why, the table, the `news-pr` result. The checks do not prove a summary says what the page says (section 9); you are the check for that. Then turn the schedule on.
 8. **Run the guard test** (section 7). It proves a `claude/` pull request with a forbidden file is blocked, before auto-merge exists to make that matter.
-9. **Only then** set `NEWS_MODE` to `"auto"` and `NEWS_AUTOMERGE` to `true`, together (section 8). The pages say "reviewed by me" only in review mode, so the two must change as one.
+9. **Only then** set `NEWS_MODE` to `"auto"` and `NEWS_AUTOMERGE` to `true`, together (section 8). About says "I read the change" only in review mode, so the two must change as one.
 
 ## 1. Repository settings
 
@@ -201,7 +201,7 @@ Setup step 8. Do not set `NEWS_AUTOMERGE` until you have run this test on GitHub
 
 Do both parts together, in this order:
 
-1. In `lib/site.ts` set `NEWS_MODE = "auto"` and commit it to `main` (through a pull request). Pages and About then stop saying "reviewed by me".
+1. In `lib/site.ts` set `NEWS_MODE = "auto"` and commit it to `main` (through a pull request). About then stops saying "I read the change".
 2. Settings, General, Pull Requests: tick "Allow auto-merge". Settings, Secrets and variables, Actions, Variables: add `NEWS_AUTOMERGE` = `true`.
 
 From then on `news-automerge` runs `gh pr merge --auto --squash` for same-repository `claude/` pull requests whose `news-pr` check passed, and GitHub merges when the required checks are green.
