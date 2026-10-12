@@ -136,6 +136,9 @@ describe("map tooltip prerequisite lines", () => {
   const title = (slug: string) => ({ dns: "DNS", caching: "Caching", databases: "Databases" })[slug] ?? slug;
   const lines = (read: string[]) => prerequisiteLines(["dns", "caching"], read, title);
 
+  it("joins three or more with commas, since a title may contain 'and'", () => {
+    expect(prerequisiteLines(["a", "b", "c"], [], (x) => x.toUpperCase()).finish).toBe("Finish A, B, C first.");
+  });
   it("says it once when nothing is read: only 'Finish ... first'", () => {
     expect(lines([])).toEqual({ builtOn: null, finish: "Finish DNS and Caching first." });
   });
