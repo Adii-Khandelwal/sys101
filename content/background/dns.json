@@ -1,0 +1,110 @@
+{
+  "topic": "dns",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "wildcard-records",
+      "name": "Wildcard records",
+      "explanation": "A wildcard record, written with a star as in *.example.com, answers for any name under it that has no record of its own. It saves listing every name, and it changes what a missing name looks like.",
+      "assumedBy": [
+        {
+          "postId": "slack-dnssec-2021",
+          "quote": "This indicated there was likely a problem with the ‘*.slack.com’ wildcard record since we didn’t have a wildcard record in any of the other domains where we had rolled out DNSSEC on."
+        }
+      ],
+      "sources": [
+        {
+          "title": "RFC 4592: The Role of Wildcards in the Domain Name System",
+          "publisher": "IETF",
+          "url": "https://www.rfc-editor.org/rfc/rfc4592.html",
+          "year": "2006",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "nsec-negative-answers",
+      "name": "Negative answers and NSEC",
+      "explanation": "When a name or record type does not exist, a resolver still gets an answer that says so, and it caches that answer like any other. With DNSSEC the answer is signed by an NSEC record, which names the next name in the zone and the record types that exist.",
+      "assumedBy": [
+        {
+          "postId": "slack-dnssec-2021",
+          "quote": "This NSEC response is cached."
+        }
+      ],
+      "sources": [
+        {
+          "title": "RFC 4034: Resource Records for the DNS Security Extensions (the NSEC record)",
+          "publisher": "IETF",
+          "url": "https://www.rfc-editor.org/rfc/rfc4034.html",
+          "year": "2005",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "dnskey",
+      "name": "DNSSEC keys: DNSKEY",
+      "explanation": "The DNSKEY record publishes the public key resolvers use to check the signatures on a zone. The parent zone's DS record points at it, so the two have to change together.",
+      "assumedBy": [
+        {
+          "postId": "slack-dnssec-2021",
+          "quote": "The team knew removing the DNSKEY from the authoritative zone is a high-risk operation unless the DS record is not published anymore."
+        }
+      ],
+      "sources": [
+        {
+          "title": "RFC 4034: Resource Records for the DNS Security Extensions (the DNSKEY record)",
+          "publisher": "IETF",
+          "url": "https://www.rfc-editor.org/rfc/rfc4034.html",
+          "year": "2005",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "distributed-key-value-store",
+      "name": "Distributed key-value stores",
+      "explanation": "A key-value store keeps each piece of data under a key and looks it up by that key, with no tables to join. A distributed one spreads the keys across many machines.",
+      "assumedBy": [
+        {
+          "postId": "cloudflare-dns-builds-2022",
+          "quote": "The Zone Builder takes the message, collects the contents of the zone from the database and pushes it to Quicksilver, our distributed KV store."
+        }
+      ],
+      "sources": [
+        {
+          "title": "What is etcd? (a distributed key-value store)",
+          "publisher": "etcd (CNCF)",
+          "url": "https://etcd.io/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "message-queue",
+      "name": "Message queues (Kafka)",
+      "explanation": "A queue that holds messages until a consumer takes them, so one part of a system can hand work to another without waiting. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "cloudflare-dns-builds-2022",
+          "quote": "The database event triggers a Kafka message which is consumed by the Zone Builder."
+        }
+      ],
+      "topicPage": "message-queues"
+    },
+    {
+      "id": "eventual-consistency",
+      "name": "Eventual consistency",
+      "explanation": "Strong consistency means every read sees the latest write; eventual consistency means the copies agree after a delay. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "cloudflare-dns-builds-2022",
+          "quote": "Each of these changes needs to be actioned so that the information we show through our API and in the Cloudflare dashboard is eventually consistent with the information we use to respond to DNS queries."
+        }
+      ],
+      "topicPage": "cap"
+    }
+  ]
+}

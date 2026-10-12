@@ -105,7 +105,7 @@
         },
         {
           "postId": "github-mysql-8-upgrade-2023",
-          "quote": "We use Vitess for horizontally sharding relational data. For the most part, upgrading our Vitess clusters was not too different from upgrading the MySQL clusters."
+          "quote": "We use Vitess for horizontally sharding relational data."
         }
       ],
       "topicPage": "sharding"

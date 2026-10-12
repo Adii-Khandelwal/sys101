@@ -151,7 +151,7 @@ describe("the link from a topic page", () => {
   it("exists only for topics that have a background file", () => {
     for (const t of topics) expect(backgroundHref(t.slug), t.slug).toBe(files.some((f) => f.topic === t.slug) ? `/background#${t.slug}` : undefined);
     expect(backgroundHref("caching")).toBe("/background#caching");
-    expect(backgroundHref("dns")).toBeUndefined();
+    expect(backgroundHref("not-a-topic")).toBeUndefined(); // no file, no link
   });
 });
 
@@ -251,6 +251,6 @@ describe("the link on a topic page", () => {
 
   it("is not shown when the topic has no background file", () => {
     expect(render(undefined)).not.toContain("Before you read these posts");
-    expect(render(backgroundHref("dns"))).not.toContain("Before you read these posts");
+    expect(render(backgroundHref("not-a-topic"))).not.toContain("Before you read these posts");
   });
 });
