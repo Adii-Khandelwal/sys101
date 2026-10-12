@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { prefersReducedMotion } from "@/lib/motion";
 
-type Doc = Document & { startViewTransition?: (cb: () => Promise<void>) => unknown };
+type Doc = Document & { startViewTransition?: (cb: () => Promise<void>) => { finished: Promise<unknown> } };
 
 /**
  * Resolve once the new page is really in the DOM: the URL has changed and no
@@ -24,14 +24,28 @@ function pageReady(pathname: string, cap = 1000) {
   });
 }
 
-/** Navigate with the page cross-fade where supported, ending only when the new page is ready. */
-export function navigateWithTransition(router: { push: (href: string) => void }, href: string) {
+/**
+ * Navigate with the page cross-fade where supported, ending only when the new page is ready.
+ * `nodeOpen` is the Map's node-open transition: the old page stays put under the grown bubble and the new page fades
+ * in (html[data-nav="node-open"] in globals.css). `onSwap` runs when the new page is in the DOM, so the bubble is gone
+ * from the new snapshot. Under reduced motion, or without the API, it just navigates.
+ */
+export function navigateWithTransition(
+  router: { push: (href: string) => void },
+  href: string,
+  opts: { nodeOpen?: boolean; onSwap?: () => void } = {},
+) {
   const doc = document as Doc;
   const url = new URL(href, location.href);
   if (!doc.startViewTransition || prefersReducedMotion()) return router.push(href);
-  doc.startViewTransition(() => {
+  const root = doc.documentElement;
+  if (opts.nodeOpen) root.dataset.nav = "node-open";
+  const transition = doc.startViewTransition(() => {
     router.push(url.pathname + url.search + url.hash);
-    return pageReady(url.pathname);
+    return pageReady(url.pathname).then(() => opts.onSwap?.());
+  });
+  transition.finished.finally(() => {
+    if (opts.nodeOpen) delete root.dataset.nav;
   });
 }
 

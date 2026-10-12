@@ -3018,3 +3018,36 @@ html {
 .page-updated + .site-footer {
   margin-top: 16px;
 }
+
+/* ── Map node-open transition (docs/graph.md): the clicked node's bubble grows, then the topic fades in ── */
+.node-bubble {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  transform-origin: center;
+  /* Compositor only: transform. No layout, no paint of the page behind it. */
+  transition: transform var(--dur-base) var(--ease-out);
+  will-change: transform;
+}
+
+.node-bubble > span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+}
+
+/* The old page stays under the bubble while the new one fades in over it, opacity only. */
+html[data-nav="node-open"]::view-transition-old(root) {
+  animation: none;
+}
+
+html[data-nav="node-open"]::view-transition-new(root) {
+  animation: vt-fade-in var(--dur-base) var(--ease-out) both;
+}
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}

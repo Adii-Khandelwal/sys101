@@ -26,6 +26,8 @@ import {
 import { createPortal } from "react-dom";
 import { DURATION, easeInOut, prefersReducedMotion } from "@/lib/motion";
 import { navigateWithTransition } from "./ViewTransitions";
+import { clickIntent, growBubble, removeBubbles, type Bubble } from "@/lib/nodeOpen";
+import { saveMapView, takeMapView, type MapView } from "@/lib/mapView";
 import {
   STEP,
   clampPan,
@@ -33,6 +35,7 @@ import {
   fitRatio,
   fitState,
   moveView,
+  clampRatio,
   ratioLimits,
   wheelFactor,
   zoomBy,
@@ -334,6 +337,11 @@ export default function GraphView({ nodes, edges }: Props) {
   interactiveRef.current = interactive;
   const animFrame = useRef(0);
   const navTimer = useRef(0);
+  /** The bubble of a node being opened. Cleared on a second click, a double click, and when the map goes away. */
+  const pendingOpen = useRef<Bubble | null>(null);
+  /** The view saved when a node was opened, if the map is being returned to by Back or Forward (undefined: not read yet). */
+  const viewToRestore = useRef<MapView | null | undefined>(undefined);
+  const scrollToRestore = useRef<number | null>(null);
   const draggedRef = useRef(false);
   const overNode = useRef(false);
   const dragging = useRef(false);
@@ -544,6 +552,7 @@ export default function GraphView({ nodes, edges }: Props) {
   useEffect(() => {
     let renderer: Sigma | undefined;
     let cancelled = false;
+    let removeMiddle: (() => void) | undefined;
 
     (async () => {
       const [{ default: GraphCtor }, { default: SigmaCtor }, { createNodeBorderProgram }, { createEdgeCurveProgram }] =
@@ -667,21 +676,86 @@ export default function GraphView({ nodes, edges }: Props) {
       });
 
       // Open a topic on click, but not after a drag, and not if a second click follows.
-      // No camera move: the map is a static, horizontally-scrolled graph, so a
-      // recentering pan on click looked like an unwanted shift. Just hold the
-      // node's highlight for a beat, then cross-fade to the topic.
-      renderer.on("clickNode", ({ node }) => {
-        if (draggedRef.current) return;
+      // A plain pointer or touch click grows the node's bubble, then the topic fades in (lib/nodeOpen.ts).
+      // Ctrl/Cmd/Shift/Alt and middle clicks open a new tab, and reduced motion opens at once. No camera move: the
+      // map is a static, horizontally-scrolled graph, so a recentering pan on click looked like an unwanted shift.
+      // Keep the zoom and sideways scroll for the Back button.
+      const saveView = () => {
+        const cam = renderer?.getCamera().getState();
+        if (cam && scrollWrap.current) saveMapView({ camera: { x: cam.x, y: cam.y, ratio: cam.ratio, angle: 0 }, scrollLeft: scrollWrap.current.scrollLeft });
+      };
+      const openNode = (node: string, intent: ReturnType<typeof clickIntent>) => {
+        const href = `/topic/${node}`;
+        if (intent === "new-tab") {
+          window.open(href, "_blank", "noopener,noreferrer");
+          return;
+        }
         window.clearTimeout(navTimer.current);
-        router.prefetch(`/topic/${node}`); // ready when the fade ends
+        pendingOpen.current?.remove();
+        router.prefetch(href); // ready when the growth ends
+        saveView();
         activate(node);
-        navTimer.current = window.setTimeout(
-          () => navigateWithTransition(router, `/topic/${node}`),
-          prefersReducedMotion() ? 0 : DURATION.fast,
-        );
+        if (intent === "instant") {
+          navTimer.current = window.setTimeout(() => navigateWithTransition(router, href), 0);
+          return;
+        }
+        const d = renderer!.getNodeDisplayData(node) as Record<string, unknown> | undefined;
+        const at = renderer!.graphToViewport({ x: graph.getNodeAttribute(node, "x"), y: graph.getNodeAttribute(node, "y") });
+        const box = container.current!.getBoundingClientRect();
+        const bubble = growBubble({
+          x: box.left + at.x,
+          y: box.top + at.y,
+          r: renderer!.scaleSize((d?.size as number) ?? NODE_RADIUS),
+          border: String(d?.borderColor ?? liveColors.inkSoft),
+          fill: String(d?.color ?? liveColors.paper),
+          dot: String(d?.dotColor ?? d?.color ?? liveColors.paper),
+          borderSize: (d?.borderSize as number) ?? 1.5,
+        });
+        pendingOpen.current = bubble;
+        void bubble.done.then(() => {
+          if (pendingOpen.current !== bubble) return; // a second click or a double click cancelled it
+          navigateWithTransition(router, href, { nodeOpen: true, onSwap: bubble.remove });
+        });
+      };
+      renderer.on("clickNode", ({ node, event }) => {
+        if (draggedRef.current) return;
+        openNode(node, clickIntent(event.original as MouseEvent | TouchEvent, prefersReducedMotion()));
       });
+      // A middle click is not a Sigma "click": open the node's page in a new tab, as a link would.
+      const canvas = container.current;
+      const nodeAt = (x: number, y: number) => {
+        let hit: string | null = null;
+        graph.forEachNode((slug, attr) => {
+          const p = renderer!.graphToViewport({ x: attr.x, y: attr.y });
+          const r = renderer!.scaleSize(renderer!.getNodeDisplayData(slug)?.size ?? NODE_RADIUS);
+          if (Math.hypot(p.x - x, p.y - y) <= r + 2) hit = slug;
+        });
+        return hit;
+      };
+      const onMiddle = (e: MouseEvent) => {
+        if (e.button !== 1 || !canvas) return;
+        const box = canvas.getBoundingClientRect();
+        const node = nodeAt(e.clientX - box.left, e.clientY - box.top);
+        if (node) {
+          e.preventDefault();
+          openNode(node, "new-tab");
+        }
+      };
+      const onMiddleDown = (e: MouseEvent) => {
+        if (e.button !== 1 || !canvas) return;
+        const box = canvas.getBoundingClientRect();
+        if (nodeAt(e.clientX - box.left, e.clientY - box.top)) e.preventDefault(); // no autoscroll
+      };
+      canvas?.addEventListener("auxclick", onMiddle);
+      canvas?.addEventListener("mousedown", onMiddleDown);
+      removeMiddle = () => {
+        canvas?.removeEventListener("auxclick", onMiddle);
+        canvas?.removeEventListener("mousedown", onMiddleDown);
+      };
       renderer.on("doubleClickNode", ({ event }) => {
         window.clearTimeout(navTimer.current);
+        pendingOpen.current?.remove(); // the first click of a double click had started to open the node
+        pendingOpen.current = null;
         event.preventSigmaDefault();
       });
       renderer.on("doubleClickStage", ({ event }) => {
@@ -714,6 +788,9 @@ export default function GraphView({ nodes, edges }: Props) {
 
     return () => {
       cancelled = true;
+      removeMiddle?.();
+      pendingOpen.current = null;
+      removeBubbles(); // the map is going away: no bubble may be left over the next page
       renderer?.kill();
       rendererRef.current = null;
       setReady(false);
@@ -793,8 +870,32 @@ export default function GraphView({ nodes, edges }: Props) {
     renderer.setSetting("maxCameraRatio", max);
     cancelAnimation();
     setCamera(renderer.getCamera(), fitState(fit));
+    // Back or Forward to the map: put the zoom, pan and sideways scroll back as they were (read once).
+    if (viewToRestore.current === undefined) viewToRestore.current = takeMapView();
+    const saved = viewToRestore.current;
+    if (saved) {
+      viewToRestore.current = null;
+      if (interactive) setCamera(renderer.getCamera(), { ...saved.camera, ratio: clampRatio(saved.camera.ratio, fit) });
+      scrollToRestore.current = saved.scrollLeft;
+    }
     renderer.refresh();
   }, [ready, cols, layered, drawn, hidden, fits, size, isPhone]);
+
+  // The sideways scroll can only be set once the stage has its full width.
+  useEffect(() => {
+    const el = scrollWrap.current;
+    if (el && scrollToRestore.current !== null && (contentWidth > 0 || scrollToRestore.current === 0)) {
+      el.scrollLeft = scrollToRestore.current;
+      scrollToRestore.current = null;
+    }
+  }, [contentWidth, ready]);
+
+  // A page restored from the back/forward cache keeps its DOM: make sure no bubble is left on it.
+  useEffect(() => {
+    const onShow = (e: PageTransitionEvent) => e.persisted && removeBubbles();
+    window.addEventListener("pageshow", onShow);
+    return () => window.removeEventListener("pageshow", onShow);
+  }, []);
 
   // Clear the highlight on Escape, page scroll, and a touch or click outside the map.
   useEffect(() => {
