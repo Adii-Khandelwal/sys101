@@ -69,7 +69,7 @@
       "assumedBy": [
         {
           "postId": "spotify-event-delivery-2019",
-          "quote": "Figure 1. Average total volume (TB) of events stored daily by our ETL process (after compression)."
+          "quote": "You can read more about this concept in Reliable export of Cloud Pub/Sub streams to Cloud Storage, a blog post explaining all technicalities of our ETL."
         }
       ],
       "sources": [
@@ -89,7 +89,7 @@
       "assumedBy": [
         {
           "postId": "spotify-event-delivery-2019",
-          "quote": "Business Impact Event Types – some are used to pay royalties to labels and artists, and some are used to calculate company key metrics."
+          "quote": "These Event Types are subject to external SLAs both for timely delivery, and quality"
         }
       ],
       "sources": [

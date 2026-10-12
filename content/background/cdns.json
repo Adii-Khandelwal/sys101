@@ -3,26 +3,6 @@
   "updatedOn": "2026-10-12",
   "items": [
     {
-      "id": "reverse-proxy",
-      "name": "Reverse proxies",
-      "explanation": "A reverse proxy sits in front of servers, receives requests and passes them on. Proxying is commonly used to spread load across several servers.",
-      "assumedBy": [
-        {
-          "postId": "cloudflare-pingora-2022",
-          "quote": "Today we are excited to talk about Pingora, a new HTTP proxy we’ve built in-house using Rust that serves over 1 trillion requests a day"
-        }
-      ],
-      "sources": [
-        {
-          "title": "NGINX Reverse Proxy",
-          "publisher": "F5 (NGINX)",
-          "url": "https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/",
-          "year": "no date shown",
-          "verifiedOn": "2026-10-12"
-        }
-      ]
-    },
-    {
       "id": "tcp-connections",
       "name": "TCP connections and their cost",
       "explanation": "TCP lets two hosts open a connection and exchange data reliably. Opening one takes round trips, so reusing an open connection saves time.",

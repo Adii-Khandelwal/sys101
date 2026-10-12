@@ -20,7 +20,7 @@ export const dynamic = "error";
 
 export const metadata = pageMeta({
   path: "/",
-  title: { absolute: "sys101: system design from how real systems work" },
+  title: { absolute: "sys101: a system design course in prerequisite order" },
   description: SITE_DESCRIPTION,
 });
 
@@ -63,7 +63,9 @@ export default function Home() {
   if (!dns || !quiz?.length) throw new Error("Homepage: the DNS topic needs a lesson quiz for Try a question");
   const postCounts = new Map<string, Set<string>>();
   for (const p of topics.flatMap((t) => t.posts)) {
-    postCounts.set(p.company, (postCounts.get(p.company) ?? new Set()).add(p.url));
+    // One company can appear under two credits (Amazon, and its Builders' Library): count it once.
+    const name = p.company.startsWith("Amazon") ? "Amazon" : p.company;
+    postCounts.set(name, (postCounts.get(name) ?? new Set()).add(p.url));
   }
   const companies = [...postCounts]
     .map(([name, urls]) => ({ name, posts: urls.size }))

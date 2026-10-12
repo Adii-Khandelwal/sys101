@@ -29,7 +29,7 @@
       "assumedBy": [
         {
           "postId": "dropbox-robinhood-2024",
-          "quote": "Some Dropbox services have millions of clients; however, we cannot allow each client to create connections to every server instance."
+          "quote": "This approach puts too much memory pressure on servers, and TLS handshakes during server restarts can overwhelm servers."
         }
       ],
       "sources": [
@@ -69,7 +69,7 @@
       "assumedBy": [
         {
           "postId": "uber-dynamic-subsetting-2022",
-          "quote": "Discovery: find the the latest backend tasks of services"
+          "quote": "Use the URIs of the backend task pools from the traffic assignment to get the latest task placement from discovery service Perform load balancing between available backend tasks The proxy is a shared resource by all the backend tasks running on the same host."
         },
         {
           "postId": "dropbox-robinhood-2024",

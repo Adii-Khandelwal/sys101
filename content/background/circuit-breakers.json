@@ -41,26 +41,6 @@
           "verifiedOn": "2026-10-12"
         }
       ]
-    },
-    {
-      "id": "reverse-proxy",
-      "name": "Reverse proxies",
-      "explanation": "A reverse proxy sits in front of servers, receives requests and passes them on. Proxying is commonly used to spread load across several servers.",
-      "assumedBy": [
-        {
-          "postId": "zalando-circuit-breaker-herd-2026",
-          "quote": "Individual span latencies during the half-open probe phase: 15 ms at the client, 10 ms at the reverse-proxy, 2 ms on the service. All healthy."
-        }
-      ],
-      "sources": [
-        {
-          "title": "NGINX Reverse Proxy",
-          "publisher": "F5 (NGINX)",
-          "url": "https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/",
-          "year": "no date shown",
-          "verifiedOn": "2026-10-12"
-        }
-      ]
     }
   ]
 }
