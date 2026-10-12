@@ -3,10 +3,11 @@ import path from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import Background from "../app/background/page";
+import TopicLesson from "../components/TopicLesson";
 import sitemap from "../app/sitemap";
 import { backgroundHref, backgroundUpdated, displayQuote, getAllBackground, getBackground, isTaughtLater, validateBackground, type Background as BackgroundFile } from "./background";
 import { topicNumbers, topicOrder } from "./order";
-import { getAllTopics } from "./topics";
+import { getAllTopics, getDependents } from "./topics";
 
 const topics = getAllTopics();
 const numbers = topicNumbers(topicOrder(topics));
@@ -190,5 +191,42 @@ describe("validation catches the mistakes it is for", () => {
     const a = good();
     a.topic = "nope";
     expect(validateBackground("nope.json", a, topics).join()).toContain('no topic "nope"');
+  });
+});
+
+describe("the link on a topic page", () => {
+  const caching = topics.find((t) => t.slug === "caching")!;
+  const render = (backgroundHref?: string) =>
+    renderToStaticMarkup(
+      TopicLesson({
+        topic: caching,
+        prerequisites: caching.prerequisites.map((s) => topics.find((t) => t.slug === s)!),
+        dependents: getDependents("caching"),
+        titles: new Map(topics.map((t) => [t.slug, t.title])),
+        backgroundHref,
+      }) as never,
+    );
+
+  it("sits at the top of the posts section, directly above the first post, with the agreed wording", () => {
+    const out = render("/background#caching");
+    expect(out).toContain('<span>Before you read these posts:</span><a href="/background#caching">Background for this topic</a>');
+    const at = out.indexOf("Before you read these posts:");
+    const firstPost = out.indexOf(`<div id="${caching.posts[0].id}">`);
+    expect(at).toBeGreaterThan(out.indexOf('id="posts-h"'));
+    expect(at).toBeLessThan(firstPost);
+    // nothing but the end of the section sits between the link and the first post
+    expect(out.slice(at, firstPost)).not.toMatch(/<h2|<section id=/);
+    expect(out.match(/Background for this topic/g)).toHaveLength(1);
+  });
+
+  it("is gone from the row with 'Skip to the posts'", () => {
+    const row = render("/background#caching").match(/<p class="lesson-jump">.*?<\/p>/s)![0];
+    expect(row).toContain("Skip to the posts");
+    expect(row).not.toContain("Background");
+  });
+
+  it("is not shown when the topic has no background file", () => {
+    expect(render(undefined)).not.toContain("Before you read these posts");
+    expect(render(backgroundHref("dns"))).not.toContain("Before you read these posts");
   });
 });

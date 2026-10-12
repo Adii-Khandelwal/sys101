@@ -2987,6 +2987,21 @@ html {
   font-size: 16px;
 }
 
+/* On a topic page, directly above the first post: a plain line pointing at /background. */
+.posts-background {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 8px;
+  margin: 12px 0 0;
+}
+
+.posts-background a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 .bg-links,
 .bg-sources li {
   display: flex;

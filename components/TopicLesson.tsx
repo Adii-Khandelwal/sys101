@@ -146,16 +146,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 </Link>
               </>
             )}
-            {backgroundHref && (
-              <>
-                <span className="label" aria-hidden="true">
-                  ·
-                </span>
-                <Link className="text-button label" href={backgroundHref}>
-                  Background for this topic
-                </Link>
-              </>
-            )}
+
           </p>
         </div>
 
@@ -245,6 +236,12 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
               How companies use it
             </h2>
             <Outcome text={l.postsOutcome} />
+            {backgroundHref && (
+              <p className="posts-background" data-pagefind-ignore>
+                <span>Before you read these posts:</span>
+                <Link href={backgroundHref}>Background for this topic</Link>
+              </p>
+            )}
           </section>
 
           {topic.posts.map((post, i) => (
