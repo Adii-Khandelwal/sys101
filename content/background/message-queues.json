@@ -1,0 +1,78 @@
+{
+  "topic": "message-queues",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "redis",
+      "name": "Redis",
+      "explanation": "An in-memory data store, often used as a shared cache or queue. Answers are fast, but everything it holds must fit in memory.",
+      "assumedBy": [
+        {
+          "postId": "slack-job-queue-2017",
+          "quote": "The enqueue handler selects one of the configured Redis hosts based on a hash of this identifier and the logical queue for the given job."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Get started with Redis Open Source",
+          "publisher": "Redis",
+          "url": "https://redis.io/docs/latest/get-started/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "kafka",
+      "name": "Kafka topics, partitions and offsets",
+      "explanation": "Kafka keeps messages in an ordered log per topic, split into partitions. A reader tracks its place with an offset, so it can resume or replay from any point.",
+      "assumedBy": [
+        {
+          "postId": "slack-job-queue-2017",
+          "quote": "JQRelay relies on Kafka commit offsets to track jobs in each topic partition."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Apache Kafka: Introduction",
+          "publisher": "Apache Kafka",
+          "url": "https://kafka.apache.org/intro",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "rpc-interface",
+      "name": "RPC and Thrift",
+      "explanation": "A remote procedure call lets one service call a function on another as if it were local. Thrift describes those calls in a shared definition and generates the client and server code.",
+      "assumedBy": [
+        {
+          "postId": "meta-foqs-2021",
+          "quote": "FOQS stores items that live in a topic within a namespace. It exposes a Thrift API"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Apache Thrift",
+          "publisher": "Apache Software Foundation",
+          "url": "https://thrift.apache.org/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "circuit-breaker",
+      "name": "Circuit breakers",
+      "explanation": "A guard that stops calling a failing part for a while, so failures do not pile up. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "meta-foqs-2021",
+          "quote": "FOQS uses a circuit breaker design pattern to mark down shards that are unhealthy."
+        }
+      ],
+      "topicPage": "circuit-breakers"
+    }
+  ]
+}
