@@ -2,6 +2,7 @@
 // Pure and content-derived (no hardcoded minutes), so it is testable and the
 // homepage/index "compute from data" rule holds.
 import type { Topic } from "./topics";
+import type { News } from "./news";
 
 // Technical prose with diagrams and code reads slower than casual text; 200 wpm
 // is a common, defensible estimate for careful reading. Each diagram adds a
@@ -58,15 +59,17 @@ function diagramCount(topic: Topic): number {
 }
 
 /** Minutes to read a topic page, rounded to a whole minute (never below 1). */
-export function readingMinutes(topic: Topic): number {
-  const wordCount = proseStrings(topic).reduce((sum, s) => sum + words(s), 0);
+export function readingMinutes(topic: Topic, news?: News | null): number {
+  // What's new renders each item's title and summary below the page, so they count too.
+  const newsProse = (news?.items ?? []).flatMap((i) => [i.title, i.summary]);
+  const wordCount = [...proseStrings(topic), ...newsProse].reduce((sum, s) => sum + words(s), 0);
   const minutes = wordCount / WORDS_PER_MINUTE + (diagramCount(topic) * SECONDS_PER_DIAGRAM) / 60;
   return Math.max(1, Math.round(minutes));
 }
 
 /** The label shown on the page, e.g. "~8 min read". */
-export function readingLabel(topic: Topic): string {
-  return `~${readingMinutes(topic)} min read`;
+export function readingLabel(topic: Topic, news?: News | null): string {
+  return `~${readingMinutes(topic, news)} min read`;
 }
 
 // ── Start-from-zero learn pages ───────────────────────────────────────────

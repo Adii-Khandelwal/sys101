@@ -11,6 +11,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { depths } from "@/lib/graph";
 import { formatNumber, topicNumbers, topicOrder } from "@/lib/order";
 import { GROUPS, getAllTopics, type Group } from "@/lib/topics";
+import { getNews } from "@/lib/news";
 import { readingMinutes } from "@/lib/readingTime";
 import { SITE_DESCRIPTION, pageMeta } from "@/lib/site";
 
@@ -49,7 +50,7 @@ export default function Home() {
     slug: t.slug,
     title: t.title,
     number: formatNumber(numbers.get(t.slug)!),
-    minutes: readingMinutes(t),
+    minutes: readingMinutes(t, getNews(t.slug)),
     group: t.group ?? groupFromDepth(depth.get(t.slug) ?? 0),
   }));
   const groups = GROUPS.map((name) => ({ name, entries: entries.filter((e) => e.group === name) })).filter(

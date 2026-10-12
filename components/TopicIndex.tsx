@@ -26,7 +26,7 @@ export default function TopicIndex({ groups }: Props) {
                     <span className="index-number">{e.number}</span>
                     <Link href={`/topic/${e.slug}`}>{e.title}</Link>
                     <span className="index-time label" aria-hidden="true">
-                      {e.minutes} min
+                      ~{e.minutes} min read
                     </span>
                     <span className={isRead ? "legend-dot is-read" : "legend-dot"} aria-hidden="true" />
                     <span className="visually-hidden">{isRead ? "read" : "unread"}</span>

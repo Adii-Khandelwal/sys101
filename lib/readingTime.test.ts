@@ -30,6 +30,12 @@ describe("readingMinutes", () => {
     expect(readingMinutes(long as typeof base)).toBeGreaterThan(readingMinutes(short as typeof base));
   });
 
+  it("counts What's new summaries as reading", () => {
+    const t = getAllTopics()[0];
+    const long = { asOf: "2026-01-01", items: [{ title: "x", summary: "word ".repeat(2000) }] } as never;
+    expect(readingMinutes(t, long)).toBeGreaterThan(readingMinutes(t));
+  });
+
   it("labels as '~N min read'", () => {
     expect(readingLabel(topics[0])).toMatch(/^~\d+ min read$/);
   });
