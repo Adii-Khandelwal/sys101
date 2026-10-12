@@ -2780,9 +2780,11 @@ html {
 .in-short {
   margin: 24px 0 0;
 }
-.in-short h2 {
+.in-short h2.label {
   margin: 0 0 8px;
-  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.4;
 }
 .in-short ul {
   margin: 0;
@@ -2824,4 +2826,17 @@ html {
   padding-left: 20px;
   font-size: 15px;
   color: var(--ink-soft);
+}
+@media (max-width: 767px) {
+  /* Name, group size, read count and the toggle no longer fit one line at phone width. */
+  .path-group-name {
+    flex-wrap: wrap;
+    gap: 0 14px;
+  }
+  .path-group-name::after {
+    display: none;
+  }
+  .path-group-mark {
+    margin-left: auto;
+  }
 }

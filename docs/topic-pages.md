@@ -9,3 +9,9 @@ Moved unchanged from CLAUDE.md. Read before editing topic pages or their content
 - Original posts lists each source with company, year, and "Checked on" date. Links open in a new tab with rel="noopener noreferrer". Missing attribution fields fail the build.
 - No data controls on topic pages. They live on /data.
 - Optional `interviewRelevance` on a topic ("core", "common" or "niche", in lib/topics.ts) shows a small mono small-caps marker beside the group label (components/InterviewTag.tsx), state carried by the text with only "core" taking the rust accent. The build rejects any other value; a topic without the field shows no marker.
+
+## In short and edge reasons
+
+- `summary`: `points` (3 to 5 sentences, 8 to 28 words each, digits only if already in the topic JSON, no em dash or "it's not X" phrasing) and `figures` (0 to 3 of `{postId, row}`, pointing at a post's `digest.numbers`). Rendered as "In short" under the concept; figures read "<value> <meaning>, <Company> <year>" (undated sources show "no date shown") and link to the post section. Not tracked, not in the rail, indexed by search.
+- `prerequisiteReasons`: `{ [prerequisiteId]: sentence }` for the full prerequisite set, 8 to 30 words, no digits. Shown under each Builds on link, in Path rows and in the learn page Before you start. Not on the map tooltip (see docs/tasks/batch-1.md).
+- Write both only through drafts files (`scripts/topic-brief.mjs`, `scripts/apply-drafts.mjs`). Restate only what the page already says.
