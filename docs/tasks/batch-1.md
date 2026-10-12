@@ -15,7 +15,7 @@ Read this first in any session and continue from RESUME. (TaskCreate/TaskUpdate 
 ## Phase B (after the user says "continue"): batches of 4 topics
 Per-topic status (todo / drafted / applied):
 caching: pilot | consensus: pilot
-cap: todo | cdns: todo | circuit-breakers: todo | consistent-hashing: todo | databases: todo | distributed-transactions: todo | dns: todo | event-driven-architecture: todo | failover: todo | indexing: todo | load-balancing: todo | message-queues: todo | pub-sub: todo | rate-limiting: todo | replication: todo | sharding: todo
+cap: applied | cdns: applied | circuit-breakers: applied | consistent-hashing: applied | databases: todo | distributed-transactions: todo | dns: todo | event-driven-architecture: todo | failover: todo | indexing: todo | load-balancing: todo | message-queues: todo | pub-sub: todo | rate-limiting: todo | replication: todo | sharding: todo
 - [ ] After the last batch: set REQUIRE_NEW_FIELDS = true, full build, tests, SEO check, list every figure referenced.
 
 ## Decisions
@@ -24,4 +24,4 @@ cap: todo | cdns: todo | circuit-breakers: todo | consistent-hashing: todo | dat
 - Ordering: topicOrder() in lib/order.ts = columns() of the transitive reduction, flattened (the existing Map index order). Numbers are global 1..N.
 - Context passes about 70%: stop at a batch boundary, update RESUME, tell the user to /clear and paste "Continue batch 1 from docs/tasks/batch-1.md."
 
-RESUME: Phase A done. Wait for the user to say "continue", then start Phase B batch 1 (cap, cdns, circuit-breakers, consistent-hashing).
+RESUME: batch 1 (cap, cdns, circuit-breakers, consistent-hashing) applied and committed. Next: batch 2 (databases, distributed-transactions, dns, event-driven-architecture). User said continue without stopping; stop only if a check fails.

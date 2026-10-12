@@ -8,6 +8,30 @@
     "dns",
     "caching"
   ],
+  "summary": {
+    "points": [
+      "A CDN keeps copies of content on servers close to users, so most requests are answered nearby instead of at the origin.",
+      "It has two jobs: deciding what each edge keeps when disk space is limited, and making the misses that still reach the origin cheap.",
+      "Cloudflare found a miss costs more than the trip to the origin, because setting up the connection counts, so connection reuse matters.",
+      "Netflix owns its catalog and can predict demand, so it fills caches ahead of time instead of waiting for misses."
+    ],
+    "figures": [
+      {
+        "postId": "cloudflare-pingora-2022",
+        "row": 2,
+        "label": "160x fewer new connections to one major customer's origins"
+      },
+      {
+        "postId": "netflix-open-connect-popularity-2017",
+        "row": 1,
+        "label": "around 1,200 files stored for one episode of The Crown"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "dns": "CDNs take from DNS the way a user's request is pointed at a nearby server, which is how each user lands on a close edge.",
+    "caching": "CDNs take from caching the hit, the miss and the fill, applied to many edge copies that sit in front of one origin."
+  },
   "posts": [
     {
       "id": "cloudflare-pingora-2022",

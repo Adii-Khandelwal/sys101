@@ -7,6 +7,29 @@
   "prerequisites": [
     "caching"
   ],
+  "summary": {
+    "points": [
+      "Consistent hashing puts servers and keys on one ring, so when a server joins or leaves only the keys next to it move.",
+      "A ring with few servers spreads load unevenly unless each server takes many points on it.",
+      "Cloudflare checked its default points per server against the math, because small per-server costs become huge at fleet scale.",
+      "Discord found that on a hot read path, copying shared data can cost more than the work itself."
+    ],
+    "figures": [
+      {
+        "postId": "cloudflare-ketama-ram-2026",
+        "row": 0,
+        "label": "load variation across 100 servers: about 99% at 1 point each, 8% at 160"
+      },
+      {
+        "postId": "cloudflare-ketama-ram-2026",
+        "row": 7,
+        "label": "over 100TB of RAM reclaimed across the fleet"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "caching": "Consistent hashing takes from caching the question of which server holds a key, and the cost of a mass reshuffle when servers change."
+  },
   "posts": [
     {
       "id": "cloudflare-ketama-ram-2026",

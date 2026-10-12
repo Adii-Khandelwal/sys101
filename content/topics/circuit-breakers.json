@@ -8,6 +8,29 @@
   "prerequisites": [
     "rate-limiting"
   ],
+  "summary": {
+    "points": [
+      "A circuit breaker stops a client calling a failing dependency for a while, so calls fail fast instead of piling up.",
+      "Load shedding makes an overloaded server reject some requests, lowest priority first, so the rest are served in time.",
+      "Zalando's analysis of one incident found that a breaker's probes test the service at a trickle, not under the load that returns when it closes.",
+      "Uber's Cinnamon lets a server protect itself, without help from callers, by ranking requests and shedding the lowest first."
+    ],
+    "figures": [
+      {
+        "postId": "zalando-circuit-breaker-herd-2026",
+        "row": 4,
+        "label": "10x the traffic per pod once the breaker closed, with at least three pods"
+      },
+      {
+        "postId": "uber-cinnamon-load-shedder-2023",
+        "row": 1,
+        "label": "about 1 microsecond of overhead per request for Cinnamon"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "rate-limiting": "Circuit breakers take from rate limiting the idea of refusing some calls on purpose to protect a system that has limited capacity."
+  },
   "lesson": {
     "why": {
       "outcome": "After this you can explain why a slow or overloaded service needs protection on both sides of a call.",

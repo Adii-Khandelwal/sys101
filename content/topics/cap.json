@@ -10,6 +10,30 @@
     "replication",
     "sharding"
   ],
+  "summary": {
+    "points": [
+      "When a network partition splits a system, each side can keep answering or refuse stale data, but not both.",
+      "Partitions are a fact of networks, so the real choice is what to do during one, and it is decided for each kind of data.",
+      "Amazon's Dynamo starts from never rejecting a write and derives quorums, hinted handoff and reconciliation from that rule.",
+      "Google's Spanner keeps strong consistency across the globe by paying a bounded latency and engineering the clock."
+    ],
+    "figures": [
+      {
+        "postId": "amazon-dynamo-2007",
+        "row": 0,
+        "label": "99.9% of reads and writes complete within 300 ms, Dynamo's SLA"
+      },
+      {
+        "postId": "google-spanner-2012",
+        "row": 0,
+        "label": "1 to 7 ms: TrueTime clock uncertainty that a transaction waits out"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "replication": "CAP takes from replication the picture of several copies of one key that can end up on opposite sides of a network split.",
+    "sharding": "CAP takes from sharding the fact that data lives on many machines joined by a network, which is where partitions come from."
+  },
   "lesson": {
     "why": {
       "outcome": "After this you can explain why a partitioned system must give up either consistency or availability, and why partition tolerance is not optional.",
