@@ -1,0 +1,66 @@
+{
+  "topic": "circuit-breakers",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "horizontal-pod-autoscaler",
+      "name": "The Horizontal Pod Autoscaler",
+      "explanation": "In Kubernetes, the autoscaler watches a workload and adds or removes copies (pods) to match demand. When traffic drops it scales down, which matters for the cold start Zalando describes.",
+      "assumedBy": [
+        {
+          "postId": "zalando-circuit-breaker-herd-2026",
+          "quote": "With barely 5 requests per second coming in, the Horizontal Pod Autoscaler (HPA) has scaled the service to a minimum of only three pods."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Horizontal Pod Autoscaling",
+          "publisher": "Kubernetes",
+          "url": "https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/",
+          "year": "page shows last updated 2026-08-03",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "distributed-tracing",
+      "name": "Traces and spans",
+      "explanation": "A trace follows one request through every service it touches. Each step in it is a span with a start time and a duration, so you can see where the time went.",
+      "assumedBy": [
+        {
+          "postId": "zalando-circuit-breaker-herd-2026",
+          "quote": "Standard trace tooling gives you one trace at a time, in a waterfall view."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Traces",
+          "publisher": "OpenTelemetry",
+          "url": "https://opentelemetry.io/docs/concepts/signals/traces/",
+          "year": "page shows last updated 2026-01-14",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "reverse-proxy",
+      "name": "Reverse proxies",
+      "explanation": "A reverse proxy sits in front of servers, receives requests and passes them on. Proxying is commonly used to spread load across several servers.",
+      "assumedBy": [
+        {
+          "postId": "zalando-circuit-breaker-herd-2026",
+          "quote": "Individual span latencies during the half-open probe phase: 15 ms at the client, 10 ms at the reverse-proxy, 2 ms on the service. All healthy."
+        }
+      ],
+      "sources": [
+        {
+          "title": "NGINX Reverse Proxy",
+          "publisher": "F5 (NGINX)",
+          "url": "https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    }
+  ]
+}
