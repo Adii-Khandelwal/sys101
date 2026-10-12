@@ -47,6 +47,40 @@ function Outcome({ text }: { text: string }) {
   return <p className="outcome">{text}</p>;
 }
 
+/** "In short": the topic in a few plain sentences, then figures read from the posts' digests so they cannot drift. Not tracked. */
+function InShort({ topic }: { topic: Topic }) {
+  const s = topic.summary;
+  if (!s) return null;
+  const figures = s.figures.map((f) => {
+    const post = topic.posts.find((p) => p.id === f.postId)!;
+    const row = post.digest.numbers[f.row];
+    return { post, row };
+  });
+  return (
+    <section className="in-short" aria-labelledby="in-short-h">
+      <h2 id="in-short-h" className="label">
+        In short
+      </h2>
+      <ul>
+        {s.points.map((p) => (
+          <li key={p}>{p}</li>
+        ))}
+      </ul>
+      {figures.length > 0 && (
+        <ul className="in-short-figures">
+          {figures.map(({ post, row }) => (
+            <li key={`${post.id}-${row.value}`}>
+              <a href={`#${post.id}`}>
+                <strong>{row.value}</strong> {row.meaning}, {post.company} {postWhen(post, "year")}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 /** Topic page in the teaching-journey format: concept first, then real-world posts. */
 export default function TopicLesson({ topic, prerequisites, dependents, titles, learnHref }: Props) {
   const l = topic.lesson!;
@@ -79,11 +113,12 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
         </div>
         <h1 data-pagefind-meta="title">{topic.title}</h1>
         <p className="concept">{topic.concept}</p>
+        <InShort topic={topic} />
 
         <div className="relations" data-pagefind-ignore>
           <div>
             <div className="label">Builds on</div>
-            <TopicList topics={prerequisites} />
+            <TopicList topics={prerequisites} reasons={topic.prerequisiteReasons} />
           </div>
           <div>
             <div className="label">Leads to</div>

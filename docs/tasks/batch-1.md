@@ -4,8 +4,8 @@ Read this first in any session and continue from RESUME. (TaskCreate/TaskUpdate 
 
 ## Phase A (code and pilot)
 - [ ] Setup: this file, scripts/topic-brief.mjs, scripts/apply-drafts.mjs
-- [ ] A1 Path numbering: caption, phone group headers, shared ordering function, docs/homepage.md, tests
-- [ ] A2 Summary field (schema, render, checks)
+- [x] A1 Path numbering: caption, phone group headers, shared ordering function, docs/homepage.md, tests
+- [x] A2 Summary field (schema, render, checks)
 - [ ] A3 prerequisiteReasons (schema, render in Builds on, Path rows, learn "Before you start", map tooltip if under 20 lines, checks)
 - [ ] A4 Fields required only on topics that have them until Phase B ends (flag REQUIRE_NEW_FIELDS in lib/topics.ts)
 - [ ] A5 Pilot drafts for caching and consensus (docs/drafts/batch-1-pilot.json)
@@ -22,4 +22,4 @@ cap: todo | cdns: todo | circuit-breakers: todo | consistent-hashing: todo | dat
 - Ordering: topicOrder() in lib/order.ts = columns() of the transitive reduction, flattened (the existing Map index order). Numbers are global 1..N.
 - Context passes about 70%: stop at a batch boundary, update RESUME, tell the user to /clear and paste "Continue batch 1 from docs/tasks/batch-1.md."
 
-RESUME: Setup done; start A1.
+RESUME: A2 committed; do A3 (reasons in Path rows, learn Before you start, map tooltip check).

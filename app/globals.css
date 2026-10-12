@@ -2775,3 +2775,39 @@ html {
     min-height: 44px;
   }
 }
+
+/* "In short": plain list under the concept paragraph, then digest figures. */
+.in-short {
+  margin: 24px 0 0;
+}
+.in-short h2 {
+  margin: 0 0 8px;
+  color: var(--ink-soft);
+}
+.in-short ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.in-short li {
+  margin: 0 0 6px;
+}
+.in-short-figures {
+  margin-top: 12px;
+  padding-left: 0;
+  list-style: none;
+  color: var(--ink-soft);
+}
+.in-short-figures a {
+  display: inline-block;
+  min-height: 44px;
+  padding: 10px 0;
+  color: inherit;
+}
+.in-short-figures strong {
+  color: var(--ink);
+}
+.relation-reason {
+  margin: 2px 0 10px;
+  font-size: 15px;
+  color: var(--ink-soft);
+}

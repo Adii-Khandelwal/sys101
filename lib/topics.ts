@@ -107,6 +107,9 @@ export const LESSON_SECTIONS = ["why", "model", "how", "example", "mistakes", "p
 /** Sections in the concept part, which comes before the posts. */
 export const CONCEPT_SECTION_IDS = ["why", "model", "how", "example", "mistakes"] as const;
 
+/** The "In short" block under the concept paragraph. Figures point at rows of a post's digest.numbers, so values never drift. */
+export type Summary = { points: string[]; figures: { postId: string; row: number }[] };
+
 export type Topic = {
   slug: string;
   title: string;
@@ -119,6 +122,10 @@ export type Topic = {
   description?: string;
   concept: string;
   prerequisites: string[];
+  /** In short: 3 to 5 plain sentences and 0 to 3 digest figures. Required on every topic once REQUIRE_NEW_FIELDS is true. */
+  summary?: Summary;
+  /** Why each prerequisite comes first: one sentence per prerequisite id, hidden edges included. */
+  prerequisiteReasons?: Record<string, string>;
   /** Recap of what the prerequisites taught, 2 to 4 sentences. Not used by lesson topics. */
   primer?: string;
   /** New page format; when present it replaces primer, quiz and exercise. */
@@ -323,6 +330,58 @@ function checkLesson(topic: Topic): string[] {
   return problems;
 }
 
+/** Flip to true when every topic has `summary` and `prerequisiteReasons` (docs/tasks/batch-1.md). Until then they are checked only where present. */
+export const REQUIRE_NEW_FIELDS = false;
+
+const wordCount = (v: string) => v.trim().split(/\s+/).length;
+/** Phrasing the site never uses: em dashes and the "it's not X, it's Y" pattern. */
+const BANNED_PHRASING = /—|\bit['’]s not\b|\bnot (?:just|only|merely)\b|\bisn['’]t (?:just|only|merely)\b/i;
+
+/** Rules for `summary`: counts, lengths, figure references, digits that come from the page, banned phrasing. */
+export function checkSummary(topic: Topic): string[] {
+  const s = topic.summary;
+  if (!s) return REQUIRE_NEW_FIELDS ? ["summary is missing"] : [];
+  const problems: string[] = [];
+  if (!Array.isArray(s.points) || s.points.length < 3 || s.points.length > 5) problems.push("summary.points needs 3 to 5 sentences");
+  // Digits in a point must already be on the page, so a summary cannot introduce a figure.
+  const { summary: _s, prerequisiteReasons: _r, ...page } = topic;
+  const source = JSON.stringify(page);
+  (s.points ?? []).forEach((p, i) => {
+    const where = `summary.points ${i + 1}`;
+    const n = nonEmpty(p) ? wordCount(p) : 0;
+    if (n < 8 || n > 28) problems.push(`${where}: ${n} words, needs 8 to 28`);
+    if (nonEmpty(p) && !/[.!?]$/.test(p.trim())) problems.push(`${where}: must end with a full stop`);
+    if (BANNED_PHRASING.test(p)) problems.push(`${where}: banned phrasing`);
+    for (const d of p.match(/\d[\d,.]*\d|\d/g) ?? []) if (!source.includes(d)) problems.push(`${where}: "${d}" does not appear in the topic content`);
+  });
+  if (!Array.isArray(s.figures) || s.figures.length > 3) problems.push("summary.figures needs 0 to 3 entries");
+  (s.figures ?? []).forEach((f, i) => {
+    const post = topic.posts.find((p) => p.id === f.postId);
+    if (!post) problems.push(`summary.figures ${i + 1}: no post with id "${f.postId}"`);
+    else if (!Number.isInteger(f.row) || !post.digest.numbers[f.row]) problems.push(`summary.figures ${i + 1}: post "${f.postId}" has no numbers row ${f.row}`);
+  });
+  return problems;
+}
+
+/** Rules for `prerequisiteReasons`: one sentence for each prerequisite and none for anything else, no digits. */
+export function checkReasons(topic: Topic): string[] {
+  const r = topic.prerequisiteReasons;
+  if (!r) return REQUIRE_NEW_FIELDS && topic.prerequisites.length ? ["prerequisiteReasons is missing"] : [];
+  const problems: string[] = [];
+  for (const p of topic.prerequisites) if (!nonEmpty(r[p])) problems.push(`prerequisiteReasons: no reason for "${p}"`);
+  for (const [id, text] of Object.entries(r)) {
+    const where = `prerequisiteReasons.${id}`;
+    if (!topic.prerequisites.includes(id)) problems.push(`${where}: not a prerequisite of this topic`);
+    if (!nonEmpty(text)) continue;
+    const n = wordCount(text);
+    if (n < 8 || n > 30) problems.push(`${where}: ${n} words, needs 8 to 30`);
+    if (!/[.!?]$/.test(text.trim())) problems.push(`${where}: must end with a full stop`);
+    if (/\d/.test(text)) problems.push(`${where}: no digits`);
+    if (BANNED_PHRASING.test(text)) problems.push(`${where}: banned phrasing`);
+  }
+  return problems;
+}
+
 /** Diagrams are hand-written SVG; enforce the site's design rules on them. */
 function checkDiagram(svg: string | undefined): string[] {
   if (!nonEmpty(svg)) return ["is empty"];
@@ -377,6 +436,7 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
     if (!Array.isArray(topic.mistakes) || topic.mistakes.length !== 3 || !topic.mistakes.every(nonEmpty)) {
       problems.push(`${file}: mistakes needs exactly 3 items`);
     }
+    problems.push(...checkSummary(topic).map((p) => `${file}: ${p}`), ...checkReasons(topic).map((p) => `${file}: ${p}`));
     if (topic.lesson) {
       problems.push(...checkLesson(topic).map((p) => `${file}: ${p}`));
     } else {

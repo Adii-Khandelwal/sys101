@@ -13,13 +13,14 @@ type Props = {
   titles: Map<string, string>;
 };
 
-export function TopicList({ topics }: { topics: Topic[] }) {
+export function TopicList({ topics, reasons }: { topics: Topic[]; reasons?: Record<string, string> }) {
   if (topics.length === 0) return <p className="none">None</p>;
   return (
     <ul>
       {topics.map((t) => (
         <li key={t.slug}>
           <Link href={`/topic/${t.slug}`}>{t.title}</Link>
+          {reasons?.[t.slug] && <p className="relation-reason">{reasons[t.slug]}</p>}
         </li>
       ))}
     </ul>
