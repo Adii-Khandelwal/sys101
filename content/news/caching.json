@@ -1,0 +1,29 @@
+{
+  "asOf": "2026-10-12",
+  "items": [
+    {
+      "id": "valkey-9-1-memory-overhead",
+      "kind": "engineering-post",
+      "title": "Reducing Memory Overhead in Valkey 9.1",
+      "publisher": "Valkey project",
+      "url": "https://valkey.io/blog/9.1-memory-efficiency/",
+      "dateShown": "2026-08-13",
+      "summary": "The Valkey project says its latest release trims per-key memory overhead for strings and sorted sets, so a cache may fit more data and hit more often.",
+      "evidence": "your cache may achieve a higher hit rate without requiring any changes",
+      "addedOn": "2026-10-12",
+      "verifiedOn": "2026-10-12"
+    },
+    {
+      "id": "cloudfront-invalidation-by-cache-tag",
+      "kind": "engineering-post",
+      "title": "Manage caches with precision using Amazon CloudFront Invalidation by Cache Tag",
+      "publisher": "AWS Networking & Content Delivery blog",
+      "url": "https://aws.amazon.com/blogs/networking-and-content-delivery/manage-caches-with-precision-using-amazon-cloudfront-invalidation-by-cache-tag/",
+      "dateShown": "2026-05-04",
+      "summary": "AWS describes invalidating CloudFront objects by cache tag so related content can be purged together, and reports that invalidations take effect in under 5 seconds at P95.",
+      "evidence": "invalidations take effect in under 5 seconds at P95",
+      "addedOn": "2026-10-12",
+      "verifiedOn": "2026-10-12"
+    }
+  ]
+}

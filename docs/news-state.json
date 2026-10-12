@@ -1,4 +1,19 @@
 {
-  "lastChecked": {},
-  "allowedDomains": {}
+  "lastChecked": {
+    "caching": "2026-10-12"
+  },
+  "allowedDomains": {
+    "caching": [
+      "engineering.fb.com",
+      "uber.com/blog/",
+      "uber.com/us/en/blog/",
+      "uber.com/en-US/blog/",
+      "valkey.io/blog/",
+      "redis.io/blog/",
+      "memcached.org",
+      "aws.amazon.com/blogs/",
+      "aws.amazon.com/builders-library/",
+      "blog.cloudflare.com/"
+    ]
+  }
 }

@@ -87,6 +87,8 @@ Content is validated during static generation (`lib/topics.ts`, `lib/learn.ts`);
 
 A separate SEO check (`scripts/check-seo.mjs`) runs after `next build` and fails on: duplicate or over-length titles and descriptions, a description that ends in an ellipsis, a page without exactly one `<h1>`, headings that skip a level, a missing or wrong canonical, a page that should be `noindex` but is not (`/data`, 404), a sitemap that does not match the indexable pages or the files in `content/`, JSON-LD that does not parse, images without alt/width/height, and content streamed in a hidden chunk that needs JavaScript.
 
+"What's new" lists (`content/news/<slug>.json`, at most three recent pages from per-topic approved sources) appear after "What to learn next". They are checked in the build (`scripts/check-news.mjs`) and against the live pages with `npm run verify:news`; see `docs/whats-new.md`.
+
 A diagram overflow check (`scripts/check-diagram-overflow.mjs`) also runs after `next build`. It renders every diagram SVG in headless Chromium with the site's real fonts (Newsreader, IBM Plex Mono) and uses `getComputedTextLength()` to measure each label; if a label's rendered box spills past the box drawn around it, the build fails. It skips with a notice when Chromium is not installed (so CI without the browser is unaffected); run `npx playwright install chromium` once to enable it, or run it on its own with `npm run check:diagrams`.
 
 The unit tests also scan the homepage source so that no count or date is hardcoded, and check the graph layout for crossings and overlaps at 1440px, 1280px and 390px.
