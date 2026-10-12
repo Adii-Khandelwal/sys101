@@ -1,0 +1,39 @@
+{
+  "caching": {
+    "summary": {
+      "points": [
+        "A cache keeps a copy of data closer to the reader than the source of truth, so most reads skip the slow path.",
+        "The price is staleness: every write has to reach the cache too, by invalidating the old entry or letting it expire.",
+        "Races between reads, writes and invalidations can leave the cache holding a value the database no longer has.",
+        "Uber built its cache inside the database and used the database's own change log as the signal to invalidate entries.",
+        "Meta measures cache consistency by what a client could actually observe, and notes that rare bugs tend to hide in error-handling paths."
+      ],
+      "figures": [
+        { "postId": "meta-cache-consistency-2022", "row": 1 },
+        { "postId": "uber-docstore-cache-2024", "row": 8 }
+      ]
+    },
+    "prerequisiteReasons": {
+      "load-balancing": "Load balancing spreads requests across servers, and a cache then lowers the load further by answering reads before they reach the source of truth."
+    }
+  },
+  "consensus": {
+    "summary": {
+      "points": [
+        "Consensus is how a group of replicas agree on one value, or one order of values, even though machines crash and messages are lost.",
+        "A leader appends each change to a replicated log, and a change counts as committed once a majority has stored it.",
+        "Any two majorities overlap, so the system can lose a minority of nodes and still agree.",
+        "The cost is a round trip to that majority on every write, so consensus trades latency for agreement.",
+        "The etcd guide says commit latency has a floor set by the network round trip between members plus a durable disk write."
+      ],
+      "figures": [
+        { "postId": "etcd-performance", "row": 0 },
+        { "postId": "cockroachdb-leader-leases-2026", "row": 0 }
+      ]
+    },
+    "prerequisiteReasons": {
+      "cap": "CAP names the trade between consistency and availability, and consensus is how a strongly consistent system stays available while a quorum survives.",
+      "replication": "Consensus keeps replicas agreeing on one order of changes, so you first need to know what replicas are and why every change must reach them."
+    }
+  }
+}

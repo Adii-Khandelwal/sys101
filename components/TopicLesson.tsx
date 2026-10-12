@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { optionId } from "@/lib/quizIds";
-import { formatDate, postWhen, type Topic } from "@/lib/topics";
+import { NO_DATE, formatDate, isUndated, postWhen, type Topic } from "@/lib/topics";
 import { readingLabel } from "@/lib/readingTime";
 import { PostDigest, TopicList } from "./TopicDossier";
 import { CompactProgress, FinishTopic, MarkDone, QuizBlock, ResumeLine } from "./LessonTrackers";
@@ -47,6 +47,9 @@ function Outcome({ text }: { text: string }) {
   return <p className="outcome">{text}</p>;
 }
 
+/** "Cache fills per day" reads on after a value; "TAO cache" and "CPU" keep their capitals. */
+const lowerFirst = (t: string) => (/^[A-Z][a-z]/.test(t) ? t[0].toLowerCase() + t.slice(1) : t);
+
 /** "In short": the topic in a few plain sentences, then figures read from the posts' digests so they cannot drift. Not tracked. */
 function InShort({ topic }: { topic: Topic }) {
   const s = topic.summary;
@@ -71,7 +74,7 @@ function InShort({ topic }: { topic: Topic }) {
           {figures.map(({ post, row }) => (
             <li key={`${post.id}-${row.value}`}>
               <a href={`#${post.id}`}>
-                <strong>{row.value}</strong> {row.meaning}, {post.company} {postWhen(post, "year")}
+                <strong>{row.value}</strong> {lowerFirst(row.meaning)}, {post.company} {isUndated(post) ? NO_DATE : postWhen(post, "year")}
               </a>
             </li>
           ))}
