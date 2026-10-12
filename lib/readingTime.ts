@@ -19,7 +19,7 @@ function words(text: string | undefined): number {
 
 /** Every prose string the topic page actually renders, in reading order. */
 function proseStrings(topic: Topic): string[] {
-  const out: string[] = [topic.concept, ...(topic.summary?.points ?? []), ...Object.values(topic.prerequisiteReasons ?? {})];
+  const out: string[] = [topic.concept, ...(topic.summary?.points ?? []), ...(topic.summary?.figures.map((f) => f.label) ?? []), ...Object.values(topic.prerequisiteReasons ?? {})];
   const l = topic.lesson;
   if (l) {
     out.push(l.why.outcome, l.why.body);

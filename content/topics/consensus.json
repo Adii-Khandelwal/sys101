@@ -12,24 +12,25 @@
     "points": [
       "Consensus is how a group of replicas agree on one value, or one order of values, even though machines crash and messages are lost.",
       "A leader appends each change to a replicated log, and a change counts as committed once a majority has stored it.",
-      "Any two majorities overlap, so the system can lose a minority of nodes and still agree.",
-      "The cost is a round trip to that majority on every write, so consensus trades latency for agreement.",
+      "Any two majorities overlap, so a minority of nodes can fail and the system still agrees; the cost is a majority round trip on every write.",
       "The etcd guide says commit latency has a floor set by the network round trip between members plus a durable disk write."
     ],
     "figures": [
       {
         "postId": "etcd-performance",
-        "row": 0
+        "row": 0,
+        "label": "member round trip: about 50 ms in the US, up to 400 ms intercontinental"
       },
       {
         "postId": "cockroachdb-leader-leases-2026",
-        "row": 0
+        "row": 0,
+        "label": "lease-maintenance CPU use cut by up to 85% with Leader Leases"
       }
     ]
   },
   "prerequisiteReasons": {
-    "cap": "CAP names the trade between consistency and availability, and consensus is how a strongly consistent system stays available while a quorum survives.",
-    "replication": "Consensus keeps replicas agreeing on one order of changes, so you first need to know what replicas are and why every change must reach them."
+    "cap": "Consensus takes from CAP the choice of strong consistency, and the cost that the system keeps serving only while a quorum of nodes survives.",
+    "replication": "Consensus takes from replication the picture of several copies of the same data, which must all apply the same changes in the same order."
   },
   "lesson": {
     "why": {

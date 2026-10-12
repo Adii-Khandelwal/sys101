@@ -108,7 +108,18 @@ export const LESSON_SECTIONS = ["why", "model", "how", "example", "mistakes", "p
 export const CONCEPT_SECTION_IDS = ["why", "model", "how", "example", "mistakes"] as const;
 
 /** The "In short" block under the concept paragraph. Figures point at rows of a post's digest.numbers, so values never drift. */
-export type Summary = { points: string[]; figures: { postId: string; row: number }[] };
+export type Summary = { points: string[]; figures: { postId: string; row: number; label: string }[] };
+
+/** The date string a post shows in its header (and, as a year, in Original posts); a summary figure repeats it exactly. */
+export const postDateLabel = (post: Pick<Post, "published" | "edition">) => postWhen(post, "month");
+
+/** A digest row the company itself calls a headline result, or a target rather than a measurement. */
+export const isOwnClaim = (row: { meaning: string }) => /headline|\btarget\b|\bgoal\b/i.test(row.meaning);
+
+/** The line a summary figure renders as: label, company, date string, and a note when the number is the company's own claim. */
+export function figureLine(post: Post, f: { row: number; label: string }) {
+  return `${f.label}, ${post.company} ${postDateLabel(post)}${isOwnClaim(post.digest.numbers[f.row]) ? " (company's own figure)" : ""}`;
+}
 
 export type Topic = {
   slug: string;
@@ -335,6 +346,8 @@ export const REQUIRE_NEW_FIELDS = false;
 
 const wordCount = (v: string) => v.trim().split(/\s+/).length;
 /** Phrasing the site never uses: em dashes and the "it's not X, it's Y" pattern. */
+/** Wording that comments on a figure instead of describing it. */
+const EDITORIAL = /headline|\bfirst limit|\bsecond limit|\bthe post['’]s\b/i;
 const BANNED_PHRASING = /—|\bit['’]s not\b|\bnot (?:just|only|merely)\b|\bisn['’]t (?:just|only|merely)\b/i;
 
 /** Rules for `summary`: counts, lengths, figure references, digits that come from the page, banned phrasing. */
@@ -355,10 +368,21 @@ export function checkSummary(topic: Topic): string[] {
     for (const d of p.match(/\d[\d,.]*\d|\d/g) ?? []) if (!source.includes(d)) problems.push(`${where}: "${d}" does not appear in the topic content`);
   });
   if (!Array.isArray(s.figures) || s.figures.length > 3) problems.push("summary.figures needs 0 to 3 entries");
+  const numbersIn = (t: string) => (t.match(/\d[\d,.]*\d|\d/g) ?? []);
   (s.figures ?? []).forEach((f, i) => {
+    const where = `summary.figures ${i + 1}`;
     const post = topic.posts.find((p) => p.id === f.postId);
-    if (!post) problems.push(`summary.figures ${i + 1}: no post with id "${f.postId}"`);
-    else if (!Number.isInteger(f.row) || !post.digest.numbers[f.row]) problems.push(`summary.figures ${i + 1}: post "${f.postId}" has no numbers row ${f.row}`);
+    const row = post?.digest.numbers[f.row];
+    if (!post) return problems.push(`${where}: no post with id "${f.postId}"`);
+    if (!Number.isInteger(f.row) || !row) return problems.push(`${where}: post "${f.postId}" has no numbers row ${f.row}`);
+    if (!nonEmpty(f.label)) return problems.push(`${where}: label is required`);
+    const n = wordCount(f.label);
+    if (n < 4 || n > 14) problems.push(`${where}: label is ${n} words, needs 4 to 14`);
+    if (BANNED_PHRASING.test(f.label) || EDITORIAL.test(f.label)) problems.push(`${where}: banned or editorial phrasing in label`);
+    const rowText = `${row.value} ${row.meaning}`;
+    for (const d of numbersIn(f.label)) if (!rowText.includes(d)) problems.push(`${where}: "${d}" is not in the referenced row`);
+    const own = numbersIn(row.value);
+    if (own.length && !own.some((d) => f.label.includes(d))) problems.push(`${where}: label must contain the figure's value (${row.value})`);
   });
   return problems;
 }

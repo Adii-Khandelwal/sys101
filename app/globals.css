@@ -2805,9 +2805,6 @@ html {
   padding: 10px 0;
   color: inherit;
 }
-.in-short-figures strong {
-  color: var(--ink);
-}
 .relation-reason {
   margin: 2px 0 10px;
   font-size: 15px;

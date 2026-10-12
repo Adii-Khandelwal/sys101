@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { optionId } from "@/lib/quizIds";
-import { NO_DATE, formatDate, isUndated, postWhen, type Topic } from "@/lib/topics";
+import { figureLine, formatDate, postWhen, type Topic } from "@/lib/topics";
 import { readingLabel } from "@/lib/readingTime";
 import { PostDigest, TopicList } from "./TopicDossier";
 import { CompactProgress, FinishTopic, MarkDone, QuizBlock, ResumeLine } from "./LessonTrackers";
@@ -47,17 +47,13 @@ function Outcome({ text }: { text: string }) {
   return <p className="outcome">{text}</p>;
 }
 
-/** "Cache fills per day" reads on after a value; "TAO cache" and "CPU" keep their capitals. */
-const lowerFirst = (t: string) => (/^[A-Z][a-z]/.test(t) ? t[0].toLowerCase() + t.slice(1) : t);
-
 /** "In short": the topic in a few plain sentences, then figures read from the posts' digests so they cannot drift. Not tracked. */
 function InShort({ topic }: { topic: Topic }) {
   const s = topic.summary;
   if (!s) return null;
   const figures = s.figures.map((f) => {
     const post = topic.posts.find((p) => p.id === f.postId)!;
-    const row = post.digest.numbers[f.row];
-    return { post, row };
+    return { post, text: figureLine(post, f) };
   });
   return (
     <section className="in-short" aria-labelledby="in-short-h">
@@ -71,11 +67,9 @@ function InShort({ topic }: { topic: Topic }) {
       </ul>
       {figures.length > 0 && (
         <ul className="in-short-figures">
-          {figures.map(({ post, row }) => (
-            <li key={`${post.id}-${row.value}`}>
-              <a href={`#${post.id}`}>
-                <strong>{row.value}</strong> {lowerFirst(row.meaning)}, {post.company} {isUndated(post) ? NO_DATE : postWhen(post, "year")}
-              </a>
+          {figures.map(({ post, text }) => (
+            <li key={text}>
+              <a href={`#${post.id}`}>{text}</a>
             </li>
           ))}
         </ul>

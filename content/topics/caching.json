@@ -10,24 +10,25 @@
   "summary": {
     "points": [
       "A cache keeps a copy of data closer to the reader than the source of truth, so most reads skip the slow path.",
-      "The price is staleness: every write has to reach the cache too, by invalidating the old entry or letting it expire.",
-      "Races between reads, writes and invalidations can leave the cache holding a value the database no longer has.",
+      "The price is staleness: every write must reach the cache too, and races with invalidations can leave it holding a value the database no longer has.",
       "Uber built its cache inside the database and used the database's own change log as the signal to invalidate entries.",
-      "Meta measures cache consistency by what a client could actually observe, and notes that rare bugs tend to hide in error-handling paths."
+      "Meta counts only inconsistencies a client could actually observe, and its checker caught a rare bug in an error-handling path."
     ],
     "figures": [
       {
         "postId": "meta-cache-consistency-2022",
-        "row": 1
+        "row": 1,
+        "label": "over 10 trillion cache fills per day, even at a 99% hit rate"
       },
       {
         "postId": "uber-docstore-cache-2024",
-        "row": 8
+        "row": 8,
+        "label": "99.99% of cached reads matched the database in compare mode"
       }
     ]
   },
   "prerequisiteReasons": {
-    "load-balancing": "Load balancing spreads requests across servers, and a cache then lowers the load further by answering reads before they reach the source of truth."
+    "load-balancing": "Caching takes from load balancing the picture of requests spread across a pool of servers, and of some server in the path answering instead of the origin."
   },
   "posts": [
     {
