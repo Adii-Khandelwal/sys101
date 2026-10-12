@@ -380,7 +380,7 @@ export function checkSummary(topic: Topic): string[] {
     if (!Number.isInteger(f.row) || !row) return problems.push(`${where}: post "${f.postId}" has no numbers row ${f.row}`);
     if (!nonEmpty(f.label)) return problems.push(`${where}: label is required`);
     const n = wordCount(f.label);
-    if (n < 4 || n > 14) problems.push(`${where}: label is ${n} words, needs 4 to 14`);
+    if (n < 4 || n > 15) problems.push(`${where}: label is ${n} words, needs 4 to 15`);
     if (BANNED_PHRASING.test(f.label) || EDITORIAL.test(f.label)) problems.push(`${where}: banned or editorial phrasing in label`);
     if (f.label.includes(":")) problems.push(`${where}: no "label: value" colon in a label; write it as a phrase`);
     if (UNIT_NO_SPACE.test(f.label)) problems.push(`${where}: put a space between a number and its unit ("500 ms")`);

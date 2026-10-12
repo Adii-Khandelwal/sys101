@@ -61,7 +61,7 @@
         "Discord found that on a hot read path, copying shared data can cost more than the work itself."
       ],
       "figures": [
-        { "postId": "cloudflare-ketama-ram-2026", "row": 0, "label": "Across 100 servers, load variation fell from about 99% to about 8%" },
+        { "postId": "cloudflare-ketama-ram-2026", "row": 0, "label": "With 160 virtual nodes per server, load variation fell from about 99% to about 8%" },
         { "postId": "cloudflare-ketama-ram-2026", "row": 7, "label": "over 100 TB of RAM reclaimed across the fleet" }
       ]
     },
