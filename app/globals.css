@@ -2746,6 +2746,10 @@ html {
     position: absolute;
     inset: -15px -4px;
   }
+  /* Wrapped footer rows sit 44px apart, so one link's tap area never overlaps the row above or below. */
+  .site-footer {
+    row-gap: 25px;
+  }
   /* The Map and Path toggle sits close together, so its areas grow sideways just enough to reach 44px. */
   .home-view-toggle .text-button::after {
     inset: -13px -9px;
