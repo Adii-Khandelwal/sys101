@@ -1,0 +1,90 @@
+{
+  "topic": "consistent-hashing",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "hash-function",
+      "name": "Hash functions",
+      "explanation": "A hash function turns any input into a fixed-size number. The same input always gives the same number, and different inputs spread across the range, which is what lets servers and keys share one number line.",
+      "assumedBy": [
+        {
+          "postId": "cloudflare-ketama-ram-2026",
+          "quote": "The key concept of consistent hashing is that while hash functions can accept any kind of input, their output is limited to a single unsigned integer (32, 64, or 128-bit integers depending on which hash function)."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Hash function (Glossary)",
+          "publisher": "MDN Web Docs",
+          "url": "https://developer.mozilla.org/en-US/docs/Glossary/Hash_function",
+          "year": "page shows last updated 2025-07-11",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "websockets",
+      "name": "WebSockets",
+      "explanation": "A WebSocket is a connection a browser or app opens once and keeps open, so the server can push messages without being asked each time.",
+      "assumedBy": [
+        {
+          "postId": "discord-elixir-ring-2017",
+          "quote": "Users connect to a WebSocket and spin up a session process (a GenServer)"
+        }
+      ],
+      "sources": [
+        {
+          "title": "WebSocket API (WebSockets)",
+          "publisher": "MDN Web Docs",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API",
+          "year": "page shows last updated 2026-09-12",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "semaphore",
+      "name": "Semaphores",
+      "explanation": "A semaphore hands out a fixed number of permits. A caller takes one before doing the work and returns it after, so no more than that many run at once.",
+      "assumedBy": [
+        {
+          "postId": "discord-elixir-ring-2017",
+          "quote": "In most other languages, we could use an atomic counter to track outstanding requests and bail early if the number was too high, effectively implementing a semaphore."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Semaphore (java.util.concurrent)",
+          "publisher": "Oracle (Java SE 21 API)",
+          "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/Semaphore.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "pub-sub",
+      "name": "Publish and subscribe",
+      "explanation": "Senders publish a message to a topic and everyone subscribed to it receives a copy, without the sender knowing who they are. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "discord-elixir-ring-2017",
+          "quote": "While Discord is rich with features, most of it boils down to pub/sub."
+        }
+      ],
+      "topicPage": "pub-sub"
+    },
+    {
+      "id": "circuit-breaker",
+      "name": "Circuit breakers",
+      "explanation": "A guard that stops calling a failing service for a while, so failures do not pile up. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "discord-elixir-ring-2017",
+          "quote": "We didn’t want to use a circuit breaker because we didn’t want a burst in timeouts to result in a temporary state where no attempts are made at all."
+        }
+      ],
+      "topicPage": "circuit-breakers"
+    }
+  ]
+}
