@@ -1,0 +1,66 @@
+{
+  "topic": "cdns",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "reverse-proxy",
+      "name": "Reverse proxies",
+      "explanation": "A reverse proxy sits in front of servers, receives requests and passes them on. Proxying is commonly used to spread load across several servers.",
+      "assumedBy": [
+        {
+          "postId": "cloudflare-pingora-2022",
+          "quote": "Today we are excited to talk about Pingora, a new HTTP proxy we’ve built in-house using Rust that serves over 1 trillion requests a day"
+        }
+      ],
+      "sources": [
+        {
+          "title": "NGINX Reverse Proxy",
+          "publisher": "F5 (NGINX)",
+          "url": "https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "tcp-connections",
+      "name": "TCP connections and their cost",
+      "explanation": "TCP lets two hosts open a connection and exchange data reliably. Opening one takes round trips, so reusing an open connection saves time.",
+      "assumedBy": [
+        {
+          "postId": "cloudflare-pingora-2022",
+          "quote": "Our machines establish TCP connections to origin servers to proxy HTTP requests."
+        }
+      ],
+      "sources": [
+        {
+          "title": "TCP (Glossary)",
+          "publisher": "MDN Web Docs",
+          "url": "https://developer.mozilla.org/en-US/docs/Glossary/TCP",
+          "year": "page shows last updated 2025-07-11",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "http-status-codes",
+      "name": "HTTP status codes",
+      "explanation": "Every HTTP response starts with a three-digit status code that says how the request went. Codes in the 500s mean the server failed.",
+      "assumedBy": [
+        {
+          "postId": "cloudflare-pingora-2022",
+          "quote": "HTTP status codes are defined in RFC 9110 as a three digit integer, and generally expected to be in the range 100 through 599."
+        }
+      ],
+      "sources": [
+        {
+          "title": "RFC 9110: HTTP Semantics, section 15 (Status Codes)",
+          "publisher": "IETF",
+          "url": "https://www.rfc-editor.org/rfc/rfc9110.html",
+          "year": "2022",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    }
+  ]
+}
