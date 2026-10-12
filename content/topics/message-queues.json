@@ -7,6 +7,29 @@
   "prerequisites": [
     "sharding"
   ],
+  "summary": {
+    "points": [
+      "A message queue lets one part of a system hand work to another without waiting: producers add messages, the queue stores them, consumers take them when free.",
+      "A message can be delivered twice, late or lost, so the design says which it allows, and consumers must be safe to run twice.",
+      "Slack found that a queue keeping its backlog in memory fails exactly when it is needed most, so it put a durable log in front.",
+      "Meta's queue uses a lease plus an ack, so anything unacknowledged comes back, which makes at-least-once delivery the safe default."
+    ],
+    "figures": [
+      {
+        "postId": "slack-job-queue-2017",
+        "row": 1,
+        "label": "peak job rate of 33,000 per second"
+      },
+      {
+        "postId": "meta-foqs-2021",
+        "row": 0,
+        "label": "close to one trillion items processed per day"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "sharding": "Message queues take from sharding the way one stream of work is split into partitions that separate consumers can take in parallel."
+  },
   "posts": [
     {
       "id": "slack-job-queue-2017",

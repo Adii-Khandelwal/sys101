@@ -9,6 +9,31 @@
     "consensus",
     "circuit-breakers"
   ],
+  "summary": {
+    "points": [
+      "Failover keeps a system serving when a component dies: detect the failure, promote or route to a stand-in, and send clients to it.",
+      "The hard parts are not being fooled by a slow network, choosing exactly one replacement so there is no split-brain, and redirecting without waiting on caches.",
+      "GitHub splits database failover into detecting without false positives, deciding once with consensus, and redirecting through a proxy instead of DNS.",
+      "Amazon's static stability argues the best recovery step is one that does not have to happen, so spare capacity is held in other zones."
+    ],
+    "figures": [
+      {
+        "postId": "github-mysql-ha-failover-2018",
+        "row": 0,
+        "label": "10 to 13 seconds total outage in most failover cases"
+      },
+      {
+        "postId": "aws-static-stability-azs",
+        "row": 0,
+        "label": "50 percent extra capacity overprovisioned when using three Availability Zones"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "replication": "Failover takes from replication the standby copies that are already current enough to be promoted when the primary dies.",
+    "consensus": "Failover takes from consensus the way to choose exactly one replacement, since only one backed by a majority may take over.",
+    "circuit-breakers": "Failover takes from circuit breakers the habit of treating a failing dependency as down and routing around it instead of waiting on it."
+  },
   "lesson": {
     "why": {
       "outcome": "After this you can explain why redundancy alone is not availability, and what failover adds.",

@@ -15,7 +15,7 @@ Read this first in any session and continue from RESUME. (TaskCreate/TaskUpdate 
 ## Phase B (after the user says "continue"): batches of 4 topics
 Per-topic status (todo / drafted / applied):
 caching: pilot | consensus: pilot
-cap: applied | cdns: applied | circuit-breakers: applied | consistent-hashing: applied | databases: applied | distributed-transactions: applied | dns: applied | event-driven-architecture: applied | failover: todo | indexing: todo | load-balancing: todo | message-queues: todo | pub-sub: todo | rate-limiting: todo | replication: todo | sharding: todo
+cap: applied | cdns: applied | circuit-breakers: applied | consistent-hashing: applied | databases: applied | distributed-transactions: applied | dns: applied | event-driven-architecture: applied | failover: applied | indexing: applied | load-balancing: applied | message-queues: applied | pub-sub: todo | rate-limiting: todo | replication: todo | sharding: todo
 - [ ] After the last batch: set REQUIRE_NEW_FIELDS = true, full build, tests, SEO check, list every figure referenced.
 
 ## Decisions
@@ -24,4 +24,4 @@ cap: applied | cdns: applied | circuit-breakers: applied | consistent-hashing: a
 - Ordering: topicOrder() in lib/order.ts = columns() of the transitive reduction, flattened (the existing Map index order). Numbers are global 1..N.
 - Context passes about 70%: stop at a batch boundary, update RESUME, tell the user to /clear and paste "Continue batch 1 from docs/tasks/batch-1.md."
 
-RESUME: batches 1 and 2 applied. Next: batch 3 (failover, indexing, load-balancing, message-queues), then batch 4 (pub-sub, rate-limiting, replication, sharding), then final steps. Stop only if a check fails.
+RESUME: batches 1 to 3 applied. Next: batch 4 (pub-sub, rate-limiting, replication, sharding), then final steps (REQUIRE_NEW_FIELDS = true, full build, tests, SEO, list figures, CLAUDE.md).

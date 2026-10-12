@@ -7,6 +7,29 @@
   "prerequisites": [
     "dns"
   ],
+  "summary": {
+    "points": [
+      "Load balancing spreads requests across a pool of backends so that no single instance saturates.",
+      "The hard parts are choosing which backends each client may talk to, deciding where each request goes, and reacting to load signals that are always slightly stale.",
+      "Uber found that a subsetting design needing no coordination between clients scales and fails more gracefully, and that subsets too large are safer than too small.",
+      "Dropbox advises picking a load signal that cannot look healthy while the server is stuck."
+    ],
+    "figures": [
+      {
+        "postId": "uber-dynamic-subsetting-2022",
+        "row": 0,
+        "label": "100,000,000 connections needed if two 10,000-task services were fully meshed"
+      },
+      {
+        "postId": "dropbox-robinhood-2024",
+        "row": 0,
+        "label": "max-to-average CPU on an Envoy proxy cluster fell from 1.26 to 1.01"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "dns": "Load balancing takes from DNS the idea of one name that stands for many servers, and the staleness of answers that clients keep using."
+  },
   "posts": [
     {
       "id": "uber-dynamic-subsetting-2022",

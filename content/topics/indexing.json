@@ -8,6 +8,30 @@
     "databases",
     "sharding"
   ],
+  "summary": {
+    "points": [
+      "An index is a second, smaller structure kept beside the data so a query can jump to what it needs instead of reading everything.",
+      "Databases keep sorted B-tree indexes for exact lookups and ranges, and search engines keep inverted indexes mapping each word or fragment to documents.",
+      "GitHub found an index is only as good as its selectivity, and that sharding by content spreads data evenly but makes every query fan out.",
+      "Discord chooses the shard key from the query it needs: by guild for guild search, by user for searching all your DMs."
+    ],
+    "figures": [
+      {
+        "postId": "github-code-search-2023",
+        "row": 7,
+        "label": "115 TB of original content became a 25 TB index"
+      },
+      {
+        "postId": "discord-search-indexing-2025",
+        "row": 6,
+        "label": "median query latency fell from 500ms to under 100ms"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "databases": "Indexing takes from databases the table of rows and the queries over it, since an index is a second copy kept in step with that data.",
+    "sharding": "Indexing takes from sharding the shard key, which decides whether a query visits one machine or all of them."
+  },
   "posts": [
     {
       "id": "github-code-search-2023",
