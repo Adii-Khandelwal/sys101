@@ -89,6 +89,8 @@ A separate SEO check (`scripts/check-seo.mjs`) runs after `next build` and fails
 
 "What's new" lists (`content/news/<slug>.json`, at most three recent pages from per-topic approved sources) appear after "What to learn next". They are checked in the build (`scripts/check-news.mjs`) and against the live pages with `npm run verify:news`; see `docs/whats-new.md`.
 
+A `/background` page lists, per topic, what its curated posts assume you already know (`content/background/<topic>.json`): each concept with the post sentence that assumes it, a link to our own topic page or an official source, and a "Taught later" gist for concepts that come later in the course. `npm run verify:background` checks the quotes against the live posts; see `docs/background.md`.
+
 A diagram overflow check (`scripts/check-diagram-overflow.mjs`) also runs after `next build`. It renders every diagram SVG in headless Chromium with the site's real fonts (Newsreader, IBM Plex Mono) and uses `getComputedTextLength()` to measure each label; if a label's rendered box spills past the box drawn around it, the build fails. It skips with a notice when Chromium is not installed (so CI without the browser is unaffected); run `npx playwright install chromium` once to enable it, or run it on its own with `npm run check:diagrams`.
 
 The unit tests also scan the homepage source so that no count or date is hardcoded, and check the graph layout for crossings and overlaps at 1440px, 1280px and 390px.
