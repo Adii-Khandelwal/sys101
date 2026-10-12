@@ -11,7 +11,7 @@ Read this first in any session and continue from RESUME. Use scripts/topic-brief
 - [x] B1 .github/workflows/news-pr.yml
 - [x] B2 docs/routines/whats-new.md
 - [x] B3 docs/routines/README.md
-- [ ] B4 allowedDomains table for all 18 topics, STOP for approval, then write docs/news-state.json, run checks, commit
+- [~] B4 (table shown, waiting) allowedDomains table for all 18 topics, STOP for approval, then write docs/news-state.json, run checks, commit
 
 ## Decisions
 - Approved Caching items: Valkey 9.1 memory post, CloudFront invalidation by cache tag. Valkey 9.1 release post dropped. No third item.
@@ -20,4 +20,4 @@ Read this first in any session and continue from RESUME. Use scripts/topic-brief
 - NEWS_MODE is a constant in lib/site.ts ("review" default). Change it together with the auto-merge variable.
 - The news section sits outside the main data-pagefind-body div (Original posts is outside it too), so it has its own data-pagefind-body; its heading "What's new in <Topic>" is the search label.
 
-RESUME: B1-B3 done. Do B4: build the allowedDomains table for all 18 topics from each topic's existing sources, show it, STOP for approval. After approval write docs/news-state.json (keep caching), run check-news and the tests, update docs/routines/README.md host list if needed, commit.
+RESUME: B4 table shown. On approval: write all 18 allowedDomains into docs/news-state.json (keep caching, keep lastChecked.caching), run check-news and tests, update the host list in docs/routines/README.md section 3 if it names hosts, commit. Open flags: aws.amazon.com/builders-library/ redirects to builder.aws.com/learn/; uber.com/en-US/blog/ redirects to /US/en/blog/ (needs the locale path in the list); envoyproxy.io/blog/ is 404 (dropped); mongodb.com/blog/ is now /company/blog/.
