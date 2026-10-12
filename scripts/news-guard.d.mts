@@ -4,3 +4,4 @@ export function disallowedPaths(files: { filename: string; previous_filename?: s
 export function isNewsPr(files: { filename: string; previous_filename?: string }[], headRef: string): boolean;
 export function isStrict(headRef: string): boolean;
 export function allowlistChanged(base: Record<string, unknown>, head: Record<string, unknown>): boolean;
+export function isFork(headRepo: string | undefined, baseRepo: string | undefined): boolean;

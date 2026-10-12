@@ -12,6 +12,8 @@ name: News PR check
 # (isNewsPr): any claude/ branch that is named claude/news-* or touches a news path, and a person's branch only when
 # it changes nothing but news files. Anything else passes at once and gets no automatic merge; a person's pull
 # request that mixes news data with code is theirs to review, and the Vercel build still runs check-news on it.
+# Two rules hold for every pull request: the checks use the base branch's docs/news-state.json allowlist only (a pull
+# request that changes allowedDomains fails), and a pull request from a fork never reaches verify:news or auto-merge.
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
@@ -34,7 +36,7 @@ jobs:
       pull-requests: read
     outputs:
       news: ${{ steps.guard.outputs.news }}
-      strict: ${{ steps.guard.outputs.strict }}
+      fork: ${{ steps.guard.outputs.fork }}
     steps:
       # The base branch: this is the code that runs.
       - uses: actions/checkout@v4
@@ -48,11 +50,12 @@ jobs:
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
           HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           CHANGED: ${{ github.event.pull_request.changed_files }}
         run: |
           set -euo pipefail
           gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[] | {filename, previous_filename}' > "$RUNNER_TEMP/files.ndjson"
-          node scripts/news-guard.mjs paths "$RUNNER_TEMP/files.ndjson" "$HEAD_REF" "$CHANGED"
+          node scripts/news-guard.mjs paths "$RUNNER_TEMP/files.ndjson" "$HEAD_REF" "$CHANGED" "$HEAD_REPO" "$REPO"
       # The pull request, as data in its own directory. Never installed, built or run.
       - if: steps.guard.outputs.news == 'true'
         uses: actions/checkout@v4
@@ -63,8 +66,6 @@ jobs:
           persist-credentials: false
       - if: steps.guard.outputs.news == 'true'
         name: Take only the news data from the pull request
-        env:
-          STRICT: ${{ steps.guard.outputs.strict }}
         run: |
           set -euo pipefail
           # A symlink could point at a runner file the checks would then read; refuse any.
@@ -73,9 +74,8 @@ jobs:
             exit 1
           fi
           cp docs/news-state.json "$RUNNER_TEMP/base-state.json"
-          if [ "$STRICT" == "true" ]; then
-            node scripts/news-guard.mjs state "$RUNNER_TEMP/base-state.json" pr/docs/news-state.json
-          fi
+          # Every pull request is checked against the base branch's allowlist only; one that changes it fails here.
+          node scripts/news-guard.mjs state "$RUNNER_TEMP/base-state.json" pr/docs/news-state.json
           rm -rf content/news
           if [ -d pr/content/news ]; then cp -R pr/content/news content/news; else mkdir -p content/news; fi
           cp pr/docs/news-state.json docs/news-state.json
@@ -95,9 +95,13 @@ jobs:
         run: npm test
       - if: steps.guard.outputs.news == 'true'
         run: node scripts/check-news.mjs
-      - if: steps.guard.outputs.news == 'true'
+      - if: steps.guard.outputs.news == 'true' && steps.guard.outputs.fork != 'true'
         name: Open every item URL and confirm its evidence and date
         run: npm run verify:news
+      # A pull request from a fork never makes the runner fetch anything: its URLs are not opened.
+      - if: steps.guard.outputs.news == 'true' && steps.guard.outputs.fork == 'true'
+        name: Fork pull request, network verification skipped
+        run: echo "fork PR: network verification skipped, merge manually"
 
   # Off unless the repository variable NEWS_AUTOMERGE is 'true' (docs/routines/README.md, section 7: do not set it before
   # the test pull request has failed the guard). Only same-repository claude/ branches that passed. `--auto` waits for the
@@ -109,6 +113,7 @@ jobs:
       vars.NEWS_AUTOMERGE == 'true' &&
       needs.check.result == 'success' &&
       needs.check.outputs.news == 'true' &&
+      needs.check.outputs.fork != 'true' &&
       startsWith(github.head_ref, 'claude/') &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
