@@ -10,3 +10,5 @@ Read before editing content/background or app/background.
 - The topic page shows "Before you read these posts: Background for this topic" at the top of the posts section, directly above the first post, only when its topic has a file (`backgroundHref`).
 - Highlight: an overlay's opacity fades over `--dur-slow` after `DURATION.pulse`; under `prefers-reduced-motion` it appears and disappears instantly. Without JavaScript the page still scrolls to the section.
 - Not in the footer. The way in is the topic page link and the sitemap.
+- /background has the same scroll-only side rail as learn pages (LearnRail, `scope="section"`): one entry per topic, and its bar restarts at 0% when the next topic section begins. No progress store.
+- All 18 topics have a file. Per topic: concepts the topic's own page teaches are left out; each quote comes from the raw post text; each sourced concept names an official page that was opened.
