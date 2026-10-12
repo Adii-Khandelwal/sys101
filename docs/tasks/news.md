@@ -4,7 +4,7 @@ Read this first in any session and continue from RESUME. Use scripts/topic-brief
 
 ## Phase A (feature and Caching pilot, then STOP)
 - [x] A1 Schema, rendering, checks, tests (empty allowlist structure)
-- [ ] A2 Pilot candidates for Caching shown as a table, STOP for approval (write nothing before approval)
+- [x] A2 Pilot candidates for Caching shown as a table, STOP for approval (write nothing before approval)
 - [ ] A3 After approval: write items, verify:news, build, tests, SEO, search index, CLAUDE.md, commit, stop
 
 ## Phase B (after the user says "continue")
@@ -18,4 +18,4 @@ Read this first in any session and continue from RESUME. Use scripts/topic-brief
 - NEWS_MODE is a constant in lib/site.ts ("review" default). Change it together with the auto-merge variable.
 - The news section sits outside the main data-pagefind-body div (Original posts is outside it too), so it has its own data-pagefind-body; its heading "What's new in <Topic>" is the search label.
 
-RESUME: A1 committed. Do A2: find up to 3 Caching candidates from the last 12 months (today 2026-10-12), show the table, STOP for approval; write nothing before approval. Visual check at 1440/390 happens in A3 with real items.
+RESUME: A2 table shown (Valkey 9.1 announcement, Valkey 9.1 memory deep dive, CloudFront cache-tag invalidation blog). Waiting for approval. After approval (A3): write content/news/caching.json, add caching allowedDomains (valkey.io, aws.amazon.com plus existing post domains) to docs/news-state.json, set lastChecked.caching, run verify:news, build, tests, SEO, index, 1440/390 check, CLAUDE.md, commit.
