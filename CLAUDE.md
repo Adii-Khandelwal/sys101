@@ -28,7 +28,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - A source with no date (versioned docs) sets `published` to "no date shown" plus `edition`, shown instead of a date only when it gives one the page shows ("date unknown" shows nothing). `tradeoffs.rejected` is left out when the source names no alternative.
 - A paper says "This is a research paper, not a company blog post"; no internal phrasing like "the rules" on a page.
 - "What's new" (content/news, 3 items max, allowlisted sources) follows What to learn next, untracked, build-checked. No provenance note on the section. NEWS_MODE (lib/site.ts) gates About's "I read the change". The routine touches only content/news/** and docs/news-state.json; read docs/whats-new.md.
-- "Background" (/background, content/background/<slug>.json) lists what a topic's posts assume; concepts taught later link forward with a gist. Topic pages link to it only if a file exists. Read docs/background.md.
+- "Background" (/background, content/background/<slug>.json) lists what a topic's posts assume; concepts taught later get a "Taught later" label and a gist, with no link. Topic pages link to it only if a file exists. Read docs/background.md.
 - Read docs/topic-pages.md before editing topic pages or their content.
 
 ## Learn pages (start from zero)

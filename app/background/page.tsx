@@ -5,7 +5,7 @@ import SiteFooter from "@/components/SiteFooter";
 import PageUpdated from "@/components/PageUpdated";
 import { backgroundUpdated, displayQuote, getAllBackground, isTaughtLater } from "@/lib/background";
 import { companyWhen, getAllTopics } from "@/lib/topics";
-import { formatNumber, topicNumbers, topicOrder } from "@/lib/order";
+import { topicNumbers, topicOrder } from "@/lib/order";
 import { pageMeta } from "@/lib/site";
 
 // Prerendered at build time; using anything dynamic here fails the build.
@@ -43,7 +43,6 @@ export default function Background() {
               <ul className="bg-items">
                 {b.items.map((item) => {
                   const later = isTaughtLater(item, b.topic, numbers);
-                  const target = item.topicPage ? bySlug.get(item.topicPage) : undefined;
                   return (
                     <li key={item.id} id={`${b.topic}-${item.id}`} className="bg-item">
                       <h3>
@@ -65,14 +64,6 @@ export default function Background() {
                           })}
                         </ul>
                       </div>
-                      {target && later && (
-                        <p className="bg-links">
-                          <span className="label">Taught in</span>
-                          <Link href={`/topic/${target.slug}`}>
-                            {target.title}, topic {formatNumber(numbers.get(target.slug)!)}
-                          </Link>
-                        </p>
-                      )}
                       {(item.sources ?? []).length > 0 && (
                         <ul className="bg-sources">
                           {item.sources!.map((s) => (

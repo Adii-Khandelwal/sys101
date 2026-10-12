@@ -84,7 +84,7 @@ export function validateBackground(file: string, b: Background, topics: Topic[])
     const sources = it.sources ?? [];
     if (!it.topicPage && sources.length === 0) problems.push(`${where}: with no topic page it needs an official source`);
     if (isTaughtLater(it, b.topic, numbers)) {
-      if (sources.length) problems.push(`${where}: a concept taught later links forward only, with no source`);
+      if (sources.length) problems.push(`${where}: a concept taught later gets only the label and the gist, with no source`);
       if (nonEmpty(it.explanation) && words(it.explanation) > GIST_MAX_WORDS) problems.push(`${where}: a concept taught later gets a one-line gist of at most ${GIST_MAX_WORDS} words`);
       if (nonEmpty(it.explanation) && !/gist is enough/i.test(it.explanation)) problems.push(`${where}: the gist must say that the gist is enough`);
     } else {

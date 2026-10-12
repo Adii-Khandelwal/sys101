@@ -104,17 +104,18 @@ describe("the /background page", () => {
     expect(html).not.toMatch(/Taught earlier|topic 01/);
   });
 
-  it("links forward to the topic page, shows each assumed-by sentence with its post, and does not re-explain", () => {
+  it("shows each assumed-by sentence with its post, and does not re-explain or link to the later topic", () => {
     for (const item of getBackground("caching")!.items) {
       for (const a of item.assumedBy) {
         const shown = displayQuote(a.quote).replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
         expect(html.includes(displayQuote(a.quote)) || html.includes(shown), `${item.id}: ${a.postId}`).toBe(true);
         expect(html).toContain(`/topic/caching#${a.postId}`);
       }
-      // only a concept taught later links forward to our page; an earlier one has just its official source
-      if (item.topicPage && isTaughtLater(item, "caching", numbers)) expect(html).toContain(`href="/topic/${item.topicPage}"`);
     }
-    expect(html).not.toContain('href="/topic/databases"');
+    // no line says where a concept is taught, and no link points at another topic page: the reader uses search or the glossary
+    expect(html).not.toMatch(/Taught in|Taught earlier|, topic \d\d/);
+    const topicLinks = [...html.matchAll(/href="(\/topic\/[^"]*)"/g)].map((m) => m[1]);
+    for (const l of topicLinks) expect(l, l).toMatch(/^\/topic\/caching(#[\w-]+)?$/);
     expect(html).toContain("https://www.postgresql.org/docs/current/tutorial-transactions.html");
   });
 
@@ -167,7 +168,7 @@ describe("validation catches the mistakes it is for", () => {
     expect(problems(b)).toContain("one-line gist");
     const c = good();
     later(c).sources = [{ title: "T", publisher: "P", url: "https://example.com", year: "2026", verifiedOn: "2026-10-12" }];
-    expect(problems(c)).toContain("links forward only");
+    expect(problems(c)).toContain("only the label and the gist");
   });
   it("an earlier concept with a topic page still needs its official source, since the page does not link back", () => {
     const a = good();
