@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CONTACT_EMAIL, NEWS_MODE, PAGE_DATES, pageMeta } from "@/lib/site";
+import { CONTACT_EMAIL, PAGE_DATES, pageMeta } from "@/lib/site";
 import Link from "next/link";
 import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
@@ -80,12 +80,8 @@ export default function About() {
       <p>
         Some topics end with a short &quot;What&apos;s new&quot; list: a few recent pages from approved
         official or engineering sites. An automated routine finds them and checks each against the page it
-        links to
-        {NEWS_MODE === "review"
-          ? ", and I read the change before it is published. "
-          : ", and nothing else reads them before they appear. "}
-        The write-ups there are short and the page they link to is the source. They do not count toward
-        your progress.
+        links to. The write-ups there are short and the page they link to is the source. They do not count
+        toward your progress.
       </p>
 
       <h2>Your progress</h2>

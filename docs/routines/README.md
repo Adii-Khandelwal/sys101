@@ -14,7 +14,7 @@ Do these in order. Each step needs the one before it.
 6. **Run now**, by hand, with the schedule still off. You see one real run before any unattended one.
 7. **Read the whole run and the pull request.** Every page it opened, every page it skipped and why, the table, the `news-pr` result. The checks do not prove a summary says what the page says (section 9); you are the check for that. Then turn the schedule on.
 8. **Run the guard test** (section 7). It proves a `claude/` pull request with a forbidden file is blocked, before auto-merge exists to make that matter.
-9. **Only then** set `NEWS_MODE` to `"auto"` and `NEWS_AUTOMERGE` to `true`, together (section 8). About says "I read the change" only in review mode, so the two must change as one.
+9. **Only then** set `NEWS_AUTOMERGE` to `true` (section 8).
 
 ## 1. Repository settings
 
@@ -199,18 +199,15 @@ Setup step 8. Do not set `NEWS_AUTOMERGE` until you have run this test on GitHub
 
 ## 8. Turn on auto-merge (optional, only after section 7 passed)
 
-Do both parts together, in this order:
+Do this only when you trust the pull requests enough to stop reading them. Settings, General, Pull Requests: tick "Allow auto-merge". Settings, Secrets and variables, Actions, Variables: add `NEWS_AUTOMERGE` = `true`.
 
-1. In `lib/site.ts` set `NEWS_MODE = "auto"` and commit it to `main` (through a pull request). About then stops saying "I read the change".
-2. Settings, General, Pull Requests: tick "Allow auto-merge". Settings, Secrets and variables, Actions, Variables: add `NEWS_AUTOMERGE` = `true`.
+From then on the `news-automerge` job runs `gh pr merge --auto --squash` for same-repository `claude/` pull requests whose `news-pr` check passed, and GitHub merges when the required checks are green.
 
-From then on `news-automerge` runs `gh pr merge --auto --squash` for same-repository `claude/` pull requests whose `news-pr` check passed, and GitHub merges when the required checks are green.
-
-To turn it off, reverse the order: delete the variable (or set it to anything but `true`), then set `NEWS_MODE` back to `"review"`.
+To turn it off, delete the variable (or set it to anything but `true`).
 
 ## 9. What the checks do and do not prove
 
-They prove each URL is https and inside the topic's allowlist (including after redirects), the item's publisher and kind match the entry, the date shown is on the page, the evidence phrase is in the page text, the summary follows the format and credits the source for any figure or comparison, and nothing outside the two paths changed. They do not prove the summary says what the page says, that the page is worth a reader's time, or that a `builder.aws.com` page is written by AWS (the routine prompt tells it to skip those that are not; nothing checks it). That is why `NEWS_MODE` defaults to "review".
+They prove each URL is https and inside the topic's allowlist (including after redirects), the item's publisher and kind match the entry, the date shown is on the page, the evidence phrase is in the page text, the summary follows the format and credits the source for any figure or comparison, and nothing outside the two paths changed. They do not prove the summary says what the page says, that the page is worth a reader's time, or that a `builder.aws.com` page is written by AWS (the routine prompt tells it to skip those that are not; nothing checks it).
 
 ## 10. When something goes wrong
 

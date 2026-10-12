@@ -17,13 +17,6 @@ export const SITE_DESCRIPTION =
 /** Content dates for pages with no JSON behind them. Shown on the page and used as sitemap lastmod. */
 export const PAGE_DATES = { about: "2026-10-11", terms: "2026-10-11", privacy: "2026-10-11", glossary: "2026-10-12" } as const;
 
-/**
- * How "What's new" items reach the site: "review" means I read each pull request before it merges, "auto" means
- * checked pull requests merge on their own. Change it together with the NEWS_AUTOMERGE repository variable
- * (docs/routines/README.md). About says "I read the change" only in "review".
- */
-export const NEWS_MODE: "review" | "auto" = "review";
-
 export const absoluteUrl = (path: string) => SITE_URL + (path === "/" ? "" : path);
 
 /** A meta description must be shorter than this many characters (checked by scripts/check-seo.mjs). */
