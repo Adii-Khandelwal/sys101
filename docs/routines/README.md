@@ -6,14 +6,15 @@ The routine reads `docs/news-state.json`, looks at approved sites for three topi
 
 Do these in order. Each step needs the one before it.
 
-1. **Push to `main`.** `pull_request_target` runs the workflow file from the pull request's base branch, which is `main`. Until the workflow, `scripts/news-guard.mjs` and the allowlist are on `main`, no pull request runs them, and the routine's first pull request would be checked by nothing.
+1. **Push to `main`.** `pull_request_target` runs the workflow file from the repository's default branch (`main`). Until the workflow, `scripts/news-guard.mjs` and the allowlist are on `main`, no pull request runs them, and the routine's first pull request would be checked by nothing.
 2. **Wait for the Vercel build.** The push deploys the site. Confirm the build is green with the new checks before anything depends on it.
-3. **Open any trivial pull request** (a typo fix in a doc) so the `news-pr` check exists, check that it passes at once, then require it in branch protection (section 1). GitHub only offers a check for requirement after it has run once.
-4. **Create the environment and the routine** (sections 2 to 6). The environment comes first because the routine form asks for it, and its domain list must be right before the first run or every fetch fails.
-5. **Run now**, by hand, with the schedule still off. You see one real run before any unattended one.
-6. **Read the whole run and the pull request.** Every page it opened, every page it skipped and why, the table, the `news-pr` result. The checks do not prove a summary says what the page says (section 9); you are the check for that. Then turn the schedule on.
-7. **Run the guard test** (section 7). It proves a `claude/` pull request with a forbidden file is blocked, before auto-merge exists to make that matter.
-8. **Only then** set `NEWS_MODE` to `"auto"` and `NEWS_AUTOMERGE` to `true`, together (section 8). The pages say "reviewed by me" only in review mode, so the two must change as one.
+3. **Allow `pull_request_target` with an Actions policy** (section 1, "Allow pull_request_target"). GitHub blocks that event in public repositories by default and enforces it on 2 November 2026. Without the policy `news-pr` stops running, and a required check that never runs blocks every merge.
+4. **Open any trivial pull request** (a typo fix in a doc) so the `news-pr` check exists, check that it passes at once, then require it in branch protection (section 1). GitHub only offers a check for requirement after it has run once.
+5. **Create the environment and the routine** (sections 2 to 6). The environment comes first because the routine form asks for it, and its domain list must be right before the first run or every fetch fails.
+6. **Run now**, by hand, with the schedule still off. You see one real run before any unattended one.
+7. **Read the whole run and the pull request.** Every page it opened, every page it skipped and why, the table, the `news-pr` result. The checks do not prove a summary says what the page says (section 9); you are the check for that. Then turn the schedule on.
+8. **Run the guard test** (section 7). It proves a `claude/` pull request with a forbidden file is blocked, before auto-merge exists to make that matter.
+9. **Only then** set `NEWS_MODE` to `"auto"` and `NEWS_AUTOMERGE` to `true`, together (section 8). The pages say "reviewed by me" only in review mode, so the two must change as one.
 
 ## 1. Repository settings
 
@@ -22,10 +23,32 @@ Do these in order. Each step needs the one before it.
    - Fork pull request workflows: keep "Require approval for first-time contributors" (or stricter).
 2. Settings, Branches (or Rulesets), add a rule for `main`:
    - Require a pull request before merging, with **0 required approvals**.
-   - Require status checks to pass, and add **`news-pr`** (after setup step 3).
+   - Require status checks to pass, and add **`news-pr`** (after setup step 4).
    - Block direct pushes to `main`.
    - **Do not** tick "Require review from Code Owners" and do not require approvals.
-3. Leave "Allow auto-merge" off until setup step 8.
+3. Leave "Allow auto-merge" off until setup step 9.
+
+### Allow pull_request_target
+
+What GitHub is changing (from "Securely using pull_request_target" at https://gh.io/securely-using-pull_request_target, which redirects to docs.github.com/en/actions/reference/security/securely-using-pull_request_target): GitHub adds a default policy that **blocks the `pull_request_target` event in public repositories** that have no applicable Actions event policy of their own. It runs in evaluate mode today (runs continue) and **on 2 November 2026 GitHub enforces it** for repositories that were on the default policy. After that, a workflow triggered by `pull_request_target` does not run. `news-pr` is such a workflow, so without the setting below it would stop, and if you have made it a required check, every pull request would wait on it forever.
+
+The setting that keeps it working is an Actions event policy that explicitly allows the event. Where it is, per GitHub's "Governing execution of GitHub Actions workflows" page (I read the documentation, not the live settings screen, so a label may differ slightly):
+
+1. The repository, **Settings** tab.
+2. Left sidebar, under **Actions**, click **Policies**.
+3. Create a new policy. Name it, for example, `Allow pull_request_target for news-pr`.
+4. Enforcement status: **Active**. (GitHub says "Evaluate" is available only on GitHub Enterprise Cloud.)
+5. Target: this repository, all of its workflows.
+6. Under **Restrict events**, allow `pull_request_target`. GitHub describes event rules as an allowlist of the events permitted to run, so also allow every other event this repository's workflows use, or they will stop: `schedule` and `workflow_dispatch` (the weekly "Source link check"). Allow `push` or others too if you later add workflows that use them.
+7. Save, then check both ways: Actions, "Source link check", **Run workflow** still starts, and a new pull request starts `news-pr`.
+
+What this allows: workflows in this repository may use `pull_request_target`, and nothing more. Our one such workflow runs its code and scripts from `main`, so a pull request still cannot change the checks that judge it.
+
+What risk is left for a public repository:
+
+- The event gives the workflow the repository's token. Ours is read-only except in the auto-merge job, and the repository has no secrets for it to read. Keep it that way: never add a step that installs, builds or runs anything from a pull request (`lib/newsGuard.test.ts` checks the workflow for this), and never set `allow-unsafe-pr-checkout`, GitHub's opt-out for its newer protection that blocks checking out a fork's pull request code in this event.
+- Anyone with a GitHub account can open a pull request from a fork and start `news-pr`. It spends your Actions minutes, and for a fork pull request that changes only news files it builds the site from `main` with their data and runs `verify:news`, which fetches the URLs in their items. For a branch that is not `claude/`, the allowlist it checks against comes from the pull request itself, so such a pull request can name hosts of its own choosing and make your runner fetch them. There are no secrets to steal and the token is read-only, but it is a free request-maker. A later tightening, not done here: treat fork pull requests as not news pull requests, or always use the base branch's allowlist.
+- `main` is the anchor of trust. Whoever can push to `main` controls the checks, which is why direct pushes are blocked (section 1) and why nothing from a pull request is ever executed.
 
 ### Why there is no code-owner or approval requirement
 
@@ -153,7 +176,7 @@ The token is read-only everywhere except `news-automerge`.
 
 ## 7. Before you ever enable auto-merge: the test pull request
 
-Setup step 7. Do not set `NEWS_AUTOMERGE` until you have run this test on GitHub and seen it fail the way it should. It proves the guard blocks a pull request from a `claude/` branch that adds a file outside the allowed paths.
+Setup step 8. Do not set `NEWS_AUTOMERGE` until you have run this test on GitHub and seen it fail the way it should. It proves the guard blocks a pull request from a `claude/` branch that adds a file outside the allowed paths.
 
 1. Make sure the workflow and `scripts/news-guard.mjs` are on `main` and the branch rule from section 1 is active. `NEWS_AUTOMERGE` must not exist yet.
 2. In your clone:
