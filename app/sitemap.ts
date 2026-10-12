@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { topicOrder } from "@/lib/order";
 import { getAllTopics } from "@/lib/topics";
 import { getAllLearn } from "@/lib/learn";
 import { PAGE_DATES, absoluteUrl, learnUpdated, topicUpdated } from "@/lib/site";
@@ -8,7 +9,7 @@ export const dynamic = "force-static";
 
 /** Every indexable page, with lastmod taken from real content dates. /data is left out on purpose. */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const topics = getAllTopics();
+  const topics = topicOrder(getAllTopics());
   const learn = getAllLearn(topics.map((t) => t.slug));
   const topicDates = topics.map(topicUpdated);
   const entry = (path: string, date: string) => ({ url: absoluteUrl(path), lastModified: date });

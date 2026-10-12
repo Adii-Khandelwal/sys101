@@ -48,6 +48,9 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
       <h2 id={headingId} className="visually-hidden">
         The path
       </h2>
+      <p className="path-caption">
+        Numbers show the suggested reading order across all topics. A topic&apos;s prerequisites are what really matter.
+      </p>
       {groups.map((g) => {
         const slugs = g.items.map((e) => e.slug);
         const readInGroup = slugs.filter((s) => read.includes(s)).length;
@@ -55,7 +58,9 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
         return (
           <div key={g.name} className="path-group">
             <h3 className="label path-group-name">
-              <span>{g.name}</span>
+              <span>
+                {g.name} · {slugs.length} of {entries.length} topics
+              </span>
               <span className="path-group-count">
                 {readInGroup} / {slugs.length} read
               </span>

@@ -854,6 +854,11 @@ a:hover {
   padding-top: 8px;
 }
 
+.path-caption {
+  margin: 0 0 8px;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
 .path-group {
   margin-top: 36px;
 }

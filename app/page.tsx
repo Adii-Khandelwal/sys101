@@ -8,7 +8,8 @@ import PostSources from "@/components/PostSources";
 import Search from "@/components/Search";
 import TryQuestion from "@/components/TryQuestion";
 import SiteFooter from "@/components/SiteFooter";
-import { columns, depths, transitiveReduction } from "@/lib/graph";
+import { depths } from "@/lib/graph";
+import { formatNumber, topicNumbers, topicOrder } from "@/lib/order";
 import { GROUPS, getAllTopics, type Group } from "@/lib/topics";
 import { readingMinutes } from "@/lib/readingTime";
 import { SITE_DESCRIPTION, pageMeta } from "@/lib/site";
@@ -35,7 +36,8 @@ export default function Home() {
   // the index numbering and for keyboard tab order through the map.
   const depth = depths(topics, edges);
   // Same order as the drawn map, which uses the reduced edges; data keeps all edges.
-  const ordered = columns(topics, transitiveReduction(edges)).flat();
+  const ordered = topicOrder(topics);
+  const numbers = topicNumbers(ordered);
   const nodes = ordered.map((t) => ({
     slug: t.slug,
     title: t.title,
@@ -43,10 +45,10 @@ export default function Home() {
     group: t.group ?? groupFromDepth(depth.get(t.slug) ?? 0),
     concept: t.concept,
   }));
-  const entries = ordered.map((t, i) => ({
+  const entries = ordered.map((t) => ({
     slug: t.slug,
     title: t.title,
-    number: String(i + 1).padStart(2, "0"),
+    number: formatNumber(numbers.get(t.slug)!),
     minutes: readingMinutes(t),
     group: t.group ?? groupFromDepth(depth.get(t.slug) ?? 0),
   }));
@@ -84,10 +86,10 @@ export default function Home() {
         nodes={nodes}
         edges={edges}
         indexGroups={groups}
-        pathEntries={ordered.map((t, i) => ({
+        pathEntries={ordered.map((t) => ({
           slug: t.slug,
           title: t.title,
-          number: String(i + 1).padStart(2, "0"),
+          number: formatNumber(numbers.get(t.slug)!),
           group: t.group ?? groupFromDepth(depth.get(t.slug) ?? 0),
           prerequisites: t.prerequisites,
         }))}
