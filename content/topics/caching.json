@@ -401,15 +401,15 @@
         "question": "Before reporting a stale entry, Meta's checker waits and rechecks. Why?",
         "options": [
           "To let normal replication lag settle, so only real inconsistencies are counted",
-          "Because checks are free",
-          "To slow down writes"
+          "To collect more samples first, because one flagged entry says little about the cache",
+          "To let the database finish replicating, since it cannot serve reads during that time"
         ],
         "correct": 0,
         "why": "Waiting keeps the metric free of false alarms, so people trust it.",
         "wrong": [
           "",
-          "Checks that hit the database are expensive, which is why they are rationed.",
-          "It does not touch the write path."
+          "Each flagged entry is rechecked by itself. The wait is for invalidations that are still on their way, not for gathering a bigger sample.",
+          "The database is not what lags here. A cache replica may simply not have processed the invalidation yet, and the wait allows for that."
         ],
         "teaches": "example"
       }
