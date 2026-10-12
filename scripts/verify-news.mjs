@@ -55,7 +55,7 @@ for (const f of files) {
     if (olderThan12Months(it.dateShown, today)) problems.push(`dateShown ${it.dateShown} is older than 12 months`);
     try {
       const { html, archive } = await fetchPage(it.url, state.allowedDomains?.[f.replace(/\.json$/, "")] ?? []);
-      if (archive) note = " (archive copy)";
+      if (archive) note = " (verified from archive copy)";
       if (!evidenceFound(pageText(html), it.evidence)) problems.push(`evidence not found in the page text: "${it.evidence}"`);
       const shown = datesShown(html);
       if (!dateMatches(it.dateShown, shown)) {

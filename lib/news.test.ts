@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dateMatches, datesShown, evidenceFound, fetchAllowed, pageText } from "../scripts/news-verify-rules.mjs";
-import { checkSummary, isAllowEntry, urlAllowed, latestDay, normalizeUrl, olderThan12Months, validateNews } from "../scripts/news-rules.mjs";
+import { checkSummary, isAllowEntry, itemAllowedProblems, urlAllowed, latestDay, normalizeUrl, olderThan12Months, validateNews } from "../scripts/news-rules.mjs";
 import { renderToStaticMarkup } from "react-dom/server";
 import WhatsNew from "../components/WhatsNew";
 import { NEWS_MODE } from "./site";
@@ -21,7 +21,9 @@ const item = (extra: object = {}) => ({
   verifiedOn: "2026-10-12",
   ...extra,
 });
-const ctx = { allowedDomains: ["redis.io/"], originalUrls: ["https://example.com/post"], today };
+const AWS = { host: "aws.amazon.com", pathPrefix: "/blogs/", publisher: "Amazon Web Services" };
+const allow = (host: string, pathPrefix?: string, publisher = "Redis", kinds?: string[]) => ({ host, ...(pathPrefix ? { pathPrefix } : {}), publisher, ...(kinds ? { kinds } : {}) });
+const ctx = { allowedDomains: [allow("redis.io")], originalUrls: ["https://example.com/post"], today };
 const check = (items: object[], c = ctx) => validateNews({ asOf: today, items }, c);
 
 describe("validateNews", () => {
@@ -40,7 +42,7 @@ describe("validateNews", () => {
     expect(check([item({ url: "https://docs.redis.io/x" })]).errors).toEqual([]);
     expect(check([item({ url: "https://redis.io.evil.example/x" })]).errors.join()).toMatch(/not inside allowedDomains/);
     expect(check([item({ url: "https://notredis.io/x" })]).errors.join()).toMatch(/not inside allowedDomains/);
-    expect(check([item({ url: "https://example.com/post/" })], { ...ctx, allowedDomains: ["example.com/"] }).errors.join()).toMatch(/already an Original post/);
+    expect(check([item({ url: "https://example.com/post/" })], { ...ctx, allowedDomains: [allow("example.com")] }).errors.join()).toMatch(/already an Original post/);
     expect(check([item()], { ...ctx, allowedDomains: [] }).errors.join()).toMatch(/no allowedDomains/);
   });
   it("holds dates to their format and the future", () => {
@@ -89,18 +91,18 @@ describe("date and url helpers", () => {
     expect(olderThan12Months("no date shown", today)).toBe(false);
   });
   it("matches hosts exactly or as a true subdomain, never by substring", () => {
-    expect(urlAllowed("https://redis.io/blog/x", ["redis.io"])).toBe(true);
-    expect(urlAllowed("https://a.b.redis.io/x", ["redis.io"])).toBe(true);
-    expect(urlAllowed("https://fakeredis.io/x", ["redis.io"])).toBe(false);
-    expect(urlAllowed("https://aws.amazon.com.evil.example/blogs/x", ["aws.amazon.com/blogs/"])).toBe(false);
-    expect(urlAllowed("https://evil-aws.amazon.com.example/blogs/x", ["aws.amazon.com/blogs/"])).toBe(false);
-    expect(urlAllowed("https://aws.amazon.com@evil.example/blogs/x", ["aws.amazon.com/blogs/"])).toBe(false);
-    expect(urlAllowed("https://user:pw@aws.amazon.com/blogs/x", ["aws.amazon.com/blogs/"])).toBe(false);
-    expect(urlAllowed("http://aws.amazon.com/blogs/x", ["aws.amazon.com/blogs/"])).toBe(false);
-    expect(urlAllowed("https://aws.amazon.com:8443/blogs/x", ["aws.amazon.com/blogs/"])).toBe(false);
+    expect(urlAllowed("https://redis.io/blog/x", [allow("redis.io")])).toBe(true);
+    expect(urlAllowed("https://a.b.redis.io/x", [allow("redis.io")])).toBe(true);
+    expect(urlAllowed("https://fakeredis.io/x", [allow("redis.io")])).toBe(false);
+    expect(urlAllowed("https://aws.amazon.com.evil.example/blogs/x", [AWS])).toBe(false);
+    expect(urlAllowed("https://evil-aws.amazon.com.example/blogs/x", [AWS])).toBe(false);
+    expect(urlAllowed("https://aws.amazon.com@evil.example/blogs/x", [AWS])).toBe(false);
+    expect(urlAllowed("https://user:pw@aws.amazon.com/blogs/x", [AWS])).toBe(false);
+    expect(urlAllowed("http://aws.amazon.com/blogs/x", [AWS])).toBe(false);
+    expect(urlAllowed("https://aws.amazon.com:8443/blogs/x", [AWS])).toBe(false);
   });
   it("holds a path-limited entry to its prefix", () => {
-    const entries = ["aws.amazon.com/blogs/", "aws.amazon.com/builders-library/", "valkey.io/blog"];
+    const entries = [AWS, allow("aws.amazon.com", "/builders-library/"), allow("valkey.io", "/blog")];
     expect(urlAllowed("https://aws.amazon.com/blogs/networking/x", entries)).toBe(true);
     expect(urlAllowed("https://aws.amazon.com/builders-library/x", entries)).toBe(true);
     expect(urlAllowed("https://aws.amazon.com/products/x", entries)).toBe(false);
@@ -109,9 +111,26 @@ describe("date and url helpers", () => {
     expect(urlAllowed("https://valkey.io/blog/post", entries)).toBe(true);
     expect(urlAllowed("https://valkey.io/blogger/post", entries)).toBe(false);
   });
-  it("accepts only host-and-path entries", () => {
-    expect(["memcached.org", "uber.com/us/en/blog/", "blog.cloudflare.com/"].every(isAllowEntry)).toBe(true);
-    expect(["https://redis.io", "redis", "redis.io blog", ""].some(isAllowEntry)).toBe(false);
+  it("accepts only well-formed entries", () => {
+    expect([allow("memcached.org"), allow("uber.com", "/us/en/blog/", "Uber"), allow("postgresql.org", "/about/news/", "PostgreSQL", ["release"])].every(isAllowEntry)).toBe(true);
+    for (const bad of ["redis.io", { host: "https://redis.io", publisher: "Redis" }, { host: "redis.io" }, { host: "redis.io", publisher: "" }, { host: "redis.io", publisher: "R", pathPrefix: "blog/" }, { host: "redis.io", publisher: "R", kinds: [] }, { host: "redis.io", publisher: "R", kinds: ["blog"] }, { host: "redis.io", publisher: "R", extra: 1 }, null]) {
+      expect(isAllowEntry(bad), JSON.stringify(bad)).toBe(false);
+    }
+  });
+  it("makes the item's publisher equal the entry's, and honours kinds", () => {
+    const entries = [allow("postgresql.org", "/about/news/", "PostgreSQL", ["release"]), allow("redis.io", "/blog/", "Redis")];
+    const base = { url: "https://www.postgresql.org/about/news/x", publisher: "PostgreSQL", kind: "release" };
+    expect(itemAllowedProblems(base, entries)).toEqual([]);
+    expect(itemAllowedProblems({ ...base, publisher: "Postgres" }, entries).join()).toMatch(/publisher "Postgres" does not match/);
+    expect(itemAllowedProblems({ ...base, kind: "engineering-post" }, entries).join()).toMatch(/kind "engineering-post" is not allowed.*release/);
+    expect(itemAllowedProblems({ ...base, url: "https://www.postgresql.org/docs/x" }, entries).join()).toMatch(/not inside allowedDomains/);
+    expect(itemAllowedProblems({ url: "https://redis.io/blog/x", publisher: "Redis", kind: "docs" }, entries)).toEqual([]);
+    // two entries for one host: the one whose publisher matches decides
+    const two = [allow("builder.aws.com", "/learn/", "Amazon Web Services"), allow("builder.aws.com", "/learn/", "Someone Else")];
+    expect(itemAllowedProblems({ url: "https://builder.aws.com/learn/x", publisher: "Someone Else", kind: "docs" }, two)).toEqual([]);
+  });
+  it("reports a publisher mismatch through validateNews", () => {
+    expect(check([item({ publisher: "Redis Ltd" })]).errors.join()).toMatch(/does not match the allowlist entry/);
   });
   it("normalises urls for the Original-post comparison", () => {
     expect(normalizeUrl("https://www.Example.com/a/?x=1#top")).toBe("example.com/a");
@@ -168,7 +187,7 @@ describe("What's new section", () => {
 });
 
 describe("redirects stay inside the allowlist", () => {
-  const entries = ["aws.amazon.com/blogs/"];
+  const entries = [AWS];
   const res = (status: number, extra: { location?: string; body?: string } = {}) => ({
     status,
     ok: status >= 200 && status < 300,

@@ -55,30 +55,58 @@ export function normalizeUrl(u) {
   }
 }
 
-/** An allowlist entry is a host with an optional path prefix: "memcached.org" or "valkey.io/blog/". No scheme. */
-export const isAllowEntry = (e) => typeof e === "string" && /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+(\/[A-Za-z0-9._~\/-]*)?$/.test(e);
+const ENTRY_KEYS = ["host", "pathPrefix", "publisher", "kinds"];
 
 /**
- * Is this URL inside the allowlist? https only, no credentials in the URL, the host equal to an entry's host or a true
- * subdomain of it (never a substring match), and, when the entry has a path, the path inside that prefix.
+ * An allowlist entry: { host, pathPrefix?, publisher, kinds? }. `host` is a bare domain (no scheme, no path),
+ * `pathPrefix` starts with "/", `publisher` is the exact string an item must use, `kinds` limits the item kinds.
  */
-export function urlAllowed(url, entries) {
-  let u;
-  try {
-    u = new URL(url);
-  } catch {
-    return false;
-  }
-  if (u.protocol !== "https:" || u.username || u.password || (u.port && u.port !== "443")) return false;
+export function isAllowEntry(e) {
+  if (!e || typeof e !== "object" || Array.isArray(e)) return false;
+  if (Object.keys(e).some((k) => !ENTRY_KEYS.includes(k))) return false;
+  if (typeof e.host !== "string" || !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(e.host)) return false;
+  if (e.pathPrefix !== undefined && !(typeof e.pathPrefix === "string" && /^\/[A-Za-z0-9._~\/-]*$/.test(e.pathPrefix))) return false;
+  if (!nonEmpty(e.publisher)) return false;
+  if (e.kinds !== undefined && !(Array.isArray(e.kinds) && e.kinds.length > 0 && e.kinds.every((k) => KINDS.includes(k)))) return false;
+  return true;
+}
+
+/** Does this entry cover the URL? https only, no credentials, no other port, host equal or a true subdomain, path inside the prefix. */
+function entryCovers(u, entry) {
   const host = u.hostname.toLowerCase();
-  return entries.some((entry) => {
-    const slash = entry.indexOf("/");
-    const domain = (slash < 0 ? entry : entry.slice(0, slash)).toLowerCase();
-    if (host !== domain && !host.endsWith(`.${domain}`)) return false;
-    if (slash < 0) return true;
-    const prefix = entry.slice(slash);
-    return u.pathname === prefix || u.pathname.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`);
-  });
+  const domain = entry.host.toLowerCase();
+  if (host !== domain && !host.endsWith(`.${domain}`)) return false;
+  if (!entry.pathPrefix) return true;
+  const prefix = entry.pathPrefix;
+  return u.pathname === prefix || u.pathname.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`);
+}
+
+function parseHttps(url) {
+  try {
+    const u = new URL(url);
+    return u.protocol !== "https:" || u.username || u.password || (u.port && u.port !== "443") ? null : u;
+  } catch {
+    return null;
+  }
+}
+
+/** Is this URL inside the allowlist (host and path only)? Used for the page itself and every redirect hop. */
+export function urlAllowed(url, entries) {
+  const u = parseHttps(url);
+  return !!u && entries.some((e) => entryCovers(u, e));
+}
+
+/** Problems with an item against the allowlist: the URL, then the publisher and kind of the entries that cover it. */
+export function itemAllowedProblems(item, entries) {
+  const u = parseHttps(item.url);
+  const covering = u ? entries.filter((e) => entryCovers(u, e)) : [];
+  if (!covering.length) return ["url is not inside allowedDomains for this topic (host and path prefix)"];
+  const named = covering.filter((e) => e.publisher === item.publisher);
+  if (!named.length) return [`publisher "${item.publisher}" does not match the allowlist entry (${[...new Set(covering.map((e) => `"${e.publisher}"`))].join(", ")})`];
+  if (!named.some((e) => !e.kinds || e.kinds.includes(item.kind))) {
+    return [`kind "${item.kind}" is not allowed for this source (allowed: ${[...new Set(named.flatMap((e) => e.kinds ?? []))].join(", ")})`];
+  }
+  return [];
 }
 
 const BANNED = /—|\bnot\b[^.]{0,60}\bbut\b|\bit['’]s not\b|\bisn['’]t just\b/i;
@@ -139,7 +167,7 @@ export function validateNews(data, ctx) {
     if (nonEmpty(it.url)) {
       if (!/^https:\/\//.test(it.url)) err("url must be https");
       else {
-        if (ctx.allowedDomains?.length && !urlAllowed(it.url, ctx.allowedDomains)) err("url is not inside allowedDomains for this topic (host and path prefix)");
+        if (ctx.allowedDomains?.length) itemAllowedProblems(it, ctx.allowedDomains).forEach(err);
         if (originals.has(normalizeUrl(it.url))) err("url is already an Original post of this topic");
       }
     }

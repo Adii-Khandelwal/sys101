@@ -17,10 +17,10 @@
       "id": "cloudfront-invalidation-by-cache-tag",
       "kind": "engineering-post",
       "title": "Manage caches with precision using Amazon CloudFront Invalidation by Cache Tag",
-      "publisher": "AWS Networking & Content Delivery blog",
+      "publisher": "Amazon Web Services",
       "url": "https://aws.amazon.com/blogs/networking-and-content-delivery/manage-caches-with-precision-using-amazon-cloudfront-invalidation-by-cache-tag/",
       "dateShown": "2026-05-04",
-      "summary": "AWS describes invalidating CloudFront objects by cache tag so related content can be purged together, and reports that invalidations take effect in under 5 seconds at P95.",
+      "summary": "Amazon Web Services describes invalidating CloudFront objects by cache tag so related content can be purged together, and reports that invalidations take effect in under 5 seconds at P95.",
       "evidence": "invalidations take effect in under 5 seconds at P95",
       "addedOn": "2026-10-12",
       "verifiedOn": "2026-10-12"

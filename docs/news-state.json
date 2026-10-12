@@ -4,16 +4,476 @@
   },
   "allowedDomains": {
     "caching": [
-      "engineering.fb.com",
-      "uber.com/blog/",
-      "uber.com/us/en/blog/",
-      "uber.com/en-US/blog/",
-      "valkey.io/blog/",
-      "redis.io/blog/",
-      "memcached.org",
-      "aws.amazon.com/blogs/",
-      "aws.amazon.com/builders-library/",
-      "blog.cloudflare.com/"
+      {
+        "host": "engineering.fb.com",
+        "publisher": "Meta"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/us/en/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/US/en/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/en-US/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "valkey.io",
+        "pathPrefix": "/blog/",
+        "publisher": "Valkey project"
+      },
+      {
+        "host": "redis.io",
+        "pathPrefix": "/blog/",
+        "publisher": "Redis"
+      },
+      {
+        "host": "memcached.org",
+        "publisher": "memcached"
+      },
+      {
+        "host": "aws.amazon.com",
+        "pathPrefix": "/blogs/",
+        "publisher": "Amazon Web Services"
+      },
+      {
+        "host": "aws.amazon.com",
+        "pathPrefix": "/builders-library/",
+        "publisher": "Amazon Web Services"
+      },
+      {
+        "host": "builder.aws.com",
+        "pathPrefix": "/learn/",
+        "publisher": "Amazon Web Services"
+      },
+      {
+        "host": "blog.cloudflare.com",
+        "publisher": "Cloudflare"
+      }
+    ],
+    "cap": [
+      {
+        "host": "research.google",
+        "pathPrefix": "/blog/",
+        "publisher": "Google Research"
+      },
+      {
+        "host": "cloud.google.com",
+        "pathPrefix": "/blog/products/databases/",
+        "publisher": "Google Cloud"
+      },
+      {
+        "host": "cassandra.apache.org",
+        "publisher": "Apache Cassandra"
+      }
+    ],
+    "cdns": [
+      {
+        "host": "blog.cloudflare.com",
+        "publisher": "Cloudflare"
+      },
+      {
+        "host": "netflixtechblog.com",
+        "publisher": "Netflix"
+      },
+      {
+        "host": "web.dev",
+        "pathPrefix": "/blog/",
+        "publisher": "web.dev"
+      },
+      {
+        "host": "developer.mozilla.org",
+        "pathPrefix": "/en-US/blog/",
+        "publisher": "MDN"
+      },
+      {
+        "host": "rfc-editor.org",
+        "pathPrefix": "/rfc/",
+        "publisher": "RFC Editor",
+        "kinds": [
+          "standard"
+        ]
+      }
+    ],
+    "circuit-breakers": [
+      {
+        "host": "engineering.zalando.com",
+        "pathPrefix": "/posts/",
+        "publisher": "Zalando"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/us/en/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/US/en/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/en-US/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "grpc.io",
+        "pathPrefix": "/blog/",
+        "publisher": "gRPC"
+      },
+      {
+        "host": "istio.io",
+        "pathPrefix": "/latest/news/",
+        "publisher": "Istio"
+      }
+    ],
+    "consensus": [
+      {
+        "host": "etcd.io",
+        "pathPrefix": "/blog/",
+        "publisher": "etcd"
+      },
+      {
+        "host": "cockroachlabs.com",
+        "pathPrefix": "/blog/",
+        "publisher": "Cockroach Labs"
+      },
+      {
+        "host": "kubernetes.io",
+        "pathPrefix": "/blog/",
+        "publisher": "Kubernetes"
+      }
+    ],
+    "consistent-hashing": [
+      {
+        "host": "blog.cloudflare.com",
+        "publisher": "Cloudflare"
+      },
+      {
+        "host": "discord.com",
+        "pathPrefix": "/blog/",
+        "publisher": "Discord"
+      },
+      {
+        "host": "redis.io",
+        "pathPrefix": "/blog/",
+        "publisher": "Redis"
+      }
+    ],
+    "databases": [
+      {
+        "host": "uber.com",
+        "pathPrefix": "/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/us/en/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/US/en/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/en-US/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "github.blog",
+        "pathPrefix": "/engineering/",
+        "publisher": "GitHub"
+      },
+      {
+        "host": "postgresql.org",
+        "pathPrefix": "/about/news/",
+        "publisher": "PostgreSQL",
+        "kinds": [
+          "release"
+        ]
+      }
+    ],
+    "distributed-transactions": [
+      {
+        "host": "research.google",
+        "pathPrefix": "/blog/",
+        "publisher": "Google Research"
+      },
+      {
+        "host": "cockroachlabs.com",
+        "pathPrefix": "/blog/",
+        "publisher": "Cockroach Labs"
+      },
+      {
+        "host": "cloud.google.com",
+        "pathPrefix": "/blog/products/databases/",
+        "publisher": "Google Cloud"
+      }
+    ],
+    "dns": [
+      {
+        "host": "blog.cloudflare.com",
+        "publisher": "Cloudflare"
+      },
+      {
+        "host": "slack.engineering",
+        "publisher": "Slack"
+      },
+      {
+        "host": "rfc-editor.org",
+        "pathPrefix": "/rfc/",
+        "publisher": "RFC Editor",
+        "kinds": [
+          "standard"
+        ]
+      },
+      {
+        "host": "bind9.readthedocs.io",
+        "publisher": "BIND 9"
+      }
+    ],
+    "event-driven-architecture": [
+      {
+        "host": "engineering.grab.com",
+        "publisher": "Grab"
+      },
+      {
+        "host": "kafka.apache.org",
+        "pathPrefix": "/blog/",
+        "publisher": "Apache Kafka"
+      },
+      {
+        "host": "aws.amazon.com",
+        "pathPrefix": "/blogs/architecture/",
+        "publisher": "Amazon Web Services"
+      }
+    ],
+    "failover": [
+      {
+        "host": "github.blog",
+        "pathPrefix": "/engineering/",
+        "publisher": "GitHub"
+      },
+      {
+        "host": "aws.amazon.com",
+        "pathPrefix": "/blogs/architecture/",
+        "publisher": "Amazon Web Services"
+      },
+      {
+        "host": "aws.amazon.com",
+        "pathPrefix": "/builders-library/",
+        "publisher": "Amazon Web Services"
+      },
+      {
+        "host": "builder.aws.com",
+        "pathPrefix": "/learn/",
+        "publisher": "Amazon Web Services"
+      }
+    ],
+    "indexing": [
+      {
+        "host": "github.blog",
+        "pathPrefix": "/engineering/",
+        "publisher": "GitHub"
+      },
+      {
+        "host": "discord.com",
+        "pathPrefix": "/blog/",
+        "publisher": "Discord"
+      },
+      {
+        "host": "lucene.apache.org",
+        "publisher": "Apache Lucene"
+      },
+      {
+        "host": "postgresql.org",
+        "pathPrefix": "/about/news/",
+        "publisher": "PostgreSQL",
+        "kinds": [
+          "release"
+        ]
+      }
+    ],
+    "load-balancing": [
+      {
+        "host": "uber.com",
+        "pathPrefix": "/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/us/en/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/US/en/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/en-US/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "dropbox.tech",
+        "publisher": "Dropbox"
+      },
+      {
+        "host": "haproxy.com",
+        "pathPrefix": "/blog/",
+        "publisher": "HAProxy"
+      },
+      {
+        "host": "nginx.org",
+        "publisher": "NGINX"
+      }
+    ],
+    "message-queues": [
+      {
+        "host": "slack.engineering",
+        "publisher": "Slack"
+      },
+      {
+        "host": "engineering.fb.com",
+        "publisher": "Meta"
+      },
+      {
+        "host": "rabbitmq.com",
+        "pathPrefix": "/blog/",
+        "publisher": "RabbitMQ"
+      },
+      {
+        "host": "kafka.apache.org",
+        "pathPrefix": "/blog/",
+        "publisher": "Apache Kafka"
+      }
+    ],
+    "pub-sub": [
+      {
+        "host": "engineering.atspotify.com",
+        "publisher": "Spotify"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/us/en/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/US/en/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "uber.com",
+        "pathPrefix": "/en-US/blog/",
+        "publisher": "Uber"
+      },
+      {
+        "host": "cloud.google.com",
+        "pathPrefix": "/blog/products/data-analytics/",
+        "publisher": "Google Cloud"
+      },
+      {
+        "host": "rabbitmq.com",
+        "pathPrefix": "/blog/",
+        "publisher": "RabbitMQ"
+      },
+      {
+        "host": "kafka.apache.org",
+        "pathPrefix": "/blog/",
+        "publisher": "Apache Kafka"
+      },
+      {
+        "host": "redis.io",
+        "pathPrefix": "/blog/",
+        "publisher": "Redis"
+      }
+    ],
+    "rate-limiting": [
+      {
+        "host": "blog.cloudflare.com",
+        "publisher": "Cloudflare"
+      },
+      {
+        "host": "nginx.org",
+        "publisher": "NGINX"
+      },
+      {
+        "host": "rfc-editor.org",
+        "pathPrefix": "/rfc/",
+        "publisher": "RFC Editor",
+        "kinds": [
+          "standard"
+        ]
+      },
+      {
+        "host": "redis.io",
+        "pathPrefix": "/blog/",
+        "publisher": "Redis"
+      }
+    ],
+    "replication": [
+      {
+        "host": "engineering.fb.com",
+        "publisher": "Meta"
+      },
+      {
+        "host": "github.blog",
+        "pathPrefix": "/engineering/",
+        "publisher": "GitHub"
+      },
+      {
+        "host": "postgresql.org",
+        "pathPrefix": "/about/news/",
+        "publisher": "PostgreSQL",
+        "kinds": [
+          "release"
+        ]
+      }
+    ],
+    "sharding": [
+      {
+        "host": "figma.com",
+        "pathPrefix": "/blog/",
+        "publisher": "Figma"
+      },
+      {
+        "host": "notion.com",
+        "pathPrefix": "/blog/",
+        "publisher": "Notion"
+      },
+      {
+        "host": "postgresql.org",
+        "pathPrefix": "/about/news/",
+        "publisher": "PostgreSQL",
+        "kinds": [
+          "release"
+        ]
+      }
     ]
   }
 }
