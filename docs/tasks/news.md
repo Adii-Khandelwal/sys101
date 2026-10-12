@@ -8,9 +8,9 @@ Read this first in any session and continue from RESUME. Use scripts/topic-brief
 - [x] A3 After approval: write items, verify:news, build, tests, SEO, search index, CLAUDE.md, commit, stop
 
 ## Phase B (after the user says "continue")
-- [ ] B1 .github/workflows/news-pr.yml
-- [ ] B2 docs/routines/whats-new.md
-- [ ] B3 docs/routines/README.md
+- [x] B1 .github/workflows/news-pr.yml
+- [x] B2 docs/routines/whats-new.md
+- [x] B3 docs/routines/README.md
 - [ ] B4 allowedDomains table for all 18 topics, STOP for approval, then write docs/news-state.json, run checks, commit
 
 ## Decisions
@@ -20,4 +20,4 @@ Read this first in any session and continue from RESUME. Use scripts/topic-brief
 - NEWS_MODE is a constant in lib/site.ts ("review" default). Change it together with the auto-merge variable.
 - The news section sits outside the main data-pagefind-body div (Original posts is outside it too), so it has its own data-pagefind-body; its heading "What's new in <Topic>" is the search label.
 
-RESUME: Phase A done (A3 committed). Phase B authorised by the user in the same message; do B1 workflow, B2 routine prompt, B3 routines README, then B4 allowlist table for all 18 topics and STOP.
+RESUME: B1-B3 done. Do B4: build the allowedDomains table for all 18 topics from each topic's existing sources, show it, STOP for approval. After approval write docs/news-state.json (keep caching), run check-news and the tests, update docs/routines/README.md host list if needed, commit.
