@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { INTERACTIVE_MIN_NODES, groupLabelSpots, groupSet, placeGroupLabel, mapIsInteractive, mapIsInteractiveAt, FADED_LABEL, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, type HighlightEvent } from "./graphUi";
+import { INTERACTIVE_MIN_NODES, groupLabelSpots, groupSet, placeGroupLabel, mapIsInteractive, mapIsInteractiveAt, FADED_LABEL, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "./graphUi";
 
 describe("tooltip placement", () => {
   const tip = { w: 280, h: 72 };
@@ -129,3 +129,26 @@ describe("group labels", () => {
   });
 });
 
+
+describe("map tooltip prerequisite lines", () => {
+  const title = (slug: string) => ({ dns: "DNS", caching: "Caching", databases: "Databases" })[slug] ?? slug;
+  const lines = (read: string[]) => prerequisiteLines(["dns", "caching"], read, title);
+
+  it("says it once when nothing is read: only 'Finish ... first'", () => {
+    expect(lines([])).toEqual({ builtOn: null, finish: "Finish DNS and Caching first." });
+  });
+  it("when one is read, the finish line drops it and the two lines differ", () => {
+    expect(lines(["dns"])).toEqual({ builtOn: "Builds on: DNS, Caching", finish: "Finish Caching first." });
+    expect(lines(["caching"])).toEqual({ builtOn: "Builds on: DNS, Caching", finish: "Finish DNS first." });
+  });
+  it("when all are read there is nothing to finish, only what it builds on", () => {
+    expect(lines(["dns", "caching"])).toEqual({ builtOn: "Builds on: DNS, Caching", finish: null });
+    expect(lines(["dns", "caching", "databases"])).toEqual({ builtOn: "Builds on: DNS, Caching", finish: null });
+  });
+  it("a topic with no prerequisites has neither line", () => {
+    expect(prerequisiteLines([], [], title)).toEqual({ builtOn: null, finish: null });
+  });
+  it("a single unread prerequisite is named once", () => {
+    expect(prerequisiteLines(["dns"], [], title)).toEqual({ builtOn: null, finish: "Finish DNS first." });
+  });
+});

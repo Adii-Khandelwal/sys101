@@ -177,3 +177,15 @@ export function groupLabelSpots(first: LabelNode, labelWidth: number, firstTitle
 export function placeGroupLabel(spots: LabelSpot[], fits: (s: LabelSpot) => boolean, blocked: (s: LabelSpot) => boolean) {
   return spots.find((s) => fits(s) && !blocked(s)) ?? spots[0];
 }
+
+/**
+ * The prerequisite lines in a map tooltip. `finish` names what is still unread. `builtOn` lists all prerequisites, and
+ * is left out only when it would repeat `finish` word for word (nothing read yet).
+ */
+export function prerequisiteLines(prerequisites: string[], read: readonly string[], titleOf: (slug: string) => string) {
+  const pending = prerequisites.filter((q) => !read.includes(q));
+  return {
+    builtOn: prerequisites.length > 0 && pending.length < prerequisites.length ? `Builds on: ${prerequisites.map(titleOf).join(", ")}` : null,
+    finish: pending.length > 0 ? `Finish ${pending.map(titleOf).join(" and ")} first.` : null,
+  };
+}

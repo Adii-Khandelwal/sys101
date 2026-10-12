@@ -11,6 +11,7 @@ import { useInProgressTopics, useReadTopics } from "@/lib/progress";
 import {
   LIGHT_COLORS,
   type ThemeColors,
+  prerequisiteLines,
   readThemeColors,
   fadeTo,
   groupSet,
@@ -958,21 +959,14 @@ export default function GraphView({ nodes, edges }: Props) {
                 const pending = pre.filter((q) => !read.includes(q));
                 const isReady = !isRead && pending.length === 0;
                 const status = isRead ? "Read" : isReady ? "Ready to read" : "Not ready yet";
+                const lines = prerequisiteLines(pre, read, (q) => bySlug.get(q)?.title ?? q);
                 return (
                   <>
                     <span className="tip-status">
                       {status}
                     </span>
-                    {pre.length > 0 && (
-                      <span>
-                        Builds on: {pre.map((q) => bySlug.get(q)?.title ?? q).join(", ")}
-                      </span>
-                    )}
-                    {pending.length > 0 && (
-                      <span className="tip-why">
-                        Finish {pending.map((q) => bySlug.get(q)?.title ?? q).join(" and ")} first.
-                      </span>
-                    )}
+                    {lines.builtOn && <span>{lines.builtOn}</span>}
+                    {lines.finish && <span className="tip-why">{lines.finish}</span>}
                   </>
                 );
               })()}
