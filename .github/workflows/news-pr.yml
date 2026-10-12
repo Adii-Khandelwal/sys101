@@ -1,0 +1,103 @@
+name: News PR check
+
+# Checks the pull requests a routine opens to update "What's new" (docs/whats-new.md, docs/routines/).
+# The job is named "news-pr" so branch protection can require it. It runs on every pull request, so a required
+# check never sits pending on an ordinary PR: a PR that touches no news path and is not on a claude/news-* branch
+# passes at once. A news PR may change content/news/** and docs/news-state.json and nothing else.
+#
+# The path guard runs before anything from the PR is installed or executed, so a PR that edits scripts or
+# package.json fails without its code ever running.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: news-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: news-pr
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      news: ${{ steps.guard.outputs.news }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Only news files may change
+        id: guard
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE...$HEAD")"
+          is_news_path() { [[ "$1" == content/news/* || "$1" == "docs/news-state.json" ]]; }
+          touches_news=false
+          while IFS= read -r f; do
+            [ -n "$f" ] && is_news_path "$f" && touches_news=true
+          done <<< "$changed"
+          if [[ "$touches_news" == false && "$HEAD_REF" != claude/news-* ]]; then
+            echo "news=false" >> "$GITHUB_OUTPUT"
+            echo "Not a news PR: nothing to check."
+            exit 0
+          fi
+          echo "news=true" >> "$GITHUB_OUTPUT"
+          bad=""
+          while IFS= read -r f; do
+            [ -n "$f" ] && ! is_news_path "$f" && bad="$bad$f"$'\n'
+          done <<< "$changed"
+          if [ -n "$bad" ]; then
+            echo "A news PR may change only content/news/** and docs/news-state.json. It also changes:"
+            printf '%s' "$bad"
+            exit 1
+          fi
+          if [ -z "$changed" ]; then
+            echo "A news PR with no changes."
+            exit 1
+          fi
+      - if: steps.guard.outputs.news == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - if: steps.guard.outputs.news == 'true'
+        run: npm ci
+      - if: steps.guard.outputs.news == 'true'
+        name: Build (runs check-news, the SEO check and the search index)
+        run: npm run build
+      - if: steps.guard.outputs.news == 'true'
+        run: npm test
+      - if: steps.guard.outputs.news == 'true'
+        run: node scripts/check-news.mjs
+      - if: steps.guard.outputs.news == 'true'
+        name: Open every item URL and confirm its evidence and date
+        run: npm run verify:news
+
+  # Off unless the repository variable NEWS_AUTOMERGE is 'true' (set it together with NEWS_MODE = "auto" in lib/site.ts).
+  # Only same-repository claude/ branches whose checks passed. `--auto` waits for the required checks in branch
+  # protection and merges when they are green.
+  automerge:
+    name: news-automerge
+    needs: check
+    if: >-
+      vars.NEWS_AUTOMERGE == 'true' &&
+      needs.check.result == 'success' &&
+      needs.check.outputs.news == 'true' &&
+      startsWith(github.head_ref, 'claude/') &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR_URL"
