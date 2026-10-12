@@ -1,0 +1,86 @@
+{
+  "topic": "event-driven-architecture",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "kafka",
+      "name": "Kafka topics, partitions and offsets",
+      "explanation": "Kafka keeps messages in an ordered log per topic, split into partitions. Each partition has a leader that takes writes, and followers that copy it.",
+      "assumedBy": [
+        {
+          "postId": "grab-zero-traffic-cost-2023",
+          "quote": "This is because, by default, Kafka clients communicate only with the partition leader, which has a 67% probability of residing in a different AZ."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Apache Kafka: Introduction",
+          "publisher": "Apache Kafka",
+          "url": "https://kafka.apache.org/intro",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "availability-zones",
+      "name": "Regions and availability zones",
+      "explanation": "A cloud region is made of several availability zones, which are separate data centres with their own power and network. Spreading across zones survives a zone failure, and traffic between zones is billed.",
+      "assumedBy": [
+        {
+          "postId": "grab-zero-traffic-cost-2023",
+          "quote": "The Grab platform is primarily hosted on AWS cloud, located in one region, spanning over three Availability Zones (AZs)."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Regions and Zones (Amazon EC2)",
+          "publisher": "Amazon Web Services",
+          "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "sqlite-wal",
+      "name": "SQLite and write-ahead logging",
+      "explanation": "SQLite is a database that lives in one local file. In write-ahead logging mode, writers append to a log file while readers keep reading the main file, so reads and writes can overlap.",
+      "assumedBy": [
+        {
+          "postId": "zapier-outbox-2026",
+          "quote": "One of the first things we did was enabling write ahead logging for our SQLite database."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Write-Ahead Logging",
+          "publisher": "SQLite",
+          "url": "https://www.sqlite.org/wal.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "statefulset",
+      "name": "Kubernetes StatefulSets",
+      "explanation": "A StatefulSet runs pods that keep a stable identity and their own storage. If a pod restarts, it comes back with the same volume and its data.",
+      "assumedBy": [
+        {
+          "postId": "zapier-outbox-2026",
+          "quote": "We stored the SQLite database on an EBS-backed volume attached to each Kubernetes StatefulSet pod."
+        }
+      ],
+      "sources": [
+        {
+          "title": "StatefulSets",
+          "publisher": "Kubernetes",
+          "url": "https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    }
+  ]
+}
