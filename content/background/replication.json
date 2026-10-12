@@ -1,0 +1,118 @@
+{
+  "topic": "replication",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "service-discovery",
+      "name": "Service discovery",
+      "explanation": "Service discovery keeps a record of where each service currently runs, so clients ask for the address instead of hard-coding it. When a new primary takes over, the record changes and clients follow.",
+      "assumedBy": [
+        {
+          "postId": "meta-mysql-raft-2023",
+          "quote": "In the semisync setups, since the service discovery store would be the source of truth, the clients noticing the finish of promotion would be much longer, leading to more elevated end user downtimes on a shard."
+        },
+        {
+          "postId": "github-mysql-ha-2018",
+          "quote": "This post illustrates GitHub’s MySQL high availability and primary service discovery solution, which allows us to reliably run a cross-data-center operation, be tolerant of data center isolation, and achieve short outage times on a failure."
+        }
+      ],
+      "sources": [
+        {
+          "title": "What is service discovery? (Consul)",
+          "publisher": "HashiCorp",
+          "url": "https://developer.hashicorp.com/consul/docs/use-case/service-discovery",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "distributed-key-value-store",
+      "name": "Distributed key-value stores",
+      "explanation": "A key-value store keeps each piece of data under a key and looks it up by that key, with no tables to join. A distributed one spreads the keys across many machines.",
+      "assumedBy": [
+        {
+          "postId": "github-mysql-ha-2018",
+          "quote": "In our solution, however, we utilize it as a highly available key-value (KV) store."
+        }
+      ],
+      "sources": [
+        {
+          "title": "What is etcd? (a distributed key-value store)",
+          "publisher": "etcd (CNCF)",
+          "url": "https://etcd.io/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "gtid",
+      "name": "Global transaction identifiers (GTIDs)",
+      "explanation": "A GTID is a unique ID that MySQL gives each committed transaction on the server where it first ran. Replicas can then tell exactly which transactions they already have.",
+      "assumedBy": [
+        {
+          "postId": "meta-mysql-raft-2023",
+          "quote": "GTIDs would be assigned, and then Raft would assign an OpId (term:index) to the transaction."
+        }
+      ],
+      "sources": [
+        {
+          "title": "MySQL 8.4 Reference Manual: GTID Format and Storage",
+          "publisher": "Oracle (MySQL)",
+          "url": "https://dev.mysql.com/doc/refman/8.4/en/replication-gtids-concepts.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "replicated-state-machine",
+      "name": "Replicated state machines",
+      "explanation": "Several machines that start the same and apply the same commands in the same order end up in the same state. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "meta-mysql-raft-2023",
+          "quote": "Over the last few years, we have implemented MySQL Raft, a Raft consensus engine that was integrated with MySQL to build a replicated state machine."
+        }
+      ],
+      "topicPage": "consensus"
+    },
+    {
+      "id": "two-phase-commit",
+      "name": "Two-phase commit",
+      "explanation": "A way to make several parts of a system commit one change together: first all agree they can, then all do it. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "meta-mysql-raft-2023",
+          "quote": "Mysqld acts as a transaction coordinator and runs a two-phase commit protocol between the engine and the replicated binlog as the participants."
+        }
+      ],
+      "topicPage": "distributed-transactions"
+    },
+    {
+      "id": "sharding",
+      "name": "Sharding and shard keys",
+      "explanation": "Splitting one big dataset across many databases by a key, so each holds only part of it. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "meta-mysql-raft-2023",
+          "quote": "To allow for high availability, fault tolerance, and scaling reads, Meta’s MySQL datastore is a massively sharded, geo-replicated deployment with millions of shards, holding petabytes of data."
+        }
+      ],
+      "topicPage": "sharding"
+    },
+    {
+      "id": "load-balancer",
+      "name": "Load balancers",
+      "explanation": "A service that spreads incoming requests across a pool of servers, or sends them all to the one server it is told to. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "github-mysql-ha-2018",
+          "quote": "On a normal day the apps connect to the write nodes through GLB/HAProxy."
+        }
+      ],
+      "topicPage": "load-balancing"
+    }
+  ]
+}
