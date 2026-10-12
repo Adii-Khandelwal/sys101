@@ -1,0 +1,98 @@
+{
+  "topic": "rate-limiting",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "leaky-bucket",
+      "name": "The leaky bucket method",
+      "explanation": "Each request adds to a counter, and the counter drains at a steady rate. A request is refused when the counter would overflow, so traffic comes out at the steady rate while short bursts are absorbed.",
+      "assumedBy": [
+        {
+          "postId": "cloudflare-rate-limiting-2017",
+          "quote": "The leaky bucket algorithm allows a great level of accuracy while being nicer on resources (this is what the stock NGINX module is using)."
+        }
+      ],
+      "sources": [
+        {
+          "title": "ngx_http_limit_req_module",
+          "publisher": "NGINX",
+          "url": "https://nginx.org/en/docs/http/ngx_http_limit_req_module.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "memcached",
+      "name": "Memcached",
+      "explanation": "A memory-only cache that many servers can share. You store and fetch values by key, and it offers a few simple operations such as get, set and an atomic increment.",
+      "assumedBy": [
+        {
+          "postId": "cloudflare-rate-limiting-2017",
+          "quote": "So the situation was that the only operations available were GET, SET and INCR (atomic increment)."
+        }
+      ],
+      "sources": [
+        {
+          "title": "What is Memcached?",
+          "publisher": "memcached.org",
+          "url": "https://memcached.org/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "redis",
+      "name": "Redis",
+      "explanation": "An in-memory data store, often used as a shared cache or counter store. Answers are fast, and the data lives on whatever machine runs it.",
+      "assumedBy": [
+        {
+          "postId": "databricks-ratelimiting-2025",
+          "quote": "Back in early 2023, the existing Ratelimit infrastructure at Databricks consisted of an Envoy ingress gateway making calls to the Ratelimit Service, with a single instance of Redis backing the service"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Get started with Redis Open Source",
+          "publisher": "Redis",
+          "url": "https://redis.io/docs/latest/get-started/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "envoy",
+      "name": "Envoy and the ingress gateway",
+      "explanation": "Envoy is a proxy that sits in front of services and handles traffic for them. An ingress gateway is the one at the edge of a system that all outside requests pass through first.",
+      "assumedBy": [
+        {
+          "postId": "databricks-ratelimiting-2025",
+          "quote": "consisted of an Envoy ingress gateway making calls to the Ratelimit Service"
+        }
+      ],
+      "sources": [
+        {
+          "title": "What is Envoy",
+          "publisher": "Envoy Project",
+          "url": "https://www.envoyproxy.io/docs/envoy/latest/intro/what_is_envoy",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "single-point-of-failure",
+      "name": "Single point of failure",
+      "explanation": "One part whose failure takes the whole system down. The usual fix is a standby that can take over. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "databricks-ratelimiting-2025",
+          "quote": "Redis as a single point of failure - Our single Redis instance was our single point of failure, and we had to do something about that."
+        }
+      ],
+      "topicPage": "failover"
+    }
+  ]
+}
