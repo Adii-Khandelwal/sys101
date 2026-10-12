@@ -428,6 +428,8 @@ a:hover {
   padding: 4px 0;
   border: 0;
   background: none;
+  /* A button does not inherit colour; without this it is the browser's black, unreadable on the dark theme. */
+  color: var(--ink);
   cursor: pointer;
   text-decoration: underline;
   text-decoration-color: var(--rule);
