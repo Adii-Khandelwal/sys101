@@ -2878,3 +2878,132 @@ html {
   font-style: italic;
   color: var(--ink-soft);
 }
+
+/* ── Background page: what the posts of each topic assume ── */
+:root {
+  /* A faint wash of the accent, so it follows both themes and needs no literal colour. */
+  --highlight: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.background-lead {
+  margin: 0 0 8px;
+  color: var(--ink-soft);
+}
+
+.bg-section {
+  position: relative;
+  isolation: isolate;
+  margin-top: 48px;
+}
+
+/* The highlight: an overlay behind the section that fades out over --dur-slow (instant under reduced motion). */
+.bg-section::before {
+  content: "";
+  position: absolute;
+  inset: -12px -16px;
+  z-index: -1;
+  background: var(--highlight);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+
+.bg-section.is-highlighted::before {
+  opacity: 1;
+  transition: none;
+}
+
+.bg-section h2 {
+  margin: 0 0 4px;
+}
+
+.bg-section > .label {
+  margin: 0;
+}
+
+.bg-section > .label a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.bg-items {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+}
+
+.bg-item {
+  padding: 16px 0 12px;
+  border-top: 1px solid var(--rule);
+}
+
+.bg-item h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  font-size: 22px;
+  margin: 0 0 6px;
+}
+
+.bg-item p {
+  margin: 0 0 10px;
+}
+
+.bg-assumed {
+  margin: 0 0 6px;
+}
+
+.bg-assumed > .label {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.bg-assumed ul,
+.bg-sources {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bg-assumed li {
+  margin: 0 0 4px;
+}
+
+.bg-assumed li > a {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 44px;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.bg-assumed q {
+  color: var(--ink-soft);
+  font-size: 16px;
+}
+
+.bg-links,
+.bg-sources li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 12px;
+  min-height: 44px;
+}
+
+.bg-links a,
+.bg-sources a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.bg-source-meta {
+  font-size: 15px;
+  color: var(--ink-soft);
+}

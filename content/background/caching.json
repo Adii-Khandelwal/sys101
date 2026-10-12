@@ -1,0 +1,166 @@
+{
+  "topic": "caching",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "atomic-transactions",
+      "name": "Atomic transactions",
+      "explanation": "A transaction bundles several changes into one step: all of them happen or none do, and other readers never see the half-done state. A change that is not committed yet does not count as having happened.",
+      "assumedBy": [
+        {
+          "postId": "meta-cache-consistency-2022",
+          "quote": "Next, a write transaction updated both the metadata table and the version table atomically."
+        },
+        {
+          "postId": "uber-docstore-cache-2024",
+          "quote": "Additionally, by using binlogs, we don’t run the risk of letting uncommitted transactions pollute the cache."
+        }
+      ],
+      "topicPage": "databases",
+      "sources": [
+        {
+          "title": "PostgreSQL: Transactions (tutorial)",
+          "publisher": "PostgreSQL Global Development Group",
+          "url": "https://www.postgresql.org/docs/current/tutorial-transactions.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "binary-log",
+      "name": "Binary log and change data capture",
+      "explanation": "A database keeps an ordered log of every change it commits, which is how its replicas copy it. Reading that log from outside lets another system react to each change as it happens, which is what change data capture means.",
+      "assumedBy": [
+        {
+          "postId": "uber-docstore-cache-2024",
+          "quote": "Flux tails the MySQL binlog events for each of the clusters in our storage engine layer and publishes the events to a list of consumers."
+        }
+      ],
+      "sources": [
+        {
+          "title": "MySQL 8.4 Reference Manual: The Binary Log",
+          "publisher": "Oracle (MySQL)",
+          "url": "https://dev.mysql.com/doc/refman/8.4/en/binary-log.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "redis-lua-scripts",
+      "name": "Redis and atomic Lua scripts",
+      "explanation": "Redis is an in-memory data store, often used as a cache, that holds values under keys. Its EVAL command runs a small Lua script on the server as one uninterrupted step, so a check and a write can happen together.",
+      "assumedBy": [
+        {
+          "postId": "uber-docstore-cache-2024",
+          "quote": "Redis supports executing custom Lua scripts atomically using the EVAL command."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Get started with Redis Open Source",
+          "publisher": "Redis",
+          "url": "https://redis.io/docs/latest/get-started/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        },
+        {
+          "title": "Scripting with Lua",
+          "publisher": "Redis",
+          "url": "https://redis.io/docs/latest/develop/programmability/eval-intro/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "latency-percentiles",
+      "name": "Latency percentiles (P99, P99.9)",
+      "explanation": "A percentile says what share of requests were at least this fast: P99 is the time that 99 out of 100 requests beat, so it shows the slow tail that an average hides. P99.9 and P99.99 look further into that tail.",
+      "assumedBy": [
+        {
+          "postId": "uber-docstore-cache-2024",
+          "quote": "P75 latency is down 75% and P99.9 latency is down over 67% while also limiting latency spikes, as seen above."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Monitoring Distributed Systems (Site Reliability Engineering, chapter 6)",
+          "publisher": "Google",
+          "url": "https://sre.google/sre-book/monitoring-distributed-systems/",
+          "year": "2017",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "eventual-and-strong-consistency",
+      "name": "Eventual and strong consistency",
+      "explanation": "Strong consistency means every read sees the latest write; eventual consistency means the copies agree after a delay. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "meta-cache-consistency-2022",
+          "quote": "“Cache should eventually be consistent with the database” is a typical client-observable invariant that Polaris monitors, especially in the presence of asynchronous cache invalidation."
+        },
+        {
+          "postId": "uber-docstore-cache-2024",
+          "quote": "Docstore is a strongly consistent database."
+        }
+      ],
+      "topicPage": "cap"
+    },
+    {
+      "id": "sharding",
+      "name": "Sharding and shard keys",
+      "explanation": "Splitting one big dataset across many databases by a key, so each holds only part of it. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "uber-docstore-cache-2024",
+          "quote": "Additionally, data is sharded across multiple partitions containing one leader and two follower nodes using Raft for consensus."
+        }
+      ],
+      "topicPage": "sharding"
+    },
+    {
+      "id": "publish-subscribe",
+      "name": "Publish-subscribe",
+      "explanation": "A way to announce that something changed so every interested service hears about it, without the sender knowing who they are. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "meta-cache-consistency-2022",
+          "quote": "Something (e.g., a client or a pub/sub system) needs to tell the cache that a mutation happened."
+        }
+      ],
+      "topicPage": "pub-sub"
+    },
+    {
+      "id": "circuit-breaker",
+      "name": "Circuit breaker",
+      "explanation": "A guard that stops calling a service that keeps failing, so calls fail fast instead of piling up. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "uber-docstore-cache-2024",
+          "quote": "To achieve this, we use a sliding window circuit breaker."
+        }
+      ],
+      "topicPage": "circuit-breakers"
+    },
+    {
+      "id": "consensus",
+      "name": "Consensus (Raft, Paxos)",
+      "explanation": "Several machines agreeing on one order of changes even when some fail, with Raft and Paxos as two named ways to do it. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "meta-cache-consistency-2022",
+          "quote": "much like designing Paxos, where the protocol is different from building Paxos that actually works in production."
+        },
+        {
+          "postId": "uber-docstore-cache-2024",
+          "quote": "The storage engine layer is responsible for consensus via Raft, replication, transactions, concurrency control, and load management."
+        }
+      ],
+      "topicPage": "consensus"
+    }
+  ]
+}

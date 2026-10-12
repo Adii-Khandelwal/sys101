@@ -21,6 +21,8 @@ type Props = {
   learnHref?: string;
   /** Recent items from approved sources, shown after What to learn next. */
   news?: News | null;
+  /** Link to this topic's section of /background, when it has one. */
+  backgroundHref?: string;
 };
 
 const SECTION_NAMES: Record<string, string> = {
@@ -83,7 +85,7 @@ function InShort({ topic }: { topic: Topic }) {
 }
 
 /** Topic page in the teaching-journey format: concept first, then real-world posts. */
-export default function TopicLesson({ topic, prerequisites, dependents, titles, learnHref, news }: Props) {
+export default function TopicLesson({ topic, prerequisites, dependents, titles, learnHref, news, backgroundHref }: Props) {
   const l = topic.lesson!;
   const meta: LessonMeta = { slug: topic.slug, postIds: topic.posts.map((p) => p.id!), correct: l.quiz.map((q) => optionId(q.options[q.correct])) };
   const names: Record<string, string> = {
@@ -141,6 +143,16 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 </span>
                 <Link className="text-button label" href={learnHref}>
                   New to this? Start from zero
+                </Link>
+              </>
+            )}
+            {backgroundHref && (
+              <>
+                <span className="label" aria-hidden="true">
+                  ·
+                </span>
+                <Link className="text-button label" href={backgroundHref}>
+                  Background for this topic
                 </Link>
               </>
             )}

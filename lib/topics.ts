@@ -350,7 +350,7 @@ const wordCount = (v: string) => v.trim().split(/\s+/).length;
 /** Phrasing the site never uses: em dashes and the "it's not X, it's Y" pattern. */
 /** Wording that comments on a figure instead of describing it. */
 const EDITORIAL = /headline|\bfirst limit|\bsecond limit|\bthe post['’]s\b/i;
-const BANNED_PHRASING = /—|\bit['’]s not\b|\bnot (?:just|only|merely)\b|\bisn['’]t (?:just|only|merely)\b/i;
+export const BANNED_PHRASING = /—|\bit['’]s not\b|\bnot (?:just|only|merely)\b|\bisn['’]t (?:just|only|merely)\b/i;
 
 /** Rules for `summary`: counts, lengths, figure references, digits that come from the page, banned phrasing. */
 export function checkSummary(topic: Topic): string[] {

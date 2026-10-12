@@ -3,6 +3,7 @@ import { topicOrder } from "@/lib/order";
 import { getAllTopics } from "@/lib/topics";
 import { getAllLearn } from "@/lib/learn";
 import { getNews } from "@/lib/news";
+import { backgroundUpdated, getAllBackground } from "@/lib/background";
 import { PAGE_DATES, absoluteUrl, learnUpdated, topicUpdated } from "@/lib/site";
 
 // Built once at build time from the content files, like every page.
@@ -19,6 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry("/", topicDates.reduce((a, b) => (b > a ? b : a))),
     ...topics.map((t, i) => entry(`/topic/${t.slug}`, topicDates[i])),
     ...learn.map((l) => entry(`/topic/${l.slug}/learn`, learnUpdated(l))),
+    ...(getAllBackground().length ? [entry("/background", backgroundUpdated())] : []),
     entry("/about", PAGE_DATES.about),
     entry("/glossary", PAGE_DATES.glossary),
     entry("/terms", PAGE_DATES.terms),
