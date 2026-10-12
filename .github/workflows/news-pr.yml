@@ -8,8 +8,10 @@ name: News PR check
 # docs/news-state.json are copied out of it, after the path guard has passed.
 #
 # The job is named "news-pr" so branch protection can require it. It runs on every pull request, so a required check
-# never sits pending on an ordinary one: a pull request that touches no news path and is not on a claude/news-*
-# branch passes at once, and gets no automatic merge.
+# never sits pending on an ordinary one. What counts as a news pull request is decided in scripts/news-guard.mjs
+# (isNewsPr): any claude/ branch that is named claude/news-* or touches a news path, and a person's branch only when
+# it changes nothing but news files. Anything else passes at once and gets no automatic merge; a person's pull
+# request that mixes news data with code is theirs to review, and the Vercel build still runs check-news on it.
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]

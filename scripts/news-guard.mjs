@@ -4,7 +4,7 @@
 //   node scripts/news-guard.mjs paths <files.ndjson> <headRef> <changedFiles>
 //       files.ndjson: one {"filename","previous_filename"?} per line, from the GitHub API.
 //       Writes news=true|false and strict=true|false to $GITHUB_OUTPUT. Exits 1 when a news pull request changes
-//       anything but content/news/**/*.json and docs/news-state.json.
+//       anything but content/news/**/*.json and docs/news-state.json (see isNewsPr for what counts as a news pull request).
 //   node scripts/news-guard.mjs state <base-state.json> <head-state.json>
 //       Exits 1 when allowedDomains differs: a routine pull request may never widen what it is checked against.
 import fs from "node:fs";
@@ -20,11 +20,22 @@ export const touchedPaths = (files) => files.flatMap((f) => [f.filename, f.previ
 
 export const disallowedPaths = (files) => touchedPaths(files).filter((p) => !pathAllowed(p));
 
-/** A pull request counts as a news pull request when it touches a news path or comes from a claude/news-* branch. */
-export const isNewsPr = (files, headRef) => headRef.startsWith("claude/news-") || touchedPaths(files).some((p) => p === STATE || p.startsWith("content/news/"));
-
-/** Routine branches (claude/*) are held to the base branch's allowlist. */
+/** Routine branches (claude/*) are the only ones that can be merged automatically, so they get the strict rules. */
 export const isStrict = (headRef) => headRef.startsWith("claude/");
+
+/**
+ * Is this a news pull request that the checks and the path guard apply to?
+ * - A claude/ branch: yes when it is named claude/news-* or touches a news path. The path guard then rejects anything
+ *   beyond the news files, so a routine pull request can never carry other changes.
+ * - Any other branch (a person's): only when every changed file is a news file. A person's pull request that mixes news
+ *   data with code (a schema change, say) is reviewed by that person and is not a news pull request; it can never be
+ *   merged automatically, and the Vercel build still runs check-news on it.
+ */
+export function isNewsPr(files, headRef) {
+  const touched = touchedPaths(files);
+  if (isStrict(headRef)) return headRef.startsWith("claude/news-") || touched.some((p) => p === STATE || p.startsWith("content/news/"));
+  return touched.length > 0 && touched.every(pathAllowed);
+}
 
 export const allowlistChanged = (base, head) => JSON.stringify(base.allowedDomains ?? null) !== JSON.stringify(head.allowedDomains ?? null);
 

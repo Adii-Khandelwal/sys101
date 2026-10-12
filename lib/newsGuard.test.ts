@@ -44,11 +44,16 @@ describe("the news path guard", () => {
     expect(disallowedPaths([f("scripts/a.mjs", "content/news/a.json")])).toEqual(["scripts/a.mjs"]);
     expect(disallowedPaths([f("content/news/b.json", "content/news/a.json")])).toEqual([]);
   });
-  it("treats a claude/news-* branch or any news path as a news pull request", () => {
+  it("holds claude/ branches to the news rules, and a person's branch only when it changes nothing but news files", () => {
     expect(isNewsPr([f("app/page.tsx")], "feature/x")).toBe(false);
     expect(isNewsPr([f("app/page.tsx")], "claude/news-2026-10-12")).toBe(true);
+    expect(isNewsPr([f("app/page.tsx")], "claude/other")).toBe(false);
+    expect(isNewsPr([f("content/news/a.json"), f("lib/news.ts")], "claude/other")).toBe(true); // then the path guard rejects it
     expect(isNewsPr([f("content/news/a.json")], "feature/x")).toBe(true);
     expect(isNewsPr([f("docs/news-state.json")], "feature/x")).toBe(true);
+    // a person's pull request that mixes news data with code (a schema change) is theirs to review
+    expect(isNewsPr([f("content/news/a.json"), f("lib/news.ts"), f("scripts/news-rules.mjs")], "feature/x")).toBe(false);
+    expect(isNewsPr([], "feature/x")).toBe(false);
     expect(isStrict("claude/anything")).toBe(true);
     expect(isStrict("feature/x")).toBe(false);
   });
@@ -87,8 +92,18 @@ describe("the guard command, as the workflow runs it", () => {
     expect(run([f("content/news/caching.json")], "claude/news-x", 4).code).toBe(1);
     expect(run([], "claude/news-x").code).toBe(1);
   });
-  it("leaves an ordinary pull request alone", () => {
+  it("leaves an ordinary pull request alone, including a person's that mixes news data with code", () => {
     expect(run([f("app/page.tsx")], "feature/x").code).toBe(0);
+    const mixed = run([f("content/news/caching.json"), f("lib/news.ts"), f("scripts/news-rules.mjs")], "feature/x");
+    expect(mixed.code).toBe(0);
+    expect(mixed.out).toContain("Not a news pull request");
+  });
+  it("still blocks the same mixed change from a claude/ branch", () => {
+    for (const ref of ["claude/news-2026-10-12", "claude/fix-schema"]) {
+      const r = run([f("content/news/caching.json"), f("lib/news.ts")], ref);
+      expect(r.code, ref).toBe(1);
+      expect(r.out).toContain("lib/news.ts");
+    }
   });
 });
 
