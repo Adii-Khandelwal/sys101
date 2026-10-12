@@ -10,22 +10,7 @@
       },
       {
         "host": "uber.com",
-        "pathPrefix": "/blog/",
-        "publisher": "Uber"
-      },
-      {
-        "host": "uber.com",
-        "pathPrefix": "/us/en/blog/",
-        "publisher": "Uber"
-      },
-      {
-        "host": "uber.com",
-        "pathPrefix": "/US/en/blog/",
-        "publisher": "Uber"
-      },
-      {
-        "host": "uber.com",
-        "pathPrefix": "/en-US/blog/",
+        "pathPattern": "^/(blog/|[a-zA-Z]{2}/en/blog/|en-US/blog/)",
         "publisher": "Uber"
       },
       {
@@ -114,22 +99,7 @@
       },
       {
         "host": "uber.com",
-        "pathPrefix": "/blog/",
-        "publisher": "Uber"
-      },
-      {
-        "host": "uber.com",
-        "pathPrefix": "/us/en/blog/",
-        "publisher": "Uber"
-      },
-      {
-        "host": "uber.com",
-        "pathPrefix": "/US/en/blog/",
-        "publisher": "Uber"
-      },
-      {
-        "host": "uber.com",
-        "pathPrefix": "/en-US/blog/",
+        "pathPattern": "^/(blog/|[a-zA-Z]{2}/en/blog/|en-US/blog/)",
         "publisher": "Uber"
       },
       {
@@ -179,22 +149,7 @@
     "databases": [
       {
         "host": "uber.com",
-        "pathPrefix": "/blog/",
-        "publisher": "Uber"
-      },
-      {
-        "host": "uber.com",
-        "pathPrefix": "/us/en/blog/",
-        "publisher": "Uber"
-      },
-      {
-        "host": "uber.com",
-        "pathPrefix": "/US/en/blog/",
-        "publisher": "Uber"
-      },
-      {
-        "host": "uber.com",
-        "pathPrefix": "/en-US/blog/",
+        "pathPattern": "^/(blog/|[a-zA-Z]{2}/en/blog/|en-US/blog/)",
         "publisher": "Uber"
       },
       {
@@ -315,22 +270,7 @@
     "load-balancing": [
       {
         "host": "uber.com",
-        "pathPrefix": "/blog/",
-        "publisher": "Uber"
-      },
-      {
-        "host": "uber.com",
-        "pathPrefix": "/us/en/blog/",
-        "publisher": "Uber"
-      },
-      {
-        "host": "uber.com",
-        "pathPrefix": "/US/en/blog/",
-        "publisher": "Uber"
-      },
-      {
-        "host": "uber.com",
-        "pathPrefix": "/en-US/blog/",
+        "pathPattern": "^/(blog/|[a-zA-Z]{2}/en/blog/|en-US/blog/)",
         "publisher": "Uber"
       },
       {
@@ -374,22 +314,7 @@
       },
       {
         "host": "uber.com",
-        "pathPrefix": "/blog/",
-        "publisher": "Uber"
-      },
-      {
-        "host": "uber.com",
-        "pathPrefix": "/us/en/blog/",
-        "publisher": "Uber"
-      },
-      {
-        "host": "uber.com",
-        "pathPrefix": "/US/en/blog/",
-        "publisher": "Uber"
-      },
-      {
-        "host": "uber.com",
-        "pathPrefix": "/en-US/blog/",
+        "pathPattern": "^/(blog/|[a-zA-Z]{2}/en/blog/|en-US/blog/)",
         "publisher": "Uber"
       },
       {

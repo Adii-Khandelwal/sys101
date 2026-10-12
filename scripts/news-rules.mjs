@@ -55,17 +55,45 @@ export function normalizeUrl(u) {
   }
 }
 
-const ENTRY_KEYS = ["host", "pathPrefix", "publisher", "kinds"];
+const ENTRY_KEYS = ["host", "pathPrefix", "pathPattern", "publisher", "kinds"];
+const MAX_PATTERN = 200;
 
 /**
- * An allowlist entry: { host, pathPrefix?, publisher, kinds? }. `host` is a bare domain (no scheme, no path),
- * `pathPrefix` starts with "/", `publisher` is the exact string an item must use, `kinds` limits the item kinds.
+ * A pathPattern is an anchored regular expression for the URL path, for sites whose paths vary by locale. Only entries in
+ * docs/news-state.json carry one, and only a person edits that. It is kept to a shape that cannot backtrack badly:
+ * anchored with ^, short, no lookarounds, named groups or backreferences, no quantifier on a group, at most one unbounded
+ * quantifier. Returns a list of problems.
+ */
+export function patternProblems(p) {
+  if (typeof p !== "string" || !p) return ["pathPattern must be a non-empty string"];
+  const out = [];
+  if (!p.startsWith("^")) out.push("pathPattern must be anchored with ^");
+  if (p.length > MAX_PATTERN) out.push(`pathPattern is longer than ${MAX_PATTERN} characters`);
+  // Strip escaped characters and character classes so the checks below look only at structure.
+  const bare = p.replace(/\\./g, "x").replace(/\[(?:[^\]\\]|\\.)*\]/g, "x");
+  if (/\\[1-9k]/.test(p)) out.push("pathPattern may not use backreferences");
+  if (/\((?!\?:)/.test(bare) && /\(\?/.test(bare)) out.push("pathPattern may use only plain and (?: ) groups, no lookarounds or named groups");
+  if (/\)[*+?{]/.test(bare)) out.push("pathPattern may not put a quantifier on a group");
+  if ((bare.match(/[*+]|\{\d+,\d*\}/g) ?? []).length > 1) out.push("pathPattern may have at most one unbounded quantifier");
+  try {
+    new RegExp(p);
+  } catch {
+    out.push("pathPattern is not a valid regular expression");
+  }
+  return out;
+}
+
+/**
+ * An allowlist entry: { host, pathPrefix? or pathPattern?, publisher, kinds? }. `host` is a bare domain (no scheme, no path),
+ * `pathPrefix` starts with "/" (or `pathPattern` is an anchored regex, see patternProblems), `publisher` is the exact string an item must use, `kinds` limits the item kinds.
  */
 export function isAllowEntry(e) {
   if (!e || typeof e !== "object" || Array.isArray(e)) return false;
   if (Object.keys(e).some((k) => !ENTRY_KEYS.includes(k))) return false;
   if (typeof e.host !== "string" || !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(e.host)) return false;
+  if (e.pathPrefix !== undefined && e.pathPattern !== undefined) return false;
   if (e.pathPrefix !== undefined && !(typeof e.pathPrefix === "string" && /^\/[A-Za-z0-9._~\/-]*$/.test(e.pathPrefix))) return false;
+  if (e.pathPattern !== undefined && patternProblems(e.pathPattern).length) return false;
   if (!nonEmpty(e.publisher)) return false;
   if (e.kinds !== undefined && !(Array.isArray(e.kinds) && e.kinds.length > 0 && e.kinds.every((k) => KINDS.includes(k)))) return false;
   return true;
@@ -76,6 +104,7 @@ function entryCovers(u, entry) {
   const host = u.hostname.toLowerCase();
   const domain = entry.host.toLowerCase();
   if (host !== domain && !host.endsWith(`.${domain}`)) return false;
+  if (entry.pathPattern) return new RegExp(entry.pathPattern).test(u.pathname);
   if (!entry.pathPrefix) return true;
   const prefix = entry.pathPrefix;
   return u.pathname === prefix || u.pathname.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`);

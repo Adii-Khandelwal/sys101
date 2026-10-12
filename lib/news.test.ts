@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dateMatches, datesShown, evidenceFound, fetchAllowed, pageText } from "../scripts/news-verify-rules.mjs";
-import { checkSummary, isAllowEntry, itemAllowedProblems, urlAllowed, latestDay, normalizeUrl, olderThan12Months, validateNews } from "../scripts/news-rules.mjs";
+import { checkSummary, isAllowEntry, itemAllowedProblems, patternProblems, urlAllowed, latestDay, normalizeUrl, olderThan12Months, validateNews } from "../scripts/news-rules.mjs";
 import { renderToStaticMarkup } from "react-dom/server";
 import WhatsNew from "../components/WhatsNew";
 import { NEWS_MODE } from "./site";
@@ -207,5 +207,45 @@ describe("redirects stay inside the allowlist", () => {
   it("refuses a start URL outside the allowlist and endless redirects", async () => {
     await expect(fetchAllowed("https://evil.example/blogs/a", entries, async () => res(200))).rejects.toThrow(/outside the allowlist/);
     await expect(fetchAllowed("https://aws.amazon.com/blogs/a", entries, async () => res(302, { location: "/blogs/a" }))).rejects.toThrow(/too many redirects/);
+  });
+});
+
+describe("pathPattern entries", () => {
+  const UBER = { host: "uber.com", pathPattern: "^/(blog/|[a-zA-Z]{2}/en/blog/|en-US/blog/)", publisher: "Uber" };
+  it("is a valid entry", () => {
+    expect(isAllowEntry(UBER)).toBe(true);
+  });
+  it("covers the Uber blog paths and nothing else", () => {
+    for (const p of ["/blog/", "/blog/post", "/in/en/blog/", "/us/en/blog/post", "/US/en/blog/", "/en-US/blog/x"]) expect(urlAllowed(`https://www.uber.com${p}`, [UBER]), p).toBe(true);
+    for (const p of ["/careers/", "/en/blog/", "/blog", "/blogger/x", "/us/en/blogs/", "/us/en/careers/", "/xyz/en/blog/", "/us/fr/blog/", "/"]) expect(urlAllowed(`https://www.uber.com${p}`, [UBER]), p).toBe(false);
+  });
+  it("keeps exact-or-subdomain host matching", () => {
+    for (const u of ["https://uber.com.evil.example/blog/", "https://evil-uber.com/blog/", "https://notuber.com/blog/", "https://uber.com@evil.example/blog/", "http://www.uber.com/blog/", "https://www.uber.com:8443/blog/"]) expect(urlAllowed(u, [UBER]), u).toBe(false);
+    expect(urlAllowed("https://www.uber.com/blog/", [UBER])).toBe(true);
+    expect(urlAllowed("https://uber.com/blog/", [UBER])).toBe(true);
+  });
+  it("refuses a redirect to a path the pattern does not match", async () => {
+    const res = (status: number, location?: string) => ({ status, ok: status === 200, headers: { get: (n: string) => (n.toLowerCase() === "location" ? (location ?? null) : null) }, text: async () => "<p>ok</p>" });
+    await expect(fetchAllowed("https://www.uber.com/us/en/blog/a", [UBER], async () => res(302, "/careers/"))).rejects.toThrow(/redirected outside the allowlist/);
+    await expect(fetchAllowed("https://www.uber.com/blog/", [UBER], async () => res(302, "https://evil.example/blog/"))).rejects.toThrow(/redirected outside/);
+    const hop = async (u: string) => (new URL(u).pathname === "/blog/" ? res(302, "/in/en/blog/") : res(200));
+    expect((await fetchAllowed("https://www.uber.com/blog/", [UBER], hop)).finalUrl).toBe("https://www.uber.com/in/en/blog/");
+  });
+  it("accepts only safe patterns", () => {
+    expect(patternProblems("^/(blog/|[a-z]{2}/blog/)")).toEqual([]);
+    expect(patternProblems("^/blog/.*")).toEqual([]);
+    for (const bad of ["/blog/", "blog/", "^/(a+)+$", "^/(a|aa)*$", "^/(a*)*", "^/(?=blog)", "^/(?<n>a)", "^/(a)\\1", "^/a+/b+", "^/.*/.*", "^/(", "^/" + "a".repeat(250), "", 5]) {
+      expect(patternProblems(bad).length, String(bad)).toBeGreaterThan(0);
+    }
+    expect(isAllowEntry({ host: "uber.com", pathPattern: "^/(a+)+$", publisher: "Uber" })).toBe(false);
+    expect(isAllowEntry({ ...UBER, pathPrefix: "/blog/" })).toBe(false);
+  });
+  it("is used by the Uber entries in docs/news-state.json", async () => {
+    const state = (await import("../docs/news-state.json")).default as { allowedDomains: Record<string, { host: string; pathPattern?: string }[]> };
+    for (const [slug, list] of Object.entries(state.allowedDomains)) {
+      const uber = list.filter((e) => e.host === "uber.com");
+      expect(uber.every((e) => e.pathPattern === UBER.pathPattern), slug).toBe(true);
+      expect(uber.length <= 1, slug).toBe(true);
+    }
   });
 });

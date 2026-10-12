@@ -12,7 +12,7 @@ Only these paths: `content/news/<topic-slug>.json` and `docs/news-state.json`. D
 
 ## Data you work with
 
-- `docs/news-state.json` has `lastChecked` (topic slug to YYYY-MM-DD, the day the routine last looked at that topic) and `allowedDomains` (topic slug to a list of entries `{ host, pathPrefix?, publisher, kinds? }`, for example `{ "host": "valkey.io", "pathPrefix": "/blog/", "publisher": "Valkey project" }`). Read it first.
+- `docs/news-state.json` has `lastChecked` (topic slug to YYYY-MM-DD, the day the routine last looked at that topic) and `allowedDomains` (topic slug to a list of entries `{ host, pathPrefix? | pathPattern?, publisher, kinds? }`, for example `{ "host": "valkey.io", "pathPrefix": "/blog/", "publisher": "Valkey project" }`). Read it first.
 - `content/news/<slug>.json` is `{ "asOf": "YYYY-MM-DD", "items": [ ... ] }`. The file may not exist yet for a topic. At most 3 items. Zero items is valid.
 - An item has exactly these fields: `id` (lowercase letters, digits and hyphens, unique in the file), `kind` (one of `release`, `engineering-post`, `standard`, `docs`), `title`, `publisher`, `url` (https), `dateShown`, `summary`, `evidence`, `addedOn`, `verifiedOn`.
 - Today's date (UTC) is the run date. Use it for `addedOn`, `verifiedOn`, `lastChecked` and `asOf`.
@@ -20,7 +20,7 @@ Only these paths: `content/news/<topic-slug>.json` and `docs/news-state.json`. D
 ## Steps
 
 1. Read `docs/news-state.json`. Among topics that have an entry in `allowedDomains`, pick the 3 with the oldest `lastChecked` (a topic with no `lastChecked` counts as the oldest; break ties by slug, alphabetically).
-2. For each of the 3 topics, look only at the hosts and path prefixes of that topic's entries. Do not use any other site, search engine snippet, social post, aggregator or summary as a source. Look for pages whose date is newer than that topic's `asOf` (or from the last 12 months when there is no file yet) and that teach something about the topic.
+2. For each of the 3 topics, look only at the hosts and paths (prefix or pattern) of that topic's entries. Do not use any other site, search engine snippet, social post, aggregator or summary as a source. Look for pages whose date is newer than that topic's `asOf` (or from the last 12 months when there is no file yet) and that teach something about the topic.
 3. Open each candidate page itself, as raw as your tools allow, and confirm three things from the page text: the publication date (use exactly what the page shows for `dateShown`: YYYY-MM-DD, YYYY-MM or YYYY; if the page shows no date, skip the page), that it is on an allowed host and path, and a phrase to use as `evidence`. The item's `publisher` must be exactly the `publisher` string of the entry that covers its URL, and if that entry has `kinds`, the item's `kind` must be one of them (the PostgreSQL entry takes `release` only; skip any other page from it). Check the address you ended up on after any redirect: if it left the allowed hosts or paths, skip the page.
 4. If the page is on `builder.aws.com`, it only counts when the page itself shows Amazon Web Services as its author (a byline or publisher line naming AWS or Amazon Web Services, not a community or personal post). If it does not, skip it.
 4b. Skip, and say why in the pull request body: marketing, product pitches, pricing or sales pages, event or webinar promotion, pages not about the topic, pages already linked as an Original post of that topic (check `content/topics/<slug>.json`), anything with no date, and anything older than 12 months.
