@@ -38,7 +38,7 @@ export default function Background() {
             <section key={b.topic} id={b.topic} className="bg-section" aria-labelledby={`${b.topic}-h`}>
               <h2 id={`${b.topic}-h`}>Background for {topic.title}</h2>
               <p className="label">
-                <Link href={`/topic/${b.topic}`}>Back to the {topic.title} topic</Link>
+                <Link href={`/topic/${b.topic}#posts`}>Back to the {topic.title} topic</Link>
               </p>
               <ul className="bg-items">
                 {b.items.map((item) => {

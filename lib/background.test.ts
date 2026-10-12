@@ -49,7 +49,8 @@ describe("background content", () => {
       const topic = route.match(/^\/topic\/([^/]+)$/)?.[1];
       if (topic) {
         expect(slugs.has(topic), m[1]).toBe(true);
-        if (hash) expect(topics.find((t) => t.slug === topic)!.posts.some((p) => p.id === hash), `${m[1]} points at a post`).toBe(true);
+        // a post's section, or "posts": the top of the posts part, where "Back to the topic" lands
+        if (hash) expect(hash === "posts" || topics.find((t) => t.slug === topic)!.posts.some((p) => p.id === hash), `${m[1]} points at a post or the posts part`).toBe(true);
       }
     }
   });
@@ -230,6 +231,14 @@ describe("the link on a topic page", () => {
     const row = render("/background#caching").match(/<p class="lesson-jump">.*?<\/p>/s)![0];
     expect(row).toContain("Skip to the posts");
     expect(row).not.toContain("Background");
+  });
+
+  it("has the anchor that 'Back to the topic' on /background lands on, just above the posts", () => {
+    const out = render("/background#caching");
+    expect(out).toContain('id="posts"');
+    expect(out.indexOf('id="posts"')).toBeLessThan(out.indexOf("Before you read these posts:"));
+    expect(out.indexOf('id="posts"')).toBeLessThan(out.indexOf(`<div id="${caching.posts[0].id}">`));
+    expect(renderToStaticMarkup(Background() as never)).toContain('<a href="/topic/caching#posts">Back to the Caching topic</a>');
   });
 
   it("is not shown when the topic has no background file", () => {
