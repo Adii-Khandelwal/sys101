@@ -99,9 +99,9 @@ describe("the /background page", () => {
     const later = caching.items.filter((i) => isTaughtLater(i, "caching", numbers)).map((i) => i.id);
     expect(later.sort()).toEqual(["circuit-breaker", "consensus", "eventual-and-strong-consistency", "publish-subscribe", "sharding"]);
     expect(html.match(/Taught later/g)).toHaveLength(later.length);
-    // Databases comes before Caching, so it is "Taught earlier", not "later", and carries its official source too.
+    // Databases comes before Caching, so it is not "later", and the page says nothing about where it is taught.
     expect(isTaughtLater({ topicPage: "databases" }, "caching", numbers)).toBe(false);
-    expect(html).toContain("Taught earlier in");
+    expect(html).not.toMatch(/Taught earlier|topic 01/);
   });
 
   it("links forward to the topic page, shows each assumed-by sentence with its post, and does not re-explain", () => {
@@ -111,10 +111,10 @@ describe("the /background page", () => {
         expect(html.includes(displayQuote(a.quote)) || html.includes(shown), `${item.id}: ${a.postId}`).toBe(true);
         expect(html).toContain(`/topic/caching#${a.postId}`);
       }
-      if (item.topicPage) expect(html).toContain(`href="/topic/${item.topicPage}"`);
+      // only a concept taught later links forward to our page; an earlier one has just its official source
+      if (item.topicPage && isTaughtLater(item, "caching", numbers)) expect(html).toContain(`href="/topic/${item.topicPage}"`);
     }
-    // Atomic transactions links Databases and the PostgreSQL page
-    expect(html).toContain('href="/topic/databases"');
+    expect(html).not.toContain('href="/topic/databases"');
     expect(html).toContain("https://www.postgresql.org/docs/current/tutorial-transactions.html");
   });
 
@@ -168,6 +168,11 @@ describe("validation catches the mistakes it is for", () => {
     const c = good();
     later(c).sources = [{ title: "T", publisher: "P", url: "https://example.com", year: "2026", verifiedOn: "2026-10-12" }];
     expect(problems(c)).toContain("links forward only");
+  });
+  it("an earlier concept with a topic page still needs its official source, since the page does not link back", () => {
+    const a = good();
+    a.items[0].sources = [];
+    expect(problems(a)).toContain("needs one");
   });
   it("an earlier concept may not claim the gist is enough", () => {
     const a = good();

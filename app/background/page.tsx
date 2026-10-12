@@ -65,9 +65,9 @@ export default function Background() {
                           })}
                         </ul>
                       </div>
-                      {target && (
+                      {target && later && (
                         <p className="bg-links">
-                          <span className="label">{later ? "Taught in" : "Taught earlier in"}</span>
+                          <span className="label">Taught in</span>
                           <Link href={`/topic/${target.slug}`}>
                             {target.title}, topic {formatNumber(numbers.get(target.slug)!)}
                           </Link>

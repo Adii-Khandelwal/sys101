@@ -87,7 +87,11 @@ export function validateBackground(file: string, b: Background, topics: Topic[])
       if (sources.length) problems.push(`${where}: a concept taught later links forward only, with no source`);
       if (nonEmpty(it.explanation) && words(it.explanation) > GIST_MAX_WORDS) problems.push(`${where}: a concept taught later gets a one-line gist of at most ${GIST_MAX_WORDS} words`);
       if (nonEmpty(it.explanation) && !/gist is enough/i.test(it.explanation)) problems.push(`${where}: the gist must say that the gist is enough`);
-    } else if (nonEmpty(it.explanation) && /gist is enough/i.test(it.explanation)) problems.push(`${where}: only a concept taught later says the gist is enough`);
+    } else {
+      if (nonEmpty(it.explanation) && /gist is enough/i.test(it.explanation)) problems.push(`${where}: only a concept taught later says the gist is enough`);
+      // The page does not link back to an earlier topic, so the reader needs the official source instead.
+      if (sources.length === 0) problems.push(`${where}: a concept not taught later is shown with its official source, so it needs one`);
+    }
     const urls = new Set<string>();
     sources.forEach((s, j) => {
       const at = `${where}: source ${j + 1}`;
