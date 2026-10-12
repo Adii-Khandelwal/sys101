@@ -8,7 +8,7 @@
         "Uber's Consumer Proxy gives up order inside a partition so any worker can take any message, which suits only work where order does not matter."
       ],
       "figures": [
-        { "postId": "spotify-event-delivery-2019", "row": 2, "label": "over 8M events per second global peak at the end of Q1 2019" },
+        { "postId": "spotify-event-delivery-2019", "row": 2, "label": "over 8 million events per second global peak at the end of Q1 2019" },
         { "postId": "uber-consumer-proxy-2021", "row": 1, "label": "over 300 microservices use Kafka for pub-sub message queueing" }
       ]
     },
@@ -44,7 +44,7 @@
       ],
       "figures": [
         { "postId": "meta-mysql-raft-2023", "row": 0, "label": "typical failover about 2 s with Raft, 20 to 40 s with semi-synchronous replication" },
-        { "postId": "github-mysql-ha-2018", "row": 0, "label": "10 to 13 s typical total outage during a failover" }
+        { "postId": "github-mysql-ha-2018", "row": 3, "label": "primary waits 500 ms for a replica to confirm a write before moving on" }
       ]
     },
     "prerequisiteReasons": {

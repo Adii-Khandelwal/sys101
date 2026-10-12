@@ -34,9 +34,16 @@ describe("checkSummary", () => {
     const three = [point, point, point];
     const out = (l: string) => checkSummary(summary(three, [{ ...fig, label: l }])).join("\n");
     expect(out("faster builds")).toMatch(/label is 2 words/);
-    expect(out("builds got 900x faster in the example")).toMatch(/"900" is not in the referenced row/);
+    expect(out("builds got 900x faster in the example")).toMatch(/"900" is not in the post's numbers/);
     expect(out("builds got much faster in the example here")).toMatch(/must contain the figure's value/);
     expect(out("builds got 150x faster, the post's headline result")).toMatch(/editorial/);
+  });
+  it("allows context numbers from the post's other rows or its year, and rejects colons and unglued units", () => {
+    const t = topic({ posts: [{ id: "p1", published: "2016-07-01", digest: { numbers: [digit, { value: "9.2", meaning: "Postgres version" }] } }] as never });
+    const out = (l: string) => checkSummary({ ...t, summary: { points: [point, point, point], figures: [{ postId: "p1", row: 0, label: l }] } }).join("\n");
+    expect(out("builds got 150x faster on Postgres 9.2 (2016 account)")).toBe("");
+    expect(out("builds: got 150x faster in the example")).toMatch(/colon/);
+    expect(out("builds got 150x faster in 500ms")).toMatch(/space between a number and its unit/);
   });
   it("allows digits only when they appear in the topic", () => {
     const withDigit = (n: string) => summary([`A cache holds ${n} copies of the data so most reads never reach the source.`, point, point]);

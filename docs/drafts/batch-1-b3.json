@@ -28,7 +28,7 @@
       ],
       "figures": [
         { "postId": "github-code-search-2023", "row": 7, "label": "115 TB of original content became a 25 TB index" },
-        { "postId": "discord-search-indexing-2025", "row": 6, "label": "median query latency fell from 500ms to under 100ms" }
+        { "postId": "discord-search-indexing-2025", "row": 6, "label": "median query latency fell from 500 ms to under 100 ms" }
       ]
     },
     "prerequisiteReasons": {

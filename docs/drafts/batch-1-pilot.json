@@ -25,7 +25,7 @@
         "The etcd guide says commit latency has a floor set by the network round trip between members plus a durable disk write."
       ],
       "figures": [
-        { "postId": "etcd-performance", "row": 0, "label": "member round trip: about 50 ms in the US, up to 400 ms intercontinental" },
+        { "postId": "etcd-performance", "row": 0, "label": "about 50 ms member round trip in the US, up to 400 ms intercontinental" },
         { "postId": "cockroachdb-leader-leases-2026", "row": 0, "label": "lease-maintenance CPU use cut by up to 85% with Leader Leases" }
       ]
     },

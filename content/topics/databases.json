@@ -16,7 +16,7 @@
       {
         "postId": "uber-postgres-to-mysql-2016",
         "row": 4,
-        "label": "active connections: a few hundred where Postgres struggled, about 10,000 handled by MySQL"
+        "label": "Postgres 9.2 struggled at a few hundred connections, MySQL handled about 10,000 (2016 account)"
       },
       {
         "postId": "github-mysql-8-upgrade-2023",

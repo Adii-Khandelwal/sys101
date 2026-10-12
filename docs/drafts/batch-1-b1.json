@@ -9,7 +9,7 @@
       ],
       "figures": [
         { "postId": "amazon-dynamo-2007", "row": 0, "label": "99.9% of reads and writes complete within 300 ms, Dynamo's SLA" },
-        { "postId": "google-spanner-2012", "row": 0, "label": "1 to 7 ms: TrueTime clock uncertainty that a transaction waits out" }
+        { "postId": "google-spanner-2012", "row": 0, "label": "TrueTime clock uncertainty is 1 to 7 ms, which a transaction waits out" }
       ]
     },
     "prerequisiteReasons": {
@@ -26,7 +26,7 @@
         "Netflix owns its catalog and can predict demand, so it fills caches ahead of time instead of waiting for misses."
       ],
       "figures": [
-        { "postId": "cloudflare-pingora-2022", "row": 2, "label": "160x fewer new connections to one major customer's origins" },
+        { "postId": "cloudflare-pingora-2022", "row": 2, "label": "160x fewer new connections to one customer's origins" },
         { "postId": "netflix-open-connect-popularity-2017", "row": 1, "label": "around 1,200 files stored for one episode of The Crown" }
       ]
     },
@@ -44,7 +44,7 @@
         "Uber's Cinnamon lets a server protect itself, without help from callers, by ranking requests and shedding the lowest first."
       ],
       "figures": [
-        { "postId": "zalando-circuit-breaker-herd-2026", "row": 4, "label": "10x the traffic per pod once the breaker closed, with at least three pods" },
+        { "postId": "zalando-circuit-breaker-herd-2026", "row": 4, "label": "10x the traffic per pod once the breaker closed, with a three-pod minimum" },
         { "postId": "uber-cinnamon-load-shedder-2023", "row": 1, "label": "about 1 microsecond of overhead per request for Cinnamon" }
       ]
     },
@@ -57,12 +57,12 @@
       "points": [
         "Consistent hashing puts servers and keys on one ring, so when a server joins or leaves only the keys next to it move.",
         "A ring with few servers spreads load unevenly unless each server takes many points on it.",
-        "Cloudflare checked its default points per server against the math, because small per-server costs become huge at fleet scale.",
+        "Cloudflare checked the default number of virtual nodes per server against the math, because small per-server costs become huge at fleet scale.",
         "Discord found that on a hot read path, copying shared data can cost more than the work itself."
       ],
       "figures": [
-        { "postId": "cloudflare-ketama-ram-2026", "row": 0, "label": "load variation across 100 servers: about 99% at 1 point each, 8% at 160" },
-        { "postId": "cloudflare-ketama-ram-2026", "row": 7, "label": "over 100TB of RAM reclaimed across the fleet" }
+        { "postId": "cloudflare-ketama-ram-2026", "row": 0, "label": "Load varied about 99% with 1 virtual node per server, about 8% with 160" },
+        { "postId": "cloudflare-ketama-ram-2026", "row": 7, "label": "over 100 TB of RAM reclaimed across the fleet" }
       ]
     },
     "prerequisiteReasons": {

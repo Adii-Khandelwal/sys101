@@ -19,7 +19,7 @@
       {
         "postId": "cloudflare-pingora-2022",
         "row": 2,
-        "label": "160x fewer new connections to one major customer's origins"
+        "label": "160x fewer new connections to one customer's origins"
       },
       {
         "postId": "netflix-open-connect-popularity-2017",

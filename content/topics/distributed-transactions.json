@@ -20,7 +20,7 @@
       {
         "postId": "google-percolator-2010",
         "row": 1,
-        "label": "about 4x overhead over raw Bigtable for a single-cell write and commit"
+        "label": "about 4x overhead over raw Bigtable in the worst case, single-cell writes"
       },
       {
         "postId": "cockroachdb-transaction-pipelining-2019",

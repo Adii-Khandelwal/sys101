@@ -22,8 +22,8 @@
       },
       {
         "postId": "github-mysql-ha-2018",
-        "row": 0,
-        "label": "10 to 13 s typical total outage during a failover"
+        "row": 3,
+        "label": "primary waits 500 ms for a replica to confirm a write before moving on"
       }
     ]
   },

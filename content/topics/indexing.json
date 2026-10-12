@@ -24,7 +24,7 @@
       {
         "postId": "discord-search-indexing-2025",
         "row": 6,
-        "label": "median query latency fell from 500ms to under 100ms"
+        "label": "median query latency fell from 500 ms to under 100 ms"
       }
     ]
   },

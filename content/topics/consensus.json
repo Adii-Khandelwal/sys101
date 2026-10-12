@@ -19,7 +19,7 @@
       {
         "postId": "etcd-performance",
         "row": 0,
-        "label": "member round trip: about 50 ms in the US, up to 400 ms intercontinental"
+        "label": "about 50 ms member round trip in the US, up to 400 ms intercontinental"
       },
       {
         "postId": "cockroachdb-leader-leases-2026",

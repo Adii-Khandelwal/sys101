@@ -344,6 +344,8 @@ function checkLesson(topic: Topic): string[] {
 /** Every topic must have `summary`, and `prerequisiteReasons` when it has prerequisites. Set to false only while backfilling a new field. */
 export const REQUIRE_NEW_FIELDS = true;
 
+/** A unit stuck to its number ("500ms", "100TB", "8M"): write "500 ms", "100 TB", "8 million". */
+const UNIT_NO_SPACE = /\d(?:ms|μs|s|[KMGT]?B|[KMGT]b|Gbps|M|K)\b/;
 const wordCount = (v: string) => v.trim().split(/\s+/).length;
 /** Phrasing the site never uses: em dashes and the "it's not X, it's Y" pattern. */
 /** Wording that comments on a figure instead of describing it. */
@@ -365,6 +367,7 @@ export function checkSummary(topic: Topic): string[] {
     if (n < 8 || n > 28) problems.push(`${where}: ${n} words, needs 8 to 28`);
     if (nonEmpty(p) && !/[.!?]$/.test(p.trim())) problems.push(`${where}: must end with a full stop`);
     if (BANNED_PHRASING.test(p)) problems.push(`${where}: banned phrasing`);
+    if (UNIT_NO_SPACE.test(p)) problems.push(`${where}: put a space between a number and its unit ("500 ms")`);
     for (const d of p.match(/\d[\d,.]*\d|\d/g) ?? []) if (!source.includes(d)) problems.push(`${where}: "${d}" does not appear in the topic content`);
   });
   if (!Array.isArray(s.figures) || s.figures.length > 3) problems.push("summary.figures needs 0 to 3 entries");
@@ -379,8 +382,12 @@ export function checkSummary(topic: Topic): string[] {
     const n = wordCount(f.label);
     if (n < 4 || n > 14) problems.push(`${where}: label is ${n} words, needs 4 to 14`);
     if (BANNED_PHRASING.test(f.label) || EDITORIAL.test(f.label)) problems.push(`${where}: banned or editorial phrasing in label`);
+    if (f.label.includes(":")) problems.push(`${where}: no "label: value" colon in a label; write it as a phrase`);
+    if (UNIT_NO_SPACE.test(f.label)) problems.push(`${where}: put a space between a number and its unit ("500 ms")`);
+    // Context numbers may come from the referenced row, another row of the same post's table, or the post's year.
     const rowText = `${row.value} ${row.meaning}`;
-    for (const d of numbersIn(f.label)) if (!rowText.includes(d)) problems.push(`${where}: "${d}" is not in the referenced row`);
+    const context = `${rowText} ${post.digest.numbers.map((n) => `${n.value} ${n.meaning}`).join(" ")} ${post.published?.slice(0, 4) ?? ""}`;
+    for (const d of numbersIn(f.label)) if (!context.includes(d)) problems.push(`${where}: "${d}" is not in the post's numbers or its year`);
     const own = numbersIn(row.value);
     if (own.length && !own.some((d) => f.label.includes(d))) problems.push(`${where}: label must contain the figure's value (${row.value})`);
   });

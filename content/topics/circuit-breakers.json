@@ -19,7 +19,7 @@
       {
         "postId": "zalando-circuit-breaker-herd-2026",
         "row": 4,
-        "label": "10x the traffic per pod once the breaker closed, with at least three pods"
+        "label": "10x the traffic per pod once the breaker closed, with a three-pod minimum"
       },
       {
         "postId": "uber-cinnamon-load-shedder-2023",

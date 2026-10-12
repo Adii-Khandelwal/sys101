@@ -9,7 +9,7 @@
     "points": [
       "DNS maps human-readable names to addresses through a hierarchy: resolvers walk from the root to top-level domains to authoritative servers.",
       "Caching at every layer, bounded by each record's TTL, keeps it fast at the cost of propagation delay.",
-      "Cloudflare found that a design sized for yesterday's load becomes the bottleneck as traffic grows, so it builds each changed record instead of the whole zone.",
+      "Cloudflare found that a design sized for yesterday's load becomes the bottleneck as traffic grows, so most changes now rebuild one record, not the whole zone.",
       "Slack's DNSSEC rollout showed that an undo is just another change, and it spreads no faster than the longest cache in the path."
     ],
     "figures": [
@@ -20,8 +20,8 @@
       },
       {
         "postId": "slack-dnssec-2021",
-        "row": 1,
-        "label": "DNSSEC outage lasted 24 hours"
+        "row": 0,
+        "label": "under 1% of Slack's online users were affected by the DNSSEC outage"
       }
     ]
   },

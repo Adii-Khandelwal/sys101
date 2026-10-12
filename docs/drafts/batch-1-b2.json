@@ -8,7 +8,7 @@
         "GitHub shows replication is also how a fleet is upgraded and rolled back, so plan the way back first."
       ],
       "figures": [
-        { "postId": "uber-postgres-to-mysql-2016", "row": 4, "label": "active connections: a few hundred where Postgres struggled, about 10,000 handled by MySQL" },
+        { "postId": "uber-postgres-to-mysql-2016", "row": 4, "label": "Postgres 9.2 struggled at a few hundred connections, MySQL handled about 10,000 (2016 account)" },
         { "postId": "github-mysql-8-upgrade-2023", "row": 2, "label": "5.5 million queries per second served" }
       ]
     }
@@ -22,7 +22,7 @@
         "Cockroach Labs found transaction latency is dominated by synchronous replication rounds in series, and pipelining overlaps those rounds."
       ],
       "figures": [
-        { "postId": "google-percolator-2010", "row": 1, "label": "about 4x overhead over raw Bigtable for a single-cell write and commit" },
+        { "postId": "google-percolator-2010", "row": 1, "label": "about 4x overhead over raw Bigtable in the worst case, single-cell writes" },
         { "postId": "cockroachdb-transaction-pipelining-2019", "row": 1, "label": "each extra ms of inter-node latency added 6 ms without pipelining, 2 ms with" }
       ]
     },
@@ -36,12 +36,12 @@
       "points": [
         "DNS maps human-readable names to addresses through a hierarchy: resolvers walk from the root to top-level domains to authoritative servers.",
         "Caching at every layer, bounded by each record's TTL, keeps it fast at the cost of propagation delay.",
-        "Cloudflare found that a design sized for yesterday's load becomes the bottleneck as traffic grows, so it builds each changed record instead of the whole zone.",
+        "Cloudflare found that a design sized for yesterday's load becomes the bottleneck as traffic grows, so most changes now rebuild one record, not the whole zone.",
         "Slack's DNSSEC rollout showed that an undo is just another change, and it spreads no faster than the longest cache in the path."
       ],
       "figures": [
         { "postId": "cloudflare-dns-builds-2022", "row": 5, "label": "150x average speedup of per-record builds over full zone builds" },
-        { "postId": "slack-dnssec-2021", "row": 1, "label": "DNSSEC outage lasted 24 hours" }
+        { "postId": "slack-dnssec-2021", "row": 0, "label": "under 1% of Slack's online users were affected by the DNSSEC outage" }
       ]
     }
   },
