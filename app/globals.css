@@ -888,6 +888,9 @@ a:hover {
 .path-group-mark {
   order: 3;
   flex: 0 0 auto;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 .path-group-mark[aria-pressed="true"] {
   color: var(--accent);
@@ -906,13 +909,13 @@ a:hover {
   grid-template-columns: 2.4ch 22px 1fr;
   align-items: start;
   column-gap: 14px;
-  padding: 14px 0;
+  padding: 2px 0 12px;
 }
 
 .path-number {
   font-family: var(--font-mono), monospace;
   font-size: 12px;
-  line-height: 1.9;
+  line-height: 44px;
   color: var(--ink-soft);
   text-align: right;
 }
@@ -927,22 +930,22 @@ a:hover {
 .path-rail::before {
   content: "";
   position: absolute;
-  top: -14px;
-  bottom: -14px;
+  top: -2px;
+  bottom: -12px;
   width: 1px;
   background: var(--rule);
 }
 .path-list .path-item:first-child .path-rail::before {
-  top: 14px;
+  top: 22px;
 }
 .path-list .path-item:last-child .path-rail::before {
-  bottom: calc(100% - 14px);
+  bottom: calc(100% - 22px);
 }
 
 .path-marker {
   position: relative;
   z-index: 1;
-  margin-top: 7px;
+  margin-top: 16px;
   width: 11px;
   height: 11px;
   border: 1.5px solid var(--ink-soft);
@@ -984,6 +987,8 @@ a:hover {
   line-height: 1.2;
   text-decoration: none;
   width: fit-content;
+  display: block;
+  padding: 9px 0;
 }
 .path-title:hover {
   text-decoration: underline;
