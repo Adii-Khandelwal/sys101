@@ -1,0 +1,106 @@
+{
+  "topic": "sharding",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "acid-transactions",
+      "name": "ACID transactions",
+      "explanation": "A transaction groups several changes so they all happen or none do. ACID names the guarantees: atomic, consistent, isolated and durable. On one database the engine enforces them; across shards it no longer can.",
+      "assumedBy": [
+        {
+          "postId": "figma-postgres-sharding-2024",
+          "quote": "When a table is split across multiple physical databases, we lose many of the reliability and consistency properties that we take for granted in ACID SQL databases."
+        }
+      ],
+      "sources": [
+        {
+          "title": "MySQL 8.4 Reference Manual: InnoDB and the ACID Model",
+          "publisher": "Oracle (MySQL)",
+          "url": "https://dev.mysql.com/doc/refman/8.4/en/mysql-acid.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "transaction-id-wraparound",
+      "name": "Transaction ID wraparound",
+      "explanation": "Postgres numbers transactions with a counter that eventually wraps. Vacuum has to keep marking old rows so the counter can be reused safely, and if vacuum falls behind, the database is in danger.",
+      "assumedBy": [
+        {
+          "postId": "notion-postgres-sharding-2021",
+          "quote": "While disk capacity can be increased, more worrying was the prospect of transaction ID (TXID) wraparound, a safety mechanism"
+        }
+      ],
+      "sources": [
+        {
+          "title": "PostgreSQL docs: Routine Vacuuming (preventing transaction ID wraparound failures)",
+          "publisher": "PostgreSQL Global Development Group",
+          "url": "https://www.postgresql.org/docs/current/routine-vacuuming.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "sql-views",
+      "name": "SQL views",
+      "explanation": "A view is a saved query that you read like a table. The query runs each time the view is used, so a view can show part of a table without copying it.",
+      "assumedBy": [
+        {
+          "postId": "figma-postgres-sharding-2024",
+          "quote": "By creating sharded views on top of our existing unsharded physical databases, we could logically shard before we performed any risky physical reshard operations."
+        }
+      ],
+      "sources": [
+        {
+          "title": "PostgreSQL docs: CREATE VIEW",
+          "publisher": "PostgreSQL Global Development Group",
+          "url": "https://www.postgresql.org/docs/current/sql-createview.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "foreign-keys",
+      "name": "Foreign keys and unique indexes",
+      "explanation": "A foreign key makes the database refuse a row that points at a missing row in another table. A unique index refuses duplicates. Both only work when the database can see all the rows, which sharding breaks.",
+      "assumedBy": [
+        {
+          "postId": "figma-postgres-sharding-2024",
+          "quote": "Foreign keys and globally unique indexes can no longer be enforced by Postgres."
+        }
+      ],
+      "sources": [
+        {
+          "title": "PostgreSQL docs: Constraints (unique constraints and foreign keys)",
+          "publisher": "PostgreSQL Global Development Group",
+          "url": "https://www.postgresql.org/docs/current/ddl-constraints.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "query-planner",
+      "name": "Query parsing and planning",
+      "explanation": "A database parses SQL into a tree, then plans how to run it. Figma's proxy repeats those steps to decide which shards a query touches.",
+      "assumedBy": [
+        {
+          "postId": "figma-postgres-sharding-2024",
+          "quote": "A query parser reads SQL sent by the application and transforms it into an Abstract Syntax Tree (AST)."
+        }
+      ],
+      "sources": [
+        {
+          "title": "PostgreSQL docs: Planner/Optimizer",
+          "publisher": "PostgreSQL Global Development Group",
+          "url": "https://www.postgresql.org/docs/current/planner-optimizer.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    }
+  ]
+}
