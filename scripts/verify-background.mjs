@@ -3,7 +3,9 @@
 //   - each "Assumed by" sentence appears in the text of the post it names (curly quotes and spacing ignored);
 //   - each official source URL answers with a success status.
 // Any miss fails the run.
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { evidenceFound, pageText } from "./news-verify-rules.mjs";
 
@@ -15,15 +17,48 @@ const HEADERS = {
   "Accept-Language": "en-US,en;q=0.9",
 };
 
-async function get(url) {
+async function fetchOnce(url) {
   // Uber's blog also wants the trailing slash.
   for (const u of [url, url.endsWith("/") ? null : `${url}/`]) {
     if (!u) continue;
-    const res = await fetch(u, { headers: HEADERS, redirect: "follow", signal: AbortSignal.timeout(30000) });
-    if (res.ok) return res.text();
+    const res = await fetch(u, { headers: { ...HEADERS, Accept: `${HEADERS.Accept},application/pdf` }, redirect: "follow", signal: AbortSignal.timeout(40000) });
+    if (res.ok) return Buffer.from(await res.arrayBuffer());
     if (u === url && res.status !== 406 && res.status !== 404) throw new Error(`HTTP ${res.status}`);
   }
   throw new Error("HTTP error");
+}
+
+/** The text of a PDF, through pdftotext or Python's pypdf (the same tools as verify:figures). */
+function pdfText(buf) {
+  const tmp = path.join(os.tmpdir(), `verify-background-${process.pid}-${Math.random().toString(36).slice(2)}.pdf`);
+  fs.writeFileSync(tmp, buf);
+  try {
+    try {
+      return execFileSync("pdftotext", ["-layout", tmp, "-"], { maxBuffer: 1 << 28 }).toString();
+    } catch {
+      return execFileSync("python3", ["-I", "-c", "import sys,pypdf;r=pypdf.PdfReader(sys.argv[1]);print('\\n'.join((p.extract_text() or '') for p in r.pages))", tmp], { maxBuffer: 1 << 28 }).toString();
+    }
+  } finally {
+    fs.rmSync(tmp, { force: true });
+  }
+}
+
+const isPdf = (buf) => buf.subarray(0, 5).toString() === "%PDF-";
+
+/** Plain text of a page or paper. A Google Research abstract page (research.google/pubs/pubN/) is followed to its paper. */
+async function pageTextOf(url) {
+  const buf = await fetchOnce(url);
+  if (isPdf(buf)) return pdfText(buf);
+  const pub = url.match(/research\.google\/pubs\/pub(\d+)/);
+  if (pub) {
+    try {
+      const paper = await fetchOnce(`https://research.google.com/pubs/archive/${pub[1]}.pdf`);
+      if (isPdf(paper)) return pdfText(paper);
+    } catch {
+      // fall back to the abstract page
+    }
+  }
+  return pageText(buf.toString("utf8"));
 }
 
 const dir = path.join(root, "content", "background");
@@ -39,7 +74,7 @@ for (const f of files) {
       checked++;
       const post = topic.posts.find((p) => p.id === a.postId);
       try {
-        if (!pageCache.has(post.url)) pageCache.set(post.url, pageText(await get(post.url)));
+        if (!pageCache.has(post.url)) pageCache.set(post.url, await pageTextOf(post.url));
         if (evidenceFound(pageCache.get(post.url), a.quote)) console.log(`ok   ${b.topic}/${item.id} in ${a.postId}`);
         else throw new Error(`sentence not found in the post text: "${a.quote.slice(0, 80)}..."`);
       } catch (e) {
@@ -50,7 +85,7 @@ for (const f of files) {
     for (const s of item.sources ?? []) {
       checked++;
       try {
-        await get(s.url);
+        await fetchOnce(s.url);
         console.log(`ok   ${b.topic}/${item.id} source ${s.url}`);
       } catch (e) {
         failures++;

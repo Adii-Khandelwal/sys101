@@ -99,24 +99,27 @@ describe("the /background page", () => {
     const caching = getBackground("caching")!;
     const later = caching.items.filter((i) => isTaughtLater(i, "caching", numbers)).map((i) => i.id);
     expect(later.sort()).toEqual(["circuit-breaker", "consensus", "eventual-and-strong-consistency", "publish-subscribe", "sharding"]);
-    expect(html.match(/class="label bg-later">Taught later</g)).toHaveLength(later.length);
+    // every file: the label appears exactly for the concepts whose topic page comes later, across the whole page
+    const total = files.reduce((n, f) => n + f.items.filter((i) => isTaughtLater(i, f.topic, numbers)).length, 0);
+    expect(html.match(/class="label bg-later">Taught later</g)).toHaveLength(total);
     // Databases comes before Caching, so it is not "later", and the page says nothing about where it is taught.
     expect(isTaughtLater({ topicPage: "databases" }, "caching", numbers)).toBe(false);
     expect(html).not.toMatch(/Taught earlier|topic 01/);
   });
 
   it("shows each assumed-by sentence with its post, and does not re-explain or link to the later topic", () => {
-    for (const item of getBackground("caching")!.items) {
+    for (const f of files) for (const item of f.items) {
       for (const a of item.assumedBy) {
         const shown = displayQuote(a.quote).replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
-        expect(html.includes(displayQuote(a.quote)) || html.includes(shown), `${item.id}: ${a.postId}`).toBe(true);
-        expect(html).toContain(`/topic/caching#${a.postId}`);
+        expect(html.includes(displayQuote(a.quote)) || html.includes(shown), `${f.topic}/${item.id}: ${a.postId}`).toBe(true);
+        expect(html).toContain(`/topic/${f.topic}#${a.postId}`);
       }
     }
     // no line says where a concept is taught, and no link points at another topic page: the reader uses search or the glossary
     expect(html).not.toMatch(/Taught in|Taught earlier|, topic \d\d/);
     const topicLinks = [...html.matchAll(/href="(\/topic\/[^"]*)"/g)].map((m) => m[1]);
-    for (const l of topicLinks) expect(l, l).toMatch(/^\/topic\/caching(#[\w-]+)?$/);
+    const fileTopics = new Set(files.map((f) => f.topic));
+    for (const l of topicLinks) expect(fileTopics.has(l.match(/^\/topic\/([^#]+)/)![1]), l).toBe(true);
     expect(html).toContain("https://www.postgresql.org/docs/current/tutorial-transactions.html");
   });
 

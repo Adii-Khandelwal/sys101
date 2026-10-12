@@ -1,0 +1,142 @@
+{
+  "topic": "databases",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "vacuum",
+      "name": "Vacuuming old row versions",
+      "explanation": "When a database keeps old versions of a row so readers are not blocked, something has to clear them out later. Vacuuming is that clean-up, and it frees the space for reuse.",
+      "assumedBy": [
+        {
+          "postId": "uber-postgres-to-mysql-2016",
+          "quote": "By comparison, the Postgres autovacuum process has to do full table scans to identify deleted rows."
+        }
+      ],
+      "sources": [
+        {
+          "title": "PostgreSQL: Routine Vacuuming",
+          "publisher": "PostgreSQL Global Development Group",
+          "url": "https://www.postgresql.org/docs/current/routine-vacuuming.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "page-cache",
+      "name": "The operating system page cache",
+      "explanation": "The operating system keeps recently read file data in memory, in the page cache, so a repeat read skips the disk. A database can lean on it or keep a cache of its own.",
+      "assumedBy": [
+        {
+          "postId": "uber-postgres-to-mysql-2016",
+          "quote": "To increase performance, Postgres allows the kernel to automatically cache recently accessed disk data via the page cache."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Concepts overview (Linux kernel memory management)",
+          "publisher": "The Linux kernel documentation",
+          "url": "https://docs.kernel.org/admin-guide/mm/concepts.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "connection-pooling",
+      "name": "Connection pooling",
+      "explanation": "A pooler sits between the applications and the database and shares a few real connections among many clients. The database then carries far fewer connections than there are clients.",
+      "assumedBy": [
+        {
+          "postId": "uber-postgres-to-mysql-2016",
+          "quote": "While the documentation is not very specific about why, it does strongly recommend employing an out-of-process connection pooling mechanism to scale to large connection counts with Postgres."
+        }
+      ],
+      "sources": [
+        {
+          "title": "PgBouncer: Features (session and transaction pooling)",
+          "publisher": "PgBouncer",
+          "url": "https://www.pgbouncer.org/features.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "service-level-objectives",
+      "name": "Service level objectives (SLOs)",
+      "explanation": "An SLO is a target for how a service should behave, such as the share of requests that succeed or finish fast enough. A team plans every change, even a long upgrade, to stay inside it.",
+      "assumedBy": [
+        {
+          "postId": "github-mysql-8-upgrade-2023",
+          "quote": "We must be able to upgrade each MySQL database while adhering to our Service Level Objectives (SLOs) and Service Level Agreements (SLAs)."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Service Level Objectives (Site Reliability Engineering, chapter 4)",
+          "publisher": "Google",
+          "url": "https://sre.google/sre-book/service-level-objectives/",
+          "year": "2017",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "b-tree-indexes",
+      "name": "B-tree indexes",
+      "explanation": "A sorted tree of keys that lets the database find a row, or a range of rows, without reading the whole table. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "uber-postgres-to-mysql-2016",
+          "quote": "Tables themselves have indexes, which are organized as data structures (typically B-trees) that map index fields to a ctid payload."
+        }
+      ],
+      "topicPage": "indexing"
+    },
+    {
+      "id": "sharding",
+      "name": "Sharding and shard keys",
+      "explanation": "Splitting one big dataset across many databases by a key, so each holds only part of it. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "uber-postgres-to-mysql-2016",
+          "quote": "Specifically, in many of the cases where we previously used Postgres, we now use Schemaless, a novel database sharding layer built on top of MySQL."
+        },
+        {
+          "postId": "github-mysql-8-upgrade-2023",
+          "quote": "We use Vitess for horizontally sharding relational data. For the most part, upgrading our Vitess clusters was not too different from upgrading the MySQL clusters."
+        }
+      ],
+      "topicPage": "sharding"
+    },
+    {
+      "id": "promoting-a-replica",
+      "name": "Promoting a replica",
+      "explanation": "Making a replica the new primary, so the other copies follow it and writes keep flowing. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "uber-postgres-to-mysql-2016",
+          "quote": "During a routine master database promotion to increase database capacity, we ran into a Postgres 9.2 bug."
+        },
+        {
+          "postId": "github-mysql-8-upgrade-2023",
+          "quote": "An 8.0 primary candidate was configured to replicate directly under the current 5.7 primary."
+        }
+      ],
+      "topicPage": "replication"
+    },
+    {
+      "id": "failover",
+      "name": "Failover",
+      "explanation": "Noticing that a primary is gone and switching traffic to a stand-in, without waiting for a person. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "github-mysql-8-upgrade-2023",
+          "quote": "Orchestrator was also configured to blacklist 5.7 hosts as potential failover candidates to prevent an accidental rollback in case of an unplanned failover."
+        }
+      ],
+      "topicPage": "failover"
+    }
+  ]
+}
