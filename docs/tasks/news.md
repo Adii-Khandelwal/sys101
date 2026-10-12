@@ -11,13 +11,15 @@ Read this first in any session and continue from RESUME. Use scripts/topic-brief
 - [x] B1 .github/workflows/news-pr.yml
 - [x] B2 docs/routines/whats-new.md
 - [x] B3 docs/routines/README.md
-- [~] B4 (table shown, waiting) allowedDomains table for all 18 topics, STOP for approval, then write docs/news-state.json, run checks, commit
+- [x] B4 allowedDomains table for all 18 topics, STOP for approval, then write docs/news-state.json, run checks, commit
 
 ## Decisions
+- Allowlist entries are { host, pathPrefix?, publisher, kinds? }; item publisher must equal the entry publisher. Dropped by the user: allthingsdistributed.com, elastic.co/blog, databricks.com/blog, mongodb.com. zapier.com/engineering/ exists only as a redirect to /blog/categories/engineering-insights/ (article URLs are under /blog/), so it would match nothing and was dropped.
+- The workflow runs on pull_request_target from base code; PR files are read as data only; claude/ branches may not change allowedDomains.
 - Approved Caching items: Valkey 9.1 memory post, CloudFront invalidation by cache tag. Valkey 9.1 release post dropped. No third item.
 - allowedDomains entries are host plus optional path prefix; redirects are followed by hand and every hop is checked.
 - Rules live once in scripts/news-rules.mjs (with a .d.mts), imported by check-news, verify-news and the tests.
 - NEWS_MODE is a constant in lib/site.ts ("review" default). Change it together with the auto-merge variable.
 - The news section sits outside the main data-pagefind-body div (Original posts is outside it too), so it has its own data-pagefind-body; its heading "What's new in <Topic>" is the search label.
 
-RESUME: B4 table shown. On approval: write all 18 allowedDomains into docs/news-state.json (keep caching, keep lastChecked.caching), run check-news and tests, update the host list in docs/routines/README.md section 3 if it names hosts, commit. Open flags: aws.amazon.com/builders-library/ redirects to builder.aws.com/learn/; uber.com/en-US/blog/ redirects to /US/en/blog/ (needs the locale path in the list); envoyproxy.io/blog/ is 404 (dropped); mongodb.com/blog/ is now /company/blog/.
+RESUME: Both phases done and committed (allowlists, then hardening). Nothing is pushed. Next for the user: merge the hardening to main, run the test PR in docs/routines/README.md section 7, then create the routine.

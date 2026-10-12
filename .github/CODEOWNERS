@@ -1,0 +1,11 @@
+# Anything that can change what runs, what is checked or what the site teaches needs my review.
+# Needs the branch protection setting "Require review from Code Owners" (docs/routines/README.md, section 1).
+# The routine's pull requests touch only content/news/** and docs/news-state.json, which are not listed here.
+/.github/**               @Adii-Khandelwal
+/scripts/**               @Adii-Khandelwal
+/lib/**                   @Adii-Khandelwal
+/package.json             @Adii-Khandelwal
+/package-lock.json        @Adii-Khandelwal
+/vitest.config.ts         @Adii-Khandelwal
+/content/topics/**        @Adii-Khandelwal
+/content/learn/**         @Adii-Khandelwal
