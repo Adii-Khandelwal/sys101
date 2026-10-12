@@ -214,6 +214,7 @@ They prove each URL is https and inside the topic's allowlist (including after r
 
 ## 10. When something goes wrong
 
+- A pull request shows no checks at all, and the Actions tab lists `news-pr.yml` as a failed run on a push with no jobs: the workflow file does not parse (a `: ` inside an unquoted `run:` value is the usual cause), so GitHub never starts it. `lib/workflows.test.ts` parses every workflow in the test run to catch this before a push. Fix the file, push to `main`, then close and reopen the pull request to start the check.
 - `news-pr` fails on "also changes": the routine edited a path it should not. Close the pull request.
 - `news-pr` fails on "allowedDomains differs": only a person edits the allowlist, in a pull request that is not a `claude/` branch.
 - `verify:news` fails on one item: the page changed, moved or blocks the runner. Edit or delete that item by hand, or close the pull request; the next run starts fresh.

@@ -101,7 +101,8 @@ jobs:
       # A pull request from a fork never makes the runner fetch anything: its URLs are not opened.
       - if: steps.guard.outputs.news == 'true' && steps.guard.outputs.fork == 'true'
         name: Fork pull request, network verification skipped
-        run: echo "fork PR: network verification skipped, merge manually"
+        run: |
+          echo "fork PR: network verification skipped, merge manually"
 
   # Off unless the repository variable NEWS_AUTOMERGE is 'true' (docs/routines/README.md, section 7: do not set it before
   # the test pull request has failed the guard). Only same-repository claude/ branches that passed. `--auto` waits for the
