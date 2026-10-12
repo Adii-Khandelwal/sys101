@@ -116,7 +116,14 @@ export const isOwnClaim = (row: { meaning: string }) => /headline|\btarget\b|\bg
 
 /** The line a summary figure renders as: label, company, date string, and a note when the number is the company's own claim. */
 export function figureLine(post: Post, f: { row: number; label: string }) {
-  return `${f.label[0].toUpperCase()}${f.label.slice(1)}, ${companyWhen(post, "month", " ")}${isOwnClaim(post.digest.numbers[f.row]) ? " (company's own figure)" : ""}`;
+  return `${f.label[0].toUpperCase()}${f.label.slice(1)}, ${companyWhen(post, "month", " ")}${figureNote(post, f)}`;
+}
+
+const figureNote = (post: Post, f: { row: number }) => (isOwnClaim(post.digest.numbers[f.row]) ? " (company's own figure)" : "");
+
+/** The same line in two parts, so the page can set the source apart: the figure, then "Company · Month Year" in label type. */
+export function figureParts(post: Post, f: { row: number; label: string }) {
+  return { text: `${f.label[0].toUpperCase()}${f.label.slice(1)}`, source: `${companyWhen(post, "month")}${figureNote(post, f)}` };
 }
 
 export type Topic = {

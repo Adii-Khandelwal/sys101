@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { optionId } from "@/lib/quizIds";
-import { companyWhen, figureLine, type Topic } from "@/lib/topics";
+import { companyWhen, figureParts, type Topic } from "@/lib/topics";
 import { readingLabel } from "@/lib/readingTime";
 import { PostDigest, TopicList } from "./TopicDossier";
 import { CompactProgress, FinishTopic, MarkDone, QuizBlock, ResumeLine } from "./LessonTrackers";
@@ -62,7 +62,7 @@ function InShort({ topic }: { topic: Topic }) {
   if (!s) return null;
   const figures = s.figures.map((f) => {
     const post = topic.posts.find((p) => p.id === f.postId)!;
-    return { post, text: figureLine(post, f) };
+    return { post, ...figureParts(post, f) };
   });
   return (
     <section className="in-short" aria-labelledby="in-short-h">
@@ -76,9 +76,12 @@ function InShort({ topic }: { topic: Topic }) {
       </ul>
       {figures.length > 0 && (
         <ul className="in-short-figures">
-          {figures.map(({ post, text }) => (
+          {figures.map(({ post, text, source }) => (
             <li key={text}>
-              <a href={`#${post.id}`}>{text}</a>
+              <a href={`#${post.id}`}>
+                <span>{text}</span>
+                <span className="label">{source}</span>
+              </a>
             </li>
           ))}
         </ul>
