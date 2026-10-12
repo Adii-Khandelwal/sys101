@@ -394,6 +394,14 @@ a:hover {
   margin: 48px 0 8px;
 }
 
+/* "Fit to size": a plain text button at the right of the legend row, with a 44px tap target. */
+.graph-fit {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: -12px 0;
+}
+
 .graph-legend {
   display: flex;
   align-items: center;

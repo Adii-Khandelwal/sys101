@@ -58,7 +58,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - The map is the homepage on desktop (768px and up); under 768px only the Path view is shown, with no Map/Path toggle; the toggle on desktop remembers an explicit choice.
 - Layout is deterministic and static. Draw only the transitive reduction by default. No edge crosses a label or node.
 - Node states never rely on color alone: unread (thin outline), ready (thicker outline + centre dot), in progress (rust outline + rust centre dot, for a topic deliberately started), read (filled rust). In progress ranks above ready. The Path view and the map legend show the same four states.
-- Pan is desktop-only and starts at INTERACTIVE_MIN_NODES topics; zoom is keyboard-only (`+`/`-`/`0`). The on-screen Zoom/Fit all/Show all links buttons were removed (camera and edge-filter state stay). A phone gets the fixed map. Keep a plain text index and keyboard use as the fallback.
+- Pan is desktop-only and starts at INTERACTIVE_MIN_NODES topics; zoom is keyboard-only (`+`/`-`/`0`). Zoom and Show all links have no on-screen buttons (camera and edge-filter state stay); the one exception is a "Fit to size" text button on an interactive map, disabled while the view is fitted. A phone gets the fixed map. Keep a plain text index and keyboard use as the fallback.
 - After adding a topic, check the map at 1280px, 1440px, and 390px for zero crossings and overlaps. At 1280px also test that sideways page scroll and map pan do not conflict.
 - Read docs/graph.md before editing graph code.
 

@@ -34,6 +34,7 @@ import {
   dragView,
   fitRatio,
   fitState,
+  isFitted,
   moveView,
   clampRatio,
   ratioLimits,
@@ -329,6 +330,8 @@ export default function GraphView({ nodes, edges }: Props) {
   // ── Camera ────────────────────────────────────────────────────────────
   const fitRef = useRef(1);
   const [zoomPct, setZoomPct] = useState(100);
+  /** The view is the fitted one, so the fit button has nothing to do. */
+  const [fitted, setFitted] = useState(true);
   // Small maps fit on screen: no zoom, pan or controls until there are enough
   // topics to need them. Phones always get the fixed map, whatever the count,
   // so a finger scrolls the page past it and a tap opens the topic.
@@ -780,6 +783,7 @@ export default function GraphView({ nodes, edges }: Props) {
       });
       renderer.getCamera().on("updated", (state) => {
         setZoomPct(Math.round(zoomLevel(state, fitRef.current) * 100));
+        setFitted(isFitted(state, fitRef.current));
         // Any zoom or pan clears the highlight and tooltip.
         if (activeRef.current) activate(nextHighlight(activeRef.current, { type: "camera" }));
       });
@@ -986,6 +990,12 @@ export default function GraphView({ nodes, edges }: Props) {
           <LegendMark state="progress" /> In progress
           <LegendMark state="read" /> Read
         </p>
+        {/* One button, for the zoom or pan a stray click can cause. Only on a map that can zoom and pan. */}
+        {interactive && (
+          <button type="button" className="text-button label graph-fit" onClick={fitAll} disabled={fitted}>
+            Fit to size
+          </button>
+        )}
       </div>
 
       <div ref={scrollWrap} className="graph-scrollwrap">

@@ -21,6 +21,11 @@ export function fitState(fit: number): Camera {
   return { x: 0.5, y: 0.5, ratio: fit, angle: 0 };
 }
 
+/** Is the camera on the fitted view, to a tolerance far below anything a reader could see? */
+export function isFitted(cam: Camera, fit: number): boolean {
+  return Math.abs(cam.ratio / fit - 1) < 0.002 && Math.abs(cam.x - 0.5) < 0.002 && Math.abs(cam.y - 0.5) < 0.002;
+}
+
 /** Ratio bounds: zoom 8x in to 0.6x out, relative to the fitted view. */
 export function ratioLimits(fit: number) {
   return { min: fit / MAX_ZOOM, max: fit / MIN_ZOOM };

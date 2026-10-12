@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { INTERACTIVE_MIN_NODES, groupLabelSpots, groupSet, placeGroupLabel, mapIsInteractive, mapIsInteractiveAt, FADED_LABEL, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "./graphUi";
 
@@ -150,5 +152,20 @@ describe("map tooltip prerequisite lines", () => {
   });
   it("a single unread prerequisite is named once", () => {
     expect(prerequisiteLines(["dns"], [], title)).toEqual({ builtOn: null, finish: "Finish DNS first." });
+  });
+});
+
+describe("the Fit to size button", () => {
+  const src = fs.readFileSync(path.resolve(__dirname, "../components/GraphView.tsx"), "utf8");
+  it("is one text button, only on a map that can zoom and pan, and disabled while the view is fitted", () => {
+    const at = src.indexOf("Fit to size");
+    const button = src.slice(src.lastIndexOf("{interactive && (", at), src.indexOf("</button>", at));
+    expect(button).toContain('className="text-button label graph-fit"');
+    expect(button).toContain("onClick={fitAll}");
+    expect(button).toContain("disabled={fitted}");
+    expect(src.match(/Fit to size/g)).toHaveLength(1);
+    // the camera feeds its state, and there are still no zoom or show-all buttons on screen
+    expect(src).toContain("setFitted(isFitted(state, fitRef.current))");
+    expect(src).not.toMatch(/>\s*(Zoom in|Zoom out|Show all links|Fit all)\s*</);
   });
 });

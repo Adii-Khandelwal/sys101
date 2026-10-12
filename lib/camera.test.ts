@@ -8,6 +8,7 @@ import {
   moveView,
   fitRatio,
   fitState,
+  isFitted,
   ratioLimits,
   wheelFactor,
   zoomBy,
@@ -138,5 +139,24 @@ describe("dragging", () => {
     const next = moveView(cam, { x: view.x * s, y: view.y * s });
     expect(screenX(0.6, next, s) - screenX(0.6, cam, s)).toBeCloseTo(100);
     expect(screenY(0.6, next, s) - screenY(0.6, cam, s)).toBeCloseTo(-40);
+  });
+});
+
+describe("isFitted (the Fit to size button's state)", () => {
+  const fit = 1.6;
+  it("is true on the fitted view and for tiny float noise around it", () => {
+    expect(isFitted(fitState(fit), fit)).toBe(true);
+    expect(isFitted({ ...fitState(fit), ratio: fit * 1.0005, x: 0.5004 }, fit)).toBe(true);
+  });
+  it("is false after any zoom or pan a reader could see", () => {
+    expect(isFitted(zoomBy(fitState(fit), 2, { x: 0.5, y: 0.5 }, fit), fit)).toBe(false); // zoomed in
+    expect(isFitted({ ...fitState(fit), ratio: fit / 0.7 }, fit)).toBe(false); // zoomed out
+    expect(isFitted({ ...fitState(fit), x: 0.52 }, fit)).toBe(false); // panned sideways
+    expect(isFitted({ ...fitState(fit), y: 0.47 }, fit)).toBe(false); // panned up
+  });
+  it("Fit all always lands on a fitted view", () => {
+    const dragged = moveView(zoomBy(fitState(fit), 3, { x: 0.4, y: 0.6 }, fit), { x: 0.05, y: -0.03 });
+    expect(isFitted(dragged, fit)).toBe(false);
+    expect(isFitted(fitState(fit), fit)).toBe(true);
   });
 });
