@@ -83,7 +83,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - WCAG AA contrast, visible focus rings, full keyboard use, 44px touch targets, real buttons, aria-live for results. Verify at 1440px and 390px.
 - Every feature must work seamlessly on a phone: verify each new feature at 390px (and touch), with no horizontal overflow, readable wrapping, and tap targets of 44px. A feature is not done until it works on mobile.
 - Skeleton loaders match the final size and only stand in for client-loaded parts (no loading.tsx on content routes).
-- Shared header with the sys101 wordmark and three-node mark linking home, and a sun/crescent-moon theme toggle (ThemeToggle). Footer links: About, Glossary, Terms, Privacy, Your data, Report a mistake (mails REPORT_EMAIL in lib/site.ts). A "Back to top" text button appears after about 1.5 screens.
+- Shared header with the sys101 wordmark and three-node mark linking home, and a sun/crescent-moon theme toggle (ThemeToggle). Footer links: About, Glossary, Background, Terms, Privacy, Your data, Report a mistake (mails REPORT_EMAIL in lib/site.ts). A "Back to top" text button appears after about 1.5 screens.
 - About and Terms describe AI assistance identically (an AI assistant drafts the write-ups; trust the original). Change one, check the other.
 
 ## Post selection (strict, never use just any post)

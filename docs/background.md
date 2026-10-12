@@ -9,4 +9,4 @@ Read before editing content/background or app/background.
 - Checks: `validateBackground` in lib/background.ts runs at load, so a bad file fails the build. lib/background.test.ts checks post ids, links, anchors, sections, the "Taught later" labels, the sitemap entry and the topic-page link. `npm run verify:background` (network, not in the build) confirms each quote is in the post's page text and each source answers.
 - The topic page shows "Background for this topic" (in the row with "Skip to the posts") only when its topic has a file (`backgroundHref`).
 - Highlight: an overlay's opacity fades over `--dur-slow` after `DURATION.pulse`; under `prefers-reduced-motion` it appears and disappears instantly. Without JavaScript the page still scrolls to the section.
-- Not in the footer. The way in is the topic page link and the sitemap.
+- Linked from the footer (Background, after Glossary), from a topic page that has a file, and from the sitemap.
