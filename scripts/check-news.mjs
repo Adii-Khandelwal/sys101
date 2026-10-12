@@ -2,7 +2,7 @@
 // Errors fail; dates older than 12 months are warnings here (verify-news.mjs fails them).
 import fs from "node:fs";
 import path from "node:path";
-import { isDate, validateNews } from "./news-rules.mjs";
+import { isAllowEntry, isDate, validateNews } from "./news-rules.mjs";
 
 const root = process.cwd();
 const today = new Date().toISOString().slice(0, 10);
@@ -24,7 +24,7 @@ for (const [slug, d] of Object.entries(state.lastChecked ?? {})) {
 }
 for (const [slug, list] of Object.entries(state.allowedDomains ?? {})) {
   if (!topics.has(slug)) problems.push(`news-state.json: allowedDomains has unknown topic "${slug}"`);
-  if (!Array.isArray(list) || !list.every((d) => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(d))) problems.push(`news-state.json: allowedDomains.${slug} must be a list of bare domains`);
+  if (!Array.isArray(list) || !list.every(isAllowEntry)) problems.push(`news-state.json: allowedDomains.${slug} must be a list of hosts with an optional path prefix, like "valkey.io/blog/"`);
 }
 
 const dir = path.join(root, "content", "news");

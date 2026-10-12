@@ -1,6 +1,6 @@
 // Pure helpers for scripts/verify-news.mjs, kept separate so the tests run without the network.
 import * as cheerio from "cheerio";
-import { isDateShown, NO_DATE } from "./news-rules.mjs";
+import { isDateShown, NO_DATE, urlAllowed } from "./news-rules.mjs";
 
 const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
 const MONTH_RE = `(${MONTHS.join("|")}|${MONTHS.map((m) => m.slice(0, 3)).join("|")})\\.?`;
@@ -45,4 +45,23 @@ export function dateMatches(dateShown, shown) {
   if (dateShown === NO_DATE) return true;
   const [y, m, d] = dateShown.split("-").map(Number);
   return shown.some((s) => s.y === y && (m === undefined || (s.m === m && (d === undefined || s.d === d))));
+}
+
+/**
+ * Fetch a page, following redirects by hand so every hop is checked against the allowlist: a page on an approved host
+ * that redirects somewhere else is refused. `fetchFn` is fetch, or a stand-in in tests. Returns { html, finalUrl }.
+ */
+export async function fetchAllowed(url, entries, fetchFn, { headers = {}, maxHops = 5 } = {}) {
+  let current = url;
+  for (let hop = 0; hop <= maxHops; hop++) {
+    if (!urlAllowed(current, entries)) throw new Error(hop === 0 ? `url is outside the allowlist: ${current}` : `redirected outside the allowlist: ${current}`);
+    const res = await fetchFn(current, { headers, redirect: "manual", signal: AbortSignal.timeout(30000) });
+    if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
+      current = new URL(res.headers.get("location"), current).toString();
+      continue;
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return { html: await res.text(), finalUrl: current };
+  }
+  throw new Error("too many redirects");
 }

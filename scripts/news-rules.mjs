@@ -55,19 +55,39 @@ export function normalizeUrl(u) {
   }
 }
 
-export function hostAllowed(url, domains) {
+/** An allowlist entry is a host with an optional path prefix: "memcached.org" or "valkey.io/blog/". No scheme. */
+export const isAllowEntry = (e) => typeof e === "string" && /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+(\/[A-Za-z0-9._~\/-]*)?$/.test(e);
+
+/**
+ * Is this URL inside the allowlist? https only, no credentials in the URL, the host equal to an entry's host or a true
+ * subdomain of it (never a substring match), and, when the entry has a path, the path inside that prefix.
+ */
+export function urlAllowed(url, entries) {
+  let u;
   try {
-    const host = new URL(url).hostname.toLowerCase();
-    return domains.some((d) => host === d.toLowerCase() || host.endsWith(`.${d.toLowerCase()}`));
+    u = new URL(url);
   } catch {
     return false;
   }
+  if (u.protocol !== "https:" || u.username || u.password || (u.port && u.port !== "443")) return false;
+  const host = u.hostname.toLowerCase();
+  return entries.some((entry) => {
+    const slash = entry.indexOf("/");
+    const domain = (slash < 0 ? entry : entry.slice(0, slash)).toLowerCase();
+    if (host !== domain && !host.endsWith(`.${domain}`)) return false;
+    if (slash < 0) return true;
+    const prefix = entry.slice(slash);
+    return u.pathname === prefix || u.pathname.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`);
+  });
 }
 
 const BANNED = /—|\bnot\b[^.]{0,60}\bbut\b|\bit['’]s not\b|\bisn['’]t just\b/i;
 
-/** Rules for one item's summary. Returns problems. */
-export function checkSummary(summary, evidence) {
+const COMPARATIVE = /\b(faster|higher|lower|more|less|better|improves?|improved)\b/i;
+const ATTRIBUTION = /\b(says|reports|claims|describes)\b/i;
+
+/** Rules for one item's summary. `publisher` names the source the summary must credit. Returns problems. */
+export function checkSummary(summary, evidence, publisher = "") {
   if (!nonEmpty(summary)) return ["summary is empty"];
   const out = [];
   const n = words(summary);
@@ -76,6 +96,13 @@ export function checkSummary(summary, evidence) {
   if (BANNED.test(summary)) out.push('summary has banned phrasing (em dash or "not X but Y")');
   for (const d of summary.match(/\d[\d,.]*\d|\d/g) ?? []) {
     if (!String(evidence ?? "").includes(d)) out.push(`summary figure "${d}" does not appear in the evidence`);
+  }
+  // A figure or a comparison is the source's claim: the sentence says so and names the source.
+  if (/\d/.test(summary) || COMPARATIVE.test(summary)) {
+    const name = publisher.trim().split(/\s+/)[0]?.replace(/[^\w]/g, "");
+    if (!ATTRIBUTION.test(summary) || (name && !new RegExp(`\\b${name}\\b`, "i").test(summary))) {
+      out.push(`summary has a figure or comparison, so it needs an attribution phrase (says, reports, claims, describes) naming "${name}"`);
+    }
   }
   return out;
 }
@@ -112,14 +139,14 @@ export function validateNews(data, ctx) {
     if (nonEmpty(it.url)) {
       if (!/^https:\/\//.test(it.url)) err("url must be https");
       else {
-        if (ctx.allowedDomains?.length && !hostAllowed(it.url, ctx.allowedDomains)) err("url domain is not in allowedDomains for this topic");
+        if (ctx.allowedDomains?.length && !urlAllowed(it.url, ctx.allowedDomains)) err("url is not inside allowedDomains for this topic (host and path prefix)");
         if (originals.has(normalizeUrl(it.url))) err("url is already an Original post of this topic");
       }
     }
     if (!isDateShown(it.dateShown)) err('dateShown must be YYYY-MM-DD, YYYY-MM, YYYY or "no date shown"');
     else if (olderThan12Months(it.dateShown, ctx.today)) warnings.push(`${where}: dateShown ${it.dateShown} is older than 12 months`);
     else if (it.dateShown !== NO_DATE && latestDay(it.dateShown) > ctx.today) err("dateShown is in the future");
-    checkSummary(it.summary, it.evidence).forEach(err);
+    checkSummary(it.summary, it.evidence, it.publisher).forEach(err);
     if (nonEmpty(it.evidence) && words(it.evidence) > 15) err(`evidence is ${words(it.evidence)} words, at most 15`);
     for (const k of ["addedOn", "verifiedOn"]) {
       if (!isDate(it[k])) err(`${k} must be a YYYY-MM-DD date`);

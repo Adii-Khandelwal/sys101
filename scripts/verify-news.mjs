@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { olderThan12Months } from "./news-rules.mjs";
-import { dateMatches, datesShown, evidenceFound, pageText } from "./news-verify-rules.mjs";
+import { dateMatches, datesShown, evidenceFound, fetchAllowed, pageText } from "./news-verify-rules.mjs";
 
 const root = process.cwd();
 const today = new Date().toISOString().slice(0, 10);
@@ -16,17 +16,20 @@ const HEADERS = {
   "Accept-Language": "en-US,en;q=0.9",
 };
 
+const state = JSON.parse(fs.readFileSync(path.join(root, "docs", "news-state.json"), "utf8"));
+
 async function get(url) {
   const res = await fetch(url, { headers: HEADERS, redirect: "follow", signal: AbortSignal.timeout(30000) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.text();
 }
 
-/** The page as HTML, and whether it came from the Wayback Machine. */
-async function fetchPage(url) {
+/** The page as HTML, and whether it came from the Wayback Machine. Redirects off the allowlist are refused, not worked around. */
+async function fetchPage(url, allowed) {
   try {
-    return { html: await get(url), archive: false };
+    return { html: (await fetchAllowed(url, allowed, fetch, { headers: HEADERS })).html, archive: false };
   } catch (first) {
+    if (/allowlist/.test(first.message)) throw first;
     try {
       const api = await get(`https://archive.org/wayback/available?url=${encodeURIComponent(url)}`);
       const snap = JSON.parse(api).archived_snapshots?.closest;
@@ -51,7 +54,7 @@ for (const f of files) {
     let note = "";
     if (olderThan12Months(it.dateShown, today)) problems.push(`dateShown ${it.dateShown} is older than 12 months`);
     try {
-      const { html, archive } = await fetchPage(it.url);
+      const { html, archive } = await fetchPage(it.url, state.allowedDomains?.[f.replace(/\.json$/, "")] ?? []);
       if (archive) note = " (archive copy)";
       if (!evidenceFound(pageText(html), it.evidence)) problems.push(`evidence not found in the page text: "${it.evidence}"`);
       const shown = datesShown(html);

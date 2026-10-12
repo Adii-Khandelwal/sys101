@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { dateMatches, datesShown, evidenceFound, pageText } from "../scripts/news-verify-rules.mjs";
-import { checkSummary, hostAllowed, latestDay, normalizeUrl, olderThan12Months, validateNews } from "../scripts/news-rules.mjs";
+import { dateMatches, datesShown, evidenceFound, fetchAllowed, pageText } from "../scripts/news-verify-rules.mjs";
+import { checkSummary, isAllowEntry, urlAllowed, latestDay, normalizeUrl, olderThan12Months, validateNews } from "../scripts/news-rules.mjs";
 import { renderToStaticMarkup } from "react-dom/server";
 import WhatsNew from "../components/WhatsNew";
 import { NEWS_MODE } from "./site";
@@ -21,7 +21,7 @@ const item = (extra: object = {}) => ({
   verifiedOn: "2026-10-12",
   ...extra,
 });
-const ctx = { allowedDomains: ["redis.io"], originalUrls: ["https://example.com/post"], today };
+const ctx = { allowedDomains: ["redis.io/"], originalUrls: ["https://example.com/post"], today };
 const check = (items: object[], c = ctx) => validateNews({ asOf: today, items }, c);
 
 describe("validateNews", () => {
@@ -36,10 +36,11 @@ describe("validateNews", () => {
   });
   it("needs https, an allowed domain, and a page that is not already an Original post", () => {
     expect(check([item({ url: "http://redis.io/x" })]).errors.join()).toMatch(/https/);
-    expect(check([item({ url: "https://evil.example/x" })]).errors.join()).toMatch(/not in allowedDomains/);
+    expect(check([item({ url: "https://evil.example/x" })]).errors.join()).toMatch(/not inside allowedDomains/);
     expect(check([item({ url: "https://docs.redis.io/x" })]).errors).toEqual([]);
-    expect(check([item({ url: "https://notredis.io/x" })]).errors.join()).toMatch(/not in allowedDomains/);
-    expect(check([item({ url: "https://example.com/post/" })], { ...ctx, allowedDomains: ["example.com"] }).errors.join()).toMatch(/already an Original post/);
+    expect(check([item({ url: "https://redis.io.evil.example/x" })]).errors.join()).toMatch(/not inside allowedDomains/);
+    expect(check([item({ url: "https://notredis.io/x" })]).errors.join()).toMatch(/not inside allowedDomains/);
+    expect(check([item({ url: "https://example.com/post/" })], { ...ctx, allowedDomains: ["example.com/"] }).errors.join()).toMatch(/already an Original post/);
     expect(check([item()], { ...ctx, allowedDomains: [] }).errors.join()).toMatch(/no allowedDomains/);
   });
   it("holds dates to their format and the future", () => {
@@ -63,9 +64,19 @@ describe("checkSummary", () => {
     expect(checkSummary("The release is not a rewrite but a change to how the cache frees memory under pressure.", "").join()).toMatch(/banned/);
   });
   it("allows a figure only when the evidence has it", () => {
-    const withFigure = "The release cut memory use for large caches by about 30 percent in the maintainers' own benchmark.";
-    expect(checkSummary(withFigure, "memory down 30 percent").join()).toBe("");
-    expect(checkSummary(withFigure, "memory went down").join()).toMatch(/"30"/);
+    const withFigure = "Redis says the release cut memory use for large caches by about 30 percent in the maintainers' own benchmark.";
+    expect(checkSummary(withFigure, "memory down 30 percent", "Redis").join()).toBe("");
+    expect(checkSummary(withFigure, "memory went down", "Redis").join()).toMatch(/"30"/);
+  });
+  it("credits the source for any figure or comparison", () => {
+    const plain = "The project changed how it stores small strings so that each key carries more data than before.";
+    expect(checkSummary(plain, "", "Valkey project").join()).toMatch(/attribution/);
+    expect(checkSummary("The project changed how it stores small strings and keeps each key in a single block of memory.", "", "Valkey project").join()).toBe("");
+    const faster = "The release makes string lookups faster by keeping small values next to their header in memory.";
+    expect(checkSummary(faster, "", "Valkey project").join()).toMatch(/attribution/);
+    expect(checkSummary(faster.replace("The release", "The Valkey project says the release"), "", "Valkey project").join()).toBe("");
+    expect(checkSummary(faster.replace("The release", "The project says the release"), "", "Valkey project").join()).toMatch(/naming "Valkey"/);
+    expect(checkSummary(faster.replace("The release makes", "Valkey describes how the release makes"), "", "Valkey project").join()).toBe("");
   });
 });
 
@@ -77,9 +88,32 @@ describe("date and url helpers", () => {
     expect(olderThan12Months("2025-09", today)).toBe(true);
     expect(olderThan12Months("no date shown", today)).toBe(false);
   });
-  it("matches hosts by domain, not by suffix text", () => {
-    expect(hostAllowed("https://a.b.redis.io/x", ["redis.io"])).toBe(true);
-    expect(hostAllowed("https://fakeredis.io/x", ["redis.io"])).toBe(false);
+  it("matches hosts exactly or as a true subdomain, never by substring", () => {
+    expect(urlAllowed("https://redis.io/blog/x", ["redis.io"])).toBe(true);
+    expect(urlAllowed("https://a.b.redis.io/x", ["redis.io"])).toBe(true);
+    expect(urlAllowed("https://fakeredis.io/x", ["redis.io"])).toBe(false);
+    expect(urlAllowed("https://aws.amazon.com.evil.example/blogs/x", ["aws.amazon.com/blogs/"])).toBe(false);
+    expect(urlAllowed("https://evil-aws.amazon.com.example/blogs/x", ["aws.amazon.com/blogs/"])).toBe(false);
+    expect(urlAllowed("https://aws.amazon.com@evil.example/blogs/x", ["aws.amazon.com/blogs/"])).toBe(false);
+    expect(urlAllowed("https://user:pw@aws.amazon.com/blogs/x", ["aws.amazon.com/blogs/"])).toBe(false);
+    expect(urlAllowed("http://aws.amazon.com/blogs/x", ["aws.amazon.com/blogs/"])).toBe(false);
+    expect(urlAllowed("https://aws.amazon.com:8443/blogs/x", ["aws.amazon.com/blogs/"])).toBe(false);
+  });
+  it("holds a path-limited entry to its prefix", () => {
+    const entries = ["aws.amazon.com/blogs/", "aws.amazon.com/builders-library/", "valkey.io/blog"];
+    expect(urlAllowed("https://aws.amazon.com/blogs/networking/x", entries)).toBe(true);
+    expect(urlAllowed("https://aws.amazon.com/builders-library/x", entries)).toBe(true);
+    expect(urlAllowed("https://aws.amazon.com/products/x", entries)).toBe(false);
+    expect(urlAllowed("https://aws.amazon.com/blogs", entries)).toBe(false); // the bare prefix with a slash needs the slash
+    expect(urlAllowed("https://aws.amazon.com/blogs/../products/x", entries)).toBe(false); // dot segments resolve first
+    expect(urlAllowed("https://valkey.io/blog/post", entries)).toBe(true);
+    expect(urlAllowed("https://valkey.io/blogger/post", entries)).toBe(false);
+  });
+  it("accepts only host-and-path entries", () => {
+    expect(["memcached.org", "uber.com/us/en/blog/", "blog.cloudflare.com/"].every(isAllowEntry)).toBe(true);
+    expect(["https://redis.io", "redis", "redis.io blog", ""].some(isAllowEntry)).toBe(false);
+  });
+  it("normalises urls for the Original-post comparison", () => {
     expect(normalizeUrl("https://www.Example.com/a/?x=1#top")).toBe("example.com/a");
   });
   it("shows dates as the source does", () => {
@@ -130,5 +164,29 @@ describe("What's new section", () => {
     const out = html({ asOf: today, items: [item() as unknown as NewsItem] });
     expect(out.includes("reviewed by me")).toBe(NEWS_MODE === "review");
     expect(out).toContain("Added by an automated routine after automated checks");
+  });
+});
+
+describe("redirects stay inside the allowlist", () => {
+  const entries = ["aws.amazon.com/blogs/"];
+  const res = (status: number, extra: { location?: string; body?: string } = {}) => ({
+    status,
+    ok: status >= 200 && status < 300,
+    headers: { get: (n: string) => (n.toLowerCase() === "location" ? (extra.location ?? null) : null) },
+    text: async () => extra.body ?? "",
+  });
+  it("returns the page and its final URL when every hop is allowed", async () => {
+    const fake = async (u: string) => (u.endsWith("/old") ? res(301, { location: "/blogs/new" }) : res(200, { body: "<p>hi</p>" }));
+    expect(await fetchAllowed("https://aws.amazon.com/blogs/old", entries, fake)).toEqual({ html: "<p>hi</p>", finalUrl: "https://aws.amazon.com/blogs/new" });
+  });
+  it("refuses a redirect to a different host, even a look-alike", async () => {
+    for (const to of ["https://evil.example/blogs/x", "https://aws.amazon.com.evil.example/blogs/x", "https://aws.amazon.com/products/x", "http://aws.amazon.com/blogs/x"]) {
+      const fake = async () => res(302, { location: to });
+      await expect(fetchAllowed("https://aws.amazon.com/blogs/a", entries, fake)).rejects.toThrow(/redirected outside the allowlist/);
+    }
+  });
+  it("refuses a start URL outside the allowlist and endless redirects", async () => {
+    await expect(fetchAllowed("https://evil.example/blogs/a", entries, async () => res(200))).rejects.toThrow(/outside the allowlist/);
+    await expect(fetchAllowed("https://aws.amazon.com/blogs/a", entries, async () => res(302, { location: "/blogs/a" }))).rejects.toThrow(/too many redirects/);
   });
 });
