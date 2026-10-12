@@ -1,0 +1,102 @@
+{
+  "topic": "load-balancing",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "tcp-connections",
+      "name": "TCP connections and their cost",
+      "explanation": "TCP lets two hosts open a connection and exchange data reliably. Each open connection holds some memory and bookkeeping at both ends, even when idle, which is why proxies reuse them.",
+      "assumedBy": [
+        {
+          "postId": "uber-dynamic-subsetting-2022",
+          "quote": "It’s common for proxies to maintain long-lived connections to the backend tasks to avoid the cost of setting up and tearing down TCP connections for every request."
+        }
+      ],
+      "sources": [
+        {
+          "title": "TCP (Glossary)",
+          "publisher": "MDN Web Docs",
+          "url": "https://developer.mozilla.org/en-US/docs/Glossary/TCP",
+          "year": "page shows last updated 2025-07-11",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "tls-handshake",
+      "name": "The TLS handshake",
+      "explanation": "Before an encrypted connection carries data, client and server agree on a TLS version and security settings in a handshake. It costs time and CPU, which matters when many clients reconnect at once.",
+      "assumedBy": [
+        {
+          "postId": "dropbox-robinhood-2024",
+          "quote": "Some Dropbox services have millions of clients; however, we cannot allow each client to create connections to every server instance."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Transport Layer Security (TLS): the TLS handshake",
+          "publisher": "MDN Web Docs",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Transport_Layer_Security",
+          "year": "page shows last updated 2026-02-28",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "reverse-proxy",
+      "name": "Reverse proxies",
+      "explanation": "A reverse proxy sits in front of servers, receives requests and passes them on. Proxying is commonly used to spread load across several servers.",
+      "assumedBy": [
+        {
+          "postId": "uber-dynamic-subsetting-2022",
+          "quote": "At a very high level, Uber’s service mesh architecture is centered around an on-host L7 reverse proxy"
+        }
+      ],
+      "sources": [
+        {
+          "title": "NGINX Reverse Proxy",
+          "publisher": "F5 (NGINX)",
+          "url": "https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "service-discovery",
+      "name": "Service discovery",
+      "explanation": "Service discovery keeps a record of where each service currently runs, so clients ask for the address instead of hard-coding it. When tasks move or fail, the record changes and clients follow.",
+      "assumedBy": [
+        {
+          "postId": "uber-dynamic-subsetting-2022",
+          "quote": "Discovery: find the the latest backend tasks of services"
+        },
+        {
+          "postId": "dropbox-robinhood-2024",
+          "quote": "Our in-house service discovery system can scale to hundreds of thousands of hosts across multiple data centers around the globe."
+        }
+      ],
+      "sources": [
+        {
+          "title": "What is service discovery? (Consul)",
+          "publisher": "HashiCorp",
+          "url": "https://developer.hashicorp.com/consul/docs/use-case/service-discovery",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "eventual-consistency",
+      "name": "Eventual consistency",
+      "explanation": "Strong consistency means every read sees the latest write; eventual consistency means the copies agree after a delay. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "dropbox-robinhood-2024",
+          "quote": "The eventual consistency guaranteed by ZooKeeper/etcd is good enough for service discovery as well."
+        }
+      ],
+      "topicPage": "cap"
+    }
+  ]
+}

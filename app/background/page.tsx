@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import HighlightTarget from "@/components/HighlightTarget";
+import LearnRail from "@/components/LearnRail";
 import SiteFooter from "@/components/SiteFooter";
 import PageUpdated from "@/components/PageUpdated";
 import { backgroundUpdated, displayQuote, getAllBackground, isTaughtLater } from "@/lib/background";
@@ -24,7 +25,11 @@ export default function Background() {
   const files = getAllBackground();
 
   return (
-    <article className="dossier legal background-page">
+    <article className="dossier legal background-page lesson">
+      <LearnRail entries={files.map((b) => ({ id: b.topic, name: bySlug.get(b.topic)!.title }))} />
+      <div className="progress-sticky" data-pagefind-ignore>
+        <LearnRail entries={files.map((b) => ({ id: b.topic, name: bySlug.get(b.topic)!.title }))} variant="line" />
+      </div>
       <div data-pagefind-body>
         <h1 data-pagefind-meta="title">Background</h1>
         <p className="background-lead">
