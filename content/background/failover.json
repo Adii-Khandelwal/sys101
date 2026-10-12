@@ -1,0 +1,106 @@
+{
+  "topic": "failover",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "virtual-ip-arp",
+      "name": "Virtual IPs and ARP",
+      "explanation": "A virtual IP is an address that can move between machines. A machine claims it by announcing, with an ARP message, that its network card now answers for that address.",
+      "assumedBy": [
+        {
+          "postId": "github-mysql-ha-failover-2018",
+          "quote": "To acquire or release a VIP, a server must send an ARP request."
+        }
+      ],
+      "sources": [
+        {
+          "title": "RFC 826: An Ethernet Address Resolution Protocol",
+          "publisher": "IETF",
+          "url": "https://www.rfc-editor.org/rfc/rfc826.html",
+          "year": "1982",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "haproxy",
+      "name": "HAProxy",
+      "explanation": "A load balancer and proxy for TCP and HTTP traffic. It sends each connection to a server from its configured pool, and it can reload that pool without dropping traffic.",
+      "assumedBy": [
+        {
+          "postId": "github-mysql-ha-failover-2018",
+          "quote": "Thus, a change in Consul to a primary’s identity is observed by each GLB/HAProxy box"
+        }
+      ],
+      "sources": [
+        {
+          "title": "HAProxy: The Reliable, High Performance TCP/HTTP Load Balancer",
+          "publisher": "HAProxy",
+          "url": "https://www.haproxy.org/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "auto-scaling-groups",
+      "name": "Auto Scaling groups",
+      "explanation": "A set of identical servers that the cloud keeps at a chosen size. If one is lost, the group launches a replacement, and the group can be spread across availability zones.",
+      "assumedBy": [
+        {
+          "postId": "aws-static-stability-azs",
+          "quote": "We run these services in an Auto Scaling group across three or more Availability Zones"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Auto Scaling groups (Amazon EC2 Auto Scaling)",
+          "publisher": "Amazon Web Services",
+          "url": "https://docs.aws.amazon.com/autoscaling/ec2/userguide/auto-scaling-groups.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "application-load-balancer",
+      "name": "Application load balancers",
+      "explanation": "A managed load balancer that spreads HTTP requests across targets in several zones and stops sending to targets whose health checks fail.",
+      "assumedBy": [
+        {
+          "postId": "aws-static-stability-azs",
+          "quote": "The following diagram shows a public-facing Application Load Balancer providing an HTTPS service."
+        }
+      ],
+      "sources": [
+        {
+          "title": "What is an Application Load Balancer?",
+          "publisher": "Amazon Web Services",
+          "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "availability-zones",
+      "name": "Regions and availability zones",
+      "explanation": "A cloud region is made of several availability zones, which are separate data centres with their own power and network. Spreading across zones survives the loss of one.",
+      "assumedBy": [
+        {
+          "postId": "aws-static-stability-azs",
+          "quote": "Availability Zones are logically isolated sections of an AWS Region"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Regions and Zones (Amazon EC2)",
+          "publisher": "Amazon Web Services",
+          "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    }
+  ]
+}
