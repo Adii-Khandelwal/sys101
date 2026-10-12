@@ -1,0 +1,50 @@
+{
+  "topic": "cap",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "service-level-agreements",
+      "name": "Service level agreements",
+      "explanation": "An SLA is an agreed promise about how a service will perform, such as answering within a set time for nearly every request. Dynamo's design starts from one.",
+      "assumedBy": [
+        {
+          "postId": "amazon-dynamo-2007",
+          "quote": "A common approach in the industry for forming a performance oriented SLA is to describe it using average, median and expected variance."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Service Level Objectives (Site Reliability Engineering, chapter 4)",
+          "publisher": "Google",
+          "url": "https://sre.google/sre-book/service-level-objectives/",
+          "year": "2017",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "paxos",
+      "name": "Paxos",
+      "explanation": "A protocol that lets a group of machines agree on one value, even when some fail. Spanner runs one group per slice of data. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "google-spanner-2012",
+          "quote": "Our Paxos implementation supports long-lived leaders with time-based leader leases, whose length defaults to 10 seconds."
+        }
+      ],
+      "topicPage": "consensus"
+    },
+    {
+      "id": "two-phase-commit",
+      "name": "Two-phase commit",
+      "explanation": "A way to make several parts of a system commit one change together: first all agree they can, then all do it. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "google-spanner-2012",
+          "quote": "Running two-phase commit over Paxos mitigates the availability problems."
+        }
+      ],
+      "topicPage": "distributed-transactions"
+    }
+  ]
+}
