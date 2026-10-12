@@ -1,0 +1,106 @@
+{
+  "topic": "pub-sub",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "kafka-offsets",
+      "name": "Kafka partitions and committed offsets",
+      "explanation": "Kafka splits a topic into partitions that keep their order. A consumer records how far it has read, its committed offset, and resumes from there after a restart.",
+      "assumedBy": [
+        {
+          "postId": "uber-consumer-proxy-2021",
+          "quote": "However, this would cause potential data loss. For example, if a consumer is restarted, it will resume from largest committed offsets;"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Apache Kafka: Introduction",
+          "publisher": "Apache Kafka",
+          "url": "https://kafka.apache.org/intro",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "grpc",
+      "name": "gRPC",
+      "explanation": "gRPC is a way for one service to call another over the network. The call and its reply are described in a shared definition, and each message is sent separately.",
+      "assumedBy": [
+        {
+          "postId": "uber-consumer-proxy-2021",
+          "quote": "Sends/pushes each message separately to a consumer service instance"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Introduction to gRPC",
+          "publisher": "gRPC",
+          "url": "https://grpc.io/docs/what-is-grpc/introduction/",
+          "year": "page shows last updated 2024-11-12",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "cloud-pubsub",
+      "name": "Google Cloud Pub/Sub",
+      "explanation": "A managed publish and subscribe service from Google Cloud. Spotify's system sits on it instead of running its own brokers.",
+      "assumedBy": [
+        {
+          "postId": "spotify-event-delivery-2019",
+          "quote": "It took us almost a year to design, write, deploy and scale the current, Cloud Pub/Sub-based Event Delivery system fully into production."
+        }
+      ],
+      "sources": [
+        {
+          "title": "What is Pub/Sub?",
+          "publisher": "Google Cloud",
+          "url": "https://cloud.google.com/pubsub/docs/overview",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "etl",
+      "name": "ETL",
+      "explanation": "Extract, transform and load: copy data out of the systems that produce it, clean it up, and load it into one store where it can be analysed.",
+      "assumedBy": [
+        {
+          "postId": "spotify-event-delivery-2019",
+          "quote": "Figure 1. Average total volume (TB) of events stored daily by our ETL process (after compression)."
+        }
+      ],
+      "sources": [
+        {
+          "title": "What is ETL?",
+          "publisher": "Amazon Web Services",
+          "url": "https://aws.amazon.com/what-is/etl/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "service-level-agreements",
+      "name": "Service level agreements",
+      "explanation": "An SLA is an agreed promise about how a service will perform, such as delivering on time and at a stated quality. Spotify ranks its events by whether one is attached.",
+      "assumedBy": [
+        {
+          "postId": "spotify-event-delivery-2019",
+          "quote": "Business Impact Event Types – some are used to pay royalties to labels and artists, and some are used to calculate company key metrics."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Service Level Objectives (Site Reliability Engineering, chapter 4)",
+          "publisher": "Google",
+          "url": "https://sre.google/sre-book/service-level-objectives/",
+          "year": "2017",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    }
+  ]
+}
