@@ -1,0 +1,102 @@
+{
+  "topic": "indexing",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "elasticsearch-lucene",
+      "name": "Elasticsearch and Lucene",
+      "explanation": "Elasticsearch is a search engine that spreads an index over many nodes. It is built on Lucene, the library that builds and reads the indexes on each node.",
+      "assumedBy": [
+        {
+          "postId": "github-code-search-2023",
+          "quote": "When we first deployed Elasticsearch, it took months to index all of the code on GitHub (about 8 million repositories at the time)."
+        },
+        {
+          "postId": "discord-search-indexing-2025",
+          "quote": "As guilds on Discord grow larger with longer histories, more and more of them bump up against Lucene’s MAX_DOC limit of ~2 billion messages."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Elasticsearch reference",
+          "publisher": "Elastic",
+          "url": "https://www.elastic.co/docs/reference/elasticsearch/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "regular-expressions",
+      "name": "Regular expressions",
+      "explanation": "A pattern that matches runs of characters, such as arguments? for argument or arguments. A search system cannot look up a pattern directly, so it has to turn it into pieces an index can answer.",
+      "assumedBy": [
+        {
+          "postId": "github-code-search-2023",
+          "quote": "Here, you can see that the regex gets translated into a series of substring queries on the ngram indices."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Regular expressions (JavaScript Guide)",
+          "publisher": "MDN Web Docs",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions",
+          "year": "page shows last updated 2026-03-17",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "kafka",
+      "name": "Kafka topics, partitions and offsets",
+      "explanation": "Kafka keeps messages in an ordered log per topic, split into partitions. A reader tracks its place with an offset, so it can resume or replay from any point.",
+      "assumedBy": [
+        {
+          "postId": "github-code-search-2023",
+          "quote": "Kafka provides events that tell us to go index something."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Apache Kafka: Introduction",
+          "publisher": "Apache Kafka",
+          "url": "https://kafka.apache.org/intro",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "kubernetes-operators",
+      "name": "Kubernetes operators",
+      "explanation": "An operator is a program that runs inside Kubernetes and manages another application for you, handling setup, upgrades and replacement of failed pieces.",
+      "assumedBy": [
+        {
+          "postId": "discord-search-indexing-2025",
+          "quote": "Now that we had committed to running on Kubernetes and using the ECK operator, we envisioned a more expansive architecture where we ran a larger number of smaller Elasticsearch clusters."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Operator pattern",
+          "publisher": "Kubernetes",
+          "url": "https://kubernetes.io/docs/concepts/extend-kubernetes/operator/",
+          "year": "page shows last updated 2025-07-16",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "pub-sub",
+      "name": "Publish and subscribe",
+      "explanation": "Senders publish a message to a topic and everyone subscribed to it receives a copy, without the sender knowing who they are. The gist is enough here.",
+      "assumedBy": [
+        {
+          "postId": "discord-search-indexing-2025",
+          "quote": "In fact, the convenience of PubSub’s guaranteed message delivery led us to adopt PubSub for other use cases across Discord like task scheduling"
+        }
+      ],
+      "topicPage": "pub-sub"
+    }
+  ]
+}
