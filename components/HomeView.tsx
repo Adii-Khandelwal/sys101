@@ -7,7 +7,10 @@ import TopicIndex from "./TopicIndex";
 
 type GraphNode = { slug: string; title: string; posts: number; group: string };
 type Edge = { from: string; to: string };
-type IndexGroup = { name: string; entries: { slug: string; title: string; number: string; minutes: number }[] };
+type IndexGroup = {
+  name: string;
+  entries: { slug: string; title: string; number: string; minutes: number }[];
+};
 
 type Props = {
   nodes: GraphNode[];
@@ -21,17 +24,22 @@ const STORAGE_KEY = "sys101:homeView";
 
 /**
  * The homepage body. The graph is the default on desktop; a toggle switches to
- * the Path view, a linear syllabus that is also the mobile default. The choice
+ * the Path view, a linear syllabus that is the only view on phones. The choice
  * is remembered per browser. The "All topics" index stays under the map but is
  * redundant under the Path view, so it is hidden there.
  */
-export default function HomeView({ nodes, edges, pathEntries, indexGroups }: Props) {
+export default function HomeView({
+  nodes,
+  edges,
+  pathEntries,
+  indexGroups,
+}: Props) {
   // Server and first client render must match, so start on "map" and decide the
-  // real view after mount: an explicit saved choice wins at any width;
-  // otherwise the Path view is the default on phones (under 768px) and the
-  // graph is the default on wider screens (docs/ideas.md idea 6).
+  // real view after mount. Phones (under 768px) always get the Path view with
+  // no toggle; on wider screens a saved choice wins, else the map.
   const [view, setView] = useState<View>("map");
-  const chosenRef = useRef(false); // the reader has picked a view explicitly
+  const [mobile, setMobile] = useState(false);
+  const mobileRef = useRef(false);
 
   useEffect(() => {
     let saved: string | null = null;
@@ -40,33 +48,28 @@ export default function HomeView({ nodes, edges, pathEntries, indexGroups }: Pro
     } catch {
       // storage blocked
     }
-    if (saved === "path" || saved === "map") {
-      setView(saved);
-      chosenRef.current = true;
-      return;
-    }
-    // No explicit choice: follow the viewport, and keep following it on resize
-    // until the reader picks one.
     const mq = window.matchMedia("(max-width: 767px)");
     const apply = () => {
-      if (!chosenRef.current) setView(mq.matches ? "path" : "map");
+      mobileRef.current = mq.matches;
+      setMobile(mq.matches);
+      setView(mq.matches ? "path" : saved === "path" ? "path" : "map");
     };
     apply();
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
   }, []);
 
-  // "Explore the map" from the intro switches to Map without marking an
-  // explicit preference (so the mobile Path default still applies afterwards).
+  // "Explore the map" from the intro switches to Map (desktop only).
   useEffect(() => {
-    const show = () => setView("map");
+    const show = () => {
+      if (!mobileRef.current) setView("map");
+    };
     window.addEventListener("sys101:show-map", show);
     return () => window.removeEventListener("sys101:show-map", show);
   }, []);
 
   const choose = (v: View) => {
     setView(v);
-    chosenRef.current = true;
     try {
       window.localStorage.setItem(STORAGE_KEY, v);
     } catch {
@@ -82,31 +85,37 @@ export default function HomeView({ nodes, edges, pathEntries, indexGroups }: Pro
             {view === "map" ? "The map" : "The path"}
           </span>
         </span>
-        <div className="home-view-toggle label" role="group" aria-label="Choose how to view the topics">
-          <span className="home-view-toggle-lead" aria-hidden="true">
-            View
-          </span>
-          <button
-            type="button"
-            className="text-button home-view-active"
-            key={view}
-            aria-pressed="true"
-            onClick={() => choose(view === "map" ? "path" : "map")}
+        {!mobile && (
+          <div
+            className="home-view-toggle label"
+            role="group"
+            aria-label="Choose how to view the topics"
           >
-            {view === "map" ? "Map" : "Path"}
-          </button>
-          <span className="home-view-sep" aria-hidden="true">
-            /
-          </span>
-          <button
-            type="button"
-            className="text-button home-view-other"
-            aria-pressed="false"
-            onClick={() => choose(view === "map" ? "path" : "map")}
-          >
-            {view === "map" ? "Path" : "Map"}
-          </button>
-        </div>
+            <span className="home-view-toggle-lead" aria-hidden="true">
+              View
+            </span>
+            <button
+              type="button"
+              className="text-button home-view-active"
+              key={view}
+              aria-pressed="true"
+              onClick={() => choose(view === "map" ? "path" : "map")}
+            >
+              {view === "map" ? "Map" : "Path"}
+            </button>
+            <span className="home-view-sep" aria-hidden="true">
+              /
+            </span>
+            <button
+              type="button"
+              className="text-button home-view-other"
+              aria-pressed="false"
+              onClick={() => choose(view === "map" ? "path" : "map")}
+            >
+              {view === "map" ? "Path" : "Map"}
+            </button>
+          </div>
+        )}
       </div>
 
       {view === "map" ? (
