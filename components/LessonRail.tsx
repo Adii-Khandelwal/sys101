@@ -62,7 +62,7 @@ export default function LessonRail({ meta, entries }: { meta: LessonMeta; entrie
     e.preventDefault();
     // Land clear of the sticky site header.
     const header = document.querySelector<HTMLElement>(".site-header")?.offsetHeight ?? 0;
-    const top = target.getBoundingClientRect().top + window.scrollY - header - 32;
+    const top = target.getBoundingClientRect().top + window.scrollY - header - 16;
     window.scrollTo({ top, behavior: prefersReducedMotion() ? "auto" : "smooth" });
     const heading = target.querySelector<HTMLElement>("h2, h3") ?? target;
     if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1");

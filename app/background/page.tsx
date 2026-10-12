@@ -26,9 +26,9 @@ export default function Background() {
 
   return (
     <article className="dossier legal background-page lesson">
-      <LearnRail entries={files.map((b) => ({ id: b.topic, name: bySlug.get(b.topic)!.title }))} />
+      <LearnRail scope="section" entries={files.map((b) => ({ id: b.topic, name: bySlug.get(b.topic)!.title }))} />
       <div className="progress-sticky" data-pagefind-ignore>
-        <LearnRail entries={files.map((b) => ({ id: b.topic, name: bySlug.get(b.topic)!.title }))} variant="line" />
+        <LearnRail entries={files.map((b) => ({ id: b.topic, name: bySlug.get(b.topic)!.title }))} variant="line" scope="section" />
       </div>
       <div data-pagefind-body>
         <h1 data-pagefind-meta="title">Background</h1>

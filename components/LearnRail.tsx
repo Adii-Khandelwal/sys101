@@ -12,7 +12,16 @@ export type LearnEntry = { id: string; name: string };
  * from scroll position only. It never touches the reading-progress store, so
  * learn pages stay untracked (CLAUDE.md: learn pages never touch progress).
  */
-export default function LearnRail({ entries, variant = "rail" }: { entries: LearnEntry[]; variant?: "rail" | "line" }) {
+export default function LearnRail({
+  entries,
+  variant = "rail",
+  scope = "page",
+}: {
+  entries: LearnEntry[];
+  variant?: "rail" | "line";
+  /** "section": the bar restarts at 0 whenever the next entry's section begins, instead of spanning the page. */
+  scope?: "page" | "section";
+}) {
   const [index, setIndex] = useState(0);
   const [ratio, setRatio] = useState(0);
   const ids = entries.map((e) => e.id).join();
@@ -35,12 +44,19 @@ export default function LearnRail({ entries, variant = "rail" }: { entries: Lear
       // Smooth reading progress: how far the page is scrolled through its
       // scrollable range, 0 at the top and 1 at the bottom.
       const max = document.documentElement.scrollHeight - window.innerHeight;
-      const r = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 1;
+      let r = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 1;
+      if (scope === "section" && els.length) {
+        const top = (el: HTMLElement) => el.getBoundingClientRect().top + window.scrollY;
+        const start = top(els[i]);
+        const next = els[i + 1];
+        const end = next ? top(next) : start + els[i].offsetHeight;
+        r = end > start ? Math.min(1, Math.max(0, (window.scrollY + line - start) / (end - start))) : 1;
+      }
       // At the very bottom the last short sections never cross the line, so
       // snap the current section to the final one once scrolled to the end.
-      const atBottom = r >= 0.999;
+      const atBottom = max > 0 && window.scrollY / max >= 0.999;
       setIndex(atBottom ? els.length - 1 : i);
-      setRatio(r);
+      setRatio(atBottom ? 1 : r);
     };
     pick();
     window.addEventListener("scroll", pick, { passive: true });
@@ -49,7 +65,7 @@ export default function LearnRail({ entries, variant = "rail" }: { entries: Lear
       window.removeEventListener("scroll", pick);
       window.removeEventListener("resize", pick);
     };
-  }, [ids]);
+  }, [ids, scope]);
 
   const current = entries[index]?.id;
   const done = index + 1;
@@ -69,7 +85,7 @@ export default function LearnRail({ entries, variant = "rail" }: { entries: Lear
     if (!target) return;
     e.preventDefault();
     const header = document.querySelector<HTMLElement>(".site-header")?.offsetHeight ?? 0;
-    const top = target.getBoundingClientRect().top + window.scrollY - header - 32;
+    const top = target.getBoundingClientRect().top + window.scrollY - header - 16;
     window.scrollTo({ top, behavior: prefersReducedMotion() ? "auto" : "smooth" });
     const heading = target.querySelector<HTMLElement>("h2, h3") ?? target;
     if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1");
@@ -77,7 +93,8 @@ export default function LearnRail({ entries, variant = "rail" }: { entries: Lear
     history.replaceState(null, "", `#${id}`);
   };
 
-  const label = `Page scrolled: ${percent}%. Section ${done} of ${total}: ${entries[index]?.name ?? ""}`;
+  const what = scope === "section" ? "Section" : "Page";
+  const label = `${what} scrolled: ${percent}%. Section ${done} of ${total}: ${entries[index]?.name ?? ""}`;
 
   if (variant === "line") {
     return (
@@ -97,7 +114,7 @@ export default function LearnRail({ entries, variant = "rail" }: { entries: Lear
     <nav className="lesson-rail" aria-label="Contents of this page" data-pagefind-ignore>
       <div className="progress-head" aria-live="polite">
         <p className="label">
-          Page scrolled:{" "}
+          {what} scrolled:{" "}
           <span key={percent} className="fade-swap">
             {percent}%
           </span>
