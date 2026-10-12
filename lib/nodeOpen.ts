@@ -1,5 +1,7 @@
-// The node-open transition on the Map: a plain click or tap on a node grows its bubble, then the topic opens with a
-// short fade-in (docs/graph.md). Everything else keeps its normal behaviour. Pure parts are tested; the DOM part is small.
+// The node-open transition on the Map (docs/graph.md): a plain click or tap on a node grows its bubble while the map
+// fades to the page colour; on that plain screen the bubble keeps swelling while the topic loads behind it, then bursts,
+// and the screen fades out to show the topic. Everything else keeps its normal behaviour. Pure parts are tested; the DOM
+// part is small.
 import { DURATION } from "./motion";
 
 /** What a click on a map node should do. */
@@ -25,8 +27,10 @@ export function clickIntent(original: PointerLike | undefined, reducedMotion: bo
   return "animate";
 }
 
-/** How much the bubble grows, as a multiple of its starting size. */
-export const BUBBLE_SCALE = 2.4;
+/** The bubble's size, as a multiple of the node, at the end of each step. */
+export const SWELL_SCALE = 10; // the one continuous growth would end here; the burst cuts it short
+export const BURST_SCALE = 12; // the pop itself
+export const SHOCK_SCALE = 2.2; // how far the shock ring travels past the bubble's full size
 
 /** The node as drawn by the map: a ring, a band of fill, and a centre dot (see the "bordered" program in GraphView). */
 export type BubbleSpec = { x: number; y: number; r: number; border: string; fill: string; dot: string; borderSize: number };
@@ -39,35 +43,54 @@ export function bubbleLayers(r: number, borderSize: number) {
   return { outer: r, inner, dot: Math.max(0, inner - FILL_BAND * r) };
 }
 
-export type Bubble = { done: Promise<void>; remove: () => void };
+export type Bubble = {
+  /** Set the size as a multiple of the node. The element animates there by its CSS transition. */
+  scaleTo: (k: number) => void;
+  /** Swap the class: "" (the continuous growth), "is-waiting" (breathing, the page is still loading) or "is-bursting". */
+  mode: (m: "" | "is-waiting" | "is-bursting") => void;
+  fadeOut: () => void;
+  remove: () => void;
+  el: HTMLElement;
+};
 
-/** Remove every bubble: on arrival at a page, and whenever a page is restored from the back/forward cache. */
+/** Remove every bubble, shock ring and screen: when a page is restored from the back/forward cache, and on leaving the map. */
 export function removeBubbles() {
-  document.querySelectorAll(".node-bubble").forEach((el) => el.remove());
+  document.querySelectorAll(".node-bubble, .node-burst, .node-curtain").forEach((el) => el.remove());
 }
 
 /**
- * Put a copy of the node over the node and scale it up with a transform (compositor only, no layout). It starts at
- * scale 1, exactly over the node, so nothing flashes. `done` resolves when the growth ends. Under prefers-reduced-motion
- * this is never called: the caller navigates at once.
+ * Put a copy of the node over the node. It is built at its largest size (SWELL_SCALE times the node) and scaled DOWN
+ * to the node's size to start, so every later size is a transform up from a crisp full-resolution layer: no blur, no
+ * layout, compositor only. It starts exactly over the node, so nothing flashes.
  */
 export function growBubble(spec: BubbleSpec): Bubble {
   const el = document.createElement("div");
   el.className = "node-bubble";
   el.setAttribute("aria-hidden", "true");
+  const big = (n: number) => n * SWELL_SCALE;
   const { outer, inner, dot } = bubbleLayers(spec.r, spec.borderSize);
-  el.style.cssText = `left:${spec.x - outer}px;top:${spec.y - outer}px;width:${outer * 2}px;height:${outer * 2}px`;
+  el.style.cssText = `left:${spec.x - big(outer)}px;top:${spec.y - big(outer)}px;width:${big(outer) * 2}px;height:${big(outer) * 2}px;transform:scale(${1 / SWELL_SCALE})`;
   const circle = (size: number, color: string) => {
     const c = document.createElement("span");
-    c.style.cssText = `width:${size * 2}px;height:${size * 2}px;margin:${-size}px 0 0 ${-size}px;background:${color}`;
+    c.style.cssText = `width:${big(size) * 2}px;height:${big(size) * 2}px;margin:${-big(size)}px 0 0 ${-big(size)}px;background:${color}`;
     return c;
   };
   el.append(circle(outer, spec.border), circle(inner, spec.fill), circle(dot, spec.dot));
   document.body.append(el);
   el.getBoundingClientRect(); // commit the starting frame before the transition begins
-  const done = new Promise<void>((resolve) => {
-    // The timeout only matters if transitionend never fires (a hidden tab).
-    const timer = window.setTimeout(resolve, DURATION.base + 60);
+  return {
+    el,
+    scaleTo: (k) => (el.style.transform = `scale(${k / SWELL_SCALE})`),
+    mode: (m) => (el.className = `node-bubble ${m}`.trim()),
+    fadeOut: () => (el.style.opacity = "0"),
+    remove: () => el.remove(),
+  };
+}
+
+/** Resolve when `el` finishes a transition, or after `ms` if it never does (a hidden tab). */
+function transitionEnd(el: Element, ms: number) {
+  return new Promise<void>((resolve) => {
+    const timer = window.setTimeout(resolve, ms);
     el.addEventListener(
       "transitionend",
       () => {
@@ -77,6 +100,79 @@ export function growBubble(spec: BubbleSpec): Bubble {
       { once: true },
     );
   });
-  el.style.transform = `scale(${BUBBLE_SCALE})`;
-  return { done, remove: () => el.remove() };
+}
+
+/** The longest the opening may hold the screen, whatever the page does. */
+export const SAFETY_MS = 6000;
+
+/**
+ * The growth lasts three base durations on one easing. Its speed peaks about halfway, so the burst starts at 55% of it:
+ * at near top speed, and the pop carries on from there. A slow page can keep the bubble growing until the growth ends.
+ */
+export const GROWTH_MS = DURATION.base * 3;
+export const BURST_AT_MS = GROWTH_MS * 0.55;
+
+const sleep = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+
+/**
+ * Play the whole transition: roughly 530 milliseconds, plus whatever the page swap needs beyond that.
+ * - The bubble grows in ONE continuous motion (three base durations, a single easing, so its speed never drops to zero
+ *   partway), while a screen in the page colour fades in over the map in the first base duration.
+ * - Once the screen is fully in, `navigate` loads the topic behind it. The page swap can hold the main thread for a
+ *   moment; nothing visible waits for it, because the growth runs on the compositor.
+ * - The burst starts at 55% of the growth, when the bubble is at its fastest, once the page has arrived: it goes outward
+ *   and fades (one fast duration), a thin shock ring flies past it, and the screen fades out (one base duration) to
+ *   show the topic. If the page is slower than that, the bubble keeps growing, then breathes: it is the page loader.
+ * Only transform and opacity are animated. `cancel` removes everything at once.
+ */
+export function playNodeOpen(spec: BubbleSpec, navigate: () => Promise<void>): { cancel: () => void } {
+  let cancelled = false;
+  const curtain = document.createElement("div");
+  curtain.className = "node-curtain";
+  curtain.setAttribute("aria-hidden", "true");
+  document.body.append(curtain);
+  const bubble = growBubble(spec); // appended after the screen, so it sits above it
+  let shock: HTMLElement | null = null;
+  const cancel = () => {
+    cancelled = true;
+    bubble.remove();
+    shock?.remove();
+    curtain.remove();
+  };
+  window.setTimeout(cancel, SAFETY_MS);
+  let bursting = false;
+  const burstTime = sleep(BURST_AT_MS);
+  curtain.getBoundingClientRect();
+  curtain.style.opacity = "1";
+  bubble.scaleTo(SWELL_SCALE);
+  // The bubble is the loading indicator. If the page is slow and the growth has run out, it breathes until the page arrives.
+  void transitionEnd(bubble.el, GROWTH_MS + 60).then(() => {
+    if (!cancelled && !bursting) bubble.mode("is-waiting");
+  });
+  void (async () => {
+    // the screen is fully in: the page can load behind it
+    await transitionEnd(curtain, DURATION.base + 60);
+    if (cancelled) return;
+    await Promise.all([navigate(), burstTime]);
+    if (cancelled) return;
+    // burst, and reveal the topic
+    bursting = true;
+    shock = document.createElement("div");
+    shock.className = "node-burst";
+    shock.setAttribute("aria-hidden", "true");
+    const full = bubbleLayers(spec.r, spec.borderSize).outer * SWELL_SCALE;
+    shock.style.cssText = `left:${spec.x - full}px;top:${spec.y - full}px;width:${full * 2}px;height:${full * 2}px;border-color:${spec.border}`;
+    document.body.append(shock);
+    shock.getBoundingClientRect();
+    const ended = transitionEnd(curtain, DURATION.base + 60);
+    bubble.mode("is-bursting");
+    bubble.scaleTo(BURST_SCALE);
+    bubble.fadeOut();
+    shock.style.transform = `scale(${SHOCK_SCALE})`;
+    shock.style.opacity = "0";
+    curtain.style.opacity = "0";
+    await ended;
+    cancel();
+  })();
+  return { cancel };
 }

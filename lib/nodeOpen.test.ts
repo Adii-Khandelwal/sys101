@@ -1,8 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { navigateWithTransition } from "../components/ViewTransitions";
-import { BUBBLE_SCALE, bubbleLayers, clickIntent, growBubble, removeBubbles } from "./nodeOpen";
+import { BURST_AT_MS, BURST_SCALE, GROWTH_MS, SAFETY_MS, SHOCK_SCALE, SWELL_SCALE, bubbleLayers, clickIntent, growBubble, playNodeOpen, removeBubbles } from "./nodeOpen";
 
 const root = path.resolve(__dirname, "..");
 const css = fs.readFileSync(path.join(root, "app/globals.css"), "utf8");
@@ -46,25 +45,27 @@ describe("which clicks play the node-open animation", () => {
   it("the Map's click handler wires the intents: new tab for modified clicks, no bubble unless the intent is animate", () => {
     expect(graphView).toContain("clickIntent(event.original");
     expect(graphView).toMatch(/intent === "new-tab"\)[^}]*window\.open\(href, "_blank", "noopener,noreferrer"\)/s);
-    // growBubble is only reached after the new-tab and instant branches have returned
+    // the animation is only reached after the new-tab and instant branches have returned
     const handler = graphView.slice(graphView.indexOf("const openNode"));
-    expect(handler.indexOf("growBubble(")).toBeGreaterThan(handler.indexOf('intent === "instant"'));
-    expect(handler.indexOf("growBubble(")).toBeGreaterThan(handler.indexOf('intent === "new-tab"'));
+    expect(handler.indexOf("playNodeOpen(")).toBeGreaterThan(handler.indexOf('intent === "instant"'));
+    expect(handler.indexOf("playNodeOpen(")).toBeGreaterThan(handler.indexOf('intent === "new-tab"'));
     // the animation lives only in the Map: Path view, search and plain links never import it
     for (const f of ["components/PathView.tsx", "components/Search.tsx", "components/TopicList.tsx", "components/TopicIndex.tsx", "components/HomeView.tsx"]) {
-      if (fs.existsSync(path.join(root, f))) expect(fs.readFileSync(path.join(root, f), "utf8"), f).not.toMatch(/nodeOpen|growBubble|node-open/);
+      if (fs.existsSync(path.join(root, f))) expect(fs.readFileSync(path.join(root, f), "utf8"), f).not.toMatch(/nodeOpen|growBubble|playNodeOpen|node-open/);
     }
   });
 });
 
 describe("the bubble", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
   it("lays out the ring, the fill and the centre dot the way the map draws a node", () => {
     expect(bubbleLayers(14, 1.5)).toEqual({ outer: 14, inner: 12.5, dot: 12.5 - 0.55 * 14 });
     expect(bubbleLayers(14, 3).dot).toBeCloseTo(11 - 7.7, 5);
     expect(bubbleLayers(2, 5)).toEqual({ outer: 2, inner: 0, dot: 0 }); // never negative
   });
 
-  it("grows by a transform only, to a fixed multiple, and is removed when asked", () => {
+  it("is built at its largest size and scaled DOWN to the node to start, so it stays crisp when it swells", () => {
     const made: FakeEl[] = [];
     const doc = fakeDocument(made);
     vi.stubGlobal("document", doc);
@@ -73,95 +74,213 @@ describe("the bubble", () => {
     const el = made[0];
     expect(el.className).toBe("node-bubble");
     expect(el.attrs["aria-hidden"]).toBe("true");
-    expect(el.style.cssText).toContain("left:86px;top:36px;width:28px;height:28px");
-    expect(el.style.transform).toBe(`scale(${BUBBLE_SCALE})`);
-    expect(el.reflowed).toBe(true); // the starting frame was committed before the transform changed
+    const big = 14 * SWELL_SCALE;
+    expect(el.style.cssText).toContain(`left:${100 - big}px;top:${50 - big}px;width:${big * 2}px;height:${big * 2}px`);
+    expect(el.style.cssText).toContain(`transform:scale(${1 / SWELL_SCALE})`); // exactly the node's own size at the start
+    expect(el.reflowed).toBe(true); // the starting frame was committed before anything changes
     expect(el.children).toHaveLength(3);
-    expect(Object.keys(el.style).filter((k) => /width|height|left|top|margin/.test(k) && k !== "cssText")).toEqual([]); // growth never touches layout properties
+    // each later size is a transform, and nothing but transform and opacity is ever set afterwards
+    bubble.scaleTo(SWELL_SCALE / 2);
+    expect(el.style.transform).toBe("scale(0.5)");
+    bubble.scaleTo(SWELL_SCALE);
+    expect(el.style.transform).toBe("scale(1)");
+    bubble.fadeOut();
+    expect(el.style.opacity).toBe("0");
+    expect(Object.keys(el.style).filter((k) => !["cssText", "transform", "opacity"].includes(k))).toEqual([]);
     bubble.remove();
     expect(doc.body.children).toHaveLength(0);
     removeBubbles(); // idempotent
   });
 
-  it("the CSS animates the bubble's transform with the base duration and nothing else", () => {
-    const rule = css.match(/\.node-bubble \{[^}]*\}/)![0];
-    expect(rule).toMatch(/transition: transform var\(--dur-base\) var\(--ease-out\);/);
-    expect(rule).not.toMatch(/animation|width|height|top:\s*[^;]*transition/);
-    expect(rule).toContain("pointer-events: none");
-  });
-});
-
-describe("the page fade-in that follows", () => {
-  it("is opacity only, one base duration, and applies only while a node is opening", () => {
-    expect(css).toMatch(/html\[data-nav="node-open"\]::view-transition-new\(root\) \{\s*animation: vt-fade-in var\(--dur-base\) var\(--ease-out\) both;/);
-    expect(css).toMatch(/html\[data-nav="node-open"\]::view-transition-old\(root\) \{\s*animation: none;/);
-    const keyframes = css.match(/@keyframes vt-fade-in \{[^]*?\n\}/)![0];
-    expect(keyframes).toContain("opacity: 0");
-    expect(keyframes).not.toMatch(/transform|translate|scale/);
-    // the ordinary page-to-page transition (with its 8px rise) is untouched
-    expect(css).toMatch(/::view-transition-new\(root\) \{\s*animation: vt-in var\(--dur-slow\)/);
+  it("the sizes only ever grow, up to a burst past the full growth, and the burst starts before the growth ends", () => {
+    expect(SWELL_SCALE).toBeGreaterThan(1);
+    expect(BURST_SCALE).toBeGreaterThan(SWELL_SCALE);
+    expect(SHOCK_SCALE).toBeGreaterThan(1);
+    // The ease-in-out speed peaks about halfway and fades to nothing at the end. Bursting between 40% and 70% means the
+    // pop takes over while the bubble is still moving fast, so there is no slowdown before it.
+    expect(BURST_AT_MS).toBeGreaterThan(GROWTH_MS * 0.4);
+    expect(BURST_AT_MS).toBeLessThan(GROWTH_MS * 0.7);
   });
 
-  it("grow (base) plus fade-in (base) is about 400ms, from the tokens", () => {
+  it("the CSS animates only transform and opacity, from the tokens: one continuous growth of three base durations, a fast burst", () => {
+    const rule = (sel: string) => {
+      const at = css.indexOf(`${sel} {`);
+      expect(at, sel).toBeGreaterThan(-1);
+      return css.slice(at, css.indexOf("}", at) + 1);
+    };
+    expect(rule(".node-bubble")).toMatch(/transition: transform calc\(var\(--dur-base\) \* 3\) var\(--ease-in-out\), opacity var\(--dur-fast\) var\(--ease-out\);/);
+    expect(rule(".node-bubble.is-bursting")).toMatch(/transition: transform var\(--dur-fast\) var\(--ease-out\), opacity var\(--dur-fast\) var\(--ease-out\);/);
+    expect(rule(".node-burst")).toMatch(/transition: transform var\(--dur-base\) var\(--ease-out\), opacity var\(--dur-base\) var\(--ease-out\);/);
+    expect(rule(".node-curtain")).toMatch(/transition: opacity var\(--dur-base\) var\(--ease-out\);/);
+    expect(rule(".node-curtain")).toContain("background: var(--paper)");
+    expect(css).not.toContain("is-swelling"); // no second growth step to start from rest: that was the pause
+    // the loader state: a gentle scale pulse on the skeleton-pulse token, transform only
+    expect(rule(".node-bubble.is-waiting")).toMatch(/animation: bubble-breathe var\(--dur-pulse\) var\(--ease-in-out\) infinite alternate;/);
+    const breathe = css.match(/@keyframes bubble-breathe \{[^]*?\n\}/)![0];
+    expect(breathe).toMatch(/scale\(1\)/);
+    expect(breathe).not.toMatch(/opacity|width|height|top|left|translate/);
+    for (const sel of [".node-bubble", ".node-burst", ".node-curtain"]) {
+      expect(rule(sel), sel).toContain("pointer-events: none");
+      expect(rule(sel), sel).not.toMatch(/animation|transition:[^;]*(width|height|top|left|margin)/);
+    }
     const base = Number(css.match(/--dur-base:\s*(\d+)ms/)![1]);
-    expect(base * 2).toBe(400);
+    expect(GROWTH_MS).toBe(base * 3);
+  });
+
+  it("uses no page-to-page keyframes and no View Transitions rules for the node-open path", () => {
+    expect(css).not.toContain('data-nav="node-open"');
   });
 });
 
-describe("navigateWithTransition", () => {
-  afterEach(() => vi.unstubAllGlobals());
+describe("playNodeOpen: the whole sequence", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
 
-  const setup = (reduced: boolean, withApi = true) => {
-    const dataset: Record<string, string> = {};
-    let finish: () => void = () => {};
-    const finished = new Promise<void>((r) => (finish = r));
-    let callback: (() => Promise<void>) | undefined;
-    const start = vi.fn((cb: () => Promise<void>) => {
-      callback = cb;
-      return { finished };
-    });
-    vi.stubGlobal("document", { ...(withApi ? { startViewTransition: start } : {}), documentElement: { dataset }, querySelector: () => null });
-    vi.stubGlobal("location", { href: "http://x.test/", pathname: "/" });
-    vi.stubGlobal("window", { matchMedia: () => ({ matches: reduced }) });
-    const router = { push: vi.fn() };
-    return { router, start, dataset, finish, run: () => callback!() };
+  const setup = () => {
+    vi.useFakeTimers();
+    const made: FakeEl[] = [];
+    const doc = fakeDocument(made);
+    vi.stubGlobal("document", doc);
+    vi.stubGlobal("window", { setTimeout, clearTimeout });
+    let release: () => void = () => {};
+    const navigate = vi.fn(() => new Promise<void>((r) => (release = r)));
+    const spec = { x: 100, y: 50, r: 14, border: "#111", fill: "#eee", dot: "#a33", borderSize: 3 };
+    const flush = async () => {
+      for (let i = 0; i < 6; i++) await Promise.resolve();
+    };
+    return { made, doc, navigate, release: () => release(), spec, flush };
   };
+  const find = (made: FakeEl[], cls: string) => made.find((e) => e.className.split(" ").includes(cls))!;
+  const hasBurst = (made: FakeEl[]) => made.some((e) => e.className === "node-burst");
 
-  it("under reduced motion it navigates at once: no transition, no data-nav", () => {
-    const t = setup(true);
-    navigateWithTransition(t.router, "/topic/caching", { nodeOpen: true, onSwap: vi.fn() });
-    expect(t.router.push).toHaveBeenCalledWith("/topic/caching");
-    expect(t.start).not.toHaveBeenCalled();
-    expect(t.dataset.nav).toBeUndefined();
+  it("starts one continuous growth at once, with the screen fading in; nothing navigates yet", async () => {
+    const t = setup();
+    playNodeOpen(t.spec, t.navigate);
+    const curtain = find(t.made, "node-curtain");
+    const bubble = find(t.made, "node-bubble");
+    expect(curtain.style.opacity).toBe("1");
+    expect(bubble.style.transform).toBe("scale(1)"); // straight to full size: a single move, set once
+    expect(curtain.reflowed).toBe(true);
+    expect(t.doc.body.children.indexOf(curtain)).toBeLessThan(t.doc.body.children.indexOf(bubble)); // the bubble is above the screen
+    await t.flush();
+    expect(t.navigate).not.toHaveBeenCalled();
   });
 
-  it("without the View Transitions API it just navigates", () => {
-    const t = setup(false, false);
-    navigateWithTransition(t.router, "/topic/caching", { nodeOpen: true });
-    expect(t.router.push).toHaveBeenCalledWith("/topic/caching");
-    expect(t.dataset.nav).toBeUndefined();
+  it("never restarts or changes the growth partway: the bubble is touched once before the burst", async () => {
+    const t = setup();
+    playNodeOpen(t.spec, t.navigate);
+    const bubble = find(t.made, "node-bubble");
+    const seen: string[] = [];
+    let transform = bubble.style.transform;
+    const watch = () => {
+      if (bubble.style.transform !== transform || bubble.className !== "node-bubble") seen.push(`${bubble.className}|${bubble.style.transform}`);
+      transform = bubble.style.transform;
+    };
+    find(t.made, "node-curtain").listeners.transitionend(); // the screen is in: the page loads
+    await t.flush();
+    watch();
+    await vi.advanceTimersByTimeAsync(BURST_AT_MS - 1);
+    watch();
+    expect(seen).toEqual([]); // no second step, no class change, no new size
   });
 
-  it("a node-open transition marks the page for the fade-in, swaps, removes the bubble after the swap, and clears the mark", async () => {
-    const t = setup(false);
-    const order: string[] = [];
-    t.router.push.mockImplementation(() => order.push("push"));
-    vi.stubGlobal("location", { href: "http://x.test/", pathname: "/topic/caching" }); // the new page has arrived
-    navigateWithTransition(t.router, "/topic/caching", { nodeOpen: true, onSwap: () => order.push("swap") });
-    expect(t.dataset.nav).toBe("node-open");
-    await t.run();
-    expect(order).toEqual(["push", "swap"]);
-    t.finish();
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(t.dataset.nav).toBeUndefined();
+  it("loads the page behind the screen once it is fully in, and bursts only when the page has arrived and the growth is far enough", async () => {
+    const t = setup();
+    playNodeOpen(t.spec, t.navigate);
+    find(t.made, "node-curtain").listeners.transitionend();
+    await t.flush();
+    expect(t.navigate).toHaveBeenCalledTimes(1);
+    t.release(); // the page is here, but the growth is not far enough
+    await vi.advanceTimersByTimeAsync(BURST_AT_MS - 5);
+    expect(hasBurst(t.made)).toBe(false);
+    await vi.advanceTimersByTimeAsync(10);
+    expect(hasBurst(t.made)).toBe(true);
   });
 
-  it("an ordinary link transition does not set data-nav, so it keeps the normal cross-fade", () => {
-    const t = setup(false);
-    navigateWithTransition(t.router, "/topic/caching");
-    expect(t.start).toHaveBeenCalled();
-    expect(t.dataset.nav).toBeUndefined();
+  it("a slow page keeps the bubble at full size until it arrives: it never bursts early", async () => {
+    const t = setup();
+    playNodeOpen(t.spec, t.navigate);
+    await vi.advanceTimersByTimeAsync(300);
+    await vi.advanceTimersByTimeAsync(2000); // the page is still loading
+    expect(hasBurst(t.made)).toBe(false);
+    expect(find(t.made, "node-bubble").className).toBe("node-bubble is-waiting"); // breathing: it is the loader
+    t.release();
+    await vi.advanceTimersByTimeAsync(300);
+    expect(t.doc.body.children).toHaveLength(0);
+  });
+
+  it("a page that arrives in time never sees the loader state: the bubble bursts straight out of the growth", async () => {
+    const t = setup();
+    playNodeOpen(t.spec, t.navigate);
+    const bubble = find(t.made, "node-bubble");
+    find(t.made, "node-curtain").listeners.transitionend();
+    await t.flush();
+    t.release();
+    await vi.advanceTimersByTimeAsync(BURST_AT_MS + 5);
+    expect(bubble.className).toBe("node-bubble is-bursting");
+    bubble.listeners.transitionend?.(); // the growth's end arrives after the burst: it must not drag the bubble back to waiting
+    await vi.advanceTimersByTimeAsync(GROWTH_MS + 100);
+    expect(bubble.className).not.toContain("is-waiting");
+  });
+
+  it("the burst: pop outward and fade, a shock ring past it, the screen fades out, then everything is removed", async () => {
+    const t = setup();
+    playNodeOpen(t.spec, t.navigate);
+    const curtain = find(t.made, "node-curtain");
+    const bubble = find(t.made, "node-bubble");
+    curtain.listeners.transitionend();
+    await t.flush();
+    t.release();
+    await vi.advanceTimersByTimeAsync(BURST_AT_MS + 5);
+    const shock = find(t.made, "node-burst");
+    expect(bubble.className).toBe("node-bubble is-bursting");
+    expect(bubble.style.transform).toBe(`scale(${BURST_SCALE / SWELL_SCALE})`);
+    expect(bubble.style.opacity).toBe("0");
+    expect(shock.style.transform).toBe(`scale(${SHOCK_SCALE})`);
+    expect(shock.style.opacity).toBe("0");
+    expect(shock.style.cssText).toContain("border-color:#111");
+    expect(curtain.style.opacity).toBe("0");
+    expect(t.doc.body.children).toHaveLength(3); // still there until the fade ends
+    curtain.listeners.transitionend();
+    await t.flush();
+    expect(t.doc.body.children).toHaveLength(0);
+  });
+
+  it("works without transitionend (a hidden tab): timeouts carry it through", async () => {
+    const t = setup();
+    playNodeOpen(t.spec, t.navigate);
+    await vi.advanceTimersByTimeAsync(300);
+    expect(t.navigate).toHaveBeenCalledTimes(1);
+    t.release();
+    await vi.advanceTimersByTimeAsync(600);
+    expect(t.doc.body.children).toHaveLength(0);
+  });
+
+  it("cancel removes everything at once, including the shock ring, and the page swap never starts", async () => {
+    const t = setup();
+    const open = playNodeOpen(t.spec, t.navigate);
+    open.cancel();
+    expect(t.doc.body.children).toHaveLength(0);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(t.navigate).not.toHaveBeenCalled();
+  });
+
+  it("nothing can hold the screen for longer than the safety limit", async () => {
+    const t = setup();
+    playNodeOpen(t.spec, t.navigate);
+    find(t.made, "node-curtain").listeners.transitionend();
+    await t.flush();
+    expect(t.doc.body.children).toHaveLength(2); // the page never arrives
+    await vi.advanceTimersByTimeAsync(SAFETY_MS + 10);
+    expect(t.doc.body.children).toHaveLength(0);
+  });
+
+  it("the Map starts it only for the animate intent, runs the page swap inside it, and keeps the screen across the swap", () => {
+    expect(graphView).toContain("playNodeOpen(");
+    expect(graphView).toMatch(/router\.push\(href\);\s*await pageReady\(href/);
+    expect(graphView).toContain("if (!pendingOpen.current) removeBubbles()");
   });
 });
 

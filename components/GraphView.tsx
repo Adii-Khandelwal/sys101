@@ -25,8 +25,8 @@ import {
 } from "@/lib/graphUi";
 import { createPortal } from "react-dom";
 import { DURATION, easeInOut, prefersReducedMotion } from "@/lib/motion";
-import { navigateWithTransition } from "./ViewTransitions";
-import { clickIntent, growBubble, removeBubbles, type Bubble } from "@/lib/nodeOpen";
+import { navigateWithTransition, pageReady } from "./ViewTransitions";
+import { clickIntent, playNodeOpen, removeBubbles } from "@/lib/nodeOpen";
 import { saveMapView, takeMapView, type MapView } from "@/lib/mapView";
 import {
   STEP,
@@ -338,7 +338,7 @@ export default function GraphView({ nodes, edges }: Props) {
   const animFrame = useRef(0);
   const navTimer = useRef(0);
   /** The bubble of a node being opened. Cleared on a second click, a double click, and when the map goes away. */
-  const pendingOpen = useRef<Bubble | null>(null);
+  const pendingOpen = useRef<{ cancel: () => void } | null>(null);
   /** The view saved when a node was opened, if the map is being returned to by Back or Forward (undefined: not read yet). */
   const viewToRestore = useRef<MapView | null | undefined>(undefined);
   const scrollToRestore = useRef<number | null>(null);
@@ -691,7 +691,7 @@ export default function GraphView({ nodes, edges }: Props) {
           return;
         }
         window.clearTimeout(navTimer.current);
-        pendingOpen.current?.remove();
+        pendingOpen.current?.cancel();
         router.prefetch(href); // ready when the growth ends
         saveView();
         activate(node);
@@ -702,20 +702,23 @@ export default function GraphView({ nodes, edges }: Props) {
         const d = renderer!.getNodeDisplayData(node) as Record<string, unknown> | undefined;
         const at = renderer!.graphToViewport({ x: graph.getNodeAttribute(node, "x"), y: graph.getNodeAttribute(node, "y") });
         const box = container.current!.getBoundingClientRect();
-        const bubble = growBubble({
-          x: box.left + at.x,
-          y: box.top + at.y,
-          r: renderer!.scaleSize((d?.size as number) ?? NODE_RADIUS),
-          border: String(d?.borderColor ?? liveColors.inkSoft),
-          fill: String(d?.color ?? liveColors.paper),
-          dot: String(d?.dotColor ?? d?.color ?? liveColors.paper),
-          borderSize: (d?.borderSize as number) ?? 1.5,
-        });
-        pendingOpen.current = bubble;
-        void bubble.done.then(() => {
-          if (pendingOpen.current !== bubble) return; // a second click or a double click cancelled it
-          navigateWithTransition(router, href, { nodeOpen: true, onSwap: bubble.remove });
-        });
+        const open = playNodeOpen(
+          {
+            x: box.left + at.x,
+            y: box.top + at.y,
+            r: renderer!.scaleSize((d?.size as number) ?? NODE_RADIUS),
+            border: String(d?.borderColor ?? liveColors.inkSoft),
+            fill: String(d?.color ?? liveColors.paper),
+            dot: String(d?.dotColor ?? d?.color ?? liveColors.paper),
+            borderSize: (d?.borderSize as number) ?? 1.5,
+          },
+          // Runs behind the plain screen, so the page swap can take as long as it likes without a visible stall.
+          async () => {
+            router.push(href);
+            await pageReady(href, 3500);
+          },
+        );
+        pendingOpen.current = open;
       };
       renderer.on("clickNode", ({ node, event }) => {
         if (draggedRef.current) return;
@@ -754,7 +757,7 @@ export default function GraphView({ nodes, edges }: Props) {
       };
       renderer.on("doubleClickNode", ({ event }) => {
         window.clearTimeout(navTimer.current);
-        pendingOpen.current?.remove(); // the first click of a double click had started to open the node
+        pendingOpen.current?.cancel(); // the first click of a double click had started to open the node
         pendingOpen.current = null;
         event.preventSigmaDefault();
       });
@@ -789,8 +792,9 @@ export default function GraphView({ nodes, edges }: Props) {
     return () => {
       cancelled = true;
       removeMiddle?.();
-      pendingOpen.current = null;
-      removeBubbles(); // the map is going away: no bubble may be left over the next page
+      // The map goes away when its page is swapped. If we started that, the screen is still fading out over the new page
+      // and removes itself. Any other way of leaving (a link, Back) must not leave a bubble behind.
+      if (!pendingOpen.current) removeBubbles();
       renderer?.kill();
       rendererRef.current = null;
       setReady(false);
