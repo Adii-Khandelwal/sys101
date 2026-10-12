@@ -1,0 +1,66 @@
+{
+  "topic": "consensus",
+  "updatedOn": "2026-10-12",
+  "items": [
+    {
+      "id": "mvcc",
+      "name": "Multiversion concurrency control",
+      "explanation": "A database keeps several versions of each value, and every reader sees a snapshot as of one moment. Readers then do not block writers.",
+      "assumedBy": [
+        {
+          "postId": "etcd-performance",
+          "quote": "Each serialized etcd request must run through etcd’s boltdb-backed MVCC storage engine, which usually takes tens of microseconds to finish."
+        }
+      ],
+      "sources": [
+        {
+          "title": "PostgreSQL docs: Concurrency Control, Introduction (MVCC)",
+          "publisher": "PostgreSQL Global Development Group",
+          "url": "https://www.postgresql.org/docs/current/mvcc-intro.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "linearizable-reads",
+      "name": "Linearizable and serializable reads",
+      "explanation": "A linearizable read returns the most recent write, which costs a round of agreement with the cluster. A serializable read is answered by one member from what it has, so it is cheaper and can be slightly stale.",
+      "assumedBy": [
+        {
+          "postId": "etcd-performance",
+          "quote": "Linearizable read requests go through a quorum of cluster members for consensus to fetch the most recent data."
+        }
+      ],
+      "sources": [
+        {
+          "title": "etcd API guarantees (linearizability)",
+          "publisher": "etcd (CNCF)",
+          "url": "https://etcd.io/docs/v3.5/learning/api_guarantees/",
+          "year": "page shows last updated 2025-09-26",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "id": "tla-plus",
+      "name": "TLA+ and formal verification",
+      "explanation": "TLA+ is a language for writing down how a system should behave so a tool can check it against every possible ordering of events. It finds bugs that tests rarely hit.",
+      "assumedBy": [
+        {
+          "postId": "cockroachdb-leader-leases-2026",
+          "quote": "The safety properties of the Liveness Fabric are formally verified in TLA+, and the verification model is publicly available on GitHub."
+        }
+      ],
+      "sources": [
+        {
+          "title": "The TLA+ Home Page",
+          "publisher": "Leslie Lamport",
+          "url": "https://lamport.azurewebsites.net/tla/tla.html",
+          "year": "page shows last updated 2025-10-13",
+          "verifiedOn": "2026-10-12"
+        }
+      ]
+    }
+  ]
+}
