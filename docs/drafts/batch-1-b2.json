@@ -1,0 +1,65 @@
+{
+  "databases": {
+    "summary": {
+      "points": [
+        "A database keeps data safe across crashes and lets many clients read and change it at once.",
+        "A change is written to a log before it touches the data files, and a commit is the moment that log record is safely on disk.",
+        "Uber's 2016 comparison found that how a log is shipped decides what replicas can do: physical replication copies disk pages, logical copies row changes.",
+        "GitHub shows replication is also how a fleet is upgraded and rolled back, so plan the way back first."
+      ],
+      "figures": [
+        { "postId": "uber-postgres-to-mysql-2016", "row": 4, "label": "active connections: a few hundred where Postgres struggled, about 10,000 handled by MySQL" },
+        { "postId": "github-mysql-8-upgrade-2023", "row": 2, "label": "5.5 million queries per second served" }
+      ]
+    }
+  },
+  "distributed-transactions": {
+    "summary": {
+      "points": [
+        "A distributed transaction makes changes across shards or services happen all-or-nothing: every part commits or none does.",
+        "Two-phase commit has a coordinator ask every participant to prepare, then commit only if all agree; a saga chains local transactions with compensating undo steps.",
+        "Google's Percolator builds cross-shard transactions on a store with only single-row atomicity, using one designated row's atomic write as the commit point.",
+        "Cockroach Labs found transaction latency is dominated by synchronous replication rounds in series, and pipelining overlaps those rounds."
+      ],
+      "figures": [
+        { "postId": "google-percolator-2010", "row": 1, "label": "about 4x overhead over raw Bigtable for a single-cell write and commit" },
+        { "postId": "cockroachdb-transaction-pipelining-2019", "row": 1, "label": "each extra ms of inter-node latency added 6 ms without pipelining, 2 ms with" }
+      ]
+    },
+    "prerequisiteReasons": {
+      "consensus": "Distributed transactions take from consensus the way each participant's prepared state and the coordinator's decision are made to survive crashes.",
+      "sharding": "Distributed transactions take from sharding the fact that one change can touch rows on several shards, which is what needs coordinating."
+    }
+  },
+  "dns": {
+    "summary": {
+      "points": [
+        "DNS maps human-readable names to addresses through a hierarchy: resolvers walk from the root to top-level domains to authoritative servers.",
+        "Caching at every layer, bounded by each record's TTL, keeps it fast at the cost of propagation delay.",
+        "Cloudflare found that a design sized for yesterday's load becomes the bottleneck as traffic grows, so it builds each changed record instead of the whole zone.",
+        "Slack's DNSSEC rollout showed that an undo is just another change, and it spreads no faster than the longest cache in the path."
+      ],
+      "figures": [
+        { "postId": "cloudflare-dns-builds-2022", "row": 5, "label": "150x average speedup of per-record builds over full zone builds" },
+        { "postId": "slack-dnssec-2021", "row": 1, "label": "DNSSEC outage lasted 24 hours" }
+      ]
+    }
+  },
+  "event-driven-architecture": {
+    "summary": {
+      "points": [
+        "Event-driven architecture has each service announce facts about what already happened, and other services react on their own.",
+        "The event log becomes the backbone and state can be rebuilt by replaying it, but publishing reliably and processing idempotently get harder.",
+        "Zapier found a plain write-then-publish can lose events, so an outbox commits the event with the state change, though a local outbox brings its own scaling pain.",
+        "Grab found that cross-AZ traffic, mostly consumers reading a far leader, can be about half the cost of its Kafka platform."
+      ],
+      "figures": [
+        { "postId": "grab-plumbing-at-scale-2020", "row": 0, "label": "over 300 billion events a week the platform was scaled to service" },
+        { "postId": "grab-zero-traffic-cost-2023", "row": 3, "label": "25% drop in cross-AZ traffic after three months of closest-replica fetch" }
+      ]
+    },
+    "prerequisiteReasons": {
+      "pub-sub": "Event-driven architecture takes from pub-sub the fan-out of one fact to every interested reader, with the producer unaware of who reads it."
+    }
+  }
+}

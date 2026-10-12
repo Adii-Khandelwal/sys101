@@ -5,6 +5,26 @@
   "interviewRelevance": "core",
   "concept": "A database keeps data safe across crashes and lets many clients read and change it at once. Most relational databases share the same core: a change is written to a log before it touches the data files, a commit is the moment that log record is safely on disk, and copies on other machines, called replicas, stay current by replaying the primary's log.",
   "prerequisites": [],
+  "summary": {
+    "points": [
+      "A database keeps data safe across crashes and lets many clients read and change it at once.",
+      "A change is written to a log before it touches the data files, and a commit is the moment that log record is safely on disk.",
+      "Uber's 2016 comparison found that how a log is shipped decides what replicas can do: physical replication copies disk pages, logical copies row changes.",
+      "GitHub shows replication is also how a fleet is upgraded and rolled back, so plan the way back first."
+    ],
+    "figures": [
+      {
+        "postId": "uber-postgres-to-mysql-2016",
+        "row": 4,
+        "label": "active connections: a few hundred where Postgres struggled, about 10,000 handled by MySQL"
+      },
+      {
+        "postId": "github-mysql-8-upgrade-2023",
+        "row": 2,
+        "label": "5.5 million queries per second served"
+      }
+    ]
+  },
   "posts": [
     {
       "id": "uber-postgres-to-mysql-2016",

@@ -9,6 +9,30 @@
     "consensus",
     "sharding"
   ],
+  "summary": {
+    "points": [
+      "A distributed transaction makes changes across shards or services happen all-or-nothing: every part commits or none does.",
+      "Two-phase commit has a coordinator ask every participant to prepare, then commit only if all agree; a saga chains local transactions with compensating undo steps.",
+      "Google's Percolator builds cross-shard transactions on a store with only single-row atomicity, using one designated row's atomic write as the commit point.",
+      "Cockroach Labs found transaction latency is dominated by synchronous replication rounds in series, and pipelining overlaps those rounds."
+    ],
+    "figures": [
+      {
+        "postId": "google-percolator-2010",
+        "row": 1,
+        "label": "about 4x overhead over raw Bigtable for a single-cell write and commit"
+      },
+      {
+        "postId": "cockroachdb-transaction-pipelining-2019",
+        "row": 1,
+        "label": "each extra ms of inter-node latency added 6 ms without pipelining, 2 ms with"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "consensus": "Distributed transactions take from consensus the way each participant's prepared state and the coordinator's decision are made to survive crashes.",
+    "sharding": "Distributed transactions take from sharding the fact that one change can touch rows on several shards, which is what needs coordinating."
+  },
   "lesson": {
     "why": {
       "outcome": "After this you can explain why a change that spans shards needs more than a single-node transaction, and what all-or-nothing means across machines.",

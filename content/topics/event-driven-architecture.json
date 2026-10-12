@@ -9,6 +9,29 @@
   "prerequisites": [
     "pub-sub"
   ],
+  "summary": {
+    "points": [
+      "Event-driven architecture has each service announce facts about what already happened, and other services react on their own.",
+      "The event log becomes the backbone and state can be rebuilt by replaying it, but publishing reliably and processing idempotently get harder.",
+      "Zapier found a plain write-then-publish can lose events, so an outbox commits the event with the state change, though a local outbox brings its own scaling pain.",
+      "Grab found that cross-AZ traffic, mostly consumers reading a far leader, can be about half the cost of its Kafka platform."
+    ],
+    "figures": [
+      {
+        "postId": "grab-plumbing-at-scale-2020",
+        "row": 0,
+        "label": "over 300 billion events a week the platform was scaled to service"
+      },
+      {
+        "postId": "grab-zero-traffic-cost-2023",
+        "row": 3,
+        "label": "25% drop in cross-AZ traffic after three months of closest-replica fetch"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "pub-sub": "Event-driven architecture takes from pub-sub the fan-out of one fact to every interested reader, with the producer unaware of who reads it."
+  },
   "lesson": {
     "why": {
       "outcome": "After this you can explain why a system would publish events as facts instead of calling services to trigger each step.",

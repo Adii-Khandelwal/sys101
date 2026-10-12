@@ -5,6 +5,26 @@
   "interviewRelevance": "common",
   "concept": "The Domain Name System maps human-readable names to the addresses machines route on. It is a hierarchical, distributed database: resolvers walk from the root to top-level domains to authoritative servers, and caching at every layer, bounded by each record's TTL, keeps the system fast at the cost of propagation delay.",
   "prerequisites": [],
+  "summary": {
+    "points": [
+      "DNS maps human-readable names to addresses through a hierarchy: resolvers walk from the root to top-level domains to authoritative servers.",
+      "Caching at every layer, bounded by each record's TTL, keeps it fast at the cost of propagation delay.",
+      "Cloudflare found that a design sized for yesterday's load becomes the bottleneck as traffic grows, so it builds each changed record instead of the whole zone.",
+      "Slack's DNSSEC rollout showed that an undo is just another change, and it spreads no faster than the longest cache in the path."
+    ],
+    "figures": [
+      {
+        "postId": "cloudflare-dns-builds-2022",
+        "row": 5,
+        "label": "150x average speedup of per-record builds over full zone builds"
+      },
+      {
+        "postId": "slack-dnssec-2021",
+        "row": 1,
+        "label": "DNSSEC outage lasted 24 hours"
+      }
+    ]
+  },
   "posts": [
     {
       "id": "cloudflare-dns-builds-2022",
