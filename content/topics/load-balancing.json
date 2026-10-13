@@ -12,7 +12,7 @@
       "Load balancing spreads requests across a pool of backends so that no single instance saturates.",
       "The hard parts are choosing which backends each client may talk to, deciding where each request goes, and reacting to load signals that are always slightly stale.",
       "Uber found that a subsetting design needing no coordination between clients scales and fails more gracefully, and that subsets too large are safer than too small.",
-      "Dropbox advises picking a load signal that cannot look healthy while the server is stuck."
+      "Dropbox found CPU alone looked healthy on servers stuck on disk I/O, so it balances on the higher of CPU and in-flight requests."
     ],
     "figures": [
       {
@@ -36,11 +36,11 @@
       "title": "Better Load Balancing: Real-Time Dynamic Subsetting",
       "url": "https://www.uber.com/blog/better-load-balancing-real-time-dynamic-subsetting/",
       "company": "Uber",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2022-05-17",
       "digest": {
         "problem": "In Uber's service mesh, each host's proxy connects to only a subset of a backend service's tasks, chosen at random, and that subset had a fixed size. Callers sending heavy traffic squeezed it through the same small subset as quiet callers, so some backend tasks ran hot while others sat idle. Each case was fixed by hand-tuning subset sizes, and the right size kept drifting as traffic changed.",
-        "constraints": "The mesh spans thousands of services in millions of containers, with services from tens to tens of thousands of tasks and traffic that can swing from 100 to 100,000 requests per second within minutes. Connecting everything to everything is impossible at that size. One proxy is shared by every task on a host and must be ready for any destination. The fix had to reuse the existing control plane and load reports, avoid reserving capacity per service, and work without proxies coordinating with each other.",
+        "constraints": "The mesh spans thousands of services in millions of containers, with services from tens to tens of thousands of tasks and traffic that can swing from 100 to 100,000 requests per second within minutes. Fully connecting two 10,000-task services would need about 100,000,000 connections. One proxy is shared by every task on a host and must be ready for any destination. The fix had to reuse the existing control plane and load reports, avoid reserving capacity per service, The chosen design kept task selection random, with no coordination between proxies.",
         "walkthrough": [
           {
             "step": "Report load",
@@ -83,7 +83,7 @@
           },
           {
             "value": "17 of 36",
-            "meaning": "Large services whose p99 CPU fell by 10% or more after rollout"
+            "meaning": "Of the 36 last-onboarded power services, those whose p99 CPU fell by 10% or more; the post says it has no precise data for the wider rollout"
           },
           {
             "value": "up to 40%",
@@ -100,7 +100,7 @@
         ],
         "tradeoffs": {
           "chosen": "Subset size computed per proxy from its share of total traffic, with random task selection and no coordination between proxies.",
-          "rejected": "Fixed subset sizes with manual tuning, least-pending-request balancing, deterministic subsets that need proxies to coordinate, and tracking load per caller or per procedure.",
+          "rejected": "Fixed subset sizes with manual tuning, and least-pending-request balancing alone, which helped too little. Considered but not built: deterministic subsets that need proxies to coordinate, and tracking load per caller or procedure.",
           "why": "Reusing load reports the control plane already had made the fix cheap to build, and keeping proxies independent kept it simple and resilient. The price is a few seconds of lag, some leftover imbalance from random picks, and more connections per proxy, which they capped."
         },
         "failures": "Static subsets had already failed for the largest services, and least-pending-request balancing helped too little because each proxy only knew about its own requests. Months after rollout, during a protocol migration, a few hosts running many busy callers against large pools opened thousands of connections and hit a memory problem in Go's HTTP/2 code; capping connections fixed it. The first scaling constant was picked fairly arbitrarily and raised a year later once they could measure better.",
@@ -112,10 +112,10 @@
       "title": "What’s new with Robinhood, our in-house load balancing service",
       "url": "https://dropbox.tech/infrastructure/robinhood-in-house-load-balancing-service",
       "company": "Dropbox",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2024-10-23",
       "digest": {
-        "problem": "Dropbox clients spread requests round-robin across the servers they knew about, with no idea how busy each one was. The fleet mixes hardware generations, so the same request costs more on some machines than others, and some servers overloaded while others idled. Teams responded by buying extra capacity to stay safe.",
+        "problem": "Dropbox clients spread requests round-robin across the servers they knew about, with no idea how busy each one was. The fleet mixes hardware generations, so the same request costs more on some machines than others, and some servers overloaded while others idled.",
         "constraints": "Some services have millions of clients, so each client only talks to a subset of servers. Clients use both Envoy and gRPC, and client changes take months to reach everyone because some clients rarely deploy. The system also had to survive restarts, new servers, missing load reports, and traffic split across data centers, and the move off the old strategy had to be gradual.",
         "walkthrough": [
           {
@@ -171,8 +171,8 @@
           "rejected": "Server load in response headers with clients choosing the least loaded server, larger subsets as a tuning knob, and balancing on CPU alone.",
           "why": "Logic in one central service can change and roll back in minutes, while client changes take months. The cost is a feedback loop that needs steady traffic, so very quiet services and requests that take minutes balance poorly."
         },
-        "failures": "The header-based approach worked but needed code changes on every server and client and was hard to roll out everywhere. Servers with stalled disk I/O showed low CPU, so the controller kept sending them more traffic; they now balance on the higher of CPU and in-flight requests. Migrating every service took far longer than planned because migration was not designed in from the start.",
-        "takeaways": "Keep configuration minimal with good defaults. Put logic where it can be changed and rolled back fastest. Pick a load signal that cannot look healthy while the server is stuck. Plan the migration while designing the system, and count migration effort as part of the cost."
+        "failures": "The header-based approach worked but needed code changes on every server and client and was hard to roll out everywhere. Servers with stalled disk I/O showed low CPU, so the controller kept sending them more traffic; they now balance on the higher of CPU and in-flight requests. The migration process was not well designed from the start, so Dropbox spent much more time than expected reimplementing it and redesigning the configuration.",
+        "takeaways": "Keep configuration minimal with good defaults. Put logic where it can be changed and rolled back fastest. Dropbox found that CPU alone can look healthy on a stuck server, so it uses the higher of CPU and in-flight requests. Plan the migration while designing the system, and count migration effort as part of the cost."
       }
     }
   ],
@@ -269,12 +269,12 @@
         },
         {
           "step": "Reuse existing signals",
-          "explanation": "Uber's proxies already reported traffic per destination, so the totals came back within seconds without new infrastructure. On 17 of 36 large services, p99 CPU fell by 10% or more."
+          "explanation": "Uber's proxies already reported traffic per destination, so the control plane sent the totals back within seconds. Of the 36 last-onboarded power services, 17 saw p99 CPU fall by 10% or more."
         }
       ],
       "diagram": "<svg viewBox=\"0 0 560 153\" role=\"img\" aria-labelledby=\"dg-lb-ex-t\" class=\"dg\"><title id=\"dg-lb-ex-t\">Evening out a fleet: measure each server, push weights to clients, pick a better load signal, and change the subset rather than overload one machine.</title><defs><marker id=\"dg-lb-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"55\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">See</text><text x=\"55\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">imbalance</text><rect x=\"124\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"167\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Measure</text><text x=\"167\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">servers</text><rect x=\"236\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box dg-accent\"/><text x=\"279\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Push</text><text x=\"279\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">weights</text><text x=\"279\" y=\"116\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">to clients</text><rect x=\"348\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"391\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Better</text><text x=\"391\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">signal</text><rect x=\"460\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"503\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Change</text><text x=\"503\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">the</text><text x=\"503\" y=\"90.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">subset</text><path d=\"M98,68.5 L124,68.5\" class=\"dg-line\" marker-end=\"url(#dg-lb-ex-a)\"/><path d=\"M210,68.5 L236,68.5\" class=\"dg-line\" marker-end=\"url(#dg-lb-ex-a)\"/><path d=\"M322,68.5 L348,68.5\" class=\"dg-line\" marker-end=\"url(#dg-lb-ex-a)\"/><path d=\"M434,68.5 L460,68.5\" class=\"dg-line\" marker-end=\"url(#dg-lb-ex-a)\"/><text x=\"280\" y=\"143\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">A better signal and smaller subsets even the load.</text></svg>"
     },
-    "mistakesOutcome": "After this you can avoid the three most common ways load balancing goes wrong.",
+    "mistakesOutcome": "After this you can avoid three ways load balancing goes wrong.",
     "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
     "quiz": [
       {
@@ -394,7 +394,7 @@
         "level": "design",
         "prompt": "Design a load balancer for a service with tens of thousands of callers and a few thousand servers.",
         "answer": "Give each caller a bounded random subset, collect load reports in a central service, turn them into weights or subset sizes, and push those out. Clients do weighted round-robin within their subset. Keep the logic central so it can change in minutes, and handle missing reports, restarts and new servers explicitly.",
-        "tradeoffs": "Central logic is easy to change but adds a dependency and a few seconds of lag; per-client logic reacts faster but takes months to roll out.",
+        "tradeoffs": "Central logic is easy to change but adds a dependency and a few seconds of lag; changes in clients can take months to roll out.",
         "wrongAnswers": [
           "Full mesh between every caller and server.",
           "Logic that only lives in clients and needs every client to redeploy.",

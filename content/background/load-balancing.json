@@ -1,6 +1,6 @@
 {
   "topic": "load-balancing",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "tcp-connections",
@@ -18,7 +18,7 @@
           "publisher": "MDN Web Docs",
           "url": "https://developer.mozilla.org/en-US/docs/Glossary/TCP",
           "year": "page shows last updated 2025-07-11",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -38,7 +38,7 @@
           "publisher": "MDN Web Docs",
           "url": "https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Transport_Layer_Security",
           "year": "page shows last updated 2026-02-28",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -58,7 +58,7 @@
           "publisher": "F5 (NGINX)",
           "url": "https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -69,7 +69,7 @@
       "assumedBy": [
         {
           "postId": "uber-dynamic-subsetting-2022",
-          "quote": "Use the URIs of the backend task pools from the traffic assignment to get the latest task placement from discovery service Perform load balancing between available backend tasks The proxy is a shared resource by all the backend tasks running on the same host."
+          "quote": "This system interfaces with cluster management to keep the most up-to-date information about the service backend tasks."
         },
         {
           "postId": "dropbox-robinhood-2024",
@@ -82,14 +82,14 @@
           "publisher": "HashiCorp",
           "url": "https://developer.hashicorp.com/consul/docs/use-case/service-discovery",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
     {
       "id": "eventual-consistency",
       "name": "Eventual consistency",
-      "explanation": "Strong consistency means every read sees the latest write; eventual consistency means the copies agree after a delay. The gist is enough here.",
+      "explanation": "Strong consistency means every read sees the latest write; eventual consistency means the copies agree after a delay.",
       "assumedBy": [
         {
           "postId": "dropbox-robinhood-2024",

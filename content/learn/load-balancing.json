@@ -1,6 +1,6 @@
 {
   "slug": "load-balancing",
-  "promise": "After this you can follow the topic page and the posts.",
+  "promise": "After this you can explain what a load balancer does, how it picks a backend, and why it needs health checks.",
   "before": {
     "prerequisites": [
       "dns"
@@ -26,7 +26,7 @@
       "id": "basics",
       "name": "Basics",
       "body": [
-        "One server can only handle so many requests before it slows down or falls over. F5's NGINX documentation describes load balancing across multiple application instances as a common technique for optimising resource utilisation, maximising throughput, reducing latency and improving fault tolerance [[nginx-lb]]. A load balancer is the server that sits in front of a group of backends and spreads incoming requests across them, so no single machine is overwhelmed.",
+        "One server can only handle so many requests before it slows down or falls over. F5's NGINX documentation gives resource use, throughput, latency and fault tolerance as the reasons to balance load across several instances of an application [[nginx-lb]]. A load balancer is the server that sits in front of a group of backends and spreads incoming requests across them, so no single machine is overwhelmed.",
         "The second job is just as important: availability. F5's glossary says load balancers are used to distribute capacity during peak traffic and to increase reliability of applications [[nginx-glossary]]. HAProxy's guide describes the mechanism: only valid servers are used, and the others are automatically evicted from the load balancing farm [[haproxy-intro]].",
         "Because the load balancer is the invisible facilitator between users and the server group, as the glossary puts it, clients do not need to know how many servers there are [[nginx-glossary]]. You can add or remove backends behind it without clients noticing, which is the foundation for scaling horizontally."
       ],
@@ -74,7 +74,7 @@
       "id": "how",
       "name": "How it works",
       "body": [
-        "When a request arrives, the load balancer picks a backend using a method. NGINX lists algorithms ranging from basic Round Robin to Least Connections, Least Time and hashing-based methods. Least Connections passes a request to the server with the smallest number of active connections [[nginx-lb]].",
+        "When a request arrives, the load balancer picks a backend using a method. NGINX lists algorithms ranging from basic Round Robin to Least Connections, Least Time and hashing-based methods (some of these, such as Least Time and Random, are NGINX Plus features). Least Connections passes a request to the server with the smallest number of active connections [[nginx-lb]].",
         "Not all backends are equal, so a backend can be given a weight. NGINX's example gives one server weight=5 so it receives a larger share of requests than a server with the default weight, and says several methods, including Round Robin, Least Connections and Random, support server weights [[nginx-lb]].",
         "The load balancer only sends traffic to backends it believes are healthy. HAProxy's guide describes health checks: periodic probes to ensure a component is still operational. It says the probes must be representative of the failure, since a ping will not notice that a web server has stopped listening on its port, while a connection to the port will, and a more advanced request can even check that the database it relies on is reachable [[haproxy-intro]].",
         "Load balancing happens at different layers. HAProxy's guide describes a packet-level kind, called layer 4, that is very fast but provides almost no content awareness, and a layer 7 kind, performed by proxies, that reassembles the session and can act on its contents, at the cost of extra processing [[haproxy-intro]]. NGINX documents its HTTP load balancing as Layer 7 and points to separate pages for Layer 4 TCP and UDP balancing [[nginx-lb]]."
@@ -173,9 +173,9 @@
       "id": "practice",
       "name": "In practice and trade-offs",
       "body": [
-        "Choosing a method is a trade-off. Round robin is simple and even when requests cost about the same, but it ignores that some requests are far heavier than others. Least connections adapts to uneven request costs but needs the balancer to track live state, and NGINX notes that with several worker processes its counters need a shared memory zone to work as expected [[nginx-lb]]. A hash keeps a client on one backend, which helps caches on that backend stay warm, but it rebalances poorly when backends are added or removed, as the HAProxy guide's source-address example shows [[haproxy-intro]].",
+        "Choosing a method is a trade-off. Round robin is simple and even when requests cost about the same, but it ignores that some requests are far heavier than others. Least connections adapts to uneven request costs but needs the balancer to track live state, and NGINX notes that without a shared memory zone each worker process keeps its own counters of connections to each server [[nginx-lb]]. A hash keeps a client on one backend, but it rebalances poorly when backends are added or removed, as the HAProxy guide's source-address example shows [[haproxy-intro]].",
         "That last problem, how a hash reshuffles when the pool changes, is exactly what the Consistent Hashing topic solves, which is why it sits right after this one. For now the lesson is that plain hashing by backend count is fragile when the count changes.",
-        "Layer 7 balancing enables more than routing. Because it works on the content of requests, it can use a cookie or other element to pick a server, and HAProxy's guide calls that the strongest reason to adopt a layer 7 balancer instead of a layer 4 one [[haproxy-intro]]. Layer 7 balancers are also where retries happen: RFC 9110 says idempotent methods are distinguished because the request can be repeated automatically if a communication failure occurs before the client reads the response [[rfc9110]]."
+        "Layer 7 balancing enables more than routing. Because it works on the content of requests, it can use a cookie or other element to pick a server, and HAProxy's guide calls that the strongest reason to adopt a layer 7 balancer instead of a layer 4 one [[haproxy-intro]]. Retries matter here too: RFC 9110 says idempotent methods are distinguished because the request can be repeated automatically if a communication failure occurs before the client reads the response [[rfc9110]]."
       ],
       "terms": [
         {
@@ -262,7 +262,7 @@
       "publisher": "F5 NGINX",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "nginx-glossary",
@@ -271,7 +271,7 @@
       "publisher": "F5 NGINX",
       "kind": "Vendor documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "haproxy-intro",
@@ -280,7 +280,7 @@
       "publisher": "HAProxy Technologies",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The HAProxy 3.2 (LTS) starter guide."
     },
     {
@@ -290,7 +290,7 @@
       "publisher": "IETF",
       "kind": "Internet standard",
       "year": "2022",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The RFC shows its date as June 2022. It replaces RFC 7231, which an earlier version of this page cited."
     },
     {
@@ -300,7 +300,7 @@
       "publisher": "Internet Systems Consortium (BIND 9)",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The dig section documents the syntax dig @server name type and the +short option."
     },
     {
@@ -310,7 +310,7 @@
       "publisher": "curl project",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     }
   ]
 }
