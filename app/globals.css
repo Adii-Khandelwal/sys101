@@ -72,6 +72,15 @@ h3 {
   margin: 0;
 }
 
+/* Tracking follows size: the larger the type, the tighter. */
+h1 {
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  letter-spacing: -0.015em;
+}
+
 /* No single-word last lines in running text; headings and the lead lines break evenly. Ignored where unsupported. */
 p,
 li,
