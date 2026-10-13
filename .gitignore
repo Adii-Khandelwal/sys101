@@ -11,3 +11,5 @@ next-env.d.ts
 public/pagefind
 .next-search
 .kiro
+docs/audit/design/
+.next-analyze
