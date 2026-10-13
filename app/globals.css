@@ -3258,8 +3258,9 @@ html[data-posts-view] .posts-view-h {
   .posts-search { flex-basis: 100%; }
 }
 
-/* Contents rail: desktop only, in the left margin, one list per view (the script shows the chosen one). */
-.posts-rail {
+/* Contents rail: desktop only, in the left margin, one list per view (the script shows the chosen one).
+   .dossier nav makes navs a flex row, so this needs the same weight to stay hidden below 1180px. */
+.dossier .posts-rail {
   display: none;
 }
 @media (min-width: 1180px) {
