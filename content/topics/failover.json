@@ -91,20 +91,20 @@
         },
         {
           "step": "Fence and redirect",
-          "explanation": "The old primary is fenced so it cannot accept writes if it returns, and the new primary's identity is published to a proxy layer. Clients, which only ever knew a name routed through the proxy, now reach the new primary without a DNS wait."
+          "explanation": "The old primary should be fenced so it cannot accept writes if it returns (GitHub sets it read-only when it can, and says a short period of split-brain is still possible in a data center isolation), and the new primary's identity is published to a proxy layer. Clients, which only ever knew a name routed through the proxy, now reach the new primary without a DNS wait."
         },
         {
           "step": "Measure the outage",
-          "explanation": "From detection to clients writing again is on the order of ten seconds, not minutes, because detection is quorum-based and redirection is through a controlled proxy rather than DNS TTL expiry."
+          "explanation": "In GitHub's design, which promotes through a raft leader and redirects through a proxy instead of DNS, total outage was 10 to 13 seconds in most cases, not minutes."
         },
         {
           "step": "A slow network, not a death",
           "explanation": "If instead the primary were merely slow for two seconds, requiring agreement across observers prevents a needless failover, avoiding the self-inflicted outage of promoting while the real primary is still alive."
         }
       ],
-      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-fo-ex-t\" class=\"dg\"><title id=\"dg-c-fo-ex-t\">A MySQL primary failure: the monitor and replicas agree the primary is unreachable, a consensus-backed controller promotes the most up-to-date replica, fences the old primary, and publishes the new primary to a proxy so clients reconnect in seconds without a DNS wait.</title><defs><marker id=\"dg-c-fo-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"40\" width=\"120\" height=\"38\" class=\"dg-box\" opacity=\"0.5\"/><text x=\"80\" y=\"63.5\" class=\"dg-label\" text-anchor=\"middle\">primary (dead)</text><rect x=\"20\" y=\"100\" width=\"120\" height=\"34\" class=\"dg-box dg-accent\"/><text x=\"80\" y=\"121.5\" class=\"dg-label\" text-anchor=\"middle\">replica (ahead)</text><rect x=\"20\" y=\"144\" width=\"120\" height=\"34\" class=\"dg-box\"/><text x=\"80\" y=\"165.5\" class=\"dg-label\" text-anchor=\"middle\">replica (behind)</text><rect x=\"210\" y=\"90\" width=\"130\" height=\"50\" class=\"dg-box\"/><text x=\"275\" y=\"110\" class=\"dg-label\" text-anchor=\"middle\">controller</text><text x=\"275\" y=\"127\" class=\"dg-label\" text-anchor=\"middle\">(consensus)</text><path d=\"M140,112 L210,114\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-ex-a)\"/><text x=\"175\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\">all agree: dead</text><path d=\"M275,140 L120,170 L140,160\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-ex-a)\"/><text x=\"275\" y=\"160\" class=\"dg-note\" text-anchor=\"middle\">promote the ahead replica</text><rect x=\"410\" y=\"90\" width=\"120\" height=\"50\" class=\"dg-box\"/><text x=\"470\" y=\"110\" class=\"dg-label\" text-anchor=\"middle\">proxy</text><text x=\"470\" y=\"127\" class=\"dg-label\" text-anchor=\"middle\">clients</text><path d=\"M340,115 L410,115\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-ex-a)\"/><text x=\"375\" y=\"107\" class=\"dg-note\" text-anchor=\"middle\">publish new primary</text><text x=\"280\" y=\"214\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">~10 seconds to recover: quorum detection + proxy redirect, no DNS wait</text><text x=\"280\" y=\"244\" class=\"dg-note\" text-anchor=\"middle\">fencing stops the old primary taking writes; a 2s slow blip triggers nothing</text></svg>"
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-fo-ex-t\" class=\"dg\"><title id=\"dg-c-fo-ex-t\">A MySQL primary failure: the monitor and replicas agree the primary is unreachable, a consensus-backed controller promotes the most up-to-date replica, fences the old primary, and publishes the new primary to a proxy so clients reconnect in seconds without a DNS wait.</title><defs><marker id=\"dg-c-fo-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"40\" width=\"120\" height=\"38\" class=\"dg-box\" opacity=\"0.5\"/><text x=\"80\" y=\"63.5\" class=\"dg-label\" text-anchor=\"middle\">primary (dead)</text><rect x=\"20\" y=\"100\" width=\"120\" height=\"34\" class=\"dg-box dg-accent\"/><text x=\"80\" y=\"121.5\" class=\"dg-label\" text-anchor=\"middle\">replica (ahead)</text><rect x=\"20\" y=\"144\" width=\"120\" height=\"34\" class=\"dg-box\"/><text x=\"80\" y=\"165.5\" class=\"dg-label\" text-anchor=\"middle\">replica (behind)</text><rect x=\"210\" y=\"90\" width=\"130\" height=\"50\" class=\"dg-box\"/><text x=\"275\" y=\"110\" class=\"dg-label\" text-anchor=\"middle\">controller</text><text x=\"275\" y=\"127\" class=\"dg-label\" text-anchor=\"middle\">(consensus)</text><path d=\"M140,112 L210,114\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-ex-a)\"/><text x=\"175\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\">all agree: dead</text><path d=\"M275,140 L120,170 L140,160\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-ex-a)\"/><text x=\"275\" y=\"160\" class=\"dg-note\" text-anchor=\"middle\">promote the ahead replica</text><rect x=\"410\" y=\"90\" width=\"120\" height=\"50\" class=\"dg-box\"/><text x=\"470\" y=\"110\" class=\"dg-label\" text-anchor=\"middle\">proxy</text><text x=\"470\" y=\"127\" class=\"dg-label\" text-anchor=\"middle\">clients</text><path d=\"M340,115 L410,115\" class=\"dg-line\" marker-end=\"url(#dg-c-fo-ex-a)\"/><text x=\"375\" y=\"107\" class=\"dg-note\" text-anchor=\"middle\">publish new primary</text><text x=\"280\" y=\"214\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">GitHub: 10 to 13 seconds in most cases, no DNS wait</text><text x=\"280\" y=\"244\" class=\"dg-note\" text-anchor=\"middle\">fencing stops the old primary taking writes; a 2s slow blip triggers nothing</text></svg>"
     },
-    "mistakesOutcome": "After this you can avoid the three most common failover mistakes.",
+    "mistakesOutcome": "After this you can spot three failover mistakes.",
     "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
     "quiz": [
       {
@@ -256,7 +256,7 @@
       "title": "MySQL High Availability at GitHub",
       "url": "https://github.blog/engineering/infrastructure/mysql-high-availability-at-github/",
       "company": "GitHub",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2018-06-20",
       "ageNote": "From June 2018 (the page also shows an update in May 2020), about eight years old, included for a fundamental that has not changed: how to fail a single-writer database over in seconds by detecting failure holistically, promoting with consensus, and redirecting clients through a controlled layer instead of DNS. GitHub's exact stack has evolved since, so treat the figures (such as 10 to 13 seconds) as of the post and the detect-promote-redirect design as the lasting lesson.",
       "related": [
@@ -309,8 +309,8 @@
           "rejected": "The earlier VIP-and-DNS discovery, which risked split-brain on VIP reassignment, wasted time contacting the dead primary, and left clients waiting on DNS time-to-live.",
           "why": "VIP and DNS tied failover speed to cache expiry and to co-locating servers, and could leave two hosts claiming one VIP. Moving discovery into Consul fed by orchestrator/raft lets GitHub fail over across data centers without a DNS wait and with a single agreed decision, bringing most failovers to 10 to 13 seconds."
         },
-        "failures": "The post is candid about the old design's failure modes it set out to kill: VIP reassignment split-brain, the wasted step of asking a dead primary to release its VIP, and DNS TTL delaying client cutover, with cross-DC failover especially slow. The new design still has limits it names, including that failover is not instantaneous and that split-brain mitigation is partly still in the works.",
-        "takeaways": "Fast database failover is three problems, not one: detect without false positives (corroborate across replicas), decide once (consensus-backed promotion), and redirect without waiting on caches (a proxy fed by service discovery, not DNS). Doing all three is what takes GitHub's outage window down to around ten seconds, and it is why failover leans on both replication and consensus."
+        "failures": "The post is candid about the old design's failure modes it set out to kill: VIP reassignment split-brain, the wasted step of asking a dead primary to release its VIP, and DNS TTL delaying client cutover, with cross-DC failover especially slow. The new design still has limits it names: the proxy hides the application's identity from the primary, a data center isolation can leave a short period of split-brain until a planned STONITH is in place, and a Consul outage during a failover is an unhandled scenario.",
+        "takeaways": "Fast database failover is three problems, not one: detect without false positives (corroborate across replicas), decide once (consensus-backed promotion), and redirect without waiting on caches (a proxy fed by service discovery, not DNS). GitHub's setup does all three and reports 10 to 13 seconds of total outage in most cases; our own reading is that this is why failover leans on both replication and consensus."
       }
     },
     {
@@ -318,7 +318,7 @@
       "title": "Static stability using Availability Zones",
       "url": "https://aws.amazon.com/builders-library/static-stability-using-availability-zones/",
       "company": "Amazon Web Services (Builders' Library)",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "no date shown",
       "edition": "date unknown",
       "related": [
@@ -375,7 +375,7 @@
           "rejected": "Deploying across several zones and scaling up in the surviving zones after an impairment, which the article calls less effective because it relies on reacting as impairments happen.",
           "why": "The article says a reactive design takes an immediate dependency for its recovery path on the EC2 control plane and on application-specific steps, and that control plane systems are more complex and more likely to misbehave when the overall system is impaired. A service that already has the capacity needs none of that at the moment of failure."
         },
-        "failures": "The article gives no incident or failure account of its own. It names a failure mode it designs around: gray failures, such as software bugs that a load balancer cannot see in its health check, which is one reason it keeps foundational services zonal. It also states the costs of its choices: additional complexity, for example managing zonal rather than regional service environments, or running multiple NAT gateways and route tables per zone, and capacity that is paid for before it is needed.",
+        "failures": "The article gives no incident or failure account of its own. It names a failure mode it designs around: gray failures, such as software bugs that a load balancer cannot see in its health check, which is one reason it keeps foundational services zonal. It also states the costs of its choices: additional complexity, for example managing zonal rather than regional service environments, or running multiple NAT gateways and route tables per zone, and states the 50 percent overprovision without discussing what that spare capacity costs.",
         "takeaways": "The best recovery step is one that does not have to happen. By holding spare capacity in other zones, a stateless service can lose a zone without launching anything, and a stateful service can promote a standby that already exists. The article's own summary is that the key to static stability is to anticipate impairments before they happen."
       }
     }

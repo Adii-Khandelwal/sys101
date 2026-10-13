@@ -1,6 +1,6 @@
 {
   "topic": "failover",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "virtual-ip-arp",
@@ -18,7 +18,7 @@
           "publisher": "IETF",
           "url": "https://www.rfc-editor.org/rfc/rfc826.html",
           "year": "1982",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -38,7 +38,7 @@
           "publisher": "HAProxy",
           "url": "https://www.haproxy.org/",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -58,7 +58,7 @@
           "publisher": "Amazon Web Services",
           "url": "https://docs.aws.amazon.com/autoscaling/ec2/userguide/auto-scaling-groups.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -78,7 +78,7 @@
           "publisher": "Amazon Web Services",
           "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -98,7 +98,7 @@
           "publisher": "Amazon Web Services",
           "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     }
