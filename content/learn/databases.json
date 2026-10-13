@@ -26,7 +26,7 @@
       "body": [
         "A database is a program whose whole job is to store data safely and answer questions about it, so your application does not have to. Instead of writing files by hand and hoping nothing is lost, you hand the data to the database and ask it questions. PostgreSQL describes itself as a relational database management system: data is stored in relations, which is essentially a mathematical term for tables, and each table is a named collection of rows with the same set of named columns [[pg-concepts]].",
         "The reason a database is more than a file is a promise about correctness. SQLite says a transactional database is one in which all changes and queries appear to be atomic, consistent, isolated and durable (ACID), and that all changes within a single transaction either occur completely or not at all, even if the write to disk is interrupted by a program crash, an operating system crash or a power failure [[sqlite-transactional]].",
-        "A real database is built from a few cooperating parts. SQLite's architecture page describes it as compiling SQL text into bytecode and then running that bytecode on a virtual machine, with a tokenizer, a parser and a code generator in front, and storage components such as a B-tree and a pager behind [[sqlite-arch]]. Reading how these parts fit together is a good way to stop treating the database as a black box."
+        "A real database is built from a few cooperating parts. SQLite's architecture page describes it as compiling SQL text into bytecode and then running that bytecode on a virtual machine, with a tokenizer, a parser and a code generator in front, and storage components such as a B-tree and a page cache behind [[sqlite-arch]]. Reading how these parts fit together is a good way to stop treating the database as a black box."
       ],
       "terms": [
         {
@@ -78,8 +78,8 @@
       "name": "How it works",
       "body": [
         "When you send a query, the database first parses it into a form it understands, then plans how to run it, then executes that plan against the stored data. In SQLite the documentation lays this out as a pipeline: the tokenizer and parser give the SQL text meaning, the code generator turns the parse tree into bytecode, and a virtual machine runs that bytecode [[sqlite-arch]].",
-        "The data itself is kept on disk in files and read through layers. SQLite's architecture page lists a B-tree layer, a pager that handles reading and writing pages of the database file, and an operating-system interface beneath them [[sqlite-arch]]. Databases generally keep recently used pages in memory so that common reads do not touch the disk; getting a change safely onto disk is the hard part the database handles for you.",
-        "To keep a transaction all-or-nothing even across a crash, SQLite in its default rollback mode creates a rollback journal file before it changes the database file, and if the program dies partway through, a hot rollback journal is used the next time to roll back the incomplete changes so the database continues as if the uncompleted writes had never happened [[sqlite-atomic-commit]].",
+        "The data itself is kept on disk in files and read through layers. SQLite's architecture page lists a B-tree layer, a page cache that handles reading, writing and caching pages of the database file, and an operating-system interface beneath them [[sqlite-arch]]. Databases generally keep recently used pages in memory so that common reads do not touch the disk; getting a change safely onto disk is the hard part the database handles for you.",
+        "To keep a transaction all-or-nothing even across a crash, SQLite in rollback mode (the page's name for when it is not using a write-ahead log) creates a rollback journal file before it changes the database file, and if the program dies partway through, a hot rollback journal is used the next time to roll back the incomplete changes so the database continues as if the uncompleted writes had never happened [[sqlite-atomic-commit]]. A write-ahead log works the other way round. PostgreSQL's documentation says changes to data files must be written only after the WAL records describing them have been flushed to permanent storage, so after a crash any changes not yet applied to the data pages can be redone from the log [[pg-wal]].",
         "A transaction is meant to have four properties together, known as ACID: atomic (all or nothing), consistent (it leaves the data valid), isolated (concurrent transactions do not interfere), and durable (once committed, it survives a crash) [[sqlite-transactional]]. The isolation part is the subtle one, and it is the subject of the next stage."
       ],
       "terms": [
@@ -111,7 +111,7 @@
       "reading": [
         {
           "source": "sqlite-arch",
-          "section": "Overview, Tokenizer, Parser, Code Generator, and the B-Tree and Pager sections",
+          "section": "Overview, Tokenizer, Parser, Code Generator, and the B-Tree and Page Cache sections",
           "what": "The parts a query passes through, from parsing to reading pages off the disk."
         },
         {
@@ -123,6 +123,11 @@
           "source": "sqlite-transactional",
           "section": "SQLite is Transactional",
           "what": "The four ACID properties, stated for SQLite."
+        },
+        {
+          "source": "pg-wal",
+          "section": "28.3. Write-Ahead Logging (WAL)",
+          "what": "What write-ahead logging is, and how a crash is recovered by redoing changes from the log."
         }
       ],
       "canNow": [
@@ -136,7 +141,7 @@
       "id": "deeper",
       "name": "Going deeper",
       "body": [
-        "When many transactions run at once, they can step on each other: one reads a half-finished change from another, or two reads of the same row inside one transaction disagree. The database controls this with isolation levels, which trade strictness for speed. The SQL standard names four levels and defines them by which anomalies they forbid, such as dirty reads and phantom reads [[pg-iso]].",
+        "When many transactions run at once, they can step on each other: one reads a half-finished change from another, or two reads of the same row inside one transaction disagree. The database controls this with isolation levels: stricter levels forbid more of these anomalies, but applications may have to retry transactions. The SQL standard names four levels and defines them by which anomalies they forbid, such as dirty reads and phantom reads [[pg-iso]].",
         "The old way to isolate transactions was locking: block anyone from touching a row you are using. PostgreSQL's page describes the alternative, a multiversion model (MVCC) in which each SQL statement sees a snapshot of the data as it was some time ago, and says that with MVCC locks acquired for reading do not conflict with locks acquired for writing, so reading never blocks writing and writing never blocks reading [[pg-mvcc]].",
         "The important and surprising point is that the top isolation level is not the default. PostgreSQL says Read Committed is its default isolation level, and that applications using Repeatable Read must be prepared to retry transactions due to serialization failures. Picking a level is a real trade-off, not a setting you can leave on maximum for free [[pg-iso]]."
       ],
@@ -155,7 +160,7 @@
         },
         {
           "term": "Snapshot",
-          "definition": "A consistent view of the data as it stood at one moment, used for the length of a transaction."
+          "definition": "A consistent view of the data as it stood at one moment. In PostgreSQL's default level a new one is taken for each query; at Repeatable Read, one for the whole transaction."
         },
         {
           "term": "Serializable",
@@ -184,9 +189,9 @@
       "id": "practice",
       "name": "In practice and trade-offs",
       "body": [
-        "The practical levers on a single-machine database are the ones from the last stage: pick an isolation level that matches how much concurrency anomaly you can tolerate, and let MVCC or locking do the rest. PostgreSQL lists the phenomena each level prevents, such as dirty reads and phantom reads, and notes that stricter levels leave applications to retry on serialization failures, which is why the default is a middle level [[pg-iso]].",
+        "On a single-machine database you can pick an isolation level that matches which concurrency anomalies you can tolerate. PostgreSQL lists the phenomena each level prevents, such as dirty reads and phantom reads, and notes that applications using Repeatable Read must be prepared to retry on serialization failures. Its default is Read Committed [[pg-iso]].",
         "Isolation also shows up in how you write transactions. PostgreSQL's tutorial treats a transaction as a group of statements surrounded by BEGIN and COMMIT, with ROLLBACK available to cancel all the updates so far, and says every statement outside a BEGIN is treated as its own transaction [[pg-transactions]].",
-        "These single-node ideas are the foundation for everything later on the map. The moment data no longer fits on one machine, it has to be copied and split, and replication, sharding and consistent hashing are all about keeping these same transaction and isolation promises once there is more than one copy and more than one machine."
+        "Our own framing, not from a cited source: these single-node ideas are the starting point for the later topics, where data is copied or split across more than one machine, such as replication and sharding."
       ],
       "terms": [
         {
@@ -244,7 +249,7 @@
     }
   ],
   "tryIt": {
-    "intro": "These use psql, the terminal client that ships with PostgreSQL. The statements and the table name accounts come from the PostgreSQL transactions tutorial, and tenk1 is the example table on the EXPLAIN page, so use a table of your own for EXPLAIN. Output depends on your data, so it is not shown here.",
+    "intro": "These are SQL statements for a PostgreSQL database; run them in the SQL client you use. The statements and the table name accounts come from the PostgreSQL transactions tutorial, and tenk1 is the example table on the EXPLAIN page, so use a table of your own for EXPLAIN. Output depends on your data, so it is not shown here.",
     "commands": [
       {
         "command": "BEGIN;",
@@ -279,7 +284,7 @@
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The page shown was the PostgreSQL 18 documentation, the \"current\" version when opened."
     },
     {
@@ -289,7 +294,7 @@
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "pg-iso",
@@ -298,7 +303,7 @@
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "sqlite-arch",
@@ -307,7 +312,7 @@
       "publisher": "SQLite",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "sqlite-transactional",
@@ -316,7 +321,7 @@
       "publisher": "SQLite",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "cmu15445",
@@ -335,7 +340,7 @@
       "publisher": "SQLite",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "pg-transactions",
@@ -344,7 +349,7 @@
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "pg-explain",
@@ -353,7 +358,17 @@
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
+    },
+    {
+      "id": "pg-wal",
+      "title": "PostgreSQL Documentation: Write-Ahead Logging (WAL)",
+      "url": "https://www.postgresql.org/docs/current/wal-intro.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-13",
+      "note": "The page shown was the PostgreSQL 18 documentation, the 'current' version when opened."
     }
   ]
 }
