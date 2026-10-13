@@ -2259,7 +2259,7 @@ button:active:not(:disabled),
 }
 
 ::view-transition-new(root) {
-  animation: vt-in var(--dur-slow) var(--ease-out) both;
+  animation: vt-in var(--dur-fast) var(--ease-out) both;
 }
 
 @keyframes vt-out {
@@ -2271,7 +2271,6 @@ button:active:not(:disabled),
 @keyframes vt-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
 }
 
