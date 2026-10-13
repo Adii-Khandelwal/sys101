@@ -72,6 +72,24 @@ h3 {
   margin: 0;
 }
 
+/* No single-word last lines in running text; headings and the lead lines break evenly. Ignored where unsupported. */
+p,
+li,
+dd,
+blockquote {
+  text-wrap: pretty;
+}
+
+h1,
+h2,
+h3,
+.concept,
+.outcome,
+.posts-lead,
+.background-lead {
+  text-wrap: balance;
+}
+
 /* Room above headings reached through a search result's #anchor. */
 [id] {
   scroll-margin-top: 32px;
