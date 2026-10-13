@@ -5,10 +5,10 @@ export const INK_SOFT = "#5c5346";
 export const EDGE = "#8a7f6c";
 export const PAPER = "#f3ecdc";
 export const ACCENT = "#9a3b1f";
-export const ACCENT_DARK = "#7a2c15";
+const ACCENT_DARK = "#7a2c15";
 
 /** Unrelated nodes and edges keep 60% of their colour while a node is highlighted. */
-export const FADE = 0.6;
+const FADE = 0.6;
 /** Faded labels use the secondary ink, which keeps WCAG AA contrast on the paper colour. */
 export const FADED_LABEL = INK_SOFT;
 
@@ -90,7 +90,12 @@ export function highlightSet(node: string, edges: { from: string; to: string }[]
   const stack = [node];
   while (stack.length) {
     const n = stack.pop()!;
-    for (const e of edges) if (e.to === n && !keep.has(e.from)) keep.add(e.from), stack.push(e.from);
+    for (const e of edges) {
+      if (e.to === n && !keep.has(e.from)) {
+        keep.add(e.from);
+        stack.push(e.from);
+      }
+    }
   }
   for (const e of edges) if (e.from === node) keep.add(e.to);
   return keep;
@@ -156,7 +161,7 @@ export function placeTooltip(
 
 
 type LabelNode = { x: number; y: number; r: number };
-export type LabelSpot = { x: number; y: number };
+type LabelSpot = { x: number; y: number };
 
 /**
  * Where a group label may sit, best first. Every label is placed the same way, relative to its

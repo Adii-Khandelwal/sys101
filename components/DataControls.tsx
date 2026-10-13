@@ -4,11 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { inProgressSlugs, replaceProgress, useAllProgress } from "@/lib/progress";
 import {
   deriveRead,
-  diffSummary,
-  emptyProgress,
   exportFile,
   exportName,
-  mergeProgress,
+  planImport,
   resetAll,
   resetTopic,
   summary,
@@ -71,22 +69,7 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
     setMessage("");
   };
 
-  // What applying the pending file would produce, in the chosen mode.
-  const plan = (p: Pending, m: "merge" | "replace") => {
-    const base = corrupt ? emptyProgress() : progress;
-    const next = m === "merge" ? mergeProgress(base, p.progress) : p.progress;
-    const nextRead = deriveRead(m === "merge" ? [...read, ...p.read] : p.read, next, topics);
-    const dates =
-      m === "merge"
-        ? Object.fromEntries(
-            [...new Set([...Object.keys(updated), ...Object.keys(p.updated)])].map((s) => [
-              s,
-              [updated[s], p.updated[s]].filter(Boolean).sort().pop()!,
-            ]),
-          )
-        : p.updated;
-    return { next, nextRead, dates, diff: diffSummary(base, next, topics) };
-  };
+  const plan = (p: Pending, m: "merge" | "replace") => planImport({ progress, read, updated, corrupt }, p, m, topics);
 
   const apply = () => {
     if (!pending) return;

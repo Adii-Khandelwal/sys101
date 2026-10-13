@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type KeyboardEvent } from "react";
+import { useState } from "react";
 import { raceLast, raceState, type RaceInputs } from "@/lib/fillRace";
 import type { FigureText } from "@/lib/figures";
-import { FigureFrame, Solid } from "./parts";
+import { FigureFrame, Solid, StepControls, stepKeys } from "./parts";
 import type { RaceGeometry } from "./fillRace/geometry";
 
 const px = ([x, y]: [number, number]) => `translate(${x}px, ${y}px)`;
@@ -16,11 +16,6 @@ export default function FillRaceLive({ uid, geo, inputs, text }: { uid: string; 
   const last = raceLast({ guard, evict });
   const at = Math.min(step, last);
   const s = raceState(inputs, { guard, evict }, at);
-
-  const onKey = (e: KeyboardEvent<HTMLElement>) => {
-    if (e.key === "ArrowRight") setStep(Math.min(at + 1, last));
-    else if (e.key === "ArrowLeft") setStep(Math.max(at - 1, 0));
-  };
 
   const svg = (
     <>
@@ -56,7 +51,7 @@ export default function FillRaceLive({ uid, geo, inputs, text }: { uid: string; 
       description={text.description}
       legend={text.legend}
       caption={text.caption}
-      onKeyDown={onKey}
+      onKeyDown={stepKeys(at, last, setStep)}
       svg={svg}
       readout={
         <>
@@ -68,23 +63,14 @@ export default function FillRaceLive({ uid, geo, inputs, text }: { uid: string; 
         </>
       }
       controls={
-        <>
-          <button type="button" className="text-button" disabled={at === 0} onClick={() => setStep(at - 1)}>
-            Back
-          </button>
-          <button type="button" className="text-button" disabled={at === last} onClick={() => setStep(at + 1)}>
-            Next step
-          </button>
+        <StepControls step={at} last={last} setStep={setStep} reset={() => (setStep(0), setGuard(false), setEvict(false))}>
           <button type="button" className="text-button" aria-pressed={guard} onClick={() => (setGuard(!guard), setStep(0))}>
             Version guard: {guard ? "on" : "off"}
           </button>
           <button type="button" className="text-button" aria-pressed={evict} onClick={() => (setEvict(!evict), setStep(0))}>
             Entry evicted first: {evict ? "on" : "off"}
           </button>
-          <button type="button" className="text-button" onClick={() => (setStep(0), setGuard(false), setEvict(false))}>
-            Reset
-          </button>
-        </>
+        </StepControls>
       }
     />
   );

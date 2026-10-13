@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import type { Box } from "./scene";
 
 /** A box's three visible faces, back to front. */
@@ -45,5 +45,29 @@ export function FigureFrame({ uid, viewBox, title, description, legend, caption,
       <p className="fig-desc">{description}</p>
       <figcaption>{caption}</figcaption>
     </figure>
+  );
+}
+
+/** Left and right arrows move a stepper figure one step. */
+export const stepKeys = (step: number, last: number, setStep: (n: number) => void) => (e: KeyboardEvent<HTMLElement>) => {
+  if (e.key === "ArrowRight") setStep(Math.min(step + 1, last));
+  else if (e.key === "ArrowLeft") setStep(Math.max(step - 1, 0));
+};
+
+/** Back, Next step, any extra switches, then Reset: the controls of every stepper figure. */
+export function StepControls({ step, last, setStep, reset, children }: { step: number; last: number; setStep: (n: number) => void; reset: () => void; children?: ReactNode }) {
+  return (
+    <>
+      <button type="button" className="text-button" disabled={step === 0} onClick={() => setStep(step - 1)}>
+        Back
+      </button>
+      <button type="button" className="text-button" disabled={step === last} onClick={() => setStep(step + 1)}>
+        Next step
+      </button>
+      {children}
+      <button type="button" className="text-button" onClick={reset}>
+        Reset
+      </button>
+    </>
   );
 }

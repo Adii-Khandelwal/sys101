@@ -12,6 +12,7 @@
     "verify:background": "node scripts/verify-background.mjs",
     "check:news": "node scripts/check-news.mjs",
     "check:diagrams": "node scripts/check-diagram-overflow.mjs",
+    "audit:figures": "node scripts/audit-figures.mjs",
     "pipeline:fetch": "node pipeline/fetch-rss.mjs",
     "pipeline:summarize": "node pipeline/summarize.mjs",
     "postbuild": "node scripts/check-news.mjs && node scripts/check-seo.mjs && node scripts/check-diagram-overflow.mjs && pagefind --site .next/server/app --output-path public/pagefind",
@@ -36,7 +37,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
-    "@types/node": "^26.6.5",
+    "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "eslint": "^9.39.5",

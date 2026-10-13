@@ -1,3 +1,4 @@
+// shortcut: parked on purpose for the owner's future goals (docs/ideas.md, "Kept on purpose"); do not delete it in a review.
 // Summarize fetched articles with Gemini Flash and attach them to topics in
 // content/topics/*.json.
 // Usage: GEMINI_API_KEY=... npm run pipeline:summarize

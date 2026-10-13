@@ -142,3 +142,11 @@ Pilot the new topic format on DNS only, and get approval before rolling it out t
 
 - General-knowledge flow: not built. Open decision: where those stories live (a separate section or route) and how topics link to them.
 - LLM pipeline (Gemini Flash) to summarize and compare posts, and alternative views (Tracks, Companies matrix, expandable tree) are described above. The Path view, mobile Path default and weekly link checking are built.
+
+## Kept on purpose
+
+Code the owner keeps for future goals. Reviews and audits must list it as "parked", not as something to delete.
+
+- `pipeline/` (RSS fetch and Gemini summarize stubs) with its two dependencies `@google/genai` and `rss-parser` and the `pipeline:*` scripts: the LLM drafting pipeline, planned.
+- Figure geometry exports used by the anatomy skill's audit (`GAUGE_WORLD`, `BEAD_WORLD`, `PROJECTION`, the spec lists and `auditShapes`): kept so the audit can be re-run.
+- `zoomLevel` (lib/camera.ts) and `optionIds` (lib/quizIds.ts): small helpers with no caller today (the zoom readout was removed); exported so they stay available.

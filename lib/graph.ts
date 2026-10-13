@@ -50,7 +50,7 @@ export function transitiveReduction(edges: Edge[]): Edge[] {
 }
 
 /** A placeholder in a column that a long edge passes through. Never drawn. */
-export type Slot = { slug: string; title: ""; slot: true; edge: string };
+type Slot = { slug: string; title: ""; slot: true; edge: string };
 
 const edgeKey = (e: Edge) => `${e.from}->${e.to}`;
 
@@ -163,7 +163,7 @@ function fewestCrossings<T extends Node>(cols: (T | Slot)[][], feeds: Map<string
   const from = options.map(() => [] as number[]);
   options[0].forEach(() => cost[0].push(0));
   for (let c = 1; c < cols.length; c++) {
-    options[c].forEach((cur, q) => {
+    options[c].forEach((cur) => {
       let bestCost = Infinity;
       let bestFrom = 0;
       options[c - 1].forEach((prev, p) => {

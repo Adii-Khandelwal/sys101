@@ -5,7 +5,7 @@ import path from "node:path";
 // only from official sources (see CLAUDE.md, Learn pages and Official sources).
 
 /** A written official source: a standard, a project's or vendor's docs, or a university's course pages. */
-export type WrittenSource = {
+type WrittenSource = {
   id: string;
   title: string;
   url: string;
@@ -30,7 +30,7 @@ export type VideoSource = WrittenSource & {
 
 export type Source = WrittenSource | VideoSource;
 
-export type Term = { term: string; definition: string };
+type Term = { term: string; definition: string };
 
 /** Where to read: a source id, the specific section, and what to look for in it. */
 export type Reading = { source: string; section: string; what: string };
@@ -81,7 +81,7 @@ export type Learn = {
  */
 export const prerequisiteLabel = (note?: string) => (/\b(do not|don't) need\b/i.test(note ?? "") ? "Later, on the topic page:" : "Read first:");
 
-export const STAGE_NAMES = ["Basics", "How it works", "Going deeper", "In practice and trade-offs"] as const;
+const STAGE_NAMES = ["Basics", "How it works", "Going deeper", "In practice and trade-offs"] as const;
 
 const LEARN_DIR = path.join(process.cwd(), "content", "learn");
 
@@ -89,9 +89,9 @@ const nonEmpty = (v: unknown) => typeof v === "string" && v.trim().length > 0;
 const isVideo = (s: Source): s is VideoSource => s.kind === "video";
 const CITE = /\[\[([a-z0-9-]+)\]\]/g;
 /** Commands that change data or interrupt a running system; each needs a visible warning. */
-export const RISKY_COMMAND = /force-failover|reboot|\bdelete\b|\bdrop\b|truncate|flushall|flushdb|shutdown|terminate|\bkill\b|\bUPDATE\b|\bINSERT\b|\bALTER\b|CONFIG SET|--alter|etcdctl (put|del)|\bSET\b|\bCREATE\b|--create|console-producer|\bPUBLISH\b|\b(INCR|DECR|LPUSH|XADD)\b/i;
+const RISKY_COMMAND = /force-failover|reboot|\bdelete\b|\bdrop\b|truncate|flushall|flushdb|shutdown|terminate|\bkill\b|\bUPDATE\b|\bINSERT\b|\bALTER\b|CONFIG SET|--alter|etcdctl (put|del)|\bSET\b|\bCREATE\b|--create|console-producer|\bPUBLISH\b|\b(INCR|DECR|LPUSH|XADD)\b/i;
 /** A source year is a four-digit year, "no date shown", or "page shows last updated YYYY-MM-DD", and only when the page shows it. */
-export const VALID_SOURCE_YEAR = /^(\d{4}|no date shown|page shows last updated \d{4}-\d{2}-\d{2})$/;
+const VALID_SOURCE_YEAR = /^(\d{4}|no date shown|page shows last updated \d{4}-\d{2}-\d{2})$/;
 
 /** Source ids cited inline in a piece of text. */
 export const citations = (text: string) => [...text.matchAll(CITE)].map((m) => m[1]);

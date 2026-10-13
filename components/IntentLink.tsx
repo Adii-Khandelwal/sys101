@@ -3,6 +3,7 @@
 import { useState, type ComponentProps } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { PHONE } from "@/lib/breakpoints";
 
 /**
  * A Link that prefetches its page on pointer-enter, focus or touchstart instead of when it scrolls into view.
@@ -11,7 +12,7 @@ import { useRouter } from "next/navigation";
  */
 export default function IntentLink({ href, onPointerEnter, onFocus, onTouchStart, ...rest }: ComponentProps<typeof Link>) {
   const router = useRouter();
-  const [phone] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches);
+  const [phone] = useState(() => typeof window !== "undefined" && window.matchMedia(PHONE).matches);
   const warm = () => {
     if (!phone && typeof href === "string") router.prefetch(href);
   };

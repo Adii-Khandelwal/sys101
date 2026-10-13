@@ -37,7 +37,7 @@ for (const f of fs.existsSync(dir) ? fs.readdirSync(dir).filter((x) => x.endsWit
   let data;
   try {
     data = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
-  } catch (e) {
+  } catch {
     problems.push(`${f}: not valid JSON`);
     continue;
   }

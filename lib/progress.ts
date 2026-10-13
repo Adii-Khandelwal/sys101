@@ -86,7 +86,10 @@ export function useIsRead(slug: string) {
 export function markTopics(slugs: readonly string[], read: boolean) {
   const current = getSnapshot();
   const set = new Set(current);
-  for (const s of slugs) (read ? set.add(s) : set.delete(s));
+  for (const s of slugs) {
+    if (read) set.add(s);
+    else set.delete(s);
+  }
   write([...set]);
 }
 
@@ -209,13 +212,13 @@ function saveUpdated(v: Record<string, string>) {
   }
 }
 
-export function stampUpdated(slugs: string[], now = new Date()) {
+function stampUpdated(slugs: string[], now = new Date()) {
   const next = { ...getUpdated() };
   for (const s of slugs) next[s] = now.toISOString();
   saveUpdated(next);
 }
 
-export type StorageStatus = "ok" | "empty" | "blocked" | "corrupt";
+type StorageStatus = "ok" | "empty" | "blocked" | "corrupt";
 
 function getStatus(): StorageStatus {
   try {

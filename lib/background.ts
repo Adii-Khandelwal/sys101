@@ -4,12 +4,12 @@ import { topicNumbers, topicOrder } from "./order";
 import { BANNED_PHRASING, NO_DATE, getAllTopics, type Topic } from "./topics";
 
 /** One page a post cites as assuming the concept. `quote` is the sentence from that post, copied from its page. */
-export type AssumedBy = { postId: string; quote: string };
+type AssumedBy = { postId: string; quote: string };
 
 /** An official page that explains the concept: opened and checked on `verifiedOn`. */
-export type BackgroundSource = { title: string; publisher: string; url: string; year: string; verifiedOn: string };
+type BackgroundSource = { title: string; publisher: string; url: string; year: string; verifiedOn: string };
 
-export type BackgroundItem = {
+type BackgroundItem = {
   id: string;
   name: string;
   /** Two plain lines in our voice. For a concept taught later in the course, one line that says the gist is enough. */
@@ -26,8 +26,8 @@ export type Background = { topic: string; /** YYYY-MM-DD: when the file was last
 
 const DIR = path.join(process.cwd(), "content", "background");
 /** The explanation of a concept taught later is a single line this long at most. */
-export const GIST_MAX_WORDS = 32;
-export const EXPLANATION_MAX_WORDS = 60;
+const GIST_MAX_WORDS = 32;
+const EXPLANATION_MAX_WORDS = 60;
 
 const nonEmpty = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
 const words = (t: string) => t.trim().split(/\s+/).length;

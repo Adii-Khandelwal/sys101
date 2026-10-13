@@ -5,7 +5,7 @@
 import { DURATION } from "./motion";
 
 /** What a click on a map node should do. */
-export type ClickIntent =
+type ClickIntent =
   /** A plain pointer or touch click: grow the bubble, then open with a fade-in. */
   | "animate"
   /** Open at once, no animation: reduced motion, or a click that did not come from a pointer. */
@@ -33,7 +33,7 @@ export const BURST_SCALE = 12; // the pop itself
 export const SHOCK_SCALE = 2.2; // how far the shock ring travels past the bubble's full size
 
 /** The node as drawn by the map: a ring, a band of fill, and a centre dot (see the "bordered" program in GraphView). */
-export type BubbleSpec = { x: number; y: number; r: number; border: string; fill: string; dot: string; borderSize: number };
+type BubbleSpec = { x: number; y: number; r: number; border: string; fill: string; dot: string; borderSize: number };
 
 const FILL_BAND = 0.55; // the fill layer's width as a share of the radius, as in the map's node program
 
@@ -43,7 +43,7 @@ export function bubbleLayers(r: number, borderSize: number) {
   return { outer: r, inner, dot: Math.max(0, inner - FILL_BAND * r) };
 }
 
-export type Bubble = {
+type Bubble = {
   /** Set the size as a multiple of the node. The element animates there by its CSS transition. */
   scaleTo: (k: number) => void;
   /** Swap the class: "" (the continuous growth), "is-waiting" (breathing, the page is still loading) or "is-bursting". */

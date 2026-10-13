@@ -1,3 +1,4 @@
+// shortcut: parked on purpose for the owner's future goals (docs/ideas.md, "Kept on purpose"); do not delete it in a review.
 // Fetch engineering-blog RSS feeds and extract article text.
 // Usage: npm run pipeline:fetch
 

@@ -50,7 +50,7 @@ export type Group = (typeof GROUPS)[number];
  * "core" is asked in almost every interview, "common" comes up often, "niche"
  * is occasional or specialised.
  */
-export const INTERVIEW_RELEVANCE = ["core", "common", "niche"] as const;
+const INTERVIEW_RELEVANCE = ["core", "common", "niche"] as const;
 export type InterviewRelevance = (typeof INTERVIEW_RELEVANCE)[number];
 
 /** Interview tags are hidden for now; the field stays in the content. Set to true to show them again. */
@@ -64,7 +64,7 @@ export const INTERVIEW_RELEVANCE_LABEL: Record<InterviewRelevance, string> = {
 };
 
 /** A concept section in the lesson format: one line on what you can do after it, then the teaching. */
-export type LessonSection = { outcome: string; body: string };
+type LessonSection = { outcome: string; body: string };
 
 export type LessonQuestion = {
   question: string;
@@ -79,7 +79,7 @@ export type LessonQuestion = {
   teaches: string;
 };
 
-export type LessonExercise = {
+type LessonExercise = {
   level: "apply" | "design" | "scale";
   prompt: string;
   answer: string;
@@ -106,16 +106,16 @@ export type Lesson = {
 };
 
 /** Section ids a quiz answer may link back to. */
-export const LESSON_SECTIONS = ["why", "model", "how", "example", "mistakes", "posts", "differ"] as const;
+const LESSON_SECTIONS = ["why", "model", "how", "example", "mistakes", "posts", "differ"] as const;
 /** Sections in the concept part, which comes before the posts. */
-export const CONCEPT_SECTION_IDS = ["why", "model", "how", "example", "mistakes"] as const;
+const CONCEPT_SECTION_IDS = ["why", "model", "how", "example", "mistakes"] as const;
 
 /** The "In short" block under the concept paragraph. Figures point at rows of a post's digest.numbers, so values never drift. */
 export type Summary = { points: string[]; figures: { postId: string; row: number; label: string }[] };
 
 
 /** A digest row the company itself calls a headline result, or a target rather than a measurement. */
-export const isOwnClaim = (row: { meaning: string }) => /headline|\btarget\b|\bgoal\b/i.test(row.meaning);
+const isOwnClaim = (row: { meaning: string }) => /headline|\btarget\b|\bgoal\b/i.test(row.meaning);
 
 /** The line a summary figure renders as: label, company, date string, and a note when the number is the company's own claim. */
 export function figureLine(post: Post, f: { row: number; label: string }) {
@@ -220,7 +220,7 @@ export function postWhen(post: Pick<Post, "published" | "edition">, precision: "
 }
 
 /** Posts older than this must explain why they still pass rule 3 (see CLAUDE.md). */
-export const OLD_POST_YEARS = 5;
+const OLD_POST_YEARS = 5;
 
 export function isOld(iso: string) {
   const cutoff = new Date();
@@ -286,7 +286,7 @@ export function checkQuizPositions(quiz: Pick<LessonQuestion, "options" | "corre
 export const QUIZ_STYLE_PENDING: readonly string[] = [];
 
 /** Most questions in which the correct option may be the single longest one. */
-export const MAX_LONGEST_CORRECT = 2;
+const MAX_LONGEST_CORRECT = 2;
 
 /**
  * Two tells a reader can use without knowing the answer: the correct positions repeat in a
@@ -371,7 +371,7 @@ function checkLesson(topic: Topic): string[] {
 }
 
 /** Every topic must have `summary`, and `prerequisiteReasons` when it has prerequisites. Set to false only while backfilling a new field. */
-export const REQUIRE_NEW_FIELDS = true;
+const REQUIRE_NEW_FIELDS = true;
 
 /** A unit stuck to its number ("500ms", "100TB", "8M"): write "500 ms", "100 TB", "8 million". */
 const UNIT_NO_SPACE = /\d(?:ms|μs|s|[KMGT]?B|[KMGT]b|Gbps|M|K)\b/;
@@ -538,7 +538,7 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
         problems.push(`${where}: digest.tradeoffs needs chosen and why, and rejected only if the source names an alternative`);
       }
       problems.push(...checkDiagram(d.diagram).map((p) => `${where}: diagram ${p}`));
-      problems.push(...checkFigure(d.figure, d.numbers).map((p) => `${where}: ${p}`));
+      problems.push(...checkFigure(d.figure, d.numbers, post.id).map((p) => `${where}: ${p}`));
     });
   }
 

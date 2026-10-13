@@ -9,7 +9,6 @@ import {
   quizComplete,
   summary,
   counts,
-  firstIncomplete,
   quizScore,
   retryQuiz,
   answer,

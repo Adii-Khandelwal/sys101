@@ -9,7 +9,7 @@ export type Box = { minX: number; maxX: number; minY: number; maxY: number };
 export const MIN_ZOOM = 0.6; // of the fitted view
 export const MAX_ZOOM = 8;
 export const STEP = 1.5; // buttons and keys
-export const PAN_MARGIN_PX = 64;
+const PAN_MARGIN_PX = 64;
 
 /** Ratio at which the content box exactly fits the viewport. */
 export function fitRatio(contentW: number, contentH: number, viewW: number, viewH: number) {
@@ -47,7 +47,7 @@ export function zoomLevel(cam: Camera, fit: number) {
  * buttons and keys. Never applies the pan limit, so zooming out never moves
  * the camera on its own.
  */
-export function zoomTo(cam: Camera, ratio: number, anchor: { x: number; y: number }, fit: number): Camera {
+function zoomTo(cam: Camera, ratio: number, anchor: { x: number; y: number }, fit: number): Camera {
   const next = clampRatio(ratio, fit);
   const k = next / cam.ratio;
   return { ...cam, ratio: next, x: anchor.x + (cam.x - anchor.x) * k, y: anchor.y + (cam.y - anchor.y) * k };

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type Graph from "graphology";
 import type Sigma from "sigma";
 import type { NodeLabelDrawingFunction } from "sigma/rendering";
-import { LABEL_START, MIN_LABEL_SCALE, chooseLayers, columns, edgeCurvatures, fitLabelScale, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
+import { LABEL_START, MIN_LABEL_SCALE, chooseLayers, columns, edgeCurvatures, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
 import { useInProgressTopics, useReadTopics } from "@/lib/progress";
 import {
   LIGHT_COLORS,
@@ -28,6 +28,7 @@ import { DURATION, easeInOut, prefersReducedMotion } from "@/lib/motion";
 import { navigateWithTransition, pageReady } from "./ViewTransitions";
 import { clickIntent, playNodeOpen, removeBubbles } from "@/lib/nodeOpen";
 import { saveMapView, takeMapView, type MapView } from "@/lib/mapView";
+import { DESKTOP, PHONE } from "@/lib/breakpoints";
 import {
   STEP,
   clampPan,
@@ -40,7 +41,6 @@ import {
   ratioLimits,
   wheelFactor,
   zoomBy,
-  zoomLevel,
   type Camera,
 } from "@/lib/camera";
 
@@ -56,7 +56,7 @@ type Props = {
 const NODE_RADIUS = 14;
 const LABEL_SIZE = 18;
 const EDGE_EMPHASIS = 2; // highlighted edges are drawn this many times their base width
-const NARROW = "(max-width: 767px)"; // below this the map stacks top to bottom; matches the CSS and the mobile Path default
+const NARROW = PHONE; // below this the map stacks top to bottom; matches the CSS and the mobile Path default
 const PADDING = 48; // px between the stage edge and the outermost nodes
 const PADDING_TOP = 86; // node centres sit this far down, so the first row is 56px+ below the controls
 const TOP_CLEAR = 24; // edges stay this far below the legend and controls line
@@ -74,7 +74,6 @@ function setCamera(camera: ReturnType<Sigma["getCamera"]>, state: Camera) {
 }
 
 const CLICK_SLOP = 5; // px a pointer may move before a press becomes a drag
-const DOUBLE_CLICK_MS = 250; // wait this long before opening a topic, so a double-click can cancel it
 
 /** The first sentence of a concept, trimmed, for a one-line tooltip description. */
 function firstSentence(text: string) {
@@ -329,7 +328,6 @@ export default function GraphView({ nodes, edges }: Props) {
 
   // ── Camera ────────────────────────────────────────────────────────────
   const fitRef = useRef(1);
-  const [zoomPct, setZoomPct] = useState(100);
   /** The view is the fitted one, so the fit button has nothing to do. */
   const [fitted, setFitted] = useState(true);
   // Small maps fit on screen: no zoom, pan or controls until there are enough
@@ -555,7 +553,7 @@ export default function GraphView({ nodes, edges }: Props) {
   useEffect(() => {
     // Phones only get the Path view (HomeView swaps GraphView out right after its first render), so they skip
     // the map libraries, about 190 KB. Going wider than 767px makes HomeView mount GraphView again.
-    if (!window.matchMedia("(min-width: 768px)").matches) return;
+    if (!window.matchMedia(DESKTOP).matches) return;
     let renderer: Sigma | undefined;
     let cancelled = false;
     let removeMiddle: (() => void) | undefined;
@@ -785,7 +783,6 @@ export default function GraphView({ nodes, edges }: Props) {
         activate(nextHighlight(activeRef.current, { type: "leave" }));
       });
       renderer.getCamera().on("updated", (state) => {
-        setZoomPct(Math.round(zoomLevel(state, fitRef.current) * 100));
         setFitted(isFitted(state, fitRef.current));
         // Any zoom or pan clears the highlight and tooltip.
         if (activeRef.current) activate(nextHighlight(activeRef.current, { type: "camera" }));
@@ -806,6 +803,8 @@ export default function GraphView({ nodes, edges }: Props) {
       rendererRef.current = null;
       setReady(false);
     };
+  // The renderer is built once per graph; setCursor and zoomAt are stable helpers, so they are left out on purpose.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, edges, router, activate, syncPoints]);
 
   // Place nodes in stage pixels and set the camera bounds to exactly the
@@ -890,6 +889,8 @@ export default function GraphView({ nodes, edges }: Props) {
       scrollToRestore.current = saved.scrollLeft;
     }
     renderer.refresh();
+  // Re-runs only when the layout inputs change; the saved view and camera helpers are read from refs on purpose.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, cols, layered, drawn, hidden, fits, size, isPhone]);
 
   // The sideways scroll can only be set once the stage has its full width.

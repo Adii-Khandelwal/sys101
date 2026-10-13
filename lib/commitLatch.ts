@@ -6,9 +6,9 @@ export type LatchInputs = { bobBefore: number; joeBefore: number; amount: number
 export const LATCH_STEPS = 5;
 export const latchValid = (i: LatchInputs) => i.bobBefore >= i.amount && i.startTs > i.oldTs && i.commitTs > i.startTs;
 
-export type Cell = "none" | "tentative" | "committed";
+type Cell = "none" | "tentative" | "committed";
 
-export type LatchState = {
+type LatchState = {
   bobLock: boolean;
   joeLock: boolean;
   bobNew: Cell;

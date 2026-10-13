@@ -8,7 +8,12 @@ function leadsTo(slug: string, entries: IndexEntry[]) {
   const stack = [slug];
   while (stack.length) {
     const s = stack.pop()!;
-    for (const e of entries) if (e.prerequisites.includes(s) && !seen.has(e.slug)) seen.add(e.slug), stack.push(e.slug);
+    for (const e of entries) {
+      if (e.prerequisites.includes(s) && !seen.has(e.slug)) {
+        seen.add(e.slug);
+        stack.push(e.slug);
+      }
+    }
   }
   return seen.size;
 }

@@ -5,17 +5,16 @@ import { LEGACY_OPTIONS } from "./legacyQuiz";
 import { optionId } from "./quizIds";
 
 export const PROGRESS_KEY = "sys101:progress";
-export const READ_KEY = "sys101:read"; // the read list the map and index use
 export const OLD_CONCEPT_KEY = "sys101:concept"; // v1: topics with the concept marked complete
 export const OLD_POSTS_KEY = "sys101:posts"; // v1: post ids marked read
-export const VERSION = 3;
+const VERSION = 3;
 /** v2 stored quiz answers as option positions; it is still read and upgraded. */
 const OLD_VERSION = 2;
 
 /** The five concept sections every lesson topic has, in page order. */
 export const CONCEPT_SECTIONS = ["why", "model", "how", "example", "mistakes"] as const;
 
-export type TopicProgress = {
+type TopicProgress = {
   /** Section ids marked done (concept sections). */
   done: string[];
   /** Unit ids scrolled into view (sections, "check", post ids). */
@@ -41,7 +40,7 @@ export const emptyProgress = (): Progress => ({ version: VERSION, topics: {}, po
 const emptyTopic = (): TopicProgress => ({ done: [], visited: [], answers: {} });
 
 /** Post ids that were renamed (the id carried a wrong year), so saved progress under the old id still counts. */
-export const POST_ID_ALIASES: Record<string, string> = {
+const POST_ID_ALIASES: Record<string, string> = {
   "github-mysql-ha-2020": "github-mysql-ha-failover-2018",
 };
 const current = (id: string) => POST_ID_ALIASES[id] ?? id;
@@ -158,7 +157,7 @@ export function isTopicRead(p: Progress, meta: LessonMeta) {
 /** Units in page order, for "Continue" and the rail. */
 export const units = (meta: LessonMeta) => [...CONCEPT_SECTIONS, "check", ...meta.postIds];
 
-export type UnitStatus = "not started" | "visited" | "done";
+type UnitStatus = "not started" | "visited" | "done";
 
 export function unitStatus(p: Progress, meta: LessonMeta, unit: string): UnitStatus {
   const t = topicOf(p, meta.slug);
@@ -169,7 +168,7 @@ export function unitStatus(p: Progress, meta: LessonMeta, unit: string): UnitSta
 }
 
 /** First unit not done, or undefined when everything is. */
-export const firstIncomplete = (p: Progress, meta: LessonMeta) => units(meta).find((u) => unitStatus(p, meta, u) !== "done");
+const firstIncomplete = (p: Progress, meta: LessonMeta) => units(meta).find((u) => unitStatus(p, meta, u) !== "done");
 
 /**
  * What the progress header shows: units done out of all (concept sections,
@@ -189,7 +188,7 @@ export function summary(p: Progress, meta: LessonMeta) {
 }
 
 /** Whether anything that counts toward reading this topic has been recorded. Visits alone do not count. */
-export function hasTracked(p: Progress, meta: LessonMeta) {
+function hasTracked(p: Progress, meta: LessonMeta) {
   const t = topicOf(p, meta.slug);
   return t.done.length > 0 || Object.keys(t.answers).length > 0 || meta.postIds.some((id) => p.posts.includes(id));
 }
@@ -247,7 +246,7 @@ export function resetTopic(p: Progress, meta: LessonMeta): Progress {
 
 // ── Export and import ──────────────────────────────────────────────────────
 
-export type ExportFile = {
+type ExportFile = {
   app: "sys101";
   version: typeof VERSION;
   exportedAt: string;
@@ -270,7 +269,7 @@ export function exportName(now = new Date()) {
 /** What this site knows about, to check an import against. */
 export type Known = { slugs: string[]; postIds: string[] };
 
-export type ImportResult =
+type ImportResult =
   | { ok: true; progress: Progress; read: string[]; updated: Record<string, string>; ignored: number }
   | { ok: false; error: string };
 
@@ -383,8 +382,28 @@ export function diffSummary(before: Progress, after: Progress, metas: LessonMeta
 }
 
 /** The read list for this progress: each lesson topic's flag derived, any other entries kept. */
-export function deriveRead(read: string[], p: Progress, metas: LessonMeta[]) {
+export function deriveRead(read: readonly string[], p: Progress, metas: LessonMeta[]) {
   return metas.reduce((r, m) => syncRead(r, p, m), [...new Set(read)]);
+}
+
+type ImportFile = { progress: Progress; read: readonly string[]; updated: Record<string, string> };
+
+/**
+ * What applying an imported file would produce here, in merge or replace mode: the progress, the read
+ * list (derived again), the per-topic dates (merge keeps the later one) and the preview counts.
+ * `corrupt` means the stored progress is unreadable, so it counts as empty.
+ */
+export function planImport(here: ImportFile & { corrupt: boolean }, file: ImportFile, mode: "merge" | "replace", metas: LessonMeta[]) {
+  const base = here.corrupt ? emptyProgress() : here.progress;
+  const next = mode === "merge" ? mergeProgress(base, file.progress) : file.progress;
+  const nextRead = deriveRead(mode === "merge" ? [...here.read, ...file.read] : file.read, next, metas);
+  const dates =
+    mode === "merge"
+      ? Object.fromEntries(
+          [...new Set([...Object.keys(here.updated), ...Object.keys(file.updated)])].map((s) => [s, [here.updated[s], file.updated[s]].filter(Boolean).sort().pop()!]),
+        )
+      : file.updated;
+  return { next, nextRead, dates, diff: diffSummary(base, next, metas) };
 }
 
 export function resetAll(): { progress: Progress; read: string[] } {

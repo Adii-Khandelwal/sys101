@@ -9,7 +9,7 @@ export const FIGURE_IDS = ["sliding-window", "fill-race", "commit-latch"] as con
 export type FigureId = (typeof FIGURE_IDS)[number];
 
 /** Input names each figure needs, each pointing at a row of the post's digest.numbers. */
-export const FIGURE_ROWS: Record<FigureId, readonly string[]> = {
+const FIGURE_ROWS: Record<FigureId, readonly string[]> = {
   "sliding-window": ["limit", "previous", "current", "elapsed"],
   "fill-race": ["stale", "fresh", "version"],
   "commit-latch": ["bobBefore", "joeBefore", "amount", "oldTs", "startTs", "commitTs"],
@@ -41,8 +41,9 @@ export function resolveInputs(spec: FigureSpec, numbers: { value: string }[]): R
 }
 
 /** Build-time check of a digest's figure field; returns problems. */
-export function checkFigure(spec: FigureSpec | undefined, numbers: { value: string }[]): string[] {
+export function checkFigure(spec: FigureSpec | undefined, numbers: { value: string }[], postId?: string): string[] {
   if (!spec) return [];
+  if (!postId) return ["a post with a figure needs an id: the figure is not shown without one"];
   if (!FIGURE_IDS.includes(spec.id)) return [`figure id "${spec.id}" is not registered`];
   return resolveInputs(spec, numbers) ? [] : [`figure "${spec.id}" needs rows ${FIGURE_ROWS[spec.id].join(", ")}, each pointing at a digest.numbers row that starts with a number the model accepts`];
 }

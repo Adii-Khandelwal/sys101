@@ -10,9 +10,9 @@ export const REPORT_EMAIL = CONTACT_EMAIL;
 export const SITE_URL = (process.env.SITE_URL || "https://sys101.vercel.app").replace(/\/+$/, "");
 export const SITE_NAME = "sys101";
 /** Static 1200x630 social image, drawn by scripts/make-og.mjs from the wordmark and tagline. */
-export const OG_IMAGE = { path: "/og.png", width: 1200, height: 630, alt: "sys101: learn system design in the order it makes sense" } as const;
+const OG_IMAGE = { path: "/og.png", width: 1200, height: 630, alt: "sys101: learn system design in the order it makes sense" } as const;
 /** A page title must be shorter than this many characters (checked by scripts/check-seo.mjs). */
-export const TITLE_MAX = 60;
+const TITLE_MAX = 60;
 export const SITE_DESCRIPTION =
   "A system design course in prerequisite order, taught through how real engineering teams built their systems.";
 
@@ -75,7 +75,7 @@ export function pageMeta({ path, title, description: raw }: { path: string; titl
 const latest = (dates: string[]) => dates.reduce((a, b) => (b > a ? b : a), "");
 
 /** A topic changes when a post on it is re-checked, so its newest verifiedOn date is its lastmod. */
-export const topicUpdated = (topic: Pick<Topic, "posts">) => latest(topic.posts.map((p) => p.verifiedOn));
+const topicUpdated = (topic: Pick<Topic, "posts">) => latest(topic.posts.map((p) => p.verifiedOn));
 
 /** The posts index changes when any post entry does. */
 export const postsUpdated = (topics: Pick<Topic, "posts">[]) => latest(topics.flatMap((t) => t.posts.map((p) => p.verifiedOn)));

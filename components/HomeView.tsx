@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import GraphView from "./GraphView";
 import PathView, { type PathEntry } from "./PathView";
 import TopicIndex from "./TopicIndex";
+import { PHONE } from "@/lib/breakpoints";
 
 type GraphNode = { slug: string; title: string; posts: number; group: string };
 type Edge = { from: string; to: string };
@@ -48,7 +49,7 @@ export default function HomeView({
     } catch {
       // storage blocked
     }
-    const mq = window.matchMedia("(max-width: 767px)");
+    const mq = window.matchMedia(PHONE);
     const apply = () => {
       mobileRef.current = mq.matches;
       setMobile(mq.matches);

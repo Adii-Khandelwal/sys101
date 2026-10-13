@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { PAGE_DATES, pageMeta } from "@/lib/site";
-import Link from "next/link";
 import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
 

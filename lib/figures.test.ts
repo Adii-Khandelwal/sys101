@@ -24,7 +24,7 @@ describe("every registered figure", () => {
   it.each(FIGURE_IDS)("%s sits on a post, reads its inputs from the numbers rows and counts toward reading time", (id) => {
     const post = postWith(id);
     expect(post, `a post carries ${id}`).toBeTruthy();
-    expect(checkFigure(specOf(post), post.digest.numbers)).toEqual([]);
+    expect(checkFigure(specOf(post), post.digest.numbers, post.id)).toEqual([]);
     const topic = topics.find((t) => t.posts.some((p) => p.id === post.id))!;
     const without = { ...topic, posts: topic.posts.map((p) => (p.id === post.id ? { ...p, digest: { ...p.digest, figure: undefined } } : p)) };
     expect(figureProse(specOf(post), post.digest.numbers, srcOf(post)).join(" ").split(/\s+/).length).toBeGreaterThan(80);
@@ -35,9 +35,10 @@ describe("every registered figure", () => {
   it("rejects a figure whose rows are missing, not numeric or out of range", () => {
     const post = postWith("sliding-window");
     const spec = specOf(post);
-    expect(checkFigure({ ...spec, rows: { ...spec.rows, limit: 99 } }, post.digest.numbers)).not.toEqual([]);
-    expect(checkFigure({ ...spec, rows: { limit: 8 } }, post.digest.numbers)).not.toEqual([]);
-    expect(checkFigure({ ...spec, id: "nope" as never }, post.digest.numbers)).not.toEqual([]);
+    expect(checkFigure(spec, post.digest.numbers)).toEqual(["a post with a figure needs an id: the figure is not shown without one"]);
+    expect(checkFigure({ ...spec, rows: { ...spec.rows, limit: 99 } }, post.digest.numbers, post.id)).not.toEqual([]);
+    expect(checkFigure({ ...spec, rows: { limit: 8 } }, post.digest.numbers, post.id)).not.toEqual([]);
+    expect(checkFigure({ ...spec, id: "nope" as never }, post.digest.numbers, post.id)).not.toEqual([]);
     expect(resolveInputs(spec, post.digest.numbers.map((n) => ({ ...n, value: n.value.replace("15 seconds", "75 seconds") })))).toBeNull();
   });
 });

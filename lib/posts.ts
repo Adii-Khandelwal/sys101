@@ -1,7 +1,7 @@
 import { GROUPS, type Group, type Topic } from "./topics";
 
 /** One distinct post (by URL). A post taught under two topics has two `topics` entries and two `ids`. */
-export type IndexedPost = {
+type IndexedPost = {
   title: string;
   company: string;
   url: string;
@@ -11,7 +11,7 @@ export type IndexedPost = {
 };
 
 export type PostRow = IndexedPost & { key: string };
-export type TopicBlock = { slug: string; title: string; posts: PostRow[] };
+type TopicBlock = { slug: string; title: string; posts: PostRow[] };
 export type PostsIndex = {
   total: number;
   companyCount: number;
@@ -22,7 +22,7 @@ export type PostsIndex = {
   byYear: { year: string | null; id: string; posts: PostRow[] }[];
 };
 
-export const slugify = (s: string) =>
+const slugify = (s: string) =>
   s
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type KeyboardEvent } from "react";
+import { useState } from "react";
 import { LATCH_STEPS, latchState, type LatchInputs } from "@/lib/commitLatch";
 import type { FigureText } from "@/lib/figures";
-import { FigureFrame, Solid } from "./parts";
+import { FigureFrame, Solid, StepControls, stepKeys } from "./parts";
 import type { LatchGeometry } from "./commitLatch/geometry";
 
 // `uid` comes from the post id, not useId: the lazy wrapper moves the tree, and useId then differs between server and client.
@@ -12,11 +12,6 @@ export default function CommitLatchLive({ uid, geo, inputs, text }: { uid: strin
   const s = latchState(inputs, step);
   const last = LATCH_STEPS - 1;
   const on = (v: boolean) => ({ opacity: v ? 1 : 0 });
-
-  const onKey = (e: KeyboardEvent<HTMLElement>) => {
-    if (e.key === "ArrowRight") setStep(Math.min(step + 1, last));
-    else if (e.key === "ArrowLeft") setStep(Math.max(step - 1, 0));
-  };
 
   const cabinet = (cabinet: LatchGeometry["bobCabinet"], cards: LatchGeometry["bob"], cell: typeof s.bobNew) => (
     <>
@@ -58,7 +53,7 @@ export default function CommitLatchLive({ uid, geo, inputs, text }: { uid: strin
       description={text.description}
       legend={text.legend}
       caption={text.caption}
-      onKeyDown={onKey}
+      onKeyDown={stepKeys(step, last, setStep)}
       svg={svg}
       readout={
         <>
@@ -72,17 +67,7 @@ export default function CommitLatchLive({ uid, geo, inputs, text }: { uid: strin
         </>
       }
       controls={
-        <>
-          <button type="button" className="text-button" disabled={step === 0} onClick={() => setStep(step - 1)}>
-            Back
-          </button>
-          <button type="button" className="text-button" disabled={step === last} onClick={() => setStep(step + 1)}>
-            Next step
-          </button>
-          <button type="button" className="text-button" onClick={() => setStep(0)}>
-            Reset
-          </button>
-        </>
+        <StepControls step={step} last={last} setStep={setStep} reset={() => setStep(0)} />
       }
     />
   );

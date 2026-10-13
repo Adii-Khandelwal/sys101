@@ -21,6 +21,7 @@ import {
   mergeProgress,
   diffSummary,
   deriveRead,
+  planImport,
   resetAll,
   resetTopic,
   exportName,
@@ -218,6 +219,26 @@ describe("your data: export, import, merge, reset", () => {
     expect(merged.posts).toEqual(["cloudflare-dns-builds-2022"]);
     expect(diffSummary(here, merged, metas)).toEqual({ topics: 1, items: 2 });
     expect(diffSummary(here, started, metas)).toEqual({ topics: 2, items: 4 });
+  });
+
+  it("plans an import: merge combines and keeps the later date, replace uses only the file, corrupt storage counts as empty", () => {
+    const here = { progress: answer(toggleUnit(emptyProgress(), lb, "why"), "dns", 0, "c9"), read: ["load-balancing"], updated: { dns: "2026-10-12T00:00:00.000Z", "load-balancing": "2026-10-01T00:00:00.000Z" }, corrupt: false };
+    const file = { progress: started, read: ["dns"], updated: { dns: "2026-10-11T12:00:00.000Z" } };
+    const merge = planImport(here, file, "merge", metas);
+    expect(merge.next.topics.dns.answers).toEqual({ 0: "c9" });
+    expect(merge.nextRead).toEqual([]); // read flags are derived: neither topic is finished
+    const finished = meta.correct.reduce((p, c, i) => answer(p, "dns", i, c), meta.postIds.reduce((p, id) => toggleUnit(p, meta, id), CONCEPT_SECTIONS.reduce((p, s) => toggleUnit(p, meta, s), emptyProgress())));
+    expect(planImport(here, { ...file, progress: finished, read: [] }, "merge", metas).nextRead).toEqual(["dns"]);
+    expect(merge.dates).toEqual({ dns: "2026-10-12T00:00:00.000Z", "load-balancing": "2026-10-01T00:00:00.000Z" });
+    expect(merge.diff).toEqual({ topics: 1, items: 2 });
+    const replace = planImport(here, file, "replace", metas);
+    expect(replace.next).toEqual(started);
+    expect(replace.nextRead).toEqual([]);
+    expect(replace.dates).toEqual(file.updated);
+    expect(replace.diff.topics).toBe(2);
+    const fromCorrupt = planImport({ ...here, corrupt: true }, file, "merge", metas);
+    expect(fromCorrupt.next).toEqual(started);
+    expect(fromCorrupt.diff).toEqual(diffSummary(emptyProgress(), started, metas));
   });
 
   it("rejects invalid and wrong-version files whole, and ignores unknown topics with a count", () => {

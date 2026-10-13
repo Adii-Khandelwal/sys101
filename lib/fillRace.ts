@@ -3,8 +3,8 @@ import type { FigureSource } from "./figures";
 
 /** stale: the value in the slow fill reply. fresh: the value written meanwhile. version: the newer entry's version. */
 export type RaceInputs = { stale: number; fresh: number; version: number };
-export type RaceOptions = { guard: boolean; evict: boolean };
-export type RaceEvent = "start" | "fill" | "mutate" | "invalidate" | "evict" | "reply";
+type RaceOptions = { guard: boolean; evict: boolean };
+type RaceEvent = "start" | "fill" | "mutate" | "invalidate" | "evict" | "reply";
 
 export const raceValid = (i: RaceInputs) => i.stale !== i.fresh && i.version > 0;
 
@@ -13,7 +13,7 @@ export const raceLast = (o: RaceOptions) => raceEvents(o).length - 1;
 
 export const raceEvents = (o: RaceOptions): RaceEvent[] => ["start", "fill", "mutate", "invalidate", ...(o.evict ? (["evict"] as const) : []), "reply"];
 
-export type RaceState = {
+type RaceState = {
   event: RaceEvent;
   db: number;
   cache: number | null;

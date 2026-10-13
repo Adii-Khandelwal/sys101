@@ -5,8 +5,6 @@ import { FEATURED_FIGURES, LESSON_OUTLINE, featuredFigures, topicSections } from
 import { startVariant } from "./nextUp";
 import { getAllTopics } from "./topics";
 
-const dir = path.resolve(__dirname, "../content/topics");
-const raw = fs.readdirSync(dir).map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")));
 const topics = getAllTopics();
 
 describe("Inside a topic preview", () => {
