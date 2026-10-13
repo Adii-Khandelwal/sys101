@@ -1379,7 +1379,10 @@ a:hover {
 }
 
 
+/* inline-flex puts the list letter on the option's first line, not its last. */
 .option {
+  display: inline-flex;
+  align-items: center;
   padding: 2px 0;
   border: 0;
   background: none;
@@ -1387,18 +1390,23 @@ a:hover {
   font: inherit;
   text-align: left;
   cursor: pointer;
-  text-decoration: underline;
-  text-decoration-color: var(--rule);
   text-underline-offset: 3px;
 }
 
-.option:hover:not(:disabled) {
-  color: var(--accent);
+.option:focus-visible {
+  text-decoration: underline;
+}
+
+@media (hover: hover) {
+  .option:hover:not(:disabled) {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-color: var(--rule);
+  }
 }
 
 .option:disabled {
   cursor: default;
-  text-decoration: none;
 }
 
 .option[aria-pressed="true"] {
@@ -2790,8 +2798,6 @@ html {
   }
   /* Quiz options are rows of wrapped text, so they get real height. */
   .options .option {
-    display: inline-flex;
-    align-items: center;
     min-height: 44px;
   }
 }
