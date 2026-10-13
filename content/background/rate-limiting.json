@@ -1,6 +1,6 @@
 {
   "topic": "rate-limiting",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "leaky-bucket",
@@ -18,7 +18,7 @@
           "publisher": "NGINX",
           "url": "https://nginx.org/en/docs/http/ngx_http_limit_req_module.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -38,7 +38,7 @@
           "publisher": "memcached.org",
           "url": "https://memcached.org/",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -58,7 +58,7 @@
           "publisher": "Redis",
           "url": "https://redis.io/docs/latest/get-started/",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -78,14 +78,14 @@
           "publisher": "Envoy Project",
           "url": "https://www.envoyproxy.io/docs/envoy/latest/intro/what_is_envoy",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
     {
       "id": "single-point-of-failure",
       "name": "Single point of failure",
-      "explanation": "One part whose failure takes the whole system down. The usual fix is a standby that can take over. The gist is enough here.",
+      "explanation": "One part whose failure takes the whole system down. The usual fix is a standby that can take over.",
       "assumedBy": [
         {
           "postId": "databricks-ratelimiting-2025",

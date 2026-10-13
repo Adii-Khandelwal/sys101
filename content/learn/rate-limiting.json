@@ -1,6 +1,6 @@
 {
   "slug": "rate-limiting",
-  "promise": "After this you can follow the topic page and the posts.",
+  "promise": "After this you can explain what a rate limit and a 429 response are, how a limiter counts with windows and buckets, and why a shared count is the hard part.",
   "before": {
     "prerequisites": [
       "caching",
@@ -74,7 +74,7 @@
       "body": [
         "Whatever the design, a limiter does three things for each request: it finds the key the request belongs to, updates the count kept for that key, and compares the count with the limit. If the count is within the limit the request goes on, and if not it is turned away.",
         "NGINX's limit_req module shows one way to count. It limits the rate of requests per key, for example per client IP address, using what it calls the leaky bucket method [[nginx-limit-req]]. You define a shared memory zone with the key and the rate, then switch it on for a location. In the docs' example, requests are held to an average of one per second, with bursts of up to five [[nginx-limit-req]]. Requests over the rate are delayed so they are processed at the rate, until their number passes the burst size, and then they are rejected. The default status for a rejected request is 503, and it can be changed [[nginx-limit-req]].",
-        "Redis shows another way, with a counter. Its INCR page builds a rate limiter that keeps one counter for every IP address for every different second, adds one to it with each request, and sets it to expire so old counters clean themselves up. The page's example allows up to ten requests per second for each IP address [[redis-incr]]. Counting in separate slices of time like this is a fixed window. The page also warns that a simpler variant has a race condition that can leave a counter without an expiry, and shows a way to fix it [[redis-incr]].",
+        "Redis shows another way, with a counter. Its INCR page builds a rate limiter that keeps one counter for every IP address for every different second, adds one to it with each request, and sets it to expire so old counters clean themselves up. The page's example allows up to ten requests per second for each IP address [[redis-incr]]. Counting in separate slices of time like this is a fixed window. The page also shows a second, single-counter variant and warns that it has a race condition that can leave a counter without an expiry, and shows a way to fix it [[redis-incr]].",
         "A third way to count, the sliding window, is not explained in the official sources used on this page. The [Cloudflare post](/topic/rate-limiting#cloudflare-rate-limiting-2017) on the topic page walks through it with numbers."
       ],
       "diagram": "<svg viewBox=\"0 0 560 190\" role=\"img\" aria-labelledby=\"dg-learn-rate-limiting-how-t\" class=\"dg\"><title id=\"dg-learn-rate-limiting-how-t\">What a rate limiter does with one request: find the key, update the count for it, compare the count with the limit, then let the request through or turn it away.</title><defs><marker id=\"dg-learn-rate-limiting-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"50\" width=\"100\" height=\"50\" class=\"dg-box\"/><text x=\"62\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Request</text><text x=\"62\" y=\"87.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">arrives</text><rect x=\"146\" y=\"50\" width=\"100\" height=\"50\" class=\"dg-box\"/><text x=\"196\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Find the</text><text x=\"196\" y=\"87.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">key</text><rect x=\"280\" y=\"50\" width=\"100\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"330\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Update</text><text x=\"330\" y=\"87.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">the count</text><rect x=\"414\" y=\"50\" width=\"134\" height=\"50\" class=\"dg-box\"/><text x=\"481\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Compare with</text><text x=\"481\" y=\"87.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">the limit</text><path d=\"M112,75 L146,75\" class=\"dg-line\" marker-end=\"url(#dg-learn-rate-limiting-how-a)\"/><path d=\"M246,75 L280,75\" class=\"dg-line\" marker-end=\"url(#dg-learn-rate-limiting-how-a)\"/><path d=\"M380,75 L414,75\" class=\"dg-line\" marker-end=\"url(#dg-learn-rate-limiting-how-a)\"/><rect x=\"330\" y=\"138\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"380\" y=\"162.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Allowed</text><rect x=\"448\" y=\"138\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"498\" y=\"162.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Turned away</text><path d=\"M470,100 L400,138\" class=\"dg-line\" marker-end=\"url(#dg-learn-rate-limiting-how-a)\"/><path d=\"M500,100 L500,138\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-learn-rate-limiting-how-a)\"/><text x=\"196\" y=\"118\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">for example the client IP</text><text x=\"140\" y=\"156\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">NGINX counts with a leaky bucket,</text><text x=\"140\" y=\"172\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">the Redis page with a counter per second,</text><text x=\"140\" y=\"188\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">AWS with a token bucket.</text></svg>",
@@ -165,7 +165,7 @@
       "name": "In practice and trade-offs",
       "body": [
         "A limit is a target more than a wall. AWS says that its throttles and quotas are applied on a best-effort basis and should be treated as targets, not guaranteed ceilings [[aws-apigw-throttling]]. That is a statement about AWS's service. It is a useful warning for any design where counts are shared or reported with a delay, because the real traffic can overshoot the limit a little.",
-        "A rejected client should be told what to do next. The 429 standard says a response may include a Retry-After header saying how long to wait [[rfc6585]]. The HTTP specification defines that header as either a date or a number of seconds, and describes it with 503 responses and redirects [[rfc9110]]. AWS says that when clients are throttled with a 429, they can resubmit the failed requests in a way that respects the limit, which means retrying more slowly [[aws-apigw-throttling]].",
+        "A rejected client should be told what to do next. The 429 standard says a response may include a Retry-After header saying how long to wait [[rfc6585]]. The HTTP specification defines that header as either a date or a number of seconds, and describes it with 503 responses and redirects [[rfc9110]]. AWS says that when clients are throttled with a 429, they can resubmit the failed requests in a way that respects the limit, [[aws-apigw-throttling]]. In our own words, that means retrying more slowly.",
         "There is also work to tell clients about their quota before they hit it. An Internet-Draft from the IETF's HTTPAPI working group proposes two header fields: one that describes a server's quota policies, and one that conveys the quota currently available [[ietf-ratelimit-draft]]. It is a draft, a work in progress and not a standard. The header names and meaning may change, so do not build on them as if they were settled.",
         "The trade-off underneath it all is accuracy against cost. A more exact shared count costs more time on every request, which is why the posts on the topic page accept approximate counts in return for keeping counting off the request path."
       ],
@@ -269,7 +269,7 @@
       "publisher": "IETF",
       "kind": "RFC",
       "year": "2012",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "rfc9110",
@@ -278,7 +278,7 @@
       "publisher": "IETF",
       "kind": "RFC",
       "year": "2022",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "aws-apigw-throttling",
@@ -287,7 +287,7 @@
       "publisher": "Amazon Web Services",
       "kind": "Vendor documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "Describes how AWS API Gateway behaves, not rate limiting in general."
     },
     {
@@ -297,7 +297,7 @@
       "publisher": "NGINX",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "redis-incr",
@@ -306,7 +306,7 @@
       "publisher": "Redis",
       "kind": "Vendor documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "envoy-global-rl",
@@ -315,7 +315,7 @@
       "publisher": "Envoy project",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "Read in the development version of the documentation (1.40.0-dev)."
     },
     {
@@ -325,7 +325,7 @@
       "publisher": "IETF HTTPAPI Working Group",
       "kind": "Internet-Draft",
       "year": "2026",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "draft-ietf-httpapi-ratelimit-headers-11. An Internet-Draft is a work in progress and not a standard; it expires 24 November 2026 and may change or be withdrawn."
     },
     {

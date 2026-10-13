@@ -102,7 +102,7 @@
       ],
       "diagram": "<svg viewBox=\"0 0 560 210\" role=\"img\" aria-labelledby=\"dg-rl-example-t\" class=\"dg\"><title id=\"dg-rl-example-t\">Sliding window estimate: the previous minute had 42 requests and the current minute has 18 after 15 seconds, so the estimate is 42 times 0.75 plus 18, which is 49.5, under a limit of 50.</title><defs><marker id=\"dg-rl-example-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"30\" y=\"50\" width=\"240\" height=\"44\" class=\"dg-box\"/><text x=\"150\" y=\"76.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Previous minute: 42</text><rect x=\"270\" y=\"50\" width=\"260\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"400\" y=\"76.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Current minute: 18 so far</text><path d=\"M90,38 L90,50\" class=\"dg-line dg-dashed\"/><path d=\"M90,94 L90,106\" class=\"dg-line dg-dashed\"/><path d=\"M335,38 L335,50\" class=\"dg-line dg-dashed\"/><path d=\"M335,94 L335,106\" class=\"dg-line dg-dashed\"/><text x=\"90\" y=\"32\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">window starts</text><text x=\"335\" y=\"32\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">now: 15 s in</text><text x=\"180\" y=\"122\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">last 45 s of it count: weight 0.75</text><text x=\"432\" y=\"122\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">counted in full</text><rect x=\"130\" y=\"138\" width=\"300\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"163.25\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"15\">42 x 0.75 + 18 = 49.5</text><text x=\"280\" y=\"198\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">49.5 is under 50, so the request passes; one more at the same moment gives 50.5.</text></svg>"
     },
-    "mistakesOutcome": "After this you can avoid the three most common ways rate limiters go wrong.",
+    "mistakesOutcome": "After this you can spot three ways rate limiters go wrong.",
     "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
     "quiz": [
       {
@@ -245,7 +245,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic that builds on this one.",
-      "body": "A rate limiter protects a service from too much traffic. The planned topics on circuit breakers and failover cover what to do when a dependency is already failing. They are not written yet."
+      "body": "A rate limiter protects a service from too much traffic. The next topics, Circuit Breakers and Load Shedding and then Failover, cover what to do when a dependency is already failing."
     }
   },
   "posts": [
@@ -254,7 +254,7 @@
       "title": "How we built rate limiting capable of scaling to millions of domains",
       "url": "https://blog.cloudflare.com/counting-things-a-lot-of-different-things/",
       "company": "Cloudflare",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2017-06-07",
       "ageNote": "From June 2017. It is here for fundamentals that do not depend on Cloudflare's current setup: how a sliding window estimate counts with two numbers, and why shared counters should stay off the request path. No newer Cloudflare source cited here confirms this design is still in use, so its details, such as Twemproxy and Twemcache, may have changed.",
       "related": [
@@ -329,7 +329,7 @@
           "rejected": "A central counter store, fixed windows, a timestamp log, a leaky bucket, and compare-and-set updates.",
           "why": "A central store would be slow and hard to keep available, and the other algorithms were too inaccurate, too memory hungry, or needed operations the store could not do atomically. The estimate is cheap and, in the post's test, close enough to the real rate."
         },
-        "failures": "The estimate is approximate: in the test, 3 sources got through despite being slightly over the limit. Compare-and-set updates would have failed often under attack. The post calls the product young and says more optimizations and features were being explored. It gives no latency, memory or time-to-live figures.",
+        "failures": "The estimate is approximate: in the test, 3 sources got through despite being slightly over the limit. Compare-and-set updates would have failed often under attack. The post says the team had just started to explore how to protect customers with the limiter and was looking into more optimizations and new features. It gives no latency, memory or time-to-live figures.",
         "takeaways": "Choose the counting algorithm by what your store can do atomically and cheaply. Keep counting off the request path, and keep the block decision as a small flag that servers can cache. Measure the error of an approximate count instead of assuming it is small."
       }
     },
@@ -338,7 +338,7 @@
       "title": "High performance ratelimiting at Databricks",
       "url": "https://databricks.com/blog/high-performance-ratelimiting-databricks",
       "company": "Databricks",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2025-09-11",
       "related": [
         "consistent-hashing"
