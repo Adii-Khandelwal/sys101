@@ -2,6 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { TOURS, keyAction, move, overlayBoxes, placeBox, resolveSteps, wrapTab, type TourId } from "./tours";
+import { renderToStaticMarkup } from "react-dom/server";
+import { createElement } from "react";
+import SiteFooter from "@/components/SiteFooter";
 import { BANNED_PHRASING } from "./topics";
 import { TOURS_KEY, forgetSeen, loadSeen, markSeen, parseSeen } from "./tourSeen";
 
@@ -22,7 +25,7 @@ describe("tour steps", () => {
 
   it("uses plain words: no em dashes, banned phrasing or emoji", () => {
     for (const s of all()) {
-      for (const t of [s.title, s.text, s.phone?.text ?? ""]) {
+      for (const t of [s.title, s.text, s.path?.text ?? ""]) {
         expect(t).not.toMatch(/—|–/);
         expect(t).not.toMatch(BANNED_PHRASING);
         expect(t).not.toMatch(/\p{Extended_Pictographic}/u);
@@ -34,30 +37,45 @@ describe("tour steps", () => {
     const files = ["components", "app"].flatMap((d) => fs.readdirSync(d, { recursive: true, encoding: "utf8" }).filter((f) => /\.tsx$/.test(f)).map((f) => fs.readFileSync(path.join(d, f), "utf8")));
     const source = files.join("\n");
     for (const s of all()) {
-      for (const target of [s.target, s.phone?.target].filter(Boolean) as string[]) {
+      for (const target of [s.target, s.path?.target].filter(Boolean) as string[]) {
         expect(source, `data-tour="${target}"`).toMatch(new RegExp(`data-tour=(?:"|\\{[^}]*)${target}`));
       }
     }
   });
 
-  it("gives a phone its own wording and drops steps that are for desktop only", () => {
+  it("gives the Path list its own wording, whatever the screen, and drops desktop-only steps on a phone", () => {
     const seen = (t: string) => t !== "none";
-    const desktop = resolveSteps("home", false, seen);
-    const phone = resolveSteps("home", true, seen);
-    expect(desktop.map((s) => s.target)).toContain("view");
+    const map = resolveSteps("home", { path: false, phone: false }, seen);
+    const deskPath = resolveSteps("home", { path: true, phone: false }, seen);
+    const phone = resolveSteps("home", { path: true, phone: true }, seen);
+    expect(map.map((s) => s.target)).toContain("view");
+    expect(deskPath.map((s) => s.target)).toContain("view");
     expect(phone.map((s) => s.target)).not.toContain("view");
-    expect(phone[0].text).not.toBe(desktop[0].text);
-    expect(phone).toHaveLength(desktop.length - 1);
+    // Nothing in the Path wording may talk about a map the reader is not looking at.
+    for (const s of [...deskPath, ...phone].filter((x) => x.target !== "view")) expect(s.text).not.toMatch(/\bmap\b/i);
+    expect(deskPath[0].text).not.toBe(map[0].text);
+    expect(deskPath.find((s) => s.target === "view")!.text).toMatch(/You are on Path/);
+    expect(map.find((s) => s.target === "view")!.text).not.toMatch(/You are on Path/);
+    expect(phone).toHaveLength(map.length - 1);
+    // A phone has no keyboard: nothing in its wording may mention keys, and a click becomes a pick or tap.
+    for (const s of phone) expect(s.text).not.toMatch(/\bPress\b|\bEnter\b|\bEsc\b|\bClick\b| \/ /);
   });
 
   it("skips a step whose target is not on the page", () => {
-    expect(resolveSteps("topic", false, (t) => t !== "check").map((s) => s.target)).not.toContain("check");
-    expect(resolveSteps("topic", false, () => false)).toEqual([]);
+    expect(resolveSteps("topic", { path: false, phone: false }, (t) => t !== "check").map((s) => s.target)).not.toContain("check");
+    expect(resolveSteps("topic", { path: false, phone: false }, () => false)).toEqual([]);
   });
 
   it("keeps the reading tracker out of a tour's scrolling", () => {
     expect(fs.readFileSync("components/TourOverlay.tsx", "utf8")).toContain("dataset.touring");
     expect(fs.readFileSync("components/LessonRail.tsx", "utf8")).toContain("dataset.touring");
+  });
+
+  it("marks a tour seen only when it is finished or skipped, never on Esc or an auto-close", () => {
+    const overlay = fs.readFileSync("components/TourOverlay.tsx", "utf8");
+    expect(overlay).toContain("close(true)"); // Done and Skip tour
+    expect(overlay).toContain("closeRef.current(false)"); // Esc, and the page changing under the tour
+    expect(fs.readFileSync("components/TourLink.tsx", "utf8")).toMatch(/if \(finished\) markSeen/);
   });
 
   it("stores only a small seen flag, and only from the entry link and tourSeen", () => {
@@ -132,5 +150,16 @@ describe("the seen flag", () => {
     expect(() => markSeen("home", blocked)).not.toThrow();
     expect(() => forgetSeen(blocked)).not.toThrow();
     expect(loadSeen(null).seen).toEqual({});
+  });
+});
+
+describe("the footer", () => {
+  const html = (el: React.ReactElement) => renderToStaticMarkup(el);
+
+  it("offers the tour only on a page that has one, in its own group", () => {
+    expect(html(createElement(SiteFooter, { tour: "home" }))).toContain("Take the tour");
+    expect(html(createElement(SiteFooter, { tour: "topic" }))).toContain("Take the tour");
+    expect(html(createElement(SiteFooter))).not.toContain("Take the tour");
+    expect(html(createElement(SiteFooter))).toContain("footer-group");
   });
 });

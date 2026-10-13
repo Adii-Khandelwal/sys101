@@ -7,6 +7,9 @@ import { isPhone, keyAction, move, overlayBoxes, placeBox, resolveSteps, wrapTab
 const PAD = 4; // the outline sits this far outside the target
 type Rect = { left: number; top: number; right: number; bottom: number };
 
+/** The homepage is showing the Path list (a phone always does). */
+const pathShowing = () => isPhone() || !!document.querySelector("section.path");
+
 const visibleTarget = (name: string) =>
   [...document.querySelectorAll<HTMLElement>(`[data-tour~="${name}"]`)].find((el) => {
     const r = el.getBoundingClientRect();
@@ -14,9 +17,11 @@ const visibleTarget = (name: string) =>
   }) ?? null;
 
 /** A thin outline around one part of the page, a light dim elsewhere, and a tooltip. Loaded only when a tour starts. */
-export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: () => void }) {
-  const [steps] = useState(() => resolveSteps(tour, isPhone(), (t) => !!visibleTarget(t)));
+// `onClose(finished)`: finished is true for Done and Skip tour, false for Esc and for a tour that ended because the page changed.
+export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: (finished: boolean) => void }) {
+  const [steps] = useState(() => resolveSteps(tour, { phone: isPhone(), path: pathShowing() }, (t) => !!visibleTarget(t)));
   const [index, setIndex] = useState(0);
+  const startedOnPath = useRef(pathShowing());
   const [rect, setRect] = useState<Rect | null>(null);
   const [tip, setTip] = useState<{ left: number; top: number }>({ left: 16, top: 16 });
   const [said, setSaid] = useState("");
@@ -36,7 +41,7 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
 
   // Fade out, and if the tour scrolled the page, ease back to where the reader was; then hand over. The reading
   // tracker stays off until then, so the scroll back leaves no visits. Under reduced motion all of it is instant.
-  const close = () => {
+  const close = (finished = false) => {
     if (closing.current) return;
     closing.current = true;
     setVisible(false);
@@ -46,7 +51,7 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
     const finish = () => {
       if (!done) {
         done = true;
-        onClose();
+        onClose(finished);
       }
     };
     if (Math.abs(window.scrollY - startY.current) > 2) {
@@ -73,7 +78,7 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
 
   const go = (dir: 1 | -1) => {
     const to = move(index, dir, steps.length);
-    if (to === null) close();
+    if (to === null) close(true);
     else setIndex(to);
   };
   const goRef = useRef(go);
@@ -91,7 +96,7 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
 
   // Bring the target into view (instantly: no scrolling animation), then follow it while the page moves.
   useEffect(() => {
-    if (!step) return onClose();
+    if (!step) return onClose(false);
     const el = visibleTarget(step.target);
     if (!el) return;
     el.scrollIntoView({ block: phone ? "start" : "center", inline: "nearest", behavior: "instant" as ScrollBehavior });
@@ -105,12 +110,18 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
     };
     measure(true);
     const follow = () => measure(false);
+    // The page stays clickable, so the reader may switch Map and Path while a tour is open. The steps were worded for
+    // the other view (or their target is gone), so the tour ends instead of describing something that is not there.
+    const watch = window.setInterval(() => {
+      if (!el.isConnected || pathShowing() !== startedOnPath.current) closeRef.current(false);
+    }, 300);
     window.addEventListener("resize", follow);
     window.addEventListener("scroll", follow, true);
     setSaid(`Step ${index + 1} of ${steps.length}: ${step.title}. ${step.text}`);
     return () => {
       window.removeEventListener("resize", follow);
       window.removeEventListener("scroll", follow, true);
+      window.clearInterval(watch);
     };
     // onClose and phone are stable for the life of a tour.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -152,7 +163,7 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
       const action = keyAction(e.key);
       if (action === "close") {
         e.preventDefault();
-        closeRef.current();
+        closeRef.current(false);
       } else if (inside && action) {
         e.preventDefault();
         goRef.current(action === "next" ? 1 : -1);
@@ -203,7 +214,7 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
           <button type="button" className="text-button label" onClick={() => go(1)}>
             {last ? "Done" : "Next"}
           </button>
-          <button type="button" className="text-button label tour-skip" onClick={close}>
+          <button type="button" className="text-button label tour-skip" onClick={() => close(true)}>
             Skip tour
           </button>
         </div>

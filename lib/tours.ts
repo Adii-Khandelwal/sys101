@@ -4,13 +4,18 @@ import { PHONE } from "./breakpoints";
 
 export type TourId = "home" | "topic";
 
-/** `target` is a data-tour name. `phone` swaps the text, or the target, on a phone; `desktopOnly` drops the step there. */
+/**
+ * `target` is a data-tour name. `path` swaps the text, or the target, when the homepage is showing the Path list
+ * (a phone always does; a desktop reader may have chosen it). `desktopOnly` drops the step on a phone.
+ */
 export type TourStep = {
   target: string;
   title: string;
   text: string;
   desktopOnly?: boolean;
-  phone?: { text?: string; target?: string };
+  path?: { title?: string; text?: string; target?: string };
+  /** Wording for a phone, which has no keyboard shortcuts. */
+  phone?: { text: string };
 };
 
 export const TOURS: Record<TourId, TourStep[]> = {
@@ -19,24 +24,26 @@ export const TOURS: Record<TourId, TourStep[]> = {
       target: "map",
       title: "The map",
       text: "Read the map left to right. A topic sits to the right of the topics it builds on, so you can start at the left and work across. Click a topic to open it.",
-      phone: { text: "This list shows the topics in a suggested reading order, with what each one builds on written under its title. Tap one to open it." },
+      path: { title: "The path", text: "This list shows the topics in a suggested reading order, with what each one builds on written under its title. Pick one to open it." },
     },
     {
       target: "states",
       title: "Four states",
       text: "A hollow ring is unread. A thicker ring with a dot is ready: you have read what it builds on. A rust ring with a dot is in progress. A filled rust circle is read.",
-      phone: { text: "The mark beside each topic shows where it stands. A hollow ring is unread, a ring with a dot is ready or in progress (the words beside the title say which), and a filled circle is read." },
+      path: { text: "The mark beside each topic shows where it stands. A hollow ring is unread, a ring with a dot is ready or in progress (the words beside the title say which), and a filled circle is read." },
     },
     {
       target: "view",
       title: "Map or Path",
       text: "Path is the same topics as a list, grouped, with a button to mark a whole group as read. The site remembers your choice.",
+      path: { text: "You are on Path: the same topics as a list, grouped, with a button to mark a whole group as read. Map draws them as a graph instead. The site remembers your choice." },
       desktopOnly: true,
     },
     {
       target: "search",
       title: "Search",
       text: "Search finds topics, companies and terms. Press / anywhere on the page to jump to the box, Enter to open the first result and Esc to clear it. Type several words with spaces between them and each word you have finished has to appear in the result.",
+      phone: { text: "Search finds topics, companies and terms. Type several words with spaces between them and each word you have finished has to appear in the result." },
     },
     {
       target: "your-data",
@@ -75,12 +82,13 @@ export const TOURS: Record<TourId, TourStep[]> = {
 
 export type ResolvedStep = { target: string; title: string; text: string };
 
-/** The steps this reader gets: phone wording and targets applied, steps without a visible target dropped. */
-export function resolveSteps(id: TourId, phone: boolean, visible: (target: string) => boolean): ResolvedStep[] {
+/** The steps this reader gets: Path wording and targets applied, steps without a visible target dropped. */
+export function resolveSteps(id: TourId, view: { path: boolean; phone: boolean }, visible: (target: string) => boolean): ResolvedStep[] {
   return TOURS[id].flatMap((s) => {
-    if (phone && s.desktopOnly) return [];
-    const target = (phone && s.phone?.target) || s.target;
-    return visible(target) ? [{ target, title: s.title, text: (phone && s.phone?.text) || s.text }] : [];
+    if (view.phone && s.desktopOnly) return [];
+    const target = (view.path && s.path?.target) || s.target;
+    const swap = view.path ? s.path : undefined;
+    return visible(target) ? [{ target, title: swap?.title ?? s.title, text: (view.phone ? s.phone?.text : undefined) ?? swap?.text ?? s.text }] : [];
   });
 }
 

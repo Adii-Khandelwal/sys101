@@ -73,11 +73,11 @@ for (const [label, url, steps] of [["home", "/", 5], ["topic", "/topic/caching",
   expect(await page.evaluate(() => getComputedStyle(document.querySelector(".tour-svg")).pointerEvents === "none"), `${label}: the dim blocks the page`);
   await page.keyboard.press("Escape");
   await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 }).catch(() => {});
-  // Closing marks the tour seen: the only thing stored, and only that tour's flag.
+  // Done and Skip (above) marked the tour seen: the only thing stored, and only that tour's flag.
   const after = JSON.parse(await page.evaluate(() => JSON.stringify({ ...localStorage })));
   const { "sys101:tours": flag, ...rest } = after;
   expect(JSON.stringify(rest) === JSON.stringify(JSON.parse(before)), `${label}: the tour stored something besides its seen flag`);
-  expect(JSON.parse(flag ?? "{}").seen?.[label === "home" ? "home" : "topic"] === true, `${label}: closing the tour did not mark it seen`);
+  expect(JSON.parse(flag ?? "{}").seen?.[label === "home" ? "home" : "topic"] === true, `${label}: finishing or skipping the tour did not mark it seen`);
   // A later visit does not show the link; Your data brings it back.
   await page.reload({ waitUntil: "networkidle" });
   expect((await page.getByRole("button", { name: "Take the 30-second tour" }).count()) === 0, `${label}: the link came back on the next visit`);
@@ -86,6 +86,69 @@ for (const [label, url, steps] of [["home", "/", 5], ["topic", "/topic/caching",
   await page.goto(BASE + url, { waitUntil: "networkidle" });
   expect((await page.getByRole("button", { name: "Take the 30-second tour" }).count()) === 1, `${label}: Your data did not bring the link back`);
   expect(errors.length === 0, `${label}: console errors: ${errors.join(" | ").slice(0, 200)}`);
+  await ctx.close();
+}
+
+// The link stays until the reader presses Skip tour or finishes: Esc, or leaving the page, does not remove it.
+for (const [how, removes] of [["Escape", false], ["Skip", true], ["Done", true]]) {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  const open = async () => {
+    await page.goto(BASE + "/", { waitUntil: "networkidle" });
+    const link = page.getByRole("button", { name: "Take the 30-second tour" });
+    if ((await link.count()) === 0) return false;
+    await link.click();
+    await page.waitForSelector(".tour-tip");
+    return true;
+  };
+  expect(await open(), `${how}: no link on a first visit`);
+  if (how === "Escape") await page.keyboard.press("Escape");
+  else if (how === "Skip") await page.getByRole("button", { name: "Skip tour" }).click();
+  else for (let i = 0; i < 5; i++) await page.locator(".tour-actions button").nth(1).click();
+  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 }).catch(() => {});
+  await page.reload({ waitUntil: "networkidle" });
+  const there = (await page.getByRole("button", { name: "Take the 30-second tour" }).count()) === 1;
+  expect(there === !removes, `${how}: the link ${there ? "stayed" : "went"} on the next visit, expected it to ${removes ? "go" : "stay"}`);
+  await ctx.close();
+}
+
+// The Path list gets Path wording on a desktop too, and switching view while a tour is open ends it cleanly.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => localStorage.setItem("sys101:homeView", "path"));
+  await page.goto(BASE + "/", { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Take the 30-second tour" }).click();
+  await page.waitForSelector(".tour-tip");
+  const text = async () => (await page.locator(".tour-title").textContent()) + " | " + (await page.locator(".tour-text").textContent());
+  expect(/The path/.test(await text()) && !/\bmap\b/i.test(await text()), `path view: step 1 talks about a map (${await text()})`);
+  await page.locator(".tour-actions button").nth(1).click();
+  await page.locator(".tour-actions button").nth(1).click();
+  expect(/You are on Path/.test(await text()), `path view: the Map or Path step does not say you are on Path (${await text()})`);
+  await page.getByRole("button", { name: "Map", exact: true }).last().click();
+  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 }).catch(() => {});
+  expect((await page.locator(".tour-tip").count()) === 0, "path view: the tour stayed open after switching to the map");
+  await ctx.close();
+}
+
+// The footer offers the tour on the pages that have one, even after the top link is gone, and nowhere else.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  const footer = () => page.locator(".site-footer").getByRole("button", { name: "Take the tour" });
+  await page.goto(BASE + "/about", { waitUntil: "networkidle" });
+  expect((await footer().count()) === 0, "footer: the tour link shows on a page with no tour");
+  await page.goto(BASE + "/", { waitUntil: "networkidle" });
+  await page.evaluate(() => localStorage.setItem("sys101:tours", JSON.stringify({ version: 1, seen: { home: true, topic: true } })));
+  await page.reload({ waitUntil: "networkidle" });
+  expect((await page.getByRole("button", { name: "Take the 30-second tour" }).count()) === 0, "footer: the top link is still shown after the tour was taken");
+  expect((await footer().count()) === 1, "footer: no tour link on the homepage once the top link is hidden");
+  await footer().focus();
+  await page.keyboard.press("Enter");
+  await page.waitForSelector(".tour-tip");
+  await page.keyboard.press("Escape");
+  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 });
+  expect(await page.evaluate(() => document.activeElement?.classList.contains("tour-footer-link")), "footer: focus did not return to the footer link");
   await ctx.close();
 }
 

@@ -9,10 +9,11 @@ import { loadSeen, markSeen } from "@/lib/tourSeen";
 const TourOverlay = dynamic(() => import("./TourOverlay"), { ssr: false });
 
 /**
- * The quiet entry link. It never starts by itself and appears only once the page is running. Once a reader has
- * taken or skipped the tour it is not shown again on later visits (Your data can bring it back), so it never nags.
+ * The quiet entry link. It never starts by itself and appears only once the page is running. It stays until the
+ * reader finishes the tour (Done) or presses Skip tour; Esc only closes it for now. After that it is not shown again
+ * on later visits (Your data can bring it back), so it never nags.
  */
-export default function TourLink({ tour }: { tour: TourId }) {
+export default function TourLink({ tour, variant = "inline" }: { tour: TourId; variant?: "inline" | "footer" }) {
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
   const [seen, setSeen] = useState(false);
@@ -23,27 +24,28 @@ export default function TourLink({ tour }: { tour: TourId }) {
   }, [tour]);
 
   // Taken or skipped counts as seen. The link stays on this page until the next visit, so focus has somewhere to return.
-  if (seen) return null;
+  // The footer copy stays: it is how a reader takes the tour again, and it does not nag from down there.
+  if (seen && variant === "inline") return null;
 
   return (
     <>
       <button
         ref={button}
         type="button"
-        className="text-button label tour-link"
+        className={variant === "footer" ? "text-button tour-footer-link" : "text-button label tour-link"}
         data-pagefind-ignore
         // Without JavaScript the button does nothing, so it stays invisible; its space is kept so nothing shifts.
         style={ready ? undefined : { visibility: "hidden" }}
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
       >
-        Take the 30-second tour
+        {variant === "footer" ? "Take the tour" : "Take the 30-second tour"}
       </button>
       {open && (
         <TourOverlay
           tour={tour}
-          onClose={() => {
-            markSeen(tour);
+          onClose={(finished) => {
+            if (finished) markSeen(tour);
             setOpen(false);
             button.current?.focus({ preventScroll: true }); // the page is back where the link is
           }}

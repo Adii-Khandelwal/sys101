@@ -107,7 +107,7 @@ export default function Home() {
       <TryQuestion slug={dns.slug} topicTitle={dns.title} questions={quiz} />
       <PostSources companies={companies} />
 
-      <SiteFooter />
+      <SiteFooter tour="home" />
     </main>
   );
 }

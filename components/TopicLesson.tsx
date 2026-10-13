@@ -335,7 +335,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
       </section>
 
       <PageUpdated date={updated} />
-      <SiteFooter />
+      <SiteFooter tour="topic" />
     </article>
   );
 }
