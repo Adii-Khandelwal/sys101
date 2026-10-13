@@ -1386,6 +1386,7 @@ h1[tabindex="-1"]:focus {
 }
 
 .sources li .label {
+  display: inline-block; /* company and year move to the next line together, never split */
   margin-left: 6px;
 }
 
