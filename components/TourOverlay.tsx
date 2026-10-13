@@ -28,13 +28,66 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
   const step = steps[index];
   const phone = isPhone();
 
+  // Fade in once the first target is measured and the tooltip placed, so nothing jumps into place.
+  const [visible, setVisible] = useState(false);
+  // Read while rendering, before the first step scrolls the page: this is where the reader was.
+  const startY = useRef(typeof window === "undefined" ? 0 : window.scrollY);
+  const closing = useRef(false);
+
+  // Fade out, and if the tour scrolled the page, ease back to where the reader was; then hand over. The reading
+  // tracker stays off until then, so the scroll back leaves no visits. Under reduced motion all of it is instant.
+  const close = () => {
+    if (closing.current) return;
+    closing.current = true;
+    setVisible(false);
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const fade = (parseFloat(dialog.current ? getComputedStyle(dialog.current).transitionDuration : "0") || 0) * 1000;
+    let done = false;
+    const finish = () => {
+      if (!done) {
+        done = true;
+        onClose();
+      }
+    };
+    if (Math.abs(window.scrollY - startY.current) > 2) {
+      window.scrollTo({ top: startY.current, behavior: reduced ? ("instant" as ScrollBehavior) : "smooth" });
+      if (reduced) setTimeout(finish, fade);
+      else {
+        // Wait until the page has reached the spot (or stopped moving), but never longer than 900ms.
+        const t0 = performance.now();
+        let still = 0;
+        let prev = window.scrollY;
+        const watch = () => {
+          const y = window.scrollY;
+          still = y === prev ? still + 1 : 0;
+          prev = y;
+          if (Math.abs(y - startY.current) <= 1 || still >= 6 || performance.now() - t0 > 900) finish();
+          else requestAnimationFrame(watch);
+        };
+        requestAnimationFrame(watch);
+      }
+    } else setTimeout(finish, fade);
+  };
+  const closeRef = useRef(close);
+  closeRef.current = close;
+
   const go = (dir: 1 | -1) => {
     const to = move(index, dir, steps.length);
-    if (to === null) onClose();
+    if (to === null) close();
     else setIndex(to);
   };
   const goRef = useRef(go);
   goRef.current = go;
+
+  useEffect(() => {
+    if (!rect || visible || closing.current) return;
+    let second = 0;
+    const first = requestAnimationFrame(() => (second = requestAnimationFrame(() => setVisible(true))));
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+    };
+  }, [rect, visible]);
 
   // Bring the target into view (instantly: no scrolling animation), then follow it while the page moves.
   useEffect(() => {
@@ -76,11 +129,9 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
   // The tour scrolls the page to each part; closing it puts the reader back where they were, and while it runs the
   // reading tracker (components/LessonRail.tsx) ignores the scrolling.
   useEffect(() => {
-    const y = window.scrollY;
     document.documentElement.dataset.touring = "true";
     return () => {
       delete document.documentElement.dataset.touring;
-      window.scrollTo({ top: y, behavior: "instant" as ScrollBehavior });
     };
   }, []);
 
@@ -101,7 +152,7 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
       const action = keyAction(e.key);
       if (action === "close") {
         e.preventDefault();
-        onClose();
+        closeRef.current();
       } else if (inside && action) {
         e.preventDefault();
         goRef.current(action === "next" ? 1 : -1);
@@ -109,7 +160,6 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!step) return null;
@@ -118,7 +168,7 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
   return createPortal(
     <>
       {boxes && (
-        <svg className={`tour-svg${glide ? " tour-go" : ""}`} aria-hidden="true">
+        <svg className={`tour-svg${glide ? " tour-go" : ""}`} data-shown={visible || undefined} aria-hidden="true">
           {(["top", "bottom", "left", "right"] as const).map((k) => (
             <rect key={k} className="tour-dim" width="1" height="1" style={{ transform: placeBox(boxes[k]) }} />
           ))}
@@ -128,6 +178,7 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
       <div
         ref={dialog}
         className={`tour-tip${glide ? " tour-go" : ""}`}
+        data-shown={visible || undefined}
         role="dialog"
         aria-modal="false"
         aria-labelledby="tour-title"
@@ -152,7 +203,7 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
           <button type="button" className="text-button label" onClick={() => go(1)}>
             {last ? "Done" : "Next"}
           </button>
-          <button type="button" className="text-button label tour-skip" onClick={onClose}>
+          <button type="button" className="text-button label tour-skip" onClick={close}>
             Skip tour
           </button>
         </div>

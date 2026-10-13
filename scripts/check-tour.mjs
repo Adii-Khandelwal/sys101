@@ -43,6 +43,7 @@ for (const [label, url, steps] of [["home", "/", 5], ["topic", "/topic/caching",
   expect(total === steps, `${label}: expected ${steps} steps, got ${total}`);
   expect((await page.locator(".tour-actions button").nth(1).innerText()).toLowerCase() === "done", `${label}: the last step does not say Done`);
   await page.locator(".tour-actions button").nth(1).click();
+  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 }).catch(() => {});
   expect((await page.locator(".tour-tip").count()) === 0, `${label}: Done did not close the tour`);
   expect(await page.evaluate(() => document.activeElement?.classList.contains("tour-link")), `${label}: focus did not return to the entry link after Done`);
 
@@ -51,6 +52,7 @@ for (const [label, url, steps] of [["home", "/", 5], ["topic", "/topic/caching",
   await page.waitForSelector(".tour-tip");
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("Escape");
+  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 }).catch(() => {});
   expect((await page.locator(".tour-tip").count()) === 0, `${label}: Esc did not close`);
   expect(await page.evaluate(() => document.activeElement?.classList.contains("tour-link")), `${label}: focus did not return after Esc`);
 
@@ -61,6 +63,7 @@ for (const [label, url, steps] of [["home", "/", 5], ["topic", "/topic/caching",
   await page.keyboard.press("ArrowRight");
   expect(await page.getByRole("button", { name: "Skip tour" }).isVisible(), `${label}: Skip is not visible on step 3`);
   await page.getByRole("button", { name: "Skip tour" }).click();
+  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 }).catch(() => {});
   expect((await page.locator(".tour-tip").count()) === 0, `${label}: Skip did not close`);
 
   // The page stayed clickable behind the dim, and nothing was stored.
@@ -69,6 +72,7 @@ for (const [label, url, steps] of [["home", "/", 5], ["topic", "/topic/caching",
   await page.waitForSelector(".tour-svg");
   expect(await page.evaluate(() => getComputedStyle(document.querySelector(".tour-svg")).pointerEvents === "none"), `${label}: the dim blocks the page`);
   await page.keyboard.press("Escape");
+  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 }).catch(() => {});
   // Closing marks the tour seen: the only thing stored, and only that tour's flag.
   const after = JSON.parse(await page.evaluate(() => JSON.stringify({ ...localStorage })));
   const { "sys101:tours": flag, ...rest } = after;
@@ -102,6 +106,51 @@ for (const [reduce, label] of [["no-preference", "motion"], ["reduce", "reduced 
   expect(start.join() !== end.join(), `${label}: the outline did not move to the next target`);
   if (reduce === "no-preference") expect(early.join() !== end.join() && early.join() !== start.join(), `${label}: the outline did not glide (start ${start}, 60ms ${early}, end ${end})`);
   else expect(early.join() === end.join(), `${label}: the outline moved gradually under reduced motion (60ms ${early}, end ${end})`);
+  await ctx.close();
+}
+
+// Opening and closing fade (opacity) and the page eases back to where it was; under reduced motion all of it is instant.
+for (const [reduce, label] of [["no-preference", "motion"], ["reduce", "reduced motion"]]) {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: reduce });
+  const page = await ctx.newPage();
+  await page.goto(BASE + "/topic/caching", { waitUntil: "networkidle" });
+  // Record the tooltip's opacity and the scroll position every frame.
+  await page.evaluate(() => {
+    window.__frames = [];
+    const tick = () => {
+      const t = document.querySelector(".tour-tip");
+      window.__frames.push([t ? Number(getComputedStyle(t).opacity) : null, Math.round(scrollY)]);
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+  await page.getByRole("button", { name: "Take the 30-second tour" }).click();
+  const y0 = await page.evaluate(() => Math.round(scrollY)); // where the reader is when the tour begins: its first scroll comes after the chunk loads
+  await page.waitForSelector(".tour-tip");
+  await page.waitForTimeout(700);
+  for (let i = 0; i < 4; i++) await page.keyboard.press("ArrowRight"); // to the last step, far down the page
+  await page.waitForTimeout(400);
+  const down = await page.evaluate(() => scrollY);
+  expect(down > y0 + 500, `${label}: the tour did not scroll down the page`);
+  const escAt = await page.evaluate(() => window.__frames.length);
+  await page.keyboard.press("Escape");
+  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 });
+  await page.waitForTimeout(300);
+  const frames = await page.evaluate(() => window.__frames);
+  const shownFrames = frames.filter((f) => f[0] !== null);
+  const peak = shownFrames.findIndex((f) => f[0] === 1);
+  const fadedIn = shownFrames.slice(0, peak).some((f) => f[0] > 0 && f[0] < 1);
+  const fadedOut = frames.slice(escAt).some((f) => f[0] !== null && f[0] > 0 && f[0] < 1);
+  const eased = frames.slice(escAt).some((f) => f[1] < down && f[1] > y0);
+  if (reduce === "no-preference") {
+    expect(fadedIn, `${label}: the tooltip did not fade in`);
+    expect(fadedOut, `${label}: the tooltip did not fade out`);
+    expect(eased, `${label}: the page did not ease back to where it was`);
+  } else {
+    expect(!fadedIn && !fadedOut, `${label}: the tooltip faded under reduced motion`);
+    expect(!eased, `${label}: the page eased back under reduced motion`);
+  }
+  expect((await page.evaluate(() => scrollY)) === y0, `${label}: the tour did not end at the starting scroll position (${await page.evaluate(() => scrollY)} instead of ${y0})`);
   await ctx.close();
 }
 

@@ -98,10 +98,10 @@ describe("tour keys and moves", () => {
     expect(overlayBoxes({ left: -30, top: -10, right: 50, bottom: 900 }, 400, 800).left.w).toBe(0);
   });
 
-  it("moves between steps by transform only: no clip-path, width, height, top or left transitions", () => {
+  it("moves and fades by transform and opacity only: no clip-path, width, height, top or left transitions", () => {
     const css = fs.readFileSync("app/globals.css", "utf8");
     const tour = css.slice(css.indexOf("Guided tour (components/TourOverlay.tsx)"));
-    for (const m of tour.matchAll(/transition:([^;]+);/g)) expect(m[1]).toMatch(/^\s*transform /);
+    for (const m of tour.matchAll(/transition:([^;]+);/g)) for (const part of m[1].split(",")) expect(part).toMatch(/^\s*(transform|opacity) /);
     expect(tour).not.toMatch(/clip-path|box-shadow/);
   });
 });

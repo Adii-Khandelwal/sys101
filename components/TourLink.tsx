@@ -45,7 +45,7 @@ export default function TourLink({ tour }: { tour: TourId }) {
           onClose={() => {
             markSeen(tour);
             setOpen(false);
-            button.current?.focus();
+            button.current?.focus({ preventScroll: true }); // the page is back where the link is
           }}
         />
       )}

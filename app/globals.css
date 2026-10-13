@@ -2924,6 +2924,16 @@ html {
   font-size: 15px;
   color: var(--ink-soft);
 }
+/* "Builds on" with the topic names right after it, so the sentences below do not have to be read to know what it builds on. */
+.path-builds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  margin-bottom: 6px;
+}
+.path-builds-names {
+  color: var(--ink);
+}
 .path-reasons {
   display: block;
   margin-top: 2px;
@@ -3798,9 +3808,19 @@ html[data-posts-view] .posts-view-h {
   text-align: left;
 }
 
-.lesson-top .lesson-jump .tour-link {
+/* On a topic page the link sits on its own line, quieter than the jump links above it, so the row stays uncrowded. */
+.lesson-top .lesson-tour {
+  margin: 4px 0 0;
+}
+
+.lesson-tour .tour-link {
   display: inline-flex;
   align-items: center;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 16px;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ink-soft);
 }
 
 /* One full-screen SVG holds the dim and the outline. The dim is four rects around the target, the outline one rect,
@@ -3812,6 +3832,12 @@ html[data-posts-view] .posts-view-h {
   width: 100%;
   height: 100%;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.tour-svg[data-shown] {
+  opacity: 1;
 }
 
 .tour-dim {
@@ -3829,9 +3855,12 @@ html[data-posts-view] .posts-view-h {
 
 /* Gliding to the next target. Under reduced motion --dur-base is 0ms, so it is instant. */
 .tour-go .tour-dim,
-.tour-go .tour-ring,
-.tour-tip.tour-go {
+.tour-go .tour-ring {
   transition: transform var(--dur-base) var(--ease-in-out);
+}
+
+.tour-tip.tour-go {
+  transition: transform var(--dur-base) var(--ease-in-out), opacity var(--dur-base) var(--ease-out);
 }
 
 .tour-tip {
@@ -3845,7 +3874,12 @@ html[data-posts-view] .posts-view-h {
   background: var(--paper);
   border: 1px solid var(--ink);
   border-radius: 2px;
-  animation: fade-in var(--dur-fast) var(--ease-out);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.tour-tip[data-shown] {
+  opacity: 1;
 }
 
 .tour-tip:focus {

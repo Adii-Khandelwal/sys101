@@ -100,7 +100,10 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
                       {buildsOn.length > 0 ? (
                         e.reasons ? (
                           <>
-                            <span className="path-meta-key">Builds on</span>
+                            <span className="path-builds">
+                              <span className="path-meta-key">Builds on</span>
+                              <span className="path-builds-names">{buildsOn.join(", ")}</span>
+                            </span>
                             <span className="path-reasons">
                               {e.prerequisites.map((p) => (
                                 <span key={p}>{e.reasons?.[p]}</span>

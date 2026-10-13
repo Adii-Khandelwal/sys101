@@ -155,9 +155,8 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 </Link>
               </>
             )}
-            <span className="label" aria-hidden="true">
-              ·
-            </span>
+          </p>
+          <p className="lesson-tour">
             <TourLink tour="topic" />
           </p>
         </div>
