@@ -3596,3 +3596,11 @@ html[data-posts-view] .posts-view-h {
     break-inside: avoid;
   }
 }
+
+/* Newsreader ships tabular figures (checked in the served woff2: GSUB tnum), so years and counts line up in columns. The mono labels are tabular already. */
+.posts-year,
+.posts-count,
+.glossary-count,
+.posts-topic-h .posts-n {
+  font-variant-numeric: tabular-nums;
+}
