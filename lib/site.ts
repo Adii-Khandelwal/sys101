@@ -9,6 +9,8 @@ export const REPORT_EMAIL = CONTACT_EMAIL;
 /** Origin for canonical URLs, the sitemap, and JSON-LD. No trailing slash. */
 export const SITE_URL = (process.env.SITE_URL || "https://sys101.vercel.app").replace(/\/+$/, "");
 export const SITE_NAME = "sys101";
+/** Static 1200x630 social image, drawn by scripts/make-og.mjs from the wordmark and tagline. */
+export const OG_IMAGE = { path: "/og.png", width: 1200, height: 630, alt: "sys101: learn system design in the order it makes sense" } as const;
 /** A page title must be shorter than this many characters (checked by scripts/check-seo.mjs). */
 export const TITLE_MAX = 60;
 export const SITE_DESCRIPTION =
@@ -59,13 +61,14 @@ export function pageTitle(name: { title: string; shortTitle?: string }, prefix =
 export function pageMeta({ path, title, description: raw }: { path: string; title: string | { absolute: string }; description: string }): Metadata {
   const url = absoluteUrl(path);
   const description = metaDescription(raw);
+  const image = { url: absoluteUrl(OG_IMAGE.path), width: OG_IMAGE.width, height: OG_IMAGE.height, alt: OG_IMAGE.alt };
   const fullTitle = typeof title === "string" ? `${title} · ${SITE_NAME}` : title.absolute;
   return {
     title,
     description,
     alternates: { canonical: url },
-    openGraph: { type: "website", siteName: SITE_NAME, url, title: fullTitle, description, locale: "en" },
-    twitter: { card: "summary", title: fullTitle, description },
+    openGraph: { type: "website", siteName: SITE_NAME, url, title: fullTitle, description, locale: "en", images: [image] },
+    twitter: { card: "summary_large_image", title: fullTitle, description, images: [image.url] },
   };
 }
 

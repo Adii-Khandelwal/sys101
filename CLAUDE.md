@@ -77,6 +77,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - app/sitemap.ts lists every indexable page with lastmod from content dates (PAGE_DATES for About, Glossary, Terms, Privacy). /data and 404 are noindex. /glossary aggregates every topic's glossary terms (grouped, backlinked) with a slash-to-focus filter; all terms are server-rendered for Pagefind.
 - JSON-LD only where it matches visible content: BreadcrumbList on topic and learn pages, LearningResource on topic pages. No FAQ schema.
 - No raster image without alt, width, and height. SVGs need role="img" and a name, or aria-hidden.
+- Social image: public/og.png (1200x630, wordmark and tagline on --paper) from scripts/make-og.mjs, committed; pageMeta sets og:image and twitter summary_large_image. Also apple-touch-icon.png and theme-color.
 - scripts/check-seo.mjs runs after every build and fails it on any of these.
 
 ## Accessibility and chrome

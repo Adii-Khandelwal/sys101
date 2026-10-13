@@ -1,6 +1,7 @@
 // Checks the built HTML for the SEO rules in CLAUDE.md and fails the build on any miss:
 //   - every indexable page has a unique title and description, within length
 //   - exactly one <h1>, and headings never skip a level
+//   - an og:image and a summary_large_image twitter card
 //   - exactly one canonical link, absolute, with no query string
 //   - no noindex on indexable pages; /data and the 404 page are noindex
 //   - the sitemap lists every indexable page and nothing else
@@ -62,6 +63,8 @@ for (const file of htmlFiles(APP)) {
     titles.set(title, route);
     descriptions.set(description, route);
 
+    if (!/^https:\/\/.+\/og\.png$/.test($('meta[property="og:image"]').attr("content") ?? "")) fail("missing og:image (/og.png)");
+    if ($('meta[name="twitter:card"]').attr("content") !== "summary_large_image") fail("twitter:card must be summary_large_image");
     const canonical = $('link[rel="canonical"]');
     if (canonical.length !== 1) fail(`has ${canonical.length} canonical links, needs exactly 1`);
     const href = canonical.attr("href") ?? "";

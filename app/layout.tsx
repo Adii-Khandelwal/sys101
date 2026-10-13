@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Newsreader, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import ViewTransitions from "@/components/ViewTransitions";
@@ -25,8 +25,19 @@ const mono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: SITE_NAME, template: `%s · ${SITE_NAME}` },
-  icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/icon-32.png", sizes: "32x32", type: "image/png" }] },
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/icon-32.png", sizes: "32x32", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   description: SITE_DESCRIPTION,
+};
+
+/** Browser bar colour: the --paper token in each theme. */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f3ecdc" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1713" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
