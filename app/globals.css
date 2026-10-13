@@ -130,6 +130,12 @@ a {
   }
 }
 
+/* Selected text: ink on a tint of the rule colour (9.8:1 light, 9.9:1 dark); rust on it would be 4.0 and 3.5. */
+::selection {
+  background: var(--rule);
+  color: var(--ink);
+}
+
 /* One focus ring for every interactive element; the few controls with their own (graph, search, code) override it. */
 :focus-visible {
   outline: 2px solid var(--accent);
