@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type Props = { companies: { name: string; posts: number }[] };
 
 /** Who wrote the posts the topics are built on, counted from the content. */
@@ -15,7 +17,7 @@ export default function PostSources({ companies }: Props) {
         ))}
       </ul>
       <p className="home-extra-note">
-        Every post is linked and dated on its topic page. None of these companies is affiliated with this site.
+        Every post is linked and dated on its topic page, and <Link href="/posts">all of them are listed here</Link>. None of these companies is affiliated with this site.
       </p>
     </section>
   );

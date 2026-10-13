@@ -28,6 +28,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - A source with no date (versioned docs) sets `published` to "no date shown" plus `edition`, shown instead of a date only when it gives one the page shows ("date unknown" shows nothing). `tradeoffs.rejected` is left out when the source names no alternative.
 - A paper says "This is a research paper, not a company blog post"; no internal phrasing like "the rules" on a page.
 - "What's new" (content/news, 3 items max, allowlisted sources) follows What to learn next, untracked, build-checked. No provenance note on the section. The routine touches only content/news/** and docs/news-state.json; read docs/whats-new.md.
+- "Posts" (/posts): every distinct post by topic, company or year (lib/posts.ts); all views are static HTML, ?view= only picks one, canonical /posts, only By topic in Pagefind.
 - "Background" (/background, content/background/<slug>.json) lists what a topic's posts assume; concepts taught later get a "Taught later" label and a gist, with no link. Topic pages link to it only if a file exists. Read docs/background.md.
 - Read docs/topic-pages.md before editing topic pages or their content.
 
@@ -113,7 +114,6 @@ Handcrafted, not AI-template. Cream background, serif headings, restrained palet
 
 - Two themes from CSS-variable tokens in app/globals.css: light (cream) and a warm dark (brown-charcoal, off-white ink, brighter AA rust). Any new colour must be a token, never a literal.
 - Theme toggle (sun/moon) stored locally, follows prefers-color-scheme until chosen, set before paint (no flash). SVG diagrams theme via the tokens; the Sigma map reads live vars (readThemeColors, lib/graphUi.ts).
-
 - Never use: gradients, neon, rainbow, pastels, purple and black, pure white background, drop shadows, large radius, liquid glass, emojis, sparkle icons, loose side icons, animated arrows, hover animations everywhere, bounce or elastic easing,
   three-card rows, bento grids, pricing tiers, testimonials, colored stripes, terminal mockups, dot grids, radial orbs, checkmark bullets, Inter/Geist/Space Grotesk, em dashes, "It's not X, it's Y" phrasing.
 - Always: skeleton loaders, a real working demo, Terms and Privacy pages in the footer.

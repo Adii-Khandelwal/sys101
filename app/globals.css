@@ -3097,3 +3097,230 @@ html {
   transition: opacity var(--dur-base) var(--ease-out);
   will-change: opacity;
 }
+
+/* ── Posts index (/posts) ─────────────────── */
+.posts-page {
+  max-width: 1040px;
+}
+@media (min-width: 1180px) {
+  /* Narrower, so the contents rail fits in the left margin. */
+  .posts-page {
+    max-width: 840px;
+  }
+}
+.posts-lead {
+  margin: 0 0 24px;
+  max-width: 62ch;
+  color: var(--ink-soft);
+}
+.posts-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 32px;
+}
+.dossier .posts-views {
+  margin-bottom: 0;
+  display: flex;
+  gap: 4px 20px;
+}
+.posts-views a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+.posts-views a:hover {
+  color: var(--ink);
+}
+.posts-views a[aria-current="page"] {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+.posts-search {
+  margin-top: 0;
+  flex: 0 1 340px;
+  min-width: 220px;
+}
+.posts-count {
+  margin: 4px 0 0;
+  font-size: 16px;
+  color: var(--ink-soft);
+}
+/* The inline script sets data-posts-view; without JavaScript no view is hidden. */
+html[data-posts-view="topic"] [data-view]:not([data-view="topic"]),
+html[data-posts-view="company"] [data-view]:not([data-view="company"]),
+html[data-posts-view="year"] [data-view]:not([data-view="year"]) {
+  display: none;
+}
+html[data-posts-view] .posts-view-h {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.posts-view {
+  margin-top: 40px;
+}
+.posts-group {
+  margin-top: 40px;
+}
+.posts-group:first-child {
+  margin-top: 8px;
+}
+.posts-group-h {
+  margin: 0 0 4px;
+  color: var(--ink-soft);
+}
+.posts-topic-h {
+  margin: 28px 0 0;
+  padding-bottom: 6px;
+  font-size: 22px;
+  font-weight: 500;
+  border-bottom: 1px solid var(--rule);
+}
+.posts-topic-h a {
+  color: inherit;
+  text-decoration: none;
+}
+.posts-topic-h a:hover {
+  text-decoration: underline;
+}
+.posts-n {
+  margin-left: 6px;
+  font-size: 16px;
+  color: var(--ink-soft);
+}
+.posts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.posts-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 130px 56px 140px 110px;
+  align-items: center;
+  column-gap: 20px;
+  min-height: 52px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 17px;
+}
+.posts-title {
+  display: block;
+  padding: 6px 0;
+}
+.posts-company,
+.posts-year,
+.posts-topics {
+  color: var(--ink-soft);
+  font-size: 16px;
+}
+.posts-topics a {
+  color: inherit;
+}
+.posts-end {
+  grid-column: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.posts-read {
+  color: var(--accent);
+}
+.posts-ext {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+@media (max-width: 767px) {
+  .posts-row {
+    grid-template-columns: auto auto 1fr;
+    grid-template-areas:
+      "title title title"
+      "company year topics"
+      "end end end";
+    justify-items: start;
+    column-gap: 12px;
+    padding: 4px 0;
+  }
+  .posts-title { grid-area: title; padding: 10px 0 2px; }
+  .posts-company { grid-area: company; }
+  .posts-year { grid-area: year; }
+  .posts-topics { grid-area: topics; }
+  .posts-end { grid-column: auto; grid-area: end; flex-direction: row; align-items: center; gap: 16px; }
+  .posts-views { gap: 4px 14px; }
+  .posts-search { flex-basis: 100%; }
+}
+
+/* Contents rail: desktop only, in the left margin, one list per view (the script shows the chosen one). */
+.posts-rail {
+  display: none;
+}
+@media (min-width: 1180px) {
+  html[data-posts-view] .posts-rail {
+    display: block;
+    position: fixed;
+    top: 120px;
+    left: max(12px, calc(50% - 420px - 190px));
+    width: 150px;
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+  }
+  html[data-posts-view="topic"] .posts-rail:not([data-view="topic"]),
+  html[data-posts-view="company"] .posts-rail:not([data-view="company"]),
+  html[data-posts-view="year"] .posts-rail:not([data-view="year"]) {
+    display: none;
+  }
+  .posts-rail-label {
+    margin: 0 0 10px;
+    color: var(--ink-soft);
+  }
+  .posts-rail ul {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 12px;
+    border-left: 1px solid var(--rule);
+  }
+  .posts-rail li {
+    position: relative;
+    margin: 0 0 8px;
+    font-family: var(--font-mono), monospace;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+  }
+  .posts-rail-group {
+    display: block;
+    margin: 14px 0 6px;
+    color: var(--ink);
+    text-transform: uppercase;
+  }
+  .posts-rail li:first-child .posts-rail-group {
+    margin-top: 0;
+  }
+  .posts-rail a {
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+  .posts-rail a:hover {
+    color: var(--ink);
+  }
+  .posts-rail .is-current a {
+    color: var(--accent);
+  }
+  .posts-rail .is-current::before {
+    content: "";
+    position: absolute;
+    left: -13px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--accent);
+  }
+}

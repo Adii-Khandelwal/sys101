@@ -74,6 +74,13 @@ const latest = (dates: string[]) => dates.reduce((a, b) => (b > a ? b : a), "");
 /** A topic changes when a post on it is re-checked, so its newest verifiedOn date is its lastmod. */
 export const topicUpdated = (topic: Pick<Topic, "posts">) => latest(topic.posts.map((p) => p.verifiedOn));
 
+/** The posts index changes when any post entry does. */
+export const postsUpdated = (topics: Pick<Topic, "posts">[]) => latest(topics.flatMap((t) => t.posts.map((p) => p.verifiedOn)));
+
+/** Meta description for /posts, from computed counts. */
+export const postsDescription = (d: { total: number; companyCount: number; topicCount: number }) =>
+  `All ${d.total} engineering posts behind the topics, from ${d.companyCount} companies, listed by topic, company or year, with a link to each original.`;
+
 /** Same for a learn page and its official sources. */
 /** When a topic page was last edited: its newest post entry or its What's new file, whichever is later. */
 export const topicPageUpdated = (topic: Pick<Topic, "posts">, news?: { asOf: string } | null) => latest([topicUpdated(topic), news?.asOf ?? ""]);
