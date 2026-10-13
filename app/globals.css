@@ -2189,6 +2189,18 @@ a {
 }
 
 
+/* Short pages (404, Terms, Privacy) keep the footer at the bottom of the window instead of mid-screen. */
+.dossier.legal {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - var(--header-h));
+}
+
+.dossier.legal > .site-footer {
+  margin-top: auto;
+  padding-top: 72px;
+}
+
 .legal h1 {
   margin-bottom: 32px;
 }
