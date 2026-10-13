@@ -1,6 +1,6 @@
 {
   "topic": "event-driven-architecture",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "kafka",
@@ -18,7 +18,7 @@
           "publisher": "Apache Kafka",
           "url": "https://kafka.apache.org/intro",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -38,7 +38,7 @@
           "publisher": "Amazon Web Services",
           "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -58,7 +58,7 @@
           "publisher": "SQLite",
           "url": "https://www.sqlite.org/wal.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -78,7 +78,7 @@
           "publisher": "Kubernetes",
           "url": "https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     }

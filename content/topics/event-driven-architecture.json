@@ -13,7 +13,7 @@
     "points": [
       "Event-driven architecture has each service announce facts about what already happened, and other services react on their own.",
       "The event log becomes the backbone and state can be rebuilt by replaying it, but publishing reliably and processing idempotently get harder.",
-      "Zapier found a plain write-then-publish can lose events, so an outbox commits the event with the state change, though a local outbox brings its own scaling pain.",
+      "Zapier wrote each event to a local SQLite outbox before Kafka so a Kafka outage would not lose it, then decided to move away after scaling pain.",
       "Grab found that cross-AZ traffic, mostly consumers reading a far leader, can be about half the cost of its Kafka platform."
     ],
     "figures": [
@@ -102,7 +102,7 @@
       ],
       "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-eda-ex-t\" class=\"dg\"><title id=\"dg-c-eda-ex-t\">Worked example: checkout writes an order and an OrderPlaced event to its outbox in one transaction; a relay ships it to the log; email, analytics and warehouse react independently; the warehouse deduplicates a re-shipped event; a loyalty service is added later by replaying history.</title><defs><marker id=\"dg-c-eda-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"120\" width=\"104\" height=\"56\" class=\"dg-box\"/><text x=\"66\" y=\"144\" class=\"dg-label\" text-anchor=\"middle\">Checkout</text><text x=\"66\" y=\"161\" class=\"dg-label\" text-anchor=\"middle\">order + outbox</text><path d=\"M118,148 L176,148\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-ex-a)\"/><rect x=\"180\" y=\"118\" width=\"130\" height=\"60\" class=\"dg-box dg-accent\"/><text x=\"245\" y=\"144\" class=\"dg-label\" text-anchor=\"middle\">OrderPlaced</text><text x=\"245\" y=\"161\" class=\"dg-label\" text-anchor=\"middle\">on the log</text><path d=\"M310,135 L366,70\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-ex-a)\"/><path d=\"M310,148 L366,148\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-ex-a)\"/><path d=\"M310,161 L366,226\" class=\"dg-line\" marker-end=\"url(#dg-c-eda-ex-a)\"/><rect x=\"370\" y=\"50\" width=\"120\" height=\"38\" class=\"dg-box\"/><text x=\"430\" y=\"73.5\" class=\"dg-label\" text-anchor=\"middle\">Email</text><rect x=\"370\" y=\"128\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"430\" y=\"152.5\" class=\"dg-label\" text-anchor=\"middle\">Analytics</text><rect x=\"370\" y=\"208\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"430\" y=\"232.5\" class=\"dg-label\" text-anchor=\"middle\">Warehouse</text><text x=\"430\" y=\"202\" class=\"dg-note\" text-anchor=\"middle\">dedupe duplicate</text><text x=\"430\" y=\"118\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">rewind + replay</text><text x=\"245\" y=\"214\" class=\"dg-note\" text-anchor=\"middle\">loyalty added later, no checkout change</text></svg>"
     },
-    "mistakesOutcome": "After this you can avoid the three mistakes that most often break event-driven systems.",
+    "mistakesOutcome": "After this you can spot three mistakes that break event-driven systems.",
     "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
     "quiz": [
       {
@@ -234,7 +234,7 @@
         "level": "scale",
         "prompt": "Your event backbone now carries hundreds of billions of events a week across three availability zones, and the cloud bill is dominated by network traffic. Where is the cost and what do you do?",
         "answer": "By default Kafka clients talk to the partition leader, which is in a different AZ most of the time, and most traffic is on the consuming side because a topic has many consumers. That cross-AZ traffic can be about half the platform's cost. Make the cluster rack-aware and let consumers fetch from the closest (same-AZ) replica, so reads stay in-zone. Keep the producer and replication paths correct, since those cross-AZ transfers are unavoidable and comparatively small.",
-        "tradeoffs": "Closest-replica reads need broker and consumer configuration and a Kafka version that supports it, and a same-AZ replica may lag the leader slightly. The saving is large because consumer traffic scales with the number of consumers.",
+        "tradeoffs": "Closest-replica reads need broker and consumer configuration and a Kafka version that supports it (2.3 or newer), and Grab saw up to 500 ms more end-to-end latency, so its most latency-sensitive uses stayed on leader fetch. The saving is large because consumer traffic scales with the number of consumers.",
         "wrongAnswers": [
           "Collapse to a single AZ to avoid cross-AZ traffic, losing fault tolerance.",
           "Assume producer traffic is the main cost and optimise that first.",
@@ -254,7 +254,7 @@
       "title": "Plumbing At Scale",
       "url": "https://engineering.grab.com/plumbing-at-scale",
       "company": "Grab",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2020-01-06",
       "ageNote": "From January 2020, about six years old. It is here for a fundamental that has not changed: how an event-sourcing and stream-processing platform is structured, with pipelines as isolated tenants, idempotent replay, and explicit trade-offs between completeness, delay and cost. The specific figures, such as 300 billion events a week, and the Go-plugin implementation detail may well have changed since; the post itself describes the plan to move from Go plugins to plugins over RPC.",
       "related": [
@@ -303,7 +303,7 @@
         ],
         "tradeoffs": {
           "chosen": "An event-sourcing platform with a reusable stream-processing framework, pipelines as isolated multi-tenant deployments, a ScyllaDB metastore, and idempotent rewind and replay.",
-          "rejected": "Letting each team build its own stream processing ad hoc, and (as a current limitation) Go-only processing logic via Go plugins.",
+          "rejected": "Go-only processing logic via Go plugins, which the post lists as a limitation it plans to move away from.",
           "why": "Common event-processing patterns kept recurring across teams, so standardising scaffolding, configuration and deployment, with explicit processing guarantees, lets teams trade completeness against delay and cost consciously rather than each solving it alone. The post names a planned move from Go plugins to plugins over RPC, HashiCorp-style, to allow non-Go languages."
         },
         "failures": "The post is candid that correct processing has to be bought: pipelines must declare guarantees on uptime and completeness, bounds on delay, alerting and self-healing, and the platform exists partly because getting these right per team is hard. A stated limitation is that processing logic was tied to Go plugins, with a plan to move to plugins over RPC so other languages can be used.",
@@ -315,15 +315,15 @@
       "title": "Lessons from using the outbox pattern at scale",
       "url": "https://zapier.com/blog/lessons-from-using-outbox-pattern-at-scale/",
       "company": "Zapier",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2026-03-30",
       "related": [
         "pub-sub",
         "databases"
       ],
       "digest": {
-        "problem": "Zapier's Events API, a high-throughput Go service, published events straight to a large managed Kafka cluster in AWS. Producer latency would spike during security updates and cluster upgrades, which made Kafka a single point of failure: if it went down, critical events could be lost. The team introduced a transactional outbox so a state change and its event are recorded together locally first, and the event is shipped to Kafka afterwards.",
-        "constraints": "The delivery goal stayed at-least-once, as before. Kafka infrastructure was mid-transition, and the team did not want the events service coupled to that work. The service already let teams produce events to Kafka in Avro through a simple API, which the outbox had to preserve.",
+        "problem": "Zapier's Events API, a high-throughput Go service, published events straight to a large managed Kafka cluster in AWS. Producer latency would spike during security updates and cluster upgrades, which made Kafka a single point of failure: if it went down, critical events could be lost. The team introduced an outbox, which the post says was not the textbook pattern: each event is written to a local database first and shipped to Kafka afterwards.",
+        "constraints": "The delivery goal stayed at-least-once, as before. Zapier's relational database infrastructure was going through a transition, and the team did not want the events service coupled to that work. The service already let teams produce events to Kafka in Avro through a simple API, which the outbox had to preserve.",
         "walkthrough": [
           {
             "step": "Write the event locally, not straight to Kafka",
@@ -364,10 +364,10 @@
         "tradeoffs": {
           "chosen": "A transactional outbox backed by local, sharded SQLite on EBS, with WAL, per-shard mutexes and aggressive vacuuming, shipping to Kafka at-least-once.",
           "rejected": "Publishing directly to Kafka from the service, and (for the outbox store) a traditional RDS setup rather than local SQLite.",
-          "why": "Direct publishing made Kafka a single point of failure whose latency spikes during upgrades could lose critical events. Local SQLite kept the outbox independent of the in-transition Kafka infrastructure and avoided coupling to a separate database. The post is explicit that this was not the textbook transactional outbox, and that the team has since decided to move away from it."
+          "why": "Direct publishing made Kafka a single point of failure whose latency spikes during upgrades could lose critical events. Local SQLite gave a local durable buffer with no provisioned database or network hop, and kept the service out of the relational database transition. The post is explicit that this was not the textbook transactional outbox, and that the team has since decided to move away from it."
         },
         "failures": "The first version did not scale: one SQLite outbox gave immediate SQLITE_BUSY errors, fixed by WAL mode, then by sharding into 50 files, then by per-shard mutexes because SQLite still allows only one writer per file. The EBS volume grew under load until they tuned journal_size_limit, auto_vacuum and startup VACUUM. The honest headline is the ending: having run it in production, the team decided to move away from this approach.",
-        "takeaways": "Reliable publishing is the hard half of event-driven systems: a plain write-to-db-then-publish can lose events, and an outbox fixes that by committing the event with the state change. But an outbox is not free, and a local-database outbox brings its own scaling pain (concurrency limits, sharding, disk growth). Weigh it against the failure it prevents, and be willing to walk it back, as Zapier did."
+        "takeaways": "Reliable publishing is the hard half of event-driven systems: publishing straight to Kafka made it a single point of failure for Zapier, and writing events to a local outbox first let it keep accepting them. But an outbox is not free, and a local-database outbox brings its own scaling pain (concurrency limits, sharding, disk growth). Weigh it against the failure it prevents, and be willing to walk it back, as Zapier did."
       }
     },
     {
@@ -375,7 +375,7 @@
       "title": "Zero traffic cost for Kafka consumers",
       "url": "https://engineering.grab.com/zero-traffic-cost",
       "company": "Grab",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2023-07-07",
       "related": [
         "pub-sub"
@@ -430,7 +430,7 @@
       }
     }
   ],
-  "comparison": "All three posts are about the same backbone, an append-only event log on Kafka, but they answer three different questions, so read them as architecture, then delivery, then economics rather than as three versions of one story. Grab's Plumbing At Scale is about the architecture: how to turn recurring event processing into an event-sourcing platform with a stream-processing framework, isolated multi-tenant pipelines, and idempotent replay. Zapier's outbox post is about getting events onto that backbone reliably in the first place, and Grab's zero-traffic-cost post is about what it costs to run the backbone once it carries everything.\n\nWhere they diverge is in the hard problem each one owns. Grab's platform post owns processing guarantees and multi-tenancy: letting many teams trade completeness against delay and cost on shared infrastructure. Zapier owns the dual-write problem: a write to the database and a publish to Kafka can disagree, so it commits the event with the state change in a local outbox, and is honest that its SQLite implementation hit concurrency and disk limits and was ultimately walked back. Grab's cost post owns the cloud bill: by default consumers read a leader that is usually in another AZ, so cross-AZ traffic became about half the platform cost until consumers were pointed at the closest replica.\n\nThe evidence is correspondingly different. Grab's platform post gives scale (over 300 billion events a week, terabytes an hour, hundreds of pipelines) but few delivery guarantees; it is a 2020 post, so treat its figures as of then. Zapier gives mechanism and a candid failure arc rather than throughput numbers (50 SQLite shards per pod, per-shard mutexes, a decision to move away). Grab's cost post gives the economic figures that the other two leave out (about 67% of client traffic crossing an AZ, consuming traffic about half the bill) and a measured result: cross-AZ traffic down 25% after three months, at the price of up to 500 ms more latency. Together they say event-driven design is three concerns that each need their own answer.",
+  "comparison": "All three posts are about the same backbone, an append-only event log on Kafka, but they answer three different questions, so read them as architecture, then delivery, then economics rather than as three versions of one story. Grab's Plumbing At Scale is about the architecture: how to turn recurring event processing into an event-sourcing platform with a stream-processing framework, isolated multi-tenant pipelines, and idempotent replay. Zapier's outbox post is about getting events onto that backbone reliably in the first place, and Grab's zero-traffic-cost post is about what it costs to run the backbone once it carries everything.\n\nWhere they diverge is in the hard problem each one owns. Grab's platform post owns processing guarantees and multi-tenancy: letting many teams trade completeness against delay and cost on shared infrastructure. Zapier owns the broker-outage problem: publishing straight to Kafka made it a single point of failure, so it writes each event to a local outbox first, and is honest that its SQLite implementation hit concurrency and disk limits and was ultimately walked back. Grab's cost post owns the cloud bill: by default consumers read a leader that is usually in another AZ, so cross-AZ traffic became about half the platform cost until consumers were pointed at the closest replica.\n\nThe evidence is correspondingly different. Grab's platform post gives scale (over 300 billion events a week, terabytes an hour, hundreds of pipelines) but few delivery guarantees; it is a 2020 post, so treat its figures as of then. Zapier gives mechanism and a candid failure arc rather than throughput numbers (50 SQLite shards per pod, per-shard mutexes, a decision to move away). Grab's cost post gives the economic figures that the other two leave out (about 67% of client traffic crossing an AZ, consuming traffic about half the bill) and a measured result: cross-AZ traffic down 25% after three months, at the price of up to 500 ms more latency. Together they say event-driven design is three concerns that each need their own answer.",
   "glossary": [
     {
       "term": "Event",

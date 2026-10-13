@@ -116,8 +116,8 @@
       "name": "Going deeper",
       "body": [
         "The first hard problem is publishing an event reliably. If a service writes its database row and then publishes the event as a separate step, one can succeed while the other fails, so a committed change emits no event, or a rolled-back change emits one. Microsoft's Transactional Outbox pattern avoids this by saving the events in an outbox table in the same database transaction as the business object, which guarantees no data loss; a separate worker then queries the outbox for unhandled entries, publishes them to the broker, and marks them processed [[ms-outbox]].",
-        "The second is that events can arrive more than once, so consumers have to be safe to repeat. The outbox guidance says guaranteed delivery of events is an important part of supporting idempotent message processing [[ms-outbox]]. A consumer must handle the same event twice with the same effect, and a common way to do that is to record the ids of events it has already processed.",
-        "A common companion is CQRS, which separates write operations (commands) from read operations (queries). Microsoft advises that commands should represent specific business tasks, such as \"Book hotel room\" rather than \"set status to reserved\", which captures intent and aligns the commands with business processes. In an event-driven system those commands produce events, and the read side is a projection built from them [[ms-cqrs]]."
+        "The second is that events can arrive more than once, so consumers have to be safe to repeat. The outbox guidance says guaranteed delivery of events is an important part of supporting idempotent message processing [[ms-outbox]]. In our own words, a consumer must handle the same event twice with the same effect, and one way to do that is to record the ids of events it has already processed.",
+        "A related pattern is CQRS, which Microsoft describes as separating read and write operations into separate data models. Microsoft advises that commands should represent specific business tasks, such as \"Book hotel room\" rather than \"set status to reserved\", which captures intent and aligns the commands with business processes. In our own words, in an event-driven system those commands can produce events, and the read side can be a projection built from them [[ms-cqrs]]."
       ],
       "terms": [
         {
@@ -159,9 +159,9 @@
       "id": "practice",
       "name": "In practice and trade-offs",
       "body": [
-        "Event-driven design buys loose coupling and independent scaling, but it changes when things are \"done\". Because the producer returns after publishing and consumers react later, the system is eventually consistent: a reader may not reflect the change the instant the producer finishes. Microsoft's event-driven page says to avoid the style where business transactions require strong consistency across services, or where synchronous calls meet your latency and throughput needs [[ms-eda]]. A question that needs an immediate answer, such as whether stock exists at checkout, still needs a direct call.",
-        "It also adds operational surface. There is a broker or event store to run, each consumer has its own backlog that can fall behind, and reasoning about a flow means tracing it across several services and over time rather than reading one call stack. Microsoft's event sourcing page calls the pattern complex, says it constrains future design decisions in the parts of the system that use it, and says to adopt it when benefits such as auditability justify the complexity [[ms-event-sourcing]].",
-        "So the pattern fits where decoupling, auditability and replay are worth that price: many independent reactions to the same facts, pipelines that aggregate or transform streams, and systems that must add new consumers without touching producers. Where a simple synchronous call would do, a plain request is still the right tool. AWS positions event-driven architecture as common in microservices precisely because it lets teams build and scale those services independently [[aws-eda]]."
+        "Event-driven design buys loose coupling and independent scaling, but it changes when things are \"done\". Because the producer returns after publishing and consumers react later, the system is eventually consistent: a reader may not reflect the change the instant the producer finishes. Microsoft's event-driven page says the style might not suit workloads where business transactions require strong consistency across services, or where simple request-response workflows with synchronous calls meet your latency and throughput needs [[ms-eda]]. A question that needs an immediate answer, such as whether stock exists at checkout, still needs a direct call.",
+        "It also adds operational surface. Microsoft's event-driven page lists the operational overhead of event brokers and asynchronous error handling [[ms-eda]]. In our own words, each consumer also has its own backlog that can fall behind, and following a flow means tracing it across several services rather than reading one call stack. Microsoft's event sourcing page calls the pattern complex, says it constrains future design decisions in the parts of the system that use it, and says to adopt it when benefits such as auditability justify the complexity [[ms-event-sourcing]].",
+        "So the pattern fits where decoupling, auditability and replay are worth that price: many independent reactions to the same facts, pipelines that aggregate or transform streams, and systems that must add new consumers without touching producers. Where a simple synchronous call would do, a plain request is still the right tool. AWS calls it common in modern applications built with microservices, and says decoupled services can be scaled, updated and deployed independently [[aws-eda]]."
       ],
       "terms": [
         {
@@ -174,7 +174,7 @@
         },
         {
           "term": "Backlog",
-          "definition": "Unprocessed events waiting for a consumer; the main failure mode is a backlog growing unnoticed on one consumer."
+          "definition": "Unprocessed events waiting for a consumer; a consumer that falls behind has a growing backlog."
         },
         {
           "term": "Replay cost",
@@ -215,7 +215,7 @@
     },
     {
       "myth": "Once the producer publishes, the whole operation is finished.",
-      "truth": "Consumers react later. The event sourcing page says projections built by replaying events are only eventually consistent, and the event-driven page says to avoid the style where business transactions need strong consistency across services [[ms-event-sourcing]] [[ms-eda]]."
+      "truth": "Consumers react later. The event sourcing page says projections built by replaying events are only eventually consistent, and the event-driven page says the style might not suit business transactions that need strong consistency across services [[ms-event-sourcing]] [[ms-eda]]."
     }
   ],
   "tryIt": {
@@ -249,7 +249,7 @@
       "publisher": "Amazon Web Services",
       "kind": "Vendor documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "ms-eda",
@@ -258,7 +258,7 @@
       "publisher": "Microsoft",
       "kind": "Vendor documentation",
       "year": "page shows last updated 2026-03-07",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "ms-event-sourcing",
@@ -267,7 +267,7 @@
       "publisher": "Microsoft",
       "kind": "Vendor documentation",
       "year": "page shows last updated 2026-03-28",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "ms-cqrs",
@@ -276,7 +276,7 @@
       "publisher": "Microsoft",
       "kind": "Vendor documentation",
       "year": "page shows last updated 2025-02-22",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "ms-outbox",
@@ -285,7 +285,7 @@
       "publisher": "Microsoft",
       "kind": "Vendor documentation",
       "year": "page shows last updated 2026-02-27",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The older address redirects here."
     },
     {
@@ -295,7 +295,7 @@
       "publisher": "Apache Software Foundation",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The page shows Kafka 4.3.1 and says a local Java 17 or newer is needed."
     }
   ]
