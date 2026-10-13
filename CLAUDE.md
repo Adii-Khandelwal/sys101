@@ -128,26 +128,24 @@ Apply system design thinking to this site: static generation, CDN caching, decou
 - Vercel Web Analytics (page views, no third-party cookies, per Vercel's own docs). The site works fully if it fails to load, it never receives reading progress, and Privacy describes it.
 - YouTube on learn pages: a click-to-load facade (title, channel, year, length, "optional", "not vetted line by line like the written sources") that loads nothing from YouTube until "Play here"; then youtube-nocookie.com, with an external link as a no-JavaScript fallback. Privacy says so.
 
-## Later ideas (do not build yet)
-
-- General-knowledge flow: not built. Open decision: where those stories live (a separate section or route) and how topics link to them.
-- LLM pipeline (Gemini Flash) to summarize and compare posts, and alternative views (Tracks, Companies matrix, expandable tree): see docs/ideas.md. The Path view, mobile Path default and weekly link checking are built.
-
 ## Working in this repo
 
 - Node 24 (`.nvmrc`). Run `source ~/.nvm/nvm.sh && nvm use` before npm commands.
 - `npm run dev`, `npm run build` (production check), `npx tsc --noEmit`. Pushing to `main` deploys to Vercel.
-- Topics live in `content/topics/<slug>.json`; the schema in lib/topics.ts is checked by the build. Keep it in sync with this file.
+- Topics live in `content/topics/<slug>.json`; the schema in lib/topics.ts is checked by the build. Keep it in sync with this file. Tooling (verify:figures, diagram overflow check, Pagefind index): docs/tooling.md.
 - The build fails on an empty section or quiz, a missing prerequisite, a prerequisite cycle, missing attribution or verifiedOn, or a bad diagram (gradients, filters, scripts, no `<title>`).
-- `npm run verify:figures` fetches every source with curl (PDFs through pdftotext or pypdf, blocked pages through the Wayback CDX API, marked "(archive copy)") and writes docs/verification-log.md (figure, URL, nearest heading, found or NOT FOUND). Needs the network, so it never runs in the build.
-- `scripts/check-diagram-overflow.mjs` runs after the build (and as `npm run check:diagrams`): it renders each diagram SVG in headless Chromium and fails if a label's box spills past its rect. It skips when Chromium is absent (`npx playwright install chromium`); Playwright is a devDependency.
-- `npm run build` also builds the Pagefind index into `public/pagefind` (git-ignored). Under `npm run dev`, run `npm run search:index` instead.
 
 ## Keeping docs current
 
 - Update docs with every commit. When a task adds or changes a standing rule, page type, schema, route, feature, or convention, update the matching section of CLAUDE.md and README.md in the same commit. Edit existing text; never duplicate a rule.
 - Do not record one-off details or temporary state. Keep CLAUDE.md under 160 lines and each line under about 300 characters by moving detail into docs/.
-- Final reply says, in one line: "CLAUDE.md: updated <section>" (or "no change"), and likewise for README.
+
+## Ponytail
+
+- Ponytail (plugin, default level full) is active for code changes. Before adding a dependency, component, script or file, climb its ladder: does it need to exist, is it already in the repo, is there a native or standard way, is there an installed dependency.
+- CLAUDE.md wins. Ponytail never overrides the honesty rules, source verification, accessibility, tests, motion rules or the banned list. "Write less" is for code, not research: content work and audits still read every source in full.
+- Run /ponytail-review on the diff before every push of code changes, and say what it found in the report.
+- Shortcut comments (`shortcut: <limit>, <when to upgrade>`) are listed by /ponytail-debt; write the ledger to docs/debt.md only when asked.
 
 ## Token discipline
 
@@ -155,6 +153,6 @@ Apply system design thinking to this site: static generation, CDN caching, decou
 - Make the smallest change that meets the task. Don't spawn subagents unless asked.
 - Run only the checks relevant to what changed, then one final build.
 - Don't fetch posts again for content already verified in content/topics/.
-- Final reply max 8 lines: what changed (file names), what couldn't be verified, the next decision. No code listings or diffs unless asked.
+- Final reply says "CLAUDE.md: updated <section>" (or "no change"), likewise README, in one line. Max 8 lines overall: what changed (file names), what couldn't be verified, the next decision. No code listings or diffs unless asked.
 - Ask at most one question at a time, only when blocked. Candidate tables: at most 6 columns, figures only.
 - Saving tokens never means skipping verification. Planned work lives in docs/ideas.md; read it only when asked.

@@ -137,3 +137,8 @@ Pilot the new topic format on DNS only, and get approval before rolling it out t
 - When existing "read" marks migrate, should they count as concept complete, posts read, or both?
 - Is the Path view the desktop default from the start, or only after the pivot trigger?
 - Do current per-post diagrams need a `sourceFigure` link even though they summarize the whole post rather than one figure?
+
+## Parked decisions (moved from CLAUDE.md)
+
+- General-knowledge flow: not built. Open decision: where those stories live (a separate section or route) and how topics link to them.
+- LLM pipeline (Gemini Flash) to summarize and compare posts, and alternative views (Tracks, Companies matrix, expandable tree) are described above. The Path view, mobile Path default and weekly link checking are built.
