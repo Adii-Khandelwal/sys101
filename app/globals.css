@@ -3504,3 +3504,76 @@ html[data-posts-view] .posts-view-h {
     background: var(--accent);
   }
 }
+
+/* ── Print ───────────────────────────────── */
+/* Ink on white, no chrome, and the address of every external link, so a printed topic is still usable. The three
+   token values below are the light theme's, with paper white to save ink; the dark theme never prints. */
+@media print {
+  :root,
+  :root[data-theme="dark"],
+  :root:not([data-theme="light"]) {
+    --paper: #fff;
+    --ink: #1f1b16;
+    --ink-soft: #5c5346;
+    --rule: #cfc3a8;
+    --accent: #9a3b1f;
+  }
+
+  .site-header,
+  .back-to-top,
+  .lesson-rail,
+  .posts-rail,
+  .progress-sticky,
+  .search,
+  .posts-tools,
+  .graph-toolbar,
+  .mark-done,
+  .reveal-wrap > button,
+  .site-footer,
+  .theme-toggle {
+    display: none !important;
+  }
+
+  html,
+  body {
+    font-size: 12pt;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .dossier,
+  .posts-page {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Answers print open: a printed page cannot click. */
+  .reveal {
+    grid-template-rows: 1fr;
+  }
+
+  .reveal-content {
+    opacity: 1;
+    transform: none;
+  }
+
+  a[target="_blank"][href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: var(--ink-soft);
+    overflow-wrap: anywhere;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  figure,
+  svg,
+  .post {
+    break-inside: avoid;
+  }
+}
