@@ -58,7 +58,7 @@
             "explanation": "A dedicated Quicksilver interface writes the single change, and Quicksilver propagates it to the edge."
           },
           {
-            "step": "Lock the two paths",
+            "step": "Lock between the two schedulers",
             "explanation": "The schedulers lock against each other, so a slow full rebuild can never overwrite a newer per-record change with stale data."
           },
           {

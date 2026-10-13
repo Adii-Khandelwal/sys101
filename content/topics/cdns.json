@@ -186,7 +186,7 @@
           "rejected": "Ranking whole titles, predicting from yesterday alone, and keeping a single copy of each file.",
           "why": "Title ranking stores unpopular bitrates next to popular ones and wastes disk. One day of history reacts to noise and churns content. A single copy of a very popular file can overwhelm its server while others sit idle, though the post says routing by network proximity and keeping popular files in memory make this less pronounced for Netflix. Extra copies also even out traffic between servers and keep a failed server's traffic in the cluster. Splitting big files into several copies is like balancing pebbles instead of rocks."
         },
-        "failures": "The post describes no incident. It designs against three problems: uneven load when a popular file sits on one server, a server failure pushing its traffic to more distant sites, and sudden popularity spikes, which is why some mid-popularity content gets extra copies as insurance.",
+        "failures": "The post describes no incident. It designs against uneven load when a popular file sits on one server, a server failure pushing its traffic to more distant sites, and sudden popularity spikes, which is why some mid-popularity content gets extra copies as insurance.",
         "takeaways": "Netflix owns the catalog and can predict demand, so it fills caches ahead of time instead of waiting for requests. Choose the unit you rank and store carefully, since finer units saved half the storage here. Consistent hashing places the copies within a cluster, which ties this post to the Consistent Hashing topic."
       }
     }

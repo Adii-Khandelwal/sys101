@@ -286,7 +286,7 @@
           },
           {
             "step": "Reconcile conflicts, often in the application",
-            "explanation": "Simple cases use last-write-wins, but Dynamo lets the application resolve, for example by merging two divergent shopping carts into one unified cart so no added item is lost."
+            "explanation": "Simple cases use last-write-wins, but Dynamo lets the application resolve, for example by merging the conflicting versions of a shopping cart into one unified cart so no added item is lost."
           },
           {
             "step": "Repair in the background",

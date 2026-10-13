@@ -267,7 +267,7 @@
         "walkthrough": [
           {
             "step": "Define performance as latency and throughput",
-            "explanation": "The guide frames two numbers: latency, the time to complete one operation, and throughput, the operations completed per second. It notes that average latency tends to rise as throughput rises under concurrent load."
+            "explanation": "The guide names two factors: latency, the time to complete one operation, and throughput, the operations completed per second. It notes that average latency tends to rise as throughput rises under concurrent load."
           },
           {
             "step": "Replicate through Raft",

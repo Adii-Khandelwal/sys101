@@ -268,7 +268,7 @@
             "explanation": "The breaker stays open for hours and blocks roughly 95% of requests, and the request rate falls to near zero for long stretches. The service shows no errors and no restarts."
           },
           {
-            "step": "Two mitigations nobody could explain",
+            "step": "Two mitigations that worked for unclear reasons",
             "explanation": "Force-closing the breaker lets traffic flood back, the pods scale out, and after a brief error spike things settle. Weeks later, pre-scaling the service first leaves the breaker already closed."
           },
           {

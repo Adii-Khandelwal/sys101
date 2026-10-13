@@ -256,7 +256,7 @@
       "company": "Grab",
       "verifiedOn": "2026-10-13",
       "published": "2020-01-06",
-      "ageNote": "From January 2020, about six years old. It is here for a fundamental that has not changed: how an event-sourcing and stream-processing platform is structured, with pipelines as isolated tenants, idempotent replay, and explicit trade-offs between completeness, delay and cost. The specific figures, such as 300 billion events a week, and the Go-plugin implementation detail may well have changed since; the post itself describes the plan to move from Go plugins to plugins over RPC.",
+      "ageNote": "From January 2020, nearly seven years old. It is here for a fundamental that has not changed: how an event-sourcing and stream-processing platform is structured, with pipelines as isolated tenants, idempotent replay, and explicit trade-offs between completeness, delay and cost. The specific figures, such as 300 billion events a week, and the Go-plugin implementation detail may well have changed since; the post itself describes the plan to move from Go plugins to plugins over RPC.",
       "related": [
         "pub-sub",
         "message-queues"
@@ -307,7 +307,7 @@
           "why": "Common event-processing patterns kept recurring across teams, so standardising scaffolding, configuration and deployment, with explicit processing guarantees, lets teams trade completeness against delay and cost consciously rather than each solving it alone. The post names a planned move from Go plugins to plugins over RPC, HashiCorp-style, to allow non-Go languages."
         },
         "failures": "The post is candid that correct processing has to be bought: pipelines must declare guarantees on uptime and completeness, bounds on delay, alerting and self-healing, and the platform exists partly because getting these right per team is hard. A stated limitation is that processing logic was tied to Go plugins, with a plan to move to plugins over RPC so other languages can be used.",
-        "takeaways": "Event sourcing plus a stream-processing framework turns ad hoc event handling into a platform: standard operators, isolated multi-tenant pipelines, a metastore for deduplication and windowed state, and idempotent replay. The hard parts are the guarantees, isolation and cost accounting around the happy path. Being six years old, treat the figures as of 2020."
+        "takeaways": "Event sourcing plus a stream-processing framework turns ad hoc event handling into a platform: standard operators, isolated multi-tenant pipelines, a metastore for deduplication and windowed state, and idempotent replay. The hard parts are the guarantees, isolation and cost accounting around the happy path. The post is from 2020, so treat its figures as of 2020."
       }
     },
     {
@@ -367,7 +367,7 @@
           "why": "Direct publishing made Kafka a single point of failure whose latency spikes during upgrades could lose critical events. Local SQLite gave a local durable buffer with no provisioned database or network hop, and kept the service out of the relational database transition. The post is explicit that this was not the textbook transactional outbox, and that the team has since decided to move away from it."
         },
         "failures": "The first version did not scale: one SQLite outbox gave immediate SQLITE_BUSY errors, fixed by WAL mode, then by sharding into 50 files, then by per-shard mutexes because SQLite still allows only one writer per file. The EBS volume grew under load until they tuned journal_size_limit, auto_vacuum and startup VACUUM. The honest headline is the ending: having run it in production, the team decided to move away from this approach.",
-        "takeaways": "Reliable publishing is the hard half of event-driven systems: publishing straight to Kafka made it a single point of failure for Zapier, and writing events to a local outbox first let it keep accepting them. But an outbox is not free, and a local-database outbox brings its own scaling pain (concurrency limits, sharding, disk growth). Weigh it against the failure it prevents, and be willing to walk it back, as Zapier did."
+        "takeaways": "Reliable publishing is the hard part of event-driven systems: publishing straight to Kafka made it a single point of failure for Zapier, and writing events to a local outbox first let it keep accepting them. But an outbox is not free, and a local-database outbox brings its own scaling pain (concurrency limits, sharding, disk growth). Weigh it against the failure it prevents, and be willing to walk it back, as Zapier did."
       }
     },
     {

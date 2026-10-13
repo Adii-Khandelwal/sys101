@@ -55,7 +55,7 @@ A post is included only if it passes most of these:
 4. **Credible.** Written by the engineering team that runs the system at scale. No listicles or marketing posts.
 5. **Transferable.** Teaches something that applies to a concept in the graph.
 
-A peer-reviewed paper by a company's engineering team can count as a post, labelled "paper", under the same rules. Every figure is checked against the raw page text (not a summary of it) before it is used, and figures that cannot be found are dropped. `npm run verify:figures` automates this: it fetches each source with curl, reads PDFs through pdftotext or pypdf, and for pages that block curl reads the Internet Archive, resolving a real captured snapshot through the Wayback CDX API and marking those rows "(archive copy)" in `docs/verification-log.md`.
+A peer-reviewed paper by a company's engineering team can count as a post, labelled "paper", under the same rules. Every figure is checked against the raw page text (not a summary of it) before it is used, and figures that cannot be found are dropped. `npm run verify:figures` automates this: it fetches each source with curl, reads PDFs through pdftotext or pypdf, and for pages that block curl reads the Internet Archive, resolving a real captured snapshot through the Wayback CDX API and marking those rows "(archive copy)" in `docs/verification-log.md`, then a headless browser ("(browser copy)"). Lone digits and number words that a script cannot judge are read by hand against the source and recorded in `docs/hand-checks.json`.
 
 ## Architecture
 

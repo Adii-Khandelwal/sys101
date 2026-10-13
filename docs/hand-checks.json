@@ -1,0 +1,182 @@
+{
+ "meta-cache-consistency-2022|over 1 quadrillion": {
+  "verdict": "ok",
+  "source": "post: \"more than one quadrillion queries a day\""
+ },
+ "meta-cache-consistency-2022|1 in 10 billion": {
+  "verdict": "ok",
+  "source": "post: less than 1 out of 10 billion cache writes inconsistent after five minutes"
+ },
+ "meta-cache-consistency-2022|1, 5 and 10 minutes": {
+  "verdict": "ok",
+  "source": "post: timescales \"one minute, five minutes or 10 minutes\""
+ },
+ "meta-cache-consistency-2022|five and": {
+  "verdict": "ok",
+  "source": "same sentence: one, five and ten minutes"
+ },
+ "amazon-dynamo-2007|(3, 2, 2)": {
+  "verdict": "ok",
+  "source": "paper: common (N,R,W) configuration is (3,2,2)"
+ },
+ "netflix-open-connect-popularity-2017|two things": {
+  "verdict": "ok",
+  "source": "post has two measures: caching efficiency and content churn"
+ },
+ "zalando-circuit-breaker-herd-2026|two Zalando": {
+  "verdict": "ok",
+  "source": "byline lists two engineers"
+ },
+ "zalando-circuit-breaker-herd-2026|Two mitigations": {
+  "verdict": "ok",
+  "source": "post: force-closing the breaker, then pre-scaling first; \"two approaches, both working, but for reasons that aren't obvious\""
+ },
+ "zalando-circuit-breaker-herd-2026|two manual": {
+  "verdict": "ok",
+  "source": "same two mitigations"
+ },
+ "uber-cinnamon-load-shedder-2023|three posts": {
+  "verdict": "ok",
+  "source": "post: \"the first in a series of three on Cinnamon\""
+ },
+ "etcd-performance|two limits": {
+  "verdict": "ok",
+  "source": "guide: \"two physical constraints: network IO latency and disk IO latency\""
+ },
+ "cockroachdb-leader-leases-2026|two earlier": {
+  "verdict": "ok",
+  "source": "post: \"two different types of leases\" before Leader Leases"
+ },
+ "cockroachdb-leader-leases-2026|two separately": {
+  "verdict": "ok",
+  "source": "same two lease types"
+ },
+ "cloudflare-ketama-ram-2026|8 to 6 bytes": {
+  "verdict": "ok",
+  "source": "post: eight bytes (u32 hash + u32 index) down to six (u32 + u16)"
+ },
+ "cloudflare-ketama-ram-2026|1 point": {
+  "verdict": "ok",
+  "source": "post: coefficient of variation drops from about 99% to about 8% going from one hash to 160 per server"
+ },
+ "cloudflare-ketama-ram-2026|ten times": {
+  "verdict": "ok",
+  "source": "post: each step down in error needs \"(almost) an order of magnitude\" more hashes"
+ },
+ "discord-elixir-ring-2017|5 guilds": {
+  "verdict": "ok",
+  "source": "post: \"an average user is in 5\""
+ },
+ "discord-elixir-ring-2017|ten guild-registry": {
+  "verdict": "ok",
+  "source": "post: \"stampede ten of these processes (one on each guild node)\""
+ },
+ "uber-postgres-to-mysql-2016|two sites": {
+  "verdict": "ok",
+  "source": "post: West Coast data center plus a second East Coast one"
+ },
+ "github-mysql-8-upgrade-2023|5 at": {
+  "verdict": "ok",
+  "source": "post: \"five database clusters\" at the last upgrade, now 50+"
+ },
+ "google-percolator-2010|timestamp 5": {
+  "verdict": "ok",
+  "source": "paper Figure 4: opening balances written at 5"
+ },
+ "google-percolator-2010|timestamp 7": {
+  "verdict": "ok",
+  "source": "paper Figure 4: start timestamp 7"
+ },
+ "google-percolator-2010|timestamp 8": {
+  "verdict": "ok",
+  "source": "paper Figure 4: commit timestamp 8"
+ },
+ "google-percolator-2010|four times": {
+  "verdict": "ok",
+  "source": "paper: about 4x overhead for a single-cell write plus commit"
+ },
+ "cockroachdb-transaction-pipelining-2019|slope 6 vs slope 2": {
+  "verdict": "ok",
+  "source": "post: slope of 6 without, slope of 2 with pipelining"
+ },
+ "cockroachdb-transaction-pipelining-2019|two consensus": {
+  "verdict": "ok",
+  "source": "post: commit costs \"two rounds of distributed consensus\""
+ },
+ "cloudflare-dns-builds-2022|5 to 10 per second": {
+  "verdict": "ok",
+  "source": "post: \"between 5 and 10 DNS record changes per second\""
+ },
+ "slack-dnssec-2021|3 attempts": {
+  "verdict": "ok",
+  "source": "post: \"the third unsuccessful attempt\"; dates Sept 7, 8, 30"
+ },
+ "slack-dnssec-2021|7 they": {
+  "verdict": "ok",
+  "source": "post: attempt one on September 7"
+ },
+ "slack-dnssec-2021|8 users": {
+  "verdict": "ok",
+  "source": "post: attempt two on September 8"
+ },
+ "zapier-outbox-2026|1 writer per database": {
+  "verdict": "ok",
+  "source": "post: \"SQLite still only wants one writer per database\""
+ },
+ "zapier-outbox-2026|0 to": {
+  "verdict": "ok",
+  "source": "post: journal_size_limit = 0"
+ },
+ "grab-zero-traffic-cost-2023|two-thirds of them": {
+  "verdict": "ok",
+  "source": "post: \"on average, two-thirds of the number of consumers\""
+ },
+ "github-mysql-ha-failover-2018|two primaries": {
+  "verdict": "ok",
+  "source": "post defines split-brain as two servers claiming to be primary"
+ },
+ "github-mysql-ha-failover-2018|three problems": {
+  "verdict": "ok",
+  "source": "our own framing of detect, decide, redirect; marked as our reading in the text"
+ },
+ "github-mysql-ha-failover-2018|three and": {
+  "verdict": "ok",
+  "source": "fragment of \"does all three\"; our framing"
+ },
+ "aws-static-stability-azs|4/9 versus 2/3": {
+  "verdict": "ok",
+  "source": "article: 2/3 * 2/3 = 4/9 versus zonal 2/3"
+ },
+ "aws-static-stability-azs|two ways": {
+  "verdict": "ok",
+  "source": "article: \"two high-level patterns\""
+ },
+ "spotify-event-delivery-2019|5 August": {
+  "verdict": "ok",
+  "source": "post: \"as of August 05, 2019\""
+ },
+ "uber-consumer-proxy-2021|two problems": {
+  "verdict": "ok",
+  "source": "post names Partition Scalability and Head-of-Line Blocking"
+ },
+ "uber-consumer-proxy-2021|four languages": {
+  "verdict": "ok",
+  "source": "post: Go, Java, Python and NodeJS; also \"over 1000 microservices\""
+ },
+ "databricks-ratelimiting-2025|1 per client replica": {
+  "verdict": "ok",
+  "source": "post: \"at most 1 remote request from a client replica per batch cycle\""
+ },
+ "databricks-ratelimiting-2025|three problems": {
+  "verdict": "ok",
+  "source": "our own framing of detect, decide, redirect; marked as our reading in the text"
+ },
+ "databricks-ratelimiting-2025|three drawbacks": {
+  "verdict": "ok",
+  "source": "post lists three numbered drawbacks of consistent hashing"
+ },
+ "github-mysql-ha-2018|1 or 2": {
+  "verdict": "ok",
+  "source": "post: \"one or two orchestrator nodes per data center\""
+ }
+}
