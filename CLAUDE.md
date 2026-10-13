@@ -50,7 +50,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 
 ## Homepage
 
-- Topic numbers come from one function, topicOrder in lib/order.ts (docs/homepage.md). Order: masthead, map or Path view with the "All topics" index, Inside a topic (DNS), Try a question, Where the posts come from. Thin dividers, no cards, icons, or images.
+- Topic numbers come from one function, topicOrder in lib/order.ts (docs/homepage.md). Order: masthead (what it is, who it is for, why, one filled start button), map or Path view with the "All topics" index, Inside a topic (DNS), Try a question, Where the posts come from. Thin dividers, no cards, icons, or images.
 - Every homepage number, name, date, and excerpt is computed from data at build time. Never hardcode them (lib/homepage.test.ts scans the source).
 - "Try a question" uses component state only and never touches the progress store.
 - Read docs/homepage.md before editing the homepage.

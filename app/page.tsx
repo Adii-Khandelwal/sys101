@@ -10,6 +10,7 @@ import Search from "@/components/Search";
 import TryQuestion from "@/components/TryQuestion";
 import SiteFooter from "@/components/SiteFooter";
 import { depths } from "@/lib/graph";
+import { buildPostsIndex } from "@/lib/posts";
 import { formatNumber, topicNumbers, topicOrder } from "@/lib/order";
 import { GROUPS, getAllTopics, type Group } from "@/lib/topics";
 import { getNews } from "@/lib/news";
@@ -68,6 +69,7 @@ export default function Home() {
     const name = p.company.startsWith("Amazon") ? "Amazon" : p.company;
     postCounts.set(name, (postCounts.get(name) ?? new Set()).add(p.url));
   }
+  const { total: postCount, companyCount } = buildPostsIndex(ordered);
   const companies = [...postCounts]
     .map(([name, urls]) => ({ name, posts: urls.size }))
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -76,14 +78,26 @@ export default function Home() {
       <header className="masthead">
         <h1>sys101</h1>
         <p className="masthead-lead">Learn system design in the order it makes sense.</p>
-        <p>
-          Each topic builds on the one before it, and every one is taught through how real engineering teams solved it.
-        </p>
+        <div className="masthead-about">
+          <p>
+            For developers who can build an app and want to understand how large systems are designed. The same few ideas keep
+            coming back, caching, replication, queues, failover, and they stick best when you see how real teams built and fixed them.
+          </p>
+          <p>
+            {topics.length} topics and {postCount} engineering posts from {companyCount} companies. Each topic builds only on the ones
+            before it, so you never have to guess what to read first.
+          </p>
+        </div>
+        <NextUp
+          start={{ slug: ordered[0].slug, title: ordered[0].title, minutes: readingMinutes(ordered[0], getNews(ordered[0].slug)) }}
+          entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))}
+        />
         <p className="masthead-actions">
-          <Link href="/about">Why this exists</Link>
+          <Link className="label" href="/about">
+            Why this exists
+          </Link>
           <TourLink tour="home" />
         </p>
-        <NextUp entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))} />
         <Search />
       </header>
 
