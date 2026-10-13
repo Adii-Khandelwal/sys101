@@ -41,8 +41,9 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // Inline scripts set data-theme and data-posts-view on <html> before hydration, so React must not flag them.
   return (
-    <html lang="en" className={`${serif.variable} ${mono.variable}`}>
+    <html lang="en" className={`${serif.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
         {/* Set the theme before first paint so there is no flash. Reads the saved
             choice; with none, follows the OS. Mirrors ThemeToggle's storage key. */}
