@@ -1625,6 +1625,14 @@ a:hover {
   }
 }
 
+/* The strip leaves the heading about 16px below it; Background and Glossary open with their H1, so give it room. */
+@media (max-width: 1179px) {
+  .progress-sticky + h1,
+  .progress-sticky + [data-pagefind-body] > h1:first-child {
+    margin-top: 28px;
+  }
+}
+
 
 
 .data-note {
