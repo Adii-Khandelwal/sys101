@@ -553,6 +553,9 @@ export default function GraphView({ nodes, edges }: Props) {
 
   // Create the renderer once.
   useEffect(() => {
+    // Phones only get the Path view (HomeView swaps GraphView out right after its first render), so they skip
+    // the map libraries, about 190 KB. Going wider than 767px makes HomeView mount GraphView again.
+    if (!window.matchMedia("(min-width: 768px)").matches) return;
     let renderer: Sigma | undefined;
     let cancelled = false;
     let removeMiddle: (() => void) | undefined;
