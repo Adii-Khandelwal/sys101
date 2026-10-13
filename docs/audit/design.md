@@ -244,3 +244,81 @@ None of the framework 340 KB can go without changing framework. `polyfills` is `
 2. **Load `legacyQuiz.ts` on demand** (7 KB raw on every topic and posts page): it is a frozen table used once to convert old saved quiz positions. `import()` it only when old-format progress is found. Effort S. Risk low if the migration still runs before first render of the quiz.
 3. **Stop prefetching the JS of `/` and the learn page from topic pages** (about 60 KB raw): `prefetch={false}` on the logo and the learn link, or prefetch on intent. Same trade-off as W4: a first click may wait. Effort S.
 4. Not worth doing: Analytics (about 3 KB), ThemeToggle, the layout chunk. The home page chunk's own code (53 KB) is mostly GraphView and the layout engine, both needed for the Map.
+
+## Appendix C. Round 2 result (13 October 2026)
+
+Screenshots: `docs/audit/design/round2/` (local only, git-ignored). Checks after each group and at the end, on a production build: `tsc`, 402 tests (graph crossing tests included), check-seo (now also requires og:image and a large Twitter card), diagram overflow (0), Pagefind (39 pages, 4,530 words, same as before, so every glossary term is still indexed), horizontal overflow on 45 pages at 1440 and 390 in both themes (180 loads, 0).
+
+### Part 0: Round 1 gaps
+- Dark mode: focus ring is `rgb(212,104,63)` 2px on quiz options, Mark done, the answer button, footer and rail links, and the phone strip button. The strip button and the map cue read correctly on the dark paper. No bug.
+- **Bug found and fixed:** between 641 and 1179px the strip's "Back to top" showed all the time (`.text-button` sets `display: inline-block` later in the file and beat `.strip-top { display: none }`), next to the floating button. Fixed; phones (390) and tablets (641, 768, 1024, 1179) re-checked.
+- Reduced motion: the cue and the strip button have `transition-duration: 0s`. No bug.
+- The CLAUDE.md Back to top line is 280 characters.
+
+### Items
+| Item | Result |
+| --- | --- |
+| B4 | Done. `public/og.png` (1200x630, wordmark and tagline on `--paper`, no gradient) and `public/apple-touch-icon.png` (180px mark), drawn by `scripts/make-og.mjs` with the site's real fonts and committed. `pageMeta` sets og:image (with size and alt) and `summary_large_image`; `theme-color` light and dark through `viewport`; one line added under SEO in CLAUDE.md. check-seo fails a page with neither. |
+| B5 | Partly. The header now uses the home container (1400px): wordmark and toggle sit on the home page's edges (60 and 1380 at 1440). /posts' title is at the same x as every other long page (404 at 1440, 324 at 1280, 644 at 1920) and its rail sits where the topic rail does; its rows run on to the right. The header stays the same on every page, so the logo does not jump when you navigate; the reading pages' own edge (title and rail) is shared across About, Terms, Data, Glossary, Background, Topic, Learn and Posts. The wordmark does not share an edge with the reading column; making it do so would move the logo between pages. |
+| W8 | Done. The glossary has the rail at 1180px and up and the "Contents" strip below (same component as Background), following the filter. |
+| N1 | Done. Prose links (inside `p`, `dd`, `blockquote`) underline in `--ink-soft`: 6.42:1 light, 6.54:1 dark against the paper, was 1.48 and 1.43. A colour change alone cannot reach 3:1 against the surrounding ink (rust 2.46:1 light, 2.84:1 dark), so this is the quietest option that passes. Lists of links keep the faint rule. |
+| N2 | Done. 28px between the strip and the H1 (was 16) on Background and Glossary at phone widths. |
+| N3 | Done. `<html>` takes `suppressHydrationWarning`; the inline scripts set `data-theme` and `data-posts-view` on it before hydration on purpose. The warning is gone in dev. |
+| N4 | Done. The count and Reset stay on one line at 390. |
+| Bundle: map code | Done. `GraphView` returns early unless the window is 768px or wider. Production, 390px: 638 KB to 446 KB of script (decoded), no Sigma, graphology or edge chunks. Desktop unchanged at 637 KB. Resizing 390 to 1280 mounts the map (7 canvases); back to 390 removes it. |
+| Bundle: legacyQuiz | **Not done, proposal below.** |
+| P1 | Done. `text-wrap: pretty` on p, li, dd, blockquote; `balance` on headings and lead lines. The "own." widow in exercise 2 is gone. |
+| P2 | Done. h1 -0.02em, h2 -0.015em, h3 -0.01em. |
+| P3 | Done, with one skip. Every mono label that was 11px is 12px. The map's group names are 18px serif (they only carry `.label`), so they were never affected; checked after I first shrank them by mistake and put them back. |
+| P4 | Done. `::selection` is `--rule` with `--ink` text: 9.8:1 light, 9.9:1 dark (rust on the tint would be 4.0 and 3.5). |
+| P5 | Done. `@media print`: header, rails, strips, search, Back to top, footer and buttons hidden; ink on white (the dark theme does not print); answers open; external links print their address. Checked as a screen capture with print media and as a PDF; no paper printer. |
+| P6 | Done. All 14 hover rules sit behind `(hover: hover) and (pointer: fine)`; the progress tip keeps its focus trigger outside the gate. |
+| P7 | Done. Reset appears only on rows with progress (also fixes a row with a quiz answer but no section done, which could not be reset). |
+| P8 | Done. The name before each "builds on" sentence is gone on the learn page and the Path rows; all 25 reasons already name their prerequisite. The topic page keeps the linked name above its sentence. |
+| P9 | Done. Footer is at the bottom of the window on the 404 (it was mid-screen); Terms and Privacy are taller than a window at both sizes. |
+| P10 | Done. Glossary count has 14px above it (the margin was being zeroed by `.dossier p`); /posts view links sit 4px from the filter when they wrap. |
+| P11 | Done. Exercise numbers use the label's mono face at 12px, so baselines meet. |
+| P13 | Done. Newsreader's served files have `tnum` (checked in the woff2 GSUB tables), so years and counts on /posts and the glossary use tabular figures. IBM Plex Mono is already tabular. |
+| Not done by instruction | P12, B3(c), R2, R3, W4 prefetch changes. |
+
+### New findings while doing this
+- The map group names on the map are `font: inherit` buttons, so a change to `.label` never reaches them; `GraphView.tsx:965` sized their room for 11px mono, but they are 18px serif. The 7.5px per character estimate is untouched and still looks right; checked by eye, not by the overlap test (no new overlap in the screenshots).
+- `check-seo` previously said nothing about social tags; it does now.
+
+## Part 2: proposals (no code)
+
+### W4: home prefetch on a throttled connection
+Production build, headless Chromium, CDP throttle of 150ms RTT and about 4 Mbps down (my choice of "4G"), transfer sizes as served (gzip), 8s idle after load.
+
+| | Total transferred | Prefetch requests | Prefetch bytes |
+| --- | --- | --- | --- |
+| Desktop 1440, prefetch on | 814 KB | 19 | 301 KB (15.8 KB each, about 320ms each) |
+| Desktop 1440, prefetch off | 508 KB | 0 | 0 |
+| Phone 390, prefetch on | 527 KB | 5 | 65 KB (13.1 KB each) |
+| Phone 390, prefetch off | 456 KB | 0 | 0 |
+
+- Prefetch is 37% of everything the desktop home downloads, and 12% on a phone.
+- Cost of removing it, measured on the phone Path view: a tap that finds nothing prefetched takes 979ms to show the new heading, against 66ms with the prefetch. Desktop clicks showed no difference (372 vs 370ms), but the map's 530ms open animation hides the wait there by design, so I do not trust that number as a general result.
+- Proposal: **desktop map, prefetch on pointer-enter or focus only** (`prefetch={false}` plus `router.prefetch(href)` on `pointerenter` and `focus`): saves about 300 KB per home visit; a hover usually lasts longer than the 320ms a fetch takes here, and the node-open animation covers the rest. **Phones keep viewport prefetch**: only 5 links and 65 KB, and without it a tap waits about a second on 4G. The logo and "Start from zero" links on topic pages also prefetch JS (about 60 KB raw, from Appendix B); `prefetch={false}` on those two is free because the reader is already on the page and rarely follows either.
+- Not measured: a real phone on a real network, and what a mouse user's hover time actually is.
+
+### B3(c): fitting the whole map into the window with labels at full size
+Measured on the live map (18px labels, 8 columns): widest label per column is 75, 157, 62, 146, 194, 270, 135 and 196px.
+
+- Needed width today: sum of the widest labels 1,235px, plus fixed overhead per column of 52px (label start 22, minimum gap 16, node radius 14) for 7 gaps and 22 for the last, which is 386px: 1,621px, plus 96px of stage padding gives the 1,717px stage.
+- Windows: 1,200px at 1280, 1,320px at 1440 and at 1920 (the home column stops at 1,400px minus 80). Note a 1,320px window does not exist at 1280.
+- **It does not fit at any of the three with full-size labels.** The label text alone (1,235px) is wider than the room left in a 1,320px window (1,224px after padding), so shrinking the gaps to zero would still not be enough. Shrinking the pitch is not the lever; the number of columns is.
+- What would fit: labels at 0.68 scale (about 12px) fit 1,440 and 1,920 exactly, and 1,280 would need 0.58 (10.5px, too small). The code floor is `MIN_LABEL_SCALE = 0.8`, which needs a 1,470px stage: still more than 1,320. Widening the home container instead (full labels) needs a window of 1,717px, so a viewport of about 1,800px: it would fit at 1920 only.
+- What breaks if labels shrink to 0.68: the 12px floor in P3 is the same size as the mono labels, so map labels would read as small as legends; zero-crossing and overlap tests would need re-running at three widths.
+- Smallest rule change if you want it: allow labels to shrink to a stated floor (12px, scale 0.67) before the map scrolls sideways. Edit `MIN_LABEL_SCALE` in `lib/graph.ts` (0.8 to 0.67), `docs/graph.md` line 6 (the "labels at full size, never shrunk" sentence) and the matching sentence in README item 1. CLAUDE.md's Graph section does not state the rule, so it needs no edit unless you want the floor written there. At 1280 the map would still scroll sideways. I did not build a mock screenshot: the map is WebGL and a faithful mock means running the layout at a new scale.
+- My recommendation: do not do it. The sideways scroll with the cue and snap from Round 1 costs nothing, and the alternative trades readable labels for no scrolling at only two of three widths.
+
+### Bundle: `legacyQuiz.ts` (7 KB raw, loaded on every topic and posts page)
+Why I stopped: `parseProgress` is synchronous and is called while the store reads localStorage on first render, from import in Your data, and from the tests. Loading the table lazily makes migration async. If a saved v2 progress is parsed before the table arrives and then written back, the old quiz answers are overwritten with nothing, which is data loss with no way back. A safe version needs: (1) `parseProgress` returns the v2 answers untouched in a side field, (2) the store dynamically imports `legacyQuiz` only when that field exists, converts, and only then saves, (3) nothing writes in between. That is a new state in the store and its tests, more than a small change. Saving 7 KB (a few KB gzipped) on a page that already carries 454 KB does not justify the risk until v2 data is rare enough to delete the table, which is the cleaner end state: drop v2 support after a stated date.
+
+## What I could not verify in Round 2
+- Real devices (touch, Safari, Firefox): `:has()`, `text-wrap`, the print layout, `scroll-snap`, `::selection` rendering and the 12px labels were checked in Chromium only.
+- Printing: a PDF and a print-media screen capture, not paper.
+- The social image: rendered locally; I did not run it through a real link preview (Slack, X, iMessage), which cache and may crop differently.
+- B5 at widths between 1180 and 1280 beyond the 1280 and 1440 checks, and the 1920 numbers come from a headless viewport.
+- The P3 change at 12px was covered by the diagram overflow check and the overflow sweep, not by looking at every page.
