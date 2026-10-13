@@ -77,7 +77,7 @@
         "The common pattern is cache-aside: the application checks the cache first; on a miss it reads the origin, stores the result in the cache, and returns it. The cache does not know about the database; the application wires them together.",
         "Entries do not live forever. Each can carry a time to live, after which it expires and the next lookup is a miss that refills it. A short time to live keeps data fresh but lowers the hit ratio; a long one does the opposite. This is the same freshness-versus-load trade-off that DNS caching had, now under your control per key. In Redis you can set one in the same command that stores the value, as the SET page shows with its EX option for a time to live in seconds [[redis-set]].",
         "Memory fills up, so a cache needs an eviction policy to decide what to drop. Redis lets you set a memory limit with maxmemory and choose a policy with maxmemory-policy. The policies include evicting the least recently used keys (allkeys-lru), the least frequently used keys (allkeys-lfu) or keys at random (allkeys-random), and the volatile versions apply only to keys that have an expiration. With noeviction, keys are not evicted and the server returns an error when you try to cache new data [[redis-eviction]].",
-        "For HTTP responses the web has a shared, standard caching language. Headers such as Cache-Control and max-age tell caches how long a response may be reused and whether it may be stored at all, and validators let a cache ask the origin \"is my copy still good?\" without refetching the whole thing [[rfc9111]]."
+        "For HTTP responses the web has a shared, standard caching language. The Cache-Control header, with directives such as max-age, tells caches how long a response may be reused and whether it may be stored at all, and validators let a cache ask the origin \"is my copy still good?\" without refetching the whole thing [[rfc9111]]."
       ],
       "terms": [
         {
@@ -124,9 +124,9 @@
       "id": "deeper",
       "name": "Going deeper",
       "body": [
-        "The hardest part of caching is invalidation: when the origin changes, copies in the cache are now wrong until they expire or are removed. A short time to live limits how long a stale copy can live but costs hit ratio. Explicitly deleting the key on a write keeps data fresh but needs the write path to know every key it affects. Most systems blend the two. RFC 9111 describes the HTTP form of the second idea: because unsafe methods such as PUT, POST or DELETE can change state on the origin, a cache must invalidate the stored responses for the target URI when it gets a non-error response to one [[rfc9111]].",
-        "A subtle failure is the stampede, also called a cache miss storm. A single hot key expires, and a flood of requests all miss at once and hit the origin together, which can knock the origin over just when the cache was supposed to protect it. The usual defences are letting only one request refill a key while others wait, or refreshing a key slightly before it expires.",
-        "Eviction policy choice matters more than it looks. Redis's rule of thumb is to use allkeys-lru when a subset of elements will be accessed far more often than the rest, which it calls a very common case and a good default if you have no reason to prefer another, and allkeys-random when keys are accessed with roughly equal frequency. It also notes that the volatile policies are mainly useful when one instance serves both caching and persistent keys, and suggests two separate instances if possible [[redis-eviction]]."
+        "The hardest part of caching is invalidation: when the origin changes, copies in the cache are now wrong until they expire or are removed. A short time to live limits how long a stale copy can live but costs hit ratio. Explicitly deleting the key on a write keeps data fresh but needs the write path to know every key it affects. Most systems blend the two. RFC 9111 has a related rule: because unsafe methods such as PUT, POST or DELETE can change state on the origin, a cache must invalidate the stored responses for the target URI when it gets a non-error response to one [[rfc9111]]. It applies to the caches that see that exchange.",
+        "Our own explanation, not from a cited source: a stampede, also called a cache miss storm, is when a single hot key expires and many requests miss it at once and reach the origin together.",
+        "Eviction policy choice matters more than it looks. Redis's rule of thumb is to use allkeys-lru when a subset of elements will be accessed far more often than the rest, which it calls a very common case and a good default if you have no reason to prefer another, and allkeys-random when keys are accessed with roughly equal frequency. It also notes that the volatile versions of LRU and random are mainly useful when one instance serves both caching and persistent keys, and suggests two separate instances if possible [[redis-eviction]]."
       ],
       "terms": [
         {
@@ -169,7 +169,7 @@
       "name": "In practice and trade-offs",
       "body": [
         "Caching speeds reads at the cost of freshness. Every cache decision is really a choice about how stale an answer you can tolerate: a price page can be seconds old, a bank balance usually cannot. Setting the time to live and the invalidation strategy per kind of data, rather than one global rule, is what separates a cache that helps from one that serves wrong answers.",
-        "Caches also change failure modes. If the cache is down, every request becomes a miss and pours onto the origin, so the origin must be sized to survive without the cache or the cache must fail gracefully. A cache that is required for the origin to stay up has quietly become part of the critical path. Redis shows how to watch for the opposite problem: INFO stats reports keyspace_hits and keyspace_misses, and keyspace_hits / (keyspace_hits + keyspace_misses) * 100 gives the percentage of accesses served from the cache, which you compare with what you expect for your app [[redis-eviction]].",
+        "Caches also change failure modes. In our own words, not from a cited source: if the cache is down, requests that would have been hits go to the origin, so a cache the origin cannot live without has become part of the critical path. Redis shows how to check that the cache is helping: INFO stats reports keyspace_hits and keyspace_misses, and keyspace_hits / (keyspace_hits + keyspace_misses) * 100 gives the percentage of accesses served from the cache, which you compare with what you expect for your app [[redis-eviction]].",
         "Where you cache matters as much as whether you do. RFC 9111 distinguishes a shared cache, which stores responses for reuse by more than one user and is usually deployed as part of an intermediary, from a private cache dedicated to a single user [[rfc9111]]. A cache close to the application cuts database load; a cache close to the user, at the edge, cuts network latency as well. That second idea, shared copies placed out in the network, is what CDNs do, which is why CDNs come right after caching on the map."
       ],
       "terms": [
@@ -180,10 +180,6 @@
         {
           "term": "Critical path",
           "definition": "The components a request must pass through; if the cache is on it, a cache outage is an outage."
-        },
-        {
-          "term": "Write-through",
-          "definition": "Writing to the cache and the origin together, so the cache is never behind the origin."
         },
         {
           "term": "Edge cache",
@@ -216,7 +212,7 @@
     },
     {
       "myth": "A cache remembers everything you put in it.",
-      "truth": "Memory is limited, so Redis evicts keys by a chosen policy once the limit is reached, and with noeviction it returns an error instead of caching new data [[redis-eviction]]."
+      "truth": "Memory is limited, so once you set a maxmemory limit Redis evicts keys by the chosen policy when it is reached (by default on 64-bit systems there is no limit), and with noeviction it returns an error instead of caching new data [[redis-eviction]]."
     },
     {
       "myth": "The cache keeps itself in sync with the database.",
@@ -278,7 +274,7 @@
       "publisher": "Redis",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "rfc9111",
@@ -287,7 +283,7 @@
       "publisher": "IETF",
       "kind": "Internet standard",
       "year": "2022",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The RFC shows its date as June 2022."
     },
     {

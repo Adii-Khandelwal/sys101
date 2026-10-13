@@ -9,14 +9,14 @@
       "publisher": "Valkey project",
       "url": "https://valkey.io/blog/9.1-memory-efficiency/",
       "dateShown": "2026-08-13",
-      "summary": "The Valkey project says Valkey 9.1 trims per-key memory overhead for strings and sorted sets, so a cache may achieve a higher hit rate.",
+      "summary": "The Valkey project says Valkey 9.1 reduces per-key memory overhead, and that a dedicated cache near full capacity with an eviction policy may see a higher hit rate.",
       "evidence": [
         "Valkey 9.1 introduces three optimizations that reduce the per-key memory overhead",
-        "reduce the memory required to store strings and sorted sets",
+        "dedicated cache running near full capacity with an eviction policy such as allkeys-lru",
         "your cache may achieve a higher hit rate without requiring any changes"
       ],
       "addedOn": "2026-10-12",
-      "verifiedOn": "2026-10-12"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "cloudfront-invalidation-by-cache-tag",
@@ -26,14 +26,14 @@
       "publisher": "Amazon Web Services",
       "url": "https://aws.amazon.com/blogs/networking-and-content-delivery/manage-caches-with-precision-using-amazon-cloudfront-invalidation-by-cache-tag/",
       "dateShown": "2026-05-04",
-      "summary": "Amazon Web Services describes invalidating CloudFront objects by cache tag so related content can be purged together, and reports that invalidations take effect in under 5 seconds at P95.",
+      "summary": "Amazon Web Services describes purging CloudFront objects by cache tag in one request, and says invalidations take effect in under 5 seconds and complete in under 25, both at P95.",
       "evidence": [
-        "Amazon CloudFront is launching Invalidation by Cache Tag",
+        "reporting the invalidation status back, is under 25 seconds at P95",
         "you can invalidate groups of related cached objects using a single invalidation request",
         "invalidations take effect in under 5 seconds at P95"
       ],
       "addedOn": "2026-10-12",
-      "verifiedOn": "2026-10-12"
+      "verifiedOn": "2026-10-13"
     }
   ]
 }
