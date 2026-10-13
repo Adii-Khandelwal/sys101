@@ -90,7 +90,8 @@ export function CompactProgress({ meta, variant = "rail" }: { meta: LessonMeta; 
   const s = summary(progress, m);
   const c = counts(progress, m);
   const detail = `Concept ${c.concept} of ${c.conceptTotal}, quiz ${c.quiz.answered} of ${c.quiz.total} answered, posts ${c.posts} of ${c.postsTotal}`;
-  const link = <a href={`#${s.target}`}>{s.action}</a>;
+  // "Start" would only point at the first section, which is right below: nothing to offer until something is done.
+  const link = s.action === "Start" ? null : <a href={`#${s.target}`}>{s.action}</a>;
 
   if (variant === "line") {
     return (
@@ -98,7 +99,8 @@ export function CompactProgress({ meta, variant = "rail" }: { meta: LessonMeta; 
         <span key={s.done} className="fade-swap">
           {s.done}
         </span>{" "}
-        of {s.total} done<span className="visually-hidden"> ({detail})</span> · {link}
+        of {s.total} done<span className="visually-hidden"> ({detail})</span>
+        {link && <> · {link}</>}
       </p>
     );
   }
@@ -121,7 +123,7 @@ export function CompactProgress({ meta, variant = "rail" }: { meta: LessonMeta; 
           Concept {c.concept}/{c.conceptTotal} · Quiz {c.quiz.answered}/{c.quiz.total} · Posts {c.posts}/{c.postsTotal}
         </span>
       </div>
-      <p className="label">{link}</p>
+      {link && <p className="label">{link}</p>}
     </div>
   );
 }
