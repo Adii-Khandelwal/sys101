@@ -1085,11 +1085,26 @@ a:hover {
 
 .relations {
   display: flex;
-  gap: 48px;
+  flex-wrap: wrap;
+  gap: 16px 48px;
   margin: 40px 0 0;
   padding: 16px 0;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
+}
+
+/* Builds on takes the spare width; Leads to is as wide as its longest name, which never breaks. */
+.relations > div:first-child {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.relations > div:last-child {
+  flex: none;
+}
+
+.relations > div:last-child a {
+  white-space: nowrap;
 }
 
 .relations ul {
@@ -1888,9 +1903,6 @@ a:hover {
   }
   .dossier h1 {
     font-size: 40px;
-  }
-  .relations {
-    gap: 32px;
   }
 
   /* No horizontal page scroll on phones (CLAUDE.md). The toolbar and the
