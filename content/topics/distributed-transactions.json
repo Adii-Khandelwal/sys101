@@ -103,7 +103,7 @@
       ],
       "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-dtx-ex-t\" class=\"dg\"><title id=\"dg-c-dtx-ex-t\">A cross-shard transfer under two-phase commit: debit X on shard A and credit Y on shard B are both prepared and voted yes, the coordinator records commit, and a crash after that point is recovered to finish the credit; a crash before it aborts and both roll back.</title><defs><marker id=\"dg-c-dtx-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"200\" y=\"30\" width=\"160\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\">Coordinator</text><rect x=\"60\" y=\"120\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"135\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\">Shard A: debit X 100</text><text x=\"135\" y=\"158\" class=\"dg-label\" text-anchor=\"middle\">prepared, locked</text><rect x=\"350\" y=\"120\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"425\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\">Shard B: credit Y 100</text><text x=\"425\" y=\"158\" class=\"dg-label\" text-anchor=\"middle\">prepared, locked</text><path d=\"M250,70 L150,120\" class=\"dg-line\" marker-end=\"url(#dg-c-dtx-ex-a)\"/><path d=\"M310,70 L410,120\" class=\"dg-line\" marker-end=\"url(#dg-c-dtx-ex-a)\"/><text x=\"135\" y=\"100\" class=\"dg-note\" text-anchor=\"middle\">vote yes</text><text x=\"425\" y=\"100\" class=\"dg-note\" text-anchor=\"middle\">vote yes</text><text x=\"280\" y=\"210\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">commit recorded: crash after this is recovered and the credit still finalises</text><text x=\"280\" y=\"240\" class=\"dg-note\" text-anchor=\"middle\">crash before this: abort, both discard, X keeps its 100</text><text x=\"280\" y=\"266\" class=\"dg-note\" text-anchor=\"middle\">cost: X and Y are locked from prepare until finalise</text></svg>"
     },
-    "mistakesOutcome": "After this you can avoid the three most common mistakes with distributed transactions.",
+    "mistakesOutcome": "After this you can avoid three mistakes with distributed transactions.",
     "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
     "quiz": [
       {
@@ -223,7 +223,7 @@
         "level": "design",
         "prompt": "You are building distributed transactions on a key-value store that only guarantees single-row atomic writes. How do you get all-or-nothing across many rows that may live on different shards?",
         "answer": "Use two-phase commit layered on the single-row primitive, as Google's Percolator does. Give each transaction a designated primary row whose single-row write is the atomic commit point; prewrite each participating row with a lock that points at the primary, then commit by flipping the primary row. A reader that finds a lock looks up the primary to learn whether the transaction committed. Use a timestamp authority and snapshot isolation so reads see a consistent version. The store's single-row atomicity is the foundation the protocol is built from.",
-        "tradeoffs": "This adds several extra store operations per logical write (Percolator reports roughly a factor-of-four overhead versus raw Bigtable), and latency rises with the number of rows. In return you get cross-row, cross-shard atomicity on storage that never promised it.",
+        "tradeoffs": "This adds several extra store operations per logical write (Percolator reports roughly a factor-of-four overhead versus raw Bigtable on its worst-case benchmark, a single-cell write and commit), and latency rises with the number of rows. In return you get cross-row, cross-shard atomicity on storage that never promised it.",
         "wrongAnswers": [
           "Assume multi-row atomicity the store does not provide.",
           "Write each row independently with no commit point, risking partial transactions.",
@@ -255,7 +255,7 @@
       "title": "Large-scale Incremental Processing Using Distributed Transactions and Notifications",
       "url": "https://research.google/pubs/pub36726/",
       "company": "Google",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2010-10-04",
       "ageNote": "This is a research paper, not a company blog post: the 2010 OSDI Percolator paper, about sixteen years old. It is here for a fundamental that has not changed: how to build cross-row, cross-shard two-phase-commit transactions on top of a store that only offers single-row atomicity, using a primary lock as the commit point and snapshot isolation. Google's indexing systems have evolved since, so treat the figures as of 2010 and the mechanism as the lasting lesson.",
       "related": [
@@ -308,8 +308,8 @@
         ],
         "tradeoffs": {
           "chosen": "Two-phase commit with a primary-lock commit point and snapshot isolation, layered on Bigtable's single-row writes, to get cross-shard ACID transactions for incremental indexing.",
-          "rejected": "The previous batch (MapReduce) approach that reprocessed the whole index, and the option of a new storage layer rather than building on Bigtable.",
-          "why": "Incremental indexing needs many small consistent updates, which batch processing cannot do efficiently, and a transaction protocol over the existing store was cheaper than a new database. Google accepted a per-operation overhead of up to roughly fourfold and higher latency in exchange for far fresher indexes and much smoother resource use."
+          "rejected": "The previous MapReduce approach, which had to be re-run over the entire repository, old pages and new.",
+          "why": "Incremental indexing needs many small consistent updates, which MapReduce cannot process individually because it relies on large batches. Google accepted roughly a fourfold overhead on its worst-case benchmark, and higher latency, in exchange for cutting the average age of documents in search results by 50% for the same number of documents per day, with much smoother resource usage."
         },
         "failures": "The paper is honest that transactions are not free: Percolator incurs roughly four times the overhead of raw Bigtable when writing a single cell and committing, which the paper calls its worst case, and workers batch their timestamp requests to the oracle to save RPC overhead at the cost of higher transaction latency. It also depends on a central timestamp oracle, which the paper says serves around 2 million timestamps per second from a single machine, and on correct lock cleanup when transactions or readers crash.",
         "takeaways": "You can build strong, cross-shard transactions on top of a store that only promises single-row atomicity, by using one designated row's atomic write as the commit point and timestamps for isolation. The durable lesson is the shape of two-phase commit and the idea of a single atomic commit point, plus the honest reminder that this atomicity is bought with real per-operation overhead."
@@ -320,7 +320,7 @@
       "title": "How Pipelining consensus writes speeds up distributed SQL transactions",
       "url": "https://www.cockroachlabs.com/blog/transaction-pipelining/",
       "company": "Cockroach Labs",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2019-01-10",
       "ageNote": "From January 2019, about seven years old, included for a fundamental that has not changed: distributed transaction latency on a consensus-replicated store is dominated by the number of synchronous consensus rounds, and pipelining those rounds reduces it. CockroachDB has added further optimisations since (such as parallel commits), so treat the specifics as the 2019 state and the latency model as the lasting lesson.",
       "related": [

@@ -1,6 +1,6 @@
 {
   "slug": "distributed-transactions",
-  "promise": "After this you can follow the topic page and the posts.",
+  "promise": "After this you can explain what a distributed transaction guarantees, how two-phase commit and a saga differ, and what each costs.",
   "before": {
     "prerequisites": [
       "consensus",
@@ -255,7 +255,7 @@
       "publisher": "Cockroach Labs",
       "kind": "Vendor documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "ms-saga",
@@ -264,7 +264,7 @@
       "publisher": "Microsoft",
       "kind": "Vendor documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "spanner-txns",
@@ -273,7 +273,7 @@
       "publisher": "Google Cloud",
       "kind": "Vendor documentation",
       "year": "page shows last updated 2026-10-09",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     }
   ]
 }

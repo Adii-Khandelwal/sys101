@@ -1,6 +1,6 @@
 {
   "topic": "distributed-transactions",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "mapreduce",
@@ -18,7 +18,7 @@
           "publisher": "Apache Hadoop",
           "url": "https://hadoop.apache.org/docs/stable/hadoop-mapreduce-client/hadoop-mapreduce-client-core/MapReduceTutorial.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -38,7 +38,7 @@
           "publisher": "Google Research",
           "url": "https://research.google/pubs/bigtable-a-distributed-storage-system-for-structured-data/",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -58,7 +58,7 @@
           "publisher": "PostgreSQL Global Development Group",
           "url": "https://www.postgresql.org/docs/current/transaction-iso.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -78,7 +78,7 @@
           "publisher": "RocksDB",
           "url": "https://rocksdb.org/",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     }
