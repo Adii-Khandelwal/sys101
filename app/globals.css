@@ -134,7 +134,7 @@ a:hover {
 
 .label {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -594,6 +594,7 @@ a:hover {
   cursor: pointer;
   border-radius: 2px;
   transition: color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+  font-size: 11px; /* faint map decoration, and GraphView sizes its room from this width */
 }
 .graph-group:hover {
   opacity: 1;
@@ -677,7 +678,7 @@ a:hover {
 
 .graph-tooltip span {
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -1091,14 +1092,14 @@ a:hover {
 
 .path-ready-tag {
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--accent);
 }
 .path-progress-tag {
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--accent);
@@ -1281,7 +1282,7 @@ a:hover {
 .tradeoffs dt,
 .glossary dt {
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -1484,7 +1485,7 @@ a:hover {
 
 .verdict {
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--accent);
@@ -1895,7 +1896,7 @@ a:hover {
   .lesson-rail li {
     margin: 0 0 8px;
     font-family: var(--font-mono), monospace;
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.04em;
   }
 
@@ -1961,7 +1962,7 @@ a:hover {
 
 .dg-note {
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 12px;
   fill: var(--ink-soft);
 }
 
@@ -2578,7 +2579,7 @@ html {
   /* Same look as .text-button: ink, mono small caps, underlined text. */
   color: var(--ink);
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
@@ -2929,7 +2930,7 @@ html {
 }
 .in-short h2.label {
   margin: 0 0 8px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
   line-height: 1.4;
 }
@@ -3434,7 +3435,7 @@ html[data-posts-view] .posts-view-h {
     position: relative;
     margin: 0 0 8px;
     font-family: var(--font-mono), monospace;
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.04em;
     line-height: 1.4;
   }
