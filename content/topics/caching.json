@@ -39,7 +39,7 @@
       "verifiedOn": "2026-10-13",
       "published": "2022-06-08",
       "digest": {
-        "problem": "A cache only stays correct if every change in the database reaches it as an invalidation, and races can break that. In Meta's example, a cache fill reads a value, the value then changes, the invalidation for the new value arrives first, and the delayed fill writes the old value back, leaving the cache wrong until something else evicts it. Such races are rare, but the harm can be real: Meta describes a case from years ago, when TAO was less consistent, where two people's messages to the same user were sent to different regions.",
+        "problem": "A cache only stays correct if every change in the database reaches it as an invalidation, and races can break that. In Meta's example, a cache fill reads a value, the value then changes, the invalidation for the new value arrives first, and the delayed fill writes the old value back, leaving the cache wrong until something else evicts it. Such races are rare, but the harm can be real: Meta describes a case from well before its 2022 post, when TAO was less consistent, where two people's messages to the same user were sent to different regions.",
         "constraints": "Meta's TAO cache handles more than a quadrillion queries a day, so even rare races add up. Logging every cache change would turn a read-heavy cache workload into a write-heavy one for the logging system. Checking the database directly is expensive and could overload it. Any measurement had to be free of false alarms and precise enough to count past ten nines.",
         "walkthrough": [
           {

@@ -258,7 +258,7 @@
       "company": "GitHub",
       "verifiedOn": "2026-10-13",
       "published": "2018-06-20",
-      "ageNote": "From June 2018 (the page also shows an update in May 2020), about eight years old, included for a fundamental that has not changed: how to fail a single-writer database over in seconds by detecting failure holistically, promoting with consensus, and redirecting clients through a controlled layer instead of DNS. GitHub's exact stack has evolved since, so treat the figures (such as 10 to 13 seconds) as of the post and the detect-promote-redirect design as the lasting lesson.",
+      "ageNote": "From June 2018 (the page also shows an update in May 2020), included for a fundamental that has not changed: how to fail a single-writer database over in seconds by detecting failure holistically, promoting with consensus, and redirecting clients through a controlled layer instead of DNS. GitHub's exact stack has evolved since, so treat the figures (such as 10 to 13 seconds) as of the post and the detect-promote-redirect design as the lasting lesson.",
       "related": [
         "replication",
         "consensus",

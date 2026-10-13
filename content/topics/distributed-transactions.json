@@ -257,7 +257,7 @@
       "company": "Google",
       "verifiedOn": "2026-10-13",
       "published": "2010-10-04",
-      "ageNote": "This is a research paper, not a company blog post: the 2010 OSDI Percolator paper, about sixteen years old. It is here for a fundamental that has not changed: how to build cross-row, cross-shard two-phase-commit transactions on top of a store that only offers single-row atomicity, using a primary lock as the commit point and snapshot isolation. Google's indexing systems have evolved since, so treat the figures as of 2010 and the mechanism as the lasting lesson.",
+      "ageNote": "This is a research paper, not a company blog post: the 2010 OSDI Percolator paper. It is here for a fundamental that has not changed: how to build cross-row, cross-shard two-phase-commit transactions on top of a store that only offers single-row atomicity, using a primary lock as the commit point and snapshot isolation. Google's indexing systems have evolved since, so treat the figures as of 2010 and the mechanism as the lasting lesson.",
       "related": [
         "sharding",
         "consensus"
@@ -357,7 +357,7 @@
       "company": "Cockroach Labs",
       "verifiedOn": "2026-10-13",
       "published": "2019-01-10",
-      "ageNote": "From January 2019, about seven years old, included for a fundamental that has not changed: distributed transaction latency on a consensus-replicated store is dominated by the number of synchronous consensus rounds, and pipelining those rounds reduces it. CockroachDB has added further optimisations since (such as parallel commits), so treat the specifics as the 2019 state and the latency model as the lasting lesson.",
+      "ageNote": "From January 2019, included for a fundamental that has not changed: distributed transaction latency on a consensus-replicated store is dominated by the number of synchronous consensus rounds, and pipelining those rounds reduces it. CockroachDB has added further optimisations since (such as parallel commits), so treat the specifics as the 2019 state and the latency model as the lasting lesson.",
       "related": [
         "consensus",
         "sharding"
