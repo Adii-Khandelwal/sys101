@@ -1,6 +1,6 @@
 {
   "topic": "dns",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "wildcard-records",
@@ -18,7 +18,7 @@
           "publisher": "IETF",
           "url": "https://www.rfc-editor.org/rfc/rfc4592.html",
           "year": "2006",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -29,7 +29,7 @@
       "assumedBy": [
         {
           "postId": "slack-dnssec-2021",
-          "quote": "This NSEC response is cached."
+          "quote": "When a request is made to a DNSSEC-enabled domain for a wildcard record which type does not exist, the answer is a signed NSEC record confirming that while the domain name exists, the requested type does not."
         }
       ],
       "sources": [
@@ -38,7 +38,7 @@
           "publisher": "IETF",
           "url": "https://www.rfc-editor.org/rfc/rfc4034.html",
           "year": "2005",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -58,7 +58,7 @@
           "publisher": "IETF",
           "url": "https://www.rfc-editor.org/rfc/rfc4034.html",
           "year": "2005",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -78,14 +78,14 @@
           "publisher": "etcd (CNCF)",
           "url": "https://etcd.io/",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
     {
       "id": "message-queue",
       "name": "Message queues (Kafka)",
-      "explanation": "A queue that holds messages until a consumer takes them, so one part of a system can hand work to another without waiting. The gist is enough here.",
+      "explanation": "A queue that holds messages until a consumer takes them, so one part of a system can hand work to another without waiting.",
       "assumedBy": [
         {
           "postId": "cloudflare-dns-builds-2022",
@@ -97,7 +97,7 @@
     {
       "id": "eventual-consistency",
       "name": "Eventual consistency",
-      "explanation": "Strong consistency means every read sees the latest write; eventual consistency means the copies agree after a delay. The gist is enough here.",
+      "explanation": "Strong consistency means every read sees the latest write; eventual consistency means the copies agree after a delay.",
       "assumedBy": [
         {
           "postId": "cloudflare-dns-builds-2022",

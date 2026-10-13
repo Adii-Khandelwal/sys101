@@ -31,11 +31,11 @@
       "title": "How we improved DNS record build speed by more than 4,000x",
       "url": "https://blog.cloudflare.com/dns-build-improvement/",
       "company": "Cloudflare",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2022-05-25",
       "digest": {
         "problem": "When a customer edits a DNS record, the change has to reach Cloudflare's edge before queries return it. The slowest step was the Zone Builder, which reacted to any edit by rebuilding the whole zone: it read every record from the database, compared all of them against Quicksilver, Cloudflare's distributed key-value store, and fixed the differences. For very large zones that took tens of seconds per edit, and the rebuilds tied up database and Quicksilver capacity that other zones needed.",
-        "constraints": "Record changes had grown about 25-fold since the Zone Builder was written, and some zones hold millions of records. The database events that triggered builds did not say which record changed. Some zone settings, such as nameserver and DNSSEC controls, really do depend on the whole zone, so full builds could not simply be deleted. Millions of domains sit on this component, so the change had to be safe.",
+        "constraints": "Record changes had grown about 25-fold since the Zone Builder was written, and some zones hold millions of records. The database events that triggered builds did not say which record changed. Some zone settings, such as nameserver and DNSSEC controls, really do depend on the whole zone, so full builds could not simply be deleted. Millions of domains sit on this component, so the change had to be safe. The post also says per-record builds would not be possible without Cloudflare's \"black lie\" approach to negative answers with DNSSEC, because the normal approach needs every record in the zone sorted.",
         "walkthrough": [
           {
             "step": "Say what changed",
@@ -63,7 +63,7 @@
           },
           {
             "step": "Model updates as delete plus create",
-            "explanation": "An edit is sent as a delete of the old record and a create of the new one, so renamed records do not leave old copies behind."
+            "explanation": "Update events were replaced by a deletion and a creation, so the old copy of a renamed record is cleaned up."
           }
         ],
         "diagram": "<svg viewBox=\"0 0 560 330\" role=\"img\" aria-labelledby=\"dg-cf-dns-t\" class=\"dg\"><title id=\"dg-cf-dns-t\">Per-record DNS builds at Cloudflare: an edit flows from the database through Kafka to a per-record scheduler, which writes only that record to Quicksilver; the full-zone scheduler remains, locked against it.</title><defs><marker id=\"dg-cf-dns-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"20\" width=\"130\" height=\"44\" class=\"dg-box\"/><text x=\"85\" y=\"47\" class=\"dg-label\" text-anchor=\"middle\">Record edit</text><rect x=\"215\" y=\"20\" width=\"130\" height=\"44\" class=\"dg-box\"/><text x=\"280\" y=\"47\" class=\"dg-label\" text-anchor=\"middle\">Database</text><rect x=\"410\" y=\"20\" width=\"130\" height=\"44\" class=\"dg-box\"/><text x=\"475\" y=\"47\" class=\"dg-label\" text-anchor=\"middle\">Kafka</text><path d=\"M150,42 L211,42\" class=\"dg-line\" marker-end=\"url(#dg-cf-dns-a)\"/><path d=\"M345,42 L406,42\" class=\"dg-line\" marker-end=\"url(#dg-cf-dns-a)\"/><text x=\"378\" y=\"82\" class=\"dg-note\" text-anchor=\"middle\">record event</text><path d=\"M450,64 C430,110 330,100 300,136\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-cf-dns-a)\"/><path d=\"M500,64 C505,95 490,110 470,136\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-cf-dns-a)\"/><rect x=\"200\" y=\"140\" width=\"150\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"275\" y=\"161.5\" class=\"dg-label\" text-anchor=\"middle\">Per-record</text><text x=\"275\" y=\"178.5\" class=\"dg-label\" text-anchor=\"middle\">scheduler</text><rect x=\"390\" y=\"140\" width=\"150\" height=\"50\" class=\"dg-box dg-dashed\"/><text x=\"465\" y=\"161.5\" class=\"dg-label\" text-anchor=\"middle\">Full-zone</text><text x=\"465\" y=\"178.5\" class=\"dg-label\" text-anchor=\"middle\">scheduler</text><path d=\"M350,165 L390,165\" class=\"dg-line dg-dashed\"/><text x=\"370\" y=\"158\" class=\"dg-note\" text-anchor=\"middle\">lock</text><text x=\"192\" y=\"160\" class=\"dg-note dg-note-accent\" text-anchor=\"end\">8 ms or less</text><text x=\"192\" y=\"174\" class=\"dg-note dg-note-accent\" text-anchor=\"end\">per edit</text><text x=\"540\" y=\"212\" class=\"dg-note\" text-anchor=\"end\">about 34 s</text><text x=\"540\" y=\"226\" class=\"dg-note\" text-anchor=\"end\">on 1M records</text><path d=\"M300,190 C300,230 330,240 338,262\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-cf-dns-a)\"/><path d=\"M420,190 C420,230 410,240 404,262\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-cf-dns-a)\"/><rect x=\"300\" y=\"266\" width=\"140\" height=\"44\" class=\"dg-box\"/><text x=\"370\" y=\"293\" class=\"dg-label\" text-anchor=\"middle\">Quicksilver</text><text x=\"110\" y=\"292\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">only the changed record</text><path d=\"M180,288 L296,288\" class=\"dg-line dg-dashed\"/></svg>",
@@ -100,9 +100,9 @@
         "tradeoffs": {
           "chosen": "Incremental per-record builds on a new event stream, with full rebuilds kept for zone-wide settings and a lock between the two.",
           "rejected": "Rebuilding the whole zone on every edit, and later, sending record edits as single update events.",
-          "why": "Full rebuilds scale with zone size rather than with the size of the edit, and they burned shared database capacity. Per-record builds cost more moving parts and cannot be batched, but their cost stays flat no matter how large the zone grows."
+          "why": "Full rebuilds scale with zone size rather than with the size of the edit, and they burned shared database capacity. Per-record builds needed a new scheduling system and cannot be batched, but the post shows their advantage over full builds growing as zones get larger."
         },
-        "failures": "The first version sent update events containing only the new record. When a customer renamed a record, the old name was never removed from Quicksilver. The fix was to send every update as a delete followed by a create. Removing full builds entirely is still unfinished.",
+        "failures": "The first version sent update events containing only the new record. When a customer renamed a record, the old name was never removed from Quicksilver. The fix was to replace those update events with a creation event and a deletion event. Removing full builds entirely is still unfinished.",
         "takeaways": "A design sized for yesterday's load becomes the bottleneck as traffic grows, so look for places where a small change triggers a large amount of work. Any incremental path needs protection from the old bulk path writing stale data over it. When a bug appears, change the design so that class of bug cannot happen again."
       }
     },
@@ -111,7 +111,7 @@
       "title": "The Case of the Recursive Resolvers (What Happened During Slack’s DNSSEC Rollout)",
       "url": "https://slack.engineering/what-happened-during-slacks-dnssec-rollout/",
       "company": "Slack",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2021-11-29",
       "digest": {
         "problem": "Slack had to sign its domains with DNSSEC to meet the FedRAMP Moderate compliance standard. On the third attempt to sign slack.com, some users could no longer resolve Slack's addresses and saw ERR_NAME_NOT_RESOLVED, mostly behind Google Public DNS and certain corporate resolvers. Fewer than 1% of online users were affected, but the outage lasted 24 hours, and Slack's own rollback made part of it worse. It is an incident write-up, and it is here because it shows how DNS caching decides how fast any change, including an undo, can take effect.",
@@ -147,7 +147,7 @@
           },
           {
             "step": "Find the root cause",
-            "explanation": "Browser network logs showed slack.com resolving while app.slack.com failed, which pointed at the wildcard record. Route 53 returned signed 'no such record' (NSEC) answers for the wildcard that did not list the record types that did exist. A query for an IPv6 (AAAA) address, which Slack did not publish, was read by resolvers like Google's as 'nothing exists at this name', cached, and then used to refuse ordinary lookups."
+            "explanation": "Network logs from Slack's client apps showed slack.com resolving while app.slack.com failed, which pointed at the wildcard record. Route 53 returned signed 'no such record' (NSEC) answers for the wildcard that did not list the record types that did exist. A query for an IPv6 (AAAA) address, which Slack did not publish, was read by resolvers like Google's as 'nothing exists at this name', cached, and then used to refuse ordinary lookups."
           }
         ],
         "diagram": "<svg viewBox=\"0 0 560 330\" role=\"img\" aria-labelledby=\"dg-slack-dnssec-t\" class=\"dg\"><title id=\"dg-slack-dnssec-t\">Slack&#x27;s DNSSEC rollback: the .com zone&#x27;s DS record for slack.com stayed cached in resolvers for up to 24 hours after Slack pulled it, so removing signing made those resolvers fail with SERVFAIL until the cache expired.</title><defs><marker id=\"dg-slack-dnssec-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"20\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"95\" y=\"41.5\" class=\"dg-label\" text-anchor=\"middle\">.com zone</text><text x=\"95\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\">DS for slack.com</text><rect x=\"20\" y=\"130\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"95\" y=\"151.5\" class=\"dg-label\" text-anchor=\"middle\">slack.com zone</text><text x=\"95\" y=\"168.5\" class=\"dg-label\" text-anchor=\"middle\">signed (Route 53)</text><path d=\"M95,70 L95,126\" class=\"dg-line\" marker-end=\"url(#dg-slack-dnssec-a)\"/><text x=\"104\" y=\"102\" class=\"dg-note\" text-anchor=\"start\">chain of trust</text><rect x=\"330\" y=\"40\" width=\"200\" height=\"120\" class=\"dg-box\"/><text x=\"430\" y=\"64\" class=\"dg-label\" text-anchor=\"middle\">Resolver cache</text><text x=\"345\" y=\"92\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">DS record: up to 24 h</text><text x=\"345\" y=\"112\" class=\"dg-note\" text-anchor=\"start\">8.8.8.8 caps it at 6 h</text><text x=\"345\" y=\"138\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">NSEC: no AAAA = no name</text><path d=\"M170,45 C240,45 280,70 326,80\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-slack-dnssec-a)\"/><path d=\"M170,155 C240,155 280,140 326,130\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-slack-dnssec-a)\"/><path d=\"M40,250 L520,250\" class=\"dg-line\"/><circle cx=\"80\" cy=\"250\" r=\"4\" class=\"dg-dot\"/><circle cx=\"240\" cy=\"250\" r=\"4\" class=\"dg-dot\"/><circle cx=\"420\" cy=\"250\" r=\"4\" class=\"dg-dot dg-dot-accent\"/><text x=\"80\" y=\"274\" class=\"dg-note\" text-anchor=\"middle\">DS published</text><text x=\"80\" y=\"288\" class=\"dg-note\" text-anchor=\"middle\">after 3 h soak</text><text x=\"240\" y=\"274\" class=\"dg-note\" text-anchor=\"middle\">DS pulled</text><text x=\"240\" y=\"288\" class=\"dg-note\" text-anchor=\"middle\">cached copies stay</text><text x=\"420\" y=\"274\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">signing removed</text><text x=\"420\" y=\"288\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">SERVFAIL until DS expires</text><text x=\"280\" y=\"322\" class=\"dg-note\" text-anchor=\"middle\">a rollback cannot outrun other people&#x27;s caches</text></svg>",
@@ -169,7 +169,7 @@
             "meaning": "Tries at signing slack.com: September 7, 8 and 30, 2021"
           },
           {
-            "value": "three hour",
+            "value": "three hours",
             "meaning": "Soak time between enabling signing and publishing the DS record, after which validations were successful"
           },
           {
@@ -186,12 +186,12 @@
           }
         ],
         "tradeoffs": {
-          "chosen": "A staged rollout: smaller domains first, then signing, validation and a soak period before publishing the DS record last. During the incident, pull the DS record first, then remove signing, then flush caches.",
-          "rejected": "Re-signing slack.com mid-incident, which would have produced a new signing key that matched nothing cached, and signing subdomains one at a time, which DNSSEC does not allow.",
+          "chosen": "A staged rollout: smaller domains first, then signing, validation and a soak period before publishing the DS record last. In the incident Slack pulled the DS record, then removed signing, which made things much worse, and then asked resolver operators to flush caches.",
+          "rejected": "Re-signing slack.com mid-incident, which would have used a different zone signing key, so validating resolvers would have kept failing, and signing subdomains one at a time, which DNSSEC does not allow.",
           "why": "Publishing the DS record last should have made the change reversible, but that only holds if the DS record is not cached. Once resolvers had cached it, every rollback step had to wait for their caches, which Slack did not control."
         },
-        "failures": "Slack had never tested DNSSEC on a domain with a wildcard record before slack.com, and the wildcard is where Route 53's incomplete NSEC answers broke resolution. The team believed DS records were not cached, when the .com zone asked for 24 hours. Managing DNS through Terraform hid a warning that the Route 53 console shows when disabling DNSSEC, and the rollback deleted signing keys that could not be recreated identically. Route 53 has since fixed the NSEC bug.",
-        "takeaways": "In DNS, an undo is just another change, and it propagates no faster than the longest cache in the path, including caches set by a parent zone you do not own. Test on a domain shaped like your most important one, wildcards included. Read tool warnings during rollbacks, and use real client evidence, here browser network logs, because resolvers that all follow the spec can still behave differently."
+        "failures": "Slack had never tested DNSSEC on a domain with a wildcard record before slack.com, and the wildcard is where Route 53's incomplete NSEC answers broke resolution. The team believed DS records were not cached, when the .com zone asked for 24 hours. Managing DNS through Terraform hid a warning that the Route 53 console shows when disabling DNSSEC, and the rollback deleted keys, one of which, the zone signing key, Route 53 would have regenerated differently. Route 53 has since fixed the NSEC bug.",
+        "takeaways": "In DNS, an undo is just another change, and it propagates no faster than the longest cache in the path, including caches set by a parent zone you do not own. Test on a domain shaped like your most important one, wildcards included. Read tool warnings during rollbacks, and use real client evidence, here network logs from Slack's clients, because resolvers that all follow the spec can still behave differently."
       }
     }
   ],
@@ -304,7 +304,7 @@
         },
         {
           "step": "Compare an ordinary edit",
-          "explanation": "A record edit at Cloudflare after its rebuild takes 8 ms or less to build, against about 34 seconds before for a million-record zone. After that, caches still serve the old copy until its TTL expires."
+          "explanation": "In Cloudflare's one-million-record test zone, a per-record build took 8 ms or less, against about 34 seconds for a full build. After that, caches still serve the old copy until its TTL expires."
         },
         {
           "step": "Add it up",

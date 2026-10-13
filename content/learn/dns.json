@@ -80,7 +80,7 @@
       "body": [
         "Your device does not search the internet itself. A small piece of software on it, the stub resolver, sends the question to a recursive resolver, often run by your internet provider or your network. The recursive resolver does the work of finding the answer and hands it back [[bind-arm]].",
         "If the recursive resolver has no saved copy, it starts at the top. It asks a root server, which does not know the final answer but replies with a referral: the servers responsible for the top-level domain. It asks one of those, gets another referral to the servers for the domain itself, and finally asks those, which are authoritative and give the real answer [[bind-arm]]. The root is served under 13 named authorities, made up of hundreds of servers around the world [[iana-root]].",
-        "Each part of the tree whose data is managed together is a zone, and a parent zone delegates a child zone to the child's own name servers. A zone is expected to run two or more name servers, so one failure does not take its names offline [[bind-arm]].",
+        "Each part of the tree whose data is managed together is a zone, and a parent zone delegates a child zone to the child's own name servers. By convention a zone has at least two name servers, so one failure does not take its names offline [[cs168]].",
         "Answers come as resource records of different types: an address record for IPv4 or IPv6, a record naming a zone's name servers, an alias pointing one name at another, a record saying where mail for a domain should go, and more [[rfc1035]]. Every record carries a time to live, which tells resolvers how long they may keep reusing a copy before asking again.",
         "There are hard limits built into names: each label is at most 63 octets and a whole name at most 255 octets [[rfc1035]]. Queries usually travel over UDP on port 53, and TCP or TLS can also be used in parts of the network [[bind-arm]]."
       ],
@@ -308,7 +308,7 @@
       "publisher": "IETF",
       "kind": "Internet standard",
       "year": "1987",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "rfc1035",
@@ -317,7 +317,7 @@
       "publisher": "IETF",
       "kind": "Internet standard",
       "year": "1987",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "rfc9499",
@@ -326,7 +326,7 @@
       "publisher": "IETF",
       "kind": "Best current practice",
       "year": "2024",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "rfc2308",
@@ -335,7 +335,7 @@
       "publisher": "IETF",
       "kind": "Internet standard",
       "year": "1998",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "rfc4033",
@@ -344,7 +344,7 @@
       "publisher": "IETF",
       "kind": "Internet standard",
       "year": "2005",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "bind-arm",
@@ -353,7 +353,7 @@
       "publisher": "Internet Systems Consortium (ISC)",
       "kind": "Project documentation",
       "year": "2023",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "BIND 9.20.29 documentation, shown with a 2023 copyright line."
     },
     {
@@ -363,7 +363,7 @@
       "publisher": "UC Berkeley, CS 168",
       "kind": "University course notes",
       "year": "2024",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "Maintained as of the Fall 2024 semester."
     },
     {
@@ -373,7 +373,7 @@
       "publisher": "IANA",
       "kind": "Registry page",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "nanog-dns-fundamentals",
@@ -404,7 +404,7 @@
       "publisher": "Internet Systems Consortium (BIND 9)",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The dig section of the manual pages. It documents the syntax dig @server name type and the +short, +trace and +dnssec options."
     }
   ]
