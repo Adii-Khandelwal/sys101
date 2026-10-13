@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import IntentLink from "./IntentLink";
 import { useReadTopics } from "@/lib/progress";
 
 type Entry = { slug: string; title: string; number: string; minutes: number };
@@ -24,7 +24,7 @@ export default function TopicIndex({ groups }: Props) {
                 return (
                   <li key={e.slug}>
                     <span className="index-number">{e.number}</span>
-                    <Link href={`/topic/${e.slug}`}>{e.title}</Link>
+                    <IntentLink href={`/topic/${e.slug}`}>{e.title}</IntentLink>
                     <span className="index-time label" aria-hidden="true">
                       ~{e.minutes} min read
                     </span>

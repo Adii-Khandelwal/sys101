@@ -36,6 +36,7 @@ export default function Logo() {
   return (
     <Link
       href="/"
+      prefetch={false}
       className={`logo${hidden ? " is-hidden" : ""}`}
       inert={hidden}
       aria-hidden={hidden || undefined}

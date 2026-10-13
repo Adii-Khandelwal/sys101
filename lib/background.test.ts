@@ -1,7 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// IntentLink asks for the app router, which does not exist when a page is rendered to a string.
+vi.mock("next/navigation", () => ({ useRouter: () => ({ prefetch: () => {} }), usePathname: () => "/" }));
+
 import Background from "../app/background/page";
 import TopicLesson from "../components/TopicLesson";
 import sitemap from "../app/sitemap";

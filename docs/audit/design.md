@@ -322,3 +322,16 @@ Why I stopped: `parseProgress` is synchronous and is called while the store read
 - The social image: rendered locally; I did not run it through a real link preview (Slack, X, iMessage), which cache and may crop differently.
 - B5 at widths between 1180 and 1280 beyond the 1280 and 1440 checks, and the 1920 numbers come from a headless viewport.
 - The P3 change at 12px was covered by the diagram overflow check and the overflow sweep, not by looking at every page.
+
+## Appendix D. W4 applied (13 October 2026)
+
+Topic links (map nodes, All topics index, Path rows, Builds on / Leads to lists) use `components/IntentLink.tsx`: on desktop they prefetch on pointer-enter, focus or touchstart and not when they scroll into view; under 768px they keep Next's viewport prefetch. The logo and "Start from zero" links have `prefetch={false}`. Same method as Part 2 (production build, 150ms RTT, about 4 Mbps down, transfer sizes, 8s idle).
+
+| Page | Before total | After total | Before prefetch (requests, KB) | After prefetch |
+| --- | --- | --- | --- | --- |
+| Home, 1440 | 814 KB | 513 KB | 19 RSC, 301 KB | 1 RSC, 4 KB |
+| Home, 390 | 527 KB | 527 KB | 5 RSC, 65 KB | unchanged (viewport prefetch kept) |
+| Topic, 1440 | 564 KB | 458 KB | 6 RSC, 84 KB, plus the home and learn route JS | none |
+| Topic, 390 | 488 KB | 458 KB | 1 RSC, 12 KB, plus route JS | none |
+
+Node-open on desktop (real mouse, bubble seen in both): click to topic heading 317 ms before and 342 ms after with no hover at all (a cold click), 274 ms before and 235 ms after with a 300ms hover. The first open does not wait noticeably longer; a cold click is about 25 ms slower in this run, inside run-to-run noise that I did not repeat enough to quantify. Not measured: a real mouse user's hover time, real networks.

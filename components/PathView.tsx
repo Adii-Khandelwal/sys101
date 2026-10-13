@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import IntentLink from "./IntentLink";
 import { markTopics, useInProgressTopics, useReadTopics } from "@/lib/progress";
 import { readyTopics, type IndexEntry } from "@/lib/nextUp";
 
@@ -88,11 +88,11 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
                     <span className="path-marker" />
                   </span>
                   <span className="path-body">
-                    <Link href={`/topic/${e.slug}`} className="path-title">
+                    <IntentLink href={`/topic/${e.slug}`} className="path-title">
                       {e.title}
                       {st === "ready" && <span className="path-ready-tag"> · ready</span>}
                       {st === "progress" && <span className="path-progress-tag"> · in progress</span>}
-                    </Link>
+                    </IntentLink>
                     <span className="path-meta">
                       <span className="visually-hidden">
                         {st === "read" ? "read. " : st === "progress" ? "in progress. " : st === "ready" ? "ready to read. " : "unread. "}

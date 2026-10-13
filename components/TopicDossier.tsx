@@ -1,4 +1,5 @@
 import Link from "next/link";
+import IntentLink from "./IntentLink";
 import { companyWhen, isOld, isUndated, postDateShown, type Post, type Topic } from "@/lib/topics";
 import ReadToggle from "./ReadToggle";
 import InterviewTag from "./InterviewTag";
@@ -22,7 +23,7 @@ export function TopicList({ topics, reasons }: { topics: Topic[]; reasons?: Reco
     <ul>
       {topics.map((t) => (
         <li key={t.slug}>
-          <Link href={`/topic/${t.slug}`}>{t.title}</Link>
+          <IntentLink href={`/topic/${t.slug}`}>{t.title}</IntentLink>
           {reasons?.[t.slug] && <p className="relation-reason">{reasons[t.slug]}</p>}
         </li>
       ))}

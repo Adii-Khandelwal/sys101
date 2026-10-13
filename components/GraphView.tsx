@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import IntentLink from "./IntentLink";
 import { useRouter } from "next/navigation";
 import type Graph from "graphology";
 import type Sigma from "sigma";
@@ -1090,7 +1090,7 @@ export default function GraphView({ nodes, edges }: Props) {
           const isRead = read.includes(p.slug);
           const isReady = !isRead && (prereqs.get(p.slug) ?? []).every((q) => read.includes(q));
           return (
-            <Link
+            <IntentLink
               key={p.slug}
               href={`/topic/${p.slug}`}
               className="graph-node-link"

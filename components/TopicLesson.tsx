@@ -149,7 +149,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 <span className="label" aria-hidden="true">
                   ·
                 </span>
-                <Link className="text-button label" href={learnHref}>
+                <Link className="text-button label" href={learnHref} prefetch={false}>
                   New to this? Start from zero
                 </Link>
               </>
