@@ -29,7 +29,7 @@
       "assumedBy": [
         {
           "postId": "uber-consumer-proxy-2021",
-          "quote": "Sends/pushes each message separately to a consumer service instance that exposes a gRPC® service endpoint"
+          "quote": "Sends/pushes each message separately to a consumer service instance"
         }
       ],
       "sources": [
