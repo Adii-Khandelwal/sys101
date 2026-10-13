@@ -29,6 +29,7 @@ import { navigateWithTransition, pageReady } from "./ViewTransitions";
 import { clickIntent, playNodeOpen, removeBubbles } from "@/lib/nodeOpen";
 import { saveMapView, takeMapView, type MapView } from "@/lib/mapView";
 import { DESKTOP, PHONE } from "@/lib/breakpoints";
+import StateLegend from "./StateLegend";
 import {
   STEP,
   clampPan,
@@ -1020,12 +1021,7 @@ export default function GraphView({ nodes, edges }: Props) {
   return (
     <>
       <div className="graph-toolbar">
-        <p className="graph-legend label" data-tour="states">
-          <LegendMark state="unread" /> Unread
-          <LegendMark state="ready" /> Ready
-          <LegendMark state="progress" /> In progress
-          <LegendMark state="read" /> Read
-        </p>
+        <StateLegend />
         <div className="graph-toolbar-end">
           <span className="graph-scroll-cue label" data-shown={moreToScroll || undefined} aria-hidden="true">
             Scroll sideways for more
@@ -1138,23 +1134,6 @@ export default function GraphView({ nodes, edges }: Props) {
         </div>
       </div>
     </>
-  );
-}
-
-/** Legend icons drawn like the nodes: thin ring, thick ring with a centre dot, filled rust. */
-function LegendMark({ state }: { state: "unread" | "ready" | "progress" | "read" }) {
-  return (
-    <svg className="legend-mark" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
-      {state === "read" ? (
-        <circle cx="8" cy="8" r="7" fill="var(--accent)" />
-      ) : state === "progress" ? (
-        <circle cx="8" cy="8" r="5.5" fill="var(--paper)" stroke="var(--accent)" strokeWidth="3" />
-      ) : (
-        <circle cx="8" cy="8" r={state === "ready" ? 5.5 : 6.25} fill="var(--paper)" stroke="var(--ink-soft)" strokeWidth={state === "ready" ? 3 : 1.5} />
-      )}
-      {state === "ready" && <circle cx="8" cy="8" r="1.6" fill="var(--ink-soft)" />}
-      {state === "progress" && <circle cx="8" cy="8" r="1.6" fill="var(--accent)" />}
-    </svg>
   );
 }
 

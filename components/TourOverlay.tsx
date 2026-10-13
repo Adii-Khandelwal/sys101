@@ -5,7 +5,31 @@ import { createPortal } from "react-dom";
 import { isPhone, keyAction, move, overlayBoxes, placeBox, resolveSteps, wrapTab, type TourId } from "@/lib/tours";
 
 const PAD = 4; // the outline sits this far outside the target
+const PHONE_HEADER = 72; // the sticky header and strip on a phone, which a lifted target must stay below
 type Rect = { left: number; top: number; right: number; bottom: number };
+
+/**
+ * Calls `done` when the page has stopped scrolling: after it moved and then held still for about 400ms (a browser may
+ * update the scroll position in bursts during a long smooth scroll), when it never
+ * moved at all (unless `mustMove`: a scroll that is known to be coming), when `arrived()` says so, or after `cap` ms. Returns a cancel function.
+ */
+function whenSettled(done: () => void, cap: number, arrived: () => boolean = () => false, mustMove = false) {
+  const t0 = performance.now();
+  let prev = window.scrollY;
+  let still = 0;
+  let moved = false;
+  let id = 0;
+  const tick = () => {
+    const y = window.scrollY;
+    if (y !== prev) moved = true;
+    still = y === prev ? still + 1 : 0;
+    prev = y;
+    if (arrived() || (moved && still >= 24) || (!mustMove && !moved && still >= 8) || performance.now() - t0 > cap) done();
+    else id = requestAnimationFrame(tick);
+  };
+  id = requestAnimationFrame(tick);
+  return () => cancelAnimationFrame(id);
+}
 
 /** The homepage is showing the Path list (a phone always does). */
 const pathShowing = () => isPhone() || !!document.querySelector("section.path");
@@ -35,11 +59,9 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
 
   // Fade in once the first target is measured and the tooltip placed, so nothing jumps into place.
   const [visible, setVisible] = useState(false);
-  // Read while rendering, before the first step scrolls the page: this is where the reader was.
-  const startY = useRef(typeof window === "undefined" ? 0 : window.scrollY);
   const closing = useRef(false);
 
-  // Fade out, and if the tour scrolled the page, ease back to where the reader was; then hand over. The reading
+  // Fade out and ease the page back to its top, so a reader who closes the tour starts again from the top; then hand over. The reading
   // tracker stays off until then, so the scroll back leaves no visits. Under reduced motion all of it is instant.
   const close = (finished = false) => {
     if (closing.current) return;
@@ -54,23 +76,10 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
         onClose(finished);
       }
     };
-    if (Math.abs(window.scrollY - startY.current) > 2) {
-      window.scrollTo({ top: startY.current, behavior: reduced ? ("instant" as ScrollBehavior) : "smooth" });
+    if (window.scrollY > 2) {
+      window.scrollTo({ top: 0, behavior: reduced ? ("instant" as ScrollBehavior) : "smooth" });
       if (reduced) setTimeout(finish, fade);
-      else {
-        // Wait until the page has reached the spot (or stopped moving), but never longer than 900ms.
-        const t0 = performance.now();
-        let still = 0;
-        let prev = window.scrollY;
-        const watch = () => {
-          const y = window.scrollY;
-          still = y === prev ? still + 1 : 0;
-          prev = y;
-          if (Math.abs(y - startY.current) <= 1 || still >= 6 || performance.now() - t0 > 900) finish();
-          else requestAnimationFrame(watch);
-        };
-        requestAnimationFrame(watch);
-      }
+      else whenSettled(finish, 2000, () => window.scrollY <= 1, true); // until it reaches the top, or stops
     } else setTimeout(finish, fade);
   };
   const closeRef = useRef(close);
@@ -94,12 +103,15 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
     };
   }, [rect, visible]);
 
-  // Bring the target into view (instantly: no scrolling animation), then follow it while the page moves.
+  // Bring the target into view, then follow it while the page moves. The first step travels there smoothly with the
+  // overlay still hidden and fades in on arrival; later steps jump the page and glide the outline. Reduced motion jumps.
   useEffect(() => {
     if (!step) return onClose(false);
     const el = visibleTarget(step.target);
     if (!el) return;
-    el.scrollIntoView({ block: phone ? "start" : "center", inline: "nearest", behavior: "instant" as ScrollBehavior });
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const travel = index === 0 && !reduced;
+    el.scrollIntoView({ block: phone ? "start" : "center", inline: "nearest", behavior: travel ? "smooth" : ("instant" as ScrollBehavior) });
     const measure = (glides: boolean) => {
       const r = el.getBoundingClientRect();
       const next = { left: r.left - PAD, top: r.top - PAD, right: r.right + PAD, bottom: r.bottom + PAD };
@@ -108,19 +120,27 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
       setGlide(glides && index > 0);
       setRect(next);
     };
-    measure(true);
     const follow = () => measure(false);
-    // The page stays clickable, so the reader may switch Map and Path while a tour is open. The steps were worded for
-    // the other view (or their target is gone), so the tour ends instead of describing something that is not there.
+    // The page stays under the blocker, but the reader may switch Map and Path with the keyboard or the page may change:
+    // the steps were worded for one view (or their target is gone), so the tour ends instead of describing what is not there.
     const watch = window.setInterval(() => {
       if (!el.isConnected || pathShowing() !== startedOnPath.current) closeRef.current(false);
     }, 300);
-    window.addEventListener("resize", follow);
-    window.addEventListener("scroll", follow, true);
+    let listening = false;
+    const start = () => {
+      measure(true);
+      window.addEventListener("resize", follow);
+      window.addEventListener("scroll", follow, true);
+      listening = true;
+    };
+    const stopTravel = travel ? whenSettled(start, 1500) : (start(), () => {});
     setSaid(`Step ${index + 1} of ${steps.length}: ${step.title}. ${step.text}`);
     return () => {
-      window.removeEventListener("resize", follow);
-      window.removeEventListener("scroll", follow, true);
+      stopTravel();
+      if (listening) {
+        window.removeEventListener("resize", follow);
+        window.removeEventListener("scroll", follow, true);
+      }
       window.clearInterval(watch);
     };
     // onClose and phone are stable for the life of a tour.
@@ -130,12 +150,24 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
   // Place the tooltip: under the target, else above it, else at the foot of the screen. A phone docks it to the bottom edge in CSS.
   useLayoutEffect(() => {
     if (!rect || !dialog.current) return;
+    if (phone) {
+      // While the tour is closing the page is easing back to the top; lifting the target again would fight that scroll.
+      if (closing.current) return;
+      // The docked tooltip must never cover its target. Give the page room below its end (so a target at the very bottom
+      // can scroll up), then scroll just enough to lift the target clear of the tooltip, keeping its top below the header.
+      const dock = dialog.current.offsetHeight;
+      document.documentElement.style.setProperty("--tour-dock", `${dock + 8}px`);
+      const over = rect.bottom - (window.innerHeight - dock - 8);
+      const room = rect.top - PHONE_HEADER;
+      if (over > 0 && room > 0) window.scrollBy({ top: Math.min(over, room), behavior: "instant" as ScrollBehavior });
+      return;
+    }
     const { offsetWidth: w, offsetHeight: h } = dialog.current;
     const left = Math.min(Math.max(rect.left, 16), Math.max(16, window.innerWidth - w - 16));
     const below = rect.bottom + 12;
     const above = rect.top - 12 - h;
     setTip({ left, top: below + h <= window.innerHeight - 12 ? below : above >= 12 ? above : window.innerHeight - h - 12 });
-  }, [rect, index]);
+  }, [rect, index, phone]);
 
   // The tour scrolls the page to each part; closing it puts the reader back where they were, and while it runs the
   // reading tracker (components/LessonRail.tsx) ignores the scrolling.
@@ -143,6 +175,7 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
     document.documentElement.dataset.touring = "true";
     return () => {
       delete document.documentElement.dataset.touring;
+      document.documentElement.style.removeProperty("--tour-dock");
     };
   }, []);
 
@@ -178,6 +211,8 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
   const boxes = rect ? overlayBoxes(rect, window.innerWidth, window.innerHeight) : null;
   return createPortal(
     <>
+      {/* The rest of the page does not take clicks while a tour runs, so nothing is pressed by accident. Scrolling still works. */}
+      <div className="tour-block" aria-hidden="true" />
       {boxes && (
         <svg className={`tour-svg${glide ? " tour-go" : ""}`} data-shown={visible || undefined} aria-hidden="true">
           {(["top", "bottom", "left", "right"] as const).map((k) => (

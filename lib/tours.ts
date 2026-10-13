@@ -30,7 +30,6 @@ export const TOURS: Record<TourId, TourStep[]> = {
       target: "states",
       title: "Four states",
       text: "A hollow ring is unread. A thicker ring with a dot is ready: you have read what it builds on. A rust ring with a dot is in progress. A filled rust circle is read.",
-      path: { text: "The mark beside each topic shows where it stands. A hollow ring is unread, a ring with a dot is ready or in progress (the words beside the title say which), and a filled circle is read." },
     },
     {
       target: "view",

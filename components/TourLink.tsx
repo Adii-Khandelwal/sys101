@@ -10,8 +10,9 @@ const TourOverlay = dynamic(() => import("./TourOverlay"), { ssr: false });
 
 /**
  * The quiet entry link. It never starts by itself and appears only once the page is running. It stays until the
- * reader finishes the tour (Done) or presses Skip tour; Esc only closes it for now. After that it is not shown again
- * on later visits (Your data can bring it back), so it never nags.
+ * reader finishes the tour (Done) or presses Skip tour, and goes the moment that happens; Esc only closes the tour
+ * for now. It is not shown again on later visits (Your data can bring it back), so it never nags. The footer copy
+ * stays, as the way to take the tour again.
  */
 export default function TourLink({ tour, variant = "inline" }: { tour: TourId; variant?: "inline" | "footer" }) {
   const [ready, setReady] = useState(false);
@@ -45,9 +46,15 @@ export default function TourLink({ tour, variant = "inline" }: { tour: TourId; v
         <TourOverlay
           tour={tour}
           onClose={(finished) => {
-            if (finished) markSeen(tour);
             setOpen(false);
-            button.current?.focus({ preventScroll: true }); // the page is back where the link is
+            if (finished) markSeen(tour);
+            if (finished && variant === "inline") {
+              // The link is gone now, so focus goes to the top of the page, where the tour leaves the reader.
+              setSeen(true);
+              const heading = document.querySelector<HTMLElement>("h1");
+              heading?.setAttribute("tabindex", "-1");
+              heading?.focus({ preventScroll: true });
+            } else button.current?.focus({ preventScroll: true });
           }}
         />
       )}

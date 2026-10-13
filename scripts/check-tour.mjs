@@ -20,7 +20,7 @@ for (const [label, url, steps] of [["home", "/", 5], ["topic", "/topic/caching",
   // Never auto-starts.
   expect((await page.locator(".tour-tip").count()) === 0, `${label}: the tour started by itself`);
 
-  // Keyboard only: open with Enter, move with the arrows and Tab, finish with Done.
+  // Keyboard only: open with Enter, move with the arrows and Tab, close with Esc, which keeps the link.
   await link.focus();
   await page.keyboard.press("Enter");
   await page.waitForSelector(".tour-tip");
@@ -38,46 +38,45 @@ for (const [label, url, steps] of [["home", "/", 5], ["topic", "/topic/caching",
     seen.push(await page.evaluate(() => (document.activeElement?.closest(".tour-tip") ? document.activeElement.textContent.trim().toLowerCase() : "OUTSIDE")));
   }
   expect(!seen.includes("OUTSIDE"), `${label}: Tab left the tooltip (${seen.join(", ")})`);
+  expect(await page.getByRole("button", { name: "Skip tour" }).isVisible(), `${label}: Skip is not visible`);
+  await page.keyboard.press("Escape");
+  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 }).catch(() => {});
+  expect((await page.locator(".tour-tip").count()) === 0, `${label}: Esc did not close`);
+  expect((await link.count()) === 1 && (await page.evaluate(() => document.activeElement?.classList.contains("tour-link"))), `${label}: Esc removed the link or focus did not return to it`);
+
+  // Clicks meant for the page behind the tour land on the blocker, so nothing is pressed by accident.
+  await link.click();
+  await page.waitForSelector(".tour-tip");
+  await page.waitForSelector(".tour-svg");
+  const logo = await page.evaluate(() => {
+    const r = document.querySelector(".site-header a").getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2, hit: document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.classList.contains("tour-block") };
+  });
+  expect(logo.hit, `${label}: a click on the page behind the tour is not caught`);
+  const urlBefore = page.url();
+  await page.mouse.click(logo.x, logo.y);
+  await page.waitForTimeout(200);
+  expect(page.url() === urlBefore && (await page.locator(".tour-tip").count()) === 1, `${label}: clicking the page behind the tour did something`);
+  await page.keyboard.press("Escape");
+  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 }).catch(() => {});
+  expect(JSON.stringify(await page.evaluate(() => ({ ...localStorage }))) === before, `${label}: Esc stored something`);
+
+  // Finish with Done: the link goes at once, focus lands on the page heading, and only that tour's seen flag is stored.
+  await link.click();
+  await page.waitForSelector(".tour-tip");
   for (let i = 1; i < steps; i++) await page.keyboard.press("ArrowRight");
   const total = Number((await page.locator(".tour-count").textContent()).match(/of (\d+)/)[1]);
   expect(total === steps, `${label}: expected ${steps} steps, got ${total}`);
   expect((await page.locator(".tour-actions button").nth(1).innerText()).toLowerCase() === "done", `${label}: the last step does not say Done`);
   await page.locator(".tour-actions button").nth(1).click();
-  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 }).catch(() => {});
+  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 4000 }).catch(() => {});
   expect((await page.locator(".tour-tip").count()) === 0, `${label}: Done did not close the tour`);
-  expect(await page.evaluate(() => document.activeElement?.classList.contains("tour-link")), `${label}: focus did not return to the entry link after Done`);
-
-  // Esc closes from the middle and returns focus.
-  await link.click();
-  await page.waitForSelector(".tour-tip");
-  await page.keyboard.press("ArrowRight");
-  await page.keyboard.press("Escape");
-  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 }).catch(() => {});
-  expect((await page.locator(".tour-tip").count()) === 0, `${label}: Esc did not close`);
-  expect(await page.evaluate(() => document.activeElement?.classList.contains("tour-link")), `${label}: focus did not return after Esc`);
-
-  // Skip is always visible and closes.
-  await link.click();
-  await page.waitForSelector(".tour-tip");
-  await page.keyboard.press("ArrowRight");
-  await page.keyboard.press("ArrowRight");
-  expect(await page.getByRole("button", { name: "Skip tour" }).isVisible(), `${label}: Skip is not visible on step 3`);
-  await page.getByRole("button", { name: "Skip tour" }).click();
-  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 }).catch(() => {});
-  expect((await page.locator(".tour-tip").count()) === 0, `${label}: Skip did not close`);
-
-  // The page stayed clickable behind the dim, and nothing was stored.
-  await link.click();
-  await page.waitForSelector(".tour-tip");
-  await page.waitForSelector(".tour-svg");
-  expect(await page.evaluate(() => getComputedStyle(document.querySelector(".tour-svg")).pointerEvents === "none"), `${label}: the dim blocks the page`);
-  await page.keyboard.press("Escape");
-  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 }).catch(() => {});
-  // Done and Skip (above) marked the tour seen: the only thing stored, and only that tour's flag.
+  expect((await page.getByRole("button", { name: "Take the 30-second tour" }).count()) === 0, `${label}: the link was still there after Done`);
+  expect(await page.evaluate(() => document.activeElement?.tagName === "H1"), `${label}: focus did not land on the page heading after Done`);
   const after = JSON.parse(await page.evaluate(() => JSON.stringify({ ...localStorage })));
   const { "sys101:tours": flag, ...rest } = after;
   expect(JSON.stringify(rest) === JSON.stringify(JSON.parse(before)), `${label}: the tour stored something besides its seen flag`);
-  expect(JSON.parse(flag ?? "{}").seen?.[label === "home" ? "home" : "topic"] === true, `${label}: finishing or skipping the tour did not mark it seen`);
+  expect(JSON.parse(flag ?? "{}").seen?.[label === "home" ? "home" : "topic"] === true, `${label}: finishing the tour did not mark it seen`);
   // A later visit does not show the link; Your data brings it back.
   await page.reload({ waitUntil: "networkidle" });
   expect((await page.getByRole("button", { name: "Take the 30-second tour" }).count()) === 0, `${label}: the link came back on the next visit`);
@@ -112,7 +111,7 @@ for (const [how, removes] of [["Escape", false], ["Skip", true], ["Done", true]]
   await ctx.close();
 }
 
-// The Path list gets Path wording on a desktop too, and switching view while a tour is open ends it cleanly.
+// The Path list gets Path wording on a desktop too, and the page changing under a tour ends it cleanly.
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
@@ -125,9 +124,11 @@ for (const [how, removes] of [["Escape", false], ["Skip", true], ["Done", true]]
   await page.locator(".tour-actions button").nth(1).click();
   await page.locator(".tour-actions button").nth(1).click();
   expect(/You are on Path/.test(await text()), `path view: the Map or Path step does not say you are on Path (${await text()})`);
-  await page.getByRole("button", { name: "Map", exact: true }).last().click();
-  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 }).catch(() => {});
-  expect((await page.locator(".tour-tip").count()) === 0, "path view: the tour stayed open after switching to the map");
+  // The tooltip is the only thing that takes clicks, so the view cannot be switched by hand; turning a tablet or
+  // resizing past the phone line still changes the view under the tour, and then the tour ends.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 4000 }).catch(() => {});
+  expect((await page.locator(".tour-tip").count()) === 0, "path view: the tour stayed open after the page changed under it");
   await ctx.close();
 }
 
@@ -172,7 +173,7 @@ for (const [reduce, label] of [["no-preference", "motion"], ["reduce", "reduced 
   await ctx.close();
 }
 
-// Opening and closing fade (opacity) and the page eases back to where it was; under reduced motion all of it is instant.
+// Opening and closing fade (opacity) and the page eases back to its top; under reduced motion all of it is instant.
 for (const [reduce, label] of [["no-preference", "motion"], ["reduce", "reduced motion"]]) {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: reduce });
   const page = await ctx.newPage();
@@ -188,7 +189,8 @@ for (const [reduce, label] of [["no-preference", "motion"], ["reduce", "reduced 
     requestAnimationFrame(tick);
   });
   await page.getByRole("button", { name: "Take the 30-second tour" }).click();
-  const y0 = await page.evaluate(() => Math.round(scrollY)); // where the reader is when the tour begins: its first scroll comes after the chunk loads
+  const y0 = 0; // closing the tour leaves the page at its top
+  expect((await page.evaluate(() => Math.round(scrollY))) > 0, `${label}: expected the entry click to have scrolled the page a little`);
   await page.waitForSelector(".tour-tip");
   await page.waitForTimeout(700);
   for (let i = 0; i < 4; i++) await page.keyboard.press("ArrowRight"); // to the last step, far down the page
@@ -208,12 +210,12 @@ for (const [reduce, label] of [["no-preference", "motion"], ["reduce", "reduced 
   if (reduce === "no-preference") {
     expect(fadedIn, `${label}: the tooltip did not fade in`);
     expect(fadedOut, `${label}: the tooltip did not fade out`);
-    expect(eased, `${label}: the page did not ease back to where it was`);
+    expect(eased, `${label}: the page did not ease back to the top`);
   } else {
     expect(!fadedIn && !fadedOut, `${label}: the tooltip faded under reduced motion`);
     expect(!eased, `${label}: the page eased back under reduced motion`);
   }
-  expect((await page.evaluate(() => scrollY)) === y0, `${label}: the tour did not end at the starting scroll position (${await page.evaluate(() => scrollY)} instead of ${y0})`);
+  expect((await page.evaluate(() => scrollY)) === y0, `${label}: the tour did not end at the top of the page (${await page.evaluate(() => scrollY)} instead of ${y0})`);
   await ctx.close();
 }
 
@@ -226,9 +228,27 @@ for (const [label, url] of [["home", "/"], ["topic", "/topic/caching"]]) {
   await page.waitForSelector(".tour-tip");
   const box = await page.locator(".tour-tip").boundingBox();
   expect(Math.abs(box.y + box.height - 844) <= 1 && box.width === 390 && box.x === 0, `${label} 390: the tooltip is not docked to the bottom edge (${JSON.stringify(box)})`);
+  // Every step: the outlined target is clear of the docked tooltip (or, if it is taller than the room, its top is).
+  for (let n = 1; n < 10; n++) {
+    await page.waitForTimeout(450);
+    const g = await page.evaluate(() => {
+      const r = document.querySelector(".tour-ring").getBoundingClientRect();
+      const t = document.querySelector(".tour-tip").getBoundingClientRect();
+      return { ringTop: r.top, ringBottom: r.bottom, tipTop: t.top, title: document.querySelector(".tour-title").textContent };
+    });
+    expect(g.ringTop >= 0 && g.ringTop < g.tipTop && (g.ringBottom <= g.tipTop + 2 || g.ringBottom - g.ringTop > g.tipTop - 72), `${label} 390: step "${g.title}" is covered by the tooltip (target ${Math.round(g.ringTop)} to ${Math.round(g.ringBottom)}, tooltip from ${Math.round(g.tipTop)})`);
+    const next = page.locator(".tour-actions button").nth(1);
+    if ((await next.innerText()).toLowerCase() === "done") break;
+    await next.tap();
+  }
   const sizes = await page.locator(".tour-actions button").evaluateAll((bs) => bs.map((b) => b.getBoundingClientRect().height));
   expect(sizes.every((h) => h >= 44), `${label} 390: a tour button is under 44px tall (${sizes})`);
   expect(!(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)), `${label} 390: sideways scroll`);
+  // Closing from the middle of the page leaves the reader at the top.
+  await page.getByRole("button", { name: "Skip tour" }).tap();
+  await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 }).catch(() => {});
+  await page.waitForTimeout(300);
+  expect((await page.evaluate(() => Math.round(scrollY))) === 0, `${label} 390: closing the tour did not leave the page at its top (scroll ${await page.evaluate(() => Math.round(scrollY))})`);
   await ctx.close();
 }
 await browser.close();

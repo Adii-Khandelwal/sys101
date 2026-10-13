@@ -3,6 +3,7 @@
 import IntentLink from "./IntentLink";
 import { markTopics, useInProgressTopics, useReadTopics } from "@/lib/progress";
 import { readyTopics, type IndexEntry } from "@/lib/nextUp";
+import StateLegend from "./StateLegend";
 
 export type PathEntry = {
   slug: string;
@@ -53,6 +54,7 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
       <p className="path-caption">
         Numbers show the suggested reading order across all topics. A topic&apos;s prerequisites are what really matter.
       </p>
+      <StateLegend />
       {groups.map((g) => {
         const slugs = g.items.map((e) => e.slug);
         const readInGroup = slugs.filter((s) => read.includes(s)).length;
@@ -75,7 +77,7 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
                 {allRead ? "Mark group unread" : "Mark group read"}
               </button>
             </h3>
-            <ol className="path-list" data-tour={g.name === groups[0].name ? "states" : undefined}>
+            <ol className="path-list">
             {g.items.map((e) => {
               const st = state(e.slug);
               const buildsOn = e.prerequisites.map((p) => titleOf.get(p) ?? p);

@@ -59,7 +59,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 
 - The map is the homepage on desktop (768px and up); under 768px only the Path view is shown, with no Map/Path toggle; the toggle on desktop remembers an explicit choice.
 - Layout is deterministic and static. Draw only the transitive reduction by default. No edge crosses a label or node.
-- Node states never rely on color alone: unread (thin outline), ready (thicker outline + centre dot), in progress (rust outline + rust centre dot, for a topic deliberately started), read (filled rust). In progress ranks above ready. The Path view and the map legend show the same four states.
+- Node states never rely on color alone: unread (thin outline), ready (thicker outline + centre dot), in progress (rust outline + rust centre dot, for a topic deliberately started), read (filled rust). In progress ranks above ready. The Path view shows the same legend (components/StateLegend.tsx) above its list, and names what each topic builds on before the reasons.
 - Pan is desktop-only and starts at INTERACTIVE_MIN_NODES topics; zoom is keyboard-only (`+`/`-`/`0`). Zoom and Show all links have no on-screen buttons (camera and edge-filter state stay); the one exception is a "Fit to size" text button on an interactive map, disabled while the view is fitted. A phone gets the fixed map. Keep a plain text index and keyboard use as the fallback.
 - After adding a topic, check the map at 1280px, 1440px, and 390px for zero crossings and overlaps. At 1280px also test that sideways page scroll and map pan do not conflict.
 - Read docs/graph.md before editing graph code.
@@ -84,9 +84,9 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 ## Accessibility and chrome
 
 - WCAG AA contrast, visible focus rings, full keyboard use, 44px touch targets, real buttons, aria-live for results. Verify at 1440px and 390px.
-- Every feature must work seamlessly on a phone: verify each new feature at 390px (and touch), with no horizontal overflow, readable wrapping, and tap targets of 44px. A feature is not done until it works on mobile.
-- Skeleton loaders match the final size and only stand in for client-loaded parts (no loading.tsx on content routes). Guided tours (Home, topic pages; docs/tours.md): a quiet text link, never auto-start, hidden once finished or skipped (sys101:tours "seen" flag, restorable on /data; footer link stays), loaded on click, dim and outline glide by transform (no shadow).
-- Shared header: wordmark and three-node mark linking home, ThemeToggle. Footer: About, Glossary, Terms, Privacy, Your data, Report a mistake (REPORT_EMAIL in lib/site.ts). "Back to top" appears after about 1.5 screens: floating on desktop, in the sticky progress strip on phones.
+- Every feature must work seamlessly on a phone and a laptop: build for both from the start, verify at 390px (touch) and 1440px (keyboard), light and dark, no horizontal overflow, readable wrapping, 44px taps. Wording that names a key, control or view must be true on each screen. A feature is not done until it works on mobile.
+- Skeleton loaders match the final size and only stand in for client-loaded parts (no loading.tsx on content routes). Guided tours (Home, topic pages; docs/tours.md): never auto-start; the link goes once finished or skipped (sys101:tours flag, restorable on /data), a footer link stays; page clicks blocked while open; wording per view (Map, Path, phone); ends at the top; glides by transform.
+- Shared header: wordmark and three-node mark linking home, ThemeToggle. Footer in three groups (Glossary, Posts, Take the tour | About, Terms, Privacy | Your data, Report a mistake; REPORT_EMAIL in lib/site.ts). "Back to top" appears after about 1.5 screens: floating on desktop, in the sticky progress strip on phones.
 - About and Terms describe AI assistance with one shared sentence, AI_ASSISTANCE in lib/site.ts (a test checks both pages); never reword it in one place.
 
 ## Post selection (strict, never use just any post)
@@ -133,7 +133,7 @@ Apply system design thinking to this site: static generation, CDN caching, decou
 
 - Node 24 (`.nvmrc`). Run `source ~/.nvm/nvm.sh && nvm use` before npm commands.
 - `npm run dev`, `npm run build` (production check), `npx tsc --noEmit`. Pushing to `main` deploys to Vercel.
-- Topics live in `content/topics/<slug>.json`; the schema in lib/topics.ts is checked by the build. Keep it in sync with this file. Tooling (verify:figures, diagram overflow check, Pagefind index): docs/tooling.md.
+- Topics live in `content/topics/<slug>.json`; the schema in lib/topics.ts is checked by the build. Keep it in sync with this file. Tooling (verify:figures with docs/hand-checks.json, audit:figures, check:tour, diagram overflow check, Pagefind index): docs/tooling.md.
 - The build fails on an empty section or quiz, a missing prerequisite, a prerequisite cycle, missing attribution or verifiedOn, or a bad diagram (gradients, filters, scripts, no `<title>`).
 
 ## Keeping docs current

@@ -142,6 +142,11 @@ a {
   outline-offset: 3px;
 }
 
+/* A heading focused by script (after a tour ends) is a landing spot for the keyboard, not a control: no ring around it. */
+h1[tabindex="-1"]:focus {
+  outline: none;
+}
+
 .label {
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 12px;
@@ -429,7 +434,7 @@ a {
 .graph-legend {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 8px 20px;
   margin: 0;
 }
 
@@ -599,8 +604,29 @@ a {
 }
 
 
-.graph-legend svg ~ svg {
-  margin-left: 12px;
+/* Each mark stays with its word; on a phone the legend is two lines, Unread and Ready, then In progress and Read. */
+.graph-legend .legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.graph-legend .legend-break {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .graph-legend {
+    flex-wrap: wrap;
+    gap: 8px 20px;
+  }
+  .graph-legend .legend-break {
+    display: block;
+    flex-basis: 100%;
+    height: 0;
+    margin: -8px 0 0;
+  }
 }
 
 /* Edges implied by a longer path: shown faint and dashed as a hint. */
@@ -923,6 +949,11 @@ a {
   margin-top: 8px;
   border-top: 1px solid var(--rule);
   padding-top: 8px;
+}
+
+.path .graph-legend {
+  flex-wrap: wrap;
+  margin: 0 0 20px;
 }
 
 .path-caption {
@@ -3843,8 +3874,15 @@ html[data-posts-view] .posts-view-h {
   color: var(--ink-soft);
 }
 
+/* Catches every click and tap meant for the page behind the tour. It is invisible and does not stop scrolling. */
+.tour-block {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+}
+
 /* One full-screen SVG holds the dim and the outline. The dim is four rects around the target, the outline one rect,
-   each a 1 x 1 square placed with translate and scale: the page stays clickable, and a step change moves by transform only. */
+   each a 1 x 1 square placed with translate and scale, so a step change moves by transform only. */
 .tour-svg {
   position: fixed;
   inset: 0;
@@ -3955,4 +3993,10 @@ html[data-posts-view] .posts-view-h {
 
 .tour-actions .tour-skip {
   margin-left: auto;
+}
+
+/* While a tour runs on a phone the tooltip is docked over the bottom of the page: this gives the page that much
+   room at its end, so even the footer's links can scroll up clear of the tooltip. */
+html[data-touring] body {
+  padding-bottom: var(--tour-dock, 0px);
 }
