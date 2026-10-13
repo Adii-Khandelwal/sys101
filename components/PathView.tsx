@@ -103,9 +103,7 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
                             <span className="path-meta-key">Builds on</span>
                             <span className="path-reasons">
                               {e.prerequisites.map((p) => (
-                                <span key={p}>
-                                  {titleOf.get(p) ?? p}: {e.reasons?.[p]}
-                                </span>
+                                <span key={p}>{e.reasons?.[p]}</span>
                               ))}
                             </span>
                           </>
