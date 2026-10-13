@@ -2109,10 +2109,6 @@ a:hover {
 /* Feedback and state changes only. Transform, opacity and color are the only
    animated properties (plus grid rows for reveals, which reserve space). */
 
-html {
-  scroll-behavior: smooth;
-}
-
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -2290,10 +2286,6 @@ button:active:not(:disabled),
     --dur-base: 0ms;
     --dur-slow: 0ms;
     --dur-page: 0ms;
-  }
-
-  html {
-    scroll-behavior: auto;
   }
 
   body,

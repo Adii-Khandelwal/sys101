@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { prefersReducedMotion } from "@/lib/motion";
 
 export type LearnEntry = { id: string; name: string };
 
@@ -79,14 +78,14 @@ export default function LearnRail({
     setMarkerY(row ? row.offsetTop : null);
   }, [current]);
 
-  /** Scroll smoothly to a section, clear of the sticky header, and move focus to its heading. */
+  /** Jump to a section, clear of the sticky header, and move focus to its heading. */
   const go = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     const target = document.getElementById(id);
     if (!target) return;
     e.preventDefault();
     const header = document.querySelector<HTMLElement>(".site-header")?.offsetHeight ?? 0;
     const top = target.getBoundingClientRect().top + window.scrollY - header - 16;
-    window.scrollTo({ top, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    window.scrollTo({ top });
     const heading = target.querySelector<HTMLElement>("h2, h3") ?? target;
     if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1");
     heading.focus({ preventScroll: true });

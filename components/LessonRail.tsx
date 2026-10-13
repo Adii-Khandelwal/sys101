@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { prefersReducedMotion } from "@/lib/motion";
 import { useLesson } from "@/lib/progress";
 import { markVisited, unitStatus, type LessonMeta } from "@/lib/lessonStore";
 import { CompactProgress } from "./LessonTrackers";
@@ -55,7 +54,7 @@ export default function LessonRail({ meta, entries }: { meta: LessonMeta; entrie
     setMarkerY(row ? row.offsetTop : null);
   }, [current]);
 
-  /** Scroll smoothly to a section, clear of the top, and move focus to its heading without a jump. */
+  /** Jump to a section, clear of the top, and move focus to its heading without a jump. */
   const go = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     const target = document.getElementById(id);
     if (!target) return;
@@ -63,7 +62,7 @@ export default function LessonRail({ meta, entries }: { meta: LessonMeta; entrie
     // Land clear of the sticky site header.
     const header = document.querySelector<HTMLElement>(".site-header")?.offsetHeight ?? 0;
     const top = target.getBoundingClientRect().top + window.scrollY - header - 16;
-    window.scrollTo({ top, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    window.scrollTo({ top });
     const heading = target.querySelector<HTMLElement>("h2, h3") ?? target;
     if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1");
     heading.focus({ preventScroll: true });
