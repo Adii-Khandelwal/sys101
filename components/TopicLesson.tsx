@@ -11,6 +11,7 @@ import Reveal from "./Reveal";
 import PageUpdated from "./PageUpdated";
 import SiteFooter from "./SiteFooter";
 import WhatsNew from "./WhatsNew";
+import TourLink from "./TourLink";
 import type { News } from "@/lib/news";
 import { StripBackToTop } from "./BackToTop";
 
@@ -140,7 +141,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
         <div className="lesson-top" data-pagefind-ignore>
           <ResumeLine meta={meta} names={names} />
 
-          <p className="lesson-jump">
+          <p className="lesson-jump" data-tour="jump">
             <a className="text-button label" href="#posts">
               Skip to the posts
             </a>
@@ -154,7 +155,10 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 </Link>
               </>
             )}
-
+            <span className="label" aria-hidden="true">
+              ·
+            </span>
+            <TourLink tour="topic" />
           </p>
         </div>
 
@@ -224,7 +228,9 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
           </section>
 
           <section id="check" aria-labelledby="check-h" data-pagefind-ignore>
-            <h2 id="check-h">Check yourself</h2>
+            <h2 id="check-h" data-tour="check">
+              Check yourself
+            </h2>
             <Outcome text={l.checkOutcome} />
             <QuizBlock meta={meta} quiz={l.quiz} names={names} />
           </section>
@@ -240,7 +246,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
           </div>
 
           <section aria-labelledby="posts-h">
-            <h2 id="posts-h" className="part-title">
+            <h2 id="posts-h" className="part-title" data-tour="posts">
               How companies use it
             </h2>
             <Outcome text={l.postsOutcome} />
@@ -270,7 +276,9 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
           )}
 
           <section id="exercises" className="closing" aria-labelledby="exercises-h" data-pagefind-ignore>
-            <h2 id="exercises-h">Design exercises</h2>
+            <h2 id="exercises-h" data-tour="exercises">
+              Design exercises
+            </h2>
             <Outcome text={l.exercisesOutcome} />
             <ol className="exercises">
               {l.exercises.map((x) => (

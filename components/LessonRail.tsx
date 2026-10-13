@@ -43,6 +43,8 @@ export default function LessonRail({ meta, entries }: { meta: LessonMeta; entrie
   // Record visits and the resume point when the current tracked unit changes.
   const tracked = entries.filter((e) => e.tracked).map((e) => e.id).join();
   useEffect(() => {
+    // A guided tour scrolls through the page for the reader; that is not reading, so it leaves no trace.
+    if (document.documentElement.dataset.touring) return;
     if (current && tracked.split(",").includes(current)) update((p) => markVisited(p, m.slug, current));
   }, [current, tracked, m.slug, update]);
 

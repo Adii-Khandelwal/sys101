@@ -58,7 +58,7 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
         const readInGroup = slugs.filter((s) => read.includes(s)).length;
         const allRead = readInGroup === slugs.length;
         return (
-          <div key={g.name} className="path-group">
+          <div key={g.name} className="path-group" data-tour={g.name === groups[0].name ? "map" : undefined}>
             <h3 className="label path-group-name">
               <span>
                 {g.name} · {slugs.length} of {entries.length} topics
@@ -75,7 +75,7 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
                 {allRead ? "Mark group unread" : "Mark group read"}
               </button>
             </h3>
-            <ol className="path-list">
+            <ol className="path-list" data-tour={g.name === groups[0].name ? "states" : undefined}>
             {g.items.map((e) => {
               const st = state(e.slug);
               const buildsOn = e.prerequisites.map((p) => titleOf.get(p) ?? p);

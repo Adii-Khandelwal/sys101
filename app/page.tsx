@@ -4,6 +4,7 @@ import InsideTopic from "@/components/InsideTopic";
 import { featuredFigures } from "@/lib/lessonOutline";
 import NextUp from "@/components/NextUp";
 import HomeResume from "@/components/HomeResume";
+import TourLink from "@/components/TourLink";
 import PostSources from "@/components/PostSources";
 import Search from "@/components/Search";
 import TryQuestion from "@/components/TryQuestion";
@@ -76,8 +77,11 @@ export default function Home() {
         <h1>sys101</h1>
         <p className="masthead-lead">Learn system design in the order it makes sense.</p>
         <p>
-          Each topic builds on the one before it, and every one is taught through how real engineering teams solved it.{" "}
+          Each topic builds on the one before it, and every one is taught through how real engineering teams solved it.
+        </p>
+        <p className="masthead-actions">
           <Link href="/about">Why this exists</Link>
+          <TourLink tour="home" />
         </p>
         <NextUp entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))} />
         <Search />

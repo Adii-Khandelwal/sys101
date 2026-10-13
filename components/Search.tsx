@@ -107,7 +107,7 @@ export default function Search() {
   const showResults = query.trim() && !searching && results;
 
   return (
-    <div className="search" role="search">
+    <div className="search" role="search" data-tour="search">
       <label htmlFor="site-search" className="visually-hidden">
         Search topics
       </label>

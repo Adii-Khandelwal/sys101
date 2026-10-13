@@ -14,7 +14,9 @@ export default function SiteFooter() {
       <span aria-hidden="true">·</span>
       <Link href="/privacy">Privacy</Link>
       <span aria-hidden="true">·</span>
-      <Link href="/data">Your data</Link>
+      <Link href="/data" data-tour="your-data">
+        Your data
+      </Link>
       <span aria-hidden="true">·</span>
       <ReportMistake />
     </footer>

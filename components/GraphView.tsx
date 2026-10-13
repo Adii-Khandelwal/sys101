@@ -1020,7 +1020,7 @@ export default function GraphView({ nodes, edges }: Props) {
   return (
     <>
       <div className="graph-toolbar">
-        <p className="graph-legend label">
+        <p className="graph-legend label" data-tour="states">
           <LegendMark state="unread" /> Unread
           <LegendMark state="ready" /> Ready
           <LegendMark state="progress" /> In progress
@@ -1048,6 +1048,7 @@ export default function GraphView({ nodes, edges }: Props) {
         <div
           ref={stage}
           className="graph-stage"
+          data-tour="map"
           role="group"
           aria-label="Topic map"
           // Stage height comes from the layout; CSS picks one per breakpoint (no shift on load).

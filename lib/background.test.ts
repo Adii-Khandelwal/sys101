@@ -237,7 +237,7 @@ describe("the link on a topic page", () => {
   });
 
   it("is gone from the row with 'Skip to the posts'", () => {
-    const row = render("/background#caching").match(/<p class="lesson-jump">.*?<\/p>/s)![0];
+    const row = render("/background#caching").match(/<p class="lesson-jump"[^>]*>.*?<\/p>/s)![0];
     expect(row).toContain("Skip to the posts");
     expect(row).not.toContain("Background");
   });

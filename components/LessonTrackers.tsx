@@ -94,7 +94,7 @@ export function CompactProgress({ meta, variant = "rail" }: { meta: LessonMeta; 
 
   if (variant === "line") {
     return (
-      <p className="progress-line label" aria-live="polite">
+      <p className="progress-line label" aria-live="polite" data-tour="progress">
         <span key={s.done} className="fade-swap">
           {s.done}
         </span>{" "}
@@ -103,7 +103,7 @@ export function CompactProgress({ meta, variant = "rail" }: { meta: LessonMeta; 
     );
   }
   return (
-    <div className="progress-head" aria-live="polite">
+    <div className="progress-head" aria-live="polite" data-tour="progress">
       <p className="label">
         <span key={s.done} className="fade-swap">
           {s.done}

@@ -13,6 +13,7 @@
     "check:news": "node scripts/check-news.mjs",
     "check:diagrams": "node scripts/check-diagram-overflow.mjs",
     "audit:figures": "node scripts/audit-figures.mjs",
+    "check:tour": "node scripts/check-tour.mjs",
     "pipeline:fetch": "node pipeline/fetch-rss.mjs",
     "pipeline:summarize": "node pipeline/summarize.mjs",
     "postbuild": "node scripts/check-news.mjs && node scripts/check-seo.mjs && node scripts/check-diagram-overflow.mjs && pagefind --site .next/server/app --output-path public/pagefind",

@@ -89,6 +89,7 @@ export default function HomeView({
         {!mobile && (
           <div
             className="home-view-toggle label"
+            data-tour="view"
             role="group"
             aria-label="Choose how to view the topics"
           >
