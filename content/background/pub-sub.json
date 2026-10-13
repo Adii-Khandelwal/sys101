@@ -1,6 +1,6 @@
 {
   "topic": "pub-sub",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "kafka-offsets",
@@ -9,7 +9,7 @@
       "assumedBy": [
         {
           "postId": "uber-consumer-proxy-2021",
-          "quote": "However, this would cause potential data loss. For example, if a consumer is restarted, it will resume from largest committed offsets;"
+          "quote": "Unlike Kafka, where a commit indicates that all messages with lower offsets are also committed, a Consumer Proxy commit only marks that single message as committed."
         }
       ],
       "sources": [
@@ -18,7 +18,7 @@
           "publisher": "Apache Kafka",
           "url": "https://kafka.apache.org/intro",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -29,7 +29,7 @@
       "assumedBy": [
         {
           "postId": "uber-consumer-proxy-2021",
-          "quote": "Sends/pushes each message separately to a consumer service instance"
+          "quote": "Sends/pushes each message separately to a consumer service instance that exposes a gRPC® service endpoint"
         }
       ],
       "sources": [
@@ -38,7 +38,7 @@
           "publisher": "gRPC",
           "url": "https://grpc.io/docs/what-is-grpc/introduction/",
           "year": "page shows last updated 2024-11-12",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -49,7 +49,7 @@
       "assumedBy": [
         {
           "postId": "spotify-event-delivery-2019",
-          "quote": "It took us almost a year to design, write, deploy and scale the current, Cloud Pub/Sub-based Event Delivery system fully into production."
+          "quote": "The backbone of our system is Cloud Pub/Sub."
         }
       ],
       "sources": [
@@ -58,7 +58,7 @@
           "publisher": "Google Cloud",
           "url": "https://cloud.google.com/pubsub/docs/overview",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -69,7 +69,7 @@
       "assumedBy": [
         {
           "postId": "spotify-event-delivery-2019",
-          "quote": "You can read more about this concept in Reliable export of Cloud Pub/Sub streams to Cloud Storage, a blog post explaining all technicalities of our ETL."
+          "quote": "In the end, every Event Type has its own Pub/Sub topic, Extract, Transform, Load (ETL) process, and final storage location."
         }
       ],
       "sources": [
@@ -78,7 +78,7 @@
           "publisher": "Amazon Web Services",
           "url": "https://aws.amazon.com/what-is/etl/",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -98,7 +98,7 @@
           "publisher": "Google",
           "url": "https://sre.google/sre-book/service-level-objectives/",
           "year": "2017",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     }

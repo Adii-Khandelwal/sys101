@@ -1,6 +1,6 @@
 {
   "slug": "pub-sub",
-  "promise": "After this you can follow the topic page and the posts.",
+  "promise": "After this you can explain what a publisher, topic and subscription are, how three products fan a message out, and what each promises about delivery and order.",
   "before": {
     "prerequisites": [
       "message-queues"
@@ -287,7 +287,7 @@
       "publisher": "Google Cloud",
       "kind": "Vendor documentation",
       "year": "page shows last updated 2026-10-09",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "About Google's Pub/Sub service, not pub-sub in general."
     },
     {
@@ -297,7 +297,7 @@
       "publisher": "RabbitMQ",
       "kind": "Vendor documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "About RabbitMQ's exchanges and queues."
     },
     {
@@ -307,7 +307,7 @@
       "publisher": "Apache Kafka",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "Section: Main Concepts and Terminology. About Kafka."
     },
     {
@@ -317,7 +317,7 @@
       "publisher": "Apache Kafka",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "Kafka 4.3 documentation (the address ends in /43/). Describes Kafka's behavior."
     },
     {
@@ -327,7 +327,7 @@
       "publisher": "Google Cloud",
       "kind": "Vendor documentation",
       "year": "page shows last updated 2026-10-09",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "About Google's Pub/Sub service."
     },
     {
@@ -337,7 +337,7 @@
       "publisher": "Google Cloud",
       "kind": "Vendor documentation",
       "year": "page shows last updated 2026-10-09",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "About Google's Pub/Sub service."
     },
     {
@@ -347,7 +347,7 @@
       "publisher": "Redis",
       "kind": "Vendor documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "About Redis channels."
     },
     {
@@ -357,7 +357,7 @@
       "publisher": "Apache Kafka",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The page shows Kafka 4.3.1 and says a local Java 17 or newer is needed."
     },
     {

@@ -12,7 +12,7 @@
       "Publish-subscribe lets a producer announce that something happened without knowing who needs to hear it: every subscription gets its own copy of each message.",
       "A queue hands each message to one consumer; pub-sub hands it to every subscription, and only inside a subscription do consumers share the work.",
       "Spotify gives each kind of message its own topic and pipeline, so a noisy or blocked kind delays only itself.",
-      "Uber's Consumer Proxy gives up order inside a partition so any worker can take any message, which suits only work where order does not matter."
+      "Uber's Consumer Proxy gives up order inside a partition so any worker can take any message, which suits work where order does not matter."
     ],
     "figures": [
       {
@@ -36,7 +36,7 @@
       "title": "Spotify's Event Delivery: Life in the Cloud",
       "url": "https://engineering.atspotify.com/2019/11/spotifys-event-delivery-life-in-the-cloud/",
       "company": "Spotify",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2019-11-12",
       "ageNote": "From November 2019, almost seven years old. It is here for a fundamental that has not changed: giving every kind of event its own topic and pipeline so one noisy or blocked kind cannot hold up the rest. The post itself says Spotify was rolling out a next-generation system, and no newer source cited here confirms this setup is still in use, so the figures, the VM counts and the choice of Cloud Pub/Sub may have changed.",
       "related": [
@@ -116,7 +116,7 @@
       "title": "Enabling Seamless Kafka Async Queuing with Consumer Proxy",
       "url": "https://www.uber.com/us/en/blog/kafka-async-queuing-with-consumer-proxy/",
       "company": "Uber",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2021-08-31",
       "ageNote": "From August 2021, just over five years old. It is here for a fundamental that has not changed: a log partition limits how many consumers can work in parallel, and per-message work needs something between the log and the workers. No newer Uber source cited here confirms Consumer Proxy is unchanged, so the figures, such as 12 million messages a second and 300 services, may have changed.",
       "related": [
@@ -189,7 +189,7 @@
       }
     }
   ],
-  "comparison": "Both put a topic between many publishers and the systems that read, split it by kind of work, and were run at large scale, so both are about what happens on the reading side once the topic exists: backlogs, slow readers and bad messages. Spotify's post is from 2019 and Uber's from 2021, and both may have changed since.\n\nSpotify's readers are ETL jobs that write events to storage, so it solved isolation: one topic, one ETL and one store per event type, with a service level for each importance, so a blocked type delays only itself. Uber's readers are services that call other services for each message, so it solved parallelism: a proxy between Kafka and the services that gives up ordering inside a partition so any instance can take any message.\n\nSpotify's evidence is about volume, with a peak above 8 million events a second and over 500 event types, and its post does not discuss delivery guarantees or ordering. Uber's evidence is about why partitions limit throughput, and the post notes that duplicates are tolerated because consumers deduplicate. Its P99 under 10 seconds is a target, not a measurement.",
+  "comparison": "Both put a topic between publishers and the systems that read it, and were run at large scale, so both are about what happens on the reading side once the topic exists: backlogs, slow readers and bad messages. Spotify's post is from 2019 and Uber's from 2021, and both may have changed since.\n\nSpotify's readers are ETL jobs that write events to storage, so it solved isolation: one topic, one ETL and one store per event type, with a service level for each importance, so a blocked type delays only itself. Uber's readers are services that call other services for each message, so it solved parallelism: a proxy between Kafka and the services that gives up ordering inside a partition so any instance can take any message.\n\nSpotify's evidence is about volume, with a peak above 8 million events a second and over 500 event types, and its post does not discuss delivery guarantees or ordering. Uber's evidence is about why partitions limit throughput, and the post notes that duplicates are tolerated because consumers deduplicate. Its P99 under 10 seconds is a target, not a measurement.",
   "glossary": [
     {
       "term": "Topic",
@@ -311,7 +311,7 @@
       ],
       "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-pubsub-ex-t\" class=\"dg\"><title id=\"dg-c-pubsub-ex-t\">Worked example: an order service publishes OrderPlaced once; the email subscription falls behind and builds a backlog while billing keeps up; a fraud check subscription is added later without changing the publisher.</title><defs><marker id=\"dg-c-pubsub-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"110\" width=\"110\" height=\"40\" class=\"dg-box\"/><text x=\"69\" y=\"134.5\" class=\"dg-label\" text-anchor=\"middle\">Order service</text><path d=\"M124,130 L166,130\" class=\"dg-line\" marker-end=\"url(#dg-c-pubsub-ex-a)\"/><rect x=\"170\" y=\"100\" width=\"130\" height=\"60\" class=\"dg-box dg-accent\"/><text x=\"235\" y=\"126\" class=\"dg-label\" text-anchor=\"middle\">OrderPlaced</text><text x=\"235\" y=\"143\" class=\"dg-label\" text-anchor=\"middle\">topic</text><path d=\"M300,120 L356,58\" class=\"dg-line\" marker-end=\"url(#dg-c-pubsub-ex-a)\"/><path d=\"M300,130 L356,130\" class=\"dg-line\" marker-end=\"url(#dg-c-pubsub-ex-a)\"/><path d=\"M300,142 L356,212\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-c-pubsub-ex-a)\"/><rect x=\"360\" y=\"38\" width=\"110\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"415\" y=\"62.5\" class=\"dg-label\" text-anchor=\"middle\">email</text><rect x=\"360\" y=\"110\" width=\"110\" height=\"40\" class=\"dg-box\"/><text x=\"415\" y=\"134.5\" class=\"dg-label\" text-anchor=\"middle\">billing</text><rect x=\"360\" y=\"192\" width=\"110\" height=\"40\" class=\"dg-box dg-dashed\"/><text x=\"415\" y=\"216.5\" class=\"dg-label\" text-anchor=\"middle\">fraud check</text><text x=\"415\" y=\"28\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">backlog grows</text><text x=\"415\" y=\"252\" class=\"dg-note\" text-anchor=\"middle\">added later</text><text x=\"280\" y=\"284\" class=\"dg-note\" text-anchor=\"middle\">none of this changes the order service</text></svg>"
     },
-    "mistakesOutcome": "After this you can avoid the three most common mistakes with pub-sub.",
+    "mistakesOutcome": "After this you can avoid three mistakes with pub-sub.",
     "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
     "quiz": [
       {
@@ -454,7 +454,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic that builds on this one.",
-      "body": "Pub-sub is the base for event-driven design, which is planned next on the map. When a subscriber is overwhelmed, Rate Limiting and Circuit Breakers cover how to protect it; Uber's proxy used a circuit breaker for exactly that."
+      "body": "Event-driven architecture builds on pub-sub, and it is the next topic on the map. When a subscriber is overwhelmed, Rate Limiting and Circuit Breakers cover how to protect it; Uber's proxy used a circuit breaker for exactly that."
     }
   }
 }
