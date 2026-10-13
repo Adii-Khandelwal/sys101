@@ -442,6 +442,7 @@ a:hover {
   padding: 4px 0;
   border: 0;
   background: none;
+  text-align: left;
   /* A button does not inherit colour; without this it is the browser's black, unreadable on the dark theme. */
   color: var(--ink);
   cursor: pointer;
@@ -2471,11 +2472,11 @@ html {
   gap: 8px;
   min-width: 44px;
   min-height: 44px;
-  padding: 0 16px;
+  padding: 0 8px;
   background: var(--paper);
-  border: 1px solid var(--rule);
-  color: var(--ink-soft);
-  /* Same mono small caps as the page's other controls, such as "Mark done". */
+  border: 0;
+  /* Same look as .text-button: ink, mono small caps, underlined text. */
+  color: var(--ink);
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: 0.08em;
@@ -2491,10 +2492,14 @@ html {
   pointer-events: auto;
 }
 
-.back-to-top:hover,
-.back-to-top:focus-visible {
-  color: var(--ink);
-  border-color: var(--ink-soft);
+.back-to-top-text {
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+}
+
+.back-to-top:hover .back-to-top-text {
+  text-decoration-color: currentColor;
 }
 
 .back-to-top svg path {
