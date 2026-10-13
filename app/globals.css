@@ -1874,6 +1874,13 @@ a {
   margin: 0 0 4px;
 }
 
+/* The number matches the mono label beside it (same face and size, so the baselines meet). */
+.exercises > li::marker {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
 .exercises h3 {
   margin: 12px 0 4px;
   font-size: 16px;
