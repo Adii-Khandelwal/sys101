@@ -1675,8 +1675,13 @@ a:hover {
   border-bottom: 1px solid var(--rule);
 }
 
+/* The count and Reset stay together on one line; the title takes what is left and wraps before they do. */
 .data-topic-title {
-  flex: 1 1 200px;
+  flex: 1 1 9rem;
+}
+
+.data-topics li > .label {
+  white-space: nowrap;
 }
 
 .data-confirm {
