@@ -111,6 +111,23 @@ for (const [how, removes] of [["Escape", false], ["Skip", true], ["Done", true]]
   await ctx.close();
 }
 
+// "Reset everything" on Your data brings the tour links back, even when no progress was ever saved.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  await page.goto(BASE + "/data", { waitUntil: "networkidle" });
+  await page.evaluate(() => localStorage.setItem("sys101:tours", JSON.stringify({ version: 1, seen: { home: true, topic: true } })));
+  await page.reload({ waitUntil: "networkidle" });
+  const reset = page.getByRole("button", { name: "Reset everything", exact: true });
+  expect(await reset.isEnabled(), "reset: Reset everything is disabled although the tours were taken");
+  await reset.click();
+  await page.getByRole("button", { name: "Yes, reset everything" }).click();
+  expect(!(await page.evaluate(() => localStorage.getItem("sys101:tours"))), "reset: the tour flag survived Reset everything");
+  await page.goto(BASE + "/", { waitUntil: "networkidle" });
+  expect((await page.getByRole("button", { name: "Take the 30-second tour" }).count()) === 1, "reset: the tour link did not come back after Reset everything");
+  await ctx.close();
+}
+
 // The Path list gets Path wording on a desktop too, and the page changing under a tour ends it cleanly.
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });

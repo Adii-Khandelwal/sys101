@@ -89,7 +89,9 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
     if (slug === "all") {
       const r = resetAll();
       replaceProgress(r.progress, r.read, {});
-      setMessage("All progress in this browser was reset.");
+      forgetSeen(); // "everything" includes the tour: its links come back
+      setToursSeen(false);
+      setMessage("All progress in this browser was reset, and the tour links are back.");
     } else {
       const meta = topics.find((t) => t.slug === slug)!;
       const next = resetTopic(progress, meta);
@@ -260,7 +262,7 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
 
       <section aria-labelledby="reset-h" className="data-danger">
         <h2 id="reset-h">Reset everything</h2>
-        <p>Clears every topic&apos;s progress in this browser. It can&apos;t be undone, so export first if you may want it back.</p>
+        <p>Clears every topic&apos;s progress in this browser and brings the tour links back. It can&apos;t be undone, so export first if you may want your progress back.</p>
         {confirmReset === "all" ? (
           <p className="data-confirm" role="group" aria-label="Reset everything?">
             <span>Reset all progress?</span>
@@ -273,7 +275,7 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
           </p>
         ) : (
           <p>
-            <button type="button" className="text-button label" disabled={blocked || empty} onClick={() => setConfirmReset("all")}>
+            <button type="button" className="text-button label" disabled={blocked || (empty && !toursSeen)} onClick={() => setConfirmReset("all")}>
               Reset everything
             </button>
           </p>
