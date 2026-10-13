@@ -2387,7 +2387,7 @@ html {
 .site-header-inner {
   display: flex;
   align-items: center;
-  max-width: 1280px; /* matches .home, so the logo lines up with the page */
+  max-width: 1400px; /* same container as .home, so the wordmark and toggle sit on the home page's edges */
   height: 100%;
   margin: 0 auto;
   padding: 0 40px;
@@ -3192,9 +3192,11 @@ html {
   max-width: 1040px;
 }
 @media (min-width: 1180px) {
-  /* Narrower, so the contents rail fits in the left margin. */
+  /* Same left edge as the other long pages (the title at the topic column's x); the rows run on to the right. */
   .posts-page {
-    max-width: 840px;
+    max-width: 888px;
+    margin-left: calc(50% - 340px);
+    margin-right: 0;
   }
 }
 .posts-lead {
@@ -3357,8 +3359,8 @@ html[data-posts-view] .posts-view-h {
     display: block;
     position: fixed;
     top: 120px;
-    left: max(12px, calc(50% - 420px - 190px));
-    width: 150px;
+    left: max(24px, calc(50% - 340px - 230px)); /* the topic page's rail position */
+    width: 200px;
     max-height: calc(100vh - 160px);
     overflow-y: auto;
   }
