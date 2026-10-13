@@ -148,7 +148,8 @@ describe("figure markup", () => {
     const { html, svg, post } = render(id);
     expect(svg.startsWith("<svg")).toBe(true);
     expect(svg).toMatch(/viewBox=/);
-    expect(svg).toMatch(/<title[^>]*>[^<]+<\/title>/);
+    // A <title> would show as a hover tooltip, so the name is a <desc> that aria-labelledby points at.
+    expect(svg).toMatch(/aria-labelledby="[^"]+"/);
     expect(svg).toMatch(/<desc[^>]*>[^<]+<\/desc>/);
     expect(svg).toMatch(/role="img"/);
     expect(svg).not.toMatch(/gradient|<filter|drop-shadow|<script|\son\w+=|<text/i);
