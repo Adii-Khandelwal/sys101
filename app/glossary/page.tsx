@@ -21,10 +21,9 @@ export default function Glossary() {
     .map((t) => ({ slug: t.slug, title: t.title, terms: t.glossary }));
 
   return (
-    <article className="dossier legal glossary-page">
+    <article className="dossier legal glossary-page lesson">
       <div data-pagefind-body>
-        <h1 data-pagefind-meta="title">Glossary</h1>
-        <GlossaryFilter groups={groups} />
+        <GlossaryFilter groups={groups} heading={<h1 data-pagefind-meta="title">Glossary</h1>} />
       </div>
 
       <PageUpdated date={PAGE_DATES.glossary} />

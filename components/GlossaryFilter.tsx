@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import LearnRail from "./LearnRail";
+import { StripBackToTop } from "./BackToTop";
 
 export type GlossaryGroup = { slug: string; title: string; terms: { term: string; definition: string }[] };
 
@@ -11,7 +13,7 @@ export type GlossaryGroup = { slug: string; title: string; terms: { term: string
  * All terms are in the server-rendered HTML, so search engines and Pagefind
  * still index them; the filter only hides non-matches in the browser.
  */
-export default function GlossaryFilter({ groups }: { groups: GlossaryGroup[] }) {
+export default function GlossaryFilter({ groups, heading }: { groups: GlossaryGroup[]; heading: React.ReactNode }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
@@ -38,8 +40,21 @@ export default function GlossaryFilter({ groups }: { groups: GlossaryGroup[] }) 
 
   const total = filtered.reduce((n, g) => n + g.terms.length, 0);
 
+  // Contents follow the filter: only topics that still have a matching term are listed.
+  const entries = filtered.map((g) => ({ id: `g-${g.slug}`, name: g.title }));
+
   return (
     <>
+      {entries.length > 0 && (
+        <>
+          <LearnRail entries={entries} scope="section" />
+          <div className="progress-sticky" data-pagefind-ignore>
+            <LearnRail entries={entries} variant="line" scope="section" />
+            <StripBackToTop />
+          </div>
+        </>
+      )}
+      {heading}
       <div className="search glossary-search" role="search">
         <label htmlFor="glossary-filter" className="visually-hidden">
           Filter glossary terms
