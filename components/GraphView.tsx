@@ -962,7 +962,7 @@ export default function GraphView({ nodes, edges }: Props) {
     return names.flatMap((name) => {
       const pts = nodes.filter((n) => n.group === name).map((n) => at.get(n.slug)).filter((p): p is Point => !!p);
       if (!pts.length) return [];
-      const width = name.length * 7.5; // mono 11px with letter spacing
+      const width = name.length * 7.5; // 18px serif, as drawn by .graph-group
       const first = pts[0]; // first in index order
       const spots = groupLabelSpots(first, width, ctx?.measureText(title.get(first.slug) ?? "").width ?? 0, effective === "vertical");
       const fits = (sp: { x: number }) => sp.x >= 0 && sp.x + width <= (size.width || Infinity);

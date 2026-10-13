@@ -594,7 +594,6 @@ a:hover {
   cursor: pointer;
   border-radius: 2px;
   transition: color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
-  font-size: 11px; /* faint map decoration, and GraphView sizes its room from this width */
 }
 .graph-group:hover {
   opacity: 1;
