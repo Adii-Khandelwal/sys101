@@ -2728,8 +2728,8 @@ html {
 .glossary-search {
   margin-top: 20px;
 }
-.glossary-count {
-  margin: 10px 0 0;
+.dossier .glossary-count {
+  margin: 14px 0 0; /* .dossier p's bottom-only margin would otherwise leave it touching the filter */
   color: var(--ink-soft);
 }
 
@@ -3303,7 +3303,7 @@ html {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px 32px;
+  gap: 4px 32px;
 }
 .dossier .posts-views {
   margin-bottom: 0;
