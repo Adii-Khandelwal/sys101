@@ -1,6 +1,6 @@
 {
   "slug": "message-queues",
-  "promise": "After this you can follow the topic page and the posts.",
+  "promise": "After this you can explain what a message queue does, how acknowledgement and redelivery work, and why consumers must be idempotent.",
   "before": {
     "prerequisites": [
       "sharding"
@@ -178,8 +178,8 @@
       "name": "In practice and trade-offs",
       "body": [
         "The two models suit different jobs. A classic broker like RabbitMQ, routing through exchanges with per-message acknowledgement, fits task distribution and complex routing where each message is handled and then gone. A log like Kafka keeps events for as long as you choose, so many consumers, or replays, can read the same ordered history. Many companies run both for different needs.",
-        "A queue is powerful but not free. It adds a component to operate and a new failure mode: a backlog. If consumers fall behind producers for long, the queue grows and latency rises. SQS's dead-letter page suggests alarms for messages moved to a dead-letter queue and a metric for the age of the oldest message, which is the kind of signal to watch alongside the services themselves [[sqs-dlq]].",
-        "Queues also change correctness. Asynchronous processing means a result is not ready the instant a request returns, so the caller must handle \"accepted, will finish later\". Combined with at-least-once delivery and idempotent consumers, this is the standard way large systems stay decoupled and resilient, and it is why queues sit at the far end of this map, after the data topics they connect."
+        "A queue is powerful but not free. It adds a component to operate and a new failure mode: a backlog. If consumers fall behind producers for long, the queue grows and latency rises. SQS's dead-letter page shows how to set an alarm for messages moved to a dead-letter queue and mentions the ApproximateAgeOfOldestMessage metric, the kind of signal to watch alongside the services themselves [[sqs-dlq]].",
+        "Queues also change correctness. Asynchronous processing means a result is not ready the instant a request returns, so the caller must handle \"accepted, will finish later\". Combined with at-least-once delivery and idempotent consumers, this is the standard way large systems stay decoupled and resilient, and it is why queues come after the data topics they connect."
       ],
       "terms": [
         {
@@ -258,7 +258,7 @@
       }
     ]
   },
-  "next": "Go back to the Message Queues topic page for the worked example and the quiz, then read the two company posts on running queues at scale. This is the far end of the current map; the delivery and idempotency ideas here recur throughout distributed systems.",
+  "next": "Go back to the Message Queues topic page for the worked example and the quiz, then read the two company posts on running queues at scale. Publish-subscribe builds on this next; the delivery and idempotency ideas here recur throughout distributed systems.",
   "sources": [
     {
       "id": "rabbitmq-amqp",
@@ -267,7 +267,7 @@
       "publisher": "RabbitMQ (Broadcom)",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "kafka-intro",
@@ -276,7 +276,7 @@
       "publisher": "Apache Software Foundation",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "sqs-welcome",
@@ -285,7 +285,7 @@
       "publisher": "Amazon Web Services",
       "kind": "Vendor documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The older address for the basic architecture page now redirects to this page."
     },
     {
@@ -295,7 +295,7 @@
       "publisher": "Amazon Web Services",
       "kind": "Vendor documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "sqs-dlq",
@@ -304,7 +304,7 @@
       "publisher": "Amazon Web Services",
       "kind": "Vendor documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "kafka-design",
@@ -313,7 +313,7 @@
       "publisher": "Apache Software Foundation",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "Kafka 4.3 documentation (the address ends in /43/)."
     },
     {
@@ -323,7 +323,7 @@
       "publisher": "Apache Software Foundation",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The page shows Kafka 4.3.1 and says a local Java 17 or newer is needed."
     }
   ]

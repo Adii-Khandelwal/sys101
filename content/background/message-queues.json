@@ -1,6 +1,6 @@
 {
   "topic": "message-queues",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "redis",
@@ -18,7 +18,7 @@
           "publisher": "Redis",
           "url": "https://redis.io/docs/latest/get-started/",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -38,7 +38,7 @@
           "publisher": "Apache Kafka",
           "url": "https://kafka.apache.org/intro",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -58,14 +58,14 @@
           "publisher": "Apache Software Foundation",
           "url": "https://thrift.apache.org/",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
     {
       "id": "circuit-breaker",
       "name": "Circuit breakers",
-      "explanation": "A guard that stops calling a failing part for a while, so failures do not pile up. The gist is enough here.",
+      "explanation": "A guard that stops calling a failing part for a while, so failures do not pile up.",
       "assumedBy": [
         {
           "postId": "meta-foqs-2021",

@@ -12,7 +12,7 @@
       "A message queue lets one part of a system hand work to another without waiting: producers add messages, the queue stores them, consumers take them when free.",
       "A message can be delivered twice, late or lost, so the design says which it allows, and consumers must be safe to run twice.",
       "Slack found that a queue keeping its backlog in memory fails exactly when it is needed most, so it put a durable log in front.",
-      "Meta's queue uses a lease plus an ack, so anything unacknowledged comes back, which makes at-least-once delivery the safe default."
+      "Meta's queue uses a lease plus an ack, so an unacknowledged item is redelivered, or deleted if the retry policy asks for at-most-once."
     ],
     "figures": [
       {
@@ -36,7 +36,7 @@
       "title": "Scaling Slack's Job Queue",
       "url": "https://slack.engineering/scaling-slacks-job-queue/",
       "company": "Slack",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2017-12-06",
       "ageNote": "From December 2017; the page also shows an update in June 2020. It is here for a fundamental that has not changed: putting a durable log in front of an in-memory queue, so a backlog fills disk instead of memory, and choosing how many copies must confirm a write. No newer Slack source cited here confirms this setup is still in use, so its details, such as Kafka 0.10, the cluster size and Redis as the execution store, may have changed.",
       "digest": {
@@ -109,7 +109,7 @@
       "title": "FOQS: Scaling a distributed priority queue",
       "url": "https://engineering.fb.com/2021/02/22/production-engineering/foqs-scaling-a-distributed-priority-queue/",
       "company": "Meta",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2021-02-22",
       "ageNote": "From February 2021. It is here for fundamentals that have not changed: leases, acks and nacks, the choice between at-least-once and at-most-once delivery, and a priority queue built on sharded storage. No newer Meta source cited here confirms FOQS still works this way, so its figures and design may have changed.",
       "digest": {
@@ -178,11 +178,11 @@
           "why": "Pulling lets very different consumers choose when and where to process, and keeps the queue simpler; the price is a routing layer so consumers can find items. Push delivers sooner but has to avoid overloading consumers. Rate limits are enforced globally, since per-region limits cannot be guaranteed."
         },
         "failures": "Long-running timestamp scans slowed reads until they were bounded with checkpoints. Promoting MySQL replicas in another region could leave capacity badly unbalanced, so FOQS added enqueue forwarding to hosts with spare capacity and better routing for dequeues. Lost acks and nacks, from MySQL outages or crashed hosts, are recovered when leases expire. The post gives no latency figures, and its circuit-breaker thresholds are written only as \"x ms\" and \"x%\".",
-        "takeaways": "A lease plus an ack is what makes delivery reliable without the queue knowing whether work finished: anything unacknowledged comes back. At-least-once is the safe default and needs idempotent consumers. A queue on ordinary sharded storage can reach very large scale, but the details of background queries and failover decide whether it stays fast."
+        "takeaways": "A lease plus an ack is what makes delivery reliable without the queue knowing whether work finished: an unacknowledged item is redelivered, or deleted for at-most-once. FOQS supports both, and at-least-once needs idempotent consumers. A queue on ordinary sharded storage can reach very large scale, but the details of background queries and failover decide whether it stays fast."
       }
     }
   ],
-  "comparison": "Both queues exist to absorb work that cannot be done immediately, and both keep it in durable storage so a backlog survives, but they started from different places.\n\nSlack's job queue was already in production on Redis and had failed by running out of memory, so in 2017 Slack added Kafka in front as a durable buffer with the smallest possible change, keeping Redis and its workers for execution. Meta built FOQS in 2021 as a general queue for many teams, so it designed the delivery contract itself: priorities, delays, leases, acks and nacks, on sharded MySQL with replicas in other regions.\n\nSlack's post is concrete about its cluster and rollout; Meta's is concrete about the delivery model but gives no latency numbers.",
+  "comparison": "Both queues exist to absorb work that cannot be done immediately, and both keep it in durable storage so a backlog survives, but they started from different places.\n\nSlack's job queue was already in production on Redis and had failed by running out of memory, so in 2017 Slack added Kafka in front as a durable buffer with the smallest possible change, keeping Redis and its workers for execution. Meta's 2021 post describes FOQS as a general queue for many teams, so it spells out the delivery contract itself: priorities, delays, leases, acks and nacks, on sharded MySQL with replicas in other regions.\n\nSlack's post is concrete about its cluster and rollout; Meta's is concrete about the delivery model but gives no latency numbers.",
   "glossary": [
     {
       "term": "Producer",
@@ -271,7 +271,7 @@
       "steps": [
         {
           "step": "A slowdown starts",
-          "explanation": "At Slack in 2017, slow database queries made jobs run slowly. The job queue handled over 1.4 billion jobs on busy days, peaking at 33,000 per second, so a backlog grew fast."
+          "explanation": "In an outage about a year before its 2017 post, slow database queries made Slack's jobs run slowly. The job queue handled over 1.4 billion jobs on busy days, peaking at 33,000 per second, so a backlog grew fast."
         },
         {
           "step": "Memory runs out",
@@ -296,7 +296,7 @@
       ],
       "diagram": "<svg viewBox=\"0 0 560 141\" role=\"img\" aria-labelledby=\"dg-mq-ex-t\" class=\"dg\"><title id=\"dg-mq-ex-t\">Absorbing a backlog: a slowdown fills memory, so a durable log goes in front, the write guarantee is chosen, the drain is rate-limited, and duplicates are expected.</title><defs><marker id=\"dg-mq-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"55\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Slowdown</text><text x=\"55\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">starts</text><rect x=\"124\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"167\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Memory</text><text x=\"167\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">fills</text><rect x=\"236\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box dg-accent\"/><text x=\"279\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Durable</text><text x=\"279\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">log in</text><text x=\"279\" y=\"90.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">front</text><rect x=\"348\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"391\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Choose</text><text x=\"391\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">write</text><text x=\"391\" y=\"90.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">guarantee</text><rect x=\"460\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"503\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Drain at</text><text x=\"503\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">safe rate</text><path d=\"M98,68.5 L124,68.5\" class=\"dg-line\" marker-end=\"url(#dg-mq-ex-a)\"/><path d=\"M210,68.5 L236,68.5\" class=\"dg-line\" marker-end=\"url(#dg-mq-ex-a)\"/><path d=\"M322,68.5 L348,68.5\" class=\"dg-line\" marker-end=\"url(#dg-mq-ex-a)\"/><path d=\"M434,68.5 L460,68.5\" class=\"dg-line\" marker-end=\"url(#dg-mq-ex-a)\"/><text x=\"280\" y=\"131\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">A durable log holds the backlog; the drain rate protects the origin.</text></svg>"
     },
-    "mistakesOutcome": "After this you can avoid the three most common mistakes with queues.",
+    "mistakesOutcome": "After this you can avoid three mistakes with queues.",
     "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
     "quiz": [
       {
@@ -439,7 +439,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic that builds on this one.",
-      "body": "Message Queues is the end of this branch of the map for now. Rate limits came up in both posts, Slack's relay and Meta's per-team limits, and Rate Limiting is the next topic planned."
+      "body": "Pub-sub builds on this: instead of one consumer taking each message, every subscriber gets a copy. Rate limits came up in both posts, Slack's relay and Meta's per-team limits, and Rate Limiting is a separate topic on the map."
     }
   }
 }
