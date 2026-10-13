@@ -88,6 +88,17 @@ a:hover {
   text-decoration-color: currentColor;
 }
 
+/* Links inside running text share the body's colour, so the underline is their only cue: draw it in --ink-soft
+   (6.4:1 light, 6.5:1 dark against the paper) instead of the faint --rule that lists of links use. A colour change
+   cannot do it: rust against ink is 2.5:1 light and 2.8:1 dark, under the 3:1 that WCAG 1.4.1 asks for. */
+:is(p, dd, blockquote) a:not(.text-button, .label) {
+  text-decoration-color: var(--ink-soft);
+}
+
+:is(p, dd, blockquote) a:not(.text-button, .label):hover {
+  text-decoration-color: currentColor;
+}
+
 /* One focus ring for every interactive element; the few controls with their own (graph, search, code) override it. */
 :focus-visible {
   outline: 2px solid var(--accent);
