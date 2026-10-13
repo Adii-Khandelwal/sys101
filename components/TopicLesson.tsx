@@ -12,6 +12,7 @@ import PageUpdated from "./PageUpdated";
 import SiteFooter from "./SiteFooter";
 import WhatsNew from "./WhatsNew";
 import type { News } from "@/lib/news";
+import { StripBackToTop } from "./BackToTop";
 
 type Props = {
   topic: Topic;
@@ -112,6 +113,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
       <LessonRail meta={meta} entries={entries} />
       <div className="progress-sticky" data-pagefind-ignore>
         <CompactProgress meta={meta} variant="line" />
+        <StripBackToTop />
       </div>
 
       <div data-pagefind-body>

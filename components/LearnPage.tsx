@@ -8,6 +8,7 @@ import { prerequisiteLabel, type Learn, type Source, type VideoSource } from "@/
 import type { Topic } from "@/lib/topics";
 import { learnUpdated } from "@/lib/site";
 import { learnReadingLabel } from "@/lib/readingTime";
+import { StripBackToTop } from "./BackToTop";
 
 type Props = { topic: Topic; learn: Learn; titles: Map<string, string> };
 
@@ -58,6 +59,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
       <LearnRail entries={entries} />
       <div className="progress-sticky" data-pagefind-ignore>
         <LearnRail entries={entries} variant="line" />
+        <StripBackToTop />
       </div>
 
       <nav className="label" data-pagefind-ignore>

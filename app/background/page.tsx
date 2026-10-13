@@ -8,6 +8,7 @@ import { backgroundUpdated, displayQuote, getAllBackground, isTaughtLater } from
 import { companyWhen, getAllTopics } from "@/lib/topics";
 import { topicNumbers, topicOrder } from "@/lib/order";
 import { pageMeta } from "@/lib/site";
+import { StripBackToTop } from "@/components/BackToTop";
 
 // Prerendered at build time; using anything dynamic here fails the build.
 export const dynamic = "error";
@@ -29,6 +30,7 @@ export default function Background() {
       <LearnRail scope="section" entries={files.map((b) => ({ id: b.topic, name: bySlug.get(b.topic)!.title }))} />
       <div className="progress-sticky" data-pagefind-ignore>
         <LearnRail entries={files.map((b) => ({ id: b.topic, name: bySlug.get(b.topic)!.title }))} variant="line" scope="section" />
+        <StripBackToTop />
       </div>
       <div data-pagefind-body>
         <h1 data-pagefind-meta="title">Background</h1>

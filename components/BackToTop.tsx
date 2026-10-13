@@ -19,8 +19,8 @@ export function scrollToTop() {
   window.scrollTo({ top: 0, behavior: scrollBehavior(prefersReducedMotion()) });
 }
 
-/** Fixed bottom-right "Back to top", shown only after scrolling well down the page. */
-export default function BackToTop() {
+/** True once the page is scrolled well down (about 1.5 screens), with a little hysteresis. */
+function useShowBackToTop() {
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
@@ -33,6 +33,30 @@ export default function BackToTop() {
       window.removeEventListener("resize", update);
     };
   }, []);
+
+  return shown;
+}
+
+/** On phones the sticky progress strip carries "Back to top" instead of a floating button over the text. */
+export function StripBackToTop() {
+  const shown = useShowBackToTop();
+  return (
+    <button
+      type="button"
+      className={`text-button label strip-top${shown ? " is-shown" : ""}`}
+      onClick={scrollToTop}
+      inert={!shown}
+      aria-hidden={!shown}
+      tabIndex={shown ? 0 : -1}
+    >
+      Back to top
+    </button>
+  );
+}
+
+/** Fixed bottom-right "Back to top", shown only after scrolling well down the page. */
+export default function BackToTop() {
+  const shown = useShowBackToTop();
 
   return (
     <button

@@ -1589,6 +1589,25 @@ a:hover {
   }
 }
 
+/* The strip's own "Back to top": phones only, and only once the page is scrolled well down. */
+.strip-top {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .strip-top {
+    display: inline-block;
+    flex: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--dur-fast) var(--ease-out), visibility var(--dur-fast);
+  }
+  .strip-top.is-shown {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
 @media (max-width: 1179px) {
   .lesson [id] {
     scroll-margin-top: 56px; /* clear the sticky progress line */
@@ -2557,6 +2576,20 @@ html {
     bottom: 16px;
     padding: 0;
     justify-content: center;
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+  }
+
+  /* Pages with a sticky progress strip carry "Back to top" there instead of floating over the text. */
+  body:has(.progress-sticky) .back-to-top {
+    display: none;
+  }
+
+  .progress-sticky {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
   }
 
   .back-to-top-text {
@@ -2758,6 +2791,7 @@ html {
   .learn-section#next a,
   .progress-line a,
   .progress-sticky a,
+  .progress-sticky .strip-top,
   .sources li a,
   .lesson-rail a,
   .explain a,
@@ -2784,6 +2818,7 @@ html {
   .learn-section#next a::after,
   .progress-line a::after,
   .progress-sticky a::after,
+  .progress-sticky .strip-top::after,
   .sources li a::after,
   .lesson-rail a::after,
   .explain a::after,
