@@ -1,6 +1,6 @@
 {
   "topic": "consistent-hashing",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "hash-function",
@@ -18,7 +18,7 @@
           "publisher": "MDN Web Docs",
           "url": "https://developer.mozilla.org/en-US/docs/Glossary/Hash_function",
           "year": "page shows last updated 2025-07-11",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -38,7 +38,7 @@
           "publisher": "MDN Web Docs",
           "url": "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API",
           "year": "page shows last updated 2026-09-12",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -58,14 +58,14 @@
           "publisher": "Oracle (Java SE 21 API)",
           "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/Semaphore.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
     {
       "id": "pub-sub",
       "name": "Publish and subscribe",
-      "explanation": "Senders publish a message to a topic and everyone subscribed to it receives a copy, without the sender knowing who they are. The gist is enough here.",
+      "explanation": "Senders publish a message to a topic and everyone subscribed to it receives a copy, without the sender knowing who they are.",
       "assumedBy": [
         {
           "postId": "discord-elixir-ring-2017",
@@ -77,7 +77,7 @@
     {
       "id": "circuit-breaker",
       "name": "Circuit breakers",
-      "explanation": "A guard that stops calling a failing service for a while, so failures do not pile up. The gist is enough here.",
+      "explanation": "A guard that stops calling a failing service for a while, so failures do not pile up.",
       "assumedBy": [
         {
           "postId": "discord-elixir-ring-2017",

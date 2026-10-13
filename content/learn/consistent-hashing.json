@@ -1,6 +1,6 @@
 {
   "slug": "consistent-hashing",
-  "promise": "After this you can follow the topic page and the posts.",
+  "promise": "After this you can explain why modulo hashing breaks when nodes change, and how a hash ring and virtual nodes fix it.",
   "before": {
     "prerequisites": [
       "caching"
@@ -26,7 +26,7 @@
       "id": "basics",
       "name": "Basics",
       "body": [
-        "When data is spread across several nodes, something has to decide which node holds each key. The obvious way is to hash the key and take it modulo the number of nodes. That works until the number of nodes changes: add or remove one, and almost every key now maps to a different node, so nearly all the data has to move at once. Karger and colleagues, who introduced consistent hashing, define a consistent hash function as one that changes minimally as the range of the function changes [[karger]].",
+        "When data is spread across several nodes, something has to decide which node holds each key. The obvious way is to hash the key and take it modulo the number of nodes. That works until the number of nodes changes: add or remove one, and almost every key now maps to a different node, so nearly all the data has to move at once. Karger and colleagues, who introduced consistent hashing, describe a consistent hash function, roughly, as one that changes minimally when the range of the function changes [[karger]].",
         "Consistent hashing was designed to fix exactly this. In the original paper both buckets and items are mapped at random onto the unit interval, and each item goes to the closest bucket [[karger]]. Dynamo describes the ring version that many systems copy: the output of the hash function is treated as a fixed circular space, each node is given a random position on it, and a key is stored on the first node found walking clockwise from the key's position [[dynamo]].",
         "The payoff is that very little moves. Dynamo says the arrival or departure of a node only affects its immediate neighbours, and other nodes remain unaffected [[dynamo]]. The original paper states the guarantees as properties: balance, where each bucket gets about 1/|V| of the items, and monotonicity, where adding buckets moves items only onto the new buckets [[karger]]. That is what makes it possible to grow or shrink a cluster without a storm of data movement."
       ],
@@ -124,7 +124,7 @@
       "id": "deeper",
       "name": "Going deeper",
       "body": [
-        "Consistent hashing is usually paired with replication. A key is not only stored on its owning node but also on the next few nodes clockwise, so if the owner fails the data is still reachable. The ring doubles as the way to find the backups: they are simply the following nodes [[dynamo]].",
+        "In Dynamo, consistent hashing is paired with replication. A key is not only stored on its owning node but also on the next few nodes clockwise, so if the owner fails the data is still reachable. The ring doubles as the way to find the backups: they are simply the following nodes [[dynamo]].",
         "Where the ring is managed differs by system. Dynamo-style systems let every node work out which nodes should hold a key, so requests can be routed without a central coordinator [[dynamo]]. Redis Cluster does not use consistent hashing at all. Its page says every key is part of a hash slot, there are 16384 slots, the slot is the CRC16 of the key modulo 16384, and every node is responsible for a subset of the slots [[redis-cluster]]. That keeps the mapping explicit and lets you move data slot by slot.",
         "Even with virtual nodes, load can be uneven if some keys are far hotter than others, a hot key problem the ring alone does not solve. A single wildly popular key still lands on one node. Handling that needs extra tactics such as replicating or splitting the hot key, which is a caching and sharding concern layered on top of the ring. This is general background; the pages cited here do not discuss hot keys."
       ],
@@ -220,7 +220,7 @@
     },
     {
       "myth": "The ring removes hot spots entirely.",
-      "truth": "A single very popular key still lands on one node, so hot keys need extra handling."
+      "truth": "General background, not from a cited page: a single very popular key still lands on one node, so hot keys need extra handling."
     },
     {
       "myth": "Every system places keys by walking a continuous ring.",
@@ -262,7 +262,7 @@
       "publisher": "Hosted by Princeton University (COS 518)",
       "kind": "Academic paper",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The PDF shows no publication date; it is the original consistent hashing paper, provided as a course reading."
     },
     {
@@ -272,7 +272,7 @@
       "publisher": "Amazon (Werner Vogels, allthingsdistributed.com)",
       "kind": "Academic paper",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The Dynamo paper, hosted on the Amazon CTO's site; the PDF itself shows no publication date."
     },
     {
@@ -282,7 +282,7 @@
       "publisher": "Redis",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     }
   ]
 }

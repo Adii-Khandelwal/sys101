@@ -18,7 +18,7 @@
       {
         "postId": "cloudflare-ketama-ram-2026",
         "row": 0,
-        "label": "With 160 virtual nodes per server, load variation fell from about 99% to about 8%"
+        "label": "With 160 virtual nodes per server across 100 servers, load variation fell from about 99% to about 8%"
       },
       {
         "postId": "cloudflare-ketama-ram-2026",
@@ -36,10 +36,10 @@
       "title": "Saving another 100TB of RAM with math (and Rust)",
       "url": "https://blog.cloudflare.com/saving-100-tb-of-ram-with-math/",
       "company": "Cloudflare",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2026-09-18",
       "digest": {
-        "problem": "Cloudflare routes cacheable requests to servers by URL with consistent hashing, so each data center keeps one copy of each file. Its internal load balancer builds these rings with the open-source pingora-ketama library, and an engineer flagged that the rings were using far too much memory, reaching about 6GB in some cases.",
+        "problem": "Cloudflare routes cacheable requests to servers by URL with consistent hashing, so each data center keeps one copy of each file. Its internal load balancer builds these rings with the open-source pingora-ketama library, and an engineer flagged that the rings were using far too much memory, about 6GB in some cases.",
         "constraints": "Every service runs on every machine, so wasted memory is multiplied across the fleet. With one point per server the ring is badly uneven, so each server gets many points, and weighting servers by disk size multiplies the count further. Compliance and caching features restrict which servers may handle a request, so each feature combination needs its own ring. Any change to a ring moves cached files and sends extra traffic to customers' origin servers, so the rollout had to be careful and reversible.",
         "walkthrough": [
           {
@@ -52,11 +52,11 @@
           },
           {
             "step": "Use fewer points",
-            "explanation": "Guided by the math, they cut the points generated per server by 90%, where the measured loss of balance was negligible."
+            "explanation": "Guided by the math, they decided they could cut the points generated per server by 90% without any appreciable error."
           },
           {
             "step": "Run both rings",
-            "explanation": "The load balancer kept the old and new rings side by side and chose one per request, which made rollback instant."
+            "explanation": "The load balancer kept the old and new rings side by side and chose one per request, which gave a clean rollback path: new requests could go back through the old ring without redeploying."
           },
           {
             "step": "Roll out by location",
@@ -79,7 +79,7 @@
           },
           {
             "value": "about 6GB",
-            "meaning": "Ring memory in the worst cases"
+            "meaning": "Memory use tied to the rings, in some cases"
           },
           {
             "value": "8 to 6 bytes",
@@ -105,7 +105,7 @@
         "tradeoffs": {
           "chosen": "Far fewer points per server, a smaller entry layout, and a slow rollout by data center with both rings running side by side.",
           "rejected": "Keeping the default point counts, forcing a packed struct layout, and switching every data center at once.",
-          "why": "The math showed most points bought almost no extra balance while costing memory on every machine. A global switch would have invalidated most cached content at once and flooded origins, so they accepted a slower rollout and temporary double memory."
+          "why": "The math showed most points bought almost no extra balance while costing memory on every machine. A global switch would have invalidated most cached content at once and flooded origins, so they accepted a slower rollout and temporarily holding both rings in memory."
         },
         "failures": "Changing only the index type saved nothing because of alignment padding. Adding ever more points stopped paying off: each step down in error needs roughly ten times more points, and with 32-bit hashes, collisions at high point counts actually add error. Separate rings per feature combination grow quickly, so more points could never solve that part.",
         "takeaways": "Check defaults like 160 points per server against the math, because small per-server costs become huge at fleet scale. Measure where returns diminish before assuming more is better. For anything that decides cache placement, roll out gradually with independent control over traffic share and location, and keep a way back."
@@ -116,12 +116,12 @@
       "title": "How Discord Scaled Elixir to 5,000,000 Concurrent Users",
       "url": "https://discord.com/blog/how-discord-scaled-elixir-to-5-000-000-concurrent-users",
       "company": "Discord",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2017-07-06",
       "ageNote": "A 2017 account. It is here for a fundamental that does not depend on Discord's current setup: on a hot read path, copying shared data can cost more than the lookup itself. Discord's ring and tooling may have changed since, and this page does not claim they are current.",
       "digest": {
         "problem": "Discord places each guild (a server, in Discord's terms) on a node chosen with a consistent hash ring, and every user session asks the ring where its guilds live. When many users reconnected at once, the single process answering ring lookups could not keep up, and the whole system overloaded.",
-        "constraints": "Users are in about 5 guilds on average, and one Erlang VM can hold up to 500,000 sessions, so restarting a session server means millions of lookups at once. Any call to another Erlang process costs about 12μs, which alone added up to around 30 seconds of lookups after a restart.",
+        "constraints": "Users are in about 5 guilds on average, and one Erlang VM can hold up to 500,000 sessions, so restarting a session server means millions of lookups at once. A request and reply to another Erlang process costs about 12μs, which alone added up to around 30 seconds of lookups after a restart.",
         "walkthrough": [
           {
             "step": "Start with a library",
@@ -172,7 +172,7 @@
           "rejected": "A single ring process, several ring processes, and an ETS table.",
           "why": "Each rejected option still paid per lookup, either for a process hop or for copying the ring. FastGlobal makes every change to the ring slow, since the module must be regenerated, which Discord accepted because the ring is read constantly and changes rarely."
         },
-        "failures": "The C port bottlenecked on its single process. More processes would have spread the load but kept the per-call cost. ETS removed the process hop but still copied the ring on every read, which left 17.5 seconds of lookups after a restart.",
+        "failures": "The C port bottlenecked on its single process. More processes would have spread the load but kept the per-call cost. ETS removed the process hop but still copied the ring on every read, which left 17.5 seconds of lookups after a restart. Once the ring was fast, the slow lookups no longer held sessions back, and nearly 5,000,000 session processes stampeded the ten guild-registry processes. Discord limited this with a semaphore built on an ETS counter, and chose not to use a circuit breaker.",
         "takeaways": "On a hot read path, copying shared data can cost more than the work itself, so removing the copy can beat adding parallelism. When data is read constantly and changes rarely, make reads cheap and let writes be slow."
       }
     }
@@ -258,7 +258,7 @@
         },
         {
           "step": "Count the cost",
-          "explanation": "Cloudflare needs a ring per combination of compliance and caching features, and points multiply with disk-size weights, so some rings reached about 6GB, on every machine."
+          "explanation": "Cloudflare needs a ring per combination of compliance and caching features, and points multiply with disk-size weights, so memory use reached about 6GB in some cases, on every machine."
         },
         {
           "step": "Cut what does not pay",
@@ -273,9 +273,9 @@
           "explanation": "In a 2017 post, Discord described its ring lookups bottlenecking on one process after a restart: about 30 seconds of lookups. Compiling the ring into a shared module cut each lookup from 12μs to 0.3μs."
         }
       ],
-      "diagram": "<svg viewBox=\"0 0 560 136\" role=\"img\" aria-labelledby=\"dg-ch-ex-t\" class=\"dg\"><title id=\"dg-ch-ex-t\">The cost of a ring: more virtual points even out load but cost memory, so pick enough points, roll out gently, and precompute lookups to keep them free.</title><defs><marker id=\"dg-ch-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"69\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Few points</text><text x=\"69\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">lumpy load</text><rect x=\"152\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"209\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">More points</text><text x=\"209\" y=\"99\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">even, costs memory</text><rect x=\"292\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"349\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Roll out</text><text x=\"349\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">gently</text><rect x=\"432\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"489\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Precompute</text><text x=\"489\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">lookup</text><text x=\"489\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">stays O(1)</text><path d=\"M126,60 L152,60\" class=\"dg-line\" marker-end=\"url(#dg-ch-ex-a)\"/><path d=\"M266,60 L292,60\" class=\"dg-line\" marker-end=\"url(#dg-ch-ex-a)\"/><path d=\"M406,60 L432,60\" class=\"dg-line\" marker-end=\"url(#dg-ch-ex-a)\"/><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Virtual points trade memory for an even spread.</text></svg>"
+      "diagram": "<svg viewBox=\"0 0 560 136\" role=\"img\" aria-labelledby=\"dg-ch-ex-t\" class=\"dg\"><title id=\"dg-ch-ex-t\">The cost of a ring: more virtual points even out load but cost memory, so pick enough points, roll out gently, and precompute lookups to keep them free.</title><defs><marker id=\"dg-ch-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"69\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Few points</text><text x=\"69\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">lumpy load</text><rect x=\"152\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"209\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">More points</text><text x=\"209\" y=\"99\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">even, costs memory</text><rect x=\"292\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"349\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Roll out</text><text x=\"349\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">gently</text><rect x=\"432\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"489\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Precompute</text><text x=\"489\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">lookup</text><text x=\"489\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">stays cheap</text><path d=\"M126,60 L152,60\" class=\"dg-line\" marker-end=\"url(#dg-ch-ex-a)\"/><path d=\"M266,60 L292,60\" class=\"dg-line\" marker-end=\"url(#dg-ch-ex-a)\"/><path d=\"M406,60 L432,60\" class=\"dg-line\" marker-end=\"url(#dg-ch-ex-a)\"/><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Virtual points trade memory for an even spread.</text></svg>"
     },
-    "mistakesOutcome": "After this you can avoid the three most common mistakes with hash rings.",
+    "mistakesOutcome": "After this you can avoid three mistakes with hash rings.",
     "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
     "quiz": [
       {
@@ -343,14 +343,14 @@
         "teaches": "model"
       },
       {
-        "question": "Going from 160 to 1,600 points per server mostly costs you what?",
+        "question": "Going from 10,000 to 100,000 points for one server mostly costs you what?",
         "options": [
           "Correctness, because more points on the ring means more chances for two servers to disagree",
-          "Ten times the memory for little extra balance",
+          "Ten times the memory for about 0.7% less error",
           "Nothing, because points are only pointers and take no memory on any machine"
         ],
         "correct": 1,
-        "why": "Balance improves slowly while memory grows with the point count.",
+        "why": "The last 90,000 points buy only about 0.7% less error in the post's example, while memory grows with the point count.",
         "wrong": [
           "Lookups stay correct either way.",
           "",
@@ -407,7 +407,7 @@
         "level": "scale",
         "prompt": "Your fleet grows ten times and you need to change the ring's layout. How do you roll it out?",
         "answer": "Run the old and new rings side by side, choose one per request, and move traffic location by location, small sites first, with separate controls for traffic share and location. Remove the old ring only at 100%.",
-        "tradeoffs": "Two rings double memory during the move, and the rollout is slow.",
+        "tradeoffs": "Holding two rings in memory costs extra memory during the move, and the rollout is slow.",
         "wrongAnswers": [
           "Switching every data center at once and flooding origins with misses.",
           "No way to roll back.",
