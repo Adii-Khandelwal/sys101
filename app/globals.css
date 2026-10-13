@@ -88,6 +88,12 @@ a:hover {
   text-decoration-color: currentColor;
 }
 
+/* One focus ring for every interactive element; the few controls with their own (graph, search, code) override it. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
 .label {
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 11px;
@@ -2212,6 +2218,10 @@ button:active:not(:disabled),
 
 .option.is-right {
   outline-color: var(--accent);
+}
+
+.option:focus-visible {
+  outline: 2px solid var(--accent);
 }
 
 /* Graph tooltip: plain fade, no movement. */
