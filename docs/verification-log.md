@@ -14,6 +14,9 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | meta-cache-consistency-2022 | numbers | 1 in 10 billion | https://engineering.fb.com/2022/06/08/core-infra/cache-made-consistent/ | Why do we care about cache consistency at | found with different formatting |
 | meta-cache-consistency-2022 | numbers | 1, 5 and 10 minutes | https://engineering.fb.com/2022/06/08/core-infra/cache-made-consistent/ | Why do we care about cache consistency at | found with different formatting |
 | meta-cache-consistency-2022 | numbers | under 30 minutes | https://engineering.fb.com/2022/06/08/core-infra/cache-made-consistent/ | A real bug we found and fixed this | found with different formatting |
+| meta-cache-consistency-2022 | numbers | x=42 | https://engineering.fb.com/2022/06/08/core-infra/cache-made-consistent/ | Defining cache invalidation and cache consistency | found |
+| meta-cache-consistency-2022 | numbers | x=43 | https://engineering.fb.com/2022/06/08/core-infra/cache-made-consistent/ | Defining cache invalidation and cache consistency | found |
+| meta-cache-consistency-2022 | numbers | @version=2 | https://engineering.fb.com/2022/06/08/core-infra/cache-made-consistent/ | Defining cache invalidation and cache consistency | found |
 | meta-cache-consistency-2022 | failures | 30 minutes | https://engineering.fb.com/2022/06/08/core-infra/cache-made-consistent/ | A real bug we found and fixed this | found |
 | uber-docstore-cache-2024 | numbers | over 40 million per second | https://www.uber.com/us/en/blog/how-uber-serves-over-40-million-reads-per-second-using-an-integrated-cache | Results | found with different formatting |
 | uber-docstore-cache-2024 | numbers | tens of petabytes | https://www.uber.com/us/en/blog/how-uber-serves-over-40-million-reads-per-second-using-an-integrated-cache | Results | found |
@@ -51,10 +54,12 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | cloudflare-pingora-2022 | numbers | 5 ms and 80 ms | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Pingora is faster in production | found with different formatting |
 | cloudflare-pingora-2022 | numbers | about 70% and 67% | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | More efficient | found with different formatting |
 | cloudflare-pingora-2022 | numbers | 434 years | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Pingora is faster in production | found |
-| netflix-open-connect-popularity-2017 | numbers | 50% | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | What granularity do we use to predict popularity? | found |
-| netflix-open-connect-popularity-2017 | numbers | around 1,200 | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | How is our content organized? | found |
-| netflix-open-connect-popularity-2017 | numbers | up to 100Gbps | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | Organizing content into server tiers | found |
-| netflix-open-connect-popularity-2017 | numbers | 200TB+ | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | Organizing content into server tiers | found |
+| cloudflare-pingora-2022 | walkthrough | 599, | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Design decisions | found with different formatting |
+| cloudflare-pingora-2022 | failures | 599, | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Design decisions | found with different formatting |
+| netflix-open-connect-popularity-2017 | numbers | 50% | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | (before first heading) | found with different formatting |
+| netflix-open-connect-popularity-2017 | numbers | around 1,200 | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | - | NOT FOUND |
+| netflix-open-connect-popularity-2017 | numbers | up to 100 Gbps | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | - | NOT FOUND |
+| netflix-open-connect-popularity-2017 | numbers | 200 TB+ | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | - | NOT FOUND |
 
 ## Circuit Breakers and Load Shedding
 
@@ -142,6 +147,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | discord-elixir-ring-2017 | numbers | 0.3μs and 750ms | https://discord.com/blog/how-discord-scaled-elixir-to-5-000-000-concurrent-users | Fast Access Shared Data | found with different formatting |
 | discord-elixir-ring-2017 | numbers | up to 1 second | https://discord.com/blog/how-discord-scaled-elixir-to-5-000-000-concurrent-users | (before first heading) | found with different formatting |
 | discord-elixir-ring-2017 | failures | 17.5 seconds | https://discord.com/blog/how-discord-scaled-elixir-to-5-000-000-concurrent-users | Fast Access Shared Data | found |
+| discord-elixir-ring-2017 | failures | 5,000,000 | https://discord.com/blog/how-discord-scaled-elixir-to-5-000-000-concurrent-users | (before first heading) | found |
 
 ## Databases
 
@@ -181,6 +187,12 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | google-percolator-2010 | numbers | atomic read-modify-write operations on individual rows | https://research.google/pubs/pub36726/ | 2.1 Bigtable overview | found |
 | google-percolator-2010 | numbers | ~4x overhead | https://research.google/pubs/pub36726/ | 4. The transaction has now reached the commit | found with different formatting |
 | google-percolator-2010 | numbers | thousands of machines | https://research.google/pubs/pub36726/ | (before first heading) | found |
+| google-percolator-2010 | numbers | $10 | https://research.google/pubs/pub36726/ | 2.2 Transactions | found |
+| google-percolator-2010 | numbers | $2 | https://research.google/pubs/pub36726/ | 2.2 Transactions | found |
+| google-percolator-2010 | numbers | 7 dollars | https://research.google/pubs/pub36726/ | 5. The transaction completes by adding write records | found |
+| google-percolator-2010 | numbers | timestamp 5 | https://research.google/pubs/pub36726/ | 1 Application | found with different formatting |
+| google-percolator-2010 | numbers | timestamp 7 | https://research.google/pubs/pub36726/ | 2.2 Transactions | found with different formatting |
+| google-percolator-2010 | numbers | timestamp 8 | https://research.google/pubs/pub36726/ | 2.2 Transactions | found with different formatting |
 | google-percolator-2010 | failures | 2 million | https://research.google/pubs/pub36726/ | 2.3 Timestamps | found |
 | cockroachdb-transaction-pipelining-2019 | numbers | O(n) to O(1) | https://www.cockroachlabs.com/blog/transaction-pipelining/ | How Pipelining consensus writes speeds up distributed SQL | found |
 | cockroachdb-transaction-pipelining-2019 | numbers | slope 6 vs slope 2 | https://www.cockroachlabs.com/blog/transaction-pipelining/ | Inter-Node Latency vs. Txn Latency | found with different formatting |
@@ -202,7 +214,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | slack-dnssec-2021 | numbers | 24 hours | https://slack.engineering/what-happened-during-slacks-dnssec-rollout/ | Managing context in long-run agentic applications | found |
 | slack-dnssec-2021 | numbers | four months | https://slack.engineering/what-happened-during-slacks-dnssec-rollout/ | Managing context in long-run agentic applications | found |
 | slack-dnssec-2021 | numbers | 3 attempts | https://slack.engineering/what-happened-during-slacks-dnssec-rollout/ | Solving the mystery 🕵️ | found with different formatting |
-| slack-dnssec-2021 | numbers | three hour | https://slack.engineering/what-happened-during-slacks-dnssec-rollout/ | Unsuccessful attempt three 😭 | found |
+| slack-dnssec-2021 | numbers | three hours | https://slack.engineering/what-happened-during-slacks-dnssec-rollout/ | - | NOT FOUND |
 | slack-dnssec-2021 | numbers | 24 hours | https://slack.engineering/what-happened-during-slacks-dnssec-rollout/ | Managing context in long-run agentic applications | found |
 | slack-dnssec-2021 | numbers | 6 hours | https://slack.engineering/what-happened-during-slacks-dnssec-rollout/ | Unsuccessful attempt three 😭 | found with different formatting |
 | slack-dnssec-2021 | numbers | nearly an hour | https://slack.engineering/what-happened-during-slacks-dnssec-rollout/ | Unsuccessful attempt three 😭 | found |
@@ -242,11 +254,14 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | github-mysql-ha-failover-2018 | numbers | 10 to 13 seconds | https://github.blog/engineering/infrastructure/mysql-high-availability-at-github/ | The results | found with different formatting |
 | github-mysql-ha-failover-2018 | numbers | up to 20-25 seconds | https://github.blog/engineering/infrastructure/mysql-high-availability-at-github/ | MySQL High Availability at GitHub | found with different formatting |
 | github-mysql-ha-failover-2018 | numbers | a single node in a cluster | https://github.blog/engineering/infrastructure/mysql-high-availability-at-github/ | MySQL High Availability at GitHub | found |
+| github-mysql-ha-failover-2018 | takeaways | 10 | https://github.blog/engineering/infrastructure/mysql-high-availability-at-github/ | The results | found |
+| github-mysql-ha-failover-2018 | takeaways | 13 seconds | https://github.blog/engineering/infrastructure/mysql-high-availability-at-github/ | The results | found |
 | aws-static-stability-azs | numbers | 50 percent | https://aws.amazon.com/builders-library/static-stability-using-availability-zones/ | Static stability patterns | found |
 | aws-static-stability-azs | numbers | 66 percent | https://aws.amazon.com/builders-library/static-stability-using-availability-zones/ | Static stability patterns | found |
 | aws-static-stability-azs | numbers | 4/9 versus 2/3 | https://aws.amazon.com/builders-library/static-stability-using-availability-zones/ | Under the hood: Static stability inside of Amazon | found with different formatting |
 | aws-static-stability-azs | walkthrough | 50 | https://aws.amazon.com/builders-library/static-stability-using-availability-zones/ | Static stability patterns | found |
 | aws-static-stability-azs | walkthrough | 66 | https://aws.amazon.com/builders-library/static-stability-using-availability-zones/ | Static stability patterns | found |
+| aws-static-stability-azs | failures | 50 | https://aws.amazon.com/builders-library/static-stability-using-availability-zones/ | Static stability patterns | found |
 
 ## Indexing and Search
 
@@ -366,6 +381,10 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | cloudflare-rate-limiting-2017 | numbers | several billion requests per day | https://blog.cloudflare.com/counting-things-a-lot-of-different-things/ | Conclusion | found |
 | cloudflare-rate-limiting-2017 | numbers | 400,000 per second | https://blog.cloudflare.com/counting-things-a-lot-of-different-things/ | Conclusion | found with different formatting |
 | cloudflare-rate-limiting-2017 | numbers | 2 numbers, 1 increment | https://blog.cloudflare.com/counting-things-a-lot-of-different-things/ | (before first heading) | found with different formatting |
+| cloudflare-rate-limiting-2017 | numbers | 50 requests per minute | https://blog.cloudflare.com/counting-things-a-lot-of-different-things/ | Sliding windows to the rescue | found |
+| cloudflare-rate-limiting-2017 | numbers | 42 requests | https://blog.cloudflare.com/counting-things-a-lot-of-different-things/ | Sliding windows to the rescue | found |
+| cloudflare-rate-limiting-2017 | numbers | 18 requests | https://blog.cloudflare.com/counting-things-a-lot-of-different-things/ | Sliding windows to the rescue | found |
+| cloudflare-rate-limiting-2017 | numbers | 15 seconds | https://blog.cloudflare.com/counting-things-a-lot-of-different-things/ | Sliding windows to the rescue | found |
 | cloudflare-rate-limiting-2017 | walkthrough | 42 | https://blog.cloudflare.com/counting-things-a-lot-of-different-things/ | Sliding windows to the rescue | found |
 | cloudflare-rate-limiting-2017 | walkthrough | 18 | https://blog.cloudflare.com/counting-things-a-lot-of-different-things/ | Sliding windows to the rescue | found |
 | cloudflare-rate-limiting-2017 | walkthrough | 15 seconds | https://blog.cloudflare.com/counting-things-a-lot-of-different-things/ | Sliding windows to the rescue | found |
@@ -435,21 +454,21 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 
 | Topic | Found | Found with different formatting | NOT FOUND |
 |---|---|---|---|
-| caching | 9 | 9 | 0 |
+| caching | 12 | 9 | 0 |
 | cap | 3 | 5 | 0 |
-| cdns | 9 | 2 | 0 |
+| cdns | 5 | 5 | 3 |
 | circuit-breakers | 23 | 13 | 0 |
 | consensus | 4 | 10 | 0 |
-| consistent-hashing | 15 | 7 | 0 |
+| consistent-hashing | 16 | 7 | 0 |
 | databases | 18 | 8 | 0 |
-| distributed-transactions | 6 | 2 | 0 |
-| dns | 15 | 7 | 0 |
+| distributed-transactions | 9 | 5 | 0 |
+| dns | 14 | 7 | 1 |
 | event-driven-architecture | 12 | 4 | 0 |
-| failover | 5 | 3 | 0 |
+| failover | 8 | 3 | 0 |
 | indexing | 24 | 8 | 0 |
 | load-balancing | 8 | 5 | 0 |
 | message-queues | 9 | 4 | 0 |
 | pub-sub | 13 | 15 | 0 |
-| rate-limiting | 20 | 6 | 0 |
+| rate-limiting | 24 | 6 | 0 |
 | replication | 5 | 10 | 0 |
 | sharding | 14 | 7 | 0 |

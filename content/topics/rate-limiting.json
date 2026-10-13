@@ -322,6 +322,22 @@
           {
             "value": "2 numbers, 1 increment",
             "meaning": "State per counter and work per request in the chosen algorithm"
+          },
+          {
+            "value": "50 requests per minute",
+            "meaning": "Limit in the post's worked example for one API endpoint"
+          },
+          {
+            "value": "42 requests",
+            "meaning": "Count for the whole previous minute in that example"
+          },
+          {
+            "value": "18 requests",
+            "meaning": "Count so far in the current minute in that example"
+          },
+          {
+            "value": "15 seconds",
+            "meaning": "How far into the current minute that example is"
           }
         ],
         "tradeoffs": {
@@ -330,7 +346,16 @@
           "why": "A central store would be slow and hard to keep available, and the other algorithms were too inaccurate, too memory hungry, or needed operations the store could not do atomically. The estimate is cheap and, in the post's test, close enough to the real rate."
         },
         "failures": "The estimate is approximate: in the test, 3 sources got through despite being slightly over the limit. Compare-and-set updates would have failed often under attack. The post says the team had just started to explore how to protect customers with the limiter and was looking into more optimizations and new features. It gives no latency, memory or time-to-live figures.",
-        "takeaways": "Choose the counting algorithm by what your store can do atomically and cheaply. Keep counting off the request path, and keep the block decision as a small flag that servers can cache. Measure the error of an approximate count instead of assuming it is small."
+        "takeaways": "Choose the counting algorithm by what your store can do atomically and cheaply. Keep counting off the request path, and keep the block decision as a small flag that servers can cache. Measure the error of an approximate count instead of assuming it is small.",
+        "figure": {
+          "id": "sliding-window",
+          "rows": {
+            "limit": 8,
+            "previous": 9,
+            "current": 10,
+            "elapsed": 11
+          }
+        }
       }
     },
     {

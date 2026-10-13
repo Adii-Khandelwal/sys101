@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { checkFigure, type FigureSpec } from "./figures";
 
 /** A post rewritten in our own words, in reading order. */
 export type Digest = {
@@ -13,6 +14,8 @@ export type Digest = {
   tradeoffs: { chosen: string; rejected?: string; why: string };
   failures: string;
   takeaways: string;
+  /** Optional interactive figure shown after the digest; its inputs are rows of `numbers` (lib/figures.ts). */
+  figure?: FigureSpec;
 };
 
 export type Post = {
@@ -535,6 +538,7 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
         problems.push(`${where}: digest.tradeoffs needs chosen and why, and rejected only if the source names an alternative`);
       }
       problems.push(...checkDiagram(d.diagram).map((p) => `${where}: diagram ${p}`));
+      problems.push(...checkFigure(d.figure, d.numbers).map((p) => `${where}: ${p}`));
     });
   }
 

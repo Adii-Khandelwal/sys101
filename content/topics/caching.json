@@ -92,6 +92,18 @@
           {
             "value": "under 30 minutes",
             "meaning": "Time for on-call engineers to locate a real bug using Polaris and tracing; the post says it once took weeks for an expert, if found at all"
+          },
+          {
+            "value": "x=42",
+            "meaning": "Value in the slow cache fill reply in the post's race example"
+          },
+          {
+            "value": "x=43",
+            "meaning": "Value written to the database before that reply arrives, and sent to the cache as an invalidation"
+          },
+          {
+            "value": "@version=2",
+            "meaning": "Version field of the newer cache entry in the post's example"
           }
         ],
         "tradeoffs": {
@@ -100,7 +112,15 @@
           "why": "Full logging would turn a read-heavy cache into a write-heavy load on the logging system, and checking the database for every suspicious sample is compute-heavy and puts the database at risk. The cost of waiting is that real problems are reported at a timescale boundary, not instantly; the post presents the wait as part of keeping the metric free of false alarms."
         },
         "failures": "Polaris caught a real bug: a rare transaction updated metadata and version together, a fill slipped in with old metadata, the next invalidation hit a transient error, and the error handler's drop-cache call only removed entries with a lower version. The stale entry carried the current version, so it stayed. Tracing showed the whole sequence and engineers found the cause in under 30 minutes. The authors list promotions, shard moves, failure recoveries, network partitions and hardware failures as events that can trigger bugs leading to inconsistency.",
-        "takeaways": "Measure what a client could actually observe, and keep the metric free of false alarms so people trust it. Expect some lag and retry before running expensive checks. The rare bug Polaris caught hid in an error-handling path, and running a consistent cache in production is a different problem from designing one."
+        "takeaways": "Measure what a client could actually observe, and keep the metric free of false alarms so people trust it. Expect some lag and retry before running expensive checks. The rare bug Polaris caught hid in an error-handling path, and running a consistent cache in production is a different problem from designing one.",
+        "figure": {
+          "id": "fill-race",
+          "rows": {
+            "stale": 6,
+            "fresh": 7,
+            "version": 8
+          }
+        }
       }
     },
     {

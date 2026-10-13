@@ -6,6 +6,7 @@ import InterviewTag from "./InterviewTag";
 import Reveal from "./Reveal";
 import PageUpdated from "./PageUpdated";
 import SiteFooter from "./SiteFooter";
+import PostFigure from "./figures/PostFigure";
 
 type Props = {
   topic: Topic;
@@ -110,6 +111,8 @@ export function PostDigest({ post, index, titles }: { post: Post; index: number;
       <p>{d.failures}</p>
       <h3>Takeaways</h3>
       <p>{d.takeaways}</p>
+
+      <PostFigure post={post} />
 
       {post.related?.length ? (
         <p className="related" data-pagefind-ignore>

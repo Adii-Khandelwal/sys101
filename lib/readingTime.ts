@@ -3,6 +3,7 @@
 // homepage/index "compute from data" rule holds.
 import type { Topic } from "./topics";
 import type { News } from "./news";
+import { figureProse } from "./figures";
 
 // Technical prose with diagrams and code reads slower than casual text; 200 wpm
 // is a common, defensible estimate for careful reading. Each diagram adds a
@@ -47,13 +48,14 @@ function proseStrings(topic: Topic): string[] {
     out.push(...d.numbers.flatMap((n) => [n.value, n.meaning]));
     out.push(d.tradeoffs.chosen, d.tradeoffs.rejected ?? "", d.tradeoffs.why);
     out.push(d.failures, d.takeaways);
+    out.push(...figureProse(d.figure, d.numbers, { company: p.company, year: p.published.slice(0, 4), postId: p.id ?? "" }));
   }
   return out;
 }
 
 /** Count of diagrams the page renders (lesson figures and one per post). */
 function diagramCount(topic: Topic): number {
-  let n = topic.posts.length; // each post digest has a diagram
+  let n = topic.posts.length + topic.posts.filter((p) => p.digest.figure).length; // each post digest has a diagram, some a figure
   if (topic.lesson) n += 3; // mental model, how it works, worked example
   return n;
 }

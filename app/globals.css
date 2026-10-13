@@ -3604,3 +3604,266 @@ html[data-posts-view] .posts-view-h {
 .posts-topic-h .posts-n {
   font-variant-numeric: tabular-nums;
 }
+
+/* ── Interactive post figure (components/figures) ──────── */
+
+.fig {
+  --fig-top: var(--paper);
+  --fig-front: var(--skeleton);
+  --fig-right: var(--rule);
+  margin: 40px 0 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+}
+
+/* Lit faces are the lightest: in the dark theme the order flips. */
+:root[data-theme="dark"] .fig {
+  --fig-top: var(--rule);
+  --fig-front: var(--skeleton);
+  --fig-right: var(--paper);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .fig {
+    --fig-top: var(--rule);
+    --fig-front: var(--skeleton);
+    --fig-right: var(--paper);
+  }
+}
+
+.fig-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.fig-svg path,
+.fig-svg circle {
+  stroke: var(--ink-soft);
+  stroke-width: 1;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.fig-top {
+  fill: var(--fig-top);
+}
+
+.fig-front {
+  fill: var(--fig-front);
+}
+
+.fig-right {
+  fill: var(--fig-right);
+}
+
+.fig-svg .fig-bezel {
+  fill: none;
+}
+
+.fig-svg .fig-tick {
+  fill: none;
+  stroke: var(--ink-soft);
+}
+
+.fig-svg .fig-tick-major {
+  stroke: var(--ink);
+}
+
+.fig-svg .fig-limit {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.fig-svg .fig-hand {
+  stroke: var(--ink);
+  stroke-width: 2;
+  fill: none;
+}
+
+.fig-svg .fig-hub {
+  fill: var(--ink);
+  stroke: var(--ink);
+}
+
+/* Counted beads are filled rust; beads outside the frame are hollow, so the state is shape, not colour. */
+.fig-svg .fig-bead {
+  fill: none;
+  stroke: var(--ink-soft);
+}
+
+.fig-svg .fig-bead.fig-in {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+.fig-move,
+.fig-needle {
+  transition: transform var(--dur-base) var(--ease-in-out);
+}
+
+.fig-svg .fig-bead {
+  transition: fill var(--dur-fast) var(--ease-out);
+}
+
+.fig-readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  margin-top: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.fig-formula {
+  font-family: var(--font-mono), monospace;
+  font-size: 15px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.fig-status {
+  font-family: var(--font-mono), monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+.fig-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  margin-top: 12px;
+}
+
+.fig-slider {
+  display: flex;
+  flex: 1 1 280px;
+  align-items: center;
+  gap: 8px 16px;
+  min-height: 44px;
+}
+
+.fig-slider input {
+  flex: 1 1 140px;
+  min-width: 0;
+  height: 44px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.fig-slider input::-webkit-slider-runnable-track {
+  height: 1px;
+  background: var(--ink-soft);
+}
+
+.fig-slider input::-moz-range-track {
+  height: 1px;
+  background: var(--ink-soft);
+}
+
+.fig-slider input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 28px;
+  margin-top: -14px;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: var(--paper);
+}
+
+.fig-slider input::-moz-range-thumb {
+  width: 12px;
+  height: 26px;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: var(--paper);
+}
+
+.fig-seconds {
+  min-width: 4ch;
+  white-space: nowrap;
+  font-family: var(--font-mono), monospace;
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.fig-controls .text-button {
+  min-height: 44px;
+  padding: 0 4px;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fig-legend {
+  margin: 16px 0 0;
+  padding-left: 20px;
+  font-size: 16px;
+  color: var(--ink-soft);
+}
+
+.fig .fig-desc,
+.fig figcaption {
+  margin: 16px 0 0;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+/* On a phone the label takes its own line, so the slider keeps a usable length. */
+@media (max-width: 767px) {
+  .fig-slider {
+    flex-wrap: wrap;
+  }
+  .fig-slider .label {
+    flex: 1 0 100%;
+  }
+}
+
+/* Stepper figures: the story line, the state lines and the toggles. */
+.fig-readout .fig-line {
+  flex: 1 0 100%;
+  margin: 0;
+  font-size: 16px;
+}
+
+.fig-readout .fig-formula {
+  flex: 1 0 100%;
+  margin: 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.fig-svg .fig-lit path {
+  fill: var(--accent);
+}
+
+/* A hollow block is a stale or tentative value: shape, not colour, tells it from a filled one. */
+.fig-svg .fig-hollow path {
+  fill: none;
+  stroke-dasharray: 4 3;
+}
+
+.fig-svg .fig-cord {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.fig-fade {
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.fig-controls .text-button[aria-pressed="true"] {
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+}

@@ -304,6 +304,30 @@
           {
             "value": "thousands of machines",
             "meaning": "The scale across which the incremental indexing system runs transactions"
+          },
+          {
+            "value": "$10",
+            "meaning": "Bob's balance before the transfer in the paper's example"
+          },
+          {
+            "value": "$2",
+            "meaning": "Joe's balance before the transfer"
+          },
+          {
+            "value": "7 dollars",
+            "meaning": "Amount the example transaction moves from Bob to Joe"
+          },
+          {
+            "value": "timestamp 5",
+            "meaning": "Timestamp of the opening balances in the paper's figure"
+          },
+          {
+            "value": "timestamp 7",
+            "meaning": "The transaction's start timestamp, at which it writes its new balances"
+          },
+          {
+            "value": "timestamp 8",
+            "meaning": "The commit timestamp that replaces the primary lock"
           }
         ],
         "tradeoffs": {
@@ -312,7 +336,18 @@
           "why": "Incremental indexing needs many small consistent updates, which MapReduce cannot process individually because it relies on large batches. Google accepted roughly a fourfold overhead on its worst-case benchmark, and higher latency, in exchange for cutting the average age of documents in search results by 50% for the same number of documents per day, with much smoother resource usage."
         },
         "failures": "The paper is honest that transactions are not free: Percolator incurs roughly four times the overhead of raw Bigtable when writing a single cell and committing, which the paper calls its worst case, and workers batch their timestamp requests to the oracle to save RPC overhead at the cost of higher transaction latency. It also depends on a central timestamp oracle, which the paper says serves around 2 million timestamps per second from a single machine, and on correct lock cleanup when transactions or readers crash.",
-        "takeaways": "You can build strong, cross-shard transactions on top of a store that only promises single-row atomicity, by using one designated row's atomic write as the commit point and timestamps for isolation. The durable lesson is the shape of two-phase commit and the idea of a single atomic commit point, plus the honest reminder that this atomicity is bought with real per-operation overhead."
+        "takeaways": "You can build strong, cross-shard transactions on top of a store that only promises single-row atomicity, by using one designated row's atomic write as the commit point and timestamps for isolation. The durable lesson is the shape of two-phase commit and the idea of a single atomic commit point, plus the honest reminder that this atomicity is bought with real per-operation overhead.",
+        "figure": {
+          "id": "commit-latch",
+          "rows": {
+            "bobBefore": 3,
+            "joeBefore": 4,
+            "amount": 5,
+            "oldTs": 6,
+            "startTs": 7,
+            "commitTs": 8
+          }
+        }
       }
     },
     {
