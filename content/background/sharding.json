@@ -1,6 +1,6 @@
 {
   "topic": "sharding",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "acid-transactions",
@@ -18,7 +18,7 @@
           "publisher": "Oracle (MySQL)",
           "url": "https://dev.mysql.com/doc/refman/8.4/en/mysql-acid.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -29,7 +29,7 @@
       "assumedBy": [
         {
           "postId": "notion-postgres-sharding-2021",
-          "quote": "While disk capacity can be increased, more worrying was the prospect of transaction ID (TXID) wraparound, a safety mechanism"
+          "quote": "While disk capacity can be increased, more worrying was the prospect of transaction ID (TXID) wraparound, a safety mechanism in which Postgres would stop processing all writes to avoid clobbering existing data."
         }
       ],
       "sources": [
@@ -38,7 +38,7 @@
           "publisher": "PostgreSQL Global Development Group",
           "url": "https://www.postgresql.org/docs/current/routine-vacuuming.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -58,7 +58,7 @@
           "publisher": "PostgreSQL Global Development Group",
           "url": "https://www.postgresql.org/docs/current/sql-createview.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -78,7 +78,7 @@
           "publisher": "PostgreSQL Global Development Group",
           "url": "https://www.postgresql.org/docs/current/ddl-constraints.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -98,7 +98,7 @@
           "publisher": "PostgreSQL Global Development Group",
           "url": "https://www.postgresql.org/docs/current/planner-optimizer.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     }

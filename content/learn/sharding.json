@@ -1,6 +1,6 @@
 {
   "slug": "sharding",
-  "promise": "After this you can follow the topic page and the posts.",
+  "promise": "After this you can explain what sharding is, how a shard key routes a query, and what you give up when data is split.",
   "before": {
     "prerequisites": [
       "replication",
@@ -174,7 +174,7 @@
       "name": "In practice and trade-offs",
       "body": [
         "The deepest trade-off is that sharding adds permanent complexity to buy scale. Routing, rebalancing, cross-shard queries and multi-shard transactions all become harder, so the usual advice is to shard only when a single replicated database can no longer cope, not before. MongoDB frames sharding as a response to the data and write limits of a single machine [[mongodb-sharding]].",
-        "The shard key is close to irreversible. Once data is spread by a key and queries are written around it, changing it means redistributing everything. A key that spreads load today but concentrates tomorrow's hot data, like a monotonically increasing timestamp sending all new writes to one shard, is a classic trap. Hashed sharding avoids that at the cost of range scans, as MongoDB's note on range queries shows [[mongodb-sharding]].",
+        "The shard key is costly to change. Once data is spread by a key and queries are written around it, changing it means redistributing the data. MongoDB 5.0 and later can reshard a collection by changing its shard key, but its page still tells you to choose the key carefully [[mongodb-sharding]]. A key that spreads load today but concentrates tomorrow's hot data, like a monotonically increasing timestamp sending all new writes to one shard, is a classic trap. Hashed sharding avoids that at the cost of range scans, as MongoDB's note on range queries shows [[mongodb-sharding]].",
         "Range versus hash is the recurring practical choice. Ranged sharding keeps neighbours together, so range scans hit few shards, but risks hot shards at the end of the range. Hashed sharding spreads writes evenly but makes range scans cluster-wide broadcasts [[mongodb-sharding]]. PostgreSQL's partitioning page offers the same menu inside one server, range, list and hash, and the right answer follows your dominant query pattern [[pg-partitioning]]."
       ],
       "terms": [
@@ -209,7 +209,7 @@
       ],
       "canNow": [
         "Say when to shard and when not to.",
-        "Explain why the shard key is close to irreversible.",
+        "Explain why the shard key is costly to change.",
         "Choose range or hash sharding from a query pattern."
       ]
     }
@@ -229,7 +229,7 @@
     },
     {
       "myth": "You can change the shard key later if you get it wrong.",
-      "truth": "Changing it means redistributing the data set, so it is close to irreversible; plan the key around your main queries."
+      "truth": "Changing it means redistributing the data. MongoDB 5.0 and later can reshard a collection by changing its shard key, but its page says to choose carefully, so plan the key around your main queries [[mongodb-sharding]]."
     }
   ],
   "tryIt": {
@@ -262,7 +262,7 @@
       "publisher": "MongoDB",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "pg-partitioning",
@@ -271,7 +271,7 @@
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "dynamo",
@@ -280,7 +280,7 @@
       "publisher": "Amazon (Werner Vogels, allthingsdistributed.com)",
       "kind": "Academic paper",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The Dynamo paper, hosted on the Amazon CTO's site; the PDF itself shows no publication date."
     },
     {
@@ -290,7 +290,7 @@
       "publisher": "Amazon Web Services",
       "kind": "Vendor documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "mongodb-sh-status",
@@ -299,7 +299,7 @@
       "publisher": "MongoDB",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "mongodb-shard-distribution",
@@ -308,7 +308,7 @@
       "publisher": "MongoDB",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     }
   ]
 }
