@@ -9,8 +9,8 @@
   ],
   "summary": {
     "points": [
-      "A cache keeps a copy of data closer to the reader than the source of truth, so most reads skip the slow path.",
-      "The price is staleness: every write must reach the cache too, and races with invalidations can leave it holding a value the database no longer has.",
+      "A cache serves repeat reads from a copy kept close to the readers, so most reads skip the slow path to the database.",
+      "A write does not update the cache by itself, so entries must be invalidated or expire, and races between fills and invalidations can leave an old value behind.",
       "Uber built its cache inside the database and used the database's own change log as the signal to invalidate entries.",
       "Meta counts only inconsistencies a client could actually observe, and its checker caught a rare bug in an error-handling path."
     ],
@@ -23,12 +23,12 @@
       {
         "postId": "uber-docstore-cache-2024",
         "row": 8,
-        "label": "99.99% of cached reads matched the database in compare mode"
+        "label": "99.99% consistent once Flux invalidated the cache"
       }
     ]
   },
   "prerequisiteReasons": {
-    "load-balancing": "Caching takes from load balancing the picture of requests spread across a pool of servers, and of some server in the path answering instead of the origin."
+    "load-balancing": "Load balancing shows requests spread over a pool of servers. A cache is one more server in that path, one that answers in place of the origin."
   },
   "posts": [
     {
@@ -40,7 +40,7 @@
       "published": "2022-06-08",
       "digest": {
         "problem": "A cache only stays correct if every change in the database reaches it as an invalidation, and races can break that. In Meta's example, a cache fill reads a value, the value then changes, the invalidation for the new value arrives first, and the delayed fill writes the old value back, leaving the cache wrong until something else evicts it. Such races are rare, but the harm can be real: Meta describes a case from years ago, when TAO was less consistent, where two people's messages to the same user were sent to different regions.",
-        "constraints": "Meta's TAO cache handles more than a quadrillion queries a day, so even rare races add up. Logging every cache change would turn a read-heavy system into a write-heavy one. Checking the database directly is expensive and could overload it. Any measurement had to be free of false alarms and precise enough to count past ten nines.",
+        "constraints": "Meta's TAO cache handles more than a quadrillion queries a day, so even rare races add up. Logging every cache change would turn a read-heavy cache workload into a write-heavy one for the logging system. Checking the database directly is expensive and could overload it. Any measurement had to be free of false alarms and precise enough to count past ten nines.",
         "walkthrough": [
           {
             "step": "Listen like a cache",
@@ -64,7 +64,7 @@
           },
           {
             "step": "Trace the race window",
-            "explanation": "Separately, consistency tracing on each cache server logs only the short window after a write when races happen, plus evictions, giving engineers a timeline when Polaris alarms."
+            "explanation": "Separately, a tracing library embedded in a few major cache services and the invalidation pipeline logs only the short window after a write when races happen, plus evictions, giving engineers a timeline when Polaris alarms."
           }
         ],
         "diagram": "<svg viewBox=\"0 0 560 320\" role=\"img\" aria-labelledby=\"dg-meta-polaris-t\" class=\"dg\"><title id=\"dg-meta-polaris-t\">Polaris at Meta: a write updates the database, and invalidations go to cache replicas and to Polaris; Polaris asks every replica for the key, rechecks flagged samples at example timescales of 1, 5 and 10 minutes, and only then runs a rationed database check.</title><defs><marker id=\"dg-meta-polaris-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"120\" width=\"110\" height=\"44\" class=\"dg-box\"/><text x=\"69\" y=\"147\" class=\"dg-label\" text-anchor=\"middle\">Write</text><rect x=\"170\" y=\"120\" width=\"120\" height=\"44\" class=\"dg-box\"/><text x=\"230\" y=\"147\" class=\"dg-label\" text-anchor=\"middle\">Database</text><path d=\"M124,142 L166,142\" class=\"dg-line\" marker-end=\"url(#dg-meta-polaris-a)\"/><rect x=\"370\" y=\"14\" width=\"160\" height=\"36\" class=\"dg-box\"/><text x=\"450\" y=\"37\" class=\"dg-label\" text-anchor=\"middle\">Replica 1</text><rect x=\"370\" y=\"58\" width=\"160\" height=\"36\" class=\"dg-box\"/><text x=\"450\" y=\"81\" class=\"dg-label\" text-anchor=\"middle\">Replica 2</text><rect x=\"370\" y=\"102\" width=\"160\" height=\"36\" class=\"dg-box\"/><text x=\"450\" y=\"125\" class=\"dg-label\" text-anchor=\"middle\">Replica 3</text><path d=\"M290,132 C320,120 330,80 366,76\" class=\"dg-line\" marker-end=\"url(#dg-meta-polaris-a)\"/><text x=\"318\" y=\"70\" class=\"dg-note\" text-anchor=\"middle\">invalidation</text><rect x=\"370\" y=\"196\" width=\"160\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"450\" y=\"223\" class=\"dg-label\" text-anchor=\"middle\">Polaris</text><path d=\"M290,152 C320,170 330,214 366,216\" class=\"dg-line\" marker-end=\"url(#dg-meta-polaris-a)\"/><path d=\"M505,196 L505,142\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-meta-polaris-a)\"/><text x=\"497\" y=\"174\" class=\"dg-note dg-note-accent\" text-anchor=\"end\">ask every replica</text><path d=\"M380,270 L520,270\" class=\"dg-line\"/><circle cx=\"390\" cy=\"270\" r=\"4\" class=\"dg-dot\"/><circle cx=\"450\" cy=\"270\" r=\"4\" class=\"dg-dot\"/><circle cx=\"510\" cy=\"270\" r=\"4\" class=\"dg-dot\"/><text x=\"390\" y=\"292\" class=\"dg-note\" text-anchor=\"middle\">1 min</text><text x=\"450\" y=\"292\" class=\"dg-note\" text-anchor=\"middle\">5 min</text><text x=\"510\" y=\"292\" class=\"dg-note\" text-anchor=\"middle\">10 min</text><text x=\"450\" y=\"312\" class=\"dg-note\" text-anchor=\"middle\">report only if still wrong</text><path d=\"M370,232 C300,260 240,230 232,168\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-meta-polaris-a)\"/><text x=\"250\" y=\"262\" class=\"dg-note\" text-anchor=\"middle\">rationed DB check</text></svg>",
@@ -91,7 +91,7 @@
           },
           {
             "value": "under 30 minutes",
-            "meaning": "Time to find a real bug with tracing, versus weeks before"
+            "meaning": "Time for on-call engineers to locate a real bug using Polaris and tracing; the post says it once took weeks for an expert, if found at all"
           }
         ],
         "tradeoffs": {
@@ -99,8 +99,8 @@
           "rejected": "Logging every cache state change, and checking the database immediately for every suspicious sample.",
           "why": "Full logging would turn a read-heavy cache into a write-heavy load on the logging system, and checking the database for every suspicious sample is compute-heavy and puts the database at risk. The cost of waiting is that real problems are reported at a timescale boundary, not instantly; the post presents the wait as part of keeping the metric free of false alarms."
         },
-        "failures": "Polaris caught a real bug: a rare transaction updated metadata and version together, a fill slipped in with old metadata, the next invalidation hit a transient error, and the error handler's drop-cache call only removed entries with a lower version. The stale entry carried the current version, so it stayed. Tracing showed the whole sequence and engineers found the cause in under 30 minutes. The authors note that shard moves, failovers and network partitions can trigger similar bugs.",
-        "takeaways": "Measure what a client could actually observe, and keep the metric free of false alarms so people trust it. Expect some lag and retry before running expensive checks. Rare bugs tend to hide in error-handling paths, and running a consistent cache in production is a different problem from designing one."
+        "failures": "Polaris caught a real bug: a rare transaction updated metadata and version together, a fill slipped in with old metadata, the next invalidation hit a transient error, and the error handler's drop-cache call only removed entries with a lower version. The stale entry carried the current version, so it stayed. Tracing showed the whole sequence and engineers found the cause in under 30 minutes. The authors list promotions, shard moves, failure recoveries, network partitions and hardware failures as events that can trigger bugs leading to inconsistency.",
+        "takeaways": "Measure what a client could actually observe, and keep the metric free of false alarms so people trust it. Expect some lag and retry before running expensive checks. The rare bug Polaris caught hid in an error-handling path, and running a consistent cache in production is a different problem from designing one."
       }
     },
     {
@@ -120,7 +120,7 @@
           },
           {
             "step": "Make it opt-in",
-            "explanation": "Caching is switched on per database, table or request. Flows that need strong consistency, such as a shopping cart, skip it."
+            "explanation": "Caching is switched on per database, table or request. Flows that need strong consistency, such as getting items in an eater's cart, skip it."
           },
           {
             "step": "Expire as a backstop",
@@ -128,7 +128,7 @@
           },
           {
             "step": "Invalidate from the log",
-            "explanation": "A system called Flux follows MySQL's binary log and invalidates or updates the affected rows in Redis. That covers conditional updates and never caches data that was not committed."
+            "explanation": "Flux, Docstore's change data capture service, follows MySQL's binary log, and a new consumer invalidates or updates the affected rows in Redis. That covers conditional updates, and uncommitted transactions cannot pollute the cache. The post says this made the cache consistent within seconds of a database change, not minutes."
           },
           {
             "step": "Let older writes lose",
@@ -154,7 +154,7 @@
         "diagram": "<svg viewBox=\"0 0 560 330\" role=\"img\" aria-labelledby=\"dg-uber-cachefront-t\" class=\"dg\"><title id=\"dg-uber-cachefront-t\">Uber&#x27;s CacheFront: the query engine checks Redis first and fills misses from the storage engine; Flux tails the MySQL binlog to invalidate or update cached rows; only keys are sent to the other region, which fills its cache from its own database.</title><defs><marker id=\"dg-uber-cachefront-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"20\" width=\"110\" height=\"44\" class=\"dg-box\"/><text x=\"69\" y=\"47\" class=\"dg-label\" text-anchor=\"middle\">Service</text><rect x=\"190\" y=\"14\" width=\"160\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"270\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\">Query engine</text><text x=\"270\" y=\"55.5\" class=\"dg-label\" text-anchor=\"middle\">(cache-aside)</text><path d=\"M124,42 L186,42\" class=\"dg-line\" marker-end=\"url(#dg-uber-cachefront-a)\"/><rect x=\"420\" y=\"14\" width=\"120\" height=\"44\" class=\"dg-box\"/><text x=\"480\" y=\"41\" class=\"dg-label\" text-anchor=\"middle\">Redis</text><path d=\"M350,34 L416,34\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-uber-cachefront-a)\"/><text x=\"383\" y=\"26\" class=\"dg-note\" text-anchor=\"middle\">1. check</text><rect x=\"190\" y=\"130\" width=\"160\" height=\"56\" class=\"dg-box\"/><text x=\"270\" y=\"154.5\" class=\"dg-label\" text-anchor=\"middle\">Storage engine</text><text x=\"270\" y=\"171.5\" class=\"dg-label\" text-anchor=\"middle\">MySQL + Raft</text><path d=\"M270,70 L270,126\" class=\"dg-line\" marker-end=\"url(#dg-uber-cachefront-a)\"/><text x=\"278\" y=\"104\" class=\"dg-note\" text-anchor=\"start\">2. misses</text><path d=\"M350,52 L416,52\" class=\"dg-line dg-dashed\" marker-start=\"url(#dg-uber-cachefront-a)\"/><text x=\"383\" y=\"82\" class=\"dg-note\" text-anchor=\"middle\">3. fill async</text><rect x=\"420\" y=\"130\" width=\"120\" height=\"56\" class=\"dg-box\"/><text x=\"480\" y=\"154.5\" class=\"dg-label\" text-anchor=\"middle\">Flux</text><text x=\"480\" y=\"171.5\" class=\"dg-label\" text-anchor=\"middle\">tails binlog</text><path d=\"M350,158 L416,158\" class=\"dg-line\" marker-end=\"url(#dg-uber-cachefront-a)\"/><path d=\"M480,130 L480,62\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-uber-cachefront-a)\"/><text x=\"488\" y=\"100\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">invalidate</text><text x=\"488\" y=\"114\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">or upsert</text><rect x=\"190\" y=\"250\" width=\"160\" height=\"50\" class=\"dg-box dg-dashed\"/><text x=\"270\" y=\"271.5\" class=\"dg-label\" text-anchor=\"middle\">Other region</text><text x=\"270\" y=\"288.5\" class=\"dg-label\" text-anchor=\"middle\">own DB + Redis</text><path d=\"M470,186 C450,240 400,270 354,272\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-uber-cachefront-a)\"/><text x=\"440\" y=\"262\" class=\"dg-note\" text-anchor=\"start\">keys only</text><text x=\"100\" y=\"230\" class=\"dg-note\" text-anchor=\"middle\">rows carry a version:</text><text x=\"100\" y=\"244\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">older writes lose</text></svg>",
         "numbers": [
           {
-            "value": "over 40M per second",
+            "value": "over 40 million per second",
             "meaning": "Reads served across all Docstore instances"
           },
           {
@@ -170,7 +170,7 @@
             "meaning": "Default cache expiry"
           },
           {
-            "value": "over 6M per second",
+            "value": "over 6 million per second",
             "meaning": "Requests per second in one of the largest first use cases"
           },
           {
@@ -178,22 +178,22 @@
             "meaning": "Cache hit rate for that use case (the post also gives 99.9% for the same workload; see note)"
           },
           {
-            "value": "about 60K vs 3K",
+            "value": "about 60,000 vs 3,000",
             "meaning": "CPU cores needed without caching vs Redis cores with it, for that use case"
           },
           {
             "value": "75% and over 67%",
-            "meaning": "Drop in p75 and p99.9 read latency"
+            "meaning": "Drop in P75 and P99.9 latency compared with the storage engine"
           },
           {
             "value": "99.99%",
-            "meaning": "Share of cached reads matching the database, measured by compare mode"
+            "meaning": "How consistent the cache is once Flux invalidation was added, per the post; compare mode checks cached reads against the database"
           }
         ],
         "tradeoffs": {
           "chosen": "One cache built into the database's query layer, filled on reads, invalidated from the binary log, protected by row versions, and switched off for flows that need strong consistency.",
           "rejected": "Separate Redis caches run by each team, a shorter expiry time, invalidating in the write path, copying cached values between regions with Redis replication, and sharding Redis the same way as the database.",
-          "why": "A shorter expiry would cut the hit rate without fixing consistency, and write-path invalidation cannot see which rows a conditional update touches. Copying values between regions would add a second replication system that could disagree with the database, while copying keys lets each region fill from its own data. The cost is eventual consistency for cached reads, which is why caching is opt-in."
+          "why": "A shorter expiry would cut the hit rate without meaningfully improving consistency, and write-path invalidation cannot see which rows a conditional update touches. Copying values between regions would add a second replication system that could disagree with the database, while copying keys lets each region fill from its own data. The cost is eventual consistency for cached reads, which is why caching is opt-in."
         },
         "failures": "The first invalidation design had a flaw: the read path and the log consumer both write to Redis, so a slow fill could overwrite a newer row. Comparing the MySQL timestamp on each row fixed it. Following the log alone also did not let a service read its own write, so an explicit invalidation call was added. Fixed timeouts were either too short, wasting work, or too long, hurting tail latency, which led to adaptive ones.",
         "takeaways": "Putting the cache inside the database means teams share one cache and one invalidation path instead of building their own. Following the database's change log gave Uber faster invalidation than relying on expiry alone and kept uncommitted data out of the cache. A cache needs explicit ways to keep stale data out and a way to measure how often it fails, and a read-heavy workload can be served from relatively cheap hosts once that is in place."
@@ -223,7 +223,7 @@
     },
     {
       "term": "Nines",
-      "definition": "Shorthand for reliability: six nines is 99.9999%, ten nines is 99.99999999%."
+      "definition": "Shorthand for how close a share is to 100%: six nines is 99.9999%, ten nines is 99.99999999%."
     },
     {
       "term": "Cache-aside",
@@ -232,18 +232,14 @@
     {
       "term": "Change data capture",
       "definition": "Reading a database's own log of committed changes so other systems, like a cache, can react to them."
-    },
-    {
-      "term": "Negative caching",
-      "definition": "Remembering that a key does not exist, so repeated lookups for it skip the database."
     }
   ],
   "mistakes": [
     "Assuming a fill and an invalidation reach the cache in the order they were sent. A delayed fill can land after the invalidation for a newer value and write the old value back.",
-    "Relying on a version check without storing the version. If the newer version is evicted, the cache can no longer tell which value wins.",
+    "Keeping the version only inside the cache entry. If the newer entry is evicted, its version goes with it and the cache can no longer tell which value wins.",
     "Treating a stale entry as harmless because it will expire. Without a TTL a missed invalidation can leave it wrong indefinitely, and with a long one it stays wrong until the TTL ends."
   ],
-  "comparison": "Both companies keep a cache in front of a database and depend on invalidations to keep it correct, but they spent their effort in different places.\n\nMeta's TAO cache already ran at over a quadrillion queries a day, so the hard problem was finding the rare races that left it wrong, and Meta built Polaris to measure only the inconsistencies a client could see.\n\nUber was adding a cache to Docstore from scratch, so it designed the races out up front with row versions, made caching opt-in for flows that cannot tolerate staleness, and built a compare mode that reports its own consistency.",
+  "comparison": "Both companies keep a cache in front of a database and depend on invalidations to keep it correct, but they spent their effort in different places.\n\nMeta's TAO cache already ran at over a quadrillion queries a day, so the hard problem was finding the rare races that left it wrong, and Meta built Polaris to measure only the inconsistencies a client could see.\n\nUber was adding a cache to Docstore from scratch, so it fixed the read-versus-invalidation race in the design with row timestamps, made caching opt-in for flows that cannot tolerate staleness, and built a compare mode that reports its own consistency.",
   "lesson": {
     "why": {
       "outcome": "After this you can explain what a cache buys you and what it costs.",
@@ -271,7 +267,7 @@
         },
         {
           "step": "Invalidate",
-          "explanation": "The change is sent to the cache to remove or replace the old entry, ideally from the database's own log of committed changes."
+          "explanation": "The change is sent to the cache to remove or replace the old entry. Uber used the database's own log of committed changes for this."
         },
         {
           "step": "Expire as a backstop",
@@ -301,11 +297,11 @@
         },
         {
           "step": "Catch it",
-          "explanation": "Meta's Polaris receives the same invalidations, asks every replica for the key, and rechecks flagged samples before reporting (the post's example timescales are one, five and ten minutes), so normal lag is not counted. TAO went from six to ten nines of writes consistent within five minutes."
+          "explanation": "Meta's Polaris receives the same invalidations, asks every replica for the key, and rechecks flagged samples before reporting (the post's example timescales are one, five and ten minutes), so normal lag is not counted. Over the years, by one measure, TAO went from six to ten nines of writes consistent within five minutes, and Polaris is how Meta measured it."
         },
         {
           "step": "Prevent it",
-          "explanation": "Uber built its Docstore cache to avoid the race up front: Redis keeps a row only if its MySQL timestamp is newer than the one already cached."
+          "explanation": "Uber's Docstore cache prevents the race: Redis keeps a row only if its MySQL timestamp is newer than the one already cached."
         },
         {
           "step": "Bound it",
@@ -322,7 +318,7 @@
         "options": [
           "Deleting every entry from the cache so the next reads all have to start from scratch again",
           "Copying the whole database onto disk as a backup that the cache can restore from",
-          "Writing a value into the cache after a miss read it from the database"
+          "Writing a value into the cache after a miss has read it from the database"
         ],
         "correct": 2,
         "why": "On a miss the server reads the source of truth and stores the result for the next reader.",
@@ -334,7 +330,7 @@
         "teaches": "model"
       },
       {
-        "question": "A fill reads value A. The value changes to B and B's invalidation arrives. Then the fill writes A. What does the cache hold?",
+        "question": "A fill reads value A. The value changes to B and B's invalidation arrives. Then the fill writes A. The cache keeps no version. What does the cache hold?",
         "options": [
           "A, the old value",
           "B, the newer value, because the invalidation arrived before the delayed fill did",
@@ -373,7 +369,7 @@
           "Because invalidations are never needed once every entry has an expiry time set"
         ],
         "correct": 1,
-        "why": "Invalidations can be lost or raced; expiry bounds how long a wrong value can live.",
+        "why": "Invalidations can be lost or raced; expiry bounds how long a wrong value can live. Uber, for example, expires entries after 5 minutes by default even when no invalidation arrives.",
         "wrong": [
           "Expiry causes extra misses; it does not speed reads.",
           "",
@@ -392,7 +388,7 @@
         "why": "Serving repeated reads from memory is much cheaper than serving them from the database.",
         "wrong": [
           "A database can hold all the data. Uber's Docstore stores tens of petabytes. The cost is serving every repeated read from the database.",
-          "They can, which is the cost being accepted.",
+          "Caches can go stale. That is the cost being accepted.",
           ""
         ],
         "teaches": "why"
@@ -422,9 +418,9 @@
         "level": "apply",
         "prompt": "Users sometimes see an old profile picture for hours after changing it. Invalidation runs on every write. What is likely happening and what do you change?",
         "answer": "A late fill or a lost invalidation left an old value with no expiry. Store a version with each entry and keep only the newer one, and add a TTL as a backstop.",
-        "tradeoffs": "Shorter TTLs mean more misses and database load; versions need to be stored and compared on every write.",
+        "tradeoffs": "Shorter TTLs mean more misses and database load; versions need to be stored and compared on every write. A version kept only in the entry is lost when the entry is evicted.",
         "wrongAnswers": [
-          "Assuming invalidations always arrive in order.",
+          "Trusting that invalidations always arrive in order, so changing nothing.",
           "Clearing the whole cache on each write.",
           "Relying on the TTL alone with a very long expiry."
         ],

@@ -167,11 +167,8 @@ describe("validation catches the mistakes it is for", () => {
     c.items[1].sources = [];
     expect(problems(c)).toContain("needs an official source");
   });
-  it("a topic taught later must say the gist is enough, stay one line, and link forward only", () => {
+  it("a topic taught later must stay one line and link forward only", () => {
     const later = (b: BackgroundFile) => b.items.find((i) => i.id === "consensus")!;
-    const a = good();
-    later(a).explanation = "Several machines agreeing on one order of changes even when some of them fail along the way.";
-    expect(problems(a)).toContain("the gist must say that the gist is enough");
     const b = good();
     later(b).explanation = `${"word ".repeat(40)}The gist is enough here.`;
     expect(problems(b)).toContain("one-line gist");

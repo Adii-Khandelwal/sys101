@@ -86,7 +86,6 @@ export function validateBackground(file: string, b: Background, topics: Topic[])
     if (isTaughtLater(it, b.topic, numbers)) {
       if (sources.length) problems.push(`${where}: a concept taught later gets only the label and the gist, with no source`);
       if (nonEmpty(it.explanation) && words(it.explanation) > GIST_MAX_WORDS) problems.push(`${where}: a concept taught later gets a one-line gist of at most ${GIST_MAX_WORDS} words`);
-      if (nonEmpty(it.explanation) && !/gist is enough/i.test(it.explanation)) problems.push(`${where}: the gist must say that the gist is enough`);
     } else {
       if (nonEmpty(it.explanation) && /gist is enough/i.test(it.explanation)) problems.push(`${where}: only a concept taught later says the gist is enough`);
       // The page does not link back to an earlier topic, so the reader needs the official source instead.

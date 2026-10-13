@@ -1,11 +1,11 @@
 {
   "topic": "caching",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "atomic-transactions",
       "name": "Atomic transactions",
-      "explanation": "A transaction bundles several changes into one step: all of them happen or none do, and other readers never see the half-done state. A change that is not committed yet does not count as having happened.",
+      "explanation": "A transaction bundles several changes into one step: all of them happen or none do, and other readers never see the half-done state. A change that is not committed yet is invisible to other readers.",
       "assumedBy": [
         {
           "postId": "meta-cache-consistency-2022",
@@ -23,14 +23,14 @@
           "publisher": "PostgreSQL Global Development Group",
           "url": "https://www.postgresql.org/docs/current/tutorial-transactions.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
     {
       "id": "binary-log",
       "name": "Binary log and change data capture",
-      "explanation": "A database keeps an ordered log of every change it commits, which is how its replicas copy it. Reading that log from outside lets another system react to each change as it happens, which is what change data capture means.",
+      "explanation": "A MySQL server can keep a binary log of events that describe the changes made to its data, which is how replicas copy it. Uber's Flux reads that log and passes each change to other systems, an approach called change data capture.",
       "assumedBy": [
         {
           "postId": "uber-docstore-cache-2024",
@@ -43,7 +43,7 @@
           "publisher": "Oracle (MySQL)",
           "url": "https://dev.mysql.com/doc/refman/8.4/en/binary-log.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -77,7 +77,7 @@
     {
       "id": "latency-percentiles",
       "name": "Latency percentiles (P99, P99.9)",
-      "explanation": "A percentile says what share of requests were at least this fast: P99 is the time that 99 out of 100 requests beat, so it shows the slow tail that an average hides. P99.9 and P99.99 look further into that tail.",
+      "explanation": "A percentile says what share of requests were at least this fast: P99 is the time that 99 out of 100 requests beat, so it shows the slow tail that an average hides. P99.9 and P99.99 look further into that tail. The SRE book's example is a service averaging 100 ms where 1% of requests take 5 seconds.",
       "assumedBy": [
         {
           "postId": "uber-docstore-cache-2024",
@@ -90,14 +90,14 @@
           "publisher": "Google",
           "url": "https://sre.google/sre-book/monitoring-distributed-systems/",
           "year": "2017",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
     {
       "id": "eventual-and-strong-consistency",
       "name": "Eventual and strong consistency",
-      "explanation": "Strong consistency means every read sees the latest write; eventual consistency means the copies agree after a delay. The gist is enough here.",
+      "explanation": "Strong consistency means every read sees the latest write; eventual consistency means the copies agree after a delay.",
       "assumedBy": [
         {
           "postId": "meta-cache-consistency-2022",
@@ -113,7 +113,7 @@
     {
       "id": "sharding",
       "name": "Sharding and shard keys",
-      "explanation": "Splitting one big dataset across many databases by a key, so each holds only part of it. The gist is enough here.",
+      "explanation": "Splitting one big dataset across many databases by a key, so each holds only part of it.",
       "assumedBy": [
         {
           "postId": "uber-docstore-cache-2024",
@@ -125,7 +125,7 @@
     {
       "id": "publish-subscribe",
       "name": "Publish-subscribe",
-      "explanation": "A way to announce that something changed so every interested service hears about it, without the sender knowing who they are. The gist is enough here.",
+      "explanation": "A way to announce that something changed so every interested service hears about it, without the sender knowing who they are.",
       "assumedBy": [
         {
           "postId": "meta-cache-consistency-2022",
@@ -137,11 +137,11 @@
     {
       "id": "circuit-breaker",
       "name": "Circuit breaker",
-      "explanation": "A guard that stops calling a service that keeps failing, so calls fail fast instead of piling up. The gist is enough here.",
+      "explanation": "A guard that stops calling a service that keeps failing, so calls fail fast instead of piling up.",
       "assumedBy": [
         {
           "postId": "uber-docstore-cache-2024",
-          "quote": "To achieve this, we use a sliding window circuit breaker."
+          "quote": "If a Redis node goes down, we’d like to be able to short circuit requests to that node to avoid the unnecessary latency penalty of a Redis get/set request for which we have high confidence that it will fail."
         }
       ],
       "topicPage": "circuit-breakers"
@@ -149,12 +149,8 @@
     {
       "id": "consensus",
       "name": "Consensus (Raft, Paxos)",
-      "explanation": "Several machines agreeing on one order of changes even when some fail, with Raft and Paxos as two named ways to do it. The gist is enough here.",
+      "explanation": "Several machines agreeing on one order of changes even when some fail, with Raft and Paxos as two named ways to do it.",
       "assumedBy": [
-        {
-          "postId": "meta-cache-consistency-2022",
-          "quote": "much like designing Paxos, where the protocol is different from building Paxos that actually works in production."
-        },
         {
           "postId": "uber-docstore-cache-2024",
           "quote": "The storage engine layer is responsible for consensus via Raft, replication, transactions, concurrency control, and load management."
