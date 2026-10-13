@@ -165,7 +165,7 @@
       "name": "In practice and trade-offs",
       "body": [
         "Caching speeds reads at the cost of freshness. Every cache decision is really a choice about how stale an answer you can tolerate: a price page can be seconds old, a bank balance usually cannot. Setting the time to live and the invalidation strategy per kind of data, rather than one global rule, is what separates a cache that helps from one that serves wrong answers.",
-        "Caches also change failure modes. In our own words, not from a cited source: if the cache is down, requests that would have been hits go to the origin, so a cache the origin cannot live without has become part of the critical path. Redis shows how to check that the cache is helping: INFO stats reports keyspace_hits and keyspace_misses, and keyspace_hits / (keyspace_hits + keyspace_misses) * 100 gives the percentage of accesses served from the cache, which you compare with what you expect for your app [[redis-eviction]].",
+        "Caches also change failure modes. In our own words, not from a cited source: if the cache is down, requests that would have been hits go to the origin, so a cache the origin cannot live without has become part of the critical path. Redis shows how to check that the cache is helping: The INFO stats section reports keyspace_hits and keyspace_misses, and keyspace_hits / (keyspace_hits + keyspace_misses) * 100 gives the percentage of accesses served from the cache, which you compare with what you expect for your app [[redis-eviction]].",
         "Where you cache matters as much as whether you do. RFC 9111 separates a shared cache, which reuses responses for more than one user and usually sits in an intermediary, from a private cache that serves a single user [[rfc9111]]. A cache close to the application cuts database load; a cache close to the user, at the edge, cuts network latency as well. That second idea, shared copies placed out in the network, is what CDNs do, which is why CDNs come right after caching on the map."
       ],
       "terms": [
@@ -238,11 +238,6 @@
         "command": "TTL mykey",
         "shows": "How many seconds are left before the key expires. It returns -1 if the key has no expiry and -2 if the key does not exist.",
         "source": "redis-ttl"
-      },
-      {
-        "command": "INFO stats",
-        "shows": "The stats section, including keyspace_hits and keyspace_misses, from which you compute the hit percentage.",
-        "source": "redis-eviction"
       },
       {
         "command": "CONFIG SET maxmemory 100mb",

@@ -21,11 +21,11 @@ Finding IDs: T = topic page, L = learn page, B = background, N = What's new. Sev
 | Severity | Count |
 |---|---|
 | wrong | 6 |
-| misleading | 19 |
-| weak | 33 |
-| style | 7 |
+| misleading | 20 |
+| weak | 35 |
+| style | 8 |
 
-65 findings (T1-T44, L1-L19, B1-B6, N1-N2 less the ones marked verified). A few carry two severities, one per sentence; each is counted under both labels.
+69 actionable findings, counted once each under their first severity label. The audit lists 71 IDs: T44 and L10 are verified-clean with no finding, and a few IDs carry a second severity for another sentence.
 
 Verified clean (no finding): every verbatim quote in Background (9 items, 11 quotes), the Meta numbers other than those flagged below, the Uber figures other than those flagged below (40M, tens of petabytes, 5 minutes, 99% and 99.9%, 60K vs 3K), the Redis eviction, SET and TTL claims on the learn page other than those flagged below, RFC 9111 section references (1, 4.3, 4.4, 5.2), the Memcached 50 x 64MB = 3.2GB arithmetic, post titles and dates (Meta 2022-06-08, Uber 2024-02-15), the "six nines is 99.9999%, ten nines is 99.99999999%" glossary entry, no em dashes anywhere, no "It's not X, it's Y" phrasing, no repeated words.
 
