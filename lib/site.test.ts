@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { DESC_MAX, absoluteUrl, breadcrumbLd, metaDescription, pageMeta, pageTitle } from "./site";
+import { renderToStaticMarkup } from "react-dom/server";
+import { createElement } from "react";
+import { AI_ASSISTANCE, DESC_MAX, absoluteUrl, breadcrumbLd, metaDescription, pageMeta, pageTitle } from "./site";
+import About from "@/app/about/page";
+import Terms from "@/app/terms/page";
 import { getAllTopics } from "./topics";
 
 describe("meta descriptions", () => {
@@ -80,5 +84,18 @@ describe("page titles", () => {
       expect(`${pageTitle(t)} · sys101`.length, t.slug).toBeLessThan(60);
       expect(`${pageTitle(t, "Start from zero: ")} · sys101`.length, `${t.slug} learn`).toBeLessThan(60);
     }
+  });
+});
+
+describe("AI assistance wording", () => {
+  const text = (el: React.ReactElement) => renderToStaticMarkup(el).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+
+  it("is the same sentence, word for word, on About and Terms", () => {
+    const about = text(createElement(About));
+    const terms = text(createElement(Terms));
+    expect(about).toContain(AI_ASSISTANCE);
+    expect(terms).toContain(AI_ASSISTANCE);
+    // Neither page may describe the assistance a second way.
+    for (const page of [about, terms]) expect(page.match(/AI assistant/g)).toHaveLength(1);
   });
 });

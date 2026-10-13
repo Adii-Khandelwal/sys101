@@ -87,7 +87,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - Every feature must work seamlessly on a phone: verify each new feature at 390px (and touch), with no horizontal overflow, readable wrapping, and tap targets of 44px. A feature is not done until it works on mobile.
 - Skeleton loaders match the final size and only stand in for client-loaded parts (no loading.tsx on content routes).
 - Shared header: wordmark and three-node mark linking home, ThemeToggle. Footer: About, Glossary, Terms, Privacy, Your data, Report a mistake (REPORT_EMAIL in lib/site.ts). "Back to top" appears after about 1.5 screens: floating on desktop, in the sticky progress strip on phones.
-- About and Terms describe AI assistance identically (an AI assistant drafts the write-ups; trust the original). Change one, check the other.
+- About and Terms describe AI assistance with one shared sentence, AI_ASSISTANCE in lib/site.ts (a test checks both pages); never reword it in one place.
 
 ## Post selection (strict, never use just any post)
 

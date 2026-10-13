@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CONTACT_EMAIL, PAGE_DATES, pageMeta } from "@/lib/site";
+import { AI_ASSISTANCE, CONTACT_EMAIL, PAGE_DATES, pageMeta } from "@/lib/site";
 import Link from "next/link";
 import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
@@ -25,8 +25,9 @@ export default function About() {
 
       <h2>How it works</h2>
       <p>
-        The homepage is a map. Each topic sits to the right of what it builds on, so you start on the left
-        and work across. A topic shows as ready once you have read everything it needs. Not sure where to
+        On a wide screen the homepage is a map; on a phone it is a list in the same order. On the map,
+        each topic sits to the right of what it builds on, so you start on the left and work across. A
+        topic shows as Ready once you have read everything it needs. Not sure where to
         begin? Start with <Link href="/topic/dns">DNS</Link> or <Link href="/topic/databases">Databases</Link>.
       </p>
       <p>
@@ -39,8 +40,9 @@ export default function About() {
 
       <h2>How to use it</h2>
       <p>
-        Start on the map. Hollow circles are unread, a circle with a dot is ready to read, and a filled one is
-        done. &ldquo;Next up&rdquo; at the top tells you where to go.
+        Start on the map. A hollow ring is Unread, a thicker ring with a dot is Ready, a rust ring with a
+        dot is In progress, and a filled rust circle is Read. &ldquo;Next up&rdquo; at the top tells you
+        where to go.
       </p>
       <p>Already know a topic&apos;s idea? Use &ldquo;Skip to the posts&rdquo; at the top of any topic page.</p>
       <p>
@@ -60,20 +62,18 @@ export default function About() {
       <p>
         A post gets in only if it has real numbers, is honest about what went wrong, comes from the team
         that built the system, and teaches something you can reuse. Older posts are allowed when the idea
-        has not changed, and they show their year. Every figure on a topic page was checked against the
-        text of the post it comes from when the topic was written. The original is always linked, with
+        has not changed, and they show their year. Every company figure on a topic page comes from
+        the post it is shown with. The original is always linked, with
         the date I last edited that entry. Nothing updates the date automatically, and the weekly link
         check only reports links that stop working.
       </p>
 
       <h2>About the write-ups</h2>
       <p>
-        I write these with an AI assistant. It reads each source and drafts the explanations, quizzes and
-        summaries, and I have not reviewed every line. Figures are checked against the original pages with
-        a script. Write-ups can contain mistakes, so when one and the original post disagree, trust the
-        post.{" "}
-        The posts belong to their authors and companies, and this personal project is not
-        affiliated with any of them. Found an error? Email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+        {AI_ASSISTANCE} The figures are compared against the original pages with a script I run by hand,
+        and a person may not have reviewed each one. The posts belong to their authors and companies, and
+        this personal project is not affiliated with any of them. Found an error? Email{" "}
+        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
       </p>
 
       <h2>What&apos;s new</h2>
@@ -86,7 +86,8 @@ export default function About() {
 
       <h2>Your progress</h2>
       <p>
-        What you mark as done is saved in your own browser and nowhere else. There are no accounts. See{" "}
+        What you mark as done, and your theme and Map or Path choice, are saved in your own browser and
+        nowhere else. There are no accounts. See{" "}
         <Link href="/data">Your data</Link> and <Link href="/privacy">Privacy</Link>.
       </p>
 

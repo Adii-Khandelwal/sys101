@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CONTACT_EMAIL, PAGE_DATES, pageMeta } from "@/lib/site";
+import { AI_ASSISTANCE, CONTACT_EMAIL, PAGE_DATES, pageMeta } from "@/lib/site";
 import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -32,10 +32,7 @@ export default function Terms() {
       </p>
 
       <h2>Write-ups can be wrong</h2>
-      <p>
-        The write-ups are drafted with an AI assistant and may contain errors. When a write-up and the
-        original disagree, trust the original.
-      </p>
+      <p>{AI_ASSISTANCE}</p>
 
       <h2>Things will change</h2>
       <p>Topics, links, and write-ups may be added, edited, or removed at any time.</p>

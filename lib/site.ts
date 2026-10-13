@@ -17,7 +17,11 @@ export const SITE_DESCRIPTION =
   "A system design course in prerequisite order, taught through how real engineering teams built their systems.";
 
 /** Content dates for pages with no JSON behind them. Shown on the page and used as sitemap lastmod. */
-export const PAGE_DATES = { about: "2026-10-11", terms: "2026-10-11", privacy: "2026-10-11", glossary: "2026-10-12" } as const;
+export const PAGE_DATES = { about: "2026-10-14", terms: "2026-10-14", privacy: "2026-10-14", glossary: "2026-10-12" } as const;
+
+/** How the write-ups are made, word for word the same on About and Terms (lib/site.test.ts checks both pages). */
+export const AI_ASSISTANCE =
+  "The write-ups are drafted with an AI assistant that reads each source. They have not all been reviewed line by line and may contain errors. When a write-up and the original disagree, trust the original.";
 
 export const absoluteUrl = (path: string) => SITE_URL + (path === "/" ? "" : path);
 
