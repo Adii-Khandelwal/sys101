@@ -66,6 +66,7 @@ describe("sliding-window model", () => {
   it("refuses inputs the drawing cannot show", () => {
     expect(windowValid(inputs)).toBe(true);
     expect(windowValid({ ...inputs, current: 30 })).toBe(false); // 30 + 22 beads overflow the 40-bead tray
+    expect(windowValid({ ...inputs, previous: 50 })).toBe(false); // 50 beads in 60 units overlap
     expect(windowValid({ ...inputs, limit: 52 })).toBe(false); // no 5-step tick for the limit mark
     expect(windowValid({ ...inputs, limit: 100 })).toBe(false); // off the dial
   });

@@ -10,7 +10,7 @@ export type { Box, Flat, Pt3, Spec };
 
 const GAUGE = { x: WINDOW_SECONDS, z: 34, r: 14, back: -2.4 };
 const scene = makeScene([[-6, -4, 0], [126, -4, 0], [126, 18, 0], [-6, 18, 0], [GAUGE.x - GAUGE.r, GAUGE.back, GAUGE.z + GAUGE.r], [GAUGE.x + GAUGE.r, 0, GAUGE.z + GAUGE.r]]);
-const { iso, box, drawn } = scene;
+const { iso, drawn } = scene;
 const S = scene.S;
 const round = (n: number) => Math.round(n * 100) / 100;
 /** Screen shift of one second of time along the rail. */

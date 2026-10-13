@@ -75,10 +75,10 @@ export default function FillRaceLive({ uid, geo, inputs, text }: { uid: string; 
           <button type="button" className="text-button" disabled={at === last} onClick={() => setStep(at + 1)}>
             Next step
           </button>
-          <button type="button" className="text-button" aria-pressed={guard} onClick={() => (setGuard(!guard), setStep(Math.min(at, raceLast({ guard: !guard, evict }))))}>
+          <button type="button" className="text-button" aria-pressed={guard} onClick={() => (setGuard(!guard), setStep(0))}>
             Version guard: {guard ? "on" : "off"}
           </button>
-          <button type="button" className="text-button" aria-pressed={evict} onClick={() => (setEvict(!evict), setStep(Math.min(at, raceLast({ guard, evict: !evict }))))}>
+          <button type="button" className="text-button" aria-pressed={evict} onClick={() => (setEvict(!evict), setStep(0))}>
             Entry evicted first: {evict ? "on" : "off"}
           </button>
           <button type="button" className="text-button" onClick={() => (setStep(0), setGuard(false), setEvict(false))}>

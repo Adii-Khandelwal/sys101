@@ -27,9 +27,9 @@ export function windowValueText(i: WindowInputs, current: number, elapsed: numbe
   return `${elapsed} seconds into the minute, estimate ${fmt(windowEstimate(i.previous, current, elapsed))} of ${i.limit}`;
 }
 
-/** Limits of the drawing: the current tray holds 40 beads, the dial marks every 5 and tops out at the largest estimate. */
+/** Limits of the drawing: beads are 1.4 wide, so the previous row holds 42; the current tray holds 40 beads, the dial marks every 5 and tops out at the largest estimate. */
 export const windowValid = (i: WindowInputs) =>
-  i.elapsed >= 0 && i.elapsed <= WINDOW_SECONDS && i.previous > 0 && i.previous <= WINDOW_SECONDS && i.current >= 0 && i.current + MAX_ADDED <= 40 && i.limit > 0 && i.limit % 5 === 0 && i.limit <= i.previous + i.current + MAX_ADDED;
+  i.elapsed >= 0 && i.elapsed <= WINDOW_SECONDS && i.previous > 0 && i.previous * 1.4 <= WINDOW_SECONDS && i.current >= 0 && i.current + MAX_ADDED <= 40 && i.limit > 0 && i.limit % 5 === 0 && i.limit <= i.previous + i.current + MAX_ADDED;
 
 /** Shift + arrow on the slider: five seconds, kept inside the minute. */
 export const nudge = (elapsed: number, dir: 1 | -1) => Math.min(WINDOW_SECONDS, Math.max(0, elapsed + 5 * dir));
