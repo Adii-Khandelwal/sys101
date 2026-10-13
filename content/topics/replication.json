@@ -11,7 +11,7 @@
     "points": [
       "Replication keeps copies of a database on several machines so reads can spread out and a failed primary can be replaced.",
       "The hard questions are when a write counts as safe, and how to pick and announce a new primary without two machines accepting writes at once.",
-      "Meta put promotions and membership changes into the replication log, which removes a whole class of coordination bugs.",
+      "Meta put promotions and membership changes into the replication log, which it says gives provable safety across both.",
       "GitHub gives each part one job, decides by quorum across data centers, and never depends on the failed node to help."
     ],
     "figures": [
@@ -36,11 +36,11 @@
       "title": "Building and deploying MySQL Raft at Meta",
       "url": "https://engineering.fb.com/2023/05/16/data-infrastructure/mysql-raft-meta/",
       "company": "Meta",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2023-05-16",
       "digest": {
         "problem": "Meta's MySQL fleet used semi-synchronous replication to protect data, while promotions, failovers and changes of membership were handled by separate Python automation, locks, fencing and service discovery. Getting all of those to act together correctly was hard, corner cases kept piling up, and a failover took 20 to 40 seconds.",
-        "constraints": "The fleet holds millions of shards and petabytes on thousands of machines in regions on several continents, 10 to 100 ms apart. Services like the social graph need very fast commits, and semi-synchronous commits took under a millisecond. The binary log format had to stay the same, and the work started on MySQL 5.6 before moving to 8.0.",
+        "constraints": "The fleet holds millions of shards and petabytes on thousands of machines in regions on several continents, 10 to 100 ms apart. Services like the social graph need very fast commits, and semi-synchronous commits took under a millisecond. Meta chose to keep the binary log format, and the work started on MySQL 5.6 before moving to 8.0.",
         "walkthrough": [
           {
             "step": "Put Raft inside MySQL",
@@ -104,11 +104,11 @@
         ],
         "tradeoffs": {
           "chosen": "Consensus inside the database: a small in-region quorum for commits, a larger quorum for elections, and every control action recorded in the replication log.",
-          "rejected": "Stock Raft with one global quorum, joint consensus for changing several members at once, automatic repair of a lost quorum, and leaderless protocols.",
+          "rejected": "Stock Raft with one global quorum, and automatic repair of a lost quorum. Joint consensus was not available in Kudu's Raft, and Meta only lists leaderless protocols as a speculative idea to explore.",
           "why": "A global quorum would put a cross-region round trip on every commit. Kudu's Raft did not support joint consensus, so membership changes go one at a time. Repairing lost quorums by hand forces someone to find the cause instead of hiding it."
         },
         "failures": "Raft made the system correct, but not more available on its own: two bad members in one region break the 2-of-3 quorum, so failed members have to be replaced quickly. Kudu's Raft had no automatic step-down, which allowed stuck leaders until mock elections were added. Provisioning races could create overlapping rings. Adapting the automation took several years, and turning Raft on caused a brief outage per ring.",
-        "takeaways": "Putting promotions and membership changes into the replication log removes a whole class of coordination bugs. A small local quorum with a wider election quorum gives fast commits and fast failover together. Availability still depends on operations, and the tooling and testing cost as much as the server work."
+        "takeaways": "Meta says putting promotions and membership changes into the replication log gave provable safety across them, after finding those operations triggered most issues. A small local quorum with a wider election quorum gives fast commits and fast failover together. Availability still depends on operations, and the tooling and testing cost as much as the server work."
       }
     },
     {
@@ -116,7 +116,7 @@
       "title": "MySQL High Availability at GitHub",
       "url": "https://github.blog/engineering/infrastructure/mysql-high-availability-at-github/",
       "company": "GitHub",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2018-06-20",
       "ageNote": "A 2018 account, updated in 2020, of an older approach: failover driven from outside the database by orchestrator. No newer GitHub post on MySQL failover is cited here, so GitHub's current setup may differ. GitHub's 2023 MySQL 8.0 post, on the Databases topic, still describes orchestrator running a planned failover. It is here as the contrast to Meta's consensus-based design.",
       "digest": {
@@ -178,14 +178,14 @@
         "tradeoffs": {
           "chosen": "Failover run from outside MySQL: orchestrator decides with Raft across data centers, Consul stores who the primary is, and proxies route writes.",
           "rejected": "Virtual IPs and DNS for finding the primary, guaranteed lossless failover when a whole data center fails, and fully preventing split brain.",
-          "why": "Virtual IPs needed the failed host to cooperate and DNS changes waited on client caches. Losslessness on total data center loss and complete split-brain prevention were judged too expensive. The proxies hide which client sent a query, and a short semi-synchronous timeout trades a little safety for availability."
+          "why": "Virtual IPs needed the failed host to cooperate and DNS changes waited on client caches. Losslessness on total data center loss and complete split-brain prevention were judged too expensive. A short semi-synchronous timeout trades a little safety for availability. A cost the post lists is that the proxies hide which client sent a query."
         },
         "failures": "If the primary's data center is cut off, applications there can keep writing to it, risking diverging data; a way to shut it down from inside the isolated data center was still being worked on. Old connections linger for a while after failover, leaving a short split-brain window. A Consul outage during failover and partial isolation of a data center were not handled. The heartbeat tool needed patches to cope with servers switching between read-only and writable.",
         "takeaways": "Give each part one job: one decides, one stores who the primary is, one routes traffic. Never depend on the failed node to help. Make decisions by quorum across data centers. Tune short timeouts deliberately, because they decide how much data safety you trade for availability."
       }
     }
   ],
-  "comparison": "Both companies run MySQL with one primary per dataset and copies in several places, and both wait for another copy to confirm a write before treating it as safe, GitHub only up to a 500 ms timeout.\n\nGitHub's 2018 setup, the older approach, kept MySQL's replication as it was and handled failover from outside: orchestrator detects the failure, agrees with Raft across data centers, and announces the new primary through Consul and HAProxy, with outages of 10 to 13 seconds.\n\nMeta moved the decision inside the replication log with Raft, so commits, elections and membership changes are all entries in one log, cutting failover to about 2 seconds, at the cost of years of automation work and a local quorum that two bad members can break.",
+  "comparison": "Both companies run MySQL with one primary per dataset and copies in several places, and both wait for another copy to confirm a write before treating it as safe, GitHub only up to a 500 ms timeout.\n\nGitHub's 2018 setup, the older approach, kept MySQL's replication as it was and handled failover from outside: orchestrator detects the failure, agrees with Raft across data centers, and announces the new primary through Consul and HAProxy, with outages of 10 to 13 seconds.\n\nMeta moved the decision inside the replication log with Raft, so commits, elections and membership changes are all entries in one log, cutting failover to about 2 seconds (a different measure from GitHub's total outage time), at the cost of years of automation work and a local quorum that two bad members can break.",
   "glossary": [
     {
       "term": "Semi-synchronous replication",
@@ -281,9 +281,9 @@
           "explanation": "A commit waits for 2 of 3 votes in the leader's region, while an election must overlap the old leader's region so no committed data is lost. Failover dropped from 20 to 40 seconds to about 2."
         }
       ],
-      "diagram": "<svg viewBox=\"0 0 560 141\" role=\"img\" aria-labelledby=\"dg-repl-ex-t\" class=\"dg\"><title id=\"dg-repl-ex-t\">Where failover seconds go: detect from outside, announce through proxies, wait but not forever, or move election into the log to keep commits local and fast.</title><defs><marker id=\"dg-repl-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"55\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Detect</text><text x=\"55\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">from</text><text x=\"55\" y=\"90.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">outside</text><rect x=\"124\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"167\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Announce</text><text x=\"167\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">via</text><text x=\"167\" y=\"90.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">proxies</text><rect x=\"236\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box dg-accent\"/><text x=\"279\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Wait, not</text><text x=\"279\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">forever</text><rect x=\"348\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"391\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Move into</text><text x=\"391\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">the log</text><rect x=\"460\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"503\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Keep</text><text x=\"503\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">commits</text><text x=\"503\" y=\"90.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">local</text><path d=\"M98,68.5 L124,68.5\" class=\"dg-line\" marker-end=\"url(#dg-repl-ex-a)\"/><path d=\"M210,68.5 L236,68.5\" class=\"dg-line\" marker-end=\"url(#dg-repl-ex-a)\"/><path d=\"M322,68.5 L348,68.5\" class=\"dg-line\" marker-end=\"url(#dg-repl-ex-a)\"/><path d=\"M434,68.5 L460,68.5\" class=\"dg-line\" marker-end=\"url(#dg-repl-ex-a)\"/><text x=\"280\" y=\"131\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Detection and promotion are where the failover seconds are spent.</text></svg>"
+      "diagram": "<svg viewBox=\"0 0 560 141\" role=\"img\" aria-labelledby=\"dg-repl-ex-t\" class=\"dg\"><title id=\"dg-repl-ex-t\">Where failover seconds go: detect from outside, announce through proxies, wait but not forever, or move election into the log to keep commits local and fast.</title><defs><marker id=\"dg-repl-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"55\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Detect</text><text x=\"55\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">from</text><text x=\"55\" y=\"90.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">outside</text><rect x=\"124\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"167\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Announce</text><text x=\"167\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">via</text><text x=\"167\" y=\"90.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">proxies</text><rect x=\"236\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box dg-accent\"/><text x=\"279\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Wait, not</text><text x=\"279\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">forever</text><rect x=\"348\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"391\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Move into</text><text x=\"391\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">the log</text><rect x=\"460\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"503\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Keep</text><text x=\"503\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">commits</text><text x=\"503\" y=\"90.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">local</text><path d=\"M98,68.5 L124,68.5\" class=\"dg-line\" marker-end=\"url(#dg-repl-ex-a)\"/><path d=\"M210,68.5 L236,68.5\" class=\"dg-line\" marker-end=\"url(#dg-repl-ex-a)\"/><path d=\"M322,68.5 L348,68.5\" class=\"dg-line\" marker-end=\"url(#dg-repl-ex-a)\"/><path d=\"M434,68.5 L460,68.5\" class=\"dg-line\" marker-end=\"url(#dg-repl-ex-a)\"/><text x=\"280\" y=\"131\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Total outage time is detecting the failure, running the failover and advertising the new primary.</text></svg>"
     },
-    "mistakesOutcome": "After this you can avoid the three most common replication mistakes.",
+    "mistakesOutcome": "After this you can avoid three replication mistakes.",
     "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
     "quiz": [
       {

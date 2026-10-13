@@ -1,6 +1,6 @@
 {
   "slug": "replication",
-  "promise": "After this you can follow the topic page and the posts.",
+  "promise": "After this you can explain what replication gives you, the difference between asynchronous and synchronous replication, and what a failover has to do.",
   "before": {
     "prerequisites": [
       "databases"
@@ -26,8 +26,8 @@
       "id": "basics",
       "name": "Basics",
       "body": [
-        "A single database is a single point of failure: if its machine dies, the data is unreachable and maybe lost. PostgreSQL's documentation opens by describing two goals for servers that work together: allowing a second server to take over quickly if the primary fails, which is high availability, and allowing several computers to serve the same data, which is load balancing [[pg-solutions]]. Replication keeps extra copies on other machines, kept up to date with the first.",
-        "The usual shape is one primary that accepts writes and one or more replicas that copy those writes and serve reads. PostgreSQL calls servers that can modify data read/write, master or primary servers, and servers that track changes in the primary standby or secondary servers [[pg-solutions]]. MySQL uses the terms source and replicas, and says replication is asynchronous by default [[mysql-repl]].",
+        "A single database is a single point of failure: if its machine dies, the data is unreachable and maybe lost. PostgreSQL's documentation opens by describing two goals for servers that work together: allowing a second server to take over quickly if the primary fails, which is high availability, and allowing several computers to serve the same data, which is load balancing [[pg-ha]]. Replication keeps extra copies on other machines, kept up to date with the first.",
+        "The usual shape is one primary that accepts writes and one or more replicas that copy those writes and serve reads. PostgreSQL calls servers that can modify data read/write, master or primary servers, and servers that track changes in the primary standby or secondary servers [[pg-ha]]. MySQL uses the terms source and replicas, and says replication is asynchronous by default [[mysql-repl]].",
         "Replication buys two things: durability and availability, by having copies survive a machine loss, and read scaling. MySQL lists scale-out among its advantages, with all writes and updates taking place on the source and reads spread across replicas [[mysql-repl]]. It does not by itself let you store more data than one machine holds; that is sharding, a later topic. Replication is about copies of the same data, not splitting it."
       ],
       "terms": [
@@ -54,6 +54,11 @@
       ],
       "reading": [
         {
+          "source": "pg-ha",
+          "section": "Chapter 26, the introduction",
+          "what": "The two goals of servers working together, and the names for primary and standby servers."
+        },
+        {
           "source": "pg-solutions",
           "section": "26.1. Comparison of Different Solutions",
           "what": "The goals of high availability and load balancing, and the terms primary and standby."
@@ -75,7 +80,7 @@
       "name": "How it works",
       "body": [
         "The primary records every change in an ordered log and streams it to the replicas, which replay the same changes in the same order. PostgreSQL's standbys read the primary's write-ahead log, which the page describes in terms of continuous archiving and streaming replication [[pg-warm-standby]]. MySQL says its traditional method replicates events from the source's binary log [[mysql-repl]]. Either way the replica rebuilds the primary's state by applying the log.",
-        "Replication can be asynchronous or synchronous. Asynchronous means the primary commits and tells the client done without waiting for replicas, which is fast but means a replica can lag behind; MySQL says replication is asynchronous by default [[mysql-repl]]. PostgreSQL describes the synchronous option: each commit of a write transaction waits until confirmation is received that the commit has been written to the write-ahead log on disk of both the primary and the standby, and data can then be lost only if both are damaged at once [[pg-warm-standby]]. That protects against losing the commit on failover but makes every write wait.",
+        "Replication can be asynchronous or synchronous. Asynchronous means the primary commits and tells the client done without waiting for replicas, which is fast but means a replica can lag behind; MySQL says replication is asynchronous by default [[mysql-repl]]. PostgreSQL's synchronous option makes each commit wait until the standby confirms it has also written the commit to its write-ahead log on disk, so data can be lost only if the primary and the standby crash at the same time [[pg-warm-standby]]. That protects against losing the commit on failover but makes every write wait.",
         "The gap between a replica and the primary is replication lag. PostgreSQL's page describes it as the amount of WAL records generated on the primary but not yet applied on the standby, which you can calculate by comparing the primary's current WAL write location with the last location received by the standby [[pg-warm-standby]]. Under asynchronous replication a read sent to a lagging replica can return data slightly out of date, so a user who just wrote something might not see it on the next read.",
         "When the primary fails, a replica is promoted to be the new primary, a failover. PostgreSQL's page says a standby leaves standby mode and switches to normal operation when pg_ctl promote is run or pg_promote() is called [[pg-warm-standby]]. If replication was asynchronous, any writes the old primary had not yet shipped are lost. Setups weigh how much they are willing to lose against how much they are willing to slow every write to avoid it."
       ],
@@ -224,7 +229,7 @@
     },
     {
       "myth": "Failover never loses data.",
-      "truth": "PostgreSQL says that with synchronous replication data can be lost only if both primary and standby are damaged at once; with asynchronous replication, writes the old primary had not yet shipped can be lost [[pg-warm-standby]]."
+      "truth": "PostgreSQL says that with synchronous replication data can be lost only if the primary and the standby crash at the same time; with asynchronous replication, writes the old primary had not yet shipped can be lost [[pg-warm-standby]]."
     },
     {
       "myth": "Any replica can safely decide to become primary.",
@@ -270,7 +275,7 @@
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "mysql-repl",
@@ -279,7 +284,7 @@
       "publisher": "Oracle (MySQL)",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The MySQL 8.4 Reference Manual, chapter 19."
     },
     {
@@ -289,7 +294,7 @@
       "publisher": "raft.github.io (Diego Ongaro and John Ousterhout)",
       "kind": "Academic project page",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The Raft project page. It refers to the 2014 Raft paper; the page itself shows no date."
     },
     {
@@ -299,7 +304,7 @@
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The PostgreSQL 18 documentation, the current version when opened."
     },
     {
@@ -309,7 +314,16 @@
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
+    },
+    {
+      "id": "pg-ha",
+      "title": "PostgreSQL Documentation: High Availability, Load Balancing, and Replication",
+      "url": "https://www.postgresql.org/docs/current/high-availability.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-13"
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "topic": "replication",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "service-discovery",
@@ -22,7 +22,7 @@
           "publisher": "HashiCorp",
           "url": "https://developer.hashicorp.com/consul/docs/use-case/service-discovery",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -42,7 +42,7 @@
           "publisher": "etcd (CNCF)",
           "url": "https://etcd.io/",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -62,14 +62,14 @@
           "publisher": "Oracle (MySQL)",
           "url": "https://dev.mysql.com/doc/refman/8.4/en/replication-gtids-concepts.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
     {
       "id": "replicated-state-machine",
       "name": "Replicated state machines",
-      "explanation": "Several machines that start the same and apply the same commands in the same order end up in the same state. The gist is enough here.",
+      "explanation": "Several machines that start the same and apply the same commands in the same order end up in the same state.",
       "assumedBy": [
         {
           "postId": "meta-mysql-raft-2023",
@@ -81,7 +81,7 @@
     {
       "id": "two-phase-commit",
       "name": "Two-phase commit",
-      "explanation": "A way to make several parts of a system commit one change together: first all agree they can, then all do it. The gist is enough here.",
+      "explanation": "A way to make several parts of a system commit one change together: first all agree they can, then all do it.",
       "assumedBy": [
         {
           "postId": "meta-mysql-raft-2023",
@@ -93,7 +93,7 @@
     {
       "id": "sharding",
       "name": "Sharding and shard keys",
-      "explanation": "Splitting one big dataset across many databases by a key, so each holds only part of it. The gist is enough here.",
+      "explanation": "Splitting one big dataset across many databases by a key, so each holds only part of it.",
       "assumedBy": [
         {
           "postId": "meta-mysql-raft-2023",
@@ -105,7 +105,7 @@
     {
       "id": "load-balancer",
       "name": "Load balancers",
-      "explanation": "A service that spreads incoming requests across a pool of servers, or sends them all to the one server it is told to. The gist is enough here.",
+      "explanation": "A service that spreads incoming requests across a pool of servers, or sends them all to the one server it is told to.",
       "assumedBy": [
         {
           "postId": "github-mysql-ha-2018",
