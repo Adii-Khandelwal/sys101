@@ -1,6 +1,6 @@
 {
   "topic": "databases",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "vacuum",
@@ -45,7 +45,7 @@
     {
       "id": "connection-pooling",
       "name": "Connection pooling",
-      "explanation": "A pooler sits between the applications and the database and shares a few real connections among many clients. The database then carries far fewer connections than there are clients.",
+      "explanation": "A pooler sits between the applications and the database and reuses a limited set of real connections. In transaction pooling a server connection is lent to a client only for one transaction.",
       "assumedBy": [
         {
           "postId": "uber-postgres-to-mysql-2016",
@@ -58,7 +58,7 @@
           "publisher": "PgBouncer",
           "url": "https://www.pgbouncer.org/features.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -85,7 +85,7 @@
     {
       "id": "b-tree-indexes",
       "name": "B-tree indexes",
-      "explanation": "A sorted tree of keys that lets the database find a row, or a range of rows, without reading the whole table. The gist is enough here.",
+      "explanation": "A sorted tree of keys that lets the database find a row, or a range of rows, without reading the whole table.",
       "assumedBy": [
         {
           "postId": "uber-postgres-to-mysql-2016",
@@ -97,7 +97,7 @@
     {
       "id": "sharding",
       "name": "Sharding and shard keys",
-      "explanation": "Splitting one big dataset across many databases by a key, so each holds only part of it. The gist is enough here.",
+      "explanation": "Splitting one big dataset across many databases by a key, so each holds only part of it.",
       "assumedBy": [
         {
           "postId": "uber-postgres-to-mysql-2016",
@@ -113,7 +113,7 @@
     {
       "id": "promoting-a-replica",
       "name": "Promoting a replica",
-      "explanation": "Making a replica the new primary, so the other copies follow it and writes keep flowing. The gist is enough here.",
+      "explanation": "Making a replica the new primary, so the other copies follow it and writes keep flowing.",
       "assumedBy": [
         {
           "postId": "uber-postgres-to-mysql-2016",
@@ -121,7 +121,7 @@
         },
         {
           "postId": "github-mysql-8-upgrade-2023",
-          "quote": "An 8.0 primary candidate was configured to replicate directly under the current 5.7 primary."
+          "quote": "Instead, we would promote a MySQL 8.0 replica to primary through a graceful failover performed with Orchestrator."
         }
       ],
       "topicPage": "replication"
@@ -129,7 +129,7 @@
     {
       "id": "failover",
       "name": "Failover",
-      "explanation": "Noticing that a primary is gone and switching traffic to a stand-in, without waiting for a person. The gist is enough here.",
+      "explanation": "Switching to another copy when the primary is lost, so writes can continue.",
       "assumedBy": [
         {
           "postId": "github-mysql-8-upgrade-2023",

@@ -1,6 +1,6 @@
 {
   "slug": "databases",
-  "promise": "After this you can follow the topic page and the posts.",
+  "promise": "After this you can explain what a database guarantees, how a transaction survives a crash, and how isolation levels trade strictness for retries.",
   "before": {
     "prerequisites": [],
     "terms": [
@@ -24,9 +24,9 @@
       "id": "basics",
       "name": "Basics",
       "body": [
-        "A database is a program whose whole job is to store data safely and answer questions about it, so your application does not have to. Instead of writing files by hand and hoping nothing is lost, you hand the data to the database and ask it questions. PostgreSQL describes itself as a relational database management system: data is stored in relations, which is essentially a mathematical term for tables, and each table is a named collection of rows with the same set of named columns [[pg-concepts]].",
-        "The reason a database is more than a file is a promise about correctness. SQLite says a transactional database is one in which all changes and queries appear to be atomic, consistent, isolated and durable (ACID), and that all changes within a single transaction either occur completely or not at all, even if the write to disk is interrupted by a program crash, an operating system crash or a power failure [[sqlite-transactional]].",
-        "A real database is built from a few cooperating parts. SQLite's architecture page describes it as compiling SQL text into bytecode and then running that bytecode on a virtual machine, with a tokenizer, a parser and a code generator in front, and storage components such as a B-tree and a page cache behind [[sqlite-arch]]. Reading how these parts fit together is a good way to stop treating the database as a black box."
+        "A database stores data safely and answers questions about it, so your application does not have to. Instead of writing files by hand and hoping nothing is lost, you hand the data to the database and ask it questions. PostgreSQL's docs explain a relational database as data kept in tables, each a named collection of rows that share the same named columns [[pg-concepts]].",
+        "What makes a database more than a file is a promise about correctness. SQLite promises that a transaction's changes happen completely or not at all, even if the machine crashes or loses power partway through a write [[sqlite-transactional]].",
+        "A real database is built from a few cooperating parts. SQLite's architecture page describes it as compiling SQL text into bytecode and then running that bytecode on a virtual machine, with a tokenizer, a parser and a code generator in front, and storage components such as a B-tree and a page cache behind [[sqlite-arch]]."
       ],
       "terms": [
         {
@@ -47,7 +47,7 @@
         },
         {
           "term": "Primary key",
-          "definition": "A column whose value uniquely identifies each row in a table."
+          "definition": "A column, or set of columns, whose values uniquely identify each row in a table."
         }
       ],
       "reading": [
@@ -78,9 +78,9 @@
       "name": "How it works",
       "body": [
         "When you send a query, the database first parses it into a form it understands, then plans how to run it, then executes that plan against the stored data. In SQLite the documentation lays this out as a pipeline: the tokenizer and parser give the SQL text meaning, the code generator turns the parse tree into bytecode, and a virtual machine runs that bytecode [[sqlite-arch]].",
-        "The data itself is kept on disk in files and read through layers. SQLite's architecture page lists a B-tree layer, a page cache that handles reading, writing and caching pages of the database file, and an operating-system interface beneath them [[sqlite-arch]]. Databases generally keep recently used pages in memory so that common reads do not touch the disk; getting a change safely onto disk is the hard part the database handles for you.",
+        "The data itself is kept on disk in files and read through layers. SQLite's architecture page lists a B-tree layer, a page cache that handles reading, writing and caching pages of the database file, and an operating-system interface beneath them [[sqlite-arch]]. SQLite's page cache keeps pages in memory so that repeated reads can skip the disk [[sqlite-arch]].",
         "To keep a transaction all-or-nothing even across a crash, SQLite in rollback mode (the page's name for when it is not using a write-ahead log) creates a rollback journal file before it changes the database file, and if the program dies partway through, a hot rollback journal is used the next time to roll back the incomplete changes so the database continues as if the uncompleted writes had never happened [[sqlite-atomic-commit]]. A write-ahead log works the other way round. PostgreSQL's documentation says changes to data files must be written only after the WAL records describing them have been flushed to permanent storage, so after a crash any changes not yet applied to the data pages can be redone from the log [[pg-wal]].",
-        "A transaction is meant to have four properties together, known as ACID: atomic (all or nothing), consistent (it leaves the data valid), isolated (concurrent transactions do not interfere), and durable (once committed, it survives a crash) [[sqlite-transactional]]. The isolation part is the subtle one, and it is the subject of the next stage."
+        "A transaction is meant to have four properties together, known as ACID [[sqlite-transactional]]. In our words: atomic (all or nothing), consistent (it leaves the data valid), isolated (concurrent transactions do not interfere), and durable (once committed, it survives a crash). The isolation part is the subtle one, and it is the subject of the next stage."
       ],
       "terms": [
         {
@@ -142,8 +142,8 @@
       "name": "Going deeper",
       "body": [
         "When many transactions run at once, they can step on each other: one reads a half-finished change from another, or two reads of the same row inside one transaction disagree. The database controls this with isolation levels: stricter levels forbid more of these anomalies, but applications may have to retry transactions. The SQL standard names four levels and defines them by which anomalies they forbid, such as dirty reads and phantom reads [[pg-iso]].",
-        "The old way to isolate transactions was locking: block anyone from touching a row you are using. PostgreSQL's page describes the alternative, a multiversion model (MVCC) in which each SQL statement sees a snapshot of the data as it was some time ago, and says that with MVCC locks acquired for reading do not conflict with locks acquired for writing, so reading never blocks writing and writing never blocks reading [[pg-mvcc]].",
-        "The important and surprising point is that the top isolation level is not the default. PostgreSQL says Read Committed is its default isolation level, and that applications using Repeatable Read must be prepared to retry transactions due to serialization failures. Picking a level is a real trade-off, not a setting you can leave on maximum for free [[pg-iso]]."
+        "Traditional systems isolate transactions with locking: block anyone from touching a row you are using. PostgreSQL's page describes the alternative, a multiversion model (MVCC) in which each SQL statement sees a snapshot of the data as it was some time ago, and says that with MVCC locks acquired for reading do not conflict with locks acquired for writing, so reading never blocks writing and writing never blocks reading [[pg-mvcc]].",
+        "The top isolation level is not the default. PostgreSQL says Read Committed is its default isolation level, and that applications using Repeatable Read must be prepared to retry transactions due to serialization failures. Picking a level is a real trade-off, not a setting you can leave on maximum for free [[pg-iso]]."
       ],
       "terms": [
         {
@@ -190,7 +190,7 @@
       "name": "In practice and trade-offs",
       "body": [
         "On a single-machine database you can pick an isolation level that matches which concurrency anomalies you can tolerate. PostgreSQL lists the phenomena each level prevents, such as dirty reads and phantom reads, and notes that applications using Repeatable Read must be prepared to retry on serialization failures. Its default is Read Committed [[pg-iso]].",
-        "Isolation also shows up in how you write transactions. PostgreSQL's tutorial treats a transaction as a group of statements surrounded by BEGIN and COMMIT, with ROLLBACK available to cancel all the updates so far, and says every statement outside a BEGIN is treated as its own transaction [[pg-transactions]].",
+        "A transaction is something you write explicitly. PostgreSQL's tutorial treats a transaction as a group of statements surrounded by BEGIN and COMMIT, with ROLLBACK available to cancel all the updates so far, and says every statement outside a BEGIN is treated as its own transaction [[pg-transactions]].",
         "Our own framing, not from a cited source: these single-node ideas are the starting point for the later topics, where data is copied or split across more than one machine, such as replication and sharding."
       ],
       "terms": [
@@ -200,7 +200,7 @@
         },
         {
           "term": "Phantom read",
-          "definition": "A re-run of the same query returns extra rows because another transaction inserted some in between."
+          "definition": "A re-run of the same query returns a different set of rows because another transaction committed a change in between."
         },
         {
           "term": "Serialization failure",
@@ -241,7 +241,7 @@
     },
     {
       "myth": "A query always runs the way you wrote it.",
-      "truth": "PostgreSQL's EXPLAIN shows the plan the planner chose for a query; the page's first example shows a sequential scan over a table with the estimated cost and row count [[pg-explain]]."
+      "truth": "Our own explanation: SQL says what you want, not how to get it, so the planner chooses a plan. PostgreSQL's EXPLAIN shows that plan; the page's first example shows a sequential scan over a table with the estimated cost and row count [[pg-explain]]."
     },
     {
       "myth": "Readers always block writers and the other way around.",
@@ -275,7 +275,7 @@
       }
     ]
   },
-  "next": "Go back to the Databases topic page for the worked example and the quiz, then read the two company posts on how a real database was run and scaled. From here the map splits toward replication and sharding, which keep these promises across many machines.",
+  "next": "Go back to the Databases topic page for the worked example and the quiz, then read the two company posts, one on what Postgres and MySQL do underneath at Uber and one on upgrading MySQL at GitHub. From here the map splits toward replication and sharding, which keep these promises across many machines.",
   "sources": [
     {
       "id": "pg-concepts",

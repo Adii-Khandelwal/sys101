@@ -3,7 +3,7 @@
   "title": "Databases",
   "group": "Foundations",
   "interviewRelevance": "core",
-  "concept": "A database keeps data safe across crashes and lets many clients read and change it at once. Most relational databases share the same core: a change is written to a log before it touches the data files, a commit is the moment that log record is safely on disk, and copies on other machines, called replicas, stay current by replaying the primary's log.",
+  "concept": "A database keeps data safe across crashes and lets many clients read and change it at once. In Postgres, as Uber's account shows, a change is written to a write-ahead log before it reaches the data files, and that log is replayed to recover after a crash and shipped to replicas.",
   "prerequisites": [],
   "summary": {
     "points": [
@@ -35,7 +35,7 @@
       "published": "2016-07-26",
       "ageNote": "A 2016 account of Postgres 9.2 and the MySQL of that time. It is here for fundamentals that are not tied to a version: what a write-ahead log is for, what physical and logical replication each ship to replicas, and why every index costs a write. The specific limits it describes may have changed in later Postgres and MySQL releases. The only fix the post itself confirms is that the 9.2 replication bug was fixed.",
       "digest": {
-        "problem": "In 2016 Uber explained why it moved its core storage from Postgres 9.2 to MySQL. Every update cost several disk writes, replication sent too much data between its two sites, a Postgres bug left replicas with wrong data, replicas cancelled long-running queries, and each major version upgrade meant hours of downtime. The post is useful mostly for how carefully it explains what a database does underneath.",
+        "problem": "In 2016 Uber explained why it moved its core storage from Postgres 9.2 to MySQL. Every update cost several disk writes, replication sent too much data between its two sites, a Postgres bug left replicas with wrong data, replicas cancelled long-running queries, and each major version upgrade meant hours of downtime.",
         "constraints": "Uber ran a primary with replicas on the US West Coast and disaster-recovery replicas on the East Coast, and bandwidth between them was expensive. Archiving the write-ahead log to a storage service could not keep up at peak. Postgres also struggled past a few hundred active connections, while application bugs sometimes left many transactions open and idle.",
         "walkthrough": [
           {
@@ -60,7 +60,7 @@
           },
           {
             "step": "InnoDB points at the primary key",
-            "explanation": "In MySQL's InnoDB, the primary key index holds the row itself, secondary indexes store the primary key, and old versions go to an undo area. An update touches only the indexes whose columns changed, at the cost of two lookups for a read through a secondary index."
+            "explanation": "In MySQL's InnoDB, secondary indexes store the primary key, and the primary index holds the on-disk row locations. Updates happen in place, and old versions are copied to a rollback segment. An update touches only the indexes whose columns changed, at the cost of two lookups for a read through a secondary index."
           },
           {
             "step": "MySQL ships logical changes",
@@ -116,7 +116,7 @@
       "published": "2023-12-07",
       "digest": {
         "problem": "MySQL 5.7 was nearing the end of its support, so GitHub had to move its whole MySQL fleet to 8.0 without breaking its service level objectives, and with a way back at every step. This is the operational view: how a fleet of primaries, replicas and replication streams is actually run and changed at scale.",
-        "constraints": "The fleet has over 1,200 hosts on Azure virtual machines and GitHub's own hardware, holding over 300 TB across more than 50 clusters, each a primary with replicas, split by product area and, for the largest, sharded with Vitess. Each cluster had to be upgraded as one unit, mixed versions had to run for a long time, and a rollback had to be possible without disruption. MySQL officially supports replicating only to the next newer release, so replicating from 8.0 back to 5.7 was outside what it promises.",
+        "constraints": "The fleet has over 1,200 hosts on Azure virtual machines and bare metal hosts in its data center, holding over 300 TB across more than 50 clusters, each a primary with replicas, split by product area and, for the largest, sharded with Vitess. Each cluster had to be upgraded as one unit, mixed versions had to run for a long time, and a rollback had to be possible without disruption. MySQL officially supports replicating only to the next newer release, so replicating from 8.0 back to 5.7 was outside what it promises.",
         "walkthrough": [
           {
             "step": "Prepare everything",
@@ -181,9 +181,9 @@
         "tradeoffs": {
           "chosen": "Upgrade replicas first, move reads, fail over the primary gracefully, and keep 5.7 replicas fed by backward replication until a full day of traffic passed.",
           "rejected": "Upgrading primaries in place, and adopting 8.0's default collation, which 5.7 did not support.",
-          "why": "Every step had to be reversible, and replication was the only practical way back. That meant spare capacity for idle 5.7 hosts, an older character set and collation, and a long, cluster-by-cluster schedule."
+          "why": "Every step had to be reversible, and rolling back the primary without data loss meant keeping backward replication from 8.0 to 5.7. That meant spare capacity for idle 5.7 hosts, an older character set and collation, and a long, cluster-by-cluster schedule."
         },
-        "failures": "In staging, promoting an 8.0 primary broke replication to every 5.7 replica, because of the collation and of permission statements 5.7 could not apply. A MySQL bug could hang replicas under heavy load until 8.0.28 fixed it. On clusters with many different clients, backward replication broke within hours, shrinking the rollback window. Queries with tens of thousands of values in a WHERE IN list passed CI but crashed MySQL in production, and replication lag under write bursts was worse on 8.0.",
+        "failures": "In staging, promoting an 8.0 primary broke replication to every 5.7 replica, because of the collation and of permission statements 5.7 could not apply. A MySQL bug, fixed in 8.0.28, could hang replicas that preserve commit order under intensive load for a long time, and GitHub met those conditions. On clusters with many different clients, backward replication broke within hours, shrinking the rollback window. Queries with tens of thousands of values in a WHERE IN list passed CI but crashed MySQL in production, and replication lag under write bursts was worse on 8.0.",
         "takeaways": "Replication is not only for reads and failover; it is also how a fleet is upgraded and rolled back. Plan the way back first, upgrade the least risky copies first, and keep old copies alive until real traffic, including peak, has run on the new version."
       }
     }
@@ -231,7 +231,7 @@
     },
     "mentalModel": {
       "outcome": "After this you can picture what happens between a write and a crash-safe commit.",
-      "body": "Think of a database as a ledger with a diary. Before changing any data file, it writes what it is about to do in the diary, the write-ahead log. A commit is the moment that log record is safely on disk. The data files can be updated later, at leisure.\n\nIf the machine crashes, the database reads the log on restart and redoes committed changes and undoes the rest. Copies on other machines, replicas, stay current the same way: they replay the primary's log, in the same order.",
+      "body": "Think of a database as a ledger with a diary. Before changing any data file, it writes what it is about to do in the diary, the write-ahead log. A commit is the moment that log record is safely on disk. The data files can be updated later.\n\nIf the machine crashes, the database reads the log on restart and redoes committed changes and undoes the rest. Copies on other machines, replicas, stay current the same way: they replay the primary's log.",
       "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-db-t\" class=\"dg\"><title id=\"dg-c-db-t\">A database write: the change is appended to the write-ahead log, the commit is the moment that log record is on disk, data files are updated later, and replicas replay the same log.</title><defs><marker id=\"dg-c-db-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"120\" width=\"110\" height=\"44\" class=\"dg-box\"/><text x=\"69\" y=\"147\" class=\"dg-label\" text-anchor=\"middle\">Client write</text><rect x=\"190\" y=\"30\" width=\"170\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"275\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\">Write-ahead log</text><text x=\"275\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\">append, then flush</text><path d=\"M124,132 C160,100 170,70 186,60\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-c-db-a)\"/><text x=\"262\" y=\"100\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">commit = log record on disk</text><rect x=\"190\" y=\"210\" width=\"170\" height=\"44\" class=\"dg-box\"/><text x=\"275\" y=\"237\" class=\"dg-label\" text-anchor=\"middle\">Data files</text><path d=\"M340,80 L340,206\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-c-db-a)\"/><text x=\"348\" y=\"150\" class=\"dg-note\" text-anchor=\"start\">applied later</text><rect x=\"420\" y=\"30\" width=\"120\" height=\"50\" class=\"dg-box\"/><text x=\"480\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\">Replica</text><text x=\"480\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\">replays log</text><path d=\"M360,55 L416,55\" class=\"dg-line\" marker-end=\"url(#dg-c-db-a)\"/><text x=\"470\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\">same log, same order</text><text x=\"280\" y=\"290\" class=\"dg-note\" text-anchor=\"middle\">after a crash, replaying the log restores every committed change</text></svg>"
     },
     "howItWorks": {
@@ -288,7 +288,7 @@
           "explanation": "After failing the primary over to 8.0, GitHub kept 5.7 replicas fed by replicating backwards, and removed them only after a full 24-hour traffic cycle."
         }
       ],
-      "diagram": "<svg viewBox=\"0 0 560 136\" role=\"img\" aria-labelledby=\"dg-db-ex-t\" class=\"dg\"><title id=\"dg-db-ex-t\">One small update: a physical log ties replicas to the same layout, while a logical log describes the change, giving more freedom at the cost of a safety check.</title><defs><marker id=\"dg-db-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box\"/><text x=\"55\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">One small</text><text x=\"55\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">update</text><rect x=\"124\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box\"/><text x=\"167\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Physical</text><text x=\"167\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">log</text><text x=\"167\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">shared layout</text><rect x=\"236\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"279\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Logical</text><text x=\"279\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">log</text><text x=\"279\" y=\"99\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">more freedom</text><rect x=\"348\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box\"/><text x=\"391\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Use the</text><text x=\"391\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">freedom</text><rect x=\"460\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box\"/><text x=\"503\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Keep a</text><text x=\"503\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">way back</text><path d=\"M98,60 L124,60\" class=\"dg-line\" marker-end=\"url(#dg-db-ex-a)\"/><path d=\"M210,60 L236,60\" class=\"dg-line\" marker-end=\"url(#dg-db-ex-a)\"/><path d=\"M322,60 L348,60\" class=\"dg-line\" marker-end=\"url(#dg-db-ex-a)\"/><path d=\"M434,60 L460,60\" class=\"dg-line\" marker-end=\"url(#dg-db-ex-a)\"/><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Physical ties replicas together; logical frees them but needs care.</text></svg>"
+      "diagram": "<svg viewBox=\"0 0 560 136\" role=\"img\" aria-labelledby=\"dg-db-ex-t\" class=\"dg\"><title id=\"dg-db-ex-t\">One small update: a physical log ties replicas to the same layout, while a logical log describes the change, so replicas can run different versions, as GitHub's upgrade relied on.</title><defs><marker id=\"dg-db-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box\"/><text x=\"55\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">One small</text><text x=\"55\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">update</text><rect x=\"124\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box\"/><text x=\"167\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Physical</text><text x=\"167\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">log</text><text x=\"167\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">shared layout</text><rect x=\"236\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"279\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Logical</text><text x=\"279\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">log</text><text x=\"279\" y=\"99\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">more freedom</text><rect x=\"348\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box\"/><text x=\"391\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Use the</text><text x=\"391\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">freedom</text><rect x=\"460\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box\"/><text x=\"503\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Keep a</text><text x=\"503\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">way back</text><path d=\"M98,60 L124,60\" class=\"dg-line\" marker-end=\"url(#dg-db-ex-a)\"/><path d=\"M210,60 L236,60\" class=\"dg-line\" marker-end=\"url(#dg-db-ex-a)\"/><path d=\"M322,60 L348,60\" class=\"dg-line\" marker-end=\"url(#dg-db-ex-a)\"/><path d=\"M434,60 L460,60\" class=\"dg-line\" marker-end=\"url(#dg-db-ex-a)\"/><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Physical ties replicas together; logical frees them but needs care.</text></svg>"
     },
     "mistakesOutcome": "After this you can avoid three database mistakes.",
     "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
@@ -328,16 +328,16 @@
       {
         "question": "Why does adding an index slow down writes?",
         "options": [
-          "Every index is another structure to update and log on each write",
+          "Every index is another structure to update and log when a write changes an indexed column",
           "Indexes lock the whole table",
-          "Indexes are stored on replicas only"
+          "Indexes are rebuilt from scratch on every write"
         ],
         "correct": 0,
         "why": "An index speeds some reads but adds work to every write that touches it.",
         "wrong": [
           "",
           "Indexes do not lock the table by themselves.",
-          "Indexes live on the primary as well."
+          "Indexes are updated, not rebuilt from scratch."
         ],
         "teaches": "mistakes"
       },
@@ -413,7 +413,7 @@
         "tradeoffs": "Spare capacity for idle old replicas, older settings for a while, and a long schedule.",
         "wrongAnswers": [
           "Upgrading the primary in place first.",
-          "No rollback path.",
+          "Upgrading without a rollback path.",
           "Removing old replicas before peak traffic has run on the new version."
         ],
         "teaches": "posts"
