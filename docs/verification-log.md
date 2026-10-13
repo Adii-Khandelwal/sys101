@@ -157,6 +157,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | uber-postgres-to-mysql-2016 | walkthrough | 9.2 | https://www.uber.com/en-ES/blog/postgres-to-mysql-migration/ | The Architecture of Postgres | found |
 | uber-postgres-to-mysql-2016 | failures | 9.2 | https://www.uber.com/en-ES/blog/postgres-to-mysql-migration/ | The Architecture of Postgres | found |
 | uber-postgres-to-mysql-2016 | failures | 9.1 | https://www.uber.com/en-ES/blog/postgres-to-mysql-migration/ | Postgres Upgrades | found |
+| uber-postgres-to-mysql-2016 | takeaways | 9.2 | https://www.uber.com/en-ES/blog/postgres-to-mysql-migration/ | The Architecture of Postgres | found |
 | github-mysql-8-upgrade-2023 | numbers | over 1,200 | https://github.blog/engineering/infrastructure/upgrading-github-com-to-mysql-8-0/ | Upgrading GitHub.com to MySQL 8.0 | found with different formatting |
 | github-mysql-8-upgrade-2023 | numbers | over 300 TB | https://github.blog/engineering/infrastructure/upgrading-github-com-to-mysql-8-0/ | GitHub's MySQL infrastructure | found with different formatting |
 | github-mysql-8-upgrade-2023 | numbers | 5.5 million | https://github.blog/engineering/infrastructure/upgrading-github-com-to-mysql-8-0/ | GitHub's MySQL infrastructure | found |
@@ -171,7 +172,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | github-mysql-8-upgrade-2023 | walkthrough | 24 | https://github.blog/engineering/infrastructure/upgrading-github-com-to-mysql-8-0/ | Upgrading GitHub.com to MySQL 8.0 | found |
 | github-mysql-8-upgrade-2023 | failures | 8.0 | https://github.blog/engineering/infrastructure/upgrading-github-com-to-mysql-8-0/ | (before first heading) | found |
 | github-mysql-8-upgrade-2023 | failures | 5.7 | https://github.blog/engineering/infrastructure/upgrading-github-com-to-mysql-8-0/ | Motivation for upgrading | found |
-| github-mysql-8-upgrade-2023 | failures | 28 | https://github.blog/engineering/infrastructure/upgrading-github-com-to-mysql-8-0/ | Replication delay | found |
+| github-mysql-8-upgrade-2023 | failures | 28, | https://github.blog/engineering/infrastructure/upgrading-github-com-to-mysql-8-0/ | Replication delay | found with different formatting |
 
 ## Distributed Transactions
 
@@ -440,7 +441,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | circuit-breakers | 23 | 13 | 0 |
 | consensus | 4 | 10 | 0 |
 | consistent-hashing | 15 | 7 | 0 |
-| databases | 18 | 7 | 0 |
+| databases | 18 | 8 | 0 |
 | distributed-transactions | 6 | 2 | 0 |
 | dns | 15 | 7 | 0 |
 | event-driven-architecture | 12 | 4 | 0 |
