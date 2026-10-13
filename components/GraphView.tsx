@@ -969,6 +969,38 @@ export default function GraphView({ nodes, edges }: Props) {
   }, [points, nodes, edgeSamples, size.width, effective, labelScale]);
   const activeNode = active ? bySlug.get(active) : undefined;
 
+  // Right edge of each column's widest label. The sideways scroll snaps so its window ends on one of
+  // these (or at the stage's end), which keeps the cut between columns instead of through a label.
+  const snapEnds = useMemo(() => {
+    if (effective !== "horizontal" || !contentWidth) return [];
+    const ctx = typeof document === "undefined" ? null : document.createElement("canvas").getContext("2d");
+    if (!ctx) return [];
+    ctx.font = `500 ${LABEL_SIZE * labelScale}px ${getComputedStyle(document.body).fontFamily}`;
+    const title = new Map(nodes.map((n) => [n.slug, n.title]));
+    const ends = new Map<number, number>();
+    for (const p of points) {
+      const column = Math.round(p.x);
+      const end = p.x + p.r + 8 + ctx.measureText(title.get(p.slug) ?? "").width;
+      ends.set(column, Math.max(ends.get(column) ?? 0, end));
+    }
+    return [...ends.values()];
+  }, [points, nodes, effective, labelScale, contentWidth]);
+
+  // Whether the map can still be scrolled to the right: drives the quiet "Scroll sideways" cue.
+  const [moreToScroll, setMoreToScroll] = useState(false);
+  useEffect(() => {
+    const el = scrollWrap.current;
+    if (!el) return;
+    const update = () => setMoreToScroll(el.scrollWidth - el.clientWidth - el.scrollLeft > 4);
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      el.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [contentWidth, ready]);
+
   useLayoutEffect(() => {
     const tip = tipRef.current;
     const box = stage.current?.getBoundingClientRect();
@@ -990,15 +1022,25 @@ export default function GraphView({ nodes, edges }: Props) {
           <LegendMark state="progress" /> In progress
           <LegendMark state="read" /> Read
         </p>
-        {/* One button, for the zoom or pan a stray click can cause. Only on a map that can zoom and pan. */}
-        {interactive && (
-          <button type="button" className="text-button label graph-fit" onClick={fitAll} disabled={fitted}>
-            Fit to size
-          </button>
-        )}
+        <div className="graph-toolbar-end">
+          <span className="graph-scroll-cue label" data-shown={moreToScroll || undefined} aria-hidden="true">
+            Scroll sideways for more
+          </span>
+          {/* One button, for the zoom or pan a stray click can cause. Only on a map that can zoom and pan. */}
+          {interactive && (
+            <button type="button" className="text-button label graph-fit" onClick={fitAll} disabled={fitted}>
+              Fit to size
+            </button>
+          )}
+        </div>
       </div>
 
       <div ref={scrollWrap} className="graph-scrollwrap">
+        {/* Snap points live here, not in the stage: the stage clips, so it is its own scroll container. */}
+        {snapEnds.map((end) => (
+          <span key={end} className="graph-snap" aria-hidden="true" style={{ left: end }} />
+        ))}
+        {snapEnds.length > 0 && <span className="graph-snap" aria-hidden="true" style={{ left: contentWidth - 1 }} />}
         <div
           ref={stage}
           className="graph-stage"

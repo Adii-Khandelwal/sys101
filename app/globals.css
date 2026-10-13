@@ -463,8 +463,38 @@ a:hover {
 
 /* Wraps the map so a map wider than the viewport scrolls sideways (step 1 test). */
 .graph-scrollwrap {
+  position: relative;
   overflow-x: auto;
   overflow-y: hidden;
+  scroll-snap-type: x proximity;
+}
+
+/* Zero-size marks at the right edge of each column's labels: the scroll window ends on one of them. */
+.graph-snap {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  scroll-snap-align: end;
+  pointer-events: none;
+}
+
+.graph-toolbar-end {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+/* Quiet hint that the map continues to the right; it hides at the end of the scroll. */
+.graph-scroll-cue {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--dur-fast) var(--ease-out), visibility var(--dur-fast);
+}
+
+.graph-scroll-cue[data-shown] {
+  opacity: 1;
+  visibility: visible;
 }
 
 .graph-stage {
