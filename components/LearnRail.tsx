@@ -112,12 +112,6 @@ export default function LearnRail({
   return (
     <nav className="lesson-rail" aria-label="Contents of this page" data-pagefind-ignore>
       <div className="progress-head" aria-live="polite">
-        <p className="label">
-          {what} scrolled:{" "}
-          <span key={percent} className="fade-swap">
-            {percent}%
-          </span>
-        </p>
         <div className="learn-progress-track" tabIndex={0} aria-label={label}>
           <span className="learn-progress-fill" style={{ transform: `scaleX(${ratio})` }} />
         </div>
