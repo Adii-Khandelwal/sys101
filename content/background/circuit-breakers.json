@@ -1,6 +1,6 @@
 {
   "topic": "circuit-breakers",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "horizontal-pod-autoscaler",
@@ -18,7 +18,7 @@
           "publisher": "Kubernetes",
           "url": "https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/",
           "year": "page shows last updated 2026-08-03",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -38,7 +38,7 @@
           "publisher": "OpenTelemetry",
           "url": "https://opentelemetry.io/docs/concepts/signals/traces/",
           "year": "page shows last updated 2026-01-14",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     }

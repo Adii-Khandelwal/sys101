@@ -1,6 +1,6 @@
 {
   "slug": "circuit-breakers",
-  "promise": "After this you can follow the topic page and the posts.",
+  "promise": "After this you can explain what a circuit breaker and its three states do, how deadlines and retries differ from a breaker, and what load shedding adds on the server side.",
   "before": {
     "prerequisites": [
       "rate-limiting"
@@ -280,7 +280,7 @@
       "publisher": "Microsoft",
       "kind": "Vendor documentation",
       "year": "page shows last updated 2025-03-21",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "rfc9110",
@@ -289,7 +289,7 @@
       "publisher": "IETF",
       "kind": "RFC",
       "year": "2022",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "Section 15.6.4."
     },
     {
@@ -299,7 +299,7 @@
       "publisher": "gRPC",
       "kind": "Project documentation",
       "year": "page shows last updated 2025-07-07",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "grpc-retry",
@@ -308,7 +308,7 @@
       "publisher": "gRPC",
       "kind": "Project documentation",
       "year": "page shows last updated 2025-11-26",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "envoy-circuit-breaking",
@@ -317,7 +317,7 @@
       "publisher": "Envoy project",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "Read in the development version of the documentation (1.40.0-dev). Defaults shown on the page may change."
     },
     {
@@ -327,7 +327,7 @@
       "publisher": "Envoy project",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "Read in the development version of the documentation (1.40.0-dev). The page gives the filter no status label."
     },
     {
@@ -337,7 +337,7 @@
       "publisher": "Google",
       "kind": "Google SRE book chapter (guidance, not a specification)",
       "year": "2017",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The page shows a 2017 copyright line. Paraphrased and linked only; none of its text is copied."
     },
     {
@@ -347,7 +347,7 @@
       "publisher": "Amazon Web Services",
       "kind": "Vendor article",
       "year": "page shows last updated 2026-06-15",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The page shows Published Jun 12, 2026 and Last modified Jun 15, 2026. Every claim taken from it is AWS's view."
     },
     {
@@ -357,7 +357,7 @@
       "publisher": "Netflix",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "Used only for its maintenance-mode statement."
     },
     {
@@ -367,7 +367,7 @@
       "publisher": "Istio project",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "Istio's example values and sample output. The task needs a cluster."
     },
     {

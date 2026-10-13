@@ -101,7 +101,7 @@
       ],
       "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-cb-example-t\" class=\"dg\"><title id=\"dg-cb-example-t\">The loop in Zalando's incident: the open breaker cuts traffic, the autoscaler shrinks the service to its minimum, fast probes close the breaker, the full load arrives at once, requests time out, and the breaker opens again.</title><defs><marker id=\"dg-cb-example-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"30\" width=\"150\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"89\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Breaker open</text><text x=\"89\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">traffic drops</text><rect x=\"204\" y=\"30\" width=\"160\" height=\"50\" class=\"dg-box\"/><text x=\"284\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Autoscaler scales</text><text x=\"284\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">down to the minimum</text><rect x=\"394\" y=\"30\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"469\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Probes arrive,</text><text x=\"469\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">all fast</text><path d=\"M164,55 L204,55\" class=\"dg-line\" marker-end=\"url(#dg-cb-example-a)\"/><path d=\"M364,55 L394,55\" class=\"dg-line\" marker-end=\"url(#dg-cb-example-a)\"/><rect x=\"394\" y=\"190\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"469\" y=\"211.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Breaker closes,</text><text x=\"469\" y=\"227.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">full load returns</text><path d=\"M469,80 L469,190\" class=\"dg-line\" marker-end=\"url(#dg-cb-example-a)\"/><rect x=\"204\" y=\"190\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"279\" y=\"211.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Queues build,</text><text x=\"279\" y=\"227.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">requests time out</text><path d=\"M394,215 L354,215\" class=\"dg-line\" marker-end=\"url(#dg-cb-example-a)\"/><path d=\"M204,215 L164,215\" class=\"dg-line\" marker-end=\"url(#dg-cb-example-a)\"/><rect x=\"14\" y=\"190\" width=\"150\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"89\" y=\"211.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Breaker opens</text><text x=\"89\" y=\"227.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">again</text><path d=\"M89,190 L89,80\" class=\"dg-line\" marker-end=\"url(#dg-cb-example-a)\"/><text x=\"280\" y=\"275\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">A burst lasts about three seconds; averaged CPU barely shows it.</text><text x=\"280\" y=\"138\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"12\">the loop repeats</text></svg>"
     },
-    "mistakesOutcome": "After this you can avoid the three most common ways these protections go wrong.",
+    "mistakesOutcome": "After this you can spot three ways these protections go wrong.",
     "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
     "quiz": [
       {
@@ -244,7 +244,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic that builds on this one.",
-      "body": "Breakers and shedders keep a failing or overloaded part from taking everything down. The planned topic on failover covers switching to a healthy copy. It is not written yet."
+      "body": "Breakers and shedders keep a failing or overloaded part from taking everything down. The next topic, Failover, covers switching to a healthy copy."
     }
   },
   "posts": [
@@ -253,7 +253,7 @@
       "title": "Thundering herd of circuit breakers",
       "url": "https://engineering.zalando.com/posts/2026/10/thundering-herd-of-circuit-breakers.html",
       "company": "Zalando",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2026-10-08",
       "digest": {
         "problem": "A client-side circuit breaker at Zalando stayed open for hours, blocking roughly 95% of requests, while the service it protected looked healthy. The post is an incident analysis by two Zalando engineers, built from OpenTelemetry trace data.",
@@ -317,7 +317,7 @@
         ],
         "tradeoffs": {
           "chosen": "Force-closing the breaker so real traffic returns and the autoscaler scales out, or pre-scaling the service before the breaker closes.",
-          "rejected": "The post does not weigh alternatives. It lists ideas it did not test: autoscaling on queue depth or concurrency, longer or heavier probes, backpressure or load shedding at the service, and propagating cancellations.",
+          "rejected": "The post does not weigh alternatives. It lists ideas it lists without reporting a test: autoscaling on queue depth or concurrency, longer or heavier probes, backpressure or load shedding at the service, and propagating cancellations.",
           "why": "Probes cannot detect autoscaling capacity: the breaker checks the service as it is while probing, not as it will be under full traffic."
         },
         "failures": "The breaker, the autoscaler and the probes each did what they were built to do, and together they trapped the system. The post does not give the breaker's threshold or timeout values, and no fix is measured; only the two manual mitigations are described. The service also keeps working on requests the client has already cancelled, which makes the queues worse.",
@@ -329,7 +329,7 @@
       "title": "Cinnamon: Using Century Old Tech to Build a Mean Load Shedder",
       "url": "https://www.uber.com/en-US/blog/cinnamon-using-century-old-tech-to-build-a-mean-load-shedder/",
       "company": "Uber",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2023-11-22",
       "digest": {
         "problem": "Uber runs thousands of microservices serving about 130 million monthly customers, with millions of requests per second in total. Services get overloaded by traffic spikes, such as a too-aggressive batch job, or by slowness, such as a slow database. Uber wanted graceful degradation, shedding lower-priority requests before online customer requests, with no per-service configuration. This post is about load shedding and never mentions circuit breakers.",
@@ -353,7 +353,7 @@
           },
           {
             "step": "Limit concurrent work",
-            "explanation": "A scheduler lets only a set number of requests run at once, the inflight limit. An auto-tuner built on a heavily modified TCP Vegas algorithm lowers the limit when latency rises and raises it when latency is stable or falling."
+            "explanation": "A scheduler lets only a set number of requests run at once, the inflight limit. An auto-tuner built on a modified TCP Vegas algorithm lowers the limit when latency rises and raises it when latency is stable or falling."
           },
           {
             "step": "Queue by priority, time out the rest",
@@ -401,7 +401,7 @@
         ],
         "tradeoffs": {
           "chosen": "Priorities propagated from the edge, a PID controller for the shed ratio, and an auto-tuned inflight limit, with no configuration.",
-          "rejected": "Priority by caller, a hand-set maximum concurrency, Go channels for shedding, and CoDel alone, which oscillates between rejecting everything and nothing.",
+          "rejected": "Priority by caller, a hand-set maximum concurrency, Go channels for shedding, and CoDel alone, which the post says tends to oscillate between rejecting everything and nothing.",
           "why": "Callers' priorities miss cases such as a test system calling a service, hand-set limits go stale as traffic and hardware change, and a single threshold or limit handles only part of the problem, hence two background controllers."
         },
         "failures": "At 1,500 requests per second the older QALM kept about 2% more goodput, which the post attributes to the auto-tuner still finding the right inflight limit plus noise in production. At high load the service spends more of its resources rejecting requests, so its capacity falls. The tests use a synthetic service on two instances, and the post gives no count of services using Cinnamon, only that it is being rapidly adopted.",
@@ -409,7 +409,7 @@
       }
     }
   ],
-  "comparison": "Both posts are about a service getting more work than it can finish, and both show that the obvious protection can fail in a way its owner does not expect. They protect opposite ends of the same call. Zalando's circuit breaker sits in a client and protects it from a failing dependency. Uber's Cinnamon sits in the server and protects it from overload, and its post is about load shedding and never mentions circuit breakers.\n\nZalando's is an incident analysis: a breaker stayed open for hours and blocked roughly 95% of requests, healthy-looking probes closed it, the full load came back at once on a service scaled to its minimum, and it opened again within about three seconds. The post does not give the breaker's thresholds, and no fix is measured. Its own ideas, among them autoscaling on queue depth and load shedding at the service, are untested. Uber's is a design with a comparison: priorities carried from the edge, a PID controller for the shed ratio, and an auto-tuned inflight limit, with no configuration.\n\nThe evidence differs. Zalando gives observations from one incident, with no measurement after a fix. Uber measured against its older shedder in production on a synthetic service with two instances, and reports latency and goodput at several request rates, plus a headline of median latency up 50% at 300% overload. Zalando's post is from 2026 and Uber's from 2023, and Uber's is the first of three on Cinnamon.",
+  "comparison": "Both posts are about a service getting more work than it can finish, and both show that the obvious protection can fail in a way its owner does not expect. They protect opposite ends of the same call. Zalando's circuit breaker sits in a client and protects it from a failing dependency. Uber's Cinnamon sits in the server and protects it from overload, and its post is about load shedding and never mentions circuit breakers.\n\nZalando's is an incident analysis: a breaker stayed open for hours and blocked roughly 95% of requests, healthy-looking probes closed it, the full load came back at once on a service scaled to its minimum, and it opened again within about three seconds. The post does not give the breaker's thresholds, and no fix is measured. Its own ideas, among them autoscaling on queue depth and load shedding at the service, are listed without a reported test. Uber's is a design with a comparison: priorities carried from the edge, a PID controller for the shed ratio, and an auto-tuned inflight limit, with no configuration.\n\nThe evidence differs. Zalando gives observations from one incident, with no measurement after a fix. Uber measured against its older shedder in production on a synthetic service with two instances, and reports latency and goodput at several request rates, plus a headline of median latency up 50% at 300% overload. Zalando's post is from 2026 and Uber's from 2023, and Uber's is the first of three on Cinnamon.",
   "glossary": [
     {
       "term": "Circuit breaker",
