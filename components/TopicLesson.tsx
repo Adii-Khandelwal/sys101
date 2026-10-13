@@ -1,3 +1,4 @@
+import { diagramHtml } from "@/lib/diagramHtml";
 import Link from "next/link";
 import { optionId } from "@/lib/quizIds";
 import { companyWhen, figureParts, type Topic } from "@/lib/topics";
@@ -175,7 +176,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             <h2 id="model-h">Mental model</h2>
             <Outcome text={l.mentalModel.outcome} />
             <Paragraphs text={l.mentalModel.body} />
-            <figure className="diagram" dangerouslySetInnerHTML={{ __html: l.mentalModel.diagram }} />
+            <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.mentalModel.diagram) }} />
             <h3>Words to know</h3>
             <dl className="glossary">
               {topic.glossary.map((g) => (
@@ -197,7 +198,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 </li>
               ))}
             </ol>
-            <figure className="diagram" dangerouslySetInnerHTML={{ __html: l.howItWorks.diagram }} />
+            <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.howItWorks.diagram) }} />
             <MarkDone meta={meta} unit="how" />
           </section>
 
@@ -211,7 +212,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 </li>
               ))}
             </ol>
-            <figure className="diagram" dangerouslySetInnerHTML={{ __html: l.workedExample.diagram }} />
+            <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.workedExample.diagram) }} />
             <MarkDone meta={meta} unit="example" />
           </section>
 

@@ -29,7 +29,7 @@ export function FigureFrame({ uid, viewBox, title, description, legend, caption,
   return (
     <figure className="fig" data-pagefind-ignore onKeyDown={onKeyDown}>
       <svg viewBox={viewBox} role="img" aria-labelledby={`${uid}t ${uid}d`} className="fig-svg">
-        <title id={`${uid}t`}>{title}</title>
+        <desc id={`${uid}t`}>{title}</desc>
         <desc id={`${uid}d`}>{description}</desc>
         {svg}
       </svg>

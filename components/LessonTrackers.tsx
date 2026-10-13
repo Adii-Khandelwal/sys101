@@ -6,6 +6,7 @@ import { optionId } from "@/lib/quizIds";
 import { RevealPanel } from "./Reveal";
 import {
   markAllDone,
+  unmarkAllDone,
   quizComplete,
   summary,
   counts,
@@ -64,8 +65,7 @@ export function FinishTopic({ meta }: { meta: LessonMeta }) {
         type="button"
         className="text-button label mark-done"
         aria-pressed={allMarked}
-        disabled={allMarked}
-        onClick={() => update((p) => markAllDone(p, m))}
+        onClick={() => update((p) => (allMarked ? unmarkAllDone(p, m) : markAllDone(p, m)))}
       >
         <span className="mark-square" aria-hidden="true" />
         {allMarked ? "Every section is done" : "I have finished this topic"}
@@ -172,8 +172,8 @@ export function QuizBlock({ meta, quiz, names }: { meta: LessonMeta; quiz: Quest
                     >
                       {o}
                     </button>
-                    {answered && j === q.correct && <span className="verdict"> Correct answer</span>}
-                    {answered && chosen === ids[j] && j !== q.correct && <span className="verdict is-wrong"> Your answer</span>}
+                    {answered && j === q.correct && <span className="verdict">Correct answer</span>}
+                    {answered && chosen === ids[j] && j !== q.correct && <span className="verdict is-wrong">Your answer</span>}
                   </li>
                 ))}
               </ol>

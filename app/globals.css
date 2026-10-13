@@ -1502,6 +1502,8 @@ h1[tabindex="-1"]:focus {
 }
 
 .verdict {
+  margin-left: 12px;
+  white-space: nowrap;
   font-family: var(--font-mono), monospace;
   font-size: 12px;
   letter-spacing: 0.06em;
@@ -3081,11 +3083,11 @@ html {
 }
 
 .bg-section h2 {
-  margin: 0 0 4px;
+  margin: 0;
 }
 
 .bg-section > .label {
-  margin: 0;
+  margin: 16px 0 0;
 }
 
 .bg-section > .label a {

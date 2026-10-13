@@ -1,3 +1,4 @@
+import { diagramHtml } from "@/lib/diagramHtml";
 import Link from "next/link";
 import IntentLink from "./IntentLink";
 import { companyWhen, isOld, isUndated, postDateShown, type Post, type Topic } from "@/lib/topics";
@@ -81,7 +82,7 @@ export function PostDigest({ post, index, titles }: { post: Post; index: number;
       </ol>
 
       {/* Diagrams are our own SVG from content JSON, checked at build time. */}
-      <figure className="diagram" dangerouslySetInnerHTML={{ __html: d.diagram }} />
+      <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(d.diagram) }} />
 
       <h3>Numbers</h3>
       <table className="numbers">

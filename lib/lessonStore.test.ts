@@ -13,6 +13,7 @@ import {
   quizScore,
   retryQuiz,
   markAllDone,
+  unmarkAllDone,
   summary,
   syncRead,
   markVisited,
@@ -180,6 +181,13 @@ describe("finish topic", () => {
     p = answerAll(p, () => "x");
     expect(isTopicRead(p, meta)).toBe(true);
     expect(markAllDone(p, meta)).toEqual(p);
+  });
+
+  it("undoes the marks but keeps quiz answers", () => {
+    const p = answerAll(markAllDone(emptyProgress(), meta), () => "x");
+    const u = unmarkAllDone(p, meta);
+    expect(summary(u, meta).done).toBe(1);
+    expect(isTopicRead(u, meta)).toBe(false);
   });
 });
 

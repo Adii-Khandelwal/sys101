@@ -225,6 +225,12 @@ export function markAllDone(p: Progress, meta: LessonMeta): Progress {
   return { ...t, posts: [...new Set([...t.posts, ...meta.postIds])] };
 }
 
+/** Undo markAllDone: clear every concept section and post mark. Quiz answers stay. */
+export function unmarkAllDone(p: Progress, meta: LessonMeta): Progress {
+  const t = withTopic(p, meta.slug, (x) => ({ ...x, done: x.done.filter((u) => !(CONCEPT_SECTIONS as readonly string[]).includes(u)) }));
+  return { ...t, posts: t.posts.filter((id) => !meta.postIds.includes(id)) };
+}
+
 export function markVisited(p: Progress, slug: string, unit: string): Progress {
   const t = topicOf(p, slug);
   if (t.visited.includes(unit) && t.last === unit) return p;

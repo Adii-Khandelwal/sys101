@@ -1,3 +1,4 @@
+import { diagramHtml } from "@/lib/diagramHtml";
 import Link from "next/link";
 import { Fragment } from "react";
 import PageUpdated from "./PageUpdated";
@@ -125,7 +126,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
                 </p>
               ))}
 
-              {st.diagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: st.diagram }} />}
+              {st.diagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(st.diagram) }} />}
 
               <h3>Key terms</h3>
               <dl className="learn-terms">
