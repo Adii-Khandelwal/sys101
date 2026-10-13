@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { inProgressSlugs, replaceProgress, useAllProgress } from "@/lib/progress";
+import { forgetSeen, loadSeen } from "@/lib/tourSeen";
 import {
   deriveRead,
   exportFile,
@@ -35,6 +36,8 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
   const [mode, setMode] = useState<"merge" | "replace">("merge");
   const [confirmReset, setConfirmReset] = useState<string | null>(null); // a slug, or "all"
   const file = useRef<HTMLInputElement>(null);
+  const [toursSeen, setToursSeen] = useState(false);
+  useEffect(() => setToursSeen(Object.keys(loadSeen().seen).length > 0), []);
 
   const blocked = status === "blocked";
   const corrupt = status === "corrupt";
@@ -231,6 +234,29 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
       <p className="data-note" aria-live="polite">
         {message}
       </p>
+
+      <section aria-labelledby="tours-h">
+        <h2 id="tours-h">Guided tours</h2>
+        {toursSeen ? (
+          <>
+            <p>You have taken or skipped the guided tour here, so its link is hidden. Show it again on the homepage and on topic pages:</p>
+            <p>
+              <button
+                type="button"
+                className="text-button label"
+                onClick={() => {
+                  forgetSeen();
+                  setToursSeen(false);
+                }}
+              >
+                Show the tour links again
+              </button>
+            </p>
+          </>
+        ) : (
+          <p>The &ldquo;Take the 30-second tour&rdquo; links show on the homepage and on topic pages. The browser keeps only whether you have taken or skipped one.</p>
+        )}
+      </section>
 
       <section aria-labelledby="reset-h" className="data-danger">
         <h2 id="reset-h">Reset everything</h2>

@@ -106,7 +106,23 @@ export function wrapTab(current: number, count: number, shift: boolean): number 
 /** The phone line the CSS and the overlay share. */
 export const isPhone = () => typeof window !== "undefined" && window.matchMedia(PHONE).matches;
 
-/** The overlay's hole: a polygon with an even-odd fill, in viewport pixels. */
-export function holePath(r: { left: number; top: number; right: number; bottom: number }) {
-  return `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${r.left}px ${r.top}px, ${r.left}px ${r.bottom}px, ${r.right}px ${r.bottom}px, ${r.right}px ${r.top}px, ${r.left}px ${r.top}px)`;
+export type Box = { x: number; y: number; w: number; h: number };
+
+/**
+ * The dim as four rectangles around the target, and the outline as one, all in whole pixels. Each is drawn as a
+ * 1 x 1 rect and placed with translate and scale, so moving from one step to the next animates transform only.
+ */
+export function overlayBoxes(r: { left: number; top: number; right: number; bottom: number }, vw: number, vh: number) {
+  const [l, t, rt, b] = [Math.round(r.left), Math.round(r.top), Math.round(r.right), Math.round(r.bottom)];
+  const h = Math.max(0, b - t);
+  const clamp = (n: number) => Math.max(0, n);
+  return {
+    top: { x: 0, y: 0, w: vw, h: clamp(t) },
+    bottom: { x: 0, y: b, w: vw, h: clamp(vh - b) },
+    left: { x: 0, y: t, w: clamp(l), h },
+    right: { x: rt, y: t, w: clamp(vw - rt), h },
+    ring: { x: l, y: t, w: Math.max(0, rt - l), h },
+  } satisfies Record<string, Box>;
 }
+
+export const placeBox = (b: Box) => `translate(${b.x}px, ${b.y}px) scale(${b.w}, ${b.h})`;

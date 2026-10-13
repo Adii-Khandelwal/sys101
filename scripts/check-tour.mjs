@@ -66,11 +66,42 @@ for (const [label, url, steps] of [["home", "/", 5], ["topic", "/topic/caching",
   // The page stayed clickable behind the dim, and nothing was stored.
   await link.click();
   await page.waitForSelector(".tour-tip");
-  await page.waitForSelector(".tour-dim");
-  expect(await page.evaluate(() => getComputedStyle(document.querySelector(".tour-dim")).pointerEvents === "none"), `${label}: the dim blocks the page`);
+  await page.waitForSelector(".tour-svg");
+  expect(await page.evaluate(() => getComputedStyle(document.querySelector(".tour-svg")).pointerEvents === "none"), `${label}: the dim blocks the page`);
   await page.keyboard.press("Escape");
-  expect((await page.evaluate(() => JSON.stringify({ ...localStorage }))) === before, `${label}: the tour stored something`);
+  // Closing marks the tour seen: the only thing stored, and only that tour's flag.
+  const after = JSON.parse(await page.evaluate(() => JSON.stringify({ ...localStorage })));
+  const { "sys101:tours": flag, ...rest } = after;
+  expect(JSON.stringify(rest) === JSON.stringify(JSON.parse(before)), `${label}: the tour stored something besides its seen flag`);
+  expect(JSON.parse(flag ?? "{}").seen?.[label === "home" ? "home" : "topic"] === true, `${label}: closing the tour did not mark it seen`);
+  // A later visit does not show the link; Your data brings it back.
+  await page.reload({ waitUntil: "networkidle" });
+  expect((await page.getByRole("button", { name: "Take the 30-second tour" }).count()) === 0, `${label}: the link came back on the next visit`);
+  await page.goto(BASE + "/data", { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Show the tour links again" }).click();
+  await page.goto(BASE + url, { waitUntil: "networkidle" });
+  expect((await page.getByRole("button", { name: "Take the 30-second tour" }).count()) === 1, `${label}: Your data did not bring the link back`);
   expect(errors.length === 0, `${label}: console errors: ${errors.join(" | ").slice(0, 200)}`);
+  await ctx.close();
+}
+
+// Moving between steps glides (transform only); under reduced motion it jumps.
+for (const [reduce, label] of [["no-preference", "motion"], ["reduce", "reduced motion"]]) {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: reduce });
+  const page = await ctx.newPage();
+  await page.goto(BASE + "/", { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Take the 30-second tour" }).click();
+  await page.waitForSelector(".tour-ring");
+  const ring = () => page.evaluate(() => { const r = document.querySelector(".tour-ring").getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)]; });
+  const start = await ring();
+  await page.locator(".tour-actions button").nth(1).click();
+  await page.waitForTimeout(60);
+  const early = await ring();
+  await page.waitForTimeout(500);
+  const end = await ring();
+  expect(start.join() !== end.join(), `${label}: the outline did not move to the next target`);
+  if (reduce === "no-preference") expect(early.join() !== end.join() && early.join() !== start.join(), `${label}: the outline did not glide (start ${start}, 60ms ${early}, end ${end})`);
+  else expect(early.join() === end.join(), `${label}: the outline moved gradually under reduced motion (60ms ${early}, end ${end})`);
   await ctx.close();
 }
 

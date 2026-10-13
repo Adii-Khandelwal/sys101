@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { TOURS, holePath, keyAction, move, resolveSteps, wrapTab, type TourId } from "./tours";
+import { TOURS, keyAction, move, overlayBoxes, placeBox, resolveSteps, wrapTab, type TourId } from "./tours";
 import { BANNED_PHRASING } from "./topics";
+import { TOURS_KEY, forgetSeen, loadSeen, markSeen, parseSeen } from "./tourSeen";
 
 const ids = Object.keys(TOURS) as TourId[];
 const all = () => ids.flatMap((id) => TOURS[id].map((s) => ({ id, ...s })));
@@ -59,8 +60,9 @@ describe("tour steps", () => {
     expect(fs.readFileSync("components/LessonRail.tsx", "utf8")).toContain("dataset.touring");
   });
 
-  it("does not store anything: no flag, no localStorage", () => {
-    for (const f of ["components/TourLink.tsx", "components/TourOverlay.tsx", "lib/tours.ts"]) expect(fs.readFileSync(f, "utf8")).not.toMatch(/localStorage|sessionStorage|document\.cookie/);
+  it("stores only a small seen flag, and only from the entry link and tourSeen", () => {
+    for (const f of ["components/TourOverlay.tsx", "lib/tours.ts"]) expect(fs.readFileSync(f, "utf8")).not.toMatch(/localStorage|sessionStorage|document\.cookie/);
+    expect(fs.readFileSync("components/TourLink.tsx", "utf8")).not.toMatch(/localStorage/);
   });
 });
 
@@ -84,10 +86,51 @@ describe("tour keys and moves", () => {
     expect(wrapTab(1, 3, true)).toBeNull();
   });
 
-  it("cuts the dim's hole with an even-odd polygon, not a shadow", () => {
-    const d = holePath({ left: 10, top: 20, right: 110, bottom: 220 });
-    expect(d).toMatch(/^polygon\(evenodd,/);
-    expect(d).toContain("10px 20px");
-    expect(d).toContain("110px 220px");
+  it("builds the dim from four rectangles around the target and the outline from one, in whole pixels", () => {
+    const o = overlayBoxes({ left: 10.4, top: 20.2, right: 110.6, bottom: 220.4 }, 1000, 800);
+    expect(o.ring).toEqual({ x: 10, y: 20, w: 101, h: 200 });
+    expect(o.top).toEqual({ x: 0, y: 0, w: 1000, h: 20 });
+    expect(o.bottom).toEqual({ x: 0, y: 220, w: 1000, h: 580 });
+    expect(o.left).toEqual({ x: 0, y: 20, w: 10, h: 200 });
+    expect(o.right).toEqual({ x: 111, y: 20, w: 889, h: 200 });
+    expect(placeBox(o.ring)).toBe("translate(10px, 20px) scale(101, 200)");
+    // A target partly off screen never gives a negative size.
+    expect(overlayBoxes({ left: -30, top: -10, right: 50, bottom: 900 }, 400, 800).left.w).toBe(0);
+  });
+
+  it("moves between steps by transform only: no clip-path, width, height, top or left transitions", () => {
+    const css = fs.readFileSync("app/globals.css", "utf8");
+    const tour = css.slice(css.indexOf("Guided tour (components/TourOverlay.tsx)"));
+    for (const m of tour.matchAll(/transition:([^;]+);/g)) expect(m[1]).toMatch(/^\s*transform /);
+    expect(tour).not.toMatch(/clip-path|box-shadow/);
+  });
+});
+
+describe("the seen flag", () => {
+  const fake = () => {
+    const m = new Map<string, string>();
+    return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k), m };
+  };
+
+  it("starts unseen, remembers each tour on its own, and can be cleared", () => {
+    const s = fake();
+    expect(loadSeen(s).seen).toEqual({});
+    markSeen("home", s);
+    expect(loadSeen(s).seen).toEqual({ home: true });
+    markSeen("topic", s);
+    expect(loadSeen(s).seen).toEqual({ home: true, topic: true });
+    expect(JSON.parse(s.m.get(TOURS_KEY)!)).toEqual({ version: 1, seen: { home: true, topic: true } });
+    forgetSeen(s);
+    expect(loadSeen(s).seen).toEqual({});
+  });
+
+  it("treats missing, corrupt or foreign data as unseen and never throws", () => {
+    for (const raw of [null, "", "{not json", "[]", '{"version":2,"seen":{"home":true}}', '{"version":1,"seen":null}', '{"version":1,"seen":{"home":"yes"}}']) expect(parseSeen(raw).seen).toEqual({});
+    expect(parseSeen('{"version":1,"seen":{"home":true,"other":true}}').seen).toEqual({ home: true });
+    const blocked = { getItem: () => { throw new Error("blocked"); }, setItem: () => { throw new Error("blocked"); }, removeItem: () => { throw new Error("blocked"); } };
+    expect(loadSeen(blocked).seen).toEqual({});
+    expect(() => markSeen("home", blocked)).not.toThrow();
+    expect(() => forgetSeen(blocked)).not.toThrow();
+    expect(loadSeen(null).seen).toEqual({});
   });
 });

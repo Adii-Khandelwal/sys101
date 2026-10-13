@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { holePath, isPhone, keyAction, move, resolveSteps, wrapTab, type TourId } from "@/lib/tours";
+import { isPhone, keyAction, move, overlayBoxes, placeBox, resolveSteps, wrapTab, type TourId } from "@/lib/tours";
 
 const PAD = 4; // the outline sits this far outside the target
 type Rect = { left: number; top: number; right: number; bottom: number };
@@ -20,6 +20,10 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
   const [rect, setRect] = useState<Rect | null>(null);
   const [tip, setTip] = useState<{ left: number; top: number }>({ left: 16, top: 16 });
   const [said, setSaid] = useState("");
+  // A step change glides to the next target (transform only); following a scroll or resize must not lag behind, so it snaps.
+  const [glide, setGlide] = useState(false);
+  const shown = useRef<Rect | null>(null);
+  const same = (a: Rect | null, b: Rect) => !!a && a.left === b.left && a.top === b.top && a.right === b.right && a.bottom === b.bottom;
   const dialog = useRef<HTMLDivElement>(null);
   const step = steps[index];
   const phone = isPhone();
@@ -38,17 +42,22 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
     const el = visibleTarget(step.target);
     if (!el) return;
     el.scrollIntoView({ block: phone ? "start" : "center", inline: "nearest", behavior: "instant" as ScrollBehavior });
-    const measure = () => {
+    const measure = (glides: boolean) => {
       const r = el.getBoundingClientRect();
-      setRect({ left: r.left - PAD, top: r.top - PAD, right: r.right + PAD, bottom: r.bottom + PAD });
+      const next = { left: r.left - PAD, top: r.top - PAD, right: r.right + PAD, bottom: r.bottom + PAD };
+      if (same(shown.current, next)) return;
+      shown.current = next;
+      setGlide(glides && index > 0);
+      setRect(next);
     };
-    measure();
-    window.addEventListener("resize", measure);
-    window.addEventListener("scroll", measure, true);
+    measure(true);
+    const follow = () => measure(false);
+    window.addEventListener("resize", follow);
+    window.addEventListener("scroll", follow, true);
     setSaid(`Step ${index + 1} of ${steps.length}: ${step.title}. ${step.text}`);
     return () => {
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure, true);
+      window.removeEventListener("resize", follow);
+      window.removeEventListener("scroll", follow, true);
     };
     // onClose and phone are stable for the life of a tour.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -105,23 +114,27 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
 
   if (!step) return null;
   const last = index === steps.length - 1;
+  const boxes = rect ? overlayBoxes(rect, window.innerWidth, window.innerHeight) : null;
   return createPortal(
     <>
-      {rect && (
-        <>
-          <div className="tour-dim" style={{ clipPath: holePath(rect) }} aria-hidden="true" />
-          <div className="tour-ring" style={{ left: rect.left, top: rect.top, width: rect.right - rect.left, height: rect.bottom - rect.top }} aria-hidden="true" />
-        </>
+      {boxes && (
+        <svg className={`tour-svg${glide ? " tour-go" : ""}`} aria-hidden="true">
+          {(["top", "bottom", "left", "right"] as const).map((k) => (
+            <rect key={k} className="tour-dim" width="1" height="1" style={{ transform: placeBox(boxes[k]) }} />
+          ))}
+          <rect className="tour-ring" width="1" height="1" style={{ transform: placeBox(boxes.ring) }} />
+        </svg>
       )}
       <div
         ref={dialog}
-        className="tour-tip"
+        className={`tour-tip${glide ? " tour-go" : ""}`}
         role="dialog"
         aria-modal="false"
         aria-labelledby="tour-title"
         aria-describedby="tour-text"
         tabIndex={-1}
-        style={{ "--tip-left": `${tip.left}px`, "--tip-top": `${tip.top}px` } as CSSProperties}
+        // On a phone the tooltip is docked to the bottom edge in CSS and does not move.
+        style={phone ? undefined : { transform: `translate(${tip.left}px, ${tip.top}px)` }}
       >
         <p className="label tour-count">
           Step {index + 1} of {steps.length}

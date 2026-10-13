@@ -85,7 +85,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 
 - WCAG AA contrast, visible focus rings, full keyboard use, 44px touch targets, real buttons, aria-live for results. Verify at 1440px and 390px.
 - Every feature must work seamlessly on a phone: verify each new feature at 390px (and touch), with no horizontal overflow, readable wrapping, and tap targets of 44px. A feature is not done until it works on mobile.
-- Skeleton loaders match the final size and only stand in for client-loaded parts (no loading.tsx on content routes). Guided tours (Home, topic pages; docs/tours.md): a quiet text link, never auto-start, no stored flag, loaded on click, clip-path dim (no shadow).
+- Skeleton loaders match the final size and only stand in for client-loaded parts (no loading.tsx on content routes). Guided tours (Home, topic pages; docs/tours.md): a quiet text link, never auto-start, hidden after one use (sys101:tours "seen" flag, restorable on /data), loaded on click, dim and outline glide by transform (no shadow).
 - Shared header: wordmark and three-node mark linking home, ThemeToggle. Footer: About, Glossary, Terms, Privacy, Your data, Report a mistake (REPORT_EMAIL in lib/site.ts). "Back to top" appears after about 1.5 screens: floating on desktop, in the sticky progress strip on phones.
 - About and Terms describe AI assistance with one shared sentence, AI_ASSISTANCE in lib/site.ts (a test checks both pages); never reword it in one place.
 

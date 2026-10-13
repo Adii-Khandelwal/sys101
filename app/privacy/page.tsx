@@ -27,7 +27,8 @@ export default function Privacy() {
         If you mark topics as read, that record is saved in your browser&apos;s localStorage on your
         own device. It is never sent to us. Clearing your browser data deletes it, and it won&apos;t
         follow you to another browser or device. The site also remembers your light or dark theme and your
-        Map or Path choice, in the same place.
+        Map or Path choice, and whether you have taken or skipped the guided tour so that its link is not
+        shown again, in the same place.
       </p>
 
       <h2>Server logs</h2>

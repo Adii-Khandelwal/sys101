@@ -86,8 +86,8 @@ export default function About() {
 
       <h2>Your progress</h2>
       <p>
-        What you mark as done, and your theme and Map or Path choice, are saved in your own browser and
-        nowhere else. There are no accounts. See{" "}
+        What you mark as done, your theme and Map or Path choice, and whether you have taken the guided
+        tour are saved in your own browser and nowhere else. There are no accounts. See{" "}
         <Link href="/data">Your data</Link> and <Link href="/privacy">Privacy</Link>.
       </p>
 

@@ -3803,26 +3803,41 @@ html[data-posts-view] .posts-view-h {
   align-items: center;
 }
 
-/* A light dim with a hole over the target. The hole is a clip-path, not a shadow, and the page stays clickable. */
-.tour-dim {
+/* One full-screen SVG holds the dim and the outline. The dim is four rects around the target, the outline one rect,
+   each a 1 x 1 square placed with translate and scale: the page stays clickable, and a step change moves by transform only. */
+.tour-svg {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: var(--paper);
-  opacity: 0.55;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
 }
 
+.tour-dim {
+  fill: var(--paper);
+  opacity: 0.55;
+  shape-rendering: crispEdges;
+}
+
 .tour-ring {
-  position: fixed;
-  z-index: 61;
-  border: 2px solid var(--accent);
-  border-radius: 2px;
-  pointer-events: none;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Gliding to the next target. Under reduced motion --dur-base is 0ms, so it is instant. */
+.tour-go .tour-dim,
+.tour-go .tour-ring,
+.tour-tip.tour-go {
+  transition: transform var(--dur-base) var(--ease-in-out);
 }
 
 .tour-tip {
   position: fixed;
+  left: 0;
+  top: 0;
   z-index: 62;
   box-sizing: border-box;
   width: min(360px, calc(100vw - 32px));
@@ -3842,17 +3857,10 @@ html[data-posts-view] .posts-view-h {
   outline-offset: 3px;
 }
 
-@media (min-width: 768px) {
-  .tour-tip {
-    left: var(--tip-left);
-    top: var(--tip-top);
-  }
-}
-
 /* On a phone the tooltip docks to the bottom edge, so a small target is never hidden behind a floating box. */
 @media (max-width: 767px) {
   .tour-tip {
-    left: 0;
+    top: auto;
     right: 0;
     bottom: 0;
     width: auto;
