@@ -38,7 +38,7 @@
       "title": "How we built Pingora, the proxy that connects Cloudflare to the Internet",
       "url": "https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/",
       "company": "Cloudflare",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2022-09-14",
       "digest": {
         "problem": "This post covers the link between a CDN and the origin servers behind it, the path every cache miss takes, not edge caching itself. Cloudflare's proxy for that link was built on NGINX, where each worker process keeps its own pool of open connections to origins. Adding workers to handle more traffic split connections into more, smaller pools, so fewer requests found an open connection to reuse, and each new connection meant another TCP and TLS handshake before the first byte. A request was also stuck on one worker, so slow work on one request held up others, and the code was hard to extend.",
@@ -54,7 +54,7 @@
           },
           {
             "step": "Write its own HTTP library",
-            "explanation": "Existing libraries rejected real-world traffic that Cloudflare must accept, so it wrote one that tolerates it."
+            "explanation": "Cloudflare must accept non-compliant HTTP traffic, such as status codes above 599, and wanted flexibility, so it wrote its own permissive HTTP library instead of using an off-the-shelf one such as hyper."
           },
           {
             "step": "Use threads, not processes",
@@ -70,7 +70,7 @@
           },
           {
             "step": "Serve every trip to the origin",
-            "explanation": "Pingora handles all requests that must reach an origin, including cache misses, and reuses pooled connections to skip handshakes."
+            "explanation": "Pingora handles almost every request that must reach an origin, including cache misses, and reuses pooled connections to skip handshakes."
           }
         ],
         "diagram": "<svg viewBox=\"0 0 560 316\" role=\"img\" aria-labelledby=\"dg-cf-pingora-t\" class=\"dg\"><title id=\"dg-cf-pingora-t\">Cloudflare&#x27;s move from NGINX to Pingora: NGINX workers each keep their own pool of origin connections, while Pingora&#x27;s threads share one pool, so far more requests reuse an open connection.</title><defs><marker id=\"dg-cf-pingora-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"130\" y=\"24\" class=\"dg-label\" text-anchor=\"middle\">Before: a pool per worker</text><text x=\"420\" y=\"24\" class=\"dg-label\" text-anchor=\"middle\">After: one shared pool</text><rect x=\"470\" y=\"120\" width=\"80\" height=\"44\" class=\"dg-box\"/><text x=\"510\" y=\"147\" class=\"dg-label\" text-anchor=\"middle\">Origin</text><rect x=\"180\" y=\"120\" width=\"80\" height=\"44\" class=\"dg-box\"/><text x=\"220\" y=\"147\" class=\"dg-label\" text-anchor=\"middle\">Origin</text><rect x=\"14\" y=\"50\" width=\"90\" height=\"40\" class=\"dg-box\"/><text x=\"59\" y=\"75\" class=\"dg-label\" text-anchor=\"middle\">Worker 1</text><path d=\"M104,70 C140,70 150,142 176,142\" class=\"dg-line\"/><rect x=\"14\" y=\"110\" width=\"90\" height=\"40\" class=\"dg-box\"/><text x=\"59\" y=\"135\" class=\"dg-label\" text-anchor=\"middle\">Worker 2</text><path d=\"M104,130 C140,130 150,142 176,142\" class=\"dg-line\"/><rect x=\"14\" y=\"170\" width=\"90\" height=\"40\" class=\"dg-box\"/><text x=\"59\" y=\"195\" class=\"dg-label\" text-anchor=\"middle\">Worker 3</text><path d=\"M104,190 C140,190 150,142 176,142\" class=\"dg-line\"/><rect x=\"300\" y=\"50\" width=\"80\" height=\"40\" class=\"dg-box\"/><text x=\"340\" y=\"75\" class=\"dg-label\" text-anchor=\"middle\">Thread</text><path d=\"M380,70 L398,70\" class=\"dg-line\"/><rect x=\"300\" y=\"110\" width=\"80\" height=\"40\" class=\"dg-box\"/><text x=\"340\" y=\"135\" class=\"dg-label\" text-anchor=\"middle\">Thread</text><path d=\"M380,130 L398,130\" class=\"dg-line\"/><rect x=\"300\" y=\"170\" width=\"80\" height=\"40\" class=\"dg-box\"/><text x=\"340\" y=\"195\" class=\"dg-label\" text-anchor=\"middle\">Thread</text><path d=\"M380,190 L398,190\" class=\"dg-line\"/><rect x=\"400\" y=\"60\" width=\"50\" height=\"140\" class=\"dg-box dg-accent\"/><text x=\"425\" y=\"134\" class=\"dg-label\" text-anchor=\"middle\">pool</text><path d=\"M450,142 L466,142\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-cf-pingora-a)\"/><text x=\"140\" y=\"240\" class=\"dg-note\" text-anchor=\"middle\">reuse drops as workers are added</text><text x=\"425\" y=\"240\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">reuse 87.1% to 99.92%</text><text x=\"425\" y=\"256\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">160x fewer new connections</text><text x=\"280\" y=\"300\" class=\"dg-note\" text-anchor=\"middle\">every cache miss takes this path back to the origin</text></svg>",
@@ -109,8 +109,8 @@
           "rejected": "Forking NGINX, adopting a third-party proxy such as Envoy, writing in C or Lua, and keeping separate processes.",
           "why": "The limits were in NGINX's process model, not its code speed: the old service already handled requests in under a millisecond, and the latency gains came from reusing connections. A fork would need that model rebuilt, and another proxy could hit the same walls within a few years. Building cost the most upfront but removed the constraint."
         },
-        "failures": "Standard HTTP libraries were too strict for real traffic, which forced Cloudflare to write its own. Across a few hundred trillion requests, Pingora's own code never crashed; the rare crashes traced back to a Linux kernel bug and faulty hardware on a few machines, which made one memory bug hard to rule out.",
-        "takeaways": "For a CDN, the cost of a miss is not only the trip to the origin but setting up the connection for it, so connection reuse matters as much as cache hit rate on uncached traffic. Architecture, here shared pools instead of per-process ones, drove the gains more than faster code. Replace a foundation when working around it costs more than rebuilding it."
+        "failures": "Cloudflare has to accept non-standard HTTP traffic, such as status codes above 599, and chose to write its own HTTP library for the flexibility. The hyper library did later accept that change. Across a few hundred trillion requests, Cloudflare says it has yet to see a crash caused by Pingora's service code. The rare crashes it did see led to a Linux kernel bug, and hardware issues on a few machines had in the past made rare software memory bugs nearly impossible to rule out.",
+        "takeaways": "For a CDN, the cost of a miss is not only the trip to the origin but setting up the connection for it, and Cloudflare called poor connection reuse its most critical problem. For latency, architecture, here shared pools instead of per-process ones, mattered more than faster code. Replace a foundation when working around it costs more than rebuilding it."
       }
     },
     {
@@ -118,7 +118,7 @@
       "title": "Content Popularity for Open Connect",
       "url": "https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b",
       "company": "Netflix",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2017-06-20",
       "ageNote": "From 2017. The idea it teaches, deciding from predicted popularity what each edge keeps and pushing it there ahead of demand, is still how Netflix describes its CDN: its 2025 post on classifying cache misses points back to this one for how content is placed. Hardware figures such as 100 Gbps and 200 TB may have changed.",
       "stillCitedBy": {
@@ -130,7 +130,7 @@
         "consistent-hashing"
       ],
       "digest": {
-        "problem": "This post covers edge placement: deciding what each edge server keeps. Netflix's CDN, Open Connect, puts its own servers inside internet providers' and exchange points' data centers, but most clusters near viewers do not have room for the whole catalog. So Netflix decides in advance, from predicted popularity, which files each cluster holds, instead of caching whatever happens to be requested.",
+        "problem": "This post covers edge placement: deciding what each edge server keeps. Netflix's CDN, Open Connect, puts its own servers inside internet providers' and exchange points' data centers, but many clusters near viewers do not have room for the whole catalog. So Netflix decides in advance, from predicted popularity, which files each cluster holds, instead of caching whatever happens to be requested.",
         "constraints": "Each server has fixed disk space, and every title is many files: each combination of encoding profile, bitrate and language is stored separately, around 1,200 files for one episode of The Crown. Updates are downloaded off-peak, and every changed file costs providers and Netflix bandwidth. Servers fail, and popularity can spike without warning.",
         "walkthrough": [
           {
@@ -173,21 +173,21 @@
             "meaning": "Files stored for one episode of The Crown"
           },
           {
-            "value": "up to 100Gbps",
+            "value": "up to 100 Gbps",
             "meaning": "Throughput of the servers that hold the most popular content"
           },
           {
-            "value": "200TB+",
+            "value": "200 TB+",
             "meaning": "Capacity of the storage servers that hold the long tail"
           }
         ],
         "tradeoffs": {
           "chosen": "Push content ahead of demand based on predicted, smoothed popularity, ranked per file and per region, with several copies of popular files spread by consistent hashing.",
           "rejected": "Ranking whole titles, predicting from yesterday alone, and keeping a single copy of each file.",
-          "why": "Title ranking stores unpopular bitrates next to popular ones and wastes disk. One day of history reacts to noise and churns content. A single copy of a very popular file can overwhelm its server while others sit idle; splitting big files into several copies is like balancing pebbles instead of rocks."
+          "why": "Title ranking stores unpopular bitrates next to popular ones and wastes disk. One day of history reacts to noise and churns content. A single copy of a very popular file can overwhelm its server while others sit idle, though the post says routing by network proximity and keeping popular files in memory make this less pronounced for Netflix. Extra copies also even out traffic between servers and keep a failed server's traffic in the cluster. Splitting big files into several copies is like balancing pebbles instead of rocks."
         },
         "failures": "The post describes no incident. It designs against three problems: uneven load when a popular file sits on one server, a server failure pushing its traffic to more distant sites, and sudden popularity spikes, which is why some mid-popularity content gets extra copies as insurance.",
-        "takeaways": "When you own the catalog and can predict demand, filling caches ahead of time beats waiting for misses. Choose the unit you rank and store carefully, since finer units saved half the storage here. Consistent hashing places the copies within a cluster, which ties this post to the Consistent Hashing topic."
+        "takeaways": "Netflix owns the catalog and can predict demand, so it fills caches ahead of time instead of waiting for requests. Choose the unit you rank and store carefully, since finer units saved half the storage here. Consistent hashing places the copies within a cluster, which ties this post to the Consistent Hashing topic."
       }
     }
   ],
@@ -234,7 +234,7 @@
     "Giving each worker process its own pool of origin connections. Every worker you add splits the pool further, so connection reuse falls exactly when traffic grows.",
     "Assuming faster code fixes slow misses. Cloudflare's old proxy already handled requests in under a millisecond; the delay came from new connections and their handshakes."
   ],
-  "comparison": "The two posts cover different halves of a CDN and do not compete.\n\nNetflix's covers edge placement: deciding ahead of time, from predicted popularity, which files each edge cluster keeps and how many copies, so most viewers are served inside their own provider's network. Cloudflare's Pingora covers the origin link: what happens on a miss, when the edge has to fetch from the customer's server, and how sharing connection pools makes that trip cheaper.\n\nNetflix can predict demand for a catalog it owns and push files off-peak; a CDN serving other people's sites cannot predict demand as well, so cheap misses matter more.",
+  "comparison": "The two posts cover different halves of a CDN and do not compete.\n\nNetflix's covers edge placement: deciding ahead of time, from predicted popularity, which files each edge cluster keeps and how many copies, so content is served over the shortest network path possible. Cloudflare's Pingora covers the origin link: what happens on a miss, when the edge has to fetch from the customer's server, and how sharing connection pools makes that trip cheaper.\n\nNetflix can predict demand for a catalog it owns and push files off-peak; Our own reading, not stated in either post: a CDN serving other people's sites cannot predict demand as well, so cheap misses matter more.",
   "lesson": {
     "why": {
       "outcome": "After this you can explain why serving content from one place is slow for most users, and what a CDN changes.",
@@ -292,12 +292,12 @@
         },
         {
           "step": "Share one pool",
-          "explanation": "Its replacement, Pingora, uses threads sharing one pool. For one major customer, connection reuse went from 87.1% to 99.92%, and median and p95 time to first byte fell by 5 ms and 80 ms."
+          "explanation": "Its replacement, Pingora, uses threads sharing one pool. For one major customer, connection reuse went from 87.1% to 99.92%. Across all traffic, median and p95 time to first byte fell by 5 ms and 80 ms."
         }
       ],
-      "diagram": "<svg viewBox=\"0 0 560 136\" role=\"img\" aria-labelledby=\"dg-cdns-ex-t\" class=\"dg\"><title id=\"dg-cdns-ex-t\">Placing content ahead of demand: rank files by popularity, copy the hot ones to edges, make misses cheap with revalidation, and share one origin pool.</title><defs><marker id=\"dg-cdns-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"69\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Rank by</text><text x=\"69\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">popularity</text><text x=\"69\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">files, not titles</text><rect x=\"152\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"209\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Copy hot</text><text x=\"209\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">files</text><text x=\"209\" y=\"99\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">to the edges</text><rect x=\"292\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"349\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Make miss</text><text x=\"349\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">cheap</text><text x=\"349\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">revalidate</text><rect x=\"432\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"489\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Share one</text><text x=\"489\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">pool</text><text x=\"489\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">origin shield</text><path d=\"M126,60 L152,60\" class=\"dg-line\" marker-end=\"url(#dg-cdns-ex-a)\"/><path d=\"M266,60 L292,60\" class=\"dg-line\" marker-end=\"url(#dg-cdns-ex-a)\"/><path d=\"M406,60 L432,60\" class=\"dg-line\" marker-end=\"url(#dg-cdns-ex-a)\"/><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Push the popular bytes outward; keep the rare miss cheap.</text></svg>"
+      "diagram": "<svg viewBox=\"0 0 560 136\" role=\"img\" aria-labelledby=\"dg-cdns-ex-t\" class=\"dg\"><title id=\"dg-cdns-ex-t\">Placing content ahead of demand: rank files by popularity, copy the hot ones to edges, make misses cheap by reusing connections, and share one pool across threads.</title><defs><marker id=\"dg-cdns-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"69\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Rank by</text><text x=\"69\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">popularity</text><text x=\"69\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">files, not titles</text><rect x=\"152\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"209\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Copy hot</text><text x=\"209\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">files</text><text x=\"209\" y=\"99\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">to the edges</text><rect x=\"292\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"349\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Make miss</text><text x=\"349\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">cheap</text><text x=\"349\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">reuse open ones</text><rect x=\"432\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"489\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Share one</text><text x=\"489\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">pool</text><text x=\"489\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">threads share it</text><path d=\"M126,60 L152,60\" class=\"dg-line\" marker-end=\"url(#dg-cdns-ex-a)\"/><path d=\"M266,60 L292,60\" class=\"dg-line\" marker-end=\"url(#dg-cdns-ex-a)\"/><path d=\"M406,60 L432,60\" class=\"dg-line\" marker-end=\"url(#dg-cdns-ex-a)\"/><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Push the popular bytes outward; keep the rare miss cheap.</text></svg>"
     },
-    "mistakesOutcome": "After this you can avoid the three most common ways CDN thinking goes wrong.",
+    "mistakesOutcome": "After this you can avoid three ways CDN thinking goes wrong.",
     "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
     "quiz": [
       {

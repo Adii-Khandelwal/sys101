@@ -1,6 +1,6 @@
 {
   "slug": "cdns",
-  "promise": "After this you can follow the topic page and the posts.",
+  "promise": "After this you can explain what a CDN is, how a request is answered at the edge, and what a CDN is allowed to cache.",
   "before": {
     "prerequisites": [
       "dns",
@@ -27,8 +27,8 @@
       "id": "basics",
       "name": "Basics",
       "body": [
-        "Distance costs time. A user in one country fetching from a server in another pays for every round trip across the network. web.dev describes a content delivery network, a CDN, as a network of servers optimised to deliver resources, located closer to users than the origin so they have a shorter round-trip time, with caches that eliminate the need for a request to travel to the origin at all [[webdev-cdn]].",
-        "At its heart a CDN is a cache, the topic you just read, placed away from your application and near users. MDN lists CDNs among managed caches, which service developers deploy explicitly to offload the origin and deliver content efficiently, and says you can usually control them through the Cache-Control header and your own configuration [[mdn-caching]]. The same ideas apply: a hit is served locally and fast, a miss fetches from the origin, and web.dev says a CDN's cache is built up over time as additional uncached resources are requested [[webdev-cdn]].",
+        "Distance costs time. A user in one country fetching from a server in another pays for every round trip across the network. web.dev explains a content delivery network, a CDN, as servers placed closer to users than the origin, so a request has a shorter round trip, with caches that can answer without contacting the origin at all [[webdev-cdn]].",
+        "At its heart a CDN is a cache, the topic you just read, placed away from your application and near users. MDN counts CDNs as managed caches, ones a service developer sets up on purpose to take load off the origin, and says that in most cases you control them with the Cache-Control header and your own configuration [[mdn-caching]]. The same ideas apply: a hit is served locally and fast, a miss fetches from the origin, and web.dev says a CDN's cache is built up over time as additional uncached resources are requested [[webdev-cdn]].",
         "The result is lower latency for users and less load on the origin. web.dev says that because CDNs reduce server load they reduce server costs and are well suited to handling traffic spikes [[webdev-cdn]]."
       ],
       "terms": [
@@ -251,7 +251,7 @@
       "publisher": "web.dev (Google)",
       "kind": "Vendor documentation",
       "year": "page shows last updated 2023-12-05",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "mdn-caching",
@@ -260,7 +260,7 @@
       "publisher": "MDN Web Docs (Mozilla)",
       "kind": "Vendor documentation",
       "year": "page shows last updated 2026-08-14",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "rfc9111",
@@ -269,7 +269,7 @@
       "publisher": "IETF",
       "kind": "Internet standard",
       "year": "2022",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The RFC shows its date as June 2022."
     },
     {
@@ -279,7 +279,7 @@
       "publisher": "curl project",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     }
   ]
 }

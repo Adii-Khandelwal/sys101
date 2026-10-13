@@ -1,6 +1,6 @@
 {
   "topic": "cdns",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "tcp-connections",
@@ -18,7 +18,7 @@
           "publisher": "MDN Web Docs",
           "url": "https://developer.mozilla.org/en-US/docs/Glossary/TCP",
           "year": "page shows last updated 2025-07-11",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -38,7 +38,7 @@
           "publisher": "IETF",
           "url": "https://www.rfc-editor.org/rfc/rfc9110.html",
           "year": "2022",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     }
