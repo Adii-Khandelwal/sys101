@@ -177,15 +177,11 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
                       </button>
                     </span>
                   ) : (
-                    <button
-                      type="button"
-                      className="text-button label"
-                      disabled={s.done === 0}
-                      onClick={() => setConfirmReset(t.slug)}
-                      aria-label={`Reset ${t.title}`}
-                    >
-                      Reset
-                    </button>
+                    (s.done > 0 || updated[t.slug]) && (
+                      <button type="button" className="text-button label" onClick={() => setConfirmReset(t.slug)} aria-label={`Reset ${t.title}`}>
+                        Reset
+                      </button>
+                    )
                   )}
                 </li>
               );
