@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type KeyboardEvent } from "react";
-import { MAX_ADDED, WINDOW_SECONDS, windowEstimate, windowFormula, windowStatus, windowValueText, type WindowInputs } from "@/lib/slidingWindow";
+import { WINDOW_SECONDS, canAdd, nudge, windowEstimate, windowFormula, windowStatus, windowValueText, type WindowInputs } from "@/lib/slidingWindow";
 import type { FigureText } from "@/lib/figures";
 import { FigureFrame, Solid } from "./parts";
 import { currentBeadX, dialAngle, type Geometry } from "./slidingWindow/geometry";
@@ -34,7 +34,7 @@ export default function SlidingWindowLive({ uid, geo, inputs, text }: { uid: str
     const dir = e.key === "ArrowRight" || e.key === "ArrowUp" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowDown" ? -1 : 0;
     if (!dir || !e.shiftKey) return;
     e.preventDefault();
-    setElapsed(Math.min(WINDOW_SECONDS, Math.max(0, elapsed + 5 * dir)));
+    setElapsed(nudge(elapsed, dir));
   };
 
   const svg = (
@@ -116,7 +116,7 @@ export default function SlidingWindowLive({ uid, geo, inputs, text }: { uid: str
             />
             <span className="fig-seconds">{elapsed} s</span>
           </label>
-          <button type="button" className="text-button" disabled={added >= MAX_ADDED} onClick={() => setAdded(added + 1)}>
+          <button type="button" className="text-button" disabled={!canAdd(added)} onClick={() => setAdded(added + 1)}>
             Add a request
           </button>
           <button type="button" className="text-button" onClick={() => (setElapsed(inputs.elapsed), setAdded(0))}>

@@ -60,13 +60,17 @@ function diagramCount(topic: Topic): number {
   return n;
 }
 
-/** Minutes to read a topic page, rounded to a whole minute (never below 1). */
-export function readingMinutes(topic: Topic, news?: News | null): number {
+/** Unrounded reading time of a topic page, in minutes. */
+export function readingExact(topic: Topic, news?: News | null): number {
   // What's new renders each item's title and summary below the page, so they count too.
   const newsProse = (news?.items ?? []).flatMap((i) => [i.title, i.summary]);
   const wordCount = [...proseStrings(topic), ...newsProse].reduce((sum, s) => sum + words(s), 0);
-  const minutes = wordCount / WORDS_PER_MINUTE + (diagramCount(topic) * SECONDS_PER_DIAGRAM) / 60;
-  return Math.max(1, Math.round(minutes));
+  return wordCount / WORDS_PER_MINUTE + (diagramCount(topic) * SECONDS_PER_DIAGRAM) / 60;
+}
+
+/** Minutes to read a topic page, rounded to a whole minute (never below 1). */
+export function readingMinutes(topic: Topic, news?: News | null): number {
+  return Math.max(1, Math.round(readingExact(topic, news)));
 }
 
 /** The label shown on the page, e.g. "~8 min read". */

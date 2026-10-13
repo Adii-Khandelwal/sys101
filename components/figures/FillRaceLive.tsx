@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type KeyboardEvent } from "react";
-import { raceEvents, raceState, type RaceInputs } from "@/lib/fillRace";
+import { raceLast, raceState, type RaceInputs } from "@/lib/fillRace";
 import type { FigureText } from "@/lib/figures";
 import { FigureFrame, Solid } from "./parts";
 import type { RaceGeometry } from "./fillRace/geometry";
@@ -13,7 +13,7 @@ export default function FillRaceLive({ uid, geo, inputs, text }: { uid: string; 
   const [step, setStep] = useState(0);
   const [guard, setGuard] = useState(false);
   const [evict, setEvict] = useState(false);
-  const last = raceEvents({ guard, evict }).length - 1;
+  const last = raceLast({ guard, evict });
   const at = Math.min(step, last);
   const s = raceState(inputs, { guard, evict }, at);
 
@@ -27,7 +27,7 @@ export default function FillRaceLive({ uid, geo, inputs, text }: { uid: string; 
       {geo.back.map((p) => (
         <Solid key={p.name} b={p.box} className={p.name === "database.token" ? "fig-lit" : undefined} />
       ))}
-      <g className="fig-move fig-fade" style={{ transform: px(geo.invalShift[s.inval === "hidden" ? "hidden" : s.inval]), opacity: s.inval === "flight" ? 1 : 0 }}>
+      <g className="fig-move fig-fade" style={{ transform: px(geo.invalShift[s.inval]), opacity: s.inval === "flight" ? 1 : 0 }}>
         <Solid b={geo.inval} />
       </g>
       <g className="fig-move fig-fade" style={{ transform: px(geo.fillShift[s.fill]), opacity: s.fill === "flight" || s.fill === "blocked" ? 1 : 0 }}>
@@ -75,10 +75,10 @@ export default function FillRaceLive({ uid, geo, inputs, text }: { uid: string; 
           <button type="button" className="text-button" disabled={at === last} onClick={() => setStep(at + 1)}>
             Next step
           </button>
-          <button type="button" className="text-button" aria-pressed={guard} onClick={() => setGuard(!guard)}>
+          <button type="button" className="text-button" aria-pressed={guard} onClick={() => (setGuard(!guard), setStep(Math.min(at, raceLast({ guard: !guard, evict }))))}>
             Version guard: {guard ? "on" : "off"}
           </button>
-          <button type="button" className="text-button" aria-pressed={evict} onClick={() => setEvict(!evict)}>
+          <button type="button" className="text-button" aria-pressed={evict} onClick={() => (setEvict(!evict), setStep(Math.min(at, raceLast({ guard, evict: !evict }))))}>
             Entry evicted first: {evict ? "on" : "off"}
           </button>
           <button type="button" className="text-button" onClick={() => (setStep(0), setGuard(false), setEvict(false))}>

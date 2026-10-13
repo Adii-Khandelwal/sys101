@@ -12,8 +12,8 @@ const [cA, sA, cE, sE] = [Math.cos(AZ), Math.sin(AZ), Math.cos(EL), Math.sin(EL)
 const round = (n: number) => Math.round(n * 100) / 100;
 const raw = ([x, y, z]: Pt3): Flat => [x * cA - y * sA, (x * sA + y * cA) * sE - z * cE];
 
-export const WIDTH = 720;
-export const PAD = 14;
+const WIDTH = 720;
+const PAD = 14;
 
 /** Fit the viewBox to the extreme points of everything drawn (including moved parts at both ends). */
 export function makeScene(extremes: Pt3[]) {
@@ -42,8 +42,5 @@ export function makeScene(extremes: Pt3[]) {
   };
   /** The kit's camera for the same view, so the skill's audit sees what is drawn: azimuth 72 puts x to the right. */
   const projection = { origin: [OX, OY] as Flat, scale: S / Math.sqrt(1.6), azimuth: 90 - 18, elevation: 30 };
-  return { iso, box, drawn, shift, projection, S, height, viewBox: `0 0 ${WIDTH} ${height}`, poly, matrixOf: () => [round(cA * S * 1000) / 1000, round(sA * sE * S * 1000) / 1000, round(cE * S * 1000) / 1000] as Pt3 };
+  return { iso, box, drawn, shift, projection, S, height, viewBox: `0 0 ${WIDTH} ${height}`, matrixOf: () => [round(cA * S * 1000) / 1000, round(sA * sE * S * 1000) / 1000, round(cE * S * 1000) / 1000] as Pt3 };
 }
-
-/** Painter's-order pieces of the figure that are boxes: the front and right faces shade, the top is lightest. */
-export type Drawn = { name: string; box: Box };

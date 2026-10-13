@@ -8,6 +8,9 @@ export type RaceEvent = "start" | "fill" | "mutate" | "invalidate" | "evict" | "
 
 export const raceValid = (i: RaceInputs) => i.stale !== i.fresh && i.version > 0;
 
+/** Index of the last step: the story is one event longer when the entry is evicted. */
+export const raceLast = (o: RaceOptions) => raceEvents(o).length - 1;
+
 export const raceEvents = (o: RaceOptions): RaceEvent[] => ["start", "fill", "mutate", "invalidate", ...(o.evict ? (["evict"] as const) : []), "reply"];
 
 export type RaceState = {

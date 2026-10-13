@@ -3,10 +3,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 import { getAllTopics, type Post } from "./topics";
 import { checkFigure, figureProse, figureText, resolveInputs, FIGURE_IDS, type FigureId, type FigureSpec } from "./figures";
-import { windowEstimate, windowFormula, windowStatus, windowValueText, type WindowInputs } from "./slidingWindow";
-import { raceEvents, raceState, type RaceInputs } from "./fillRace";
+import { canAdd, nudge, windowEstimate, windowFormula, windowStatus, windowValid, windowValueText, MAX_ADDED, type WindowInputs } from "./slidingWindow";
+import { raceEvents, raceLast, raceState, type RaceInputs } from "./fillRace";
 import { latchState, type LatchInputs } from "./commitLatch";
-import { readingMinutes } from "./readingTime";
+import { readingExact } from "./readingTime";
 import SlidingWindowLive from "@/components/figures/SlidingWindowLive";
 import FillRaceLive from "@/components/figures/FillRaceLive";
 import CommitLatchLive from "@/components/figures/CommitLatchLive";
@@ -28,7 +28,7 @@ describe("every registered figure", () => {
     const topic = topics.find((t) => t.posts.some((p) => p.id === post.id))!;
     const without = { ...topic, posts: topic.posts.map((p) => (p.id === post.id ? { ...p, digest: { ...p.digest, figure: undefined } } : p)) };
     expect(figureProse(specOf(post), post.digest.numbers, srcOf(post)).join(" ").split(/\s+/).length).toBeGreaterThan(80);
-    expect(readingMinutes(topic)).toBeGreaterThanOrEqual(readingMinutes(without));
+    expect(readingExact(topic)).toBeGreaterThan(readingExact(without));
     expect(figureProse(undefined, post.digest.numbers, srcOf(post))).toEqual([]);
   });
 
@@ -58,6 +58,18 @@ describe("sliding-window model", () => {
     expect(windowValueText(inputs, 18, 15)).toBe("15 seconds into the minute, estimate 49.5 of 50");
   });
 
+  it("steps five seconds with Shift and arrows, kept inside the minute, and caps added requests", () => {
+    expect([nudge(15, 1), nudge(15, -1), nudge(58, 1), nudge(2, -1)]).toEqual([20, 10, 60, 0]);
+    expect([canAdd(0), canAdd(MAX_ADDED - 1), canAdd(MAX_ADDED)]).toEqual([true, true, false]);
+  });
+
+  it("refuses inputs the drawing cannot show", () => {
+    expect(windowValid(inputs)).toBe(true);
+    expect(windowValid({ ...inputs, current: 30 })).toBe(false); // 30 + 22 beads overflow the 40-bead tray
+    expect(windowValid({ ...inputs, limit: 52 })).toBe(false); // no 5-step tick for the limit mark
+    expect(windowValid({ ...inputs, limit: 100 })).toBe(false); // off the dial
+  });
+
   it("keeps the current minute's lanes clear of the previous minute's row", () => {
     for (const y of CUR_LANES) expect(Math.abs(y - 9)).toBeGreaterThanOrEqual(2.8);
   });
@@ -80,6 +92,12 @@ describe("fill-race model", () => {
   it("refuses the older reply with the guard, until the entry is evicted", () => {
     expect(last(true, false)).toMatchObject({ cache: 43, refused: true, fill: "blocked", pawl: "up" });
     expect(last(true, true)).toMatchObject({ cache: 42, refused: false, fill: "delivered", pawl: "down" });
+  });
+
+  it("shortens the story when the eviction switch goes off, so a stored step cannot jump back", () => {
+    expect(raceLast({ guard: false, evict: false })).toBe(4);
+    expect(raceLast({ guard: false, evict: true })).toBe(5);
+    expect(raceState(i, { guard: true, evict: false }, 5).event).toBe("reply"); // out of range clamps to the end
   });
 
   it("has the invalidation land first", () => {

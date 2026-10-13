@@ -13,9 +13,8 @@ const scene = makeScene([[-6, -4, 0], [126, -4, 0], [126, 18, 0], [-6, 18, 0], [
 const { iso, box, drawn } = scene;
 const S = scene.S;
 const round = (n: number) => Math.round(n * 100) / 100;
-export const HEIGHT = scene.height;
 /** Screen shift of one second of time along the rail. */
-export const SECOND: Flat = scene.shift(1);
+const SECOND: Flat = scene.shift(1);
 
 const BASE = { x0: -6, x1: 126, y0: -4, y1: 18, z0: 0, z1: 3 };
 const TRAY = { y0: 5, y1: 13, z0: 3, z1: 5.2 };
