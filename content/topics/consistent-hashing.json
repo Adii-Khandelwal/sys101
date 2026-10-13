@@ -18,7 +18,7 @@
       {
         "postId": "cloudflare-ketama-ram-2026",
         "row": 0,
-        "label": "With 160 virtual nodes per server across 100 servers, load variation fell from about 99% to about 8%"
+        "label": "Across 100 servers, 160 points each cut load variation from about 99% to about 8%"
       },
       {
         "postId": "cloudflare-ketama-ram-2026",
