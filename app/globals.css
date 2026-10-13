@@ -1590,12 +1590,12 @@ a:hover {
 }
 
 /* The strip's own "Back to top": phones only, and only once the page is scrolled well down. */
-.strip-top {
-  display: none;
+.progress-sticky .strip-top {
+  display: none; /* .text-button sets inline-block later in the file, so this needs the extra class */
 }
 
 @media (max-width: 640px) {
-  .strip-top {
+  .progress-sticky .strip-top {
     display: inline-block;
     flex: none;
     opacity: 0;
