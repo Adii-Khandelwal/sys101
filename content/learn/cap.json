@@ -1,6 +1,6 @@
 {
   "slug": "cap",
-  "promise": "After this you can follow the topic page and the posts.",
+  "promise": "After this you can explain what CAP forces you to choose, how R, W and N tune that choice, and what each side costs.",
   "before": {
     "prerequisites": [
       "replication",
@@ -27,8 +27,8 @@
       "id": "basics",
       "name": "Basics",
       "body": [
-        "Once data lives on more than one machine, the network between those machines can fail: messages are dropped or delayed, and two groups of nodes can no longer talk. That is a network partition. The CAP theorem is about what a system does in that moment. It says that during a partition you can keep every node answering (availability) or keep every answer correct and up to date (consistency), but not both at once.",
-        "The popular shorthand \"pick two of three: consistency, availability, partition tolerance\" is misleading. On a real network, partitions happen whether you want them or not, so partition tolerance is not something you trade away. The honest statement is: when a partition occurs, choose consistency or availability. When there is no partition, a good system gives you both.",
+        "Once data lives on more than one machine, the network between those machines can fail: messages are dropped or delayed, and two groups of nodes can no longer talk. That is a network partition. The CAP theorem is about what a system does in that moment. Our summary of it, which none of the cited pages states: during a partition you can keep every node answering (availability) or keep every answer correct and up to date (consistency), but not both at once.",
+        "General background, not from a cited page: the popular shorthand \"pick two of three: consistency, availability, partition tolerance\" is misleading. On a real network, partitions happen whether you want them or not, so partition tolerance is not something you trade away. The honest statement is: when a partition occurs, choose consistency or availability. When there is no partition, a good system gives you both.",
         "Different databases make this choice differently, and often make it configurable. Amazon's DynamoDB, for instance, offers two read modes: eventually consistent reads (the default), which Amazon notes might not reflect a recently completed write, and strongly consistent reads, which do but cost more [[aws-ddb-consistency]]. That single setting is the CAP trade-off made concrete."
       ],
       "terms": [
@@ -252,7 +252,7 @@
       "publisher": "Amazon Web Services",
       "kind": "Vendor documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "cassandra-dynamo",
@@ -261,7 +261,7 @@
       "publisher": "Apache Software Foundation",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The page was labelled as the 5.0 prerelease documentation when opened."
     },
     {
@@ -271,7 +271,7 @@
       "publisher": "Google Cloud",
       "kind": "Vendor documentation",
       "year": "page shows last updated 2026-10-09",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "cassandra-cqlsh",
@@ -280,7 +280,7 @@
       "publisher": "Apache Software Foundation",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "topic": "cap",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "service-level-agreements",
@@ -18,18 +18,18 @@
           "publisher": "Google",
           "url": "https://sre.google/sre-book/service-level-objectives/",
           "year": "2017",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
     {
       "id": "paxos",
       "name": "Paxos",
-      "explanation": "A protocol that lets a group of machines agree on one value, even when some fail. Spanner runs one group per slice of data. The gist is enough here.",
+      "explanation": "A protocol that lets a group of machines agree on one value, even when some fail. Spanner runs one group per slice of data.",
       "assumedBy": [
         {
           "postId": "google-spanner-2012",
-          "quote": "Our Paxos implementation supports long-lived leaders with time-based leader leases, whose length defaults to 10 seconds."
+          "quote": "To support replication, each spanserver implements a single Paxos state machine on top of each tablet."
         }
       ],
       "topicPage": "consensus"
@@ -37,7 +37,7 @@
     {
       "id": "two-phase-commit",
       "name": "Two-phase commit",
-      "explanation": "A way to make several parts of a system commit one change together: first all agree they can, then all do it. The gist is enough here.",
+      "explanation": "A way to make several parts of a system commit one change together: first all agree they can, then all do it.",
       "assumedBy": [
         {
           "postId": "google-spanner-2012",

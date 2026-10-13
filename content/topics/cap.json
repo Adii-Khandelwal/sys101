@@ -21,7 +21,7 @@
       {
         "postId": "amazon-dynamo-2007",
         "row": 0,
-        "label": "99.9% of reads and writes complete within 300 ms, Dynamo's SLA"
+        "label": "Amazon's example SLA asks for 99.9% of requests within 300 ms"
       },
       {
         "postId": "google-spanner-2012",
@@ -104,7 +104,7 @@
       ],
       "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-cap-ex-t\" class=\"dg\"><title id=\"dg-c-cap-ex-t\">A partition isolates replica C: under the available policy C accepts a write and diverges from A and B, so a reader gets stale data and the versions are merged on heal; under the consistent policy C refuses without a quorum, so its clients are unavailable but nothing diverges.</title><defs><marker id=\"dg-c-cap-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"40\" y=\"50\" width=\"90\" height=\"36\" class=\"dg-box dg-accent\"/><text x=\"85\" y=\"72.5\" class=\"dg-label\" text-anchor=\"middle\">A</text><rect x=\"40\" y=\"100\" width=\"90\" height=\"36\" class=\"dg-box dg-accent\"/><text x=\"85\" y=\"122.5\" class=\"dg-label\" text-anchor=\"middle\">B</text><text x=\"85\" y=\"158\" class=\"dg-note\" text-anchor=\"middle\">quorum of 2</text><line x1=\"200\" y1=\"40\" x2=\"200\" y2=\"180\" class=\"dg-line dg-dashed\"/><text x=\"200\" y=\"198\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">partition</text><rect x=\"270\" y=\"75\" width=\"90\" height=\"36\" class=\"dg-box\"/><text x=\"315\" y=\"97.5\" class=\"dg-label\" text-anchor=\"middle\">C (alone)</text><rect x=\"410\" y=\"40\" width=\"140\" height=\"44\" class=\"dg-box\"/><text x=\"480\" y=\"60\" class=\"dg-label\" text-anchor=\"middle\">available:</text><text x=\"480\" y=\"77\" class=\"dg-label\" text-anchor=\"middle\">accept, diverge</text><rect x=\"410\" y=\"104\" width=\"140\" height=\"44\" class=\"dg-box\"/><text x=\"480\" y=\"124\" class=\"dg-label\" text-anchor=\"middle\">consistent:</text><text x=\"480\" y=\"141\" class=\"dg-label\" text-anchor=\"middle\">refuse, stay safe</text><path d=\"M360,88 L410,70\" class=\"dg-line\" marker-end=\"url(#dg-c-cap-ex-a)\"/><path d=\"M360,100 L410,122\" class=\"dg-line\" marker-end=\"url(#dg-c-cap-ex-a)\"/><text x=\"280\" y=\"240\" class=\"dg-note\" text-anchor=\"middle\">on heal: available merges versions (vector clocks); consistent had nothing to merge</text><text x=\"280\" y=\"262\" class=\"dg-note\" text-anchor=\"middle\">pick per data: a cart merges, a balance must not</text></svg>"
     },
-    "mistakesOutcome": "After this you can avoid the three most common misreadings of CAP.",
+    "mistakesOutcome": "After this you can avoid three misreadings of CAP.",
     "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
     "quiz": [
       {
@@ -256,9 +256,9 @@
       "title": "Dynamo: Amazon's Highly Available Key-value Store",
       "url": "https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf",
       "company": "Amazon",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2007-10-14",
-      "ageNote": "This is a research paper, not a company blog post: the 2007 SOSP paper, about nineteen years old. It is here for a fundamental that has not changed: how a system deliberately chooses availability over strong consistency and reconciles divergence afterwards. The DynamoDB product Amazon sells today has evolved well beyond this design and now offers strongly consistent reads and transactions, so treat the paper as the origin of the ideas, not a description of the current service.",
+      "ageNote": "This is a research paper, not a company blog post: the 2007 SOSP paper, about nineteen years old. It is here for a fundamental that has not changed: how a system deliberately chooses availability over strong consistency and reconciles divergence afterwards. The DynamoDB product Amazon sells today has evolved well beyond this design and now offers strongly consistent reads, so treat the paper as the origin of the ideas, not a description of the current service.",
       "related": [
         "consistent-hashing",
         "replication",
@@ -266,7 +266,7 @@
       ],
       "digest": {
         "problem": "Amazon's e-commerce platform needed storage for services that must give an \"always-on\" experience, such as the shopping cart, where even a brief inability to write loses sales and trust. Many of these services only need primary-key access, not relational queries. The team wanted a store that is always writable, scales incrementally, and keeps answering through the failures and partitions that are routine at Amazon's scale.",
-        "constraints": "The headline requirement is a service level agreement stated at the 99.9th percentile, not the mean: 99.9% of read and write requests must execute within 300 ms. Writes must never be rejected, even during failures. The design assumes commodity hardware that fails constantly and must tolerate partitions without an operator in the loop.",
+        "constraints": "Amazon states its service level agreements at the 99.9th percentile, not the mean. The paper's example is a response within 300 ms for 99.9% of requests at a peak load of 500 requests per second. Writes must never be rejected, even during failures. The design assumes commodity hardware that fails constantly and must tolerate partitions without an operator in the loop.",
         "walkthrough": [
           {
             "step": "Place keys with consistent hashing",
@@ -297,7 +297,7 @@
         "numbers": [
           {
             "value": "99.9% within 300 ms",
-            "meaning": "The SLA Dynamo is built to: 99.9% of read and write requests complete within 300 milliseconds, measured at the 99.9th percentile rather than the mean"
+            "meaning": "The paper's example SLA, for a peak client load of 500 requests per second; Amazon measures SLAs at the 99.9th percentile rather than the mean"
           },
           {
             "value": "(3, 2, 2)",
@@ -322,7 +322,7 @@
       "title": "Spanner: Google's Globally-Distributed Database",
       "url": "https://static.googleusercontent.com/media/research.google.com/en//archive/spanner-osdi2012.pdf",
       "company": "Google",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2012-10-08",
       "ageNote": "This is a research paper, not a company blog post: the 2012 OSDI paper, about fourteen years old. It is here for a fundamental that has not changed: how a system chooses strong consistency across the globe and engineers around partitions and clock uncertainty rather than giving up consistency. Cloud Spanner has grown since, but the TrueTime and commit-wait ideas the paper introduces are the point.",
       "related": [
@@ -332,7 +332,7 @@
       ],
       "digest": {
         "problem": "Google needed a database that scales across datacenters worldwide yet still offers strong, SQL-like semantics, including externally consistent transactions. Its advertising backend, F1, was moving off a manually sharded MySQL deployment that was painful to reshard and operate. The goal was global scale without giving up the consistency that application developers rely on.",
-        "constraints": "Spanner commits to external consistency (a global linearizable order of transactions), which is the opposite CAP stance from Dynamo. It runs across datacenters connected by wide-area links, so it must tolerate partitions while never serving an order of transactions that violates real time. It leans on replication by Paxos and on tightly controlled time.",
+        "constraints": "Spanner commits to external consistency (a global linearizable order of transactions), which, in our CAP framing (the paper does not use it), is the opposite stance from Dynamo. It runs across datacenters connected by wide-area links, so it must tolerate partitions while never serving an order of transactions that violates real time. It leans on replication by Paxos and on tightly controlled time.",
         "walkthrough": [
           {
             "step": "Shard into directories, replicate by Paxos",
@@ -383,7 +383,7 @@
           "rejected": "The availability-first, eventually consistent approach, and the pretence that clocks are exact.",
           "why": "Google judged that giving application developers strong consistency and SQL was worth paying latency for, because reasoning about an eventually consistent store across continents is harder than paying a bounded wait. Rather than drop consistency, Spanner shrinks the cost by making clock uncertainty small and known, so the commit-wait is short."
         },
-        "failures": "The honesty is in the costs it accepts. Commit-wait adds latency to writes, bounded by TrueTime's uncertainty, so the whole design depends on keeping that uncertainty small, which needs real GPS and atomic-clock hardware in every datacenter. A partitioned minority of replicas cannot form a Paxos majority, so it cannot commit, which is the availability price of choosing consistency.",
+        "failures": "The honesty is in the costs it accepts. Commit-wait adds latency to writes, bounded by TrueTime's uncertainty, so the whole design depends on keeping that uncertainty small, which needs real GPS and atomic-clock hardware in every datacenter. Our reading, not stated in the paper: a partitioned minority of replicas cannot form a Paxos majority, so it cannot commit, which is the availability price of choosing consistency.",
         "takeaways": "Spanner is the counterexample to \"you must give up consistency to go distributed\": you can keep strong consistency globally if you are willing to pay a bounded latency and engineer the clock. It shows the CAP choice depends on what you are willing to spend, since distribution alone does not force it, and that making the uncertainty window small and measurable is what makes the consistent choice affordable."
       }
     }
