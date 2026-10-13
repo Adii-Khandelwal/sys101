@@ -1,6 +1,6 @@
 {
   "topic": "indexing",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "elasticsearch-lucene",
@@ -13,7 +13,7 @@
         },
         {
           "postId": "discord-search-indexing-2025",
-          "quote": "As guilds on Discord grow larger with longer histories, more and more of them bump up against Lucene’s MAX_DOC limit of ~2 billion messages."
+          "quote": "Each of our Elasticsearch indices is a single Lucene index under the hood"
         }
       ],
       "sources": [
@@ -22,7 +22,7 @@
           "publisher": "Elastic",
           "url": "https://www.elastic.co/docs/reference/elasticsearch/",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -42,7 +42,7 @@
           "publisher": "MDN Web Docs",
           "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions",
           "year": "page shows last updated 2026-03-17",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -62,7 +62,7 @@
           "publisher": "Apache Kafka",
           "url": "https://kafka.apache.org/intro",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -82,14 +82,14 @@
           "publisher": "Kubernetes",
           "url": "https://kubernetes.io/docs/concepts/extend-kubernetes/operator/",
           "year": "page shows last updated 2025-07-16",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
     {
       "id": "pub-sub",
       "name": "Publish and subscribe",
-      "explanation": "Senders publish a message to a topic and everyone subscribed to it receives a copy, without the sender knowing who they are. The gist is enough here.",
+      "explanation": "Senders publish a message to a topic and everyone subscribed to it receives a copy, without the sender knowing who they are.",
       "assumedBy": [
         {
           "postId": "discord-search-indexing-2025",

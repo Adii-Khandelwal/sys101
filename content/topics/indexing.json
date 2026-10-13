@@ -38,10 +38,10 @@
       "title": "The technology behind GitHub's new code search",
       "url": "https://github.blog/engineering/architecture-optimization/the-technology-behind-githubs-new-code-search/",
       "company": "GitHub",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2023-02-06",
       "digest": {
-        "problem": "GitHub wanted to search all of its code, including punctuation and regular expressions, without stemming or dropping common words, which general text search does badly. When it first deployed Elasticsearch, indexing all the code on GitHub, about 8 million repositories at the time, took months; by 2023 there were more than 200 million repositories, and the code keeps changing. All figures below describe the code search beta as of February 2023: almost 45 million searchable repositories, 115 TB of code and 15.5 billion documents.",
+        "problem": "GitHub wanted to search all of its code, including punctuation and regular expressions, without stemming or dropping common words. General text search products had given it a poor user experience, slow indexing and high hosting costs. When it first deployed Elasticsearch, indexing all the code on GitHub, about 8 million repositories at the time, took months; by 2023 there were more than 200 million repositories, and the code keeps changing. All figures below describe the code search beta as of February 2023: almost 45 million searchable repositories, 115 TB of code and 15.5 billion documents.",
         "constraints": "Scanning everything per query is out of reach. GitHub's own estimate: ripgrep reads about 0.6 GB per second per core, so one query over 115 TB on a 32-machine, 64-core cluster would hold 2,048 cores for 96 seconds, about 0.01 queries per second. Results also had to be consistent per commit: a search must not see half of a push that is still being processed.",
         "walkthrough": [
           {
@@ -111,10 +111,10 @@
         "tradeoffs": {
           "chosen": "Its own search engine, Blackbird, written in Rust: an ngram index with sparse grams, sharded by blob ID, fed through Kafka with delta-encoded crawling.",
           "rejected": "General text search products such as Elasticsearch, existing open source code search tools, and brute-force scanning with grep.",
-          "why": "General products handled code poorly, indexed slowly and were expensive to host; the open source tools did not work at GitHub's scale; and scanning was thousands of times too slow. Sharding by content keeps storage even and free of duplicates, at the price that every query has to visit every shard."
+          "why": "General products handled code poorly, indexed slowly and were expensive to host; the open source tools did not work at GitHub's scale; and scanning by brute force would serve about 0.01 queries per second. Sharding by content keeps storage even and free of duplicates, at the price that every query has to visit every shard."
         },
         "failures": "The first Elasticsearch deployment took months to index about 8 million repositories. Plain trigrams produced so many false matches that queries slowed down, which led to sparse grams. The post is clear that the 100 ms p99 is per shard, and that total response time is longer once results are aggregated, permission-checked and highlighted. It describes a beta that was still adding repositories.",
-        "takeaways": "An index is only as good as its selectivity: grams that match too much cost as much as no index. The shard key decides the query path; sharding by content spreads data evenly but makes every query fan out. Knowing your data, here content hashes and heavy duplication, can cut indexing work in half."
+        "takeaways": "An index is only as good as its selectivity: common trigrams gave GitHub too many false positives and slow queries. The shard key decides the query path; sharding by content spreads data evenly but makes every query fan out. Knowing your data, here content hashes and heavy duplication, can cut indexing work in half."
       }
     },
     {
@@ -122,11 +122,11 @@
       "title": "How Discord Indexes Trillions of Messages",
       "url": "https://discord.com/blog/how-discord-indexes-trillions-of-messages",
       "company": "Discord",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "published": "2025-04-24",
       "digest": {
         "problem": "Discord indexes messages in Elasticsearch so people can search them, with each guild's messages, or each DM's, kept together in one index. As message volume grew, the clusters reached more than 200 nodes, indexing slowed and failed more often, upgrades became nearly impossible, and the biggest guilds started hitting a hard limit on index size.",
-        "constraints": "Each Elasticsearch index is a single Lucene index, and Lucene caps an index at about 2 billion documents; past that, every write to it fails. Elastic's recommendation is to keep an index under 200M messages and 50GB. Large clusters also carry coordination overhead on their master nodes, which grows with nodes and indexes.",
+        "constraints": "Each Elasticsearch index is a single Lucene index, and Lucene caps an index at about 2 billion documents; past that, every write to it fails. Discord cites a recommendation to keep an index within 200M messages and 50GB. Large clusters also carry coordination overhead on their master nodes, which grows with nodes and indexes.",
         "walkthrough": [
           {
             "step": "Batch by destination",
@@ -157,7 +157,7 @@
         "numbers": [
           {
             "value": "~40%",
-            "meaning": "Bulk index operations failing after one node failure, in Discord's example of a 100-node cluster and batches of 50 messages"
+            "meaning": "Bulk index operations failing after one node failure, in Discord's example of a 100-node cluster, batches of 50 messages and an equal distribution"
           },
           {
             "value": "over 200",
@@ -193,7 +193,7 @@
           "rejected": "Ever-larger clusters, batches that span many nodes, and one sharding scheme for every kind of message.",
           "why": "Large clusters failed more often, coordinated slowly and could not be restarted safely. Keeping a guild on one shard means no query fan-out for almost every search; only the biggest guilds are worth the coordination cost of several shards. Sharding DMs by user doubles their storage but makes cross-DM search possible."
         },
-        "failures": "One node failure could fail about 40% of bulk writes. Master nodes ran out of memory as clusters grew, which caused indexing failures and timeouts. Patching the Log4Shell vulnerability meant taking search fully offline to restart every node. When indexes hit Lucene's limit, the only fix was to work with the Safety team to delete spam guilds.",
+        "failures": "The Redis queue feeding the indexers dropped messages when it backed up, so Discord moved to PubSub, which guarantees delivery. One node failure could fail about 40% of bulk writes. Master nodes ran out of memory as clusters grew, which caused indexing failures and timeouts. Patching the Log4Shell vulnerability meant taking search fully offline to restart every node. When indexes hit Lucene's limit, the only fix was to work with the Safety team to delete spam guilds.",
         "takeaways": "Write batches should match how data is placed, or one failure spreads to many writes. Choose the shard key from the query you need: by guild for guild search, by user for searching all your DMs. Keep indexes well below hard limits, and split the rare giant ones rather than every index."
       }
     }
@@ -287,7 +287,7 @@
         },
         {
           "step": "Add an inverted index",
-          "explanation": "With an ngram index, each shard answers in about 100 ms at p99, and one 64-core host can serve something like 640 queries per second. Those figures are from GitHub's 2023 beta."
+          "explanation": "With an ngram index, each shard answers in about 100 ms at p99, and one 64-core host has an upper bound of something like 640 queries per second. Those figures are from GitHub's 2023 beta."
         },
         {
           "step": "See the cost",
@@ -308,7 +308,7 @@
       ],
       "diagram": "<svg viewBox=\"0 0 560 153\" role=\"img\" aria-labelledby=\"dg-idx-ex-t\" class=\"dg\"><title id=\"dg-idx-ex-t\">From scan to index: a table scan is slow, an inverted index is fast but costs writes and storage, and the shard key decides how a search query spreads.</title><defs><marker id=\"dg-idx-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"55\" y=\"73.16666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">No index</text><text x=\"55\" y=\"116\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">full scan</text><rect x=\"124\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box dg-accent\"/><text x=\"167\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Add</text><text x=\"167\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">inverted</text><text x=\"167\" y=\"90.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">index</text><text x=\"167\" y=\"116\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">fast lookup</text><rect x=\"236\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"279\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">See the</text><text x=\"279\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">cost</text><text x=\"279\" y=\"116\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">writes, storage</text><rect x=\"348\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"391\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Shard by</text><text x=\"391\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">content</text><rect x=\"460\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"503\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Shard by</text><text x=\"503\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">scope</text><path d=\"M98,68.5 L124,68.5\" class=\"dg-line\" marker-end=\"url(#dg-idx-ex-a)\"/><path d=\"M210,68.5 L236,68.5\" class=\"dg-line\" marker-end=\"url(#dg-idx-ex-a)\"/><path d=\"M322,68.5 L348,68.5\" class=\"dg-line\" marker-end=\"url(#dg-idx-ex-a)\"/><path d=\"M434,68.5 L460,68.5\" class=\"dg-line\" marker-end=\"url(#dg-idx-ex-a)\"/><text x=\"280\" y=\"143\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The index saves the read; the shard key shapes the search.</text></svg>"
     },
-    "mistakesOutcome": "After this you can avoid the three most common indexing mistakes.",
+    "mistakesOutcome": "After this you can avoid three indexing mistakes.",
     "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
     "quiz": [
       {

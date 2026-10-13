@@ -1,6 +1,6 @@
 {
   "slug": "indexing",
-  "promise": "After this you can follow the topic page and the posts.",
+  "promise": "After this you can explain what an index is, what it costs, and how B-tree and search indexes differ.",
   "before": {
     "prerequisites": [
       "databases",
@@ -175,7 +175,7 @@
       "body": [
         "Every index is a bet: it speeds some queries while slowing all writes and taking space. The practical discipline is to index for the queries you actually run, confirm with the query plan that each index is used, and drop ones that are not. An unused index is pure cost. PostgreSQL devotes a whole section to examining whether your indexes are being used and refining them against the real workload [[pg-indexes-examine]].",
         "Databases and search engines make different default bargains. A relational B-tree index favours exact and range lookups on structured columns; a search engine favours flexible text matching and ranking, and it updates its index slightly behind the source data. Elasticsearch says a stored document is fully searchable in near real-time, within one second, because a refresh makes recent changes visible, by default every second [[es-near-real-time]]. Many systems use both: the database as the source of truth, a search index kept in sync beside it.",
-        "At scale the two topics meet. A sharded database spreads rows across shards, and a search cluster spreads its inverted index across shards the same way, running each query on every shard and merging results. The indexing ideas here are what make queries fast within each shard, so this topic completes the data path the earlier topics built [[es-docs]]."
+        "At scale the two topics meet. A sharded database spreads rows across shards, and a search cluster spreads its inverted index across shards the same way. Running each query on every shard and merging the results is general practice, not something the cited page spells out. The indexing ideas here are what make queries fast within each shard, so this topic completes the data path the earlier topics built [[es-docs]]."
       ],
       "terms": [
         {
@@ -263,7 +263,7 @@
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "pg-indexes-types",
@@ -272,7 +272,7 @@
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "lucene",
@@ -281,7 +281,7 @@
       "publisher": "Apache Software Foundation",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The Lucene landing page. The inverted index and scoring claims below come from the Lucene core pages added as separate sources."
     },
     {
@@ -291,7 +291,7 @@
       "publisher": "Elastic",
       "kind": "Vendor documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "pg-indexes-multicolumn",
@@ -300,7 +300,7 @@
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "pg-indexes-examine",
@@ -309,7 +309,7 @@
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "lucene-index",
@@ -318,7 +318,7 @@
       "publisher": "Apache Software Foundation",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "Lucene 10.5.2 API documentation."
     },
     {
@@ -328,7 +328,7 @@
       "publisher": "Apache Software Foundation",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "Lucene 10.5.2 API documentation."
     },
     {
@@ -338,7 +338,7 @@
       "publisher": "Elastic",
       "kind": "Vendor documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The address redirects to the current Elastic docs page."
     },
     {
@@ -348,7 +348,7 @@
       "publisher": "Elastic",
       "kind": "Vendor documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The address redirects to the current Elastic docs page."
     },
     {
@@ -358,7 +358,7 @@
       "publisher": "PostgreSQL Global Development Group",
       "kind": "Project documentation",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     }
   ]
 }
