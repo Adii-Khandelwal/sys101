@@ -1,6 +1,6 @@
 {
   "topic": "consensus",
-  "updatedOn": "2026-10-12",
+  "updatedOn": "2026-10-13",
   "items": [
     {
       "id": "mvcc",
@@ -18,7 +18,7 @@
           "publisher": "PostgreSQL Global Development Group",
           "url": "https://www.postgresql.org/docs/current/mvcc-intro.html",
           "year": "no date shown",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -38,7 +38,7 @@
           "publisher": "etcd (CNCF)",
           "url": "https://etcd.io/docs/v3.5/learning/api_guarantees/",
           "year": "page shows last updated 2025-09-26",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     },
@@ -58,7 +58,7 @@
           "publisher": "Leslie Lamport",
           "url": "https://lamport.azurewebsites.net/tla/tla.html",
           "year": "page shows last updated 2025-10-13",
-          "verifiedOn": "2026-10-12"
+          "verifiedOn": "2026-10-13"
         }
       ]
     }

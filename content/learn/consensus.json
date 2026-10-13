@@ -1,6 +1,6 @@
 {
   "slug": "consensus",
-  "promise": "After this you can follow the topic page and the posts.",
+  "promise": "After this you can explain what consensus agrees on, how a Raft leader commits by majority, and what that costs in latency.",
   "before": {
     "prerequisites": [
       "cap",
@@ -118,7 +118,7 @@
       "body": [
         "The subtle part of consensus is reads, not writes. A leader that was just deposed during a partition might still think it leads and serve stale data. The Raft paper says a leader must check whether it has been deposed by exchanging heartbeats with a majority before answering a read-only request [[raft-paper]]. etcd's guide describes the same cost: linearizable reads go through a quorum of members to fetch the most recent data, while serializable reads are cheaper because a single member serves them, in exchange for possibly stale data [[etcd-perf]].",
         "The common optimisation is a lease on leadership, so the leader can answer reads from local state without checking a majority each time. The Raft paper mentions the idea, and warns that relying on heartbeats as a lease depends on timing for safety, because it assumes bounded clock skew [[raft-paper]]. The topic's CockroachDB post shows leases taken to scale, folding the lease into Raft leadership to cut its overhead.",
-        "Sizing follows from the majority rule. A cluster of five can tolerate the failure of any two servers [[raft-paper]], and the Kubernetes docs say to run etcd with an odd number of members and recommend five in production [[kube-etcd]]. An even number buys nothing extra: four nodes tolerate the same single failure as three but need a larger majority to agree. So consensus clusters are usually three or five nodes, chosen for the failure budget you need, not for raw capacity."
+        "Sizing follows from the majority rule. A cluster of five can tolerate the failure of any two servers [[raft-paper]], and the Kubernetes docs say to run etcd with an odd number of members and recommend five in production [[kube-etcd]]. General reasoning, not from the cited pages: an even number buys nothing extra, since four nodes tolerate the same single failure as three but need a larger majority to agree. So consensus clusters are usually three or five nodes, chosen for the failure budget you need, not for raw capacity."
       ],
       "terms": [
         {
@@ -160,7 +160,7 @@
       "id": "practice",
       "name": "In practice and trade-offs",
       "body": [
-        "The headline trade-off is latency for agreement. etcd's performance guide is explicit that consensus commit latency is limited by two physical costs: network round-trip time between members and the disk sync on each member, with a typical US round trip around 50 ms and up to 400 ms between continents, and a disk sync around 10 ms on a spinning disk versus under 1 ms on an SSD [[etcd-perf]]. You make consensus faster by shrinking those, with SSDs and co-located members, and by batching requests, not by removing the round trip.",
+        "The headline trade-off is latency for agreement. etcd's performance guide is explicit that consensus commit latency is limited by two physical costs: network round-trip time between members and the disk sync on each member, with a typical US round trip around 50 ms and up to 400 ms between continents, and a disk sync around 10 ms on a spinning disk versus under 1 ms on an SSD [[etcd-perf]]. The guide says etcd raises throughput by batching requests. Our reading of its figures: SSDs and nearby members would shrink the two costs, but nothing removes the round trip.",
         "Placement is the other practical lever. Because every commit needs a majority, a cluster whose majority is spread across continents pays a cross-region round trip on every write; that is general reasoning from the round-trip figures above, not something the etcd page spells out. The etcd page does note that systems which partition data across multiple consistent replication groups (shards) are the ones used for large data sets, while etcd keeps one group for a few GB [[etcd-why]].",
         "Finally, consensus is where availability meets correctness from CAP. As long as a majority of the cluster is reachable, the system keeps making progress, and when too many servers fail it stops making progress but never returns an incorrect result [[raft]]. etcd's page says the systems it is built for will never tolerate split-brain operation and are willing to sacrifice availability to achieve this [[etcd-why]]."
       ],
@@ -249,7 +249,7 @@
       "publisher": "raft.github.io (Diego Ongaro and John Ousterhout, Stanford)",
       "kind": "Project / academic reference",
       "year": "no date shown",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The page refers to the 2014 Raft paper; the page itself shows no date."
     },
     {
@@ -259,7 +259,7 @@
       "publisher": "etcd (CNCF)",
       "kind": "Project documentation",
       "year": "page shows last updated 2026-07-10",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "etcd-perf",
@@ -268,7 +268,7 @@
       "publisher": "etcd (CNCF)",
       "kind": "Project documentation",
       "year": "page shows last updated 2021-06-14",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "kube-etcd",
@@ -277,7 +277,7 @@
       "publisher": "Kubernetes",
       "kind": "Project documentation",
       "year": "page shows last updated 2026-08-03",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "raft-paper",
@@ -286,7 +286,7 @@
       "publisher": "raft.github.io (Diego Ongaro and John Ousterhout, Stanford)",
       "kind": "Academic paper on the project's site",
       "year": "2014",
-      "verifiedOn": "2026-10-11",
+      "verifiedOn": "2026-10-13",
       "note": "The paper shows \"Published May 20, 2014\"."
     },
     {
@@ -296,7 +296,7 @@
       "publisher": "etcd (CNCF)",
       "kind": "Project documentation",
       "year": "page shows last updated 2026-09-29",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "etcd-runtime-config",
@@ -305,7 +305,7 @@
       "publisher": "etcd (CNCF)",
       "kind": "Project documentation",
       "year": "page shows last updated 2021-10-26",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     },
     {
       "id": "etcd-interacting",
@@ -314,7 +314,7 @@
       "publisher": "etcd (CNCF)",
       "kind": "Project documentation",
       "year": "page shows last updated 2021-06-14",
-      "verifiedOn": "2026-10-11"
+      "verifiedOn": "2026-10-13"
     }
   ]
 }
