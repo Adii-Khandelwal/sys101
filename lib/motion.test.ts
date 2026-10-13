@@ -68,7 +68,8 @@ describe("reduced motion", () => {
     for (const name of ["dur-fast", "dur-base", "dur-slow", "dur-page"]) expect(block).toMatch(new RegExp(`--${name}:\\s*0ms`));
     expect(block).toMatch(/animation-duration:\s*var\(--dur-reduced\)/);
     expect(DURATION.reduced).toBeLessThanOrEqual(80);
-    expect(block).toMatch(/scroll-behavior:\s*auto/);
+    // Only Back to top scrolls smoothly, and that is in JS (scrollBehavior); CSS never sets smooth scrolling.
+    expect(css).not.toMatch(/scroll-behavior:\s*smooth/);
   });
 
   it("JS reads the user's preference", () => {
