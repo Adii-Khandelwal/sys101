@@ -119,6 +119,13 @@ a {
   }
 }
 
+/* Touch has no hover: a tapped link takes the same rust while it is pressed. */
+@media (hover: none) {
+  a:active:not(.cta) {
+    color: var(--accent);
+  }
+}
+
 /* Links inside running text share the body's colour, so the underline is their only cue: draw it in --ink-soft
    (6.4:1 light, 6.5:1 dark against the paper) instead of the faint --rule that lists of links use. A colour change
    cannot do it: rust against ink is 2.5:1 light and 2.8:1 dark, under the 3:1 that WCAG 1.4.1 asks for. */
@@ -962,6 +969,13 @@ li {
   gap: 10px;
   white-space: nowrap;
 }
+.sources-list a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  width: 100%;
+}
 
 /* A company's mark: a fixed slot, the mark fitted inside it with its own proportions, so names line up and nothing shifts as it loads. */
 .company-logo {
@@ -1049,11 +1063,6 @@ li {
   font-size: 18px;
 }
 
-.sources-count {
-  margin-left: 6px;
-  font-size: 16px;
-  color: var(--ink-soft);
-}
 
 /* ── Home view toggle (Map / Path) ───────── */
 .home-toolbar {
@@ -2124,6 +2133,13 @@ li {
     text-decoration: none;
   }
 
+  @media (hover: hover) and (pointer: fine) {
+    /* Ink, not rust: rust marks the current section in this list. */
+    .lesson-rail a:hover {
+      color: var(--ink);
+    }
+  }
+
   .lesson-rail .is-current a {
     color: var(--accent);
   }
@@ -2630,6 +2646,7 @@ button:active:not(:disabled),
 
 html {
   scroll-padding-top: calc(var(--header-h) + 16px); /* anchors land below the header */
+  -webkit-tap-highlight-color: transparent; /* no blue flash over a tapped link on a phone; the pressed colour below and the focus ring are the feedback */
   overscroll-behavior-y: none; /* no rubber-band at the page ends: it moves the sticky header and leaves the fixed header letters behind */
 }
 
@@ -2686,6 +2703,7 @@ html {
 
 .logo {
   display: inline-flex;
+  flex: none; /* the page and section names give way, never the wordmark */
   align-items: center;
   gap: 8px;
   min-height: 44px;
@@ -2762,17 +2780,49 @@ html {
   padding-top: 24px;
 }
 
-/* Topic name beside the logo once the page heading scrolls away. */
+/* The page's name beside the logo once its heading scrolls under the bar, then the current section's name, lighter, behind a thin
+   rule. Both fade with the scroll (lib/headerFade.ts); opacity starts at 0 so nothing shows before the first measure. */
 .header-topic {
   display: flex;
+  flex: 1 1 0; /* takes only the room the logo and toggle leave, so a long name cannot squeeze them */
   align-items: center;
-  margin-left: 14px;
-  overflow: hidden; /* letters rise from below this edge */
-  font-size: 18px;
+  margin-left: 18px;
+  overflow: hidden;
   line-height: 1.2;
   white-space: nowrap;
   min-width: 0;
+}
+
+.header-title {
+  flex: none;
+  max-width: 55vw; /* a percentage would depend on this very row and collapse the name to "P..." */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 18px;
+  color: var(--ink);
+  opacity: 0;
+}
+
+.header-sections {
+  display: grid;
+  min-width: 0;
+}
+
+.header-crumb {
+  grid-area: 1 / 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin-left: 14px;
+  font-size: 16px;
   color: var(--ink-soft);
+  opacity: 0;
+}
+
+.header-section-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-topic-rule {
@@ -2785,8 +2835,16 @@ html {
 
 @media (max-width: 640px) {
   .header-topic {
-    margin-left: 10px;
+    margin-left: 12px;
+  }
+
+  .header-title {
     font-size: 16px;
+  }
+
+  .header-crumb {
+    margin-left: 10px;
+    font-size: 14px;
   }
 
   .header-topic-rule {
@@ -3607,7 +3665,7 @@ html[data-posts-view] .posts-view-h {
 }
 @media (hover: hover) and (pointer: fine) {
   .posts-topic-h a:hover {
-    text-decoration: underline;
+    color: var(--accent);
   }
 }
 .posts-n {

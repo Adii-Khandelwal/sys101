@@ -68,6 +68,7 @@ Handcrafted, not AI-template. Cream background, serif headings, restrained palet
 - Theme toggle (sun/moon) stored locally, follows prefers-color-scheme until chosen, set before paint (no flash). SVG diagrams theme via the tokens; the Sigma map reads live vars (readThemeColors, lib/graphUi.ts).
 - Never use: gradients, neon, rainbow, pastels, purple and black, pure white background, drop shadows, large radius, liquid glass, emojis, sparkle icons, loose side icons, animated arrows, hover animations everywhere, bounce or elastic easing,
   three-card rows, bento grids, pricing tiers, testimonials, colored stripes, terminal mockups, dot grids, radial orbs, checkmark bullets, Inter/Geist/Space Grotesk, em dashes, "It's not X, it's Y" phrasing.
+- Links are not underlined unless they sit inside a running sentence; a standalone link shows itself by a colour change on hover (rust; ink in side contents lists). Every search or filter box behaves like the homepage search: "/" focus, Escape clears, Enter to the first result, word-start matching, a "/" hint, an aria-live count (`accessibility-and-chrome.md`). Only the homepage "sys101" flies letter by letter into the bar; elsewhere the page name and the current section name fade into it, the section name lighter (`motion.md`).
 - Always: skeleton loaders, a real working demo, Terms and Privacy pages in the footer.
 - Review every page or UI piece before calling it done: render it at 1440px and 390px and check it reads as part of the whole (mono small-caps labels, generous whitespace, state shown by shape not colour alone).
 - Check spacing: text and adjacent controls must never run together. Prefer a flex row with `gap` over JSX `{" "}`. Catch this in development, never push it.
@@ -107,8 +108,23 @@ Run only what the change touches, then once at the end:
 - Run `/ponytail-review` on the diff before every push of code changes and say what it found.
 - `.github/CODEOWNERS` records who owns what; `.claude/**` and `CLAUDE.md` are listed because they change what an agent does.
 
+## Owner's ideas (the log)
+
+Every idea or preference the owner states is written down, here as one line and in full in the matching rule file, so none is lost. Add a line with each new one. Newest last.
+
+- Great reads (`/reads`, `reads.md`): a curated list of influential or excellent posts and papers, chosen by the owner, kept apart from the topic sources; each row says post or paper; the title is the link; no read-state in v1, later a small "Read" toggle (`progress-tracking.md`).
+- Filters on /reads: All/Posts/Papers, a Topic row under its own "Topic" heading, a text filter. The count line shows only while filtering.
+- Every search or filter box has the homepage search's behaviour: "/" focus, Escape, Enter to the first result, word-start matching ("uber" must not find "Kubernetes") (`accessibility-and-chrome.md`).
+- Links are not underlined unless inside a running sentence; hover turns them a colour (rust, ink in side lists), on every list of links (`accessibility-and-chrome.md`). No blue tap flash on a phone.
+- The homepage "Where the sources come from" list links each company to `/posts#<company>` and shows no counts (`homepage.md`).
+- The top bar: only the homepage "sys101" flies letter by letter. Elsewhere the page name fades in, then a thin rule and the current section name, lighter, replaced by each new section heading going down and back up; no rule before the page name; at the very end of a page only the last section shows (`motion.md`, lib/headerFade.ts).
+- The top bar shows no section names on About, Terms, Privacy and Your data.
+- Links to a section glide down to it (same page), or open the other page at its top and then glide down (`motion.md`, lib/glide.ts).
+- Start button text must stay visible on hover.
+
 ## Keeping docs current
 
+- When the owner states an idea, preference or correction, add it to the Owner's ideas log above and to its rule file in the same change.
 - Update docs with every commit. When a task adds or changes a standing rule, page type, schema, route, feature or convention, update the matching `.claude/rules/` file (or this file for a project-wide rule) and `README.md` in the same commit. Edit existing text; never duplicate a rule.
 - Put a new rule where it will load when it matters: path-scoped in `.claude/rules/<area>.md` (add the file's globs to its `paths`), or here only if it applies to every task. A new area gets a rule file and a row in the table above. Use a skill, not a rule, for a multi-step workflow.
 - Do not record one-off details or temporary state. Dated working records go in `docs/`.

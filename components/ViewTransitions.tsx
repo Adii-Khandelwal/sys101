@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { glideToSection, whenVisible } from "@/lib/glide";
 import { prefersReducedMotion } from "@/lib/motion";
 
 type Doc = Document & { startViewTransition?: (cb: () => Promise<void>) => unknown };
@@ -24,22 +25,42 @@ export function pageReady(pathname: string, cap = 1000) {
   });
 }
 
-/** Navigate with the page cross-fade where supported, ending only when the new page is ready. */
-export function navigateWithTransition(router: { push: (href: string) => void }, href: string) {
-  const doc = document as Doc;
-  const url = new URL(href, location.href);
-  if (!doc.startViewTransition || prefersReducedMotion()) return router.push(href);
-  doc.startViewTransition(() => {
-    router.push(url.pathname + url.search + url.hash);
-    return pageReady(url.pathname);
-  });
+/** After a page that was opened with a #section has loaded: show it from its top, then glide down to the section. */
+async function glideToHash(url: URL) {
+  if (location.pathname !== url.pathname) return; // the reader already went elsewhere (Back, another link): leave that page where it is
+  window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+  const id = decodeURIComponent(url.hash.slice(1));
+  const target = id ? await whenVisible(id) : null;
+  if (target) await glideToSection(target);
 }
 
 /**
- * Cross-fades between pages with the View Transitions API where supported.
- * Only plain left-clicks on same-site links to another page are wrapped;
- * hash links, new tabs, modified clicks and back/forward are left alone, and
- * browsers without the API navigate exactly as before.
+ * Navigate with the page cross-fade where supported, ending only when the new page is ready. A link with a #section opens the
+ * page at its top (Next is told not to jump to the section) and then glides down to it.
+ */
+export function navigateWithTransition(router: { push: (href: string, opts?: { scroll?: boolean }) => void }, href: string) {
+  const doc = document as Doc;
+  const url = new URL(href, location.href);
+  const to = url.pathname + url.search + url.hash;
+  const opts = url.hash ? { scroll: false } : undefined;
+  if (!doc.startViewTransition || prefersReducedMotion()) {
+    router.push(to, opts);
+    if (url.hash) void pageReady(url.pathname).then(() => glideToHash(url));
+    return;
+  }
+  const t = doc.startViewTransition(() => {
+    router.push(to, opts);
+    return pageReady(url.pathname).then(() => {
+      if (url.hash) window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); // the new page is captured at its top
+    });
+  }) as { finished?: Promise<unknown> } | undefined;
+  if (url.hash) void (t?.finished ?? Promise.resolve()).finally(() => glideToHash(url));
+}
+
+/**
+ * Moves the reader through the site: a plain left-click on a link to another page cross-fades where the View Transitions API
+ * exists; a link to a #section on this page glides down to it; a link to a #section on another page opens that page at its top
+ * and then glides down. New tabs, modified clicks and back/forward are left alone, and browsers without the API navigate as before.
  */
 export default function ViewTransitions() {
   const router = useRouter();
@@ -47,13 +68,23 @@ export default function ViewTransitions() {
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       const doc = document as Doc;
-      if (!doc.startViewTransition || prefersReducedMotion()) return;
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const a = (e.target as Element | null)?.closest?.("a");
       if (!a || a.target === "_blank" || a.hasAttribute("download")) return;
       if (a.hasAttribute("data-own-transition")) return; // the link runs its own navigation
       const url = new URL(a.href, location.href);
-      if (url.origin !== location.origin || url.pathname === location.pathname) return;
+      if (url.origin !== location.origin) return;
+      if (url.pathname === location.pathname) {
+        // Same page: a section on it glides there (an unknown or hidden one is left to the browser).
+        const target = url.search === location.search && url.hash.length > 1 ? document.getElementById(decodeURIComponent(url.hash.slice(1))) : null;
+        if (!target || !target.getClientRects().length) return;
+        e.preventDefault();
+        history.replaceState(null, "", url.hash);
+        void glideToSection(target);
+        return;
+      }
+      if (!doc.startViewTransition && !url.hash) return; // a plain page change: Next does it
+      if (prefersReducedMotion() && !url.hash) return;
       e.preventDefault();
       navigateWithTransition(router, url.href);
     };
