@@ -5,6 +5,7 @@ import LearnRail from "@/components/LearnRail";
 import SiteFooter from "@/components/SiteFooter";
 import PageUpdated from "@/components/PageUpdated";
 import { backgroundUpdated, displayQuote, getAllBackground, isTaughtLater } from "@/lib/background";
+import CompanyLogo from "@/components/CompanyLogo";
 import { companyWhen, getAllTopics } from "@/lib/topics";
 import { topicNumbers, topicOrder } from "@/lib/order";
 import { pageMeta } from "@/lib/site";
@@ -61,7 +62,10 @@ export default function Background() {
                             const post = topic.posts.find((p) => p.id === a.postId)!;
                             return (
                               <li key={a.postId}>
-                                <Link href={`/topic/${b.topic}#${a.postId}`}>{companyWhen(post, "year", ", ")}</Link>
+                                <Link href={`/topic/${b.topic}#${a.postId}`} className="company-label">
+                                  <CompanyLogo name={post.company} size="sm" />
+                                  <span>{companyWhen(post, "year", ", ")}</span>
+                                </Link>
                                 <q>{displayQuote(a.quote)}</q>
                               </li>
                             );

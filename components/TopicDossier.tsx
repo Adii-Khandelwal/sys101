@@ -1,5 +1,6 @@
 import { diagramHtml } from "@/lib/diagramHtml";
 import Link from "next/link";
+import CompanyLogo from "./CompanyLogo";
 import IntentLink from "./IntentLink";
 import { companyWhen, isOld, isUndated, postDateShown, type Post, type Topic } from "@/lib/topics";
 import ReadToggle from "./ReadToggle";
@@ -40,7 +41,10 @@ export function PostDigest({ post, index, titles }: { post: Post; index: number;
   const old = isUndated(post) || isOld(post.published);
   return (
     <section className="post" aria-labelledby={`${id}-title`}>
-      <div className="label">{companyWhen(post, "month")}</div>
+      <div className="label company-label">
+        <CompanyLogo name={post.company} size="sm" />
+        <span>{companyWhen(post, "month")}</span>
+      </div>
       <h2 id={`${id}-title`}>{post.title}</h2>
 
       {old && (
@@ -229,7 +233,10 @@ export default function TopicDossier({ topic, prerequisites, dependents, titles,
               <a href={post.url} target="_blank" rel="noopener noreferrer">
                 {post.title}
               </a>{" "}
-              <span className="label">{companyWhen(post, "year")}</span>
+              <span className="label company-label company-label-inline">
+                <CompanyLogo name={post.company} size="sm" />
+                <span>{companyWhen(post, "year")}</span>
+              </span>
             </li>
           ))}
         </ul>

@@ -1,5 +1,6 @@
 import { diagramHtml } from "@/lib/diagramHtml";
 import Link from "next/link";
+import CompanyLogo from "./CompanyLogo";
 import { optionId } from "@/lib/quizIds";
 import { companyWhen, figureParts, type Topic } from "@/lib/topics";
 import { readingLabel } from "@/lib/readingTime";
@@ -83,7 +84,10 @@ function InShort({ topic }: { topic: Topic }) {
             <li key={text}>
               <a href={`#${post.id}`}>
                 <span>{text}</span>
-                <span className="label">{source}</span>
+                <span className="label company-label">
+                  <CompanyLogo name={post.company} size="sm" />
+                  <span>{source}</span>
+                </span>
               </a>
             </li>
           ))}
@@ -104,7 +108,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
   const entries = [
     ...["why", "model", "how", "example", "mistakes", "check"].map((id) => ({ id, name: SECTION_NAMES[id], tracked: true })),
     { id: "posts", name: "How companies use it", tracked: false },
-    ...topic.posts.map((p) => ({ id: p.id!, name: `${p.company} post`, tracked: true })),
+    ...topic.posts.map((p) => ({ id: p.id!, name: `${p.company} post`, tracked: true, company: p.company })),
     ...(topic.posts.length >= 2 && topic.comparison ? [{ id: "differ", name: "Where they differ", tracked: false }] : []),
     { id: "exercises", name: "Design exercises", tracked: false },
     { id: "next", name: "What to learn next", tracked: false },
@@ -329,7 +333,10 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
               <a href={post.url} target="_blank" rel="noopener noreferrer">
                 {post.title}
               </a>{" "}
-              <span className="label">{companyWhen(post, "year")}</span>
+              <span className="label company-label company-label-inline">
+                <CompanyLogo name={post.company} size="sm" />
+                <span>{companyWhen(post, "year")}</span>
+              </span>
             </li>
           ))}
         </ul>
