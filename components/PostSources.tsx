@@ -1,15 +1,17 @@
 import Link from "next/link";
 import CompanyLogo from "./CompanyLogo";
 import { slugify } from "@/lib/posts";
+import { NOT_COMPANIES } from "@/lib/organization";
 
 type Props = { companies: { name: string; label: string }[] };
 
 /** Who wrote the posts the topics are built on, counted from the content. */
 export default function PostSources({ companies }: Props) {
+  const notCompanies = companies.filter((c) => NOT_COMPANIES.includes(c.name)).map((c) => c.label);
   return (
     <section className="home-extra" aria-labelledby="sources-heading">
       <h2 id="sources-heading" className="label">
-        Who wrote the sources
+        Companies we learn from
       </h2>
       <ul className="sources-list">
         {companies.map((c) => (
@@ -23,7 +25,7 @@ export default function PostSources({ companies }: Props) {
         ))}
       </ul>
       <p className="home-extra-note">
-        Every source is linked and dated on its topic page, and <Link href="/posts">all of them are listed here</Link>, with <Link href="/reads">great reads</Link> kept apart. None of these companies is affiliated with this site.
+        Every source is linked and dated on its topic page, and <Link href="/posts">all of them are listed here</Link>, with <Link href="/reads">great reads</Link> kept apart. {notCompanies.length > 0 && `${notCompanies.join(" and ")} ${notCompanies.length > 1 ? "are open-source projects" : "is an open-source project"}, not ${notCompanies.length > 1 ? "companies" : "a company"}. `}None of these is affiliated with this site.
       </p>
     </section>
   );
