@@ -101,8 +101,8 @@ describe("group labels", () => {
 
   it("sit above the first node, left edge on the node's left edge", () => {
     const [above, below] = groupLabelSpots(first, 80, 120, false);
-    expect(above).toEqual({ x: 786, y: 264 });
-    expect(below).toEqual({ x: 786, y: 320 });
+    expect(above).toEqual({ x: 786, y: 258 });
+    expect(below).toEqual({ x: 786, y: 322 });
     expect(placeGroupLabel(groupLabelSpots(first, 80, 120, false), () => true, () => false)).toEqual(above);
   });
 

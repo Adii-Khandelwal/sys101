@@ -951,8 +951,8 @@ export default function GraphView({ nodes, edges }: Props) {
     const ctx = typeof document === "undefined" ? null : document.createElement("canvas").getContext("2d");
     if (ctx) ctx.font = `500 ${LABEL_SIZE * labelScale}px ${getComputedStyle(document.body).fontFamily}`;
     const title = new Map(nodes.map((n) => [n.slug, n.title]));
-    const blocked = (x: number, y: number, w: number, h = 17) => {
-      const [l, r, t, b] = [x - 4, x + w + 4, y - 3, y + h + 3];
+    const blocked = (x: number, y: number, w: number, h = 24) => {
+      const [l, r, t, b] = [x - 6, x + w + 6, y - 4, y + h + 4];
       if (edgeSamples.points.some((p) => p.x > l && p.x < r && p.y > t && p.y < b)) return true;
       return points.some((p) => {
         const lw = ctx?.measureText(title.get(p.slug) ?? "").width ?? 0;
@@ -960,11 +960,14 @@ export default function GraphView({ nodes, edges }: Props) {
         return boxes.some(([bl, bt, br, bb]) => l < br && r > bl && t < bb && b > bt);
       });
     };
+    const groupCtx = ctx ? document.createElement("canvas").getContext("2d") : null;
+    if (groupCtx) groupCtx.font = `400 18px ${getComputedStyle(document.body).fontFamily}`;
     const names = [...new Set(nodes.map((n) => n.group).filter((g): g is string => !!g))];
     return names.flatMap((name) => {
       const pts = nodes.filter((n) => n.group === name).map((n) => at.get(n.slug)).filter((p): p is Point => !!p);
       if (!pts.length) return [];
-      const width = name.length * 7.5; // 18px serif, as drawn by .graph-group
+      // Measured in the 18px serif the label is drawn in, plus its 4px side padding; a per-letter guess was off by up to 10px.
+      const width = (groupCtx ? groupCtx.measureText(name).width : name.length * 8) + 8;
       const first = pts[0]; // first in index order
       const spots = groupLabelSpots(first, width, ctx?.measureText(title.get(first.slug) ?? "").width ?? 0, effective === "vertical");
       const fits = (sp: { x: number }) => sp.x >= 0 && sp.x + width <= (size.width || Infinity);

@@ -192,7 +192,7 @@ h1[tabindex="-1"]:focus {
 }
 
 .masthead {
-  padding-top: 48px;
+  padding-top: 4px;
 }
 
 .masthead h1 {
@@ -219,7 +219,7 @@ h1[tabindex="-1"]:focus {
 
 /* Who it is for, why it matters: plain roman text at a reading measure, quieter than the lead. */
 .masthead .masthead-about {
-  max-width: 62ch;
+  max-width: none;
   margin-top: 20px;
 }
 
@@ -227,48 +227,49 @@ h1[tabindex="-1"]:focus {
   margin-top: 0;
 }
 
-/* Desktop: the pitch sits beside the wordmark and start button, so the map's top edge stays on screen. */
-@media (min-width: 768px) {
+/* Wide desktop: the pitch sits beside the wordmark and start button, so the map's top edge stays on screen. The right column ends on the page's right
+   edge, the same as the search underline and the Map and Path controls below it. */
+@media (min-width: 1024px) {
   .masthead {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     column-gap: 72px;
     align-items: start;
   }
-  .masthead > h1,
-  .masthead > .masthead-lead,
-  .masthead > .start-cta,
-  .masthead > .next-up,
-  .masthead > .masthead-actions {
-    grid-column: 1;
+  .masthead-main,
+  .masthead-side {
+    display: flex;
+    flex-direction: column;
   }
-  .masthead > .masthead-about {
-    grid-column: 2;
-    grid-row: 1 / span 3;
-    align-self: end;
-    margin: 0 0 24px;
+  .masthead-side .masthead-about {
+    max-width: none;
+    margin: 0;
   }
-  .masthead > .search {
-    grid-column: 2;
-    grid-row: 4;
-    margin-top: 0;
-    align-self: center;
+  .masthead-side .masthead-about p {
+    font-size: 18px;
+  }
+  .masthead-side .search {
+    margin-top: 16px;
   }
 }
 
-/* Phone: wordmark, lead, then the start button, before the longer pitch. */
-@media (max-width: 767px) {
+/* Phone and tablet: one column. The wrappers dissolve so the order can put the start button right after the lead. */
+@media (max-width: 1023px) {
   .masthead {
     display: flex;
     flex-direction: column;
   }
-  .masthead > h1 { order: 1; }
-  .masthead > .masthead-lead { order: 2; }
-  .masthead > .start-cta,
-  .masthead > .next-up { order: 3; }
-  .masthead > .masthead-about { order: 4; }
-  .masthead > .masthead-actions { order: 5; }
-  .masthead > .search { order: 6; }
+  .masthead-main,
+  .masthead-side {
+    display: contents;
+  }
+  .masthead h1 { order: 1; }
+  .masthead .masthead-lead { order: 2; }
+  .masthead .start-cta,
+  .masthead .next-up { order: 3; }
+  .masthead .masthead-about { order: 4; }
+  .masthead .masthead-actions { order: 5; }
+  .masthead .search { order: 6; }
 }
 
 /* The one filled control on the page: where to begin. */
@@ -277,7 +278,7 @@ h1[tabindex="-1"]:focus {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 20px;
-  margin: 28px 0 0;
+  margin: 22px 0 0;
 }
 
 .cta {
@@ -318,7 +319,7 @@ li {
 }
 
 .search {
-  max-width: 560px;
+  width: 100%;
   margin-top: 20px;
 }
 
@@ -519,7 +520,7 @@ li {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin: 8px 0 8px;
+  margin: 4px 0 8px;
 }
 
 /* "Fit to size": a plain text button at the right of the legend row, with a 44px tap target. */
@@ -972,8 +973,8 @@ li {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin: 32px 0 0;
-  padding-bottom: 10px;
+  margin: 20px 0 0;
+  padding-bottom: 2px;
 }
 
 .home-toolbar-label {
@@ -3079,6 +3080,18 @@ html {
   min-height: 44px;
   padding: 10px 0;
   color: inherit;
+  text-decoration: none;
+}
+/* The claim is the link cue; the company and date under it stay plain. */
+.in-short-figures a > span:first-child {
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .in-short-figures a:hover > span:first-child {
+    text-decoration-color: currentColor;
+  }
 }
 .relation-reason {
   margin: 2px 0 10px;
@@ -3959,7 +3972,7 @@ html[data-posts-view] .posts-view-h {
   flex-wrap: wrap;
   align-items: center;
   gap: 0 20px;
-  margin-top: 8px;
+  margin-top: 0;
 }
 
 /* 44px tap area for the entry link, without extra visible space. */
@@ -4021,16 +4034,7 @@ html[data-posts-view] .posts-view-h {
   vector-effect: non-scaling-stroke;
 }
 
-/* Gliding to the next target. Under reduced motion --dur-base is 0ms, so it is instant. */
-.tour-go .tour-dim,
-.tour-go .tour-ring {
-  transition: transform var(--dur-base) var(--ease-in-out);
-}
-
-.tour-tip.tour-go {
-  transition: transform var(--dur-base) var(--ease-in-out), opacity var(--dur-base) var(--ease-out);
-}
-
+/* The tooltip box and the outline travel by transform on one clock in TourOverlay; the words fade in. */
 .tour-tip {
   position: fixed;
   left: 0;
@@ -4070,6 +4074,10 @@ html[data-posts-view] .posts-view-h {
     border-width: 1px 0 0;
     border-radius: 0;
   }
+}
+
+.tour-body {
+  animation: fade-in var(--dur-fast) var(--ease-out);
 }
 
 .tour-count {

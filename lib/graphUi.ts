@@ -171,8 +171,9 @@ type LabelSpot = { x: number; y: number };
  * resorts. A label is never pinned to the stage edge.
  */
 export function groupLabelSpots(first: LabelNode, labelWidth: number, firstTitleWidth: number, stacked: boolean): LabelSpot[] {
-  const above = { x: first.x - first.r, y: first.y - first.r - 22 };
-  const below = { x: first.x - first.r, y: first.y + first.r + 6 };
+  // 28 above and 8 below clear the ring by a few px even for descenders (g, y) in the serif label.
+  const above = { x: first.x - first.r, y: first.y - first.r - 28 };
+  const below = { x: first.x - first.r, y: first.y + first.r + 8 };
   const left = { x: first.x - first.r - labelWidth - 8, y: first.y - 8 };
   const right = { x: first.x + first.r + 8 + firstTitleWidth + 16, y: first.y - 8 };
   return stacked ? [right, above, below, left] : [above, below, left, right];
