@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoScrollsInPlace } from "@/lib/scrollTop";
 import { scrollToTop } from "./BackToTop";
-import { trackRise } from "@/lib/letterRise";
+import { trackFly } from "@/lib/letterRise";
 
 /** Three nodes joined like a tiny prerequisite graph: two on the left, one on the right. */
 export function LogoMark({ size = 18 }: { size?: number }) {
@@ -22,14 +22,14 @@ export function LogoMark({ size = 18 }: { size?: number }) {
 /** Site logo, top left on every page. On the homepage it only scrolls to the top. */
 export default function Logo() {
   const pathname = usePathname();
-  // The homepage opens with the big "sys101" heading; the wordmark rises into the bar letter by letter as that heading scrolls under it.
+  // The homepage opens with the big "sys101" heading; its letters fly into the wordmark in the bar as that heading scrolls under it.
   const [hidden, setHidden] = useState(false);
   const ref = useRef<HTMLAnchorElement>(null);
   useEffect(() => {
     const h1 = logoScrollsInPlace(pathname) ? document.querySelector<HTMLElement>(".masthead h1") : null;
     setHidden(!!h1);
     if (!h1 || !ref.current) return;
-    return trackRise(h1, ref.current, (p) => setHidden(p < 0.5));
+    return trackFly(h1, ref.current, (p) => setHidden(p < 0.5));
   }, [pathname]);
   return (
     <Link
@@ -48,12 +48,12 @@ export default function Logo() {
         scrollToTop();
       }}
     >
-      <span className="logo-rise" data-rise>
+      <span className="logo-rise" data-fade>
         <LogoMark />
       </span>
       <span className="logo-word">
         {[..."sys101"].map((c, i) => (
-          <span key={i} className="rise-letter" data-rise>
+          <span key={i} className="rise-letter" data-ghost>
             {c}
           </span>
         ))}

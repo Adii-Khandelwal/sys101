@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { trackRise } from "@/lib/letterRise";
+import { trackFly } from "@/lib/letterRise";
 import { usePathname } from "next/navigation";
 
 /**
- * On topic pages, the topic's name next to the logo, arriving letter by letter
- * as its heading scrolls under the sticky header. Decorative for screen readers: the page
+ * On topic pages, the topic's name next to the logo, flown in from its heading
+ * letter by letter as the heading scrolls under the sticky header. Decorative for screen readers: the page
  * heading already names the topic.
  */
 export default function HeaderTopic() {
@@ -37,15 +37,15 @@ export default function HeaderTopic() {
 
   // Runs once the letters are in the DOM, before paint, so the title never shows in full at the top of the page.
   useLayoutEffect(() => {
-    if (heading && ref.current) return trackRise(heading, ref.current);
+    if (heading && ref.current) return trackFly(heading, ref.current);
   }, [heading]);
 
   if (!title) return null;
   return (
     <span ref={ref} className="header-topic" aria-hidden="true">
-      <span className="header-topic-rule" data-rise />
+      <span className="header-topic-rule" data-fade />
       {[...title].map((c, i) => (
-        <span key={i} className="rise-letter" data-rise>
+        <span key={i} className="rise-letter" data-ghost={c === " " ? undefined : ""}>
           {c === " " ? "\u00a0" : c}
         </span>
       ))}

@@ -2687,6 +2687,23 @@ html {
   display: inline-block;
 }
 
+/* The page heading, split into letters by lib/letterRise.ts while it flies to the bar. Words stay whole so lines still wrap at spaces. */
+.fly-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.fly-slot {
+  display: inline-block;
+}
+
+.fly-letter {
+  display: inline-block;
+  position: relative;
+  z-index: 40; /* above the sticky header (30), so letters stay visible once they sit in the bar */
+  pointer-events: none;
+}
+
 .logo-rise {
   display: inline-flex;
 }
