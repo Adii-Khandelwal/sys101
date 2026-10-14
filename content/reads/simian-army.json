@@ -1,0 +1,19 @@
+{
+  "id": "simian-army",
+  "title": "The Netflix Simian Army",
+  "company": "Netflix",
+  "kind": "post",
+  "published": "2011-07-19",
+  "theme": "Seeing and changing production",
+  "url": "https://netflixtechblog.com/the-netflix-simian-army-16e57fbab116",
+  "whyItMatters": "Explains why Netflix built Chaos Monkey, a tool that randomly disables production instances, to test that its cloud architecture survives common failures.",
+  "influence": "writeup",
+  "evidence": [
+    "a tool that randomly disables our production instances"
+  ],
+  "topics": [
+    "failover"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

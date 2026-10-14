@@ -13,6 +13,8 @@ export default function SiteFooter({ tour }: { tour?: TourId }) {
         <Link href="/glossary">Glossary</Link>
         <Dot />
         <Link href="/posts">Posts</Link>
+        <Dot />
+        <Link href="/reads">Great reads</Link>
         {tour && (
           <>
             <Dot />

@@ -1,0 +1,20 @@
+{
+  "id": "instagram-ids",
+  "title": "Sharding & IDs at Instagram",
+  "company": "Instagram",
+  "kind": "post",
+  "published": "2012-12-30",
+  "theme": "Caching, sharding and moving data",
+  "url": "https://medium.com/instagram-engineering/sharding-ids-at-instagram-1cf5a71e5a5c",
+  "whyItMatters": "Compares ways to hand out unique IDs when data is sharded, and explains the time-sortable 64-bit scheme Instagram built on PostgreSQL.",
+  "influence": "writeup",
+  "evidence": [
+    "IDs should ideally be 64 bits",
+    "41 bits for time in milliseconds"
+  ],
+  "topics": [
+    "sharding"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

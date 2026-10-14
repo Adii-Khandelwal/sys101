@@ -4,6 +4,7 @@ import { getAllTopics } from "@/lib/topics";
 import { getAllLearn } from "@/lib/learn";
 import { getNews } from "@/lib/news";
 import { backgroundUpdated, getAllBackground } from "@/lib/background";
+import { getAllReads, readsUpdated } from "@/lib/reads";
 import { PAGE_DATES, absoluteUrl, learnUpdated, postsUpdated, topicPageUpdated } from "@/lib/site";
 
 // Built once at build time from the content files, like every page.
@@ -22,6 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...learn.map((l) => entry(`/topic/${l.slug}/learn`, learnUpdated(l))),
     ...(getAllBackground().length ? [entry("/background", backgroundUpdated())] : []),
     entry("/posts", postsUpdated(topics)),
+    entry("/reads", readsUpdated(getAllReads(topics.map((t) => t.slug)))),
     entry("/about", PAGE_DATES.about),
     entry("/glossary", PAGE_DATES.glossary),
     entry("/terms", PAGE_DATES.terms),

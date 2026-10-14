@@ -1,0 +1,20 @@
+{
+  "id": "dynamo",
+  "title": "Dynamo: Amazon's Highly Available Key-value Store",
+  "company": "Amazon",
+  "kind": "paper",
+  "published": "2007",
+  "theme": "Storing data",
+  "url": "https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf",
+  "whyItMatters": "Presents the design of the key-value store some of Amazon's core services use for an always-on experience, and the consistency it gives up to get there.",
+  "influence": "writeup",
+  "evidence": [
+    "highly available key-value storage system",
+    "Dynamo sacrifices consistency under certain failure scenarios"
+  ],
+  "topics": [
+    "cap"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

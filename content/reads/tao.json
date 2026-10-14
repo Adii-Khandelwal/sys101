@@ -1,0 +1,19 @@
+{
+  "id": "tao",
+  "title": "TAO: The power of the graph",
+  "company": "Facebook",
+  "kind": "post",
+  "published": "2013-06-25",
+  "theme": "Caching, sharding and moving data",
+  "url": "https://engineering.fb.com/2013/06/25/core-infra/tao-the-power-of-the-graph/",
+  "whyItMatters": "Explains why Facebook found a memcache and MySQL pairing awkward for social graph data, and the objects and associations API it built to hide that complexity.",
+  "influence": "writeup",
+  "evidence": [
+    "Objects and Associations API"
+  ],
+  "topics": [
+    "caching"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

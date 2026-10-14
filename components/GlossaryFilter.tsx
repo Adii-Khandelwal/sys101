@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import LearnRail from "./LearnRail";
 import { StripBackToTop } from "./BackToTop";
+import { matchesAll } from "@/lib/searchMatch";
+import { focusFirstResult, useSlashFocus } from "@/lib/useSlashFocus";
 
 export type GlossaryGroup = { slug: string; title: string; terms: { term: string; definition: string }[] };
 
@@ -18,23 +20,12 @@ export default function GlossaryFilter({ groups, heading }: { groups: GlossaryGr
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
 
-  // "/" focuses the box, unless the reader is already typing or holds a modifier.
-  useEffect(() => {
-    const onSlash = (e: KeyboardEvent) => {
-      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
-      const el = e.target as HTMLElement | null;
-      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
-      e.preventDefault();
-      inputRef.current?.focus();
-    };
-    window.addEventListener("keydown", onSlash);
-    return () => window.removeEventListener("keydown", onSlash);
-  }, []);
+  useSlashFocus(inputRef);
 
   const filtered = useMemo(() => {
     if (!q) return groups;
     return groups
-      .map((g) => ({ ...g, terms: g.terms.filter((t) => `${t.term} ${t.definition}`.toLowerCase().includes(q)) }))
+      .map((g) => ({ ...g, terms: g.terms.filter((t) => matchesAll(`${t.term} ${t.definition}`, q)) }))
       .filter((g) => g.terms.length > 0);
   }, [groups, q]);
 
@@ -69,7 +60,7 @@ export default function GlossaryFilter({ groups, heading }: { groups: GlossaryGr
             spellCheck={false}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Escape" && (setQuery(""), e.currentTarget.blur())}
+            onKeyDown={(e) => (e.key === "Escape" ? (setQuery(""), e.currentTarget.blur()) : e.key === "Enter" && focusFirstResult(".glossary-terms a"))}
             aria-describedby="glossary-filter-status"
             aria-keyshortcuts="/"
           />

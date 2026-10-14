@@ -1,0 +1,19 @@
+{
+  "id": "pinterest-sharding",
+  "title": "Sharding Pinterest: How we scaled our MySQL fleet",
+  "company": "Pinterest",
+  "kind": "post",
+  "published": "2015-08-17",
+  "theme": "Caching, sharding and moving data",
+  "url": "https://medium.com/pinterest-engineering/sharding-pinterest-how-we-scaled-our-mysql-fleet-3f341e96ca6f",
+  "whyItMatters": "Walks through how Pinterest split its data across many MySQL servers, from the requirements it set first to the design choices that followed.",
+  "influence": "writeup",
+  "evidence": [
+    "how we split our data across many MySQL servers"
+  ],
+  "topics": [
+    "sharding"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

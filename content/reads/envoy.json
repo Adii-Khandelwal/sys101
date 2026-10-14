@@ -1,0 +1,22 @@
+{
+  "id": "envoy",
+  "title": "Announcing Envoy: C++ L7 proxy and communication bus",
+  "company": "Lyft",
+  "kind": "post",
+  "published": "2016-09-14",
+  "theme": "Traffic and resilience",
+  "url": "https://eng.lyft.com/announcing-envoy-c-l7-proxy-and-communication-bus-92520b6c8191",
+  "whyItMatters": "Announces that Lyft is open sourcing Envoy, a proxy built on the belief that the network should be transparent to applications.",
+  "influence": "stated",
+  "claim": {
+    "phrase": "Today we are incredibly excited to open source Envoy"
+  },
+  "evidence": [
+    "The network should be transparent to applications"
+  ],
+  "topics": [
+    "load-balancing"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

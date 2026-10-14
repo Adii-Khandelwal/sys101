@@ -1,0 +1,21 @@
+{
+  "id": "spanner",
+  "title": "Spanner: Google's Globally-Distributed Database",
+  "company": "Google",
+  "kind": "paper",
+  "published": "2012",
+  "theme": "Storing data",
+  "url": "https://static.googleusercontent.com/media/research.google.com/en//archive/spanner-osdi2012.pdf",
+  "whyItMatters": "Explains how Google built a database that spreads data across the world and still offers externally consistent transactions, using a time API that exposes clock uncertainty.",
+  "influence": "writeup",
+  "evidence": [
+    "externally-consistent distributed transactions",
+    "a novel time API that exposes clock uncertainty"
+  ],
+  "topics": [
+    "cap",
+    "distributed-transactions"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

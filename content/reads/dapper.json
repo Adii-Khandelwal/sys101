@@ -1,0 +1,21 @@
+{
+  "id": "dapper",
+  "title": "Dapper, a Large-Scale Distributed Systems Tracing Infrastructure",
+  "company": "Google",
+  "kind": "paper",
+  "published": "2010",
+  "theme": "Seeing and changing production",
+  "url": "https://research.google/pubs/dapper-a-large-scale-distributed-systems-tracing-infrastructure/",
+  "whyItMatters": "Describes Google's production tracing system and its goals of low overhead and transparency, and Uber's engineers say they built Dapper-style tracing into their RPC protocol.",
+  "influence": "stated",
+  "claim": {
+    "phrase": "style distributed tracing built into the protocol as a first-class citizen",
+    "url": "https://www.uber.com/blog/distributed-tracing/"
+  },
+  "evidence": [
+    "low overhead, application-level transparency, and ubiquitous deployment"
+  ],
+  "topics": [],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

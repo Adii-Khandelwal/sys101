@@ -1,0 +1,22 @@
+{
+  "id": "snowflake",
+  "title": "Announcing Snowflake",
+  "company": "Twitter",
+  "kind": "post",
+  "published": "2010-06-01",
+  "theme": "Caching, sharding and moving data",
+  "url": "https://blog.x.com/engineering/en_us/a/2010/announcing-snowflake",
+  "whyItMatters": "Explains why Twitter needed a service to generate unique, roughly sortable IDs without coordination, and says it open sourced the Snowflake code base that day.",
+  "influence": "stated",
+  "claim": {
+    "phrase": "we are open sourcing the Snowflake code base today"
+  },
+  "evidence": [
+    "roughly sortable"
+  ],
+  "topics": [
+    "sharding"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

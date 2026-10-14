@@ -21,7 +21,7 @@ export default function PostSources({ companies }: Props) {
         ))}
       </ul>
       <p className="home-extra-note">
-        Every source is linked and dated on its topic page, and <Link href="/posts">all of them are listed here</Link>. None of these companies is affiliated with this site.
+        Every source is linked and dated on its topic page, and <Link href="/posts">all of them are listed here</Link>, with <Link href="/reads">great reads</Link> kept apart. None of these companies is affiliated with this site.
       </p>
     </section>
   );

@@ -1,0 +1,20 @@
+{
+  "id": "stripe-online-migrations",
+  "title": "Online migrations at scale",
+  "company": "Stripe",
+  "kind": "post",
+  "published": "2017-02-02",
+  "theme": "Caching, sharding and moving data",
+  "url": "https://stripe.com/blog/online-migrations",
+  "whyItMatters": "Lays out the four-step dual-writing pattern for moving live data between tables, using Stripe's migration of its Subscriptions objects as the example.",
+  "influence": "writeup",
+  "evidence": [
+    "common 4 step dual writing pattern"
+  ],
+  "topics": [
+    "databases",
+    "sharding"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "borg",
+  "title": "Large-scale cluster management at Google with Borg",
+  "company": "Google",
+  "kind": "paper",
+  "published": "2015",
+  "theme": "Platforms and building blocks",
+  "url": "https://research.google/pubs/large-scale-cluster-management-at-google-with-borg/",
+  "whyItMatters": "Summarises how Google's cluster manager runs hundreds of thousands of jobs across its clusters, and the Kubernetes blog calls Borg the predecessor to Kubernetes.",
+  "influence": "stated",
+  "claim": {
+    "phrase": "Borg: The Predecessor to Kubernetes",
+    "url": "https://kubernetes.io/blog/2015/04/borg-predecessor-to-kubernetes/"
+  },
+  "evidence": [
+    "runs hundreds of thousands of jobs"
+  ],
+  "topics": [],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

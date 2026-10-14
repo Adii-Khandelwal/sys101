@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { containsAll, finishedWords } from "@/lib/searchMatch";
+import { useSlashFocus } from "@/lib/useSlashFocus";
 
 type Result = { url: string; title: string; section?: string; excerpt: string };
 
@@ -82,18 +83,7 @@ export default function Search() {
     setSearching(false);
   };
 
-  // "/" jumps to the box, unless the reader is already typing somewhere or holds a shortcut key.
-  useEffect(() => {
-    const onSlash = (e: KeyboardEvent) => {
-      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
-      const el = e.target as HTMLElement | null;
-      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
-      e.preventDefault();
-      inputRef.current?.focus();
-    };
-    window.addEventListener("keydown", onSlash);
-    return () => window.removeEventListener("keydown", onSlash);
-  }, []);
+  useSlashFocus(inputRef);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {

@@ -1,0 +1,21 @@
+{
+  "id": "cassandra",
+  "title": "Cassandra: A Decentralized Structured Storage System",
+  "company": "Facebook",
+  "kind": "paper",
+  "published": "2009",
+  "theme": "Storing data",
+  "url": "https://www.cs.cornell.edu/projects/ladis2009/papers/lakshman-ladis2009.pdf",
+  "whyItMatters": "Describes the storage system Facebook built to hold very large amounts of structured data across commodity servers, with no single point of failure.",
+  "influence": "writeup",
+  "evidence": [
+    "no single point of failure"
+  ],
+  "topics": [
+    "replication",
+    "consistent-hashing"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14",
+  "dateUrl": "https://www.cs.cornell.edu/projects/ladis2009/program.htm"
+}

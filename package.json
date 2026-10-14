@@ -9,6 +9,8 @@
     "lint": "next lint",
     "verify:figures": "node scripts/verify-figures.mjs",
     "verify:news": "node scripts/verify-news.mjs",
+    "verify:reads": "node scripts/verify-reads.mjs",
+    "verify:landmarks": "node scripts/verify-reads.mjs",
     "verify:background": "node scripts/verify-background.mjs",
     "check:news": "node scripts/check-news.mjs",
     "check:diagrams": "node scripts/check-diagram-overflow.mjs",

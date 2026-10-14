@@ -29,6 +29,9 @@
     "Dropbox": {
       "svgl": "dropbox.svg"
     },
+    "etcd (CNCF)": {
+      "simpleIcons": "etcd"
+    },
     "Figma": {
       "svgl": "figma.svg"
     },
@@ -42,6 +45,12 @@
     "Grab": {
       "simpleIcons": "grab"
     },
+    "Instagram": {
+      "svgl": "instagram-icon.svg"
+    },
+    "Lyft": {
+      "simpleIcons": "lyft"
+    },
     "Meta": {
       "svgl": "meta.svg"
     },
@@ -51,11 +60,20 @@
     "Notion": {
       "svgl": "notion.svg"
     },
+    "Pinterest": {
+      "svgl": "pinterest.svg"
+    },
     "Slack": {
       "svgl": "slack.svg"
     },
     "Spotify": {
       "svgl": "spotify.svg"
+    },
+    "Stripe": {
+      "svgl": "stripe.svg"
+    },
+    "Twitter": {
+      "svgl": "twitter.svg"
     },
     "Uber": {
       "svgl": "uber_light.svg",
@@ -66,9 +84,6 @@
     },
     "Zapier": {
       "simpleIcons": "zapier"
-    },
-    "etcd (CNCF)": {
-      "simpleIcons": "etcd"
     }
   },
   "withoutLogo": {},

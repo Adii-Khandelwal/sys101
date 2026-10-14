@@ -1,0 +1,20 @@
+{
+  "id": "scientist",
+  "title": "Scientist: Measure Twice, Cut Once",
+  "company": "GitHub",
+  "kind": "post",
+  "published": "2016-02-03",
+  "theme": "Seeing and changing production",
+  "url": "https://github.blog/developer-skills/application-development/scientist/",
+  "whyItMatters": "Introduces Scientist, GitHub's library for running a new code path next to the old one and comparing results before switching, and says it is releasing version 1.0.",
+  "influence": "stated",
+  "claim": {
+    "phrase": "Today we’re releasing Scientist 1.0"
+  },
+  "evidence": [
+    "rewrite critical code with confidence"
+  ],
+  "topics": [],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

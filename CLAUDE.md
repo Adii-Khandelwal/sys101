@@ -32,6 +32,7 @@ Path-scoped rule files load when you read, write or edit a matching file; open t
 | `tours.md` | Guided tours: steps, motion clock, behaviour, seen flag, checks |
 | `background.md` | /background data, "Taught later", checks |
 | `figures.md` | Interactive post figures, their inputs and checks |
+| `reads.md` | Great reads (/reads): selection, `influence` rule, data, `verify:reads` |
 | `news.md` | What's new, the allowlist, the routine, the guard workflow |
 | `logos.md` | Company marks, sources, the `add` command, brand rules, exceptions |
 | `tooling.md` | Verification scripts and their network use |
@@ -47,6 +48,7 @@ Only include a post if it passes most of these:
 5. Teaches something transferable to a concept in the graph.
 
 - System design flow: the post maps to one graph node. Incident write-ups that teach a reusable concept belong on the matching topic.
+- Great reads (/reads, `reads.md`) are the one exception: rule 1 (numbers) and rule 5 (graph concept) are waived there, rule 3 becomes the label "describes the system as of <year>" with no "still holds" claim, and the only read state is a per-entry toggle outside topic progress.
 - General knowledge flow: stories that map to no single node (large migrations, pure war stories). Keep them off topic pages.
 
 ## Honesty rules

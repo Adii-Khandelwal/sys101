@@ -1,0 +1,19 @@
+{
+  "id": "memcache",
+  "title": "Scaling Memcache at Facebook",
+  "company": "Facebook",
+  "kind": "paper",
+  "published": "2013",
+  "theme": "Caching, sharding and moving data",
+  "url": "https://www.usenix.org/conference/nsdi13/technical-sessions/presentation/nishtala",
+  "whyItMatters": "Describes how Facebook used memcached as a building block to construct and scale a distributed key-value store for its social network.",
+  "influence": "writeup",
+  "evidence": [
+    "leverages memcached as a building block to construct and scale a distributed key-value store"
+  ],
+  "topics": [
+    "caching"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

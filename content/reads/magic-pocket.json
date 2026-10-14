@@ -1,0 +1,19 @@
+{
+  "id": "magic-pocket",
+  "title": "Inside the Magic Pocket",
+  "company": "Dropbox",
+  "kind": "post",
+  "published": "2016-05-06",
+  "theme": "Storing data",
+  "url": "https://dropbox.tech/infrastructure/inside-the-magic-pocket",
+  "whyItMatters": "Gives an architectural overview of Dropbox's in-house block store for file content, and the requirements of durability, scale and simplicity it was designed to meet.",
+  "influence": "writeup",
+  "evidence": [
+    "Magic Pocket is an immutable block storage system"
+  ],
+  "topics": [
+    "replication"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}
