@@ -22,7 +22,7 @@ export const dynamic = "error";
 
 export const metadata = pageMeta({
   path: "/",
-  title: { absolute: "sys101: a system design course in prerequisite order" },
+  title: { absolute: "sys101" },
   description: SITE_DESCRIPTION,
 });
 
