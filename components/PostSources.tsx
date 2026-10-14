@@ -25,7 +25,7 @@ export default function PostSources({ companies }: Props) {
         ))}
       </ul>
       <p className="home-extra-note">
-        Every source is linked and dated on its topic page, and <Link href="/posts">all of them are listed here</Link>, with <Link href="/reads">great reads</Link> kept apart. {notCompanies.length > 0 && `${notCompanies.join(" and ")} is an open-source project, not a company. `}None of these is affiliated with this site.
+        <Link href="/posts">Browse every source</Link>, or start with the <Link href="/reads">great reads</Link>. {notCompanies.length > 0 && `${notCompanies.join(" and ")} is an open-source project, not a company. `}None of these is affiliated with this site.
       </p>
     </section>
   );

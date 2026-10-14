@@ -196,9 +196,7 @@ export default function PostsIndex({ data }: { data: Data }) {
         </div>
       </div>
       <p id="posts-filter-status" className="posts-count" aria-live="polite">
-        {q
-          ? `${matching} of ${data.total} sources match “${query.trim()}”.`
-          : `${data.total} sources from ${data.companyCount} organizations (${sourceKinds(data.counts)}), taught across ${data.topicCount} topics.`}
+        {q ? `${matching} of ${data.total} sources match “${query.trim()}”.` : ""}
       </p>
 
       <div data-pagefind-body>
@@ -249,6 +247,12 @@ export default function PostsIndex({ data }: { data: Data }) {
             <ul className="posts-list">{y.posts.map((p) => row(p, false, "year"))}</ul>
           </div>
         )),
+      )}
+
+      {!q && (
+        <p className="posts-count posts-total">
+          {data.total} sources from {data.companyCount} organizations ({sourceKinds(data.counts)}), taught across {data.topicCount} topics.
+        </p>
       )}
 
       <script dangerouslySetInnerHTML={{ __html: PICK_VIEW }} />
