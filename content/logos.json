@@ -1,28 +1,78 @@
 {
   "note": "Company marks shown beside company names. Edit, then run: node scripts/make-logos.mjs. Marks are trademarks of their owners, shown only to identify the source, never altered or recoloured.",
-  "svgl": { "release": "main of https://github.com/pheralb/svgl, static/library (the logos belong to their owners; svgl's code is MIT)" },
-  "simpleIcons": { "version": "16.35.0", "licence": "CC0-1.0 icon files, filled with each brand's own colour" },
-  "logos": {
-    "Cloudflare": { "svgl": "cloudflare.svg" },
-    "Dropbox": { "svgl": "dropbox.svg" },
-    "Figma": { "svgl": "figma.svg" },
-    "GitHub": { "svgl": "github_light.svg", "svglDark": "github_dark.svg" },
-    "Google": { "svgl": "google.svg" },
-    "Meta": { "svgl": "meta.svg" },
-    "Netflix": { "svgl": "netflix-icon.svg" },
-    "Notion": { "svgl": "notion.svg" },
-    "Slack": { "svgl": "slack.svg" },
-    "Spotify": { "svgl": "spotify.svg" },
-    "Uber": { "svgl": "uber_light.svg", "svglDark": "uber_dark.svg" },
-    "Cockroach Labs": { "simpleIcons": "cockroachlabs" },
-    "Databricks": { "simpleIcons": "databricks" },
-    "Grab": { "simpleIcons": "grab" },
-    "Zalando": { "simpleIcons": "zalando" },
-    "Zapier": { "simpleIcons": "zapier" },
-    "etcd (CNCF)": { "simpleIcons": "etcd" }
+  "svgl": {
+    "release": "main of https://github.com/pheralb/svgl, static/library (the logos belong to their owners; svgl's code is MIT)"
   },
-  "withoutLogo": {
-    "Amazon": "Not in svgl or the current Simple Icons. The AWS mark is a different brand from Amazon, so it is not used for the Dynamo paper.",
-    "Discord": "Discord's branding page asks for permission before use of its marks beyond the uses it lists, and a sources list is not one of them."
+  "simpleIcons": {
+    "version": "16.35.0",
+    "licence": "CC0-1.0 icon files, filled with each brand's own colour"
+  },
+  "logos": {
+    "Amazon": {
+      "svgl": "aws_light.svg",
+      "svglDark": "aws_dark.svg",
+      "note": "svgl has no Amazon.com mark and Simple Icons removed Amazon and AWS (no confirmed permission). This is the AWS mark: both credits under Amazon are Amazon-owned, and the Builders' Library credit is AWS."
+    },
+    "Cloudflare": {
+      "svgl": "cloudflare.svg"
+    },
+    "Cockroach Labs": {
+      "simpleIcons": "cockroachlabs"
+    },
+    "Databricks": {
+      "simpleIcons": "databricks"
+    },
+    "Discord": {
+      "svgl": "discord.svg",
+      "note": "Discord's branding page asks for permission before uses it does not list, and a sources list is not one of them. Shown at the owner's decision; remove this entry if Discord objects."
+    },
+    "Dropbox": {
+      "svgl": "dropbox.svg"
+    },
+    "Figma": {
+      "svgl": "figma.svg"
+    },
+    "GitHub": {
+      "svgl": "github_light.svg",
+      "svglDark": "github_dark.svg"
+    },
+    "Google": {
+      "svgl": "google.svg"
+    },
+    "Grab": {
+      "simpleIcons": "grab"
+    },
+    "Meta": {
+      "svgl": "meta.svg"
+    },
+    "Netflix": {
+      "svgl": "netflix-icon.svg"
+    },
+    "Notion": {
+      "svgl": "notion.svg"
+    },
+    "Slack": {
+      "svgl": "slack.svg"
+    },
+    "Spotify": {
+      "svgl": "spotify.svg"
+    },
+    "Uber": {
+      "svgl": "uber_light.svg",
+      "svglDark": "uber_dark.svg"
+    },
+    "Zalando": {
+      "simpleIcons": "zalando"
+    },
+    "Zapier": {
+      "simpleIcons": "zapier"
+    },
+    "etcd (CNCF)": {
+      "simpleIcons": "etcd"
+    }
+  },
+  "withoutLogo": {},
+  "hunter": {
+    "about": "Last resort for a company neither svgl nor Simple Icons has: https://logos.hunter.io/<domain>, no key, trademarks stay with their owners. Raster, so it is trimmed and saved as WebP; check it on both themes."
   }
 }

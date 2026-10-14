@@ -1,3 +1,4 @@
+import { organization } from "./organization";
 import type { SourceCounts } from "./sourceKinds";
 import { GROUPS, type Group, type Topic } from "./topics";
 
@@ -31,8 +32,7 @@ const slugify = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-/** One company can be credited twice (Amazon, and its Builders' Library): treat it as one organization. */
-export const organization = (company: string) => (company.startsWith("Amazon") ? "Amazon" : company);
+export { organization } from "./organization";
 
 const isPaper = (p: { ageNote?: string }) => (p.ageNote ?? "").startsWith("This is a research paper");
 

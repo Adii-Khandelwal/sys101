@@ -6,3 +6,4 @@ Moved from CLAUDE.md, "Working in this repo".
 - `scripts/check-diagram-overflow.mjs` runs after the build (and as `npm run check:diagrams`): it renders each diagram SVG in headless Chromium and fails if a label's box spills past its rect. It skips when Chromium is absent (`npx playwright install chromium`); Playwright is a devDependency.
 - `npm run build` also builds the Pagefind index into `public/pagefind` (git-ignored). Under `npm run dev`, run `npm run search:index` instead.
 - `npm run audit:figures` replays the figures' geometry through the anatomy skill's audit (docs/figures.md). `npm run check:tour` drives the guided tours in a browser against a running server (docs/tours.md). Both are offline and never run in the build.
+- `node scripts/make-logos.mjs` copies company marks from svgl and Simple Icons into `public/logos/` and writes `lib/logoFiles.ts` (docs/logos.md). Offline, run by hand, never in the build.
