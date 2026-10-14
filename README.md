@@ -212,7 +212,7 @@ The project carries its own configuration:
 - `CLAUDE.md`: the project-wide standing rules (precedence, honesty and post selection, site feel, architecture, how to work and verify, git and releases). Always loaded.
 - `.claude/rules/*.md`: one file per area (topic pages, learn pages, homepage, graph, motion, SEO, accessibility, tours, background, figures, news, logos, tooling, progress). Each holds the rules and the full specification for its area and loads when a matching file is touched. `CLAUDE.md` has the index.
 - `.claude/skills/`: `add-topic`, `add-post`, `verify-ui` and `release-check`, the repeatable workflows.
-- `.claude/settings.json`: shared permissions for read-only and check commands, two guard hooks (building under a running dev server, hand-editing generated files) and the plugins the project uses. Personal overrides go in `.claude/settings.local.json`, which is gitignored.
+- `.claude/settings.json`: shared permissions for read-only and check commands, two guard hooks (building under a running dev server, hand-editing generated files), a hook that trims test output to the summary and failures, and the plugins the project uses (`vercel` and `agent-skills` are installed but off to keep context small). Personal overrides go in `.claude/settings.local.json`, which is gitignored.
 
 When a change adds or alters a rule, page type, schema, route or convention, the matching rule file and this README are updated in the same commit.
 
