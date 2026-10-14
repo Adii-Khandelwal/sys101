@@ -124,6 +124,7 @@ Every idea or preference the owner states is written down, here as one line and 
 - The homepage sources section is a static, wrapped row of dimmed marks and names titled "Companies we learn from" (no marquee, no exception to the banned list); its note says etcd is a project, not a company (`homepage.md`).
 - Homepage copy is short and made to make a visitor want to explore: no numbers in the intro, no "linked and dated" reassurance (`homepage.md`).
 - No post counts beside company, topic or year headings on /posts; the totals line sits at the bottom, and only the filter count shows at the top while filtering (`homepage.md`).
+- The content pages (Glossary, Blogs, Great reads; "Blogs" is the label for the /posts page, which also holds a few papers and docs) live in the header bar as a nav, a Menu button on narrow screens, because nobody scrolls to the footer to find them (`accessibility-and-chrome.md`).
 - The site's own logo mark sits beside the big homepage wordmark and at the start of the footer (`homepage.md`, `accessibility-and-chrome.md`). (`homepage.md`).
 
 ## Keeping docs current

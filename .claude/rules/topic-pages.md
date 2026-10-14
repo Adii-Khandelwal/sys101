@@ -36,7 +36,7 @@ Applies when editing topic pages, their content JSON or the schema in lib/topics
 - A source with no date (versioned docs) sets `published` to "no date shown" plus `edition`, shown instead of a date only when it gives one the page shows ("date unknown" shows nothing). `tradeoffs.rejected` is left out when the source names no alternative.
 - A paper says "This is a research paper, not a company blog post"; no internal phrasing like "the rules" on a page.
 - "What's new" (content/news, 3 items max, allowlisted sources) follows What to learn next, untracked, build-checked. No provenance note on the section. The routine touches only content/news/** and docs/news-state.json; read .claude/rules/news.md.
-- "Posts" (/posts): every distinct post by topic, company or year (lib/posts.ts); all views are static HTML, ?view= only picks one, canonical /posts, only By topic in Pagefind.
+- "Blogs" (/posts, the address stays; the page lists posts, a few papers and docs): every distinct post by topic, company or year (lib/posts.ts); all views are static HTML, ?view= only picks one, canonical /posts, only By topic in Pagefind.
 - "Background" (/background, content/background/<slug>.json) lists what a topic's posts assume; concepts taught later get a "Taught later" label and a gist, with no link. Topic pages link to it only if a file exists. Read .claude/rules/background.md.
 
 ## Specification

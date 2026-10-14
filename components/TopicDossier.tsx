@@ -223,27 +223,34 @@ export default function TopicDossier({ topic, prerequisites, dependents, titles,
         </section>
       </div>
 
-      <section className="sources" aria-labelledby="sources" data-pagefind-ignore>
-        <h2 id="sources" className="label">
-          {topic.posts.length === 1 ? "Original post" : "Original posts"}
-        </h2>
-        <ul>
-          {topic.posts.map((post) => (
-            <li key={post.url}>
-              <a href={post.url} target="_blank" rel="noopener noreferrer">
-                {post.title}
-              </a>{" "}
-              <span className="label company-label company-label-inline">
-                <CompanyLogo name={post.company} size="sm" />
-                <span>{companyWhen(post, "year")}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <OriginalPosts posts={topic.posts} />
 
       <PageUpdated date={updated} />
       <SiteFooter />
     </article>
+  );
+}
+
+/** The topic's sources, title on the left, and on the right the company mark, name and year side by side, one source above the next. */
+export function OriginalPosts({ posts }: { posts: Post[] }) {
+  return (
+    <section className="sources" aria-labelledby="sources" data-pagefind-ignore>
+      <h2 id="sources" className="label">
+        {posts.length === 1 ? "Original post" : "Original posts"}
+      </h2>
+      <ul>
+        {posts.map((post) => (
+          <li key={post.url}>
+            <a href={post.url} target="_blank" rel="noopener noreferrer">
+              {post.title}
+            </a>
+            <span className="source-meta label">
+              <CompanyLogo name={post.company} size="sm" />
+              <span>{companyWhen(post, "year")}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

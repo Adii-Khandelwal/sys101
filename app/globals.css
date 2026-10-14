@@ -1597,16 +1597,25 @@ li {
 }
 
 .sources li {
-  margin-bottom: 6px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 14rem;
+  gap: 4px 24px;
+  align-items: start;
+  margin-bottom: 14px;
 }
 
-.sources li .label {
-  display: inline-block; /* company and year move to the next line together, never split */
-  margin-left: 6px;
+/* Company mark, name and year in one row at the right; each source sits above the next. Below 640px it drops under the title. */
+.sources li .source-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
 }
 
-.sources li .company-label {
-  display: inline-flex;
+@media (max-width: 640px) {
+  .sources li {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .age-note {
@@ -2691,9 +2700,106 @@ html {
   padding: 0 40px;
 }
 
+/* Content pages in the bar: small mono links on wide screens, a Menu button below 900px (components/SiteNav.tsx). */
+.site-nav {
+  margin-left: auto;
+  flex: none;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.site-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.site-nav a,
+.site-nav-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--ink-soft);
+}
+.site-nav a[aria-current="page"] {
+  color: var(--ink);
+}
+.site-nav-button {
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.site-nav-button:active {
+  transform: scale(0.97);
+}
+.site-nav-inline {
+  display: flex;
+}
+.site-nav-button {
+  display: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .site-nav-button:hover {
+    color: var(--accent);
+  }
+}
+.site-nav a:focus-visible,
+.site-nav-button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+@media (max-width: 899px) {
+  .site-nav-inline {
+    display: none;
+  }
+  .site-nav-button {
+    display: inline-flex;
+  }
+}
+
+/* The open menu: a panel under the header, above the homepage's flying letters (z-index 40). Only exists while open, and only on narrow screens. */
+.site-nav-menu {
+  position: fixed;
+  top: var(--header-h);
+  left: 0;
+  right: 0;
+  z-index: 45;
+  list-style: none;
+  margin: 0;
+  padding: 4px 16px 12px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.site-nav-menu a {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  color: var(--ink-soft);
+}
+.site-nav-menu a[aria-current="page"] {
+  color: var(--ink);
+}
+.site-nav-menu a:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+@media (min-width: 900px) {
+  .site-nav-menu {
+    display: none;
+  }
+}
+
 /* Theme toggle sits at the right of the header, a sun or crescent-moon icon. */
 .theme-toggle {
-  margin-left: auto;
+  margin-left: 4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

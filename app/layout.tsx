@@ -3,6 +3,7 @@ import { Newsreader, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import ViewTransitions from "@/components/ViewTransitions";
 import Logo from "@/components/Logo";
+import SiteNav from "@/components/SiteNav";
 import HeaderTopic from "@/components/HeaderTopic";
 import BackToTop from "@/components/BackToTop";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -63,6 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="site-header-inner">
             <Logo />
             <HeaderTopic />
+            <SiteNav />
             <ThemeToggle />
           </div>
         </header>

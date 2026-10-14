@@ -75,7 +75,8 @@ describe("posts index", () => {
   it("is in the sitemap, the footer and the home page sources section", () => {
     const read = (f: string) => fs.readFileSync(path.join(process.cwd(), f), "utf8");
     expect(read("app/sitemap.ts")).toContain('"/posts"');
-    expect(read("components/SiteFooter.tsx")).toContain('href="/posts"');
+    expect(read("components/SiteFooter.tsx")).toContain("NAV_ITEMS");
+    expect(read("lib/navItems.ts")).toContain('"/posts"');
     expect(read("components/PostSources.tsx")).toContain('href="/posts"');
   });
 });

@@ -2,9 +2,9 @@ import { diagramHtml } from "@/lib/diagramHtml";
 import Link from "next/link";
 import CompanyLogo from "./CompanyLogo";
 import { optionId } from "@/lib/quizIds";
-import { companyWhen, figureParts, type Topic } from "@/lib/topics";
+import { figureParts, type Topic } from "@/lib/topics";
 import { readingLabel } from "@/lib/readingTime";
-import { PostDigest, TopicList } from "./TopicDossier";
+import { OriginalPosts, PostDigest, TopicList } from "./TopicDossier";
 import { CompactProgress, FinishTopic, MarkDone, QuizBlock, ResumeLine } from "./LessonTrackers";
 import type { LessonMeta } from "@/lib/lessonStore";
 import LessonRail from "./LessonRail";
@@ -323,24 +323,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
 
       <WhatsNew title={topic.title} news={news ?? null} />
 
-      <section className="sources" aria-labelledby="sources" data-pagefind-ignore>
-        <h2 id="sources" className="label">
-          {topic.posts.length === 1 ? "Original post" : "Original posts"}
-        </h2>
-        <ul>
-          {topic.posts.map((post) => (
-            <li key={post.url}>
-              <a href={post.url} target="_blank" rel="noopener noreferrer">
-                {post.title}
-              </a>{" "}
-              <span className="label company-label company-label-inline">
-                <CompanyLogo name={post.company} size="sm" />
-                <span>{companyWhen(post, "year")}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <OriginalPosts posts={topic.posts} />
 
       <PageUpdated date={updated} />
       <SiteFooter tour="topic" />
