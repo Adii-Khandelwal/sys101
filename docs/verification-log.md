@@ -402,6 +402,41 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | aws-static-stability-azs | meaning | three Availability | https://aws.amazon.com/builders-library/static-stability-using-availability-zones/ | (before first heading) | found (other spelling) |
 | aws-static-stability-azs | failures | 50 | https://aws.amazon.com/builders-library/static-stability-using-availability-zones/ | Static stability patterns | found |
 
+## Idempotency and Retries
+
+| Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
+|---|---|---|---|---|---|
+| aws-timeouts-retries-backoff-2019 | numbers | 0.1% | https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/ | Timeouts | found |
+| aws-timeouts-retries-backoff-2019 | numbers | p99.9 | https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/ | Timeouts | found |
+| aws-timeouts-retries-backoff-2019 | numbers | around 20 milliseconds | https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/ | Timeouts | found |
+| aws-timeouts-retries-backoff-2019 | numbers | 243x | https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/ | Retries and backoff | found |
+| aws-timeouts-retries-backoff-2019 | numbers | 2016 | https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/ | Retries and backoff | found |
+| aws-timeouts-retries-backoff-2019 | walkthrough | 0.1% | https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/ | Timeouts | found |
+| aws-timeouts-retries-backoff-2019 | walkthrough | 99.9 | https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/ | Timeouts | found |
+| aws-timeouts-retries-backoff-2019 | walkthrough | 20 | https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/ | Marc | found |
+| aws-timeouts-retries-backoff-2019 | walkthrough | 243x | https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/ | Retries and backoff | found |
+| aws-timeouts-retries-backoff-2019 | walkthrough | five deep | https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/ | (before first heading) | found (other spelling) |
+| aws-timeouts-retries-backoff-2019 | walkthrough | three retries | https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/ | (before first heading) | found (other spelling) |
+| aws-timeouts-retries-backoff-2019 | meaning | 0.1% | https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/ | Timeouts | found |
+| aws-timeouts-retries-backoff-2019 | meaning | five layers | https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/ | (before first heading) | hand-checked |
+| aws-timeouts-retries-backoff-2019 | meaning | three times | https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/ | (before first heading) | hand-checked |
+| aws-timeouts-retries-backoff-2019 | failures | 20 | https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/ | Marc | found |
+| aws-timeouts-retries-backoff-2019 | takeaways | 2019, | https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/ | Marc | found with different formatting |
+| google-sre-handling-overload-2017 | numbers | 3 attempts | https://sre.google/sre-book/handling-overload/ | (before first heading) | found (other spelling) |
+| google-sre-handling-overload-2017 | numbers | 10% | https://sre.google/sre-book/handling-overload/ | Deciding to Retry | found |
+| google-sre-handling-overload-2017 | numbers | just below 3X | https://sre.google/sre-book/handling-overload/ | Deciding to Retry | found |
+| google-sre-handling-overload-2017 | numbers | 1.1x | https://sre.google/sre-book/handling-overload/ | Deciding to Retry | found |
+| google-sre-handling-overload-2017 | walkthrough | 10% | https://sre.google/sre-book/handling-overload/ | Deciding to Retry | found |
+| google-sre-handling-overload-2017 | walkthrough | 1.1x | https://sre.google/sre-book/handling-overload/ | Deciding to Retry | found |
+| google-sre-handling-overload-2017 | walkthrough | three times | https://sre.google/sre-book/handling-overload/ | (before first heading) | found (other spelling) |
+| google-sre-handling-overload-2017 | meaning | 10% | https://sre.google/sre-book/handling-overload/ | Deciding to Retry | found |
+| google-sre-handling-overload-2017 | tradeoffs | 10% | https://sre.google/sre-book/handling-overload/ | Deciding to Retry | found |
+| google-sre-handling-overload-2017 | tradeoffs | three attempts | https://sre.google/sre-book/handling-overload/ | (before first heading) | found (other spelling) |
+| google-sre-handling-overload-2017 | tradeoffs | three times | https://sre.google/sre-book/handling-overload/ | (before first heading) | found (other spelling) |
+| google-sre-handling-overload-2017 | failures | 10% | https://sre.google/sre-book/handling-overload/ | Deciding to Retry | found |
+| google-sre-handling-overload-2017 | failures | 1.1x | https://sre.google/sre-book/handling-overload/ | Deciding to Retry | found |
+| google-sre-handling-overload-2017 | failures | three times | https://sre.google/sre-book/handling-overload/ | (before first heading) | found (other spelling) |
+
 ## Indexing and Search
 
 | Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
@@ -685,6 +720,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | dns | 18 | 7 | 0 | 4 | 4 | 0 |
 | event-driven-architecture | 14 | 3 | 0 | 13 | 3 | 0 |
 | failover | 10 | 5 | 0 | 4 | 5 | 0 |
+| idempotency-and-retries | 20 | 1 | 0 | 7 | 2 | 0 |
 | indexing | 45 | 7 | 0 | 1 | 0 | 0 |
 | load-balancing | 17 | 4 | 0 | 1 | 0 | 0 |
 | message-queues | 16 | 3 | 0 | 2 | 0 | 0 |

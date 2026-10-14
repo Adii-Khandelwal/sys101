@@ -1,0 +1,445 @@
+{
+  "slug": "idempotency-and-retries",
+  "title": "Idempotency and Retries",
+  "group": "Reliability",
+  "concept": "A retry sends a failed or unanswered call again, which turns a lost reply into a second try, and it is only safe when doing the work twice has the same effect as doing it once. That property is called idempotency. Retries also add load to a dependency that is already failing, so they need limits on how many are sent, how long each waits and which layer sends them, and every client has to apply those limits on its own.",
+  "prerequisites": [
+    "circuit-breakers"
+  ],
+  "summary": {
+    "points": [
+      "A retry is only safe when doing the work twice has the same effect as doing it once, which is what idempotent means.",
+      "Retries add load to a dependency that is already failing, so they need a wait that grows, some randomness and a cap on how many are sent.",
+      "Amazon's Builders' Library gives an example where five layers each retrying three times multiply the load on a database by 243.",
+      "Google's SRE book limits retries per request and per client, and lets a backend tell clients not to retry at all."
+    ],
+    "figures": [
+      {
+        "postId": "aws-timeouts-retries-backoff-2019",
+        "row": 3,
+        "label": "243x the load on a database when five layers each retry"
+      },
+      {
+        "postId": "google-sre-handling-overload-2017",
+        "row": 3,
+        "label": "retry growth held to 1.1x by a 10% client retry budget"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "circuit-breakers": "Circuit breakers show that retries add load to a dependency that is already failing, which is the problem that retry limits and backoff exist to solve."
+  },
+  "posts": [
+    {
+      "id": "aws-timeouts-retries-backoff-2019",
+      "title": "Timeouts, retries, and backoff with jitter",
+      "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
+      "company": "Amazon Web Services (Builders' Library)",
+      "verifiedOn": "2026-10-15",
+      "published": "2019-12-05",
+      "ageNote": "A 2019 account by one Amazon engineer. It is here for fundamentals that are not tied to a product version: why retries need a limit, why backoff needs jitter, and why retrying at every layer multiplies load. The page says its opinions are the author's and may not reflect AWS, and it does not say whether Amazon still works this way, so read the practices as one engineer's view in 2019 and the SDK behavior it mentions as that of its time.",
+      "digest": {
+        "problem": "Whenever one service calls another, the call can fail, hang or come back slow, and a small share of failures can grow into a full outage. Marc Brooker describes how Amazon sets timeouts, limits retries, and adds backoff and jitter so that clients do not make a small failure worse.",
+        "constraints": "Clients cannot coordinate with one another to agree on the right number of retries. Picking a timeout is hard: too high holds resources, and too low causes extra retries and can turn a small rise in latency into a complete outage. The page states that its opinions are the individual author's and may not reflect AWS.",
+        "walkthrough": [
+          {
+            "step": "Put a timeout on every remote call",
+            "explanation": "Set a connection timeout and a request timeout on any call across processes. To choose one, pick an acceptable rate of false timeouts, such as 0.1%, and use the matching latency percentile of the downstream service, p99.9 in that example. Clients far away over the internet, and services whose p99.9 is close to their median, need extra padding."
+          },
+          {
+            "step": "A timeout that was too tight",
+            "explanation": "One service used a timeout of around 20 milliseconds and saw a few requests time out right after deployments, because a new server's first connection took longer than that. The team first raised the timeout while a connection was being set up, then made servers open connections at startup, before taking traffic."
+          },
+          {
+            "step": "Retries are selfish",
+            "explanation": "A retry spends more of the server's time to raise one client's chance of success. That is fine while failures are rare, and when overload causes them the extra load can keep the load high long after the first problem is gone."
+          },
+          {
+            "step": "Back off, with a cap",
+            "explanation": "Waiting longer after each try spreads retries out. A cap stops the wait from growing without end, but then every client retries steadily at the capped rate, so the author also limits how many times a client retries and handles the failure earlier in the stack."
+          },
+          {
+            "step": "Retry in one place",
+            "explanation": "In a stack five deep, with three retries at each layer, a failing database would see 243x the load, because the retries multiply from layer to layer. For low-cost operations the author's practice is to retry at a single point in the stack."
+          },
+          {
+            "step": "Limit retries locally with a token bucket",
+            "explanation": "Even one layer of retries raises traffic. The author says circuit breakers are widely promoted for this, but that they add modal behavior that is hard to test and can add recovery time. A token bucket lets calls retry while tokens last, then at a fixed rate. AWS added this to its SDK in 2016."
+          },
+          {
+            "step": "Retry only what is safe",
+            "explanation": "APIs with side effects are not safe to retry unless they are idempotent. Reads usually are, and creating a resource may not be. Some APIs, such as the EC2 RunInstances call, take a token that makes a retry safe."
+          },
+          {
+            "step": "Add jitter",
+            "explanation": "Randomness in the backoff spreads retries in time, because clients that back off by the same amount line up again. The author also adds jitter to timers and periodic jobs. For scheduled work the amount is chosen consistently for each host, not at random, so that a problem happens the same way each time and can be diagnosed."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-ir-aws-t\" class=\"dg\"><title id=\"dg-ir-aws-t\">Amazon&#x27;s retry practice in order: a timeout chosen from downstream latency, a limited number of retries, capped exponential backoff, jitter, and a token bucket that limits retries locally.</title><defs><marker id=\"dg-ir-aws-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"20\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">ONE CALL, FOUR LIMITS</text><rect x=\"6\" y=\"34\" width=\"104\" height=\"50\" class=\"dg-box\"/><text x=\"58\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Timeout</text><text x=\"58\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">from p99.9</text><rect x=\"154\" y=\"34\" width=\"104\" height=\"50\" class=\"dg-box\"/><text x=\"206\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Retries</text><text x=\"206\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">limited count</text><rect x=\"302\" y=\"34\" width=\"104\" height=\"50\" class=\"dg-box\"/><text x=\"354\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Backoff</text><text x=\"354\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">capped, grows</text><rect x=\"450\" y=\"34\" width=\"104\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"502\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Jitter</text><text x=\"502\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">spread in time</text><path d=\"M110,59 L154,59\" class=\"dg-line\" marker-end=\"url(#dg-ir-aws-a)\"/><path d=\"M258,59 L302,59\" class=\"dg-line\" marker-end=\"url(#dg-ir-aws-a)\"/><path d=\"M406,59 L450,59\" class=\"dg-line\" marker-end=\"url(#dg-ir-aws-a)\"/><path d=\"M14,104 L546,104\" class=\"dg-line dg-dashed\"/><text x=\"14\" y=\"124\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">ACROSS CALLS</text><rect x=\"14\" y=\"138\" width=\"252\" height=\"50\" class=\"dg-box\"/><text x=\"140\" y=\"159.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Token bucket</text><text x=\"140\" y=\"175.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">retry while tokens last</text><rect x=\"294\" y=\"138\" width=\"252\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"420\" y=\"159.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">One layer retries</text><text x=\"420\" y=\"175.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">not every layer</text><text x=\"280\" y=\"216\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Idempotent APIs make a retry safe. Circuit breakers are the author&#x27;s less preferred tool.</text><text x=\"280\" y=\"236\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Source: one Amazon engineer&#x27;s account, 2019.</text></svg>",
+        "numbers": [
+          {
+            "value": "0.1%",
+            "meaning": "Acceptable rate of false timeouts the author gives as an example when choosing a timeout"
+          },
+          {
+            "value": "p99.9",
+            "meaning": "Latency percentile of the downstream service that matches a 0.1% false-timeout rate in the same example"
+          },
+          {
+            "value": "around 20 milliseconds",
+            "meaning": "A very low timeout that still failed a few requests right after deployments, while new connections were set up"
+          },
+          {
+            "value": "243x",
+            "meaning": "Load on a database when each of five layers retries three times and the retries multiply"
+          },
+          {
+            "value": "2016",
+            "meaning": "Year AWS added token-bucket limiting of retries to its SDK"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Capped exponential backoff with jitter, a limit on how many times a client retries, retries at one layer of the stack, and a local token bucket that limits retries.",
+          "rejected": "Circuit breakers as the main answer to retry load, which the author says add modal behavior that is hard to test and can lengthen recovery, and independent retries at every layer, which multiply the load.",
+          "why": "Retries are selfish and clients cannot coordinate, so each client limits what it may spend. The page gives this as Amazon's practice and as one engineer's view, and it has no measurement comparing it with circuit breakers."
+        },
+        "failures": "The 20 millisecond timeout failed a few requests after each deployment until servers opened their connections at startup. The author also warns that retries can delay recovery by keeping load high, and that eventual consistency blurs which errors are worth retrying. The post gives no incident data or measured results for backoff, jitter or the token bucket.",
+        "takeaways": "A retry asks for more of the server's time, so give every client limits: a timeout taken from the downstream's latency, a wait that grows with some randomness, one retrying layer and a local budget. The post is one engineer's account from 2019, with worked arithmetic and no measured results."
+      }
+    },
+    {
+      "id": "google-sre-handling-overload-2017",
+      "title": "Handling Overload (Site Reliability Engineering, chapter 21)",
+      "url": "https://sre.google/sre-book/handling-overload/",
+      "company": "Google",
+      "verifiedOn": "2026-10-15",
+      "published": "no date shown",
+      "edition": "page shows copyright 2017 Google, Inc., published by O'Reilly Media, SRE book chapter",
+      "ageNote": "This is a book chapter, not a dated blog post: the page shows only a 2017 copyright for the book. It is here for the retry rules, which are limits on how many retries are sent and do not depend on a product version. The chapter describes Google's systems as they were written about in 2017, and the page does not say whether they still work this way.",
+      "digest": {
+        "problem": "Even good load balancing leaves some backend tasks overloaded, and a client has to decide what to do with a task-overloaded error. Alejandro Forero Cuervo writes up how Google's clients decide when to retry and when to give up.",
+        "constraints": "Google's larger services are deep stacks of systems that depend on one another, and to the load balancer a retry looks like any other request. The chapter separates a small share of overloaded tasks from a large share, because the right response differs. It is a book chapter about design, not an incident report.",
+        "walkthrough": [
+          {
+            "step": "A small or a large share overloaded",
+            "explanation": "If a small subset of tasks in a datacenter is overloaded, the preferred response is to retry at once, because other tasks probably have room. If a large subset is overloaded, requests should not be retried, and the error should go back up to the caller."
+          },
+          {
+            "step": "Retries are ordinary requests",
+            "explanation": "The load balancer does not treat a retry differently and does not force it onto another task. The chapter says forcing that would add more complexity to the APIs than it is worth, and that retrying in other tasks works as a kind of organic load balancing."
+          },
+          {
+            "step": "A budget per request",
+            "explanation": "A request is attempted at most three times. After the third failure the error goes back to the caller, on the reasoning that a request that has landed on overloaded tasks three times suggests the whole datacenter is overloaded."
+          },
+          {
+            "step": "A budget per client",
+            "explanation": "Each client tracks the share of its requests that are retries, and retries only while that share is below 10%."
+          },
+          {
+            "step": "What the budgets do in the worst case",
+            "explanation": "If a datacenter accepts few requests and rejects many, the per-request budget alone takes request volume to just below three times the attempted rate. Layering the 10% per-client budget on top brings the growth to 1.1x in the general case."
+          },
+          {
+            "step": "Backends tell clients not to retry",
+            "explanation": "Clients put the number of earlier attempts in the request metadata, and a backend keeps histograms of those counts. When many of the requests it sees are already retries, it answers with an overloaded; don't retry error instead of the ordinary overload error."
+          },
+          {
+            "step": "Only one layer retries",
+            "explanation": "In a stack of services, a request is retried only by the layer directly above the one that rejected it. If that layer gives up, it returns the don't-retry error or a degraded response, so the layers above do not retry as well, which avoids a combinatorial retry explosion."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-ir-google-t\" class=\"dg\"><title id=\"dg-ir-google-t\">Google&#x27;s retry rules: a client retries an overload error at most three times per request, only while retries are under ten percent of its requests, and stops when the backend says not to retry.</title><defs><marker id=\"dg-ir-google-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"20\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">A CLIENT GETS &quot;TASK OVERLOADED&quot;</text><rect x=\"14\" y=\"34\" width=\"120\" height=\"50\" class=\"dg-box\"/><text x=\"74\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><text x=\"74\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">sends request</text><rect x=\"426\" y=\"34\" width=\"120\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"486\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Backend task</text><text x=\"486\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">rejects it</text><path d=\"M134,52 L426,52\" class=\"dg-line\" marker-end=\"url(#dg-ir-google-a)\"/><text x=\"280\" y=\"44\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">request</text><path d=\"M426,72 L134,72\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-ir-google-a)\"/><text x=\"280\" y=\"90\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">overload error</text><path d=\"M14,108 L546,108\" class=\"dg-line dg-dashed\"/><text x=\"14\" y=\"128\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">THREE CHECKS BEFORE A RETRY</text><rect x=\"14\" y=\"142\" width=\"160\" height=\"50\" class=\"dg-box\"/><text x=\"94\" y=\"163.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Per request</text><text x=\"94\" y=\"179.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">under 3 attempts</text><rect x=\"200\" y=\"142\" width=\"160\" height=\"50\" class=\"dg-box\"/><text x=\"280\" y=\"163.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Per client</text><text x=\"280\" y=\"179.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">retries under 10%</text><rect x=\"386\" y=\"142\" width=\"160\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"466\" y=\"163.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Backend said</text><text x=\"466\" y=\"179.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">overloaded; don&#x27;t retry</text><text x=\"280\" y=\"220\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">All three must allow it. The third is a hint the backend sends when other tasks are overloaded too.</text><text x=\"280\" y=\"240\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Only the layer directly above the rejection retries.</text></svg>",
+        "numbers": [
+          {
+            "value": "3 attempts",
+            "meaning": "Per-request retry budget: after the third failed attempt the error goes back to the caller"
+          },
+          {
+            "value": "10%",
+            "meaning": "Per-client retry budget: a request is retried only while retries are below this share of the client's requests"
+          },
+          {
+            "value": "just below 3X",
+            "meaning": "Worst-case growth in request volume with only the per-request budget, when a datacenter rejects a large portion of requests"
+          },
+          {
+            "value": "1.1x",
+            "meaning": "Growth in request volume with the 10% per-client budget layered on, in the general case"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A limit of three attempts per request, a limit of 10% retries per client, an overloaded; don't retry answer from the backend, and retries only one layer above the rejection.",
+          "rejected": "Forcing a retry onto a different task, which the chapter says would cost more in API complexity than it is worth, and retrying at every layer, which it says causes a combinatorial explosion.",
+          "why": "The budgets cap how fast load grows using only what each client and backend can see locally, with no coordination between clients. Even a worst case of just below three times is significant when rejecting a request costs nearly as much as serving it."
+        },
+        "failures": "With only the per-request budget, worst-case growth is still just below three times, which the chapter calls significant, and the 10% budget reaches 1.1x only in the general case. The chapter gives worked worst-case arithmetic, not production measurements, and says there is no magic bullet. Its retry guidance is about limits on how many retries are sent, and it does not mention backoff or jitter.",
+        "takeaways": "Spend retries from a budget, per request and per client, let the backend say when retrying will not help, and retry in one layer only. The chapter is a design from Google's SRE team with arithmetic for the worst case, and it shows no measured results."
+      }
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Idempotent",
+      "definition": "An operation is idempotent when doing it more than once has the same effect as doing it once."
+    },
+    {
+      "term": "Idempotency key",
+      "definition": "A unique value a client sends with a request and reuses on every retry, so the server can recognize a repeat."
+    },
+    {
+      "term": "Retry",
+      "definition": "Sending a failed or unanswered call again."
+    },
+    {
+      "term": "Timeout",
+      "definition": "How long a caller waits for a reply before it treats the call as failed."
+    },
+    {
+      "term": "Exponential backoff",
+      "definition": "Waiting longer after each failed try, usually doubling the wait, often up to a cap."
+    },
+    {
+      "term": "Jitter",
+      "definition": "Random time added to a wait so that many clients do not retry at the same moment."
+    },
+    {
+      "term": "Retry budget",
+      "definition": "A limit on how many retries a request, a client or a process may spend."
+    },
+    {
+      "term": "Token bucket",
+      "definition": "A counter that refills at a steady rate. A retry takes a token, and when the bucket is empty the retry waits or is dropped."
+    },
+    {
+      "term": "Thundering herd",
+      "definition": "Many clients acting at the same moment, for example all retrying together after the same failure."
+    },
+    {
+      "term": "Retry amplification",
+      "definition": "Retries at several layers multiplying one another, so a small failure produces a large load."
+    }
+  ],
+  "mistakes": [
+    "Retrying a call that changes something without any way to spot the repeat. A lost reply then becomes a duplicate charge, order or message.",
+    "Retrying at every layer. Each layer multiplies the tries below it, so a small failure at the bottom becomes a flood.",
+    "Waiting the same time between retries, or not waiting at all. Clients that failed together retry together and knock the dependency over again."
+  ],
+  "comparison": "Both sources say a retry is a request for more of an already stretched server's time, so it needs a limit, and both say only one layer of a stack should retry. Each gives arithmetic for what goes wrong without the limit: Amazon's example of five layers retrying three times each reaches 243x on the database, and Google's worst case with three attempts per request is just below three times the attempted volume.\n\nThey differ in the tools. Amazon's engineer relies on a timeout taken from downstream latency, capped exponential backoff with jitter, and a local token bucket, and says circuit breakers add modal behavior that is hard to test and can lengthen recovery. That is one engineer's view, given with that reason, and the Circuit Breakers topic shows what a breaker does in a real incident. Google's chapter counts retries instead: three attempts per request, retries under 10% of a client's requests, and a don't-retry answer from the backend. It does not mention backoff or jitter.\n\nThe evidence is similar and thin. Amazon's page, from 2019, has worked arithmetic and one small operational detail, a timeout of around 20 milliseconds that failed after deployments. Google's chapter shows a 2017 copyright and gives worst-case arithmetic for 3X and 1.1x. Neither reports measured results for its limits.",
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why a call that seems to have failed cannot simply be sent again, and what makes a retry safe.",
+      "body": "A call across a network can fail in ways the caller cannot tell apart. The request may never have arrived. It may have arrived and run, with only the reply lost. It may still be running. After a timeout the caller knows only that it heard nothing, so sending the call again is a guess.\n\nFor a read, the guess is harmless. For a call that charges a card, creates an order or adds a message, a repeat can do the work twice. The same problem sits inside a queue: a message is delivered again when its acknowledgment is lost, so a consumer has to cope with seeing it twice.\n\nTwo things make retrying safe and considerate. Idempotency makes a repeat harmless, so the work happens once however many times the call is made. Limits keep retries from adding load to something that is already failing, as the Circuit Breakers topic showed. A good retry policy needs both."
+    },
+    "mentalModel": {
+      "outcome": "After this you can picture a retry carrying a key and a client holding back its own retries.",
+      "body": "Think of a lift call button. Pressing it twice does not bring two lifts: the second press changes nothing, which is what idempotent means. Adding one to a counter is different, because every press changes the total. An operation like that can be made safe to repeat by giving each request a label the server remembers.\n\nThat label is an idempotency key. The client makes up a unique key for one intended action and sends it with the request. If it has to retry, it sends the same key. The server stores the key with the result of the work, so a repeat gets the saved result and the work runs once.\n\nThe second half is restraint. Each retry spends some of the server's time, and the clients cannot agree among themselves how many retries are right. So each client limits itself: it waits longer each time, adds randomness to the wait, and stops when its budget is spent.",
+      "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-ir-model-t\" class=\"dg\"><title id=\"dg-ir-model-t\">A client sends a request and times out. It cannot tell whether the request or the reply was lost, so the retry carries the same key and the server answers from its stored result.</title><defs><marker id=\"dg-ir-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"20\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">FIRST TRY</text><rect x=\"14\" y=\"34\" width=\"120\" height=\"50\" class=\"dg-box\"/><text x=\"74\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><text x=\"74\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">sends a key</text><rect x=\"380\" y=\"34\" width=\"166\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"463\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Server</text><text x=\"463\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">remembers the key</text><path d=\"M134,52 L380,52\" class=\"dg-line\" marker-end=\"url(#dg-ir-model-a)\"/><text x=\"257\" y=\"44\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">request</text><path d=\"M380,72 L134,72\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-ir-model-a)\"/><text x=\"257\" y=\"90\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">reply may be lost on the way back</text><text x=\"280\" y=\"118\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The client waits, times out, and cannot tell which message was lost.</text><path d=\"M14,132 L546,132\" class=\"dg-line dg-dashed\"/><text x=\"14\" y=\"152\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">SECOND TRY</text><rect x=\"14\" y=\"166\" width=\"120\" height=\"50\" class=\"dg-box\"/><text x=\"74\" y=\"187.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><text x=\"74\" y=\"203.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">same key</text><rect x=\"380\" y=\"166\" width=\"166\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"463\" y=\"187.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Server</text><text x=\"463\" y=\"203.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">key already seen</text><path d=\"M134,184 L380,184\" class=\"dg-line\" marker-end=\"url(#dg-ir-model-a)\"/><text x=\"257\" y=\"176\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">retry</text><path d=\"M380,204 L134,204\" class=\"dg-line\" marker-end=\"url(#dg-ir-model-a)\"/><text x=\"257\" y=\"222\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">stored result, work not repeated</text><text x=\"280\" y=\"242\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">A repeat with a known key gets the saved answer instead of a second run.</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can walk through one retry, on the client and on the server.",
+      "steps": [
+        {
+          "step": "Set a timeout",
+          "explanation": "The client decides how long it will wait for a reply. Too long ties up its resources, and too short produces retries the server did not need."
+        },
+        {
+          "step": "Decide whether the failure is worth retrying",
+          "explanation": "An error that says the request was invalid will fail again. A timeout or an overload error may succeed later."
+        },
+        {
+          "step": "Retry with the same key",
+          "explanation": "For a call with side effects, the client sends the key from the first attempt, so the server can recognize the repeat."
+        },
+        {
+          "step": "The server checks the key",
+          "explanation": "A new key means do the work and save the result. A finished key means return the saved result. A key whose first attempt is still running means wait or refuse the repeat."
+        },
+        {
+          "step": "Wait before the next try",
+          "explanation": "The client waits longer after each failure, with a cap, and adds randomness so clients that failed together do not retry together."
+        },
+        {
+          "step": "Stop when the budget says so",
+          "explanation": "The client limits the tries per request and the share of its requests that are retries, and retries at one layer instead of every layer."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-ir-how-t\" class=\"dg\"><title id=\"dg-ir-how-t\">A retry starts with a timeout, repeats the request with the same key, waits with backoff and jitter, and checks a retry budget. On the server, a key is new, still running, or finished.</title><defs><marker id=\"dg-ir-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"6\" y=\"20\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">CLIENT SIDE</text><rect x=\"6\" y=\"34\" width=\"104\" height=\"50\" class=\"dg-box\"/><text x=\"58\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Timeout</text><text x=\"58\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">call gives up</text><rect x=\"154\" y=\"34\" width=\"104\" height=\"50\" class=\"dg-box\"/><text x=\"206\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Retry</text><text x=\"206\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">same key</text><rect x=\"302\" y=\"34\" width=\"104\" height=\"50\" class=\"dg-box\"/><text x=\"354\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Wait</text><text x=\"354\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">backoff, jitter</text><rect x=\"450\" y=\"34\" width=\"104\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"502\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Budget</text><text x=\"502\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">may I retry?</text><path d=\"M110,59 L154,59\" class=\"dg-line\" marker-end=\"url(#dg-ir-how-a)\"/><path d=\"M258,59 L302,59\" class=\"dg-line\" marker-end=\"url(#dg-ir-how-a)\"/><path d=\"M406,59 L450,59\" class=\"dg-line\" marker-end=\"url(#dg-ir-how-a)\"/><path d=\"M502,84 L502,104\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-ir-how-a)\"/><path d=\"M502,104 L206,104\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-ir-how-a)\"/><path d=\"M206,104 L206,84\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-ir-how-a)\"/><text x=\"354\" y=\"122\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">within budget: try again. Over budget: give up and report the error.</text><path d=\"M14,140 L546,140\" class=\"dg-line dg-dashed\"/><text x=\"6\" y=\"160\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">SERVER SIDE: what it does with a key</text><rect x=\"6\" y=\"174\" width=\"156\" height=\"50\" class=\"dg-box\"/><text x=\"84\" y=\"195.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">New key</text><text x=\"84\" y=\"211.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">do work, save</text><rect x=\"202\" y=\"174\" width=\"156\" height=\"50\" class=\"dg-box\"/><text x=\"280\" y=\"195.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Key running</text><text x=\"280\" y=\"211.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">wait or refuse</text><rect x=\"398\" y=\"174\" width=\"156\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"476\" y=\"195.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Key finished</text><text x=\"476\" y=\"211.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">return the save</text><text x=\"280\" y=\"244\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The result is saved with the key, so a repeat does not repeat the work.</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can trace how retries multiply across layers, and how budgets cap the growth.",
+      "steps": [
+        {
+          "step": "A database starts failing under load",
+          "explanation": "A customer's call passes through a stack five calls deep, and the last call is a query to a database."
+        },
+        {
+          "step": "Every layer retries",
+          "explanation": "Each layer retries a failed call three times. Three tries at one layer become nine in the layer above, and so on, until the database receives 243 times the load. It is already failing, so it is unlikely to recover."
+        },
+        {
+          "step": "Retry in one place",
+          "explanation": "Amazon's practice for low-cost operations is to retry at a single point in the stack and let the other layers report the failure."
+        },
+        {
+          "step": "Cap the tries",
+          "explanation": "Google lets a request be attempted up to three times. With only that rule, if a datacenter rejects most requests, volume still grows to just below three times the attempted rate."
+        },
+        {
+          "step": "Add a client budget",
+          "explanation": "Each client also retries only while retries are under 10% of its requests. That brings the growth to 1.1x in the general case."
+        },
+        {
+          "step": "Make the retry safe",
+          "explanation": "The one retrying layer sends a key with each call that changes state, so a retry whose first attempt actually worked does not do the work twice."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-ir-example-t\" class=\"dg\"><title id=\"dg-ir-example-t\">Five layers that each retry a failing database call three times multiply the load on the database. Google&#x27;s budgets cap the growth at a worst case just below three times, and 1.1 times with a ten percent client budget.</title><defs><marker id=\"dg-ir-example-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"20\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">EVERY LAYER RETRIES (Amazon&#x27;s example)</text><rect x=\"14\" y=\"34\" width=\"76\" height=\"40\" class=\"dg-box\"/><text x=\"52\" y=\"58.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Layer 1</text><rect x=\"100\" y=\"34\" width=\"76\" height=\"40\" class=\"dg-box\"/><text x=\"138\" y=\"58.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Layer 2</text><rect x=\"186\" y=\"34\" width=\"76\" height=\"40\" class=\"dg-box\"/><text x=\"224\" y=\"58.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Layer 3</text><rect x=\"272\" y=\"34\" width=\"76\" height=\"40\" class=\"dg-box\"/><text x=\"310\" y=\"58.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Layer 4</text><rect x=\"358\" y=\"34\" width=\"76\" height=\"40\" class=\"dg-box\"/><text x=\"396\" y=\"58.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Layer 5</text><rect x=\"450\" y=\"34\" width=\"96\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"498\" y=\"58.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Database</text><path d=\"M90,54 L100,54\" class=\"dg-line\" marker-end=\"url(#dg-ir-example-a)\"/><path d=\"M176,54 L186,54\" class=\"dg-line\" marker-end=\"url(#dg-ir-example-a)\"/><path d=\"M262,54 L272,54\" class=\"dg-line\" marker-end=\"url(#dg-ir-example-a)\"/><path d=\"M348,54 L358,54\" class=\"dg-line\" marker-end=\"url(#dg-ir-example-a)\"/><path d=\"M434,54 L450,54\" class=\"dg-line\" marker-end=\"url(#dg-ir-example-a)\"/><text x=\"280\" y=\"96\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">3 tries at one layer, then 9, and so on: the database sees 243x.</text><path d=\"M14,112 L546,112\" class=\"dg-line dg-dashed\"/><text x=\"14\" y=\"132\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">BUDGETS INSTEAD (Google&#x27;s chapter)</text><rect x=\"14\" y=\"146\" width=\"160\" height=\"50\" class=\"dg-box\"/><text x=\"94\" y=\"167.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Per request</text><text x=\"94\" y=\"183.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">3 attempts</text><rect x=\"200\" y=\"146\" width=\"160\" height=\"50\" class=\"dg-box\"/><text x=\"280\" y=\"167.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Per client</text><text x=\"280\" y=\"183.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">retries under 10%</text><rect x=\"386\" y=\"146\" width=\"160\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"466\" y=\"167.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Backend hint</text><text x=\"466\" y=\"183.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">don&#x27;t retry</text><path d=\"M174,171 L200,171\" class=\"dg-line\" marker-end=\"url(#dg-ir-example-a)\"/><path d=\"M360,171 L386,171\" class=\"dg-line\" marker-end=\"url(#dg-ir-example-a)\"/><text x=\"280\" y=\"222\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Worst case just below 3X with the first budget, 1.1x with both.</text><text x=\"280\" y=\"240\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Retries happen one layer above the rejection, not at every layer.</text></svg>"
+    },
+    "mistakesOutcome": "After this you can spot three ways retries go wrong.",
+    "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
+    "quiz": [
+      {
+        "question": "A client sends a request, waits, and gets no reply. What does the client know?",
+        "options": [
+          "The request failed, so sending it again is safe and cannot cause a duplicate",
+          "Nothing for certain: the request or the reply may have been lost",
+          "The request was lost, because replies on a healthy network are never lost"
+        ],
+        "correct": 1,
+        "why": "A missing reply looks the same whether the request never arrived, the work was done and the reply was lost, or the work is still running.",
+        "wrong": [
+          "Failure of the call does not mean failure of the work: the server may have finished it.",
+          "",
+          "Replies can be lost on the way back like any other message."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "What makes an operation idempotent?",
+        "options": [
+          "Repeating it has the same effect as doing it once",
+          "It always succeeds on the very first try it is given",
+          "It is cheap enough that repeating it makes no real difference"
+        ],
+        "correct": 0,
+        "why": "Idempotent means a repeat changes nothing further, which is what lets a client retry without fear of doing the work twice.",
+        "wrong": [
+          "",
+          "Succeeding first time has no bearing on what a repeat does.",
+          "Cost is separate from effect: a cheap call can still charge a card twice."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "A retry arrives with a key the server has already finished. What should the server do?",
+        "options": [
+          "Run the work again so that the result it returns is fresh",
+          "Reject it with an error and send no reply at all",
+          "Return the stored result without repeating the work"
+        ],
+        "correct": 2,
+        "why": "The saved result is what the first attempt produced, so the client gets its answer and the effect happens once.",
+        "wrong": [
+          "Running the work again is the duplicate the key exists to prevent.",
+          "An error leaves the client unsure again, which is the problem a stored result solves.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why add jitter to the wait before a retry?",
+        "options": [
+          "So that each retry waits a little longer than the one before it",
+          "So clients that failed together do not all retry at once",
+          "So the server can tell a retry apart from a brand new request"
+        ],
+        "correct": 1,
+        "why": "Backoff alone can leave many clients waiting the same time. Randomness spreads their retries out, which gives the server room to recover.",
+        "wrong": [
+          "Growing waits are backoff; jitter is the random part added to them.",
+          "",
+          "A key, not a delay, is how a server recognizes a repeat."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Five layers each retry a failing database call three times, as in Amazon's example. What happens to the database's load?",
+        "options": [
+          "It grows three times, because each layer adds three tries",
+          "It grows by about fifteen times, one step per layer",
+          "It multiplies at every layer, so the database sees 243 times the load"
+        ],
+        "correct": 2,
+        "why": "Tries at one layer multiply the tries below it: three, then nine, and so on, so a small failure at the bottom becomes a flood.",
+        "wrong": [
+          "Retries multiply from layer to layer instead of adding.",
+          "Adding three per layer would give fifteen, but each layer multiplies the one below.",
+          ""
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "Which is the safest way to retry a call that creates a payment?",
+        "options": [
+          "Send it again with the same key, so a repeat cannot charge twice",
+          "Send it again with a fresh key each time, so the server treats each try as new",
+          "Never retry, and ask the user to try again later"
+        ],
+        "correct": 0,
+        "why": "The same key tells the server the second request is the first one repeated, so the charge happens once however many tries it takes.",
+        "wrong": [
+          "",
+          "A fresh key makes each try look new, which is how a duplicate charge happens.",
+          "Never retrying leaves the user as unsure as the client was, and adds work for the user."
+        ],
+        "teaches": "mistakes"
+      }
+    ],
+    "postsOutcome": "After this you can compare how Amazon and Google limit retries.",
+    "differOutcome": "After this you can say where the two accounts agree and where they differ.",
+    "exercisesOutcome": "After this you can design a retry policy and defend each limit in it.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A client calls a payment provider and the call times out. Should it retry, and what has to be true first?",
+        "answer": "It should retry only if the provider can recognize a repeat. Send a unique key with the first attempt and reuse the same key on every retry, so the provider returns the stored result instead of charging again. Without a key, the client has to find out whether the first call worked before it sends another, for example by asking the provider.",
+        "tradeoffs": "Keys cost the provider storage and a lookup on every request, and the record has to be kept long enough to catch late retries.",
+        "wrongAnswers": [
+          "Retry with a new key so the call is treated as fresh.",
+          "Never retry any call that moves money.",
+          "Retry immediately, as many times as it takes."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "design",
+        "prompt": "A client calls service A, which calls B, which calls C, which reads a database. Design the retry policy: where retries happen, how many, how long to wait, and what stops them.",
+        "answer": "Retry at one layer only, and let the layers below fail fast and report the error. Cap the tries per request at a small number, wait longer after each try with some randomness added, and keep a budget that stops retries when too large a share of the client's requests are already retries. Make every retried call idempotent with a key. Have a lower layer tell the layers above not to retry when it knows the failure is not transient.",
+        "tradeoffs": "Retrying at the top wastes the work lower layers already did, and retrying low saves that work but leaves the top unable to recover from some failures. A small budget protects the dependency and gives up on more requests.",
+        "wrongAnswers": [
+          "Let every layer retry three times.",
+          "Retry at once so users notice nothing.",
+          "Make the timeout very short so failures show up sooner."
+        ],
+        "teaches": "example"
+      },
+      {
+        "level": "scale",
+        "prompt": "Ten thousand clients all fail together when a dependency restarts. Each retries after the same fixed delay. What happens, and what do you change?",
+        "answer": "Every client retries at the same instant, so the restarted dependency receives all of them at once and fails again, and they all retry again together. Wait longer after each try and add randomness so the retries spread over time, cap how many tries each client makes, and give each client a retry budget so the total load from retries stays small. Check it by restarting the dependency in a test and watching the request rate over time.",
+        "tradeoffs": "Randomness makes behavior harder to reproduce when debugging, and a tight budget gives up on requests that might have succeeded.",
+        "wrongAnswers": [
+          "Shorten the fixed delay so clients recover sooner.",
+          "Add more servers and keep the same retry schedule.",
+          "Remove the retry limit so every request eventually succeeds."
+        ],
+        "teaches": "mistakes"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can look back at the earlier topics that depend on retries.",
+      "body": "This ends the map for now. Look back at Message Queues, where a redelivered message is a retry, and at Circuit Breakers, where a retry is one more call to a dependency that is failing."
+    }
+  }
+}
