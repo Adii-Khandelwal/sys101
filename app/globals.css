@@ -2373,6 +2373,11 @@ li {
 
 
 /* Short groups: what to read, the site's pages, and you. Each wraps as a unit, so a separator never dangles at a line end. */
+.site-footer .footer-mark {
+  display: inline-flex;
+  align-items: center;
+}
+
 .site-footer .footer-group {
   display: flex;
   flex-wrap: wrap;
