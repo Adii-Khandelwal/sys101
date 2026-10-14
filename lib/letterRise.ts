@@ -102,8 +102,10 @@ export function trackFly(h1: HTMLElement, root: HTMLElement, onProgress?: (p: nu
   let shown = 0; // the progress on screen: it eases toward the scroll position, so a jump of the wheel does not make a jump of the letters
   let last = 0;
   let raf = 0;
+  let dead = false; // set by the cleanup: a late font or frame callback must not touch the header afterwards
   const apply = (now = performance.now()) => {
     raf = 0;
+    if (dead) return;
     const target = goal();
     const dt = Math.min(64, now - last);
     last = now;
@@ -143,9 +145,10 @@ export function trackFly(h1: HTMLElement, root: HTMLElement, onProgress?: (p: nu
     if (shown !== target) raf = requestAnimationFrame(apply); // keep easing after the scrolling stops
   };
   const schedule = () => {
-    if (!raf) raf = requestAnimationFrame(apply);
+    if (!raf && !dead) raf = requestAnimationFrame(apply);
   };
   const remeasure = () => {
+    if (dead) return;
     measure();
     schedule();
   };
@@ -156,6 +159,7 @@ export function trackFly(h1: HTMLElement, root: HTMLElement, onProgress?: (p: nu
   shown = goal(); // start where the page is, with no easing (a reload part-way down the page)
   apply();
   return () => {
+    dead = true;
     window.removeEventListener("scroll", schedule);
     window.removeEventListener("resize", remeasure);
     cancelAnimationFrame(raf);

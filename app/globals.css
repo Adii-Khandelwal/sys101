@@ -3749,6 +3749,13 @@ html[data-posts-view] .posts-view-h {
     display: none !important;
   }
 
+  /* Letters pinned in the bar are position: fixed and would repeat on every page. */
+  .fly-letter {
+    position: static !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+
   html,
   body {
     font-size: 12pt;
