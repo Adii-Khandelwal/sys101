@@ -1,4 +1,15 @@
+---
+paths:
+  - "components/Tour*.tsx"
+  - "lib/tours*.ts"
+  - "scripts/check-tour.mjs"
+---
+
 # Guided tours
+
+Applies when editing the home and topic tours.
+
+## Specification
 
 A short, optional tour on the home page and on topic pages. Entry is a quiet text link, "Take the 30-second tour": in the masthead on Home, in the "Skip to the posts" row on a topic page. It never starts by itself.
 

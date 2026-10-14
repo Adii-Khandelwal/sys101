@@ -1,6 +1,26 @@
-# Learn page specification
+---
+paths:
+  - "content/learn/**"
+  - "lib/learn.ts"
+  - "lib/learn.test.ts"
+  - "components/Learn*.tsx"
+  - "components/VideoEmbed.tsx"
+  - "app/topic/**/learn/**"
+---
 
-Moved unchanged from CLAUDE.md. Read before editing learn pages or their content.
+# Learn pages (start from zero)
+
+Applies when editing /topic/<slug>/learn or content/learn.
+
+## Standing rules
+
+- Every topic has a second page at /topic/<slug>/learn, titled "Start from zero: <Topic>", for a complete beginner. Not counted in "topic read"; never touches the progress store. A new topic is not done until its learn page exists.
+- Content lives in content/learn/<slug>.json, typed in lib. Pagefind indexes it with a "Start from zero" label.
+- Official sources only. Any number, default, limit, or command must be confirmed in an opened source; cite the page that says it. A source year is a four-digit year, "no date shown", or "page shows last updated YYYY-MM-DD", only if the page shows it (build check).
+- Try it commands appear on the cited page, with no "> " or "$ " prompt; risky ones carry a visible `warning`; invented names go in `exampleNames` (build checks).
+- Get approval for candidate sources and videos before saving.
+
+## Specification
 
 - Every topic, current and future, has a second page at /topic/<slug>/learn, titled "Start from zero: <Topic>", teaching it from 0 to 100 for a complete beginner. Not counted in "topic read"; never touches the progress store.
 - Structure: promise line ("After this you can follow the topic page and the posts"); Before you start (link prerequisite topics plus the few terms needed); 4 stages (Basics, How it works, Going deeper, In practice and trade-offs), each with an explanation in our own words, key terms, official reading (a specific section and what to read in it), an optional original SVG diagram in the site style (same build rules as topic diagrams; usually on How it works), an optional video, and an untracked "You can now" list; then Common misconceptions, Try it (commands only if confirmed in an official source, shown as scrollable pre blocks), Where to go next (back to the topic page and its posts), and Sources.

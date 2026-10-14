@@ -2205,7 +2205,7 @@ li {
     font-size: 40px;
   }
 
-  /* No horizontal page scroll on phones (CLAUDE.md). The toolbar and the
+  /* No horizontal page scroll on phones (.claude/rules/accessibility-and-chrome.md). The toolbar and the
      "Next up" line wrap instead of pushing content off the edge. */
   .home {
     overflow-x: hidden;
@@ -3024,7 +3024,7 @@ html {
 
 /* ── Touch targets on phones ─────────────────
    Small text links and buttons keep their look and spacing; an invisible
-   pseudo-element grows the tap area to 44px (WCAG AA, CLAUDE.md). */
+   pseudo-element grows the tap area to 44px (WCAG AA, .claude/rules/accessibility-and-chrome.md). */
 @media (max-width: 767px), (pointer: coarse) {
   .masthead p a,
   .index-groups a,
@@ -3392,7 +3392,7 @@ html {
   margin-top: 16px;
 }
 
-/* ── Map node-open transition (docs/graph.md): the clicked node's bubble grows while the map fades to the page colour,
+/* ── Map node-open transition (.claude/rules/graph.md): the clicked node's bubble grows while the map fades to the page colour,
       keeps growing on the plain screen while the topic loads behind it, then bursts as the screen fades out.
       Transform and opacity only. ── */
 .node-bubble {

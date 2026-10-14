@@ -9,7 +9,7 @@ export type LearnEntry = { id: string; name: string };
  * contents, with the current section highlighted and a marker that slides to
  * it. Progress is how far the reader has moved through the sections, computed
  * from scroll position only. It never touches the reading-progress store, so
- * learn pages stay untracked (CLAUDE.md: learn pages never touch progress).
+ * learn pages stay untracked (.claude/rules/learn-pages.md: learn pages never touch progress).
  */
 export default function LearnRail({
   entries,

@@ -1,4 +1,4 @@
-// Checks the built HTML for the SEO rules in CLAUDE.md and fails the build on any miss:
+// Checks the built HTML for the SEO rules in .claude/rules/seo.md and fails the build on any miss:
 //   - every indexable page has a unique title and description, within length
 //   - exactly one <h1>, and headings never skip a level
 //   - an og:image and a summary_large_image twitter card

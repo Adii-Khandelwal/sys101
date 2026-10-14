@@ -1,6 +1,17 @@
-# Background hub
+---
+paths:
+  - "content/background/**"
+  - "app/background/**"
+  - "lib/background*.ts"
+  - "scripts/verify-background.mjs"
+  - "components/HighlightTarget.tsx"
+---
 
-Read before editing content/background or app/background.
+# Background page
+
+Applies when editing /background or its data.
+
+## Specification
 
 - One page, `/background`: what the curated posts of each topic assume the reader already knows, beyond the topic itself. One section per topic that has a file, `id` = topic slug (`/background#caching`). Static HTML; the only client code is `HighlightTarget`, which highlights the section the URL fragment points at.
 - Data: `content/background/<topic-slug>.json` is `{ topic, updatedOn, items }`. An item has `id`, `name`, `explanation`, `assumedBy` (one `{ postId, quote }` per post, the quote copied from that post's page), `topicPage?` (our own page for the concept) and `sources?` (`{ title, publisher, url, year, verifiedOn }`).

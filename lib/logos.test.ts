@@ -12,7 +12,7 @@ const file = (src: string) => path.join(process.cwd(), "public", src);
 describe("company logos", () => {
   it("every organization has a logo or a written reason it has none", () => {
     for (const o of orgs) {
-      expect(o in LOGO_FILES || o in marks.withoutLogo, `${o} has no logo. Run: node scripts/make-logos.mjs add "${o}" [domain.com]  (docs/logos.md)`).toBe(true);
+      expect(o in LOGO_FILES || o in marks.withoutLogo, `${o} has no logo. Run: node scripts/make-logos.mjs add "${o}" [domain.com]  (.claude/rules/logos.md)`).toBe(true);
     }
   });
   it("lists no organization that is gone, and none twice", () => {

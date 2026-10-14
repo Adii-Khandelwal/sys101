@@ -1,4 +1,4 @@
-// The guided tours (docs/tours.md): step text and the small pure helpers behind the overlay.
+// The guided tours (.claude/rules/tours.md): step text and the small pure helpers behind the overlay.
 // Nothing here touches the DOM, so the tests can run it directly.
 import { PHONE } from "./breakpoints";
 

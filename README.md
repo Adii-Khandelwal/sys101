@@ -39,11 +39,12 @@ Years are shown for posts more than five years old; each topic page explains why
 
 ## How it works
 
-1. **The graph is the homepage.** Each node is a topic, and arrows point from what you should read first to what builds on it. A hollow node is unread, a node with a dot is ready to read (all its prerequisites are done), a node ringed in rust with a rust dot is in progress (you have started it), and a filled node is read. Once you have read something, "Next up" suggests where to go, preferring topics that continue what you already read and that open up more of the map, and a "pick up where you left off" line links back to the topic and section you last viewed. Under 768px the homepage shows only a linear Path view, with no Map/Path toggle (desktop keeps the toggle and remembers your choice). On desktop the map is a full-size horizontal graph; when it is wider than the screen (as it is once there are enough topics) the map section scrolls sideways with a scrollbar, rather than shrinking the labels or stacking. Pan with a drag and zoom with the trackpad or the `+`/`-`/`0` keys are available on desktop (the on-screen zoom and fit buttons were removed; the keyboard shortcuts remain). Below the map are a short "Inside a topic" outline with a figure of the day taken from the posts, a "Try a question" that rotates through real quiz questions, and a plain list of where the posts come from. Press `/` to jump to search; several words in the box must all appear in a result. The Path list (the only view on a phone) has the same four-state legend as the map and names what each topic builds on before the reasons. The footer is grouped (reading, site pages, you) and offers the tour again. Each topic page also has interactive figures at the end of three posts (a sliding-window gauge, a cache fill race, a commit latch; `docs/figures.md`). The homepage and every topic page have an optional "Take the 30-second tour" link: a short guided walk-through of the page (five steps at most), started only by the reader, hidden once finished or skipped so it never nags (the footer link stays) (`docs/tours.md`).
+1. **The graph is the homepage.** Each node is a topic, and arrows point from what you should read first to what builds on it. A hollow node is unread, a node with a dot is ready to read (all its prerequisites are done), a node ringed in rust with a rust dot is in progress (you have started it), and a filled node is read. Above the map, the homepage says what the course is, who it is for and why it matters, and gives one start button: "Start with <first topic>" on a first visit; once you have started a topic (a section marked done or a quiz question answered), "Continue: <topic>" (or "Finish:" when only a couple of units are left) linking to the first unfinished section, with a quiet line naming your other started topics or the topic after it; and with only reads and nothing started, "Next up", preferring topics that continue what you already read and that open up more of the map. Under 768px the homepage shows only a linear Path view, with no Map/Path toggle (desktop keeps the toggle and remembers your choice). On desktop the map is a full-size horizontal graph; when it is wider than the screen (as it is once there are enough topics) the map section scrolls sideways with a scrollbar, rather than shrinking the labels or stacking. Pan with a drag and zoom with the trackpad or the `+`/`-`/`0` keys are available on desktop (the on-screen zoom and fit buttons were removed; the keyboard shortcuts remain). Below the map are a short "Inside a topic" outline with a figure of the day taken from the posts, a "Try a question" that rotates through real quiz questions, and a list of where the sources come from, each organization with its mark. Press `/` to jump to search; several words in the box must all appear in a result. The Path list (the only view on a phone) has the same four-state legend as the map and names what each topic builds on before the reasons. The footer is grouped (reading, site pages, you) and offers the tour again. Each topic page also has interactive figures at the end of three posts (a sliding-window gauge, a cache fill race, a commit latch; `.claude/rules/figures.md`). The homepage and every topic page have an optional "Take the 30-second tour" link: a short guided walk-through of the page (five steps at most), started only by the reader, hidden once finished or skipped so it never nags (the footer link stays) (`.claude/rules/tours.md`).
 2. **Each topic page is a lesson.** It opens with a reading-time estimate computed from its content, then an "In short" summary. It has two halves. First the idea: why the concept exists, a mental model with a diagram, how it works step by step, a worked example, the common mistakes, a self-check quiz with explained answers, and a "skip to the posts" link for people who already know it. Then the real world: a digest of each company post (problem, constraints, walkthrough, diagram, numbers, trade-offs, what failed, takeaways), a comparison when there are two or more posts, an interactive isometric figure on a post that gives a mechanism (so far the sliding-window gauge in Rate Limiting, the cache fill race in Caching and the commit latch in Distributed Transactions), and design exercises that rise in difficulty (apply, design, scale) with model answers.
 3. **"Start from zero" learn pages** give an absolute beginner a staged path through a topic (Basics, How it works, Going deeper, In practice and trade-offs), built only from official sources: standards, vendor and project docs, university course pages, and recognized conference talks. Each stage cites its sources inline, points to the exact section to read, and ends with what you can now do. Videos are click-to-load and labelled as optional and not reviewed by the author. Every topic has one at `/topic/<slug>/learn`, and commands and config in "Try it" are shown as scrollable code blocks.
 4. **Reading progress is stored in your browser only.** Nothing is sent to a server, and there are no accounts. Section-level, post-level and quiz progress are tracked per topic, with a progress bar on each page. A topic you have deliberately started (a section marked done or a quiz question answered) shows as "in progress" on the map and the Path view; the Path view also shows a per-group read count and a mark-group-read toggle. Quiz answers are saved by option, not by position, so options can be reordered without losing them, and older saves are upgraded. You can export, import, or reset it on the `/data` page, which also shows a read / in-progress / ready tally.
-5. **A glossary and themes.** `/glossary` gathers every term defined across the topics, grouped by topic with a link back to each, a contents list down the side, and a filter box (focus it with `/`) that jumps straight to a term. `/posts` lists every post the topics are built on, by topic, company or year, with a filter and a contents list. A sun/moon control in the header switches between the light (cream) and a warm dark theme; the choice is remembered and follows your system setting until you pick one.
+5. **A glossary and themes.** `/glossary` gathers every term defined across the topics, grouped by topic with a link back to each, a contents list down the side, and a filter box (focus it with `/`) that jumps straight to a term. `/posts` lists every source the topics are built on ("36 sources from 19 organizations", split into posts, papers and documentation), by topic, company or year, with a filter and a contents list. A sun/moon control in the header switches between the light (cream) and a warm dark theme; the choice is remembered and follows your system setting until you pick one.
+6. **Company marks.** A company's mark sits beside its name wherever the name stands as a label (the homepage sources list, `/posts`, a post's header, Original posts, In short, the left rail, What's new, Background). They are local SVG files from svgl (official brand SVGs) or Simple Icons, never recoloured and never fetched at runtime; a mark with a dark-page version swaps with the theme. `node scripts/make-logos.mjs add "Company" [domain]` finds one for a new company (svgl, then Simple Icons, then Hunter by domain), and a test fails until a new company has one. The marks belong to their owners and are shown only to say whose post it is (`.claude/rules/logos.md`).
 
 ## How posts are chosen
 
@@ -87,9 +88,9 @@ Content is validated during static generation (`lib/topics.ts`, `lib/learn.ts`);
 
 A separate SEO check (`scripts/check-seo.mjs`) runs after `next build` and fails on: duplicate or over-length titles and descriptions, a description that ends in an ellipsis, a page without exactly one `<h1>`, headings that skip a level, a missing or wrong canonical, a page that should be `noindex` but is not (`/data`, 404), a sitemap that does not match the indexable pages or the files in `content/`, JSON-LD that does not parse, images without alt/width/height, and content streamed in a hidden chunk that needs JavaScript.
 
-"What's new" lists (`content/news/<slug>.json`, at most three recent pages from per-topic approved sources) appear after "What to learn next". They are checked in the build (`scripts/check-news.mjs`) and against the live pages with `npm run verify:news`; see `docs/whats-new.md`.
+"What's new" lists (`content/news/<slug>.json`, at most three recent pages from per-topic approved sources) appear after "What to learn next". They are checked in the build (`scripts/check-news.mjs`) and against the live pages with `npm run verify:news`; see `.claude/rules/news.md`.
 
-A `/background` page lists, per topic, what its curated posts assume you already know (`content/background/<topic>.json`): each concept with the post sentence that assumes it, a link to our own topic page or an official source, and a "Taught later" gist for concepts that come later in the course. `npm run verify:background` checks the quotes against the live posts; see `docs/background.md`.
+A `/background` page lists, per topic, what its curated posts assume you already know (`content/background/<topic>.json`): each concept with the post sentence that assumes it, a link to our own topic page or an official source, and a "Taught later" gist for concepts that come later in the course. `npm run verify:background` checks the quotes against the live posts; see `.claude/rules/background.md`.
 
 A diagram overflow check (`scripts/check-diagram-overflow.mjs`) also runs after `next build`. It renders every diagram SVG in headless Chromium with the site's real fonts (Newsreader, IBM Plex Mono) and uses `getComputedTextLength()` to measure each label; if a label's rendered box spills past the box drawn around it, the build fails. It skips with a notice when Chromium is not installed (so CI without the browser is unaffected); run `npx playwright install chromium` once to enable it, or run it on its own with `npm run check:diagrams`.
 
@@ -106,7 +107,8 @@ Every post records `verifiedOn`, the date someone last opened it and checked the
 - Pagefind for search, built into static files at build time
 - Vercel for hosting and Vercel Analytics for traffic
 - Vitest for the unit tests in `lib/`
-- Playwright (headless Chromium) for the diagram overflow check, run after the build
+- Playwright (headless Chromium) for the diagram overflow check, the tour check and the UI check
+- svgl and Simple Icons as the offline sources of company marks (`scripts/make-logos.mjs`); nothing is fetched from them at runtime
 - Pipeline in Node with rss-parser, Cheerio and Gemini Flash (`@google/genai`); scaffolded, not yet in use
 
 ## Project structure
@@ -116,17 +118,20 @@ app/              routes: graph homepage, topic pages, learn pages, glossary, ab
 components/       graph view, topic lesson, learn page, index, search, glossary filter, progress trackers, data controls, theme toggle
 content/topics/   one JSON file per topic (18 topics)
 content/learn/    one JSON file per "start from zero" learn page (18 pages)
+content/          also background/ (what the posts assume), news/ (What's new), logos.json (company marks) and marks of the sources
 lib/              content loading and build checks, graph layout, reading progress, SEO helpers, and their tests
 pipeline/         offline scripts for fetching and summarizing posts
 scripts/          weekly source link check, the postbuild SEO and diagram-overflow checks, the figure verifier and audit, and the guided-tour browser check
 .github/          the scheduled link-check workflow
-public/           static files; public/pagefind is generated by the build
-docs/             images and design notes for this project
+public/           static files; public/pagefind is generated by the build; public/logos holds the company marks
+docs/             working records: ideas, the verification log, review progress, batch tasks and drafts, the news routine's setup
+.claude/          how Claude Code works on this project: rules/ (the standing rules and specifications), skills/, hooks/ and settings.json
+CLAUDE.md         the project-wide standing rules, always loaded; .claude/rules/ holds the per-area detail
 ```
 
 ## Run locally
 
-Requires Node 20.9 or newer (`package.json` sets `engines.node >= 20.9`; see also `.nvmrc`).
+Requires Node 20.9 or newer (`package.json` sets `engines.node >= 20.9`); the project is developed on the version in `.nvmrc` (24).
 
 ```
 npm install
@@ -137,7 +142,11 @@ npm test               # run the Vitest unit tests
 npm run verify:figures # check every figure against its source (docs/verification-log.md, docs/hand-checks.json); needs the network
 npm run audit:figures  # replay the interactive figures' geometry through the anatomy skill's audit
 npm run check:tour     # drive the guided tours in a browser against a running server
+npm run check:ui       # overflow, tooltips, split labels, broken images and layout shift at 1440 and 390, light and dark
+node scripts/make-logos.mjs add "Company" [domain]   # find and add a company's mark
 ```
+
+While `npm run dev` is running, do not run `npm run build`: it overwrites `.next` under the dev server. Build into another directory instead, `NEXT_DIST_DIR=.next-build npx next build`, run the post-build checks with the same variable, then delete it (a Claude Code hook enforces this; see `CLAUDE.md`).
 
 ## Adding a topic
 
@@ -184,6 +193,8 @@ Create `content/topics/<slug>.json` and, with it, `content/learn/<slug>.json`: a
 }
 ```
 
+A new company also needs a logo (`node scripts/make-logos.mjs add`). With Claude Code, the `add-topic` and `add-post` skills walk through all of this.
+
 Before committing:
 
 - Every prerequisite already exists as a topic.
@@ -193,6 +204,17 @@ Before committing:
 - The digest is written in your own words from the post itself, with no copied passages.
 - Every number is checked against the post. Never estimate or round in a way the post does not.
 - A post over five years old has an `ageNote` saying why it still applies, without claiming details still hold unless a source you opened says so.
+
+## Working with Claude Code
+
+The project carries its own configuration:
+
+- `CLAUDE.md`: the project-wide standing rules (precedence, honesty and post selection, site feel, architecture, how to work and verify, git and releases). Always loaded.
+- `.claude/rules/*.md`: one file per area (topic pages, learn pages, homepage, graph, motion, SEO, accessibility, tours, background, figures, news, logos, tooling, progress). Each holds the rules and the full specification for its area and loads when a matching file is touched. `CLAUDE.md` has the index.
+- `.claude/skills/`: `add-topic`, `add-post`, `verify-ui` and `release-check`, the repeatable workflows.
+- `.claude/settings.json`: shared permissions for read-only and check commands, two guard hooks (building under a running dev server, hand-editing generated files) and the plugins the project uses. Personal overrides go in `.claude/settings.local.json`, which is gitignored.
+
+When a change adds or alters a rule, page type, schema, route or convention, the matching rule file and this README are updated in the same commit.
 
 ## Content and attribution
 

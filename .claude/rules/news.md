@@ -1,6 +1,19 @@
-# What's new per topic
+---
+paths:
+  - "content/news/**"
+  - "docs/news-state.json"
+  - "docs/routines/**"
+  - "scripts/*news*"
+  - "pipeline/**"
+  - ".github/workflows/news-pr.yml"
+  - "lib/news*.ts"
+---
 
-Read before editing content/news, docs/news-state.json or the routine files.
+# What's new (news routine)
+
+Applies when editing content/news, the allowlist, the routine files or the news workflow. The routine may touch only content/news/** and docs/news-state.json.
+
+## Specification
 
 - Data: `content/news/<slug>.json` is `{ asOf, items }`, at most 3 items, zero is valid and renders nothing. An item has `id`, `kind` (release, engineering-post, standard, docs), `title`, `publisher`, `url`, `dateShown` (YYYY-MM-DD, YYYY-MM, YYYY or "no date shown", exactly what the page shows), `summary`, `evidence`, `origin`, `addedOn`, `verifiedOn`.
 - Summary: one plain sentence of 12 to 30 words in our own words, no em dash or "not X but Y". Any digit must also be in the evidence, and it needs at least one evidence phrase per 15 summary words, so every sentence-level claim is covered. Any digit or comparative word (faster, higher, lower, more, less, better, improves) needs an attribution phrase (says, reports, claims, describes) naming the publisher's first word.

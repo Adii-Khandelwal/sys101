@@ -1,9 +1,23 @@
-# Tooling details
+---
+paths:
+  - "scripts/**"
+  - "package.json"
+  - "vitest.config.ts"
+  - ".github/**"
+  - "pipeline/**"
+---
+
+# Tooling
+
+Applies when editing scripts, the build, CI or package scripts.
+
+## Specification
 
 Moved from CLAUDE.md, "Working in this repo".
 
 - `npm run verify:figures` fetches every source with curl (PDFs through pdftotext or pypdf; a page that refuses curl through the Wayback CDX API, marked "(archive copy)", and then through headless Chromium, marked "(browser copy)") and writes docs/verification-log.md (figure, URL, nearest heading, result). It checks the numbers table, problem, constraints, walkthrough, trade-offs, failures, takeaways and the numbers' meanings. A figure with a lone digit or a number written as a word cannot be judged by a script: the script looks for the other spelling next to the same noun, and anything left says HAND CHECK until a person has read the source and recorded the verdict in docs/hand-checks.json (key `<post id>|<figure as written>`, with a short note). `VF_DUMP=<dir>` writes each page's text for reading. Needs the network, so it never runs in the build.
 - `scripts/check-diagram-overflow.mjs` runs after the build (and as `npm run check:diagrams`): it renders each diagram SVG in headless Chromium and fails if a label's box spills past its rect. It skips when Chromium is absent (`npx playwright install chromium`); Playwright is a devDependency.
 - `npm run build` also builds the Pagefind index into `public/pagefind` (git-ignored). Under `npm run dev`, run `npm run search:index` instead.
-- `npm run audit:figures` replays the figures' geometry through the anatomy skill's audit (docs/figures.md). `npm run check:tour` drives the guided tours in a browser against a running server (docs/tours.md). Both are offline and never run in the build.
-- `node scripts/make-logos.mjs` copies company marks from svgl and Simple Icons into `public/logos/` and writes `lib/logoFiles.ts` (docs/logos.md). Offline, run by hand, never in the build.
+- `npm run audit:figures` replays the figures' geometry through the anatomy skill's audit (.claude/rules/figures.md). `npm run check:tour` drives the guided tours in a browser against a running server (.claude/rules/tours.md). Both are offline and never run in the build.
+- `node scripts/make-logos.mjs` copies company marks from svgl and Simple Icons into `public/logos/` and writes `lib/logoFiles.ts` (.claude/rules/logos.md). Offline, run by hand, never in the build.
+- `npm run check:ui` (scripts/ui-audit.mjs, `BASE_URL` defaults to http://localhost:3000) loads every sitemap page at 1440 and 390, light and dark, and fails on sideways scroll, hover-tooltip sources, a short mono label split over lines, a broken company mark or layout shift. Offline, run by hand, never in the build; the `verify-ui` skill uses it.

@@ -672,7 +672,7 @@ export default function GraphView({ nodes, edges }: Props) {
           const h = highlightRef.current;
           const inChain = h.has(graph.source(edge)) && h.has(graph.target(edge));
           // Highlighted edges are the signal: darker ink and a touch thicker, so
-          // the lit path reads clearly against the faded rest (CLAUDE.md: emphasise
+          // the lit path reads clearly against the faded rest (.claude/rules/graph.md: emphasise
           // the highlight rather than add a dashed style that clashes with implied links).
           return inChain
             ? { ...data, color: liveColors.ink, size: (data.size ?? 1) * EDGE_EMPHASIS }

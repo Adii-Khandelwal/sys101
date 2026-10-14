@@ -1,6 +1,26 @@
-# Graph specification
+---
+paths:
+  - "components/GraphView.tsx"
+  - "components/StateLegend.tsx"
+  - "lib/graph*.ts"
+  - "lib/nodeOpen.ts"
+  - "lib/mapView.ts"
+  - "lib/camera*.ts"
+---
 
-Moved unchanged from CLAUDE.md. Read before editing graph code.
+# Graph
+
+Applies when editing the map, its layout or the node-open transition.
+
+## Standing rules
+
+- The map is the homepage on desktop (768px and up); under 768px only the Path view is shown, with no Map/Path toggle; the toggle on desktop remembers an explicit choice.
+- Layout is deterministic and static. Draw only the transitive reduction by default. No edge crosses a label or node.
+- Node states never rely on color alone: unread (thin outline), ready (thicker outline + centre dot), in progress (rust outline + rust centre dot, for a topic deliberately started), read (filled rust). In progress ranks above ready. The Path view shows the same legend (components/StateLegend.tsx) above its list, and names what each topic builds on before the reasons.
+- Pan is desktop-only and starts at INTERACTIVE_MIN_NODES topics; zoom is keyboard-only (`+`/`-`/`0`). Zoom and Show all links have no on-screen buttons (camera and edge-filter state stay); the one exception is a "Fit to size" text button on an interactive map, disabled while the view is fitted. A phone gets the fixed map. Keep a plain text index and keyboard use as the fallback.
+- After adding a topic, check the map at 1280px, 1440px, and 390px for zero crossings and overlaps. At 1280px also test that sideways page scroll and map pan do not conflict.
+
+## Specification
 
 - The graph is the homepage on desktop (768px and up). Under 768px the homepage shows only the Path view (components/PathView.tsx), a linear grouped syllabus, with no toggle; on desktop a Map/Path toggle switches between them and the choice is remembered per browser. Layout is deterministic, left to right by prerequisite depth, and panning never moves nodes.
 - Under INTERACTIVE_MIN_NODES topics (12, in lib/graphUi.ts), or on a phone (under 768px) at any count, the map is fixed and fitted: no zoom, pan, or map controls, and clicking a node cross-fades to its topic. On a phone the homepage shows only the Path view, and GraphView skips importing the map libraries (Sigma, graphology, about 190 KB) there; a fixed map is what a phone would get so a finger scrolls the page past it and a tap opens the topic; zoom and pan are desktop-only. At 768px and up, from INTERACTIVE_MIN_NODES topics the zoom/pan/Fit-all controls switch on. On desktop the map is always a full-size horizontal graph (labels at full size, never shrunk or stacked): GraphView lays it out across the width its labels need, and the stage renders at that content width inside a horizontally-scrolling wrapper (components, `.graph-scrollwrap`), so when the map is wider than the viewport the whole map section scrolls sideways with a real scrollbar. A quiet "Scroll sideways for more" cue in the legend row shows while there is more to the right and hides at the end (opacity only, instant under reduced motion). The wrapper uses `scroll-snap-type: x proximity` with zero-size `.graph-snap` marks at the right edge of each column's widest label, so a scroll ends between columns, never through a label; the first, unscrolled view still cuts where the stage is wider than the window. The viewport width is measured on the wrapper and the stage width is driven by the computed content width, so they never feed back on each other. The map is static: a node click just highlights briefly and cross-fades (no camera recentre). A phone stacks vertically, one topic per row. After adding a topic, check the map at 1280px, 1440px, and 390px for zero crossings and overlaps. Group labels sit directly above their first node with their left edge on the node's, else below it the same way; stacked, they sit right of the node's label; never pinned to the stage edge.

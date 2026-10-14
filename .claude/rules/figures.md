@@ -1,4 +1,19 @@
+---
+paths:
+  - "components/figures/**"
+  - "lib/figures*.ts"
+  - "lib/slidingWindow*.ts"
+  - "lib/fillRace*.ts"
+  - "lib/commitLatch*.ts"
+  - "scripts/verify-figures.mjs"
+  - "scripts/audit-figures.mjs"
+---
+
 # Interactive post figures
+
+Applies when editing an interactive figure or its model.
+
+## Specification
 
 A post digest may carry `figure: { id, rows }` (type FigureSpec, lib/figures.ts). Registered ids: `sliding-window` (Cloudflare 2017), `fill-race` (Meta 2022) and `commit-latch` (Percolator 2010). Each id lists the input names it needs in FIGURE_ROWS; its model and wording live in lib/slidingWindow.ts, lib/fillRace.ts or lib/commitLatch.ts, its geometry in components/figures/<name>/geometry.ts on the shared scene (components/figures/scene.ts), and its client part in <Name>Live.tsx inside the shared FigureFrame (parts.tsx). It renders after the digest, before "Related topic".
 

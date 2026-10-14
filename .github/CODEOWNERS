@@ -3,6 +3,8 @@
 # does not let an author approve their own pull request, and routine pull requests carry the owner's identity.
 # The routine's pull requests touch only content/news/** and docs/news-state.json, which are not listed here.
 /.github/**               @Adii-Khandelwal
+/.claude/**               @Adii-Khandelwal
+/CLAUDE.md                @Adii-Khandelwal
 /scripts/**               @Adii-Khandelwal
 /lib/**                   @Adii-Khandelwal
 /package.json             @Adii-Khandelwal
