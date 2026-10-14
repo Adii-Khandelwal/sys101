@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ReportMistake from "./ReportMistake";
+import { LogoMark } from "./Logo";
 import TourLink from "./TourLink";
 import type { TourId } from "@/lib/tours";
 
@@ -9,6 +10,9 @@ const Dot = () => <span aria-hidden="true">·</span>;
 export default function SiteFooter({ tour }: { tour?: TourId }) {
   return (
     <footer className="site-footer">
+      <span className="footer-mark" aria-hidden="true">
+        <LogoMark size={14} />
+      </span>
       <p className="footer-group">
         <Link href="/glossary">Glossary</Link>
         <Dot />
