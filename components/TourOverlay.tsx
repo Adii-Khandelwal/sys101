@@ -2,33 +2,55 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { DURATION, EASING, bezier, prefersReducedMotion } from "@/lib/motion";
 import { isPhone, keyAction, move, overlayBoxes, placeBox, resolveSteps, wrapTab, type TourId } from "@/lib/tours";
 
 const PAD = 4; // the outline sits this far outside the target
 const PHONE_HEADER = 72; // the sticky header and strip on a phone, which a lifted target must stay below
 type Rect = { left: number; top: number; right: number; bottom: number };
 
+const ease = bezier(EASING.inOut);
+
 /**
- * Calls `done` when the page has stopped scrolling: after it moved and then held still for about 400ms (a browser may
- * update the scroll position in bursts during a long smooth scroll), when it never
- * moved at all (unless `mustMove`: a scroll that is known to be coming), when `arrived()` says so, or after `cap` ms. Returns a cancel function.
+ * Runs `frame(p)` every animation frame with p easing from 0 to 1 over `ms`, then `done`. Reduced motion (or ms of 0)
+ * jumps straight to p = 1. One clock drives the page scroll, the outline and the tooltip, so they always arrive together.
+ * Returns a cancel function.
  */
-function whenSettled(done: () => void, cap: number, arrived: () => boolean = () => false, mustMove = false) {
+function animate(ms: number, frame: (p: number) => void, done: () => void) {
+  if (ms <= 0 || prefersReducedMotion()) {
+    frame(1);
+    done();
+    return () => {};
+  }
   const t0 = performance.now();
-  let prev = window.scrollY;
-  let still = 0;
-  let moved = false;
   let id = 0;
-  const tick = () => {
-    const y = window.scrollY;
-    if (y !== prev) moved = true;
-    still = y === prev ? still + 1 : 0;
-    prev = y;
-    if (arrived() || (moved && still >= 24) || (!mustMove && !moved && still >= 8) || performance.now() - t0 > cap) done();
-    else id = requestAnimationFrame(tick);
+  const tick = (now: number) => {
+    const t = Math.min(1, (now - t0) / ms);
+    frame(ease(t));
+    if (t < 1) id = requestAnimationFrame(tick);
+    else done();
   };
   id = requestAnimationFrame(tick);
   return () => cancelAnimationFrame(id);
+}
+
+const lerp = (a: number, b: number, p: number) => a + (b - a) * p;
+const lerpRect = (a: Rect, b: Rect, p: number): Rect => ({
+  left: lerp(a.left, b.left, p),
+  top: lerp(a.top, b.top, p),
+  right: lerp(a.right, b.right, p),
+  bottom: lerp(a.bottom, b.bottom, p),
+});
+
+/** A step that only moves the outline takes the base token; one that moves the page takes the slow token, a little longer for a long way so it does not blur. */
+const travelMs = (distance: number) => (distance < 2 ? DURATION.base : DURATION.slow + Math.min(DURATION.slow / 2, distance / 50));
+
+/** Under the target, else above it, else at the foot of the screen. */
+function placeTip(rect: Rect, w: number, h: number) {
+  const left = Math.min(Math.max(rect.left, 16), Math.max(16, window.innerWidth - w - 16));
+  const below = rect.bottom + 12;
+  const above = rect.top - 12 - h;
+  return { left, top: below + h <= window.innerHeight - 12 ? below : above >= 12 ? above : window.innerHeight - h - 12 };
 }
 
 /** The homepage is showing the Path list (a phone always does). */
@@ -49,9 +71,10 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
   const [rect, setRect] = useState<Rect | null>(null);
   const [tip, setTip] = useState<{ left: number; top: number }>({ left: 16, top: 16 });
   const [said, setSaid] = useState("");
-  // A step change glides to the next target (transform only); following a scroll or resize must not lag behind, so it snaps.
-  const [glide, setGlide] = useState(false);
+  // A step change moves the page, outline and tooltip together on one clock (see `animate`); following a scroll or resize snaps.
   const shown = useRef<Rect | null>(null);
+  const tipNow = useRef({ left: 16, top: 16 });
+  const animating = useRef(false);
   const same = (a: Rect | null, b: Rect) => !!a && a.left === b.left && a.top === b.top && a.right === b.right && a.bottom === b.bottom;
   const dialog = useRef<HTMLDivElement>(null);
   const step = steps[index];
@@ -67,7 +90,7 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
     if (closing.current) return;
     closing.current = true;
     setVisible(false);
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = prefersReducedMotion();
     const fade = (parseFloat(dialog.current ? getComputedStyle(dialog.current).transitionDuration : "0") || 0) * 1000;
     let done = false;
     const finish = () => {
@@ -77,9 +100,11 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
       }
     };
     if (window.scrollY > 2) {
-      window.scrollTo({ top: 0, behavior: reduced ? ("instant" as ScrollBehavior) : "smooth" });
-      if (reduced) setTimeout(finish, fade);
-      else whenSettled(finish, 2000, () => window.scrollY <= 1, true); // until it reaches the top, or stops
+      const from = window.scrollY;
+      if (reduced) {
+        window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+        setTimeout(finish, fade);
+      } else animate(DURATION.slow, (p) => window.scrollTo({ top: from * (1 - p), behavior: "instant" as ScrollBehavior }), finish);
     } else setTimeout(finish, fade);
   };
   const closeRef = useRef(close);
@@ -103,40 +128,82 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
     };
   }, [rect, visible]);
 
-  // Bring the target into view, then follow it while the page moves. The first step travels there smoothly with the
-  // overlay still hidden and fades in on arrival; later steps jump the page and glide the outline. Reduced motion jumps.
+  // Bring the target into view. Every step works out where the page will end up, then moves the page, the outline and the
+  // tooltip there on one eased clock: the first step with the overlay still hidden (it fades in on arrival), later steps with the
+  // old outline travelling to the new place while the page scrolls under it. Reduced motion jumps.
   useEffect(() => {
     if (!step) return onClose(false);
     const el = visibleTarget(step.target);
     if (!el) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const travel = index === 0 && !reduced;
-    el.scrollIntoView({ block: phone ? "start" : "center", inline: "nearest", behavior: travel ? "smooth" : ("instant" as ScrollBehavior) });
-    const measure = (glides: boolean) => {
+    const padded = (): Rect => {
       const r = el.getBoundingClientRect();
-      const next = { left: r.left - PAD, top: r.top - PAD, right: r.right + PAD, bottom: r.bottom + PAD };
+      return { left: r.left - PAD, top: r.top - PAD, right: r.right + PAD, bottom: r.bottom + PAD };
+    };
+    const measure = () => {
+      const next = padded();
       if (same(shown.current, next)) return;
       shown.current = next;
-      setGlide(glides && index > 0);
       setRect(next);
     };
-    const follow = () => measure(false);
+    const follow = () => measure();
+
+    // Find where the browser would put the page (its own rules for centring and sticky headers), then put it back. No frame is
+    // painted in between, so nothing flashes.
+    const y0 = window.scrollY;
+    const dock = phone && dialog.current ? dialog.current.offsetHeight : 0;
+    if (phone) document.documentElement.style.setProperty("--tour-dock", `${dock + 8}px`);
+    el.scrollIntoView({ block: phone ? "start" : "center", inline: "nearest", behavior: "instant" as ScrollBehavior });
+    if (phone) {
+      // The docked tooltip must never cover its target: lift it just clear, keeping its top below the header.
+      const r = padded();
+      const over = r.bottom - (window.innerHeight - dock - 8);
+      const room = r.top - PHONE_HEADER;
+      if (over > 0 && room > 0) window.scrollBy({ top: Math.min(over, room), behavior: "instant" as ScrollBehavior });
+    }
+    const yEnd = window.scrollY;
+    const endRect = padded();
+    window.scrollTo({ top: y0, behavior: "instant" as ScrollBehavior });
+
+    const from = shown.current;
+    const fromTip = tipNow.current;
+    const endTip = dialog.current && !phone ? placeTip(endRect, dialog.current.offsetWidth, dialog.current.offsetHeight) : fromTip;
+    let listening = false;
+    const arrive = () => {
+      animating.current = false;
+      window.scrollTo({ top: yEnd, behavior: "instant" as ScrollBehavior });
+      measure();
+      window.addEventListener("resize", follow);
+      window.addEventListener("scroll", follow, true);
+      listening = true;
+    };
+    animating.current = index > 0 && !!from;
+    const cancel = animate(
+      travelMs(Math.abs(yEnd - y0)),
+      (p) => {
+        window.scrollTo({ top: lerp(y0, yEnd, p), behavior: "instant" as ScrollBehavior });
+        // The first step has no outline yet (the overlay is hidden), so only a later step moves one.
+        if (index > 0 && from && p < 1) {
+          const r = lerpRect(from, endRect, p);
+          shown.current = r;
+          setRect(r);
+          if (!phone) {
+            const t = { left: lerp(fromTip.left, endTip.left, p), top: lerp(fromTip.top, endTip.top, p) };
+            tipNow.current = t;
+            setTip(t);
+          }
+        }
+      },
+      arrive,
+    );
     // The page stays under the blocker, but the reader may switch Map and Path with the keyboard or the page may change:
     // the steps were worded for one view (or their target is gone), so the tour ends instead of describing what is not there.
     const watch = window.setInterval(() => {
       if (!el.isConnected || pathShowing() !== startedOnPath.current) closeRef.current(false);
     }, 300);
-    let listening = false;
-    const start = () => {
-      measure(true);
-      window.addEventListener("resize", follow);
-      window.addEventListener("scroll", follow, true);
-      listening = true;
-    };
-    const stopTravel = travel ? whenSettled(start, 1500) : (start(), () => {});
     setSaid(`Step ${index + 1} of ${steps.length}: ${step.title}. ${step.text}`);
     return () => {
-      stopTravel();
+      cancel();
+      animating.current = false;
       if (listening) {
         window.removeEventListener("resize", follow);
         window.removeEventListener("scroll", follow, true);
@@ -148,25 +215,18 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
   }, [index, step]);
 
   // Place the tooltip: under the target, else above it, else at the foot of the screen. A phone docks it to the bottom edge in CSS.
+  // While a step is travelling the animation places it, so this waits for the outline to arrive.
   useLayoutEffect(() => {
-    if (!rect || !dialog.current) return;
+    if (!rect || !dialog.current || animating.current) return;
     if (phone) {
-      // While the tour is closing the page is easing back to the top; lifting the target again would fight that scroll.
-      if (closing.current) return;
       // The docked tooltip must never cover its target. Give the page room below its end (so a target at the very bottom
-      // can scroll up), then scroll just enough to lift the target clear of the tooltip, keeping its top below the header.
-      const dock = dialog.current.offsetHeight;
-      document.documentElement.style.setProperty("--tour-dock", `${dock + 8}px`);
-      const over = rect.bottom - (window.innerHeight - dock - 8);
-      const room = rect.top - PHONE_HEADER;
-      if (over > 0 && room > 0) window.scrollBy({ top: Math.min(over, room), behavior: "instant" as ScrollBehavior });
+      // can scroll up); the lift itself is part of the step's travel.
+      document.documentElement.style.setProperty("--tour-dock", `${dialog.current.offsetHeight + 8}px`);
       return;
     }
-    const { offsetWidth: w, offsetHeight: h } = dialog.current;
-    const left = Math.min(Math.max(rect.left, 16), Math.max(16, window.innerWidth - w - 16));
-    const below = rect.bottom + 12;
-    const above = rect.top - 12 - h;
-    setTip({ left, top: below + h <= window.innerHeight - 12 ? below : above >= 12 ? above : window.innerHeight - h - 12 });
+    const t = placeTip(rect, dialog.current.offsetWidth, dialog.current.offsetHeight);
+    tipNow.current = t;
+    setTip(t);
   }, [rect, index, phone]);
 
   // The tour scrolls the page to each part; closing it puts the reader back where they were, and while it runs the
@@ -214,7 +274,7 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
       {/* The rest of the page does not take clicks while a tour runs, so nothing is pressed by accident. Scrolling still works. */}
       <div className="tour-block" aria-hidden="true" />
       {boxes && (
-        <svg className={`tour-svg${glide ? " tour-go" : ""}`} data-shown={visible || undefined} aria-hidden="true">
+        <svg className="tour-svg" data-shown={visible || undefined} aria-hidden="true">
           {(["top", "bottom", "left", "right"] as const).map((k) => (
             <rect key={k} className="tour-dim" width="1" height="1" style={{ transform: placeBox(boxes[k]) }} />
           ))}
@@ -223,7 +283,7 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
       )}
       <div
         ref={dialog}
-        className={`tour-tip${glide ? " tour-go" : ""}`}
+        className="tour-tip"
         data-shown={visible || undefined}
         role="dialog"
         aria-modal="false"
@@ -233,15 +293,17 @@ export default function TourOverlay({ tour, onClose }: { tour: TourId; onClose: 
         // On a phone the tooltip is docked to the bottom edge in CSS and does not move.
         style={phone ? undefined : { transform: `translate(${tip.left}px, ${tip.top}px)` }}
       >
-        <p className="label tour-count">
-          Step {index + 1} of {steps.length}
-        </p>
-        <p id="tour-title" className="tour-title">
-          {step.title}
-        </p>
-        <p id="tour-text" className="tour-text">
-          {step.text}
-        </p>
+        <div key={index} className="tour-body">
+          <p className="label tour-count">
+            Step {index + 1} of {steps.length}
+          </p>
+          <p id="tour-title" className="tour-title">
+            {step.title}
+          </p>
+          <p id="tour-text" className="tour-text">
+            {step.text}
+          </p>
+        </div>
         <div className="tour-actions">
           <button type="button" className="text-button label" onClick={() => go(-1)} disabled={index === 0}>
             Back

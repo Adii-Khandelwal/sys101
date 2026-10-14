@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { topicOrder } from "./order";
-import { buildPostsIndex } from "./posts";
+import { buildPostsIndex, organization } from "./posts";
+import { sourceKinds } from "./sourceKinds";
 import { postsDescription } from "./site";
 import { getAllTopics } from "./topics";
 
@@ -15,7 +16,10 @@ const urlsIn = (rows: { url: string }[]) => rows.map((r) => r.url);
 describe("posts index", () => {
   it("counts match the data", () => {
     expect(d.total).toBe(urls.size);
-    expect(d.companyCount).toBe(new Set(entries.map((p) => p.company)).size);
+    expect(d.companyCount).toBe(new Set(entries.map((p) => organization(p.company))).size);
+    expect(d.counts.posts + d.counts.papers + d.counts.docs).toBe(d.counts.total);
+    expect(d.counts.organizations).toBe(d.companyCount);
+    expect(sourceKinds(d.counts)).toMatch(/engineering posts?/);
     expect(d.topicCount).toBe(topics.length);
   });
 

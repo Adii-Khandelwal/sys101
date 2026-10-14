@@ -86,7 +86,7 @@ export const postsUpdated = (topics: Pick<Topic, "posts">[]) => latest(topics.fl
 
 /** Meta description for /posts, from computed counts. */
 export const postsDescription = (d: { total: number; companyCount: number; topicCount: number }) =>
-  `All ${d.total} engineering posts behind the topics, from ${d.companyCount} companies, listed by topic, company or year, with a link to each original.`;
+  `All ${d.total} sources behind the topics, from ${d.companyCount} organizations, listed by topic, company or year, with a link to each original.`;
 
 /** Same for a learn page and its official sources. */
 /** When a topic page was last edited: its newest post entry or its What's new file, whichever is later. */

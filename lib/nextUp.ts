@@ -1,4 +1,4 @@
-// Which topics to suggest next, from the read list. Pure, so it is easy to test.
+// Which topic to suggest next, from the read list and what was started. Pure, so it is easy to test.
 
 export type IndexEntry = { slug: string; title: string; prerequisites: string[] };
 
@@ -36,27 +36,54 @@ export function readCount(entries: IndexEntry[], read: readonly string[]) {
   return entries.filter((e) => read.includes(e.slug)).length;
 }
 
-/** Nothing read yet ("first": no link, the map is the way in) or some progress ("progress": Next up). */
-export function startVariant(read: readonly string[]): "first" | "progress" {
-  return read.length === 0 ? "first" : "progress";
-}
+import { summary, topicOf, type LessonMeta, type Progress } from "./lessonStore";
 
-/** A topic the reader was partway through, best to resume. */
-export type ResumeTarget = { slug: string; section: string };
+/** A topic the reader has started but not finished, with where they are in it. */
+export type Started = { slug: string; title: string; done: number; total: number; target: string };
+
+export type HomeAction =
+  /** Nothing read and nothing started: the map's first topic. */
+  | { kind: "start" }
+  /** Something started: continue it. `others` are the other started topics, most recent first; `after` is the next ready topic. */
+  | { kind: "continue"; topic: Started; others: Started[]; after: IndexEntry | null }
+  /** Something read, nothing started: the best ready topic, and the second best. */
+  | { kind: "next"; next: IndexEntry; also: IndexEntry | null }
+  | { kind: "done" };
 
 /**
- * The topic to offer as "Continue where you left off": one that is not finished
- * yet, has a last-viewed section past the start, and was touched most recently
- * (by the per-topic change date). Returns null when there is nothing to resume.
+ * What the homepage's one button should point at. A topic the reader deliberately started (a section marked done or a quiz
+ * question answered) beats a topic that is merely ready: it is what they are in the middle of. With several started, the one
+ * with the latest deliberate change wins (`updated` is stamped only on such changes), then the one furthest along, then course
+ * order. Started topics that are not in the course any more, or have no lesson meta, are ignored.
  */
-export function resumeTarget(
-  topics: Record<string, { last?: string }>,
-  updated: Record<string, string>,
+export function homeAction(
+  entries: IndexEntry[],
+  metas: LessonMeta[],
+  progress: Progress,
   read: readonly string[],
-): ResumeTarget | null {
-  const candidates = Object.entries(topics)
-    .filter(([slug, t]) => t.last && t.last !== "why" && !read.includes(slug))
-    .map(([slug, t]) => ({ slug, section: t.last!, when: updated[slug] ?? "" }))
-    .sort((a, b) => (a.when < b.when ? 1 : a.when > b.when ? -1 : a.slug.localeCompare(b.slug)));
-  return candidates[0] ? { slug: candidates[0].slug, section: candidates[0].section } : null;
+  updated: Record<string, string>,
+): HomeAction {
+  const metaOf = new Map(metas.map((m) => [m.slug, m]));
+  const started: Started[] = entries
+    .filter((e) => !read.includes(e.slug) && metaOf.has(e.slug))
+    .filter((e) => {
+      const t = topicOf(progress, e.slug);
+      return t.done.length > 0 || Object.keys(t.answers).length > 0;
+    })
+    .map((e) => {
+      const sum = summary(progress, metaOf.get(e.slug)!);
+      return { slug: e.slug, title: e.title, done: sum.done, total: sum.total, target: sum.target };
+    })
+    .sort((a, b) => {
+      const ua = updated[a.slug] ?? "";
+      const ub = updated[b.slug] ?? "";
+      return ua < ub ? 1 : ua > ub ? -1 : b.done - a.done; // equal on both: the stable sort keeps course order
+    });
+  const ready = readyTopics(entries, read);
+  if (started.length > 0) {
+    const [topic, ...others] = started;
+    return { kind: "continue", topic, others, after: ready.find((e) => e.slug !== topic.slug) ?? null };
+  }
+  if (read.length === 0) return { kind: "start" };
+  return ready[0] ? { kind: "next", next: ready[0], also: ready[1] ?? null } : { kind: "done" };
 }

@@ -3,14 +3,14 @@ import HomeView from "@/components/HomeView";
 import InsideTopic from "@/components/InsideTopic";
 import { featuredFigures } from "@/lib/lessonOutline";
 import NextUp from "@/components/NextUp";
-import HomeResume from "@/components/HomeResume";
 import TourLink from "@/components/TourLink";
 import PostSources from "@/components/PostSources";
 import Search from "@/components/Search";
 import TryQuestion from "@/components/TryQuestion";
 import SiteFooter from "@/components/SiteFooter";
+import { optionId } from "@/lib/quizIds";
 import { depths } from "@/lib/graph";
-import { buildPostsIndex } from "@/lib/posts";
+import { organization, sourceCounts } from "@/lib/posts";
 import { formatNumber, topicNumbers, topicOrder } from "@/lib/order";
 import { GROUPS, getAllTopics, type Group } from "@/lib/topics";
 import { getNews } from "@/lib/news";
@@ -65,43 +65,45 @@ export default function Home() {
   if (!dns || !quiz?.length) throw new Error("Homepage: the DNS topic needs a lesson quiz for Try a question");
   const postCounts = new Map<string, Set<string>>();
   for (const p of topics.flatMap((t) => t.posts)) {
-    // One company can appear under two credits (Amazon, and its Builders' Library): count it once.
-    const name = p.company.startsWith("Amazon") ? "Amazon" : p.company;
+    const name = organization(p.company);
     postCounts.set(name, (postCounts.get(name) ?? new Set()).add(p.url));
   }
-  const { total: postCount, companyCount } = buildPostsIndex(ordered);
+  const { total: sourceTotal, organizations } = sourceCounts(ordered);
   const companies = [...postCounts]
     .map(([name, urls]) => ({ name, posts: urls.size }))
     .sort((a, b) => a.name.localeCompare(b.name));
   return (
     <main className="home">
       <header className="masthead">
-        <h1>sys101</h1>
-        <p className="masthead-lead">Learn system design in the order it makes sense.</p>
-        <div className="masthead-about">
-          <p>
-            For developers who can build an app and want to understand how large systems are designed. The same few ideas keep
-            coming back, caching, replication, queues, failover, and they stick best when you see how real teams built and fixed them.
-          </p>
-          <p>
-            {topics.length} topics and {postCount} engineering posts from {companyCount} companies. Each topic builds only on the ones
-            before it, so you never have to guess what to read first.
+        <div className="masthead-main">
+          <h1>sys101</h1>
+          <p className="masthead-lead">Learn system design in the order it makes sense.</p>
+          <NextUp
+            start={{ slug: ordered[0].slug, title: ordered[0].title, minutes: readingMinutes(ordered[0], getNews(ordered[0].slug)) }}
+            entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))}
+            metas={ordered.map((t) => ({ slug: t.slug, postIds: t.posts.map((p) => p.id!), correct: (t.lesson?.quiz ?? []).map((q) => optionId(q.options[q.correct])) }))}
+          />
+          <p className="masthead-actions">
+            <Link className="label" href="/about">
+              Why this exists
+            </Link>
+            <TourLink tour="home" />
           </p>
         </div>
-        <NextUp
-          start={{ slug: ordered[0].slug, title: ordered[0].title, minutes: readingMinutes(ordered[0], getNews(ordered[0].slug)) }}
-          entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))}
-        />
-        <p className="masthead-actions">
-          <Link className="label" href="/about">
-            Why this exists
-          </Link>
-          <TourLink tour="home" />
-        </p>
-        <Search />
+        <div className="masthead-side">
+          <div className="masthead-about">
+            <p>
+              For developers who can build an app and want to understand how large systems are designed. The same few ideas keep
+              coming back (caching, replication, queues, failover), and they stick best when you see how real teams built and fixed them.
+            </p>
+            <p>
+              {topics.length} topics and {sourceTotal} sources from {organizations} organizations, each linked and dated on its topic page. Each topic builds only on the ones
+              before it, so you never have to guess what to read first.
+            </p>
+          </div>
+          <Search />
+        </div>
       </header>
-
-      <HomeResume titles={Object.fromEntries(ordered.map((t) => [t.slug, t.title]))} />
 
       <HomeView
         nodes={nodes}

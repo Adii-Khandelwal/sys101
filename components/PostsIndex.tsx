@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useAllProgress } from "@/lib/progress";
 import type { PostRow, PostsIndex as Data } from "@/lib/posts";
+import { sourceKinds } from "@/lib/sourceKinds";
 
 const VIEWS = [
   { id: "topic", label: "By topic" },
@@ -191,8 +192,8 @@ export default function PostsIndex({ data }: { data: Data }) {
       </div>
       <p id="posts-filter-status" className="posts-count" aria-live="polite">
         {q
-          ? `${matching} of ${data.total} posts match “${query.trim()}”.`
-          : `${data.total} posts from ${data.companyCount} companies, taught across ${data.topicCount} topics.`}
+          ? `${matching} of ${data.total} sources match “${query.trim()}”.`
+          : `${data.total} sources from ${data.companyCount} organizations (${sourceKinds(data.counts)}), taught across ${data.topicCount} topics.`}
       </p>
 
       <div data-pagefind-body>
