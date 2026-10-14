@@ -12,5 +12,5 @@ Work on a branch, never `main`. Push only when asked. Read `CLAUDE.md` "Verifyin
 3. **Docs in the same commit:** the matching `.claude/rules/` file, `CLAUDE.md` for a project-wide rule, `README.md`. The final report says which changed (or "no change").
 4. **Review:** run `/ponytail-review` on the diff and report what it found.
 5. **Commit** with a message that says what changed and why, ending with the co-author line the session gives. Push the branch with `-u`.
-6. **PR hand-off** (`gh` is not installed): `open "https://github.com/Adii-Khandelwal/sys101/compare/main...<branch>?expand=1"` and give a description ready to paste: title, what changed, checks run, anything to read before merging (permissions, brand rules, caveats).
+6. **PR hand-off** (`gh` is at `/opt/homebrew/bin/gh`; use `gh pr create` only when asked): `open "https://github.com/Adii-Khandelwal/sys101/compare/main...<branch>?expand=1"` and give a description ready to paste: title, what changed, checks run, anything to read before merging (permissions, brand rules, caveats).
 7. **After the merge:** poll `https://sys101.vercel.app` until the new markup appears (`curl`, then an until-loop), then check the live site: status 200, the changed pages at 1440 and 390 with `BASE_URL=https://sys101.vercel.app npm run check:ui`, no console errors, assets return 200. Say plainly if it is not live yet.

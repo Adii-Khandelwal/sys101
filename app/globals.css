@@ -2615,6 +2615,7 @@ button:active:not(:disabled),
 
 html {
   scroll-padding-top: calc(var(--header-h) + 16px); /* anchors land below the header */
+  overscroll-behavior-y: none; /* no rubber-band at the page ends: it moves the sticky header and leaves the fixed header letters behind */
 }
 
 .site-header {
@@ -2677,14 +2678,35 @@ html {
   text-decoration: none;
 }
 
-.logo {
-  transition: opacity var(--dur-base) var(--ease-out);
+/* Homepage only: the wordmark arrives letter by letter (lib/letterRise.ts sets each letter's opacity and transform from scroll)
+   while the big heading leaves; until it has mostly arrived it is not clickable. */
+.logo.is-hidden {
+  pointer-events: none;
 }
 
-/* Homepage only, while the big heading is in view. */
-.logo.is-hidden {
-  opacity: 0;
+.rise-letter {
+  display: inline-block;
+}
+
+/* The page heading, split into letters by lib/letterRise.ts while it flies to the bar. Words stay whole so lines still wrap at spaces. */
+.fly-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.fly-slot {
+  display: inline-block;
+}
+
+.fly-letter {
+  display: inline-block;
+  position: relative;
+  z-index: 40; /* above the sticky header (30), so letters stay visible once they sit in the bar */
   pointer-events: none;
+}
+
+.logo-rise {
+  display: inline-flex;
 }
 
 .logo-word {
@@ -2727,28 +2749,33 @@ html {
 
 /* Topic name beside the logo once the page heading scrolls away. */
 .header-topic {
+  display: flex;
+  align-items: center;
   margin-left: 14px;
-  padding-left: 14px;
-  border-left: 1px solid var(--rule);
-  overflow: hidden;
+  overflow: hidden; /* letters rise from below this edge */
   font-size: 18px;
   line-height: 1.2;
   white-space: nowrap;
-  text-overflow: ellipsis;
+  min-width: 0;
   color: var(--ink-soft);
-  opacity: 0;
-  transition: opacity var(--dur-base) var(--ease-out);
 }
 
-.header-topic.is-shown {
-  opacity: 1;
+.header-topic-rule {
+  flex: none;
+  width: 1px;
+  height: 1.2em;
+  margin-right: 14px;
+  background: var(--rule);
 }
 
 @media (max-width: 640px) {
   .header-topic {
     margin-left: 10px;
-    padding-left: 10px;
     font-size: 16px;
+  }
+
+  .header-topic-rule {
+    margin-right: 10px;
   }
 }
 
@@ -3720,6 +3747,13 @@ html[data-posts-view] .posts-view-h {
   .site-footer,
   .theme-toggle {
     display: none !important;
+  }
+
+  /* Letters pinned in the bar are position: fixed and would repeat on every page. */
+  .fly-letter {
+    position: static !important;
+    transform: none !important;
+    opacity: 1 !important;
   }
 
   html,

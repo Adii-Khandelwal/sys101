@@ -1,51 +1,54 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { trackFly } from "@/lib/letterRise";
 import { usePathname } from "next/navigation";
 
 /**
- * On topic pages, the topic's name next to the logo once its heading has
- * scrolled under the sticky header. Decorative for screen readers: the page
+ * On every page but the homepage, the page's name next to the logo, flown in from its heading
+ * letter by letter as the heading scrolls under the sticky header. Decorative for screen readers: the page
  * heading already names the topic.
  */
 export default function HeaderTopic() {
   const pathname = usePathname();
-  const [title, setTitle] = useState<string | null>(null);
-  const [shown, setShown] = useState(false);
+  const [heading, setHeading] = useState<HTMLElement | null>(null);
+  const title = heading?.textContent ?? null;
+  const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    setShown(false);
-    setTitle(null);
-    if (!pathname.startsWith("/topic/")) return;
-    let io: IntersectionObserver | undefined;
+    setHeading(null);
+    if (pathname === "/") return; // the homepage flies its heading into the wordmark instead (Logo)
     let timer = 0;
     const start = performance.now();
     // After a client-side navigation the new page may still be loading: wait for its heading.
     const attach = () => {
-      const h1 = document.querySelector<HTMLElement>("article h1");
+      const h1 = document.querySelector<HTMLElement>("h1");
       if (!h1) {
         if (performance.now() - start < 3000) timer = window.setTimeout(attach, 50);
         return;
       }
-      setTitle(h1.textContent);
-      const header = document.querySelector<HTMLElement>(".site-header")?.offsetHeight ?? 0;
-      // Shown once the heading has passed under the header.
-      io = new IntersectionObserver(([e]) => setShown(!e.isIntersecting && e.boundingClientRect.top < header), {
-        rootMargin: `-${header}px 0px 0px 0px`,
-      });
-      io.observe(h1);
+      if (h1.childElementCount === 0) setHeading(h1); // plain-text headings only: the letters are cut from its text
     };
     attach();
     return () => {
       window.clearTimeout(timer);
-      io?.disconnect();
     };
   }, [pathname]);
 
+  // Runs once the letters are in the DOM, before paint, so the title never shows in full at the top of the page.
+  useLayoutEffect(() => {
+    if (heading && ref.current) return trackFly(heading, ref.current);
+  }, [heading]);
+
   if (!title) return null;
   return (
-    <span className={`header-topic${shown ? " is-shown" : ""}`} aria-hidden="true">
-      {title}
+    <span ref={ref} className="header-topic" aria-hidden="true">
+      <span className="header-topic-rule" data-fade />
+      {[...title].map((c, i) => (
+        <span key={i} className="rise-letter" data-ghost={c === " " ? undefined : ""}>
+          {c === " " ? "\u00a0" : c}
+        </span>
+      ))}
     </span>
   );
 }

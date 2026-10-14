@@ -101,7 +101,7 @@ Run only what the change touches, then once at the end:
 ## Git and releases
 
 - Work on a branch, never directly on `main`. Commit messages end with the co-author line the session gives. Push only when asked.
-- `gh` is not installed. After pushing, open the compare page for the user: `open "https://github.com/Adii-Khandelwal/sys101/compare/main...<branch>?expand=1"`, and give a short description ready to paste (what changed, checks, anything to read before merging). Vercel builds a preview for each branch and deploys `main`; after a merge, check the live site (`https://sys101.vercel.app`) rather than assuming.
+- `gh` is installed at `/opt/homebrew/bin/gh` (not on Claude's PATH, so call it by full path) and needs a one-time `gh auth login` by the user; create a PR with `gh pr create` only when asked. By default, after pushing, open the compare page for the user: `open "https://github.com/Adii-Khandelwal/sys101/compare/main...<branch>?expand=1"`, and give a short description ready to paste (what changed, checks, anything to read before merging). Vercel builds a preview for each branch and deploys `main`; after a merge, check the live site (`https://sys101.vercel.app`) rather than assuming.
 - Run `/ponytail-review` on the diff before every push of code changes and say what it found.
 - `.github/CODEOWNERS` records who owns what; `.claude/**` and `CLAUDE.md` are listed because they change what an agent does.
 
@@ -114,7 +114,7 @@ Run only what the change touches, then once at the end:
 
 ## Project configuration
 
-- `.claude/settings.json` (shared): permissions for the routine read-only and check commands, hooks (a guard against building under a running dev server, a guard against hand-editing generated files), and the plugins this project uses (`ponytail`, `vercel`, `agent-skills`) with their marketplaces. Personal settings go in `.claude/settings.local.json` (gitignored).
+- `.claude/settings.json` (shared): permissions for the routine read-only and check commands, hooks (a guard against building under a running dev server, a guard against hand-editing generated files, a test-output trimmer), and the plugins this project uses (`ponytail` on; `vercel` and `agent-skills` installed but off) with their marketplaces. Personal settings go in `.claude/settings.local.json` (gitignored).
 - `.claude/hooks/`: the scripts those hooks run. They read the tool call as JSON on stdin and exit 2 with a message to block.
 - `.claude/skills/`: project skills (below). `.claude/rules/`: the rule files above.
 
@@ -134,7 +134,7 @@ Installed skills that fit this project (advisory; this file wins, and anything b
 - `break-ui`: worst-case data (long names, zero items) on a component.
 - `mobile-native`, `apple-design`: touch and phone behaviour, within the accessibility rules.
 - `anatomy`: the interactive figures' geometry audit (`npm run audit:figures`).
-- `vercel:nextjs`, `vercel:verification`, `vercel:deployments-cicd` (plugin `vercel`): Next.js and deploy questions. `agent-skills:*` (plugin `agent-skills`): spec, plan, build, test, review, ship workflows when a task is big enough to need one.
+- Plugins `vercel` (Next.js and deploy skills) and `agent-skills` (spec, plan, build, review, ship workflows) are installed but off in `.claude/settings.json` to keep every session's context small. Turn one on in `enabledPlugins` (or `/plugin`) for a task that needs it, then off again.
 - Not used here: skills that add gradients, shadows, glass, bounce, emojis or a banned font; or that add a dependency or runtime third-party call.
 
 ## Ponytail
@@ -144,6 +144,10 @@ Installed skills that fit this project (advisory; this file wins, and anything b
 - Run /ponytail-review on the diff before every push of code changes, and say what it found in the report.
 - Shortcut comments (`shortcut: <limit>, <when to upgrade>`) are listed by /ponytail-debt; write the ledger to docs/debt.md only when asked.
 
+## Compact instructions
+
+When compacting, keep: the current task and its SKIP list, files changed and why, failing checks with their output, and decisions the user made. Drop exploration and passed checks.
+
 ## Token discipline
 
 - Do the task. Don't restate it, plan out loud, or narrate steps. Read only the files the task needs; grep before opening, read line ranges, never re-read a file you just edited.
@@ -152,4 +156,6 @@ Installed skills that fit this project (advisory; this file wins, and anything b
 - Don't fetch posts again for content already verified in content/topics/.
 - Final reply says "CLAUDE.md: updated <section>" (or "no change"), likewise README and the rule files, in one line. Max 8 lines overall: what changed (file names), what couldn't be verified, the next decision. No code listings or diffs unless asked.
 - Ask at most one question at a time, only when blocked. Candidate tables: at most 6 columns, figures only.
+- `.claude/hooks/trim-test-output.sh` cuts a bare `npm test` or `npx vitest` to its summary and failures (exit code kept); add `| cat` to see everything.
+- Between unrelated tasks run `/clear`; `/context` shows what fills the window; `/effort` lower for routine CSS and copy changes.
 - Saving tokens never means skipping verification.
