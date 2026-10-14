@@ -72,7 +72,7 @@ export default function About() {
       <p>
         {AI_ASSISTANCE} The figures are compared against the original pages with a script I run by hand,
         and a person may not have reviewed each one. The posts belong to their authors and companies, and
-        this personal project is not affiliated with any of them. Found an error? Email{" "}
+        this personal project is not affiliated with any of them. Company marks beside their names come from svgl and Simple Icons, belong to their owners, are never altered, and are shown only to say whose post it is. Found an error? Email{" "}
         <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
       </p>
 

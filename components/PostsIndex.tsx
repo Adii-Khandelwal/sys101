@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useAllProgress } from "@/lib/progress";
+import CompanyLogo from "./CompanyLogo";
 import type { PostRow, PostsIndex as Data } from "@/lib/posts";
 import { sourceKinds } from "@/lib/sourceKinds";
 
@@ -77,7 +78,14 @@ export default function PostsIndex({ data }: { data: Data }) {
         <Link className="posts-title" href={`/topic/${first.slug}#${own ? p.key : first.postId}`}>
           {p.title}
         </Link>
-        <span className="posts-company">{hide === "company" ? null : p.company}</span>
+        <span className="posts-company">
+          {hide === "company" ? null : (
+            <>
+              <CompanyLogo name={p.company} />
+              <span>{p.company}</span>
+            </>
+          )}
+        </span>
         <span className="posts-year">{hide === "year" ? null : (p.year ?? "No date")}</span>
         {others.length > 0 && (
           <span className="posts-topics">
@@ -224,8 +232,9 @@ export default function PostsIndex({ data }: { data: Data }) {
         companies.length === 0,
         companies.map((c) => (
           <div key={c.id}>
-            <h3 id={c.id} className="posts-topic-h">
-              {c.name}
+            <h3 id={c.id} className="posts-topic-h posts-company-h">
+              <CompanyLogo name={c.name} />
+              <span>{c.name}</span>
               <span className="posts-n"> {c.posts.length}</span>
             </h3>
             <ul className="posts-list">{c.posts.map((p) => row(p, false, "company"))}</ul>
