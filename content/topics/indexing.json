@@ -10,7 +10,6 @@
   ],
   "summary": {
     "points": [
-      "An index is a second, smaller structure kept beside the data so a query can jump to what it needs instead of reading everything.",
       "Databases keep sorted B-tree indexes for exact lookups and ranges, and search engines keep inverted indexes mapping each word or fragment to documents.",
       "GitHub found an index is only as good as its selectivity, and that sharding by content spreads data evenly but makes every query fan out.",
       "Discord chooses the shard key from the query it needs: by guild for guild search, by user for searching all your DMs."

@@ -9,10 +9,10 @@ import { navigateWithTransition } from "./ViewTransitions";
 
 /**
  * The line under the intro, from what has been read in this browser.
- * With nothing read it renders nothing (the map is the way in); once something
- * is read it shows "Next up" and the count.
+ * With nothing read it is the one start button; once something is read it
+ * shows "Next up" and the count.
  */
-export default function NextUp({ entries }: { entries: IndexEntry[] }) {
+export default function NextUp({ entries, start }: { entries: IndexEntry[]; start: { slug: string; title: string; minutes: number } }) {
   const read = useReadTopics();
   const router = useRouter();
   const ready = readyTopics(entries, read);
@@ -37,8 +37,17 @@ export default function NextUp({ entries }: { entries: IndexEntry[] }) {
     </span>
   );
 
-  // Nothing read yet: the map below is the way in, so nothing shows here.
-  if (startVariant(read) === "first") return null;
+  // Nothing read yet: one clear first step. The map below is for looking around.
+  if (startVariant(read) === "first") {
+    return (
+      <p className="start-cta" data-pagefind-ignore>
+        <Link className="cta" href={`/topic/${start.slug}`} data-own-transition onClick={(e) => open(e, start.slug)}>
+          Start with {start.title}
+        </Link>
+        <span className="label">Topic 01 · ~{start.minutes} min read</span>
+      </p>
+    );
+  }
 
   return (
     <p className="next-up" data-pagefind-ignore>

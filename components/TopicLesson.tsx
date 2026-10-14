@@ -126,6 +126,29 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
         </div>
         <h1 data-pagefind-meta="title">{topic.title}</h1>
         <p className="concept">{topic.concept}</p>
+        <div className="lesson-top" data-pagefind-ignore>
+          <ResumeLine meta={meta} names={names} />
+
+          <p className="lesson-jump" data-tour="jump">
+            {learnHref && (
+              <>
+                <Link className="text-button" href={learnHref} prefetch={false}>
+                  New to this? Start from zero
+                </Link>
+                <span className="label" aria-hidden="true">
+                  ·
+                </span>
+              </>
+            )}
+            <a className="text-button" href="#posts">
+              Skip to the posts
+            </a>
+          </p>
+          <p className="lesson-tour">
+            <TourLink tour="topic" />
+          </p>
+        </div>
+
         <InShort topic={topic} />
 
         <div className="relations" data-pagefind-ignore>
@@ -137,29 +160,6 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             <div className="label">Leads to</div>
             <TopicList topics={dependents} />
           </div>
-        </div>
-
-        <div className="lesson-top" data-pagefind-ignore>
-          <ResumeLine meta={meta} names={names} />
-
-          <p className="lesson-jump" data-tour="jump">
-            <a className="text-button label" href="#posts">
-              Skip to the posts
-            </a>
-            {learnHref && (
-              <>
-                <span className="label" aria-hidden="true">
-                  ·
-                </span>
-                <Link className="text-button label" href={learnHref} prefetch={false}>
-                  New to this? Start from zero
-                </Link>
-              </>
-            )}
-          </p>
-          <p className="lesson-tour">
-            <TourLink tour="topic" />
-          </p>
         </div>
 
         <div id="concept" className="part">

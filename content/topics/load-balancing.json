@@ -9,7 +9,6 @@
   ],
   "summary": {
     "points": [
-      "Load balancing spreads requests across a pool of backends so that no single instance saturates.",
       "The hard parts are choosing which backends each client may talk to, deciding where each request goes, and reacting to load signals that are always slightly stale.",
       "Uber found that a subsetting design needing no coordination between clients scales and fails more gracefully, and that subsets too large are safer than too small.",
       "Dropbox found CPU alone looked healthy on servers stuck on disk I/O, so it balances on the higher of CPU and in-flight requests."

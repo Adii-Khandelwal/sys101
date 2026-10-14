@@ -207,7 +207,6 @@ for (const [reduce, label] of [["no-preference", "motion"], ["reduce", "reduced 
   });
   await page.getByRole("button", { name: "Take the 30-second tour" }).click();
   const y0 = 0; // closing the tour leaves the page at its top
-  expect((await page.evaluate(() => Math.round(scrollY))) > 0, `${label}: expected the entry click to have scrolled the page a little`);
   await page.waitForSelector(".tour-tip");
   await page.waitForTimeout(700);
   for (let i = 0; i < 4; i++) await page.keyboard.press("ArrowRight"); // to the last step, far down the page
