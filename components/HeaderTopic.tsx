@@ -5,7 +5,7 @@ import { trackFly } from "@/lib/letterRise";
 import { usePathname } from "next/navigation";
 
 /**
- * On topic pages, the topic's name next to the logo, flown in from its heading
+ * On every page but the homepage, the page's name next to the logo, flown in from its heading
  * letter by letter as the heading scrolls under the sticky header. Decorative for screen readers: the page
  * heading already names the topic.
  */
@@ -17,17 +17,17 @@ export default function HeaderTopic() {
 
   useEffect(() => {
     setHeading(null);
-    if (!pathname.startsWith("/topic/")) return;
+    if (pathname === "/") return; // the homepage flies its heading into the wordmark instead (Logo)
     let timer = 0;
     const start = performance.now();
     // After a client-side navigation the new page may still be loading: wait for its heading.
     const attach = () => {
-      const h1 = document.querySelector<HTMLElement>("article h1");
+      const h1 = document.querySelector<HTMLElement>("h1");
       if (!h1) {
         if (performance.now() - start < 3000) timer = window.setTimeout(attach, 50);
         return;
       }
-      setHeading(h1);
+      if (h1.childElementCount === 0) setHeading(h1); // plain-text headings only: the letters are cut from its text
     };
     attach();
     return () => {

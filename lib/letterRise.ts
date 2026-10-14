@@ -58,65 +58,106 @@ export function trackFly(h1: HTMLElement, root: HTMLElement, onProgress?: (p: nu
   ghosts.forEach((g) => (g.style.opacity = "0")); // the flying letters are the visible ones
 
   const n = Math.min(slots.length, ghosts.length);
+  const letterOf = (i: number) => slots[i].firstElementChild as HTMLElement;
+  const undock = (i: number) => {
+    const letter = letterOf(i);
+    if (!letter.dataset.docked) return;
+    delete letter.dataset.docked;
+    slots[i].style.width = slots[i].style.height = slots[i].style.verticalAlign = "";
+    letter.style.position = letter.style.left = letter.style.top = "";
+  };
+
+  // Where everything is, measured once (and again on resize or when the font arrives), so scrolling only does arithmetic:
+  // reading layout every frame is what made the flight choppy.
+  let header = 0;
+  let pageBottom = 0; // the heading's bottom edge, from the top of the page
+  let k = 1;
+  let boxRight = 0;
+  let geo: { x: number; y: number; w: number; h: number; tx: number; ty: number; fits: boolean }[] = [];
+  const measure = () => {
+    for (let i = 0; i < n; i++) undock(i); // docked letters change their slot's height, so measure undocked
+    header = document.querySelector<HTMLElement>(".site-header")?.offsetHeight ?? 0;
+    pageBottom = h1.getBoundingClientRect().bottom + window.scrollY;
+    boxRight = root.getBoundingClientRect().right;
+    k = n ? fontSize(ghosts[0]) / fontSize(slots[0]) : 1;
+    geo = slots.slice(0, n).map((slot, i) => {
+      const a = slot.getBoundingClientRect();
+      const t = ghosts[i].getBoundingClientRect();
+      return {
+        x: a.left + a.width / 2 + window.scrollX, // centre, in page coordinates
+        y: a.top + a.height / 2 + window.scrollY,
+        w: a.width,
+        h: a.height,
+        tx: t.left + t.width / 2, // target centre, in the viewport (the header does not scroll)
+        ty: t.top + t.height / 2,
+        fits: t.right <= boxRight + 0.5,
+      };
+    });
+  };
+
+  const goal = () => {
+    const p = headingProgress(pageBottom - window.scrollY, header, pageBottom);
+    return reduce ? (p >= 0.5 ? 1 : 0) : p; // reduced motion: no travel, the name is simply there or not
+  };
+  let shown = 0; // the progress on screen: it eases toward the scroll position, so a jump of the wheel does not make a jump of the letters
+  let last = 0;
   let raf = 0;
-  const apply = () => {
+  const apply = (now = performance.now()) => {
     raf = 0;
-    const header = document.querySelector<HTMLElement>(".site-header")?.offsetHeight ?? 0;
-    const bottom = h1.getBoundingClientRect().bottom;
-    let p = headingProgress(bottom, header, bottom + window.scrollY);
-    if (reduce) p = p >= 0.5 ? 1 : 0; // no travel: the name is simply there or not
-    // Read every position first, then write, so the browser lays out once per frame.
-    const boxRight = root.getBoundingClientRect().right;
-    const k = n ? fontSize(ghosts[0]) / fontSize(slots[0]) : 1;
-    const from = slots.slice(0, n).map((s) => s.getBoundingClientRect());
-    const to = ghosts.slice(0, n).map((g) => g.getBoundingClientRect());
-    slots.forEach((slot, i) => {
-      const letter = slot.firstElementChild as HTMLElement;
-      const q = riseQ(p, i, n);
-      if (i >= n || to[i].right > boxRight + 0.5) {
+    const target = goal();
+    const dt = Math.min(64, now - last);
+    last = now;
+    shown = reduce || Math.abs(target - shown) < 0.002 ? target : shown + (target - shown) * (1 - Math.exp(-dt / 70));
+    for (let i = 0; i < slots.length; i++) {
+      const letter = letterOf(i);
+      const q = riseQ(shown, i, n);
+      const g = geo[i];
+      if (!g || !g.fits) {
         letter.style.transform = "";
         letter.style.opacity = String(1 - q);
-        return;
+        continue;
       }
-      const cx = to[i].left + to[i].width / 2;
-      const cy = to[i].top + to[i].height / 2;
-      if (p >= 1) {
-        // Arrived: pin the letter to the viewport. Re-aiming a letter that scrolls with the page lags the scroll by a frame and jitters.
+      if (shown >= 1) {
+        // Arrived: pin the letter to the viewport. A letter that still scrolls with the page lags the scroll by a frame and jitters.
         if (!letter.dataset.docked) {
-          slot.style.width = `${from[i].width}px`; // the empty slot keeps the heading's line from reflowing
-          slot.style.height = `${from[i].height}px`;
-          slot.style.verticalAlign = "top"; // an empty inline-block sits on its bottom edge and would make the line taller
+          slots[i].style.width = `${g.w}px`; // the empty slot keeps the heading's line from reflowing
+          slots[i].style.height = `${g.h}px`;
+          slots[i].style.verticalAlign = "top"; // an empty inline-block sits on its bottom edge and would make the line taller
           letter.dataset.docked = "1";
           letter.style.position = "fixed";
+          letter.style.left = `${g.tx - g.w / 2}px`;
+          letter.style.top = `${g.ty - g.h / 2}px`;
+          letter.style.transform = `scale(${k})`;
         }
-        letter.style.left = `${cx - from[i].width / 2}px`;
-        letter.style.top = `${cy - from[i].height / 2}px`;
-        letter.style.transform = `scale(${k})`;
-        return;
+        continue;
       }
-      if (letter.dataset.docked) {
-        delete letter.dataset.docked;
-        slot.style.width = slot.style.height = slot.style.verticalAlign = letter.style.position = letter.style.left = letter.style.top = "";
-      }
-      letter.style.transform = flyTransform(cx - (from[i].left + from[i].width / 2), cy - (from[i].top + from[i].height / 2), k, q);
-    });
-    const f = Math.min(1, p * 3);
+      undock(i);
+      letter.style.transform = flyTransform(g.tx - (g.x - window.scrollX), g.ty - (g.y - window.scrollY), k, q);
+    }
+    const f = Math.min(1, shown * 3);
     fades.forEach((el) => {
       el.style.opacity = String(f);
       el.style.transform = `translateY(${(1 - f) * 10}px)`;
     });
-    onProgress?.(p);
+    onProgress?.(shown);
+    if (shown !== target) raf = requestAnimationFrame(apply); // keep easing after the scrolling stops
   };
   const schedule = () => {
     if (!raf) raf = requestAnimationFrame(apply);
   };
+  const remeasure = () => {
+    measure();
+    schedule();
+  };
   window.addEventListener("scroll", schedule, { passive: true });
-  window.addEventListener("resize", schedule);
-  void document.fonts?.ready.then(schedule); // letter widths change when the web font arrives
+  window.addEventListener("resize", remeasure);
+  void document.fonts?.ready.then(remeasure); // letter widths change when the web font arrives
+  measure();
+  shown = goal(); // start where the page is, with no easing (a reload part-way down the page)
   apply();
   return () => {
     window.removeEventListener("scroll", schedule);
-    window.removeEventListener("resize", schedule);
+    window.removeEventListener("resize", remeasure);
     cancelAnimationFrame(raf);
     // The logo outlives the homepage: put the heading and the header's letters back as they were.
     h1.replaceChildren(...original);
