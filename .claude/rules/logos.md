@@ -1,4 +1,19 @@
+---
+paths:
+  - "components/CompanyLogo.tsx"
+  - "content/logos.json"
+  - "scripts/make-logos.mjs"
+  - "lib/logoFiles.ts"
+  - "lib/organization.ts"
+  - "lib/posts.ts"
+  - "public/logos/**"
+---
+
 # Company logos
+
+Applies when editing company marks, the logo component or the logo pipeline.
+
+## Specification
 
 Marks beside company names, wherever the name stands as a label: the homepage "Where the sources come from" list and the daily figure; /posts (company headings and column); on a topic page the post header ("GitHub · December 2023"), the Original posts list, the In short figures, the left rail ("Uber post") and What's new; and the Background page. Not inside running prose or figure text. `CompanyLogo` takes `size="sm"` (20x16, for mono labels) and `bare` (draw nothing for a company without a mark, used where most names have none, such as What's new publishers).
 

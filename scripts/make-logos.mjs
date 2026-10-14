@@ -1,4 +1,4 @@
-// Offline pipeline for company marks (docs/logos.md). The site never fetches a logo at runtime.
+// Offline pipeline for company marks (.claude/rules/logos.md). The site never fetches a logo at runtime.
 //   node scripts/make-logos.mjs              rebuild public/logos and lib/logoFiles.ts from content/logos.json
 //   node scripts/make-logos.mjs add "Name" [domain]
 //                                            find a mark for a new company, add it to content/logos.json, then rebuild.

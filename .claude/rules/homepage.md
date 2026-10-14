@@ -1,8 +1,34 @@
-# Homepage specification
+---
+paths:
+  - "app/page.tsx"
+  - "components/Home*.tsx"
+  - "components/NextUp.tsx"
+  - "components/PathView.tsx"
+  - "components/PostSources.tsx"
+  - "components/InsideTopic.tsx"
+  - "components/TryQuestion.tsx"
+  - "components/DailyFigure.tsx"
+  - "components/StateLegend.tsx"
+  - "components/Search.tsx"
+  - "lib/homeContent.test.ts"
+  - "lib/homepage.test.ts"
+  - "lib/nextUp*.ts"
+  - "lib/order*.ts"
+---
 
-Moved unchanged from CLAUDE.md. Read before editing the homepage.
+# Homepage
 
-- Order: masthead (wordmark, lead line, who it is for and why in two short paragraphs, the start button or Next up line, Why this exists and tour links, search; two columns from 1024px with the pitch beside the wordmark, one column below, so the map's top edge stays visible; the right column, the search underline and the Map/Path controls end on one right edge), the map or Path view with the "All topics" index, Inside a topic (DNS), Try a question, Where the posts come from. Thin dividers, no cards or images; the only icons are company marks beside company names (docs/logos.md). The top edge of the map stays visible without scrolling at 1440x800 and 390x844.
+Applies when editing the homepage and its parts.
+
+## Standing rules
+
+- Topic numbers come from one function, topicOrder in lib/order.ts. Order: masthead (what it is, who it is for, why, one filled start button), map or Path view with the "All topics" index, Inside a topic (DNS), Try a question, Where the posts come from. Thin dividers, no cards or images; the only icons are company marks beside company names (components/CompanyLogo.tsx). A new company in any post needs a mark: node scripts/make-logos.mjs add (.claude/rules/logos.md); a test fails without one.
+- Every homepage number, name, date, and excerpt is computed from data at build time. Never hardcode them (lib/homepage.test.ts scans the source).
+- "Try a question" uses component state only and never touches the progress store.
+
+## Specification
+
+- Order: masthead (wordmark, lead line, who it is for and why in two short paragraphs, the start button or Next up line, Why this exists and tour links, search; two columns from 1024px with the pitch beside the wordmark, one column below, so the map's top edge stays visible; the right column, the search underline and the Map/Path controls end on one right edge), the map or Path view with the "All topics" index, Inside a topic (DNS), Try a question, Where the posts come from. Thin dividers, no cards or images; the only icons are company marks beside company names (.claude/rules/logos.md). The top edge of the map stays visible without scrolling at 1440x800 and 390x844.
 - Every homepage number, name, date, and excerpt is computed from data at build time (topics, quiz, posts). Never hardcode them; lib/homepage.test.ts scans the source.
 - The one filled button under the intro (NextUp, `homeAction` in lib/nextUp.ts, from local progress only; the static HTML shows the first-visit version). Priority: a topic you deliberately started (a section marked done or a quiz question answered) beats one that is merely ready, because it is what you are in the middle of. 1) Started: "Continue: <topic>" (or "Finish:" when two or fewer units are left) linking to the first unfinished section, with that section's name and "x of N done" beside it. 2) Nothing started, nothing read: "Start with <first topic>" and its reading time. 3) Something read, nothing started: "Next up: <topic>" with "Also ready" under it and the topics-read count. 4) Everything read: "All caught up". With several started, the latest deliberate change wins (`updated` is stamped only on those), then the one furthest along, then course order; the quiet line under the button names up to two others with their progress and "and N more". With one started, the quiet line is "After it: <next ready topic>". Topics that are read, no longer in the course, or only visited are ignored. There is no separate "pick up where you left off" line: this button replaces it.
 - Inside a topic: the real section names in order (lib/lessonOutline.ts, checked against TopicLesson.tsx) with real counts, generic wording (no topic name, no "Open" link), and a figure of the day: one digest figure from FEATURED_FIGURES, each with company, year, and its post linked. All are in the static HTML; the first shows without JavaScript and the reader's local date picks one after load. Each must exist in its digest (the build fails otherwise).

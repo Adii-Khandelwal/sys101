@@ -28,7 +28,7 @@ describe("the news path guard", () => {
       "content/learn/caching.json",
       "app/page.tsx",
       "docs/news-state.json.bak",
-      "docs/whats-new.md",
+      ".claude/rules/news.md",
       "content/news/run.sh",
       "content/news/.hidden.json",
       "content/newsletter/x.json",

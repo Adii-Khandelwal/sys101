@@ -118,7 +118,7 @@ export const mapIsInteractive = (nodeCount: number) => nodeCount >= INTERACTIVE_
  * Whether the map should be interactive (zoom and pan) right now. Needs both
  * enough nodes to justify it and a non-phone viewport: a phone always gets a
  * fixed, non-interactive map so a finger scrolls the page past it and a tap
- * opens the topic (CLAUDE.md, Graph and Touch).
+ * opens the topic (.claude/rules/graph.md, Graph and Touch).
  */
 export const mapIsInteractiveAt = (nodeCount: number, isPhone: boolean) => mapIsInteractive(nodeCount) && !isPhone;
 

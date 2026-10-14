@@ -1,4 +1,4 @@
-// The node-open transition on the Map (docs/graph.md): a plain click or tap on a node grows its bubble while the map
+// The node-open transition on the Map (.claude/rules/graph.md): a plain click or tap on a node grows its bubble while the map
 // fades to the page colour; on that plain screen the bubble keeps swelling while the topic loads behind it, then bursts,
 // and the screen fades out to show the topic. Everything else keeps its normal behaviour. Pure parts are tested; the DOM
 // part is small.

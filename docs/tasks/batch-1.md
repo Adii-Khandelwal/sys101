@@ -4,7 +4,7 @@ Read this first in any session and continue from RESUME. (TaskCreate/TaskUpdate 
 
 ## Phase A (code and pilot)
 - [ ] Setup: this file, scripts/topic-brief.mjs, scripts/apply-drafts.mjs
-- [x] A1 Path numbering: caption, phone group headers, shared ordering function, docs/homepage.md, tests
+- [x] A1 Path numbering: caption, phone group headers, shared ordering function, .claude/rules/homepage.md, tests
 - [x] A2 Summary field (schema, render, checks)
 - [x] A3 prerequisiteReasons (schema, render in Builds on, Path rows, learn "Before you start", map tooltip if under 20 lines, checks)
 - [x] A4 Fields required only on topics that have them until Phase B ends (flag REQUIRE_NEW_FIELDS in lib/topics.ts)

@@ -4,7 +4,7 @@ import type { Topic } from "./topics";
 /**
  * The one reading order for all topics: the map's columns (prerequisite depth, then position in the
  * column, itself fixed by barycenter sweeps with ties kept in input order), read left to right.
- * The Map index, Path view, Next up tie-break and sitemap all use it. See docs/homepage.md.
+ * The Map index, Path view, Next up tie-break and sitemap all use it. See .claude/rules/homepage.md.
  */
 export function topicOrder<T extends Pick<Topic, "slug" | "title" | "prerequisites">>(topics: T[]): T[] {
   const edges = topics.flatMap((t) => t.prerequisites.map((p) => ({ from: p, to: t.slug })));

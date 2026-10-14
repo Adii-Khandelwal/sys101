@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 // "Start from zero" learn pages: a beginner's path through one topic, built
-// only from official sources (see CLAUDE.md, Learn pages and Official sources).
+// only from official sources (see .claude/rules/learn-pages.md).
 
 /** A written official source: a standard, a project's or vendor's docs, or a university's course pages. */
 type WrittenSource = {

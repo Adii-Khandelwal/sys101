@@ -1,4 +1,4 @@
-// Interactive figures that sit at the end of a post's section (CLAUDE.md, "Topic pages", docs/figures.md).
+// Interactive figures that sit at the end of a post's section (.claude/rules/topic-pages.md, .claude/rules/figures.md).
 // This file is the registry: which ids exist, which numbers rows feed each, and every figure's wording.
 // The models are pure, so the build, the reading-time estimate and the tests need no DOM.
 import { windowText, windowValid, windowFormula, type WindowInputs } from "./slidingWindow";

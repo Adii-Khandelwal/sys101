@@ -1,11 +1,12 @@
 # sys101
 
-Standing rules for this project. Follow them in every task.
+Standing rules for this project. Follow them in every task. This file is always loaded; the detail for one area lives in `.claude/rules/`, loaded when you touch matching files (index below). Skills for repeatable workflows live in `.claude/skills/`. Nothing here has a length limit: keep each file cohesive, each rule one idea, and edit rather than duplicate.
 
 ## Rule precedence
 
 - CLAUDE.md wins over any skill, plugin, or design tool (Impeccable, Emil Kowalski skills, Taste Skill). Skills are advisory. If one suggests something banned here (shadows, gradients, bounce easing, em dashes, a banned font), skip it silently.
 - Task prompts use TASK / FILES / DONE WHEN / SKIP. Follow SKIP strictly. Prompts do not repeat these rules, so assume them.
+- Claude Code treats memory as context, not enforcement. Anything that must never happen is a hook in `.claude/settings.json` (see Project configuration), not only a sentence here.
 
 ## Project
 
@@ -14,80 +15,26 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - Roadmap logic: every topic lists what it builds on and what leads on from it.
 - Topic order is a standard curriculum: networking basics, databases, load balancing, caching, CDNs, consistent hashing, replication, sharding, indexing, CAP, consensus, distributed transactions, queues, pub-sub, event-driven design, rate limiting, circuit breakers, failover, then capstones.
 
-## Topic pages
+## Where the detail lives (`.claude/rules/`)
 
-- Order: Part A concept (Why it exists, Mental model, How it works, Worked example, Common mistakes, Check yourself), Part B real world (one section per post, then Where they differ), Design exercises, What to learn next, Original posts. Each section opens with "After this you can ...".
-- Concept text may come from general knowledge, but every figure or company claim must come from a verified post in the JSON. Never invent numbers.
-- Check yourself is 5 to 8 questions; the build enforces answer positions, no 2- or 3-cycle of positions, and the correct option longest in at most 2. QUIZ_STYLE_PENDING (lib/topics.ts) lists topics not yet reworked.
-- Diagrams are original inline SVG with a title and alt text. No data controls on topic pages (they live on /data).
-- A reading-time estimate ("~N min read") shows beside the group label on topic and learn pages and in the All-topics index; it is computed from the rendered prose plus a per-diagram allowance (lib/readingTime.ts), never hardcoded.
-- A post digest may carry one interactive `figure` (lib/figures.ts, docs/figures.md): its inputs are digest.numbers rows, labels are HTML outside the SVG, no gradients, filters, idle motion or auto-start; one per post, only where the source gives a mechanism.
-- Original posts lists company and year (just the company when the source shows no date); links open in a new tab with rel="noopener noreferrer".
-- Every content page ends with one "Page last updated <date>" line above the footer (PageUpdated), from content dates; no per-source "Checked on". `verifiedOn` is the date that entry was last edited; no code writes it. Never imply the author personally checked sources unless true.
-- "In short" (`summary`: 3 to 5 plain points, 0 to 3 labelled digest figures) sits under the concept; `prerequisiteReasons` gives one sentence per prerequisite (Builds on, Path rows, learn page). Checked in lib/topics.ts (figure labels: no colon, units spaced like "500 ms"); REQUIRE_NEW_FIELDS (now true) makes both mandatory. Details: docs/topic-pages.md.
-- Optional `description` on a topic replaces the generated meta description: one sentence of 8 words or more ending in a period, under 155 characters. Interview tags are hidden for now (SHOW_INTERVIEW_TAGS in lib/topics.ts); the field stays.
-- A source with no date (versioned docs) sets `published` to "no date shown" plus `edition`, shown instead of a date only when it gives one the page shows ("date unknown" shows nothing). `tradeoffs.rejected` is left out when the source names no alternative.
-- A paper says "This is a research paper, not a company blog post"; no internal phrasing like "the rules" on a page.
-- "What's new" (content/news, 3 items max, allowlisted sources) follows What to learn next, untracked, build-checked. No provenance note on the section. The routine touches only content/news/** and docs/news-state.json; read docs/whats-new.md.
-- "Posts" (/posts): every distinct post by topic, company or year (lib/posts.ts); all views are static HTML, ?view= only picks one, canonical /posts, only By topic in Pagefind.
-- "Background" (/background, content/background/<slug>.json) lists what a topic's posts assume; concepts taught later get a "Taught later" label and a gist, with no link. Topic pages link to it only if a file exists. Read docs/background.md.
-- Read docs/topic-pages.md before editing topic pages or their content.
+Path-scoped rule files load when you read, write or edit a matching file; open the one you need before changing that area. Each holds the standing rules and the full specification for its area.
 
-## Learn pages (start from zero)
-
-- Every topic has a second page at /topic/<slug>/learn, titled "Start from zero: <Topic>", for a complete beginner. Not counted in "topic read"; never touches the progress store. A new topic is not done until its learn page exists.
-- Content lives in content/learn/<slug>.json, typed in lib. Pagefind indexes it with a "Start from zero" label.
-- Official sources only. Any number, default, limit, or command must be confirmed in an opened source; cite the page that says it. A source year is a four-digit year, "no date shown", or "page shows last updated YYYY-MM-DD", only if the page shows it (build check).
-- Try it commands appear on the cited page, with no "> " or "$ " prompt; risky ones carry a visible `warning`; invented names go in `exampleNames` (build checks).
-- Get approval for candidate sources and videos before saving. Read docs/learn-pages.md before editing learn pages.
-
-## Progress tracking
-
-- Tracked units per topic: each concept section, the quiz, each post, each with "Mark done" at the end of its section. A topic is read when all are done; the read flag is derived, and the graph and "Next up" use only it.
-- "In progress" means deliberate progress only: a section marked done or a quiz question answered (inProgressSlugs in lib/progress.ts). Scrolling a section into view ("visited") does not count, so merely opening a topic never marks it in progress.
-- Stored in localStorage only: versioned, try/catch, tolerant of missing or corrupt data, pages render without it, synced across tabs, old keys migrate. No accounts, nothing sent anywhere.
-- Display: "x of N done", a thin segmented bar, a Continue link. The homepage button follows what you started (homeAction in lib/nextUp.ts). /data shows a read/in-progress/ready tally then export/import/reset. The Path view shows a per-group count and a mark-group-read toggle (markTopics).
-
-## Homepage
-
-- Topic numbers come from one function, topicOrder in lib/order.ts (docs/homepage.md). Order: masthead (what it is, who it is for, why, one filled start button), map or Path view with the "All topics" index, Inside a topic (DNS), Try a question, Where the posts come from. Thin dividers, no cards or images; the only icons are company marks beside company names (components/CompanyLogo.tsx). A new company in any post needs a mark: node scripts/make-logos.mjs add (docs/logos.md); a test fails without one.
-- Every homepage number, name, date, and excerpt is computed from data at build time. Never hardcode them (lib/homepage.test.ts scans the source).
-- "Try a question" uses component state only and never touches the progress store.
-- Read docs/homepage.md before editing the homepage.
-
-## Graph
-
-- The map is the homepage on desktop (768px and up); under 768px only the Path view is shown, with no Map/Path toggle; the toggle on desktop remembers an explicit choice.
-- Layout is deterministic and static. Draw only the transitive reduction by default. No edge crosses a label or node.
-- Node states never rely on color alone: unread (thin outline), ready (thicker outline + centre dot), in progress (rust outline + rust centre dot, for a topic deliberately started), read (filled rust). In progress ranks above ready. The Path view shows the same legend (components/StateLegend.tsx) above its list, and names what each topic builds on before the reasons.
-- Pan is desktop-only and starts at INTERACTIVE_MIN_NODES topics; zoom is keyboard-only (`+`/`-`/`0`). Zoom and Show all links have no on-screen buttons (camera and edge-filter state stay); the one exception is a "Fit to size" text button on an interactive map, disabled while the view is fitted. A phone gets the fixed map. Keep a plain text index and keyboard use as the fallback.
-- After adding a topic, check the map at 1280px, 1440px, and 390px for zero crossings and overlaps. At 1280px also test that sideways page scroll and map pan do not conflict.
-- Read docs/graph.md before editing graph code.
-
-## Motion
-
-- One tokens file: 120ms fast, 200ms base, 320ms slow. Ease-out cubic-bezier(0.23, 1, 0.32, 1) for entering or responding, ease-in-out for on-screen movement.
-- Animate only transform, opacity, and color. No bounce or elastic, no layout shift, no staggered or scroll-triggered effects. Press feedback scale 0.97.
-- Under prefers-reduced-motion, change instantly or fade in 80ms or less. Never fade in the page itself on load: it delays LCP. The one exception is the Map node-open transition (docs/graph.md): a fade-in after a plain click or tap on a Map node, never on a direct load.
-
-## SEO
-
-- One absolute canonical per page from SITE_URL in lib/site.ts, no query strings. Set metadata through pageMeta(), which adds Open Graph and Twitter text tags.
-- Unique title under 60 characters with the " · sys101" suffix (optional topic `shortTitle`, used by pageTitle in lib/site.ts). Description under 155, ending at a sentence or clause boundary with no ellipsis (metaDescription), generated from content.
-- Exactly one H1 and no skipped heading levels. Content must be in the HTML and render without JavaScript.
-- app/sitemap.ts lists every indexable page with lastmod from content dates (PAGE_DATES for About, Glossary, Terms, Privacy). /data and 404 are noindex. /glossary lists every topic's terms (grouped, backlinked), a slash-to-focus filter and a contents rail (phone strip), all server-rendered for Pagefind.
-- JSON-LD only where it matches visible content: BreadcrumbList on topic and learn pages, LearningResource on topic pages. No FAQ schema.
-- No raster image without alt, width, and height. SVGs need role="img" and a name, or aria-hidden.
-- Social image: public/og.png (1200x630, wordmark and tagline on --paper) from scripts/make-og.mjs, committed; pageMeta sets og:image and twitter summary_large_image. Also apple-touch-icon.png and theme-color.
-- scripts/check-seo.mjs runs after every build and fails it on any of these.
-
-## Accessibility and chrome
-
-- WCAG AA contrast, visible focus rings, full keyboard use, 44px touch targets, real buttons, aria-live for results. Verify at 1440px and 390px.
-- Every feature must work seamlessly on a phone and a laptop: build for both from the start, verify at 390px (touch) and 1440px (keyboard), light and dark, no horizontal overflow, readable wrapping, 44px taps. Wording that names a key, control or view must be true on each screen. A feature is not done until it works on mobile.
-- Skeleton loaders match the final size and only stand in for client-loaded parts (no loading.tsx on content routes). Guided tours (Home, topic pages; docs/tours.md): never auto-start; the link goes once finished or skipped (sys101:tours flag, restorable on /data), a footer link stays; page clicks blocked while open; wording per view (Map, Path, phone); ends at the top; glides by transform.
-- Shared header: wordmark and three-node mark linking home, ThemeToggle. Footer in three groups (Glossary, Posts, Take the tour | About, Terms, Privacy | Your data, Report a mistake; REPORT_EMAIL in lib/site.ts). "Back to top" appears after about 1.5 screens: floating on desktop, in the sticky progress strip on phones.
-- About and Terms describe AI assistance with one shared sentence, AI_ASSISTANCE in lib/site.ts (a test checks both pages); never reword it in one place.
+| File | Area |
+| - | - |
+| `topic-pages.md` | Topic pages, content JSON, quiz style, In short, prerequisite reasons, Page last updated, reading time, interview tags |
+| `learn-pages.md` | /topic/<slug>/learn, official-source rules, videos, Try it commands |
+| `progress-tracking.md` | Tracked units, "in progress", localStorage store, the Path group toggle |
+| `homepage.md` | Masthead, the one start button and its priority, map or Path, Inside a topic, Try a question, sources, topic numbering |
+| `graph.md` | The map: layout, states, zoom and pan, group labels, node-open transition |
+| `motion.md` | Duration and easing tokens, what may animate |
+| `seo.md` | Canonicals, titles, descriptions, JSON-LD, sitemap, images, `check-seo` |
+| `accessibility-and-chrome.md` | Contrast, focus, touch targets, phone and laptop parity, skeletons, header, footer, AI sentence |
+| `tours.md` | Guided tours: steps, motion clock, behaviour, seen flag, checks |
+| `background.md` | /background data, "Taught later", checks |
+| `figures.md` | Interactive post figures, their inputs and checks |
+| `news.md` | What's new, the allowlist, the routine, the guard workflow |
+| `logos.md` | Company marks, sources, the `add` command, brand rules, exceptions |
+| `tooling.md` | Verification scripts and their network use |
 
 ## Post selection (strict, never use just any post)
 
@@ -108,7 +55,8 @@ Only include a post if it passes most of these:
 - If a post fails the selection rules, say so and find another. Before saving a new post, show the user the URL, the company, and why it passed.
 - The fetch tool returns a model-written reading, not the page. For every figure, fetch the raw page with curl (browser-like headers if blocked) and confirm the number appears. Drop any figure you cannot find, and list the drops in the reply.
 - A peer-reviewed paper by a company's engineering team counts as a post, labeled "paper", under the same five rules.
-- Learn pages use official sources only (details in docs/learn-pages.md). Claude cannot watch videos: show each candidate and get approval first.
+- Learn pages use official sources only (details in `learn-pages.md`). Claude cannot watch videos: show each candidate and get approval first.
+- A new company in any post needs a logo in the same change: `node scripts/make-logos.mjs add "<Company>" [domain]` (see `logos.md`); `lib/logos.test.ts` fails without it.
 
 ## Site feel
 
@@ -121,6 +69,8 @@ Handcrafted, not AI-template. Cream background, serif headings, restrained palet
 - Always: skeleton loaders, a real working demo, Terms and Privacy pages in the footer.
 - Review every page or UI piece before calling it done: render it at 1440px and 390px and check it reads as part of the whole (mono small-caps labels, generous whitespace, state shown by shape not colour alone).
 - Check spacing: text and adjacent controls must never run together. Prefer a flex row with `gap` over JSX `{" "}`. Catch this in development, never push it.
+- Company marks are the only icons: beside company names, from local files, never recoloured (`logos.md`). Homepage: thin dividers, no cards or images.
+- On a UI request, fix every similar element across the page, not one spot, and check that no count or status appears twice on one page (client-rendered parts included).
 
 ## Architecture of the site itself
 
@@ -128,18 +78,64 @@ Apply system design thinking to this site: static generation, CDN caching, decou
 
 - Vercel Web Analytics (page views, no third-party cookies, per Vercel's own docs). The site works fully if it fails to load, it never receives reading progress, and Privacy describes it.
 - YouTube on learn pages: a click-to-load facade (title, channel, year, length, "optional", "not vetted line by line like the written sources") that loads nothing from YouTube until "Play here"; then youtube-nocookie.com, with an external link as a no-JavaScript fallback. Privacy says so.
+- Company marks and every other asset are local files; nothing is fetched from a third party at runtime. Logo lookups happen only in the offline script.
 
 ## Working in this repo
 
 - Node 24 (`.nvmrc`). Run `source ~/.nvm/nvm.sh && nvm use` before npm commands.
-- `npm run dev`, `npm run build` (production check), `npx tsc --noEmit`. Pushing to `main` deploys to Vercel.
-- Topics live in `content/topics/<slug>.json`; the schema in lib/topics.ts is checked by the build. Keep it in sync with this file. Tooling (verify:figures with docs/hand-checks.json, audit:figures, check:tour, diagram overflow check, Pagefind index): docs/tooling.md.
+- `npm run dev` (leave it running on :3000 when idle), `npx tsc --noEmit`, `npm run lint`, `npm test` (vitest), `npm run build` (production check). Pushing to `main` deploys to Vercel.
+- A production build overwrites `.next` under a running `next dev` and breaks it. While the dev server is up, build into another directory and run the post-build checks against it with the same variable, then delete it: `NEXT_DIST_DIR=.next-build npx next build`, then `NEXT_DIST_DIR=.next-build node scripts/check-seo.mjs` (also `check-news`, `check-diagram-overflow`), then `rm -rf .next-build`. (`postbuild` reads `.next`, so Pagefind is skipped this way; run it only on a build that owns `.next`.) A hook blocks the unsafe form.
+- Topics live in `content/topics/<slug>.json`; the schema in `lib/topics.ts` is checked by the build. Keep it in sync with `topic-pages.md`. Tooling (verify:figures with docs/hand-checks.json, audit:figures, check:tour, check:ui, diagram overflow check, Pagefind index) is described in `tooling.md`.
 - The build fails on an empty section or quiz, a missing prerequisite, a prerequisite cycle, missing attribution or verifiedOn, or a bad diagram (gradients, filters, scripts, no `<title>`).
+- Planned work lives in `docs/ideas.md`; read it only when asked. `docs/verification-log.md`, `docs/review-progress.md`, `docs/tasks/` and `docs/drafts/` are working records, not rules.
+
+## Verifying a change
+
+Run only what the change touches, then once at the end:
+
+1. `npx tsc --noEmit`, `npm run lint`, `npm test`.
+2. A build (see above) and `check-seo`, `check-news`, `check-diagram-overflow`. `npm run check:tour` when tours or the top of a topic page changed; the graph tests are in `npm test`.
+3. Anything visible: render it at 1440px and 390px, light and dark, and look (`npm run check:ui` for overflow, tooltips, split labels, broken images and layout shift; the `verify-ui` skill has the full routine). Wording that names a key, control or view must be true on each screen.
+4. State what you did not check (Safari, a real phone, Pagefind, a deploy) in the report.
+
+## Git and releases
+
+- Work on a branch, never directly on `main`. Commit messages end with the co-author line the session gives. Push only when asked.
+- `gh` is not installed. After pushing, open the compare page for the user: `open "https://github.com/Adii-Khandelwal/sys101/compare/main...<branch>?expand=1"`, and give a short description ready to paste (what changed, checks, anything to read before merging). Vercel builds a preview for each branch and deploys `main`; after a merge, check the live site (`https://sys101.vercel.app`) rather than assuming.
+- Run `/ponytail-review` on the diff before every push of code changes and say what it found.
+- `.github/CODEOWNERS` records who owns what; `.claude/**` and `CLAUDE.md` are listed because they change what an agent does.
 
 ## Keeping docs current
 
-- Update docs with every commit. When a task adds or changes a standing rule, page type, schema, route, feature, or convention, update the matching section of CLAUDE.md and README.md in the same commit. Edit existing text; never duplicate a rule.
-- Do not record one-off details or temporary state. Keep CLAUDE.md under 160 lines and each line under about 300 characters by moving detail into docs/.
+- Update docs with every commit. When a task adds or changes a standing rule, page type, schema, route, feature or convention, update the matching `.claude/rules/` file (or this file for a project-wide rule) and `README.md` in the same commit. Edit existing text; never duplicate a rule.
+- Put a new rule where it will load when it matters: path-scoped in `.claude/rules/<area>.md` (add the file's globs to its `paths`), or here only if it applies to every task. A new area gets a rule file and a row in the table above. Use a skill, not a rule, for a multi-step workflow.
+- Do not record one-off details or temporary state. Dated working records go in `docs/`.
+- Rule files are specifications: keep the numbers, names and file references exact, and update them in the same change that alters the behaviour.
+
+## Project configuration
+
+- `.claude/settings.json` (shared): permissions for the routine read-only and check commands, hooks (a guard against building under a running dev server, a guard against hand-editing generated files), and the plugins this project uses (`ponytail`, `vercel`, `agent-skills`) with their marketplaces. Personal settings go in `.claude/settings.local.json` (gitignored).
+- `.claude/hooks/`: the scripts those hooks run. They read the tool call as JSON on stdin and exit 2 with a message to block.
+- `.claude/skills/`: project skills (below). `.claude/rules/`: the rule files above.
+
+## Skills and plugins
+
+Project skills (`.claude/skills/`, invoke with `/name` or let them trigger):
+
+- `add-topic`: everything a new topic needs (content, learn page, background, graph checks, tests).
+- `add-post`: choosing, verifying and saving a post (selection rules, raw-page figure check, logo, drafts).
+- `verify-ui`: the render, overflow, tooltip, split-label, tap-target and layout-shift routine at 1440 and 390, light and dark.
+- `release-check`: the pre-push checklist and the report and PR hand-off.
+
+Installed skills that fit this project (advisory; this file wins, and anything banned here is skipped silently):
+
+- `ponytail`, `ponytail-review`, `ponytail-audit`, `ponytail-debt` (plugin `ponytail`): the smallest change; review before push.
+- `emil-design-eng`, `animate`, `review-animations`, `animation-performance`, `improve-animations`: motion and polish, within the Motion rules (tokens, transform and opacity only, no bounce).
+- `break-ui`: worst-case data (long names, zero items) on a component.
+- `mobile-native`, `apple-design`: touch and phone behaviour, within the accessibility rules.
+- `anatomy`: the interactive figures' geometry audit (`npm run audit:figures`).
+- `vercel:nextjs`, `vercel:verification`, `vercel:deployments-cicd` (plugin `vercel`): Next.js and deploy questions. `agent-skills:*` (plugin `agent-skills`): spec, plan, build, test, review, ship workflows when a task is big enough to need one.
+- Not used here: skills that add gradients, shadows, glass, bounce, emojis or a banned font; or that add a dependency or runtime third-party call.
 
 ## Ponytail
 
@@ -154,6 +150,6 @@ Apply system design thinking to this site: static generation, CDN caching, decou
 - Make the smallest change that meets the task. Don't spawn subagents unless asked.
 - Run only the checks relevant to what changed, then one final build.
 - Don't fetch posts again for content already verified in content/topics/.
-- Final reply says "CLAUDE.md: updated <section>" (or "no change"), likewise README, in one line. Max 8 lines overall: what changed (file names), what couldn't be verified, the next decision. No code listings or diffs unless asked.
+- Final reply says "CLAUDE.md: updated <section>" (or "no change"), likewise README and the rule files, in one line. Max 8 lines overall: what changed (file names), what couldn't be verified, the next decision. No code listings or diffs unless asked.
 - Ask at most one question at a time, only when blocked. Candidate tables: at most 6 columns, figures only.
-- Saving tokens never means skipping verification. Planned work lives in docs/ideas.md; read it only when asked.
+- Saving tokens never means skipping verification.

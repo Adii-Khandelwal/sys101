@@ -1,6 +1,6 @@
 name: News PR check
 
-# Checks the pull requests a routine opens to update "What's new" (docs/whats-new.md, docs/routines/README.md).
+# Checks the pull requests a routine opens to update "What's new" (.claude/rules/news.md, docs/routines/README.md).
 #
 # It runs on pull_request_target, so the workflow, the scripts and node_modules always come from the BASE branch and
 # a pull request cannot change the code that judges it. The pull request's files are checked out into pr/ and are only
