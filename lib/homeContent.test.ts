@@ -2,7 +2,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { FEATURED_FIGURES, LESSON_OUTLINE, featuredFigures, topicSections } from "./lessonOutline";
-import { startVariant } from "./nextUp";
 import { getAllTopics } from "./topics";
 
 const topics = getAllTopics();
@@ -39,12 +38,5 @@ describe("Inside a topic preview", () => {
       expect([f.company, f.url]).toEqual([post.company, post.url]);
     });
     expect(new Set(FEATURED_FIGURES.map((x) => x.post)).size).toBe(FEATURED_FIGURES.length);
-  });
-});
-
-describe("start line", () => {
-  it("is exactly one version at a time", () => {
-    expect(startVariant([])).toBe("first");
-    expect(startVariant(["dns"])).toBe("progress");
   });
 });

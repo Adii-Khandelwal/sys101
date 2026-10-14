@@ -641,23 +641,15 @@ li {
   color: var(--ink);
 }
 
+.next-also .keep {
+  white-space: nowrap;
+}
+
 .masthead .next-up .next-also {
   margin: 12px 0 0;
   font-size: 18px;
   color: var(--ink-soft);
 }
-
-/* Resume line: sits just below the masthead, above the map. Quiet, with space
-   so it reads as its own line, and fades in once local progress is known. */
-.home-resume {
-  margin: 20px 0 0;
-  color: var(--ink-soft);
-  animation: fade-in var(--dur-base) var(--ease-out);
-}
-.home-resume a {
-  color: var(--accent);
-}
-
 
 /* Group names on the map: faint, never interactive. */
 .graph-group {

@@ -3,12 +3,12 @@ import HomeView from "@/components/HomeView";
 import InsideTopic from "@/components/InsideTopic";
 import { featuredFigures } from "@/lib/lessonOutline";
 import NextUp from "@/components/NextUp";
-import HomeResume from "@/components/HomeResume";
 import TourLink from "@/components/TourLink";
 import PostSources from "@/components/PostSources";
 import Search from "@/components/Search";
 import TryQuestion from "@/components/TryQuestion";
 import SiteFooter from "@/components/SiteFooter";
+import { optionId } from "@/lib/quizIds";
 import { depths } from "@/lib/graph";
 import { organization, sourceCounts } from "@/lib/posts";
 import { formatNumber, topicNumbers, topicOrder } from "@/lib/order";
@@ -81,6 +81,7 @@ export default function Home() {
           <NextUp
             start={{ slug: ordered[0].slug, title: ordered[0].title, minutes: readingMinutes(ordered[0], getNews(ordered[0].slug)) }}
             entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))}
+            metas={ordered.map((t) => ({ slug: t.slug, postIds: t.posts.map((p) => p.id!), correct: (t.lesson?.quiz ?? []).map((q) => optionId(q.options[q.correct])) }))}
           />
           <p className="masthead-actions">
             <Link className="label" href="/about">
@@ -103,8 +104,6 @@ export default function Home() {
           <Search />
         </div>
       </header>
-
-      <HomeResume titles={Object.fromEntries(ordered.map((t) => [t.slug, t.title]))} />
 
       <HomeView
         nodes={nodes}
