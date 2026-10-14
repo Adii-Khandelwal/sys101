@@ -103,7 +103,7 @@ Run only what the change touches, then once at the end:
 
 ## Git and releases
 
-- Work on a branch, never directly on `main`. Commit messages end with the co-author line the session gives. Push only when asked.
+- Work on a branch, never directly on `main`, and never on a branch whose PR is already merged: a later commit or push reaches no PR (the guard-branch hook blocks `git commit` and `git push` on `main` and on a branch with a merged PR; start a new one with `git switch -c <name> origin/main`). Before a push, also run `git fetch` and check `git log origin/main --merges -3`. Commit messages end with the co-author line the session gives. Push only when asked.
 - `gh` is installed at `/opt/homebrew/bin/gh` (not on Claude's PATH, so call it by full path) and needs a one-time `gh auth login` by the user; create a PR with `gh pr create` only when asked. By default, after pushing, open the compare page for the user: `open "https://github.com/Adii-Khandelwal/sys101/compare/main...<branch>?expand=1"`, and give a short description ready to paste (what changed, checks, anything to read before merging). Vercel builds a preview for each branch and deploys `main`; after a merge, check the live site (`https://sys101.vercel.app`) rather than assuming.
 - Run `/ponytail-review` on the diff before every push of code changes and say what it found.
 - `.github/CODEOWNERS` records who owns what; `.claude/**` and `CLAUDE.md` are listed because they change what an agent does.
@@ -116,7 +116,7 @@ Every idea or preference the owner states is written down, here as one line and 
 - Filters on /reads: All/Posts/Papers, a Topic row under its own "Topic" heading, a text filter. The count line shows only while filtering.
 - Every search or filter box has the homepage search's behaviour: "/" focus, Escape, Enter to the first result, word-start matching ("uber" must not find "Kubernetes") (`accessibility-and-chrome.md`).
 - Links are not underlined unless inside a running sentence; hover turns them a colour (rust, ink in side lists), on every list of links (`accessibility-and-chrome.md`). No blue tap flash on a phone.
-- The homepage "Who wrote the sources" list links each company to `/posts#<company>` and shows no counts (`homepage.md`).
+- The homepage "Companies we learn from" list links each company to `/posts#<company>` and shows no counts (`homepage.md`).
 - The top bar: only the homepage "sys101" flies letter by letter. Elsewhere the page name fades in, then a thin rule and the current section name, lighter, replaced by each new section heading going down and back up; no rule before the page name; at the very end of a page only the last section shows (`motion.md`, lib/headerFade.ts).
 - The top bar shows no section names on About, Terms, Privacy and Your data.
 - Links to a section glide down to it (same page), or open the other page at its top and then glide down (`motion.md`, lib/glide.ts).
@@ -132,7 +132,7 @@ Every idea or preference the owner states is written down, here as one line and 
 
 ## Project configuration
 
-- `.claude/settings.json` (shared): permissions for the routine read-only and check commands, hooks (a guard against building under a running dev server, a guard against hand-editing generated files, a test-output trimmer), and the plugins this project uses (`ponytail` on; `vercel` and `agent-skills` installed but off) with their marketplaces. Personal settings go in `.claude/settings.local.json` (gitignored).
+- `.claude/settings.json` (shared): permissions for the routine read-only and check commands, hooks (a guard against building under a running dev server, a guard against hand-editing generated files, a guard against committing or pushing on `main` or a merged branch, a test-output trimmer), and the plugins this project uses (`ponytail` on; `vercel` and `agent-skills` installed but off) with their marketplaces. Personal settings go in `.claude/settings.local.json` (gitignored).
 - `.claude/hooks/`: the scripts those hooks run. They read the tool call as JSON on stdin and exit 2 with a message to block.
 - `.claude/skills/`: project skills (below). `.claude/rules/`: the rule files above.
 

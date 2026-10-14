@@ -3,3 +3,7 @@ export const organization = (company: string) => (company.startsWith("Amazon") ?
 
 /** What a merged organization is called where several credits share one mark: Amazon (the Dynamo paper) and AWS (the Builders' Library) share the AWS mark, so the homepage says both. */
 export const MIXED_LABEL: Record<string, string> = { Amazon: "Amazon and AWS" };
+
+/** Listed organizations that are not companies, so the homepage says so instead of calling them all companies. */
+// shortcut: the homepage note is worded for one name, add plural wording when a second is listed.
+export const NOT_COMPANIES = ["etcd (CNCF)"];
