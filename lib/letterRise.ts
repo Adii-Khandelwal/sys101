@@ -35,5 +35,10 @@ export function trackRise(h1: HTMLElement, root: HTMLElement, onProgress?: (p: n
     window.removeEventListener("scroll", schedule);
     window.removeEventListener("resize", schedule);
     cancelAnimationFrame(raf);
+    // The logo outlives the homepage: leave its letters visible on other pages.
+    items.forEach((el) => {
+      el.style.opacity = "";
+      el.style.transform = "";
+    });
   };
 }

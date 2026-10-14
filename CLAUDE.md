@@ -101,7 +101,7 @@ Run only what the change touches, then once at the end:
 ## Git and releases
 
 - Work on a branch, never directly on `main`. Commit messages end with the co-author line the session gives. Push only when asked.
-- `gh` is not installed. After pushing, open the compare page for the user: `open "https://github.com/Adii-Khandelwal/sys101/compare/main...<branch>?expand=1"`, and give a short description ready to paste (what changed, checks, anything to read before merging). Vercel builds a preview for each branch and deploys `main`; after a merge, check the live site (`https://sys101.vercel.app`) rather than assuming.
+- `gh` is installed at `/opt/homebrew/bin/gh` (not on Claude's PATH, so call it by full path) and needs a one-time `gh auth login` by the user; create a PR with `gh pr create` only when asked. By default, after pushing, open the compare page for the user: `open "https://github.com/Adii-Khandelwal/sys101/compare/main...<branch>?expand=1"`, and give a short description ready to paste (what changed, checks, anything to read before merging). Vercel builds a preview for each branch and deploys `main`; after a merge, check the live site (`https://sys101.vercel.app`) rather than assuming.
 - Run `/ponytail-review` on the diff before every push of code changes and say what it found.
 - `.github/CODEOWNERS` records who owns what; `.claude/**` and `CLAUDE.md` are listed because they change what an agent does.
 

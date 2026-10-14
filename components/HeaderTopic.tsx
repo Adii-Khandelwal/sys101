@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { trackRise } from "@/lib/letterRise";
 import { usePathname } from "next/navigation";
 
@@ -11,15 +11,14 @@ import { usePathname } from "next/navigation";
  */
 export default function HeaderTopic() {
   const pathname = usePathname();
-  const [title, setTitle] = useState<string | null>(null);
+  const [heading, setHeading] = useState<HTMLElement | null>(null);
+  const title = heading?.textContent ?? null;
   const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    setTitle(null);
+    setHeading(null);
     if (!pathname.startsWith("/topic/")) return;
-    let stop: (() => void) | undefined;
     let timer = 0;
-    let done = false;
     const start = performance.now();
     // After a client-side navigation the new page may still be loading: wait for its heading.
     const attach = () => {
@@ -28,19 +27,18 @@ export default function HeaderTopic() {
         if (performance.now() - start < 3000) timer = window.setTimeout(attach, 50);
         return;
       }
-      setTitle(h1.textContent);
-      // The title (state) renders on the next frame; start tracking once its letters exist.
-      requestAnimationFrame(() => {
-        if (!done && ref.current) stop = trackRise(h1, ref.current);
-      });
+      setHeading(h1);
     };
     attach();
     return () => {
-      done = true;
       window.clearTimeout(timer);
-      stop?.();
     };
   }, [pathname]);
+
+  // Runs once the letters are in the DOM, before paint, so the title never shows in full at the top of the page.
+  useLayoutEffect(() => {
+    if (heading && ref.current) return trackRise(heading, ref.current);
+  }, [heading]);
 
   if (!title) return null;
   return (
