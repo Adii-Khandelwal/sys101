@@ -78,9 +78,27 @@ export function trackFly(h1: HTMLElement, root: HTMLElement, onProgress?: (p: nu
         letter.style.opacity = String(1 - q);
         return;
       }
-      const dx = to[i].left + to[i].width / 2 - (from[i].left + from[i].width / 2);
-      const dy = to[i].top + to[i].height / 2 - (from[i].top + from[i].height / 2);
-      letter.style.transform = flyTransform(dx, dy, k, q);
+      const cx = to[i].left + to[i].width / 2;
+      const cy = to[i].top + to[i].height / 2;
+      if (p >= 1) {
+        // Arrived: pin the letter to the viewport. Re-aiming a letter that scrolls with the page lags the scroll by a frame and jitters.
+        if (!letter.dataset.docked) {
+          slot.style.width = `${from[i].width}px`; // the empty slot keeps the heading's line from reflowing
+          slot.style.height = `${from[i].height}px`;
+          slot.style.verticalAlign = "top"; // an empty inline-block sits on its bottom edge and would make the line taller
+          letter.dataset.docked = "1";
+          letter.style.position = "fixed";
+        }
+        letter.style.left = `${cx - from[i].width / 2}px`;
+        letter.style.top = `${cy - from[i].height / 2}px`;
+        letter.style.transform = `scale(${k})`;
+        return;
+      }
+      if (letter.dataset.docked) {
+        delete letter.dataset.docked;
+        slot.style.width = slot.style.height = slot.style.verticalAlign = letter.style.position = letter.style.left = letter.style.top = "";
+      }
+      letter.style.transform = flyTransform(cx - (from[i].left + from[i].width / 2), cy - (from[i].top + from[i].height / 2), k, q);
     });
     const f = Math.min(1, p * 3);
     fades.forEach((el) => {
