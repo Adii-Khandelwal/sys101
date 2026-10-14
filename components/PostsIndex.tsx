@@ -213,7 +213,6 @@ export default function PostsIndex({ data }: { data: Data }) {
                 <div key={t.slug}>
                   <h4 id={t.slug} className="posts-topic-h">
                     <Link href={`/topic/${t.slug}`}>{t.title}</Link>
-                    <span className="posts-n"> {t.posts.length}</span>
                   </h4>
                   <ul className="posts-list">{t.posts.map((p) => row(p, true))}</ul>
                 </div>
@@ -232,7 +231,6 @@ export default function PostsIndex({ data }: { data: Data }) {
             <h3 id={c.id} className="posts-topic-h posts-company-h">
               <CompanyLogo name={c.name} />
               <span>{c.name}</span>
-              <span className="posts-n"> {c.posts.length}</span>
             </h3>
             <ul className="posts-list">{c.posts.map((p) => row(p, false, "company"))}</ul>
           </div>
@@ -247,7 +245,6 @@ export default function PostsIndex({ data }: { data: Data }) {
           <div key={y.id}>
             <h3 id={y.id} className="posts-topic-h">
               {y.year ?? "No date shown"}
-              <span className="posts-n"> {y.posts.length}</span>
             </h3>
             <ul className="posts-list">{y.posts.map((p) => row(p, false, "year"))}</ul>
           </div>

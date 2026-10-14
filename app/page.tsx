@@ -11,6 +11,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { optionId } from "@/lib/quizIds";
 import { depths } from "@/lib/graph";
 import { organization, sourceCounts } from "@/lib/posts";
+import { MIXED_LABEL } from "@/lib/organization";
 import { formatNumber, topicNumbers, topicOrder } from "@/lib/order";
 import { GROUPS, getAllTopics, type Group } from "@/lib/topics";
 import { getNews } from "@/lib/news";
@@ -64,7 +65,11 @@ export default function Home() {
   const quiz = dns?.lesson?.quiz;
   if (!dns || !quiz?.length) throw new Error("Homepage: the DNS topic needs a lesson quiz for Try a question");
   const { total: sourceTotal, organizations } = sourceCounts(ordered);
-  const companies = [...new Set(topics.flatMap((t) => t.posts).map((p) => organization(p.company)))].sort((x, y) => x.localeCompare(y)).map((name) => ({ name }));
+  const credits = new Map<string, Set<string>>();
+  for (const p of topics.flatMap((t) => t.posts)) credits.set(organization(p.company), (credits.get(organization(p.company)) ?? new Set()).add(p.company));
+  const companies = [...credits.keys()]
+    .sort((x, y) => x.localeCompare(y))
+    .map((name) => ({ name, label: credits.get(name)!.size > 1 ? (MIXED_LABEL[name] ?? name) : name }));
   return (
     <main className="home">
       <header className="masthead">

@@ -963,18 +963,11 @@ li {
   color: var(--ink-soft);
 }
 
-.sources-list li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  white-space: nowrap;
-}
 .sources-list a {
   display: flex;
   align-items: center;
   gap: 10px;
   min-height: 44px;
-  width: 100%;
 }
 
 /* A company's mark: a fixed slot, the mark fitted inside it with its own proportions, so names line up and nothing shifts as it loads. */
@@ -1057,12 +1050,31 @@ li {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 8px 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 28px;
   font-size: 18px;
 }
 
+.sources-list li {
+  white-space: nowrap;
+}
+
+/* The row is calm: marks dim with opacity (not recoloured) and return to full on hover and keyboard focus. `even` sizes are set inline. */
+.sources-list .company-logo {
+  width: 36px;
+  height: 24px;
+  opacity: 0.7;
+}
+
+.sources-list a:hover .company-logo,
+.sources-list a:focus-visible .company-logo {
+  opacity: 1;
+}
+
+.sources-list a:active .company-logo {
+  opacity: 1;
+}
 
 /* ── Home view toggle (Map / Path) ───────── */
 .home-toolbar {
@@ -3668,11 +3680,6 @@ html[data-posts-view] .posts-view-h {
     color: var(--accent);
   }
 }
-.posts-n {
-  margin-left: 6px;
-  font-size: 16px;
-  color: var(--ink-soft);
-}
 .posts-list {
   list-style: none;
   margin: 0;
@@ -4006,8 +4013,7 @@ html[data-posts-view] .posts-view-h {
 /* Newsreader ships tabular figures (checked in the served woff2: GSUB tnum), so years and counts line up in columns. The mono labels are tabular already. */
 .posts-year,
 .posts-count,
-.glossary-count,
-.posts-topic-h .posts-n {
+.glossary-count {
   font-variant-numeric: tabular-nums;
 }
 
