@@ -5,8 +5,14 @@ const SOFT = 3; // how many letters are mid-rise at once
 /** 0 to 1 arrival of item i of n, for overall progress p. Item 0 starts first. */
 export const riseQ = (p: number, i: number, n: number) => Math.min(1, Math.max(0, (p * (n + SOFT) - i) / SOFT));
 
-/** 0 while the heading's bottom edge is RANGE or more below the header, 1 once it touches it. */
-export const headingProgress = (bottom: number, header: number) => Math.min(1, Math.max(0, (header + RANGE - bottom) / RANGE));
+/**
+ * 0 while the heading's bottom edge is RANGE or more below the header, 1 once it touches it. pageBottom is that edge's
+ * distance from the top of the page: the range is capped by it, so at scroll position 0 the progress is exactly 0.
+ */
+export const headingProgress = (bottom: number, header: number, pageBottom: number) => {
+  const range = Math.max(1, Math.min(RANGE, pageBottom - header));
+  return Math.min(1, Math.max(0, 1 - (bottom - header) / range));
+};
 
 /** Drives every [data-rise] child of root from h1's scroll position (opacity and transform only). Returns a cleanup. */
 export function trackRise(h1: HTMLElement, root: HTMLElement, onProgress?: (p: number) => void) {
@@ -16,7 +22,8 @@ export function trackRise(h1: HTMLElement, root: HTMLElement, onProgress?: (p: n
   const apply = () => {
     raf = 0;
     const header = document.querySelector<HTMLElement>(".site-header")?.offsetHeight ?? 0;
-    let p = headingProgress(h1.getBoundingClientRect().bottom, header);
+    const bottom = h1.getBoundingClientRect().bottom;
+    let p = headingProgress(bottom, header, bottom + window.scrollY);
     if (reduce) p = p >= 0.5 ? 1 : 0; // no travel: the name is simply there or not
     items.forEach((el, i) => {
       const q = riseQ(p, i, items.length);
