@@ -23,7 +23,8 @@ export default function Glossary() {
   return (
     <article className="dossier legal glossary-page lesson">
       <div data-pagefind-body>
-        <GlossaryFilter groups={groups} heading={<h1 data-pagefind-meta="title">Glossary</h1>} />
+        {/* The key on the h1 silences a dev-only "unique key" warning React raises for a server element passed to a client component as a prop. */}
+        <GlossaryFilter groups={groups} heading={<h1 key="heading" data-pagefind-meta="title">Glossary</h1>} />
       </div>
 
       <PageUpdated date={PAGE_DATES.glossary} />
