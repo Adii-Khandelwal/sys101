@@ -1,5 +1,6 @@
 "use client";
 
+import { glideToSection } from "@/lib/glide";
 import { useEffect, useRef, useState } from "react";
 
 export type LearnEntry = { id: string; name: string };
@@ -83,12 +84,7 @@ export default function LearnRail({
     const target = document.getElementById(id);
     if (!target) return;
     e.preventDefault();
-    const header = document.querySelector<HTMLElement>(".site-header")?.offsetHeight ?? 0;
-    const top = target.getBoundingClientRect().top + window.scrollY - header - 16;
-    window.scrollTo({ top });
-    const heading = target.querySelector<HTMLElement>("h2, h3") ?? target;
-    if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1");
-    heading.focus({ preventScroll: true });
+    void glideToSection(target);
     history.replaceState(null, "", `#${id}`);
   };
 

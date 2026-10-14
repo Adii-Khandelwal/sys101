@@ -26,7 +26,7 @@ export type PostsIndex = {
   byYear: { year: string | null; id: string; posts: PostRow[] }[];
 };
 
-const slugify = (s: string) =>
+export const slugify = (s: string) =>
   s
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")

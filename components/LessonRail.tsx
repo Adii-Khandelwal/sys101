@@ -1,5 +1,6 @@
 "use client";
 
+import { glideToSection } from "@/lib/glide";
 import CompanyLogo from "./CompanyLogo";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLesson } from "@/lib/progress";
@@ -62,13 +63,7 @@ export default function LessonRail({ meta, entries }: { meta: LessonMeta; entrie
     const target = document.getElementById(id);
     if (!target) return;
     e.preventDefault();
-    // Land clear of the sticky site header.
-    const header = document.querySelector<HTMLElement>(".site-header")?.offsetHeight ?? 0;
-    const top = target.getBoundingClientRect().top + window.scrollY - header - 16;
-    window.scrollTo({ top });
-    const heading = target.querySelector<HTMLElement>("h2, h3") ?? target;
-    if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1");
-    heading.focus({ preventScroll: true });
+    void glideToSection(target);
     history.replaceState(null, "", `#${id}`);
   };
 

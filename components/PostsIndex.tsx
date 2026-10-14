@@ -34,6 +34,12 @@ export default function PostsIndex({ data }: { data: Data }) {
   const readIds = new Set(progress.posts);
 
   useEffect(() => {
+    // A client-side arrival (the homepage's company links) does not run the inline script above: choose the view the address names.
+    const d = document.documentElement;
+    const q = new URLSearchParams(location.search).get("view");
+    const named = VIEWS.find((v) => v.id === q)?.id;
+    const hit = location.hash ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+    d.dataset.postsView = named ?? (hit?.closest("[data-view]")?.getAttribute("data-view") || d.dataset.postsView || "topic");
     const sync = () => setView((document.documentElement.dataset.postsView as View) || "topic");
     sync();
     window.addEventListener("popstate", sync);

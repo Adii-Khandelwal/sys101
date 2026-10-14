@@ -63,15 +63,8 @@ export default function Home() {
   const dns = topics.find((t) => t.slug === "dns");
   const quiz = dns?.lesson?.quiz;
   if (!dns || !quiz?.length) throw new Error("Homepage: the DNS topic needs a lesson quiz for Try a question");
-  const postCounts = new Map<string, Set<string>>();
-  for (const p of topics.flatMap((t) => t.posts)) {
-    const name = organization(p.company);
-    postCounts.set(name, (postCounts.get(name) ?? new Set()).add(p.url));
-  }
   const { total: sourceTotal, organizations } = sourceCounts(ordered);
-  const companies = [...postCounts]
-    .map(([name, urls]) => ({ name, posts: urls.size }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const companies = [...new Set(topics.flatMap((t) => t.posts).map((p) => organization(p.company)))].sort((x, y) => x.localeCompare(y)).map((name) => ({ name }));
   return (
     <main className="home">
       <header className="masthead">

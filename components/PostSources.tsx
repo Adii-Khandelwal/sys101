@@ -1,7 +1,8 @@
 import Link from "next/link";
 import CompanyLogo from "./CompanyLogo";
+import { slugify } from "@/lib/posts";
 
-type Props = { companies: { name: string; posts: number }[] };
+type Props = { companies: { name: string }[] };
 
 /** Who wrote the posts the topics are built on, counted from the content. */
 export default function PostSources({ companies }: Props) {
@@ -13,10 +14,11 @@ export default function PostSources({ companies }: Props) {
       <ul className="sources-list">
         {companies.map((c) => (
           <li key={c.name}>
-            <CompanyLogo name={c.name} />
-            <span>
-              {c.name} <span className="sources-count">{c.posts} {c.posts === 1 ? "post" : "posts"}</span>
-            </span>
+            {/* /posts opens its By company view when the address names a company. */}
+            <Link href={`/posts#${slugify(c.name)}`}>
+              <CompanyLogo name={c.name} />
+              <span>{c.name}</span>
+            </Link>
           </li>
         ))}
       </ul>
