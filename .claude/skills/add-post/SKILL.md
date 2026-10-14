@@ -14,4 +14,4 @@ Read `CLAUDE.md` "Post selection" and "Honesty rules", and `.claude/rules/topic-
 5. **Check every figure** in the raw page text. Drop any you cannot find and list the drops in the reply. `npm run verify:figures` repeats this over the network. A single-digit value is checked by hand (`docs/hand-checks.json`).
 6. **Logo.** A new company needs a mark: `node scripts/make-logos.mjs add "<Company>" [domain]`; `lib/logos.test.ts` fails without it. Check the result on both themes.
 7. **Interactive figure** only where the source gives a mechanism: `.claude/rules/figures.md`.
-8. **Run** `npm test` and a build; update the README topics table if the posts column changed.
+8. **Run** `npm test` and a build; run `npm run readme:stats` (the README counts sources and organizations from the topic files).
