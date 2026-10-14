@@ -3773,6 +3773,14 @@ html[data-posts-view] .posts-view-h {
 .reads-topics a {
   color: inherit;
 }
+/* These set color: inherit, which would beat the global a:hover; give them the same rust on hover. */
+@media (hover: hover) and (pointer: fine) {
+  .reads-topics a:hover,
+  .posts-topics a:hover,
+  .inside-source a:hover {
+    color: var(--accent);
+  }
+}
 @media (max-width: 767px) {
   .reads-row {
     grid-template-columns: auto 1fr;
