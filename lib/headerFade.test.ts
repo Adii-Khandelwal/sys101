@@ -14,6 +14,9 @@ describe("fadeProgress", () => {
     expect(fadeProgress(max, 1000, 56, max)).toBe(1);
     expect(fadeProgress(max - 200, 1000, 56, max)).toBe(0);
   });
+  it("shows nothing on a page that cannot scroll", () => {
+    expect(fadeProgress(0, 300, 56, 0)).toBe(0);
+  });
   it("is 1 at once for a heading that starts above the header", () => {
     expect(fadeProgress(0, 40, 56, 3000)).toBe(1);
   });

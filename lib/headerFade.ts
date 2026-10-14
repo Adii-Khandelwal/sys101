@@ -6,6 +6,7 @@ const RANGE = 120; // px of scroll over which a name fades in
  * final headings still take turns instead of staying half shown together.
  */
 export const fadeProgress = (scroll: number, bottom: number, header: number, max: number) => {
+  if (max <= 0) return 0; // the page cannot scroll, so no heading has passed under the bar (a 404 or a short page)
   const reach = Math.min(bottom - header, Math.max(0, max));
   if (reach <= 0) return 1;
   return Math.min(1, Math.max(0, 1 - (reach - scroll) / Math.min(RANGE, reach)));

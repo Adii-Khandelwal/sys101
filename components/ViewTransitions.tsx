@@ -27,6 +27,7 @@ export function pageReady(pathname: string, cap = 1000) {
 
 /** After a page that was opened with a #section has loaded: show it from its top, then glide down to the section. */
 async function glideToHash(url: URL) {
+  if (location.pathname !== url.pathname) return; // the reader already went elsewhere (Back, another link): leave that page where it is
   window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
   const id = decodeURIComponent(url.hash.slice(1));
   const target = id ? await whenVisible(id) : null;
