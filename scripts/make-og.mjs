@@ -23,7 +23,7 @@ const draw = async (html) => {
 await draw(`<div style="box-sizing:border-box;width:1200px;height:630px;padding:84px 96px;display:flex;flex-direction:column;justify-content:space-between;color:var(--ink)">
   <div style="display:flex;align-items:center;gap:28px">${MARK(96, 1.6)}<span style="font-family:var(--font-serif);font-weight:500;font-size:96px;line-height:1;letter-spacing:-0.02em">sys101</span></div>
   <div>
-    <p style="margin:0 0 28px;font-family:var(--font-serif);font-weight:500;font-size:68px;line-height:1.1;letter-spacing:-0.015em;max-width:960px">Learn system design in the order it makes sense.</p>
+    <p style="margin:0 0 28px;font-family:var(--font-serif);font-weight:500;font-size:68px;line-height:1.1;letter-spacing:-0.015em;max-width:960px">Learn system design from what real companies built, broke and fixed.</p>
     <p style="margin:0;font-family:var(--font-mono);font-size:22px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-soft)">Each topic taught through how real engineering teams built it</p>
   </div></div>`);
 await page.screenshot({ path: "public/og.png" });

@@ -4,13 +4,14 @@ import InsideTopic from "@/components/InsideTopic";
 import { featuredFigures } from "@/lib/lessonOutline";
 import NextUp from "@/components/NextUp";
 import TourLink from "@/components/TourLink";
+import { LogoMark } from "@/components/Logo";
 import PostSources from "@/components/PostSources";
 import Search from "@/components/Search";
 import TryQuestion from "@/components/TryQuestion";
 import SiteFooter from "@/components/SiteFooter";
 import { optionId } from "@/lib/quizIds";
 import { depths } from "@/lib/graph";
-import { organization, sourceCounts } from "@/lib/posts";
+import { organization } from "@/lib/posts";
 import { MIXED_LABEL } from "@/lib/organization";
 import { formatNumber, topicNumbers, topicOrder } from "@/lib/order";
 import { GROUPS, getAllTopics, type Group } from "@/lib/topics";
@@ -64,7 +65,6 @@ export default function Home() {
   const dns = topics.find((t) => t.slug === "dns");
   const quiz = dns?.lesson?.quiz;
   if (!dns || !quiz?.length) throw new Error("Homepage: the DNS topic needs a lesson quiz for Try a question");
-  const { total: sourceTotal, organizations } = sourceCounts(ordered);
   const credits = new Map<string, Set<string>>();
   for (const p of topics.flatMap((t) => t.posts)) credits.set(organization(p.company), (credits.get(organization(p.company)) ?? new Set()).add(p.company));
   const companies = [...credits.keys()]
@@ -74,8 +74,11 @@ export default function Home() {
     <main className="home">
       <header className="masthead">
         <div className="masthead-main">
-          <h1>sys101</h1>
-          <p className="masthead-lead">Learn system design in the order it makes sense.</p>
+          <div className="masthead-title">
+            <LogoMark size={46} />
+            <h1>sys101</h1>
+          </div>
+          <p className="masthead-lead">Learn system design from what real companies built, broke and fixed.</p>
           <NextUp
             start={{ slug: ordered[0].slug, title: ordered[0].title, minutes: readingMinutes(ordered[0], getNews(ordered[0].slug)) }}
             entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))}
@@ -91,12 +94,12 @@ export default function Home() {
         <div className="masthead-side">
           <div className="masthead-about">
             <p>
-              For developers who can build an app and want to understand how large systems are designed. The same few ideas keep
-              coming back (caching, replication, queues, failover), and they stick best when you see how real teams built and fixed them.
+              Behind most systems you use is a team that got it wrong first: a database that outgrew its server, a cache that took the
+              site down, a retry storm nobody saw coming. They wrote it up, and those posts are a goldmine.
             </p>
             <p>
-              {topics.length} topics and {sourceTotal} sources from {organizations} organizations, each linked and dated on its topic page. Each topic builds only on the ones
-              before it, so you never have to guess what to read first.
+              sys101 puts them in order, so you learn caching, replication and queues from what really happened, and always know
+              what to read next.
             </p>
           </div>
           <Search />

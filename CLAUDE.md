@@ -72,7 +72,7 @@ Handcrafted, not AI-template. Cream background, serif headings, restrained palet
 - Always: skeleton loaders, a real working demo, Terms and Privacy pages in the footer.
 - Review every page or UI piece before calling it done: render it at 1440px and 390px and check it reads as part of the whole (mono small-caps labels, generous whitespace, state shown by shape not colour alone).
 - Check spacing: text and adjacent controls must never run together. Prefer a flex row with `gap` over JSX `{" "}`. Catch this in development, never push it.
-- Company marks are the only icons: beside company names, from local files, never recoloured (`logos.md`). Homepage: thin dividers, no cards or images.
+- Company marks are the only icons: beside company names, from local files, never recoloured (`logos.md`). The one other mark is the site's own three-node `LogoMark` (components/Logo.tsx): in the header and beside the homepage wordmark, nowhere else and never as a background or watermark. Homepage: thin dividers, no cards or images.
 - On a UI request, fix every similar element across the page, not one spot, and check that no count or status appears twice on one page (client-rendered parts included).
 
 ## Architecture of the site itself
@@ -121,6 +121,10 @@ Every idea or preference the owner states is written down, here as one line and 
 - The top bar shows no section names on About, Terms, Privacy and Your data.
 - Links to a section glide down to it (same page), or open the other page at its top and then glide down (`motion.md`, lib/glide.ts).
 - Start button text must stay visible on hover.
+- The homepage sources section is a static, wrapped row of dimmed marks and names titled "Companies we learn from" (no marquee, no exception to the banned list); its note says etcd is a project, not a company (`homepage.md`).
+- Homepage copy is short and made to make a visitor want to explore: no numbers in the intro, no "linked and dated" reassurance (`homepage.md`).
+- No post counts beside company, topic or year headings on /posts; the totals line sits at the bottom, and only the filter count shows at the top while filtering (`homepage.md`).
+- The site's own logo mark sits beside the big homepage wordmark (`homepage.md`).
 
 ## Keeping docs current
 

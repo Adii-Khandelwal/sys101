@@ -10,7 +10,7 @@ export const REPORT_EMAIL = CONTACT_EMAIL;
 export const SITE_URL = (process.env.SITE_URL || "https://sys101.vercel.app").replace(/\/+$/, "");
 export const SITE_NAME = "sys101";
 /** Static 1200x630 social image, drawn by scripts/make-og.mjs from the wordmark and tagline. */
-const OG_IMAGE = { path: "/og.png", width: 1200, height: 630, alt: "sys101: learn system design in the order it makes sense" } as const;
+const OG_IMAGE = { path: "/og.png", width: 1200, height: 630, alt: "sys101: learn system design from what real companies built, broke and fixed" } as const;
 /** A page title must be shorter than this many characters (checked by scripts/check-seo.mjs). */
 const TITLE_MAX = 60;
 export const SITE_DESCRIPTION =
