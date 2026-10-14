@@ -2615,6 +2615,7 @@ button:active:not(:disabled),
 
 html {
   scroll-padding-top: calc(var(--header-h) + 16px); /* anchors land below the header */
+  overscroll-behavior-y: none; /* no rubber-band at the page ends: it moves the sticky header and leaves the fixed header letters behind */
 }
 
 .site-header {
