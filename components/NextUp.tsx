@@ -32,7 +32,7 @@ export default function NextUp({ entries, start }: { entries: IndexEntry[]; star
   };
 
   const count = (
-    <span key={done} className="next-count label fade-swap">
+    <span key={done} className="label fade-swap">
       {done} of {entries.length} topics read
     </span>
   );
@@ -49,28 +49,27 @@ export default function NextUp({ entries, start }: { entries: IndexEntry[]; star
     );
   }
 
+  // Something is read: the same button as a first visit, now pointing at the next topic; the second ready topic is a quiet line below.
   return (
-    <p className="next-up" data-pagefind-ignore>
-      {next ? (
-        <span key={next.slug} className="fade-swap">
-          Next up:{" "}
-          <Link href={`/topic/${next.slug}`} data-own-transition onClick={(e) => open(e, next.slug)}>
-            {next.title}
+    <div className="next-up" data-pagefind-ignore>
+      <p className="start-cta">
+        {next ? (
+          <Link key={next.slug} className="cta fade-swap" href={`/topic/${next.slug}`} data-own-transition onClick={(e) => open(e, next.slug)}>
+            Next up: {next.title}
           </Link>
-          {also && (
-            <span className="next-also">
-              {" "}
-              Also ready:{" "}
-              <Link href={`/topic/${also.slug}`} data-own-transition onClick={(e) => open(e, also.slug)}>
-                {also.title}
-              </Link>
-            </span>
-          )}
-        </span>
-      ) : (
-        "All caught up"
+        ) : (
+          <span className="next-done">All caught up</span>
+        )}
+        {count}
+      </p>
+      {next && also && (
+        <p className="next-also">
+          Also ready:{" "}
+          <Link href={`/topic/${also.slug}`} data-own-transition onClick={(e) => open(e, also.slug)}>
+            {also.title}
+          </Link>
+        </p>
       )}
-      {count}
-    </p>
+    </div>
   );
 }

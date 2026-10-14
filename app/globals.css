@@ -278,7 +278,7 @@ h1[tabindex="-1"]:focus {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 20px;
-  margin: 22px 0 0;
+  margin: 28px 0 0;
 }
 
 .cta {
@@ -631,19 +631,19 @@ li {
   border-bottom: 1px solid var(--rule);
 }
 
-/* "Next up" under the tagline. */
+/* "Next up" under the tagline: the start button's twin, with the second ready topic on its own quiet line. */
 .masthead .next-up {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 16px;
-  margin: 12px 0 0;
-  font-size: 18px;
-  font-style: normal;
+  margin: 0;
+}
+
+.next-done {
+  font-size: 20px;
   color: var(--ink);
 }
 
-.next-also {
+.masthead .next-up .next-also {
+  margin: 12px 0 0;
+  font-size: 18px;
   color: var(--ink-soft);
 }
 
@@ -658,9 +658,6 @@ li {
   color: var(--accent);
 }
 
-.next-count {
-  margin-left: auto;
-}
 
 /* Group names on the map: faint, never interactive. */
 .graph-group {
@@ -2137,10 +2134,6 @@ li {
   .home-toolbar {
     flex-wrap: wrap;
     gap: 4px 16px;
-  }
-  .next-count {
-    margin-left: 0;
-    flex-basis: 100%;
   }
   .path-item {
     column-gap: 10px;
@@ -3972,7 +3965,7 @@ html[data-posts-view] .posts-view-h {
   flex-wrap: wrap;
   align-items: center;
   gap: 0 20px;
-  margin-top: 0;
+  margin-top: 12px;
 }
 
 /* 44px tap area for the entry link, without extra visible space. */
