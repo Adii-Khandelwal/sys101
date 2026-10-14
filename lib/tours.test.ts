@@ -12,10 +12,10 @@ const ids = Object.keys(TOURS) as TourId[];
 const all = () => ids.flatMap((id) => TOURS[id].map((s) => ({ id, ...s })));
 
 describe("tour steps", () => {
-  it("has at most five steps a page, each with a title and text", () => {
+  it("has at most six steps a page, each with a title and text", () => {
     for (const id of ids) {
       expect(TOURS[id].length).toBeGreaterThan(0);
-      expect(TOURS[id].length).toBeLessThanOrEqual(5);
+      expect(TOURS[id].length).toBeLessThanOrEqual(6);
     }
     for (const s of all()) {
       expect(s.title.trim()).not.toBe("");

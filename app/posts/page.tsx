@@ -14,13 +14,13 @@ export const dynamic = "error";
 
 const data = buildPostsIndex(topicOrder(getAllTopics()));
 
-export const metadata: Metadata = pageMeta({ path: "/posts", title: "Posts", description: postsDescription(data) });
+export const metadata: Metadata = pageMeta({ path: "/posts", title: "Blogs", description: postsDescription(data) });
 
 export default function Posts() {
   const ld = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: "Posts",
+    name: "Blogs",
     url: absoluteUrl("/posts"),
     mainEntity: {
       "@type": "ItemList",
@@ -33,9 +33,9 @@ export default function Posts() {
   return (
     <article className="dossier posts-page">
       <div data-pagefind-body>
-        <h1 data-pagefind-meta="title">Posts</h1>
+        <h1 data-pagefind-meta="title">Blogs</h1>
         <p className="posts-lead">
-          Every engineering post the topics are built on. Each row opens the section of our topic page that explains it; the original is linked beside it. <Link href="/reads">Great reads</Link> are kept apart.
+          Every engineering blog post the topics are built on, plus a few papers and docs. Each row opens the section of our topic page that explains it; the original is linked beside it. <Link href="/reads">Great reads</Link> are kept apart.
         </p>
       </div>
       <PostsIndex data={data} />

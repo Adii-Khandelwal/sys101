@@ -39,6 +39,12 @@ export const TOURS: Record<TourId, TourStep[]> = {
       desktopOnly: true,
     },
     {
+      target: "nav",
+      title: "Look around",
+      text: "Glossary defines every term the topics use. Blogs lists every write-up they are built on, by topic, company or year. Great reads is a short list of the posts and papers the field leans on.",
+      phone: { text: "Menu opens the Glossary, which defines every term the topics use; Blogs, every write-up they are built on; and Great reads, a short list of the posts and papers the field leans on." },
+    },
+    {
       target: "search",
       title: "Search",
       text: "Search finds topics, companies and terms. Press / anywhere on the page to jump to the box, Enter to open the first result and Esc to clear it. Type several words with spaces between them and each word you have finished has to appear in the result.",

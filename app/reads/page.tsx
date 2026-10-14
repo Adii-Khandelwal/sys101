@@ -35,7 +35,7 @@ export default function Reads() {
         <h1 data-pagefind-meta="title">Great reads</h1>
         <p className="posts-lead">
           Posts and papers I chose because others adopted what they introduced, or because they are simply excellent. They are not tied to one topic, and they are not the sources the topics are built on (those are under{" "}
-          <Link href="/posts">Posts</Link>). Each describes its system as of the year shown.
+          <Link href="/posts">Blogs</Link>). Each describes its system as of the year shown.
         </p>
         <ReadsList data={data} />
       </div>

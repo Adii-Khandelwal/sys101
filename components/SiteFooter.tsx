@@ -1,4 +1,6 @@
+import { Fragment } from "react";
 import Link from "next/link";
+import { NAV_ITEMS } from "@/lib/navItems";
 import ReportMistake from "./ReportMistake";
 import { LogoMark } from "./Logo";
 import TourLink from "./TourLink";
@@ -14,11 +16,12 @@ export default function SiteFooter({ tour }: { tour?: TourId }) {
         <LogoMark size={14} />
       </span>
       <p className="footer-group">
-        <Link href="/glossary">Glossary</Link>
-        <Dot />
-        <Link href="/posts">Posts</Link>
-        <Dot />
-        <Link href="/reads">Great reads</Link>
+        {NAV_ITEMS.map((i, n) => (
+          <Fragment key={i.href}>
+            {n > 0 && <Dot />}
+            <Link href={i.href}>{i.label}</Link>
+          </Fragment>
+        ))}
         {tour && (
           <>
             <Dot />
