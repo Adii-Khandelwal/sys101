@@ -2677,14 +2677,19 @@ html {
   text-decoration: none;
 }
 
-.logo {
-  transition: opacity var(--dur-base) var(--ease-out);
+/* Homepage only: the wordmark arrives letter by letter (lib/letterRise.ts sets each letter's opacity and transform from scroll)
+   while the big heading leaves; until it has mostly arrived it is not clickable. */
+.logo.is-hidden {
+  pointer-events: none;
 }
 
-/* Homepage only, while the big heading is in view. */
-.logo.is-hidden {
-  opacity: 0;
-  pointer-events: none;
+.logo-rise,
+.rise-letter {
+  display: inline-block;
+}
+
+.logo-rise {
+  display: inline-flex;
 }
 
 .logo-word {
@@ -2727,28 +2732,33 @@ html {
 
 /* Topic name beside the logo once the page heading scrolls away. */
 .header-topic {
+  display: flex;
+  align-items: center;
   margin-left: 14px;
-  padding-left: 14px;
-  border-left: 1px solid var(--rule);
-  overflow: hidden;
+  overflow: hidden; /* letters rise from below this edge */
   font-size: 18px;
   line-height: 1.2;
   white-space: nowrap;
-  text-overflow: ellipsis;
+  min-width: 0;
   color: var(--ink-soft);
-  opacity: 0;
-  transition: opacity var(--dur-base) var(--ease-out);
 }
 
-.header-topic.is-shown {
-  opacity: 1;
+.header-topic-rule {
+  flex: none;
+  width: 1px;
+  height: 1.2em;
+  margin-right: 14px;
+  background: var(--rule);
 }
 
 @media (max-width: 640px) {
   .header-topic {
     margin-left: 10px;
-    padding-left: 10px;
     font-size: 16px;
+  }
+
+  .header-topic-rule {
+    margin-right: 10px;
   }
 }
 
