@@ -958,6 +958,32 @@ li {
   height: 22px;
 }
 
+/* The small slot beside a company name in a mono label (post headers, Original posts, In short, Background, the daily figure). */
+.company-logo-sm {
+  width: 20px;
+  height: 16px;
+}
+
+.company-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.company-label-inline {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+/* In the left rail the mark sits inline with the mono name, a touch smaller. */
+.lesson-rail .company-logo {
+  display: inline-flex;
+  width: 16px;
+  height: 13px;
+  margin-right: 7px;
+  vertical-align: -2px;
+}
+
 .company-logo-img {
   width: 100%;
   height: 100%;
@@ -1534,6 +1560,10 @@ li {
 .sources li .label {
   display: inline-block; /* company and year move to the next line together, never split */
   margin-left: 6px;
+}
+
+.sources li .company-label {
+  display: inline-flex;
 }
 
 .age-note {

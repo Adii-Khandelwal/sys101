@@ -1,5 +1,6 @@
 "use client";
 
+import CompanyLogo from "./CompanyLogo";
 import { useEffect, useState } from "react";
 import type { Figure } from "@/lib/lessonOutline";
 
@@ -25,7 +26,12 @@ export default function DailyFigure({ figures }: { figures: Figure[] }) {
       <p className="inside-meaning">
         {f.meaning}.
         <span className="inside-source label">
-          {f.company}, {f.year}
+          <span className="company-label company-label-inline">
+            <CompanyLogo name={f.company} size="sm" />
+            <span>
+              {f.company}, {f.year}
+            </span>
+          </span>
           <span aria-hidden="true"> · </span>
           <a href={f.url} target="_blank" rel="noopener noreferrer">
             {f.postTitle}

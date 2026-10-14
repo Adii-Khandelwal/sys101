@@ -1,11 +1,12 @@
 "use client";
 
+import CompanyLogo from "./CompanyLogo";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLesson } from "@/lib/progress";
 import { markVisited, unitStatus, type LessonMeta } from "@/lib/lessonStore";
 import { CompactProgress } from "./LessonTrackers";
 
-type Entry = { id: string; name: string; tracked: boolean };
+type Entry = { id: string; name: string; tracked: boolean; company?: string };
 
 /**
  * Left rail: the progress header, then every section. Done units get a
@@ -84,6 +85,7 @@ export default function LessonRail({ meta, entries }: { meta: LessonMeta; entrie
             <li key={e.id} data-id={e.id} className={e.id === current ? "is-current" : undefined}>
               <a href={`#${e.id}`} aria-current={e.id === current ? "location" : undefined} onClick={(ev) => go(ev, e.id)}>
                 {status === "done" && <span className="status is-done" aria-hidden="true" />}
+                {e.company && <CompanyLogo name={e.company} size="sm" bare />}
                 {e.name}
                 {status === "done" && <span className="visually-hidden"> (done)</span>}
               </a>

@@ -1,3 +1,4 @@
+import CompanyLogo from "./CompanyLogo";
 import { newsDate, type News } from "../lib/news";
 import { NO_DATE } from "../lib/topics";
 
@@ -12,7 +13,10 @@ export default function WhatsNew({ title, news }: { title: string; news: News | 
           <li key={item.id}>
             <p className="label whats-new-meta">
               {item.dateShown !== NO_DATE && <span>{newsDate(item.dateShown)}</span>}
-              <span>{item.publisher}</span>
+              <span className="company-label company-label-inline">
+                <CompanyLogo name={item.publisher} size="sm" bare />
+                {item.publisher}
+              </span>
             </p>
             <p>
               <a href={item.url} target="_blank" rel="noopener noreferrer">
