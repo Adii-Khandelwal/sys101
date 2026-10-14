@@ -1,233 +1,137 @@
 # sys101
 
-A system design course built as a prerequisite graph, taught through how real companies engineered each concept.
+Learn system design from what real companies built, broke and fixed.
 
-![The sys101 homepage: a map of topics joined by arrows that show which topic builds on which.](docs/graph.png)
+**[sys101.vercel.app](https://sys101.vercel.app)**
 
-Live at [sys101.vercel.app](https://sys101.vercel.app).
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/map-dark.png">
+  <img src="docs/readme/map-light.png" alt="The sys101 map: topics from DNS and Databases on the left to Failover and Event-driven Architecture on the right, joined by arrows that point from what to learn first to what builds on it." width="100%">
+</picture>
 
-## Why this exists
+---
 
-Learning system design from engineering blogs is hard because nothing tells you which post to read first, or what you need to know before it makes sense. Good posts assume background that a different post explains. sys101 orders concepts by their prerequisites and attaches vetted engineering posts to each one, so there is always a clear next thing to read.
+## What it is
 
-## Topics
+Behind most systems you use is a team that got it wrong first: a database that outgrew its server, a cache that took the site down, a retry storm nobody saw coming. They wrote it up, and those posts are a goldmine. They are also hard to use, because each blog assumes background that a different post explains, and nothing says which to read first.
 
-Eighteen topics across five groups. Each topic lists what it builds on and the company posts digested on its page.
+sys101 puts them in order. It is a map of <!--stat:topics-->18<!--/stat--> system design topics, each one placed after the topics it depends on and taught through engineering posts picked from the teams that ran the system. Every topic has its own explanation, a quiz and design exercises. The posts come from <!--stat:sources-->36<!--/stat--> sources by <!--stat:organizations-->19<!--/stat--> organizations (<!--stat:kinds-->32 engineering posts, 3 research papers and 1 documentation page<!--/stat-->), and a separate Great reads list holds <!--stat:reads-->30<!--/stat--> influential posts and papers in <!--stat:themes-->5<!--/stat--> themes.
 
-| Group | Topic | Builds on | Posts from |
-|---|---|---|---|
-| Foundations | Databases | none | Uber (2016), GitHub |
-| Foundations | DNS | none | Cloudflare, Slack |
-| Scaling | Load Balancing | DNS | Uber, Dropbox |
-| Scaling | Caching | Load Balancing | Meta, Uber |
-| Scaling | Consistent Hashing | Caching | Cloudflare, Discord (2017) |
-| Scaling | CDNs | DNS, Caching | Cloudflare, Netflix (2017) |
-| Data | Database Replication | Databases | Meta, GitHub (2018) |
-| Data | Sharding and Partitioning | Database Replication, Consistent Hashing | Figma, Notion |
-| Data | Indexing and Search | Databases, Sharding | GitHub, Discord |
-| Data | CAP Theorem | Database Replication, Sharding and Partitioning | Amazon (2007, paper), Google (2012, paper) |
-| Data | Consensus | CAP Theorem, Database Replication | etcd (CNCF), Cockroach Labs (2026) |
-| Data | Distributed Transactions | Consensus, Sharding and Partitioning | Google (2010, paper), Cockroach Labs (2019) |
-| Messaging | Message Queues | Sharding | Slack (2017), Meta |
-| Messaging | Publish-Subscribe | Message Queues | Spotify (2019), Uber (2021) |
-| Messaging | Event-driven Architecture | Publish-Subscribe | Grab (2020), Zapier, Grab (2023) |
-| Reliability | Rate Limiting | Caching, Consistent Hashing | Cloudflare (2017), Databricks |
-| Reliability | Circuit Breakers and Load Shedding | Rate Limiting | Zalando, Uber |
-| Reliability | Failover | Circuit Breakers and Load Shedding | GitHub (2018), Cloudflare |
+It is one person's learning project, built in the open.
 
-Years are shown for posts more than five years old; each topic page explains why they still apply. Next in the plan: capstone case studies.
+---
 
 ## How it works
 
-1. **The graph is the homepage.** Each node is a topic, and arrows point from what you should read first to what builds on it. A hollow node is unread, a node with a dot is ready to read (all its prerequisites are done), a node ringed in rust with a rust dot is in progress (you have started it), and a filled node is read. Above the map, the homepage says what the course is, who it is for and why it matters, and gives one start button: "Start with <first topic>" on a first visit; once you have started a topic (a section marked done or a quiz question answered), "Continue: <topic>" (or "Finish:" when only a couple of units are left) linking to the first unfinished section, with a quiet line naming your other started topics or the topic after it; and with only reads and nothing started, "Next up", preferring topics that continue what you already read and that open up more of the map. Under 768px the homepage shows only a linear Path view, with no Map/Path toggle (desktop keeps the toggle and remembers your choice). On desktop the map is a full-size horizontal graph; when it is wider than the screen (as it is once there are enough topics) the map section scrolls sideways with a scrollbar, rather than shrinking the labels or stacking. Pan with a drag and zoom with the trackpad or the `+`/`-`/`0` keys are available on desktop (the on-screen zoom and fit buttons were removed; the keyboard shortcuts remain). Below the map are a short "Inside a topic" outline with a figure of the day taken from the posts, a "Try a question" that rotates through real quiz questions, and a "Companies we learn from" row, each organization with its mark. Press `/` to jump to search; several words in the box must all appear in a result. The Path list (the only view on a phone) has the same four-state legend as the map and names what each topic builds on before the reasons. The footer is grouped (reading, site pages, you) and offers the tour again. Each topic page also has interactive figures at the end of three posts (a sliding-window gauge, a cache fill race, a commit latch; `.claude/rules/figures.md`). The homepage and every topic page have an optional "Take the 30-second tour" link: a short guided walk-through of the page (five steps at most), started only by the reader, hidden once finished or skipped so it never nags (the footer link stays) (`.claude/rules/tours.md`).
-2. **Each topic page is a lesson.** It opens with a reading-time estimate computed from its content, then an "In short" summary. It has two halves. First the idea: why the concept exists, a mental model with a diagram, how it works step by step, a worked example, the common mistakes, a self-check quiz with explained answers, and a "skip to the posts" link for people who already know it. Then the real world: a digest of each company post (problem, constraints, walkthrough, diagram, numbers, trade-offs, what failed, takeaways), a comparison when there are two or more posts, an interactive isometric figure on a post that gives a mechanism (so far the sliding-window gauge in Rate Limiting, the cache fill race in Caching and the commit latch in Distributed Transactions), and design exercises that rise in difficulty (apply, design, scale) with model answers.
-3. **"Start from zero" learn pages** give an absolute beginner a staged path through a topic (Basics, How it works, Going deeper, In practice and trade-offs), built only from official sources: standards, vendor and project docs, university course pages, and recognized conference talks. Each stage cites its sources inline, points to the exact section to read, and ends with what you can now do. Videos are click-to-load and labelled as optional and not reviewed by the author. Every topic has one at `/topic/<slug>/learn`, and commands and config in "Try it" are shown as scrollable code blocks.
-4. **Reading progress is stored in your browser only.** Nothing is sent to a server, and there are no accounts. Section-level, post-level and quiz progress are tracked per topic, with a progress bar on each page. A topic you have deliberately started (a section marked done or a quiz question answered) shows as "in progress" on the map and the Path view; the Path view also shows a per-group read count and a mark-group-read toggle. Quiz answers are saved by option, not by position, so options can be reordered without losing them, and older saves are upgraded. You can export, import, or reset it on the `/data` page, which also shows a read / in-progress / ready tally.
-5. **A glossary and themes.** `/glossary` gathers every term defined across the topics, grouped by topic with a link back to each, a contents list down the side, and a filter box (focus it with `/`) that jumps straight to a term. `/reads` ("Great reads") is a short, separate list of influential or simply excellent posts and papers, chosen by the author, grouped by what each introduced and each described as of its year (`content/reads/`, checked live by `npm run verify:reads`; `.claude/rules/reads.md`). `/posts` lists every source the topics are built on (a totals line at the bottom splits them into posts, papers and documentation), by topic, company or year, with a filter and a contents list. The header shows the page name once its heading scrolls away, and after a thin rule the section you are in, each fading in and replaced by the next as you scroll (and restored on the way back up). Links are not underlined outside running sentences; every search or filter box has the same keys as the homepage search. A sun/moon control in the header switches between the light (cream) and a warm dark theme; the choice is remembered and follows your system setting until you pick one.
-6. **Company marks.** A company's mark sits beside its name wherever the name stands as a label (the homepage sources list, `/posts`, a post's header, Original posts, In short, the left rail, What's new, Background). They are local SVG files from svgl (official brand SVGs) or Simple Icons, never recoloured and never fetched at runtime; a mark with a dark-page version swaps with the theme. `node scripts/make-logos.mjs add "Company" [domain]` finds one for a new company (svgl, then Simple Icons, then Hunter by domain), and a test fails until a new company has one. The marks belong to their owners and are shown only to say whose post it is (`.claude/rules/logos.md`).
+**The map and the Path.** On a wide screen the homepage is a map. Each topic sits to the right of what it builds on, so you start at the left and work across. On a phone the same order is a list, the Path. A topic is ready once you have read what it needs, and one button always says where to go next.
 
-## How posts are chosen
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/topic-dark.png">
+  <img src="docs/readme/topic-light.png" alt="The Caching topic page: a contents list on the left, the title and a short summary, then an In short list with links to a Meta post and an Uber post." width="100%">
+</picture>
 
-A post is included only if it passes most of these:
+**Topics built on topics.** Each topic page names its prerequisites and says why each one matters. The page runs from the idea (why it exists, a mental model, a worked example, common mistakes) to the real world: a digest of each company post with its numbers, trade-offs and what failed.
 
-1. **Specific.** Real numbers: latency, throughput, request volume, error rates.
-2. **Honest about trade-offs.** What was tried, what failed, and why the final design won.
-3. **Still relevant.** Describes architecture in use today. A post older than about five years passes only if it teaches a fundamental that has not changed, and its year is shown on the page via an `ageNote`.
-4. **Credible.** Written by the engineering team that runs the system at scale. No listicles or marketing posts.
-5. **Transferable.** Teaches something that applies to a concept in the graph.
+**Check yourself.** Every topic ends with a quiz that explains the wrong answers too, and design exercises that rise from applying the idea to designing and scaling a system, with model answers you open when you are ready.
 
-A peer-reviewed paper by a company's engineering team can count as a post, labelled "paper", under the same rules. Every figure is checked against the raw page text (not a summary of it) before it is used, and figures that cannot be found are dropped. `npm run verify:figures` automates this: it fetches each source with curl, reads PDFs through pdftotext or pypdf, and for pages that block curl reads the Internet Archive, resolving a real captured snapshot through the Wayback CDX API and marking those rows "(archive copy)" in `docs/verification-log.md`, then a headless browser ("(browser copy)"). Lone digits and number words that a script cannot judge are read by hand against the source and recorded in `docs/hand-checks.json`.
+**Start from zero.** Every topic also has a beginner's path at `/topic/<slug>/learn`, built only from official sources: standards, project and vendor docs, university courses and recognised conference talks.
 
-## Architecture
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/learn-dark.png">
+  <img src="docs/readme/learn-light.png" alt="The Start from zero page for DNS: a list of stages down the left, then the title, a note that it is built only from official sources, and three terms to know before starting." width="100%">
+</picture>
 
-```
-content/topics/*.json ──► next build ──► static HTML + Pagefind index ──► CDN (Vercel)
-content/learn/*.json  ──►     │
-        ▲                     ├── fails on missing prerequisites, cycles, or empty sections
-        │                     └── postbuild SEO check fails on bad titles/canonicals/headings/sitemap
-pipeline/ (offline, run by hand)
-  fetch RSS ──► extract text ──► draft digests ──► human review ──► commit JSON
-```
+**Progress stays in your browser.** There are no accounts and nothing is sent to a server. You can export, import or reset what you have marked on the Your data page.
 
-The site is read-heavy and its content changes rarely, so every page is generated at build time and served as static files from a CDN, with search running in the browser against a prebuilt index. The content pipeline is decoupled from the site and idempotent: it only produces JSON for review, so a failed or repeated run never affects what readers see.
+---
 
-## Build-time checks
+## How the content stays honest
 
-Content is validated during static generation (`lib/topics.ts`, `lib/learn.ts`); a bad file fails the build instead of shipping a broken page. The build fails if:
+A post gets in only if it has real numbers, is honest about what was tried and what failed, describes a system that still looks like that (an older post shows its year and says why it still applies), comes from the team that runs the system at scale, and teaches something that carries to another concept on the map. Papers by a company's engineers count as posts and are labelled as papers. The full rules are in [CLAUDE.md](CLAUDE.md).
 
-- a topic lists a prerequisite or related topic with no topic file, or prerequisites form a cycle;
-- any section is empty, including each post's digest, the glossary, or a lesson section;
-- a lesson's quiz has fewer than 5 or more than 8 questions, or an answer does not explain each wrong option; every correct answer sits in one position, one position repeats four times in a row, an explanation points at an option by letter, or "Neither" or "All of the above" is not last; a lesson needs 2 to 3 exercises rising in difficulty;
-- a topic with two or more posts has a "Where they differ" comparison that is not 2 to 3 short paragraphs;
-- a classic (non-lesson) topic's quiz has fewer than 3 or more than 5 questions, or has no exercise;
-- a lesson is missing a diagram on its Mental model, How it works or Worked example section, or any post digest has no diagram;
-- a diagram uses gradients, filters, shadows or scripts, or lacks a `viewBox` and a `<title>`;
-- `verifiedOn` or `published` is missing or in the future, or a post over five years old has no `ageNote`;
-- a learn page is missing its four stages, cites an unknown source, has a stage with no official written source, or lists an Internet-Draft without saying it is a work in progress, not a standard, and when it expires;
-- a topic's `shortTitle` is empty or not shorter than its title.
+What is checked, and by what:
 
-A separate SEO check (`scripts/check-seo.mjs`) runs after `next build` and fails on: duplicate or over-length titles and descriptions, a description that ends in an ellipsis, a page without exactly one `<h1>`, headings that skip a level, a missing or wrong canonical, a page that should be `noindex` but is not (`/data`, 404), a sitemap that does not match the indexable pages or the files in `content/`, JSON-LD that does not parse, images without alt/width/height, and content streamed in a hidden chunk that needs JavaScript.
+**Figures match the original pages.** `npm run verify:figures` fetches each source and looks for every number in the raw page text. Results go in [docs/verification-log.md](docs/verification-log.md). By hand, and it needs the network.
 
-"What's new" lists (`content/news/<slug>.json`, at most three recent pages from per-topic approved sources) appear after "What to learn next". They are checked in the build (`scripts/check-news.mjs`) and against the live pages with `npm run verify:news`; see `.claude/rules/news.md`.
+**Numbers a script cannot judge.** Lone digits and numbers written as words are read against the source by a person and recorded in [docs/hand-checks.json](docs/hand-checks.json). By hand.
 
-A `/background` page lists, per topic, what its curated posts assume you already know (`content/background/<topic>.json`): each concept with the post sentence that assumes it, a link to our own topic page or an official source, and a "Taught later" gist for concepts that come later in the course. `npm run verify:background` checks the quotes against the live posts; see `.claude/rules/background.md`.
+**Content shape.** The build fails on a missing prerequisite, a prerequisite cycle, an empty section, a quiz with the wrong shape, a diagram that breaks the house rules, or a missing verification date. Automatic, every build.
 
-A diagram overflow check (`scripts/check-diagram-overflow.mjs`) also runs after `next build`. It renders every diagram SVG in headless Chromium with the site's real fonts (Newsreader, IBM Plex Mono) and uses `getComputedTextLength()` to measure each label; if a label's rendered box spills past the box drawn around it, the build fails. It skips with a notice when Chromium is not installed (so CI without the browser is unaffected); run `npx playwright install chromium` once to enable it, or run it on its own with `npm run check:diagrams`.
+**Pages and metadata.** `check-seo` checks titles, canonicals, headings, the sitemap and image attributes, and `check-diagram-overflow` measures every diagram label in a real browser. Automatic, after every build.
 
-The unit tests also scan the homepage source so that no count or date is hardcoded, and check the graph layout for crossings and overlaps at 1440px, 1280px and 390px.
+**Source links.** A [GitHub Action](.github/workflows/link-check.yml) requests every source URL each Monday and keeps one "Source links failing" issue in sync. It only reports. Automatic, weekly.
 
-## Link checks
+**What's new.** A scheduled routine proposes recent official pages for some topics as pull requests that may change only `content/news/` and the allowlist. [news-pr](.github/workflows/news-pr.yml) re-checks every item against its live page, and setup is in [docs/routines](docs/routines/README.md). The workflow is in this repo; the routine runs outside it.
 
-Every post records `verifiedOn`, the date someone last opened it and checked the digest, and each page ends with one "Page last updated <date>" line derived from those dates. A GitHub Action (`.github/workflows/link-check.yml`) requests every source URL each Monday and keeps one "Source links failing" issue in sync: it opens the issue, rewrites it on later runs, and closes it once every link passes, so reruns never duplicate it. Pages never fetch sources at runtime, so a dead link only affects the outbound link. Run it locally with `node scripts/check-links.mjs`.
+Every post records the date someone last opened it, and each page ends with "Page last updated" taken from those dates. Nothing updates a date on its own.
 
-## Stack
+---
 
-- Next.js (App Router) and TypeScript, every page statically generated
-- Sigma.js and graphology for the graph (with node borders and curved edges)
-- Pagefind for search, built into static files at build time
-- Vercel for hosting and Vercel Analytics for traffic
-- Vitest for the unit tests in `lib/`
-- Playwright (headless Chromium) for the diagram overflow check, the tour check and the UI check
-- svgl and Simple Icons as the offline sources of company marks (`scripts/make-logos.mjs`); nothing is fetched from them at runtime
-- Pipeline in Node with rss-parser, Cheerio and Gemini Flash (`@google/genai`); scaffolded, not yet in use
+## Built with
 
-## Project structure
+Next.js (App Router) and TypeScript, every page generated at build time and served from Vercel's CDN. The map is Sigma.js on graphology. Search runs in the browser against a Pagefind index built with the site. Vitest runs the unit tests; Playwright drives the browser checks. Vercel Web Analytics counts page views. Nothing is fetched from a third party at runtime, and company marks are local files.
 
-```
-app/              routes: graph homepage, topic pages, learn pages, glossary, about, data, terms, privacy, sitemap, robots
-components/       graph view, topic lesson, learn page, index, search, glossary filter, progress trackers, data controls, theme toggle
-content/topics/   one JSON file per topic (18 topics)
-content/learn/    one JSON file per "start from zero" learn page (18 pages)
-content/          also background/ (what the posts assume), reads/ (Great reads), news/ (What's new), logos.json (company marks) and marks of the sources
-lib/              content loading and build checks, graph layout, reading progress, SEO helpers, and their tests
-pipeline/         offline scripts for fetching and summarizing posts
-scripts/          weekly source link check, the postbuild SEO and diagram-overflow checks, the figure verifier and audit, and the guided-tour browser check
-.github/          the scheduled link-check workflow
-public/           static files; public/pagefind is generated by the build; public/logos holds the company marks
-docs/             working records: ideas, the verification log, review progress, batch tasks and drafts, the news routine's setup
-.claude/          how Claude Code works on this project: rules/ (the standing rules and specifications), skills/, hooks/ and settings.json
-CLAUDE.md         the project-wide standing rules, always loaded; .claude/rules/ holds the per-area detail
-```
+---
 
-## Run locally
+## Run it locally
 
-Requires Node 20.9 or newer (`package.json` sets `engines.node >= 20.9`); the project is developed on the version in `.nvmrc` (24).
+Node 20.9 or newer; the project is developed on the version in `.nvmrc` (24). `npm run readme:stats` and `npm test` need Node 22.18 or newer, because the README script imports TypeScript files directly.
 
 ```
 npm install
-npm run dev            # http://localhost:3000
-npm run search:index   # build the search index for local dev; rerun after content changes
-npm run build          # static build, then the SEO check and the Pagefind index
-npm test               # run the Vitest unit tests
-npm run verify:figures # check every figure against its source (docs/verification-log.md, docs/hand-checks.json); needs the network
-npm run audit:figures  # replay the interactive figures' geometry through the anatomy skill's audit
-npm run check:tour     # drive the guided tours in a browser against a running server
-npm run check:ui       # overflow, tooltips, split labels, broken images and layout shift at 1440 and 390, light and dark
-node scripts/make-logos.mjs add "Company" [domain]   # find and add a company's mark
+npm run dev
 ```
 
-While `npm run dev` is running, do not run `npm run build`: it overwrites `.next` under the dev server. Build into another directory instead, `NEXT_DIST_DIR=.next-build npx next build`, run the post-build checks with the same variable, then delete it (a Claude Code hook enforces this; see `CLAUDE.md`).
+The site is then at http://localhost:3000. Search needs an index: run `npm run search:index` once, and again after content changes.
 
-## Adding a topic
+While `npm run dev` is running, do not run `npm run build`. It overwrites `.next` under the dev server. Build into another directory instead:
 
-Create `content/topics/<slug>.json` and, with it, `content/learn/<slug>.json`: a topic is not done until its learn page exists. Topics use the lesson format (`why`, `mentalModel`, `howItWorks`, `workedExample`, mistakes, a 5-to-8 question `quiz`, `posts`, a `comparison`, and 2-to-3 `exercises`); the older `primer`/`quiz`/`exercise` format is still supported for non-lesson topics. A shortened lesson example:
-
-```json
-{
-  "slug": "cdn",
-  "title": "CDNs",
-  "shortTitle": "optional, used in page titles when the full title would pass 60 characters",
-  "group": "Scaling",
-  "interviewRelevance": "optional: core, common, or niche; shown as a marker on the topic page",
-  "concept": "Two to four sentences on the idea itself.",
-  "prerequisites": ["dns", "caching"],
-  "lesson": {
-    "why": { "outcome": "After this you can ...", "body": "..." },
-    "mentalModel": { "outcome": "After this you can ...", "body": "...", "diagram": "<svg viewBox=\"0 0 560 300\"><title>...</title>...</svg>" },
-    "howItWorks": { "outcome": "After this you can ...", "steps": [{ "step": "...", "explanation": "..." }], "diagram": "<svg viewBox=\"0 0 560 300\"><title>...</title>...</svg>" },
-    "workedExample": { "outcome": "After this you can ...", "steps": [{ "step": "...", "explanation": "..." }], "diagram": "<svg viewBox=\"0 0 560 300\"><title>...</title>...</svg>" },
-    "mistakesOutcome": "After this you can ...",
-    "checkOutcome": "After this you can ...",
-    "quiz": [{ "question": "...", "options": ["..."], "correct": 0, "why": "...", "wrong": ["..."], "teaches": "why" }],
-    "postsOutcome": "After this you can ...",
-    "differOutcome": "After this you can ...",
-    "exercisesOutcome": "After this you can ...",
-    "exercises": [{ "level": "apply", "prompt": "...", "answer": "...", "tradeoffs": "...", "wrongAnswers": ["..."], "teaches": "how" }],
-    "next": { "outcome": "After this you can ...", "body": "..." }
-  },
-  "posts": [{
-    "id": "cdn-cloudflare", "title": "Post title", "url": "https://...", "company": "Company",
-    "verifiedOn": "2026-10-11", "published": "2024-03-14",
-    "digest": {
-      "problem": "...", "constraints": "...",
-      "walkthrough": [{ "step": "...", "explanation": "..." }],
-      "diagram": "<svg viewBox=\"0 0 560 300\"><title>...</title>...</svg>",
-      "numbers": [{ "value": "...", "meaning": "..." }],
-      "tradeoffs": { "chosen": "...", "rejected": "...", "why": "..." },
-      "failures": "...", "takeaways": "..."
-    }
-  }],
-  "comparison": "How the posts' approaches differ and why.",
-  "glossary": [{ "term": "...", "definition": "..." }],
-  "mistakes": ["...", "...", "..."]
-}
+```
+NEXT_DIST_DIR=.next-build npx next build
+NEXT_DIST_DIR=.next-build node scripts/check-seo.mjs
+rm -rf .next-build
 ```
 
-A new company also needs a logo (`node scripts/make-logos.mjs add`). With Claude Code, the `add-topic` and `add-post` skills walk through all of this.
+Scripts worth knowing:
 
-Before committing:
+| Command | What it does |
+| - | - |
+| `npm test` | Unit tests: content rules, graph layout, quiz shape, and the README numbers and sentences. |
+| `npx tsc --noEmit` and `npm run lint` | Types and lint. |
+| `npm run build` | Static build, then the news, SEO and diagram checks, then the Pagefind index. |
+| `npm run verify:figures` | Checks every figure against its source. Needs the network. |
+| `npm run verify:reads`, `verify:news`, `verify:background` | The same live check for Great reads, What's new and the Background page. |
+| `npm run check:tour` | Drives the guided tours in a browser against a running server. |
+| `npm run check:ui` | Overflow, tooltips, split labels, broken images and layout shift at 1440 and 390 pixels, light and dark. |
+| `npm run readme:stats` | Rewrites the numbers in this README from the content ([how](docs/readme/README.md)). |
 
-- Every prerequisite already exists as a topic.
-- Quiz answers are spread across positions, and explanations quote option text instead of naming letters.
-- "Where they differ" is 2 to 3 short paragraphs: what the posts share, where they diverge, and what the evidence is.
-- The post passes the selection rules above.
-- The digest is written in your own words from the post itself, with no copied passages.
-- Every number is checked against the post. Never estimate or round in a way the post does not.
-- A post over five years old has an `ageNote` saying why it still applies, without claiming details still hold unless a source you opened says so.
+---
 
-## Working with Claude Code
+## Where things live
 
-The project carries its own configuration:
+- `content/` is the course: `topics/`, `learn/`, `background/`, `reads/`, `news/`, one JSON file each.
+- `app/` and `components/` are the routes and the interface.
+- `lib/` loads and checks the content, lays out the graph, and holds the tests.
+- `scripts/` holds the build-time checks and the by-hand verifiers.
+- `docs/` is working records: the verification log, hand checks, routine setup and these screenshots.
+- `.claude/` holds the rules and skills for working on the project with Claude Code; [CLAUDE.md](CLAUDE.md) is the index.
 
-- `CLAUDE.md`: the project-wide standing rules (precedence, honesty and post selection, site feel, architecture, how to work and verify, git and releases). Always loaded.
-- `.claude/rules/*.md`: one file per area (topic pages, learn pages, homepage, graph, motion, SEO, accessibility, tours, background, figures, news, logos, tooling, progress). Each holds the rules and the full specification for its area and loads when a matching file is touched. `CLAUDE.md` has the index.
-- `.claude/skills/`: `add-topic`, `add-post`, `verify-ui` and `release-check`, the repeatable workflows.
-- `.claude/settings.json`: shared permissions for read-only and check commands, two guard hooks (building under a running dev server, hand-editing generated files), a hook that trims test output to the summary and failures, and the plugins the project uses (`vercel` and `agent-skills` are installed but off to keep context small). Personal overrides go in `.claude/settings.local.json`, which is gitignored.
+---
 
-When a change adds or alters a rule, page type, schema, route or convention, the matching rule file and this README are updated in the same commit.
+## Corrections and contributions
 
-## Content and attribution
+Found a mistake? Every page footer has a "Report a mistake" link that fills in the page, or write to [aditya01khandelwal@gmail.com](mailto:aditya01khandelwal@gmail.com?subject=Mistake%20in%20sys101). To have a post removed or a write-up corrected, use the same address.
 
-Every post belongs to its authors. The digests are original write-ups of what each post says, drafted with AI assistance and checked against the originals, and every topic page links to the original. To have a post removed or a digest corrected, email aditya01khandelwal@gmail.com.
+There is no contributing guide yet, so please open an issue or write before sending a pull request. The one kind of pull request with written rules is a What's new update: it may change only `content/news/**/*.json` and `docs/news-state.json`, it is checked against the allowlist already on `main`, and one from a fork is never merged automatically.
 
-## Roadmap
+---
 
-- Capstone case studies
-- Sync reading progress across devices
-- Staleness review driven by link-check results and post age
-- An LLM pipeline (Gemini Flash) to draft digests and comparisons for review
+## About the write-ups
+
+The write-ups are drafted with an AI assistant that reads each source. They have not all been reviewed line by line and may contain errors. When a write-up and the original disagree, trust the original.
+
+The posts belong to their authors and companies, and this personal project is not affiliated with any of them. Company marks beside their names belong to their owners, are never altered, and are shown only to say whose post it is.
 
 ## License
 
-All rights reserved.
-
+There is no license file in this repository, so no license is granted: all rights are reserved. You can read it and fork it on GitHub, but you cannot reuse the code or the write-ups without asking. The posts the write-ups describe belong to their authors.
