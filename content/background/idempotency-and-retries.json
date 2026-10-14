@@ -1,0 +1,67 @@
+{
+  "topic": "idempotency-and-retries",
+  "updatedOn": "2026-10-15",
+  "items": [
+    {
+      "id": "idempotency-token-details",
+      "name": "How a service keeps an idempotency token",
+      "explanation": "Some APIs let the caller supply a unique request identifier, the token. The service records the token and the work in one all-or-nothing step, replies to a repeat with an equivalent answer, and keeps the record for a limited time. Deriving a token from the request's parameters fails when two identical requests are both wanted.",
+      "assumedBy": [
+        {
+          "postId": "aws-timeouts-retries-backoff-2019",
+          "quote": "provide explicit token-based mechanisms to provide idempotency"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Making retries safe with idempotent APIs",
+          "publisher": "Amazon Web Services (Builders' Library)",
+          "url": "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-15"
+        }
+      ]
+    },
+    {
+      "id": "latency-percentiles",
+      "name": "Latency percentiles such as p99.9",
+      "explanation": "A percentile is the latency that a given share of requests finish within. The 99th percentile describes the slowest 1% of requests, which an average hides, and p99.9 is the same idea for the slowest 0.1%.",
+      "assumedBy": [
+        {
+          "postId": "aws-timeouts-retries-backoff-2019",
+          "quote": "we look at the corresponding latency percentile on the downstream service"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Monitoring Distributed Systems (Site Reliability Engineering, chapter 6)",
+          "publisher": "Google",
+          "url": "https://sre.google/sre-book/monitoring-distributed-systems/",
+          "year": "2017",
+          "verifiedOn": "2026-10-15"
+        }
+      ]
+    },
+    {
+      "id": "retry-token-bucket",
+      "name": "Token bucket for limiting retries",
+      "explanation": "A token bucket holds a number of tokens. Each retry spends one and each success puts some back. When the bucket is empty the client returns the error without retrying, so retry traffic stays small while a service is struggling.",
+      "assumedBy": [
+        {
+          "postId": "aws-timeouts-retries-backoff-2019",
+          "quote": "limiting retries locally using a token bucket"
+        }
+      ],
+      "topicPage": "rate-limiting",
+      "sources": [
+        {
+          "title": "AWS SDKs and Tools reference guide: Retry behavior",
+          "publisher": "Amazon Web Services",
+          "url": "https://docs.aws.amazon.com/sdkref/latest/guide/feature-retry-behavior.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-15"
+        }
+      ]
+    }
+  ]
+}

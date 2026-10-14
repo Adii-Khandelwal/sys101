@@ -178,5 +178,13 @@
  "github-mysql-ha-2018|1 or 2": {
   "verdict": "ok",
   "source": "post: \"one or two orchestrator nodes per data center\""
+ },
+ "aws-timeouts-retries-backoff-2019|five layers": {
+  "verdict": "ok",
+  "source": "post: \"a five-deep stack of service calls ... three retries at each layer\""
+ },
+ "aws-timeouts-retries-backoff-2019|three times": {
+  "verdict": "ok",
+  "source": "post: \"three retries at each layer\"; \"first three tries, then nine tries\""
  }
 }

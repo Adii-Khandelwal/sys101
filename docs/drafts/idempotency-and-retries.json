@@ -1,0 +1,27 @@
+{
+  "idempotency-and-retries": {
+    "summary": {
+      "points": [
+        "A retry is only safe when doing the work twice has the same effect as doing it once, which is what idempotent means.",
+        "Retries add load to a dependency that is already failing, so they need a wait that grows, some randomness and a cap on how many are sent.",
+        "Amazon's Builders' Library gives an example where five layers each retrying three times multiply the load on a database by 243.",
+        "Google's SRE book limits retries per request and per client, and lets a backend tell clients not to retry at all."
+      ],
+      "figures": [
+        {
+          "postId": "aws-timeouts-retries-backoff-2019",
+          "row": 3,
+          "label": "243x the load on a database when five layers each retry"
+        },
+        {
+          "postId": "google-sre-handling-overload-2017",
+          "row": 3,
+          "label": "retry growth held to 1.1x by a 10% client retry budget"
+        }
+      ]
+    },
+    "prerequisiteReasons": {
+      "circuit-breakers": "Circuit breakers show that retries add load to a dependency that is already failing, which is the problem that retry limits and backoff exist to solve."
+    }
+  }
+}

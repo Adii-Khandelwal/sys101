@@ -1,0 +1,341 @@
+{
+  "slug": "idempotency-and-retries",
+  "promise": "After this you can explain what idempotent means, how a key lets a client retry safely, and how backoff, jitter and retry budgets keep retries from adding to an overload.",
+  "before": {
+    "prerequisites": [
+      "circuit-breakers"
+    ],
+    "terms": [
+      {
+        "term": "Request",
+        "definition": "A message a client sends to a server asking it to do something."
+      },
+      {
+        "term": "Timeout",
+        "definition": "How long a caller waits for an answer before giving up."
+      },
+      {
+        "term": "Dependency",
+        "definition": "A service that another service calls in order to do its own work."
+      }
+    ],
+    "note": "Read Circuit Breakers and Load Shedding first: it shows why a retry adds load to a dependency that is already failing. Message Queues also helps, because a message delivered twice is a retry. The terms below are enough to begin."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "A call across a network can fail in a way the caller cannot read: it sends a request, hears nothing back, and has no idea whether the work was done. What is safe to do next depends on whether the call can be repeated without harm. The HTTP specification calls a method idempotent when the intended effect on the server of several identical requests is the same as the effect of one. By that definition PUT, DELETE and the safe methods are idempotent [[rfc9110]].",
+        "The specification gives the reason the property matters. An idempotent request can be repeated automatically if a communication failure happens before the client reads the response, because repeating it has the same intended effect even if the first request succeeded, though the response might differ [[rfc9110]]. A client should not automatically retry a request with a non-idempotent method unless it knows the request is actually idempotent or can detect that the original was never applied [[rfc9110]].",
+        "Cloud providers explain the same idea for their own APIs. Amazon's EC2 guide says an operation can time out or hit a server problem after the request already returned a result, which makes it hard to tell whether it succeeded and can lead to more resources than intended. It defines idempotency as ensuring that an API request completes no more than one time [[ec2-idempotency]]. Google's Cloud Storage guide says that when you receive a retryable response you should consider the idempotency of the request, because retrying requests that are not idempotent can lead to race conditions and other conflicts [[gcs-retry-strategy]]."
+      ],
+      "terms": [
+        {
+          "term": "Idempotent",
+          "definition": "Describes a request whose intended effect on the server is the same whether it is made once or several times."
+        },
+        {
+          "term": "Safe method",
+          "definition": "An HTTP method, such as GET, that does not ask the server to change anything. The specification counts safe methods as idempotent."
+        },
+        {
+          "term": "Retry",
+          "definition": "Sending a failed or unanswered request again."
+        },
+        {
+          "term": "Transient error",
+          "definition": "A failure expected to go away on its own, so that trying again may succeed."
+        },
+        {
+          "term": "Side effect",
+          "definition": "A change a request makes beyond returning an answer, such as creating a resource."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rfc9110",
+          "section": "9.2.2 Idempotent Methods",
+          "what": "The definition of idempotent, which methods have it, and when a client may retry automatically."
+        },
+        {
+          "source": "ec2-idempotency",
+          "section": "The opening paragraphs of Ensuring idempotency in Amazon EC2 API requests",
+          "what": "Why a timeout leaves it unclear whether the work was done, and what idempotency promises."
+        }
+      ],
+      "canNow": [
+        "Say what idempotent means for a request.",
+        "Say why a lost reply makes repeating a request risky.",
+        "Say when a client may retry on its own, in the HTTP specification's words."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "Methods such as PUT cover many cases. For an operation that must happen once, such as creating a resource or charging a card, APIs add a key that the client supplies. EC2 calls it a client token: a unique, case-sensitive string of up to 64 ASCII characters, specified in the request. If you retry a request that completed successfully using the same client token and the same parameters, the retry succeeds without performing any further actions [[ec2-idempotency]]. If the token is the same but one or more parameters differ, other than the Region or Availability Zone, the retry fails with an IdempotentParameterMismatch error [[ec2-idempotency]].",
+        "Stripe describes the same idea as an idempotency key, which the client generates and which the server uses to recognize later retries of the same request. For API v1, Stripe saves the status code and body of the first request made with a key, after the endpoint begins executing, and retries with the same key return the saved response, including 500 errors. Keys can be up to 255 characters long, and Stripe suggests V4 UUIDs or another random string with enough entropy to avoid collisions [[stripe-idempotent-requests]]. Its idempotency layer compares the incoming parameters with those of the original request and returns an error if they differ [[stripe-idempotent-requests]].",
+        "Both pages put the key in the client's hands: one key for one intended action, reused on every retry, with the server keeping the key and the outcome. Stripe tells you not to use sensitive data, such as an email address, as a key [[stripe-idempotent-requests]]. It also says that for API v1 it may remove keys once they are at least 24 hours old, and that a request that reuses a key after the original was removed is treated as new [[stripe-idempotent-requests]].",
+        "A saved result exists only if the request got far enough to produce one. Stripe says that for API v1 it saves results only after the endpoint begins executing, so a request that fails parameter validation, or that conflicts with another request still running, saves nothing and can be retried [[stripe-idempotent-requests]]."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 210\" role=\"img\" aria-labelledby=\"dg-learn-ir-how-t\" class=\"dg\"><title id=\"dg-learn-ir-how-t\">A client sends a request with a key. The server checks the key: a new key means do the work and save the result, and a key it has seen means return the saved result.</title><defs><marker id=\"dg-learn-ir-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"40\" width=\"120\" height=\"52\" class=\"dg-box\"/><text x=\"72\" y=\"62.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Request</text><text x=\"72\" y=\"78.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">with a key</text><rect x=\"190\" y=\"40\" width=\"130\" height=\"52\" class=\"dg-box dg-accent\"/><text x=\"255\" y=\"62.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Server checks</text><text x=\"255\" y=\"78.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">the key</text><rect x=\"380\" y=\"18\" width=\"168\" height=\"46\" class=\"dg-box\"/><text x=\"464\" y=\"37.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">New key</text><text x=\"464\" y=\"53.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">do the work, save it</text><rect x=\"380\" y=\"84\" width=\"168\" height=\"46\" class=\"dg-box\"/><text x=\"464\" y=\"103.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Seen key</text><text x=\"464\" y=\"119.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">return the saved result</text><path d=\"M132,66 L190,66\" class=\"dg-line\" marker-end=\"url(#dg-learn-ir-how-a)\"/><path d=\"M320,58 L380,41\" class=\"dg-line\" marker-end=\"url(#dg-learn-ir-how-a)\"/><path d=\"M320,74 L380,107\" class=\"dg-line\" marker-end=\"url(#dg-learn-ir-how-a)\"/><text x=\"280\" y=\"160\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Same key and different parameters is refused (EC2 and Stripe both say so).</text><text x=\"280\" y=\"180\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Stripe and EC2 keep the key and result on the server for a limited time.</text></svg>",
+      "terms": [
+        {
+          "term": "Client token",
+          "definition": "EC2's name for the unique string a caller sends so a retry of the same request can be recognized."
+        },
+        {
+          "term": "Idempotency key",
+          "definition": "Stripe's name for the unique value a client generates and reuses on every retry of one request."
+        },
+        {
+          "term": "IdempotentParameterMismatch",
+          "definition": "The error EC2 returns when a retry uses a token it has seen but with different parameters."
+        },
+        {
+          "term": "Saved response",
+          "definition": "The status code and body Stripe stores for the first request made with a key and returns to later retries."
+        },
+        {
+          "term": "Entropy",
+          "definition": "How unpredictable a random value is. A key with enough of it is unlikely to collide with another."
+        }
+      ],
+      "reading": [
+        {
+          "source": "ec2-idempotency",
+          "section": "Idempotency in Amazon EC2",
+          "what": "How a client token works, and the error for a changed parameter."
+        },
+        {
+          "source": "stripe-idempotent-requests",
+          "section": "Idempotent requests",
+          "what": "What Stripe saves for a key, how long, and what it does when parameters differ."
+        }
+      ],
+      "canNow": [
+        "Say what a client sends to make a retry recognizable.",
+        "Say what the server does with a key it has seen, and with one it has not.",
+        "Say what happens when a key is reused with different parameters."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "A key makes a repeat safe. It does not say how often or how fast to retry. The AWS SDK reference gives one concrete answer. Its standard mode retries with exponential backoff and jitter, using shorter delays for transient errors and longer ones for throttling errors [[aws-sdk-retry-behavior]]. The page's formula for a retry delay is random(0, 1) times the smaller of 20,000 ms and base_delay times 2 to the power of the retry number, where the base delay is 50 ms for transient errors and 1,000 ms for throttling errors, and no single delay exceeds 20 seconds [[aws-sdk-retry-behavior]].",
+        "The same page describes a retry quota, a token bucket that takes tokens for each retry and gives them back when requests succeed. When the tokens run out the SDK returns the error without retrying, so the application fails fast [[aws-sdk-retry-behavior]]. The default is 3 total attempts, one initial request and up to two retries, and the DynamoDB clients default to 4 [[aws-sdk-retry-behavior]]. The page also says the behavior it describes requires opting in, by setting AWS_NEW_RETRIES_2026=true, until it becomes the default, and that without it the SDK uses pre-2026 behavior that differs in backoff timing, retry quota costs and service-specific defaults [[aws-sdk-retry-behavior]].",
+        "Google's SRE book describes limits that count retries instead. A per-request retry budget allows up to three attempts, and a per-client budget retries a request only while retries are below 10% of that client's requests. The chapter works through a worst case: with the first budget alone, request volume grows to just below three times the attempted rate, and layering the second brings the growth to 1.1x in the general case [[google-sre-overload]]. It adds that a backend can answer with an overloaded, don't-retry error, and that in a stack of services only the layer directly above a rejection should retry [[google-sre-overload]]. That is Google's guidance, not a standard.",
+        "Amazon's engineer describes what idempotency costs a service. It records the token and all the changes the request makes in one all-or-nothing step, replies to a repeat with a response equivalent to the first, and keeps the record only for a limited time, which for EC2 instances is the life of the resource plus a margin [[aws-making-retries-safe]]. This is AWS's view of its own design."
+      ],
+      "terms": [
+        {
+          "term": "Exponential backoff",
+          "definition": "Waiting longer after each failed attempt, with the wait growing by a fixed factor."
+        },
+        {
+          "term": "Jitter",
+          "definition": "Randomness added to a wait. In the SDK formula it is the random(0, 1) factor."
+        },
+        {
+          "term": "Retry quota",
+          "definition": "The AWS SDK's token bucket that limits how many retries the client may spend."
+        },
+        {
+          "term": "Retry budget",
+          "definition": "A limit on retries, such as a number of attempts per request or a share of requests per client."
+        },
+        {
+          "term": "Max attempts",
+          "definition": "The total number of tries, counting the first request."
+        }
+      ],
+      "reading": [
+        {
+          "source": "aws-sdk-retry-behavior",
+          "section": "How retries work: the backoff formula and the retry quota",
+          "what": "A concrete backoff formula and a token-bucket limit on retries."
+        },
+        {
+          "source": "google-sre-overload",
+          "section": "Deciding to Retry",
+          "what": "Per-request and per-client retry budgets, and the worst-case arithmetic."
+        }
+      ],
+      "canNow": [
+        "Write the AWS backoff formula and say what each part does.",
+        "Say what a retry quota or retry budget limits.",
+        "Say why only one layer of a stack should retry."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "Deciding what to retry matters as much as how. EC2's table recommends not retrying a 200, which succeeded, or a 400-series response, which means a problem with the request. It recommends retrying 500-series responses, which it calls generally transient, with an appropriate backoff strategy [[ec2-idempotency]]. Google's Cloud Storage guide lists HTTP 408, 429 and 5xx responses, socket timeouts and TCP disconnects as transient problems that are useful to retry [[gcs-retry-strategy]].",
+        "Not every request is idempotent all the time. Google's guide describes conditionally idempotent requests, which are idempotent only when they carry a precondition, such as IfMetagenerationMatch or an ETag, and says they should be retried by default only when the condition passes [[gcs-retry-strategy]]. Its Go example sets an initial retry delay of 2 seconds, subject to random jitter, a maximum delay of 60 seconds and a multiplier of 3 [[gcs-retry-strategy]]. Those are the example's values, not recommendations.",
+        "AWS's Builders' Library says retries are selfish: a retry spends more of the server's time for a better chance of success, which is fine when failures are rare and harmful when overload causes them. Its example is a stack five deep with three retries at each layer, where a failing database would see 243x the load, and its practice is to retry at a single point in the stack [[aws-timeouts-retries]]. It also says circuit breakers add behavior that is hard to test and can lengthen recovery, so it limits retries locally with a token bucket instead [[aws-timeouts-retries]]. That is AWS's view; the Circuit Breakers topic here shows what a breaker does in a real incident.",
+        "Idempotency has costs too. AWS says that building a service to meet the contract has cost and complexity, and is not right for every solution [[aws-making-retries-safe]]. It also says that deriving a token from the request's parameters fails where two identical requests are both wanted, such as launching two identical EC2 instances, which is why it prefers a caller-supplied identifier [[aws-making-retries-safe]]."
+      ],
+      "terms": [
+        {
+          "term": "Client error",
+          "definition": "A 400-series response: the request itself has a problem, so repeating it unchanged will fail again."
+        },
+        {
+          "term": "Server error",
+          "definition": "A 500-series response: the server had a problem, which is often transient."
+        },
+        {
+          "term": "Conditional idempotency",
+          "definition": "Idempotent only when a request carries a precondition that must hold."
+        },
+        {
+          "term": "Retry amplification",
+          "definition": "Retries at several layers multiplying one another so a small failure becomes a large load."
+        }
+      ],
+      "reading": [
+        {
+          "source": "ec2-idempotency",
+          "section": "Retry recommendations for idempotent requests",
+          "what": "Which responses to retry and which not to."
+        },
+        {
+          "source": "gcs-retry-strategy",
+          "section": "Overview, Idempotency, and the retry code examples",
+          "what": "Which responses are retryable, conditional idempotency, and an example backoff configuration."
+        },
+        {
+          "source": "aws-timeouts-retries",
+          "section": "Retries and backoff, and Jitter",
+          "what": "AWS's view of why retries are selfish, and why it retries at one layer."
+        }
+      ],
+      "canNow": [
+        "Say which responses are worth retrying and which are not.",
+        "Say why a request may be idempotent only under a condition.",
+        "Say what retry amplification is and one way to avoid it."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "Any failed request can safely be sent again.",
+      "truth": "The HTTP specification says a client should not automatically retry a request with a non-idempotent method unless it knows the request is idempotent or can detect that the original was never applied [[rfc9110]]."
+    },
+    {
+      "myth": "An idempotent request always gets the same response.",
+      "truth": "The specification says repeating an idempotent request has the same intended effect, though the response might differ [[rfc9110]], and EC2 says a retry's result might contain updated information such as the current creation status [[ec2-idempotency]]."
+    },
+    {
+      "myth": "An idempotency key is the same thing as a hash of the request.",
+      "truth": "AWS says deriving a token from the parameters fails where identical requests are both wanted, and prefers a caller-supplied identifier [[aws-making-retries-safe]]."
+    },
+    {
+      "myth": "More retries make a call more likely to succeed overall.",
+      "truth": "AWS says retries are selfish and can keep load high after a problem has passed [[aws-timeouts-retries]], and Google's chapter caps attempts at three per request and retries at 10% per client [[google-sre-overload]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These are examples as printed on the vendors' pages, not things to run casually: both create something real, in a cloud account or a payments test account [[ec2-idempotency]] [[stripe-idempotent-requests]]. Running the same command twice with the same token or key is the point of the exercise. The values in them are the pages' own placeholders.",
+    "commands": [
+      {
+        "command": "aws ec2 run-instances --image-id ami-b232d0db --count 1 --key-name my-key-pair --client-token 550e8400-e29b-41d4-a716-446655440000",
+        "shows": "Launches one instance with a client token. EC2's page says a retry with the same token and the same parameters succeeds without launching another.",
+        "source": "ec2-idempotency",
+        "note": "The image id, key name and token are the page's example values.",
+        "warning": "This launches a real EC2 instance, which costs money until you terminate it. Run it only in a test account, and terminate the instance afterwards."
+      },
+      {
+        "command": "curl https://api.stripe.com/v1/customers \\\n  -u sk_test_...sk_test_...: \\\n  -H \"Idempotency-Key: KG5LxwFBepaKHyUD\" \\\n  -d description=\"My First Test Customer (created for API docs at https://docs.stripe.com/api)\"",
+        "shows": "Creates a customer with an idempotency key. Stripe's page says that for API v1 a retry with the same key returns the saved response.",
+        "source": "stripe-idempotent-requests",
+        "note": "The page's example key and description; your own test secret key replaces the placeholder.",
+        "warning": "This creates a customer in your Stripe account. Use a test-mode key only."
+      }
+    ]
+  },
+  "next": "Go back to the Idempotency and Retries topic page for the worked example and the quiz, then read the two posts: [Amazon's Builders' Library](/topic/idempotency-and-retries#aws-timeouts-retries-backoff-2019) on timeouts, backoff, jitter and why retries at every layer multiply load, and [Google's SRE book](/topic/idempotency-and-retries#google-sre-handling-overload-2017) on budgets that limit retries.",
+  "sources": [
+    {
+      "id": "rfc9110",
+      "title": "RFC 9110: HTTP Semantics",
+      "url": "https://www.rfc-editor.org/rfc/rfc9110",
+      "publisher": "IETF",
+      "kind": "RFC",
+      "year": "2022",
+      "verifiedOn": "2026-10-15",
+      "note": "Section 9.2.2."
+    },
+    {
+      "id": "ec2-idempotency",
+      "title": "Ensuring idempotency in Amazon EC2 API requests (Amazon EC2 developer guide)",
+      "url": "https://docs.aws.amazon.com/ec2/latest/devguide/ec2-api-idempotency.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "stripe-idempotent-requests",
+      "title": "Idempotent requests (Stripe API reference)",
+      "url": "https://docs.stripe.com/api/idempotent_requests",
+      "publisher": "Stripe",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15",
+      "note": "The page describes API v1 and API v2 separately; this page uses the API v1 behavior."
+    },
+    {
+      "id": "gcs-retry-strategy",
+      "title": "Retry strategy (Cloud Storage)",
+      "url": "https://docs.cloud.google.com/storage/docs/retry-strategy",
+      "publisher": "Google Cloud",
+      "kind": "Vendor documentation",
+      "year": "page shows last updated 2026-10-13",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "aws-sdk-retry-behavior",
+      "title": "Retry behavior (AWS SDKs and Tools reference guide)",
+      "url": "https://docs.aws.amazon.com/sdkref/latest/guide/feature-retry-behavior.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15",
+      "note": "The page says the behavior it describes requires opting in until it becomes the default."
+    },
+    {
+      "id": "aws-making-retries-safe",
+      "title": "Making retries safe with idempotent APIs (Amazon Builders' Library)",
+      "url": "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor article",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15",
+      "note": "The page shows no date; AWS's own announcement page says it was posted on Jan 15, 2021. Every claim taken from it is AWS's view."
+    },
+    {
+      "id": "aws-timeouts-retries",
+      "title": "Timeouts, retries, and backoff with jitter (Amazon Builders' Library)",
+      "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor article",
+      "year": "2019",
+      "verifiedOn": "2026-10-15",
+      "note": "The page shows Published Dec 5, 2019 and Last modified Dec 5, 2019. Every claim taken from it is AWS's view."
+    },
+    {
+      "id": "google-sre-overload",
+      "title": "Handling Overload (Site Reliability Engineering, chapter 21)",
+      "url": "https://sre.google/sre-book/handling-overload/",
+      "publisher": "Google",
+      "kind": "Google SRE book chapter (guidance, not a specification)",
+      "year": "2017",
+      "verifiedOn": "2026-10-15",
+      "note": "The page shows a 2017 copyright line. Paraphrased and linked only; none of its text is copied."
+    }
+  ]
+}
