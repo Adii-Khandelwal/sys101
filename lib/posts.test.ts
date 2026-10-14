@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { topicOrder } from "./order";
 import { buildPostsIndex, organization } from "./posts";
+import { NOT_COMPANIES } from "./organization";
 import { sourceKinds } from "./sourceKinds";
 import { postsDescription } from "./site";
 import { getAllTopics } from "./topics";
@@ -14,6 +15,11 @@ const urls = new Set(entries.map((p) => p.url));
 const urlsIn = (rows: { url: string }[]) => rows.map((r) => r.url);
 
 describe("posts index", () => {
+  it("every name the homepage calls a non-company is a real organization", () => {
+    const orgs = new Set(entries.map((p) => organization(p.company)));
+    for (const name of NOT_COMPANIES) expect(orgs.has(name)).toBe(true);
+  });
+
   it("counts match the data", () => {
     expect(d.total).toBe(urls.size);
     expect(d.companyCount).toBe(new Set(entries.map((p) => organization(p.company))).size);

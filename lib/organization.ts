@@ -5,4 +5,5 @@ export const organization = (company: string) => (company.startsWith("Amazon") ?
 export const MIXED_LABEL: Record<string, string> = { Amazon: "Amazon and AWS" };
 
 /** Listed organizations that are not companies, so the homepage says so instead of calling them all companies. */
+// shortcut: the homepage note is worded for one name, add plural wording when a second is listed.
 export const NOT_COMPANIES = ["etcd (CNCF)"];
