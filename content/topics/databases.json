@@ -7,7 +7,6 @@
   "prerequisites": [],
   "summary": {
     "points": [
-      "A database keeps data safe across crashes and lets many clients read and change it at once.",
       "A change is written to a log before it touches the data files, and a commit is the moment that log record is safely on disk.",
       "Uber's 2016 comparison found that how a log is shipped decides what replicas can do: physical replication copies disk pages, logical copies row changes.",
       "GitHub shows replication is also how a fleet is upgraded and rolled back, so plan the way back first."

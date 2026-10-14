@@ -9,7 +9,6 @@
   ],
   "summary": {
     "points": [
-      "Publish-subscribe lets a producer announce that something happened without knowing who needs to hear it: every subscription gets its own copy of each message.",
       "A queue hands each message to one consumer; pub-sub hands it to every subscription, and only inside a subscription do consumers share the work.",
       "Spotify gives each kind of message its own topic and pipeline, so a noisy or blocked kind delays only itself.",
       "Uber's Consumer Proxy gives up order inside a partition so any worker can take any message, which suits work where order does not matter."

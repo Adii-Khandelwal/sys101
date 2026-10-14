@@ -9,7 +9,6 @@
   ],
   "summary": {
     "points": [
-      "Replication keeps copies of a database on several machines so reads can spread out and a failed primary can be replaced.",
       "The hard questions are when a write counts as safe, and how to pick and announce a new primary without two machines accepting writes at once.",
       "Meta put promotions and membership changes into the replication log, which it says gives provable safety across both.",
       "GitHub gives each part one job, decides by quorum across data centers, and never depends on the failed node to help."

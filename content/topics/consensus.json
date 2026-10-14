@@ -10,7 +10,6 @@
   ],
   "summary": {
     "points": [
-      "Consensus is how a group of replicas agree on one value, or one order of values, even though machines crash and messages are lost.",
       "A leader appends each change to a replicated log, and a change counts as committed once a majority has stored it.",
       "Any two majorities overlap, so a minority of nodes can fail and the system still agrees; the cost is a majority round trip on every write.",
       "The etcd guide says commit latency has a floor set by the network round trip between members plus a durable disk write."
