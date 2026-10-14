@@ -119,8 +119,8 @@ export function trackFly(h1: HTMLElement, root: HTMLElement, onProgress?: (p: nu
         letter.style.opacity = String(1 - q);
         continue;
       }
-      if (shown >= 1) {
-        // Arrived: pin the letter to the viewport. A letter that still scrolls with the page lags the scroll by a frame and jitters.
+      if (q >= 1) {
+        // This letter has arrived: pin it to the viewport right now, not when the easing ends, so it never gets re-aimed while the page scrolls. A letter that still scrolls with the page lags the scroll by a frame and jitters.
         if (!letter.dataset.docked) {
           slots[i].style.width = `${g.w}px`; // the empty slot keeps the heading's line from reflowing
           slots[i].style.height = `${g.h}px`;
