@@ -4,9 +4,12 @@ import { describe, expect, it } from "vitest";
 import marks from "../content/logos.json";
 import { LOGO_FILES } from "./logoFiles";
 import { organization } from "./organization";
+import { getAllReads } from "./reads";
 import { getAllTopics } from "./topics";
 
-const orgs = [...new Set(getAllTopics().flatMap((t) => t.posts.map((p) => organization(p.company))))];
+const topics = getAllTopics();
+const reads = getAllReads(topics.map((t) => t.slug));
+const orgs = [...new Set([...topics.flatMap((t) => t.posts.map((p) => p.company)), ...reads.map((r) => r.company)].map(organization))];
 const file = (src: string) => path.join(process.cwd(), "public", src);
 
 describe("company logos", () => {

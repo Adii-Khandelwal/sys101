@@ -1,0 +1,17 @@
+{
+  "id": "mapreduce",
+  "title": "MapReduce: Simplified Data Processing on Large Clusters",
+  "company": "Google",
+  "kind": "paper",
+  "published": "2004",
+  "theme": "Platforms and building blocks",
+  "url": "https://research.google/pubs/mapreduce-simplified-data-processing-on-large-clusters/",
+  "whyItMatters": "Presents a programming model where users write map and reduce functions while the run-time system handles partitioning, scheduling and machine failures.",
+  "influence": "writeup",
+  "evidence": [
+    "Users specify a map function"
+  ],
+  "topics": [],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

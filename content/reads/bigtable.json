@@ -1,0 +1,24 @@
+{
+  "id": "bigtable",
+  "title": "Bigtable: A Distributed Storage System for Structured Data",
+  "company": "Google",
+  "kind": "paper",
+  "published": "2006",
+  "theme": "Storing data",
+  "url": "https://research.google/pubs/bigtable-a-distributed-storage-system-for-structured-data/",
+  "whyItMatters": "Describes how Google stores structured data across thousands of commodity servers, and Apache HBase says it offers Bigtable-like capabilities on top of Hadoop.",
+  "influence": "stated",
+  "claim": {
+    "phrase": "Bigtable-like capabilities on top of Hadoop and HDFS",
+    "url": "https://hbase.apache.org/"
+  },
+  "evidence": [
+    "petabytes of data across thousands of commodity servers"
+  ],
+  "topics": [
+    "sharding",
+    "indexing"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "h3",
+  "title": "H3: Uber's Hexagonal Hierarchical Spatial Index",
+  "company": "Uber",
+  "kind": "post",
+  "published": "2018-06-27",
+  "theme": "Platforms and building blocks",
+  "url": "https://www.uber.com/en-US/blog/h3/",
+  "whyItMatters": "Explains why Uber buckets city data into hexagons and how it built H3, a hierarchical global grid, which the post says it open sourced earlier that year.",
+  "influence": "stated",
+  "claim": {
+    "phrase": "we open sourced H3 on Github"
+  },
+  "evidence": [
+    "hexagons minimize the quantization error introduced when users move through a city"
+  ],
+  "topics": [],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "stripe-idempotency",
+  "title": "Designing robust and predictable APIs with idempotency",
+  "company": "Stripe",
+  "kind": "post",
+  "published": "2017-02-22",
+  "theme": "Traffic and resilience",
+  "url": "https://stripe.com/blog/idempotency",
+  "whyItMatters": "Explains how idempotent endpoints let a client retry safely after an ambiguous network failure, and how Stripe designs its API around that idea.",
+  "influence": "writeup",
+  "evidence": [
+    "called any number of times while guaranteeing that side effects only occur once"
+  ],
+  "topics": [
+    "event-driven-architecture",
+    "distributed-transactions"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

@@ -1,0 +1,24 @@
+{
+  "id": "maglev",
+  "title": "Maglev: A Fast and Reliable Software Network Load Balancer",
+  "company": "Google",
+  "kind": "paper",
+  "published": "2016",
+  "theme": "Traffic and resilience",
+  "url": "https://research.google/pubs/maglev-a-fast-and-reliable-software-network-load-balancer/",
+  "whyItMatters": "Describes Google's software network load balancer, and Envoy's documentation says its Maglev balancer uses the consistent hashing algorithm described in this paper.",
+  "influence": "stated",
+  "claim": {
+    "phrase": "It uses the algorithm described in section 3.4 of this paper",
+    "url": "https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/load_balancers"
+  },
+  "evidence": [
+    "Maglev is Google's network load balancer"
+  ],
+  "topics": [
+    "load-balancing",
+    "consistent-hashing"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

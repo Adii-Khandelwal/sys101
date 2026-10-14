@@ -1,0 +1,20 @@
+{
+  "id": "netflix-resilient-api",
+  "title": "Making the Netflix API More Resilient",
+  "company": "Netflix",
+  "kind": "post",
+  "published": "2011-12-08",
+  "theme": "Traffic and resilience",
+  "url": "https://netflixtechblog.com/making-the-netflix-api-more-resilient-a8ec62159c2d",
+  "whyItMatters": "Describes how Netflix restructured its API so that a failing service dependency triggers a fallback instead of breaking playback, using circuit breakers.",
+  "influence": "writeup",
+  "evidence": [
+    "graceful fallback mechanisms to kick in when a service dependency fails"
+  ],
+  "topics": [
+    "circuit-breakers",
+    "failover"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

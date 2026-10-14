@@ -1,0 +1,18 @@
+{
+  "id": "figma-multiplayer",
+  "title": "How Figma's multiplayer technology works",
+  "company": "Figma",
+  "kind": "post",
+  "published": "2019-10-16",
+  "theme": "Platforms and building blocks",
+  "url": "https://www.figma.com/blog/how-figmas-multiplayer-technology-works/",
+  "whyItMatters": "Shows how Figma built its own multiplayer editing system instead of using operational transforms, which it judged unnecessarily complex for its problem.",
+  "influence": "writeup",
+  "evidence": [
+    "we didn't want to use operational transforms",
+    "OTs were unnecessarily complex for our problem space"
+  ],
+  "topics": [],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

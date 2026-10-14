@@ -6,6 +6,8 @@ import { useAllProgress } from "@/lib/progress";
 import CompanyLogo from "./CompanyLogo";
 import type { PostRow, PostsIndex as Data } from "@/lib/posts";
 import { sourceKinds } from "@/lib/sourceKinds";
+import { matchesAll } from "@/lib/searchMatch";
+import { focusFirstResult, useSlashFocus } from "@/lib/useSlashFocus";
 
 const VIEWS = [
   { id: "topic", label: "By topic" },
@@ -17,7 +19,7 @@ type View = (typeof VIEWS)[number]["id"];
 // Runs as the page parses, so the chosen view shows with no flash. A #company or #topic link opens the view that holds it.
 const PICK_VIEW = `(function(){var d=document.documentElement,q=new URLSearchParams(location.search).get("view"),v=["topic","company","year"].indexOf(q)>-1?q:null,h=decodeURIComponent(location.hash.slice(1)),e=h&&document.getElementById(h);if(!v&&e){var s=e.closest("[data-view]");if(s)v=s.getAttribute("data-view")}d.dataset.postsView=v||"topic";if(e)e.scrollIntoView()})()`;
 
-const matches = (p: PostRow, q: string) => !q || `${p.title} ${p.company}`.toLowerCase().includes(q);
+const matches = (p: PostRow, q: string) => !q || matchesAll(`${p.title} ${p.company}`, q);
 
 /**
  * The posts index. All three views are in the server-rendered HTML; CSS shows the one named by
@@ -42,18 +44,7 @@ export default function PostsIndex({ data }: { data: Data }) {
     };
   }, []);
 
-  // "/" focuses the box, unless the reader is already typing or holds a modifier.
-  useEffect(() => {
-    const onSlash = (e: KeyboardEvent) => {
-      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
-      const el = e.target as HTMLElement | null;
-      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
-      e.preventDefault();
-      inputRef.current?.focus();
-    };
-    window.addEventListener("keydown", onSlash);
-    return () => window.removeEventListener("keydown", onSlash);
-  }, []);
+  useSlashFocus(inputRef);
 
   const [current, setCurrent] = useState("");
 
@@ -188,7 +179,7 @@ export default function PostsIndex({ data }: { data: Data }) {
               spellCheck={false}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Escape" && (setQuery(""), e.currentTarget.blur())}
+              onKeyDown={(e) => (e.key === "Escape" ? (setQuery(""), e.currentTarget.blur()) : e.key === "Enter" && focusFirstResult(".posts-title"))}
               aria-describedby="posts-filter-status"
               aria-keyshortcuts="/"
             />

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import JsonLd from "@/components/JsonLd";
 import PageUpdated from "@/components/PageUpdated";
 import PostsIndex from "@/components/PostsIndex";
@@ -34,7 +35,7 @@ export default function Posts() {
       <div data-pagefind-body>
         <h1 data-pagefind-meta="title">Posts</h1>
         <p className="posts-lead">
-          Every engineering post the topics are built on. Each row opens the section of our topic page that explains it; the original is linked beside it.
+          Every engineering post the topics are built on. Each row opens the section of our topic page that explains it; the original is linked beside it. <Link href="/reads">Great reads</Link> are kept apart.
         </p>
       </div>
       <PostsIndex data={data} />

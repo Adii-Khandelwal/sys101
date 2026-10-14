@@ -1,0 +1,21 @@
+{
+  "id": "zanzibar",
+  "title": "Zanzibar: Google's Consistent, Global Authorization System",
+  "company": "Google",
+  "kind": "paper",
+  "published": "2019",
+  "theme": "Platforms and building blocks",
+  "url": "https://research.google/pubs/zanzibar-googles-consistent-global-authorization-system/",
+  "whyItMatters": "Presents Google's global system for storing and evaluating access control lists, and the OpenFGA project says its authorization engine is inspired by Zanzibar.",
+  "influence": "stated",
+  "claim": {
+    "phrase": "is a high-performance, flexible authorization/permission engine inspired by",
+    "url": "https://raw.githubusercontent.com/openfga/openfga/main/README.md"
+  },
+  "evidence": [
+    "a global system for storing and evaluating access control lists"
+  ],
+  "topics": [],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

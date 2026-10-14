@@ -12,6 +12,9 @@ export function finishedWords(q: string) {
   return /\s$/.test(q) ? words : words.slice(0, -1);
 }
 
+/** The filter boxes' match: every word the reader typed starts a word of the text, so "uber" never matches "Kubernetes". */
+export const matchesAll = (text: string, query: string) => containsAll(text, query.toLowerCase().split(/\s+/).filter(Boolean));
+
 export function containsAll(text: string, words: string[]) {
   return words.every((w) => new RegExp(`(^|[^\\p{L}\\p{N}])${escape(w)}`, "iu").test(text));
 }

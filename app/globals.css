@@ -104,9 +104,11 @@ h3,
   scroll-margin-top: 32px;
 }
 
+/* Links are not underlined: where one stands on its own (a list, a heading, a label, the footer) the colour shift on hover and
+   the layout say "link". Links inside running sentences keep an underline below, because rust against ink is under 3:1. */
 a {
   color: inherit;
-  text-decoration-color: var(--rule);
+  text-decoration: none;
   text-underline-offset: 3px;
 }
 
@@ -120,8 +122,14 @@ a {
 /* Links inside running text share the body's colour, so the underline is their only cue: draw it in --ink-soft
    (6.4:1 light, 6.5:1 dark against the paper) instead of the faint --rule that lists of links use. A colour change
    cannot do it: rust against ink is 2.5:1 light and 2.8:1 dark, under the 3:1 that WCAG 1.4.1 asks for. */
-:is(p, dd, blockquote) a:not(.text-button, .label) {
+:is(p, dd, blockquote) a:not(.text-button, .label, .cta, .footer-group a, .explain a, .inside-source a, .label a) {
+  text-decoration: underline;
   text-decoration-color: var(--ink-soft);
+}
+
+/* Great reads: no link is underlined, not even in the lead (the owner's choice for this page). */
+.reads-page a[href] {
+  text-decoration: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -292,6 +300,13 @@ h1[tabindex="-1"]:focus {
   font-size: 20px;
   text-decoration: none;
   transition: transform var(--dur-fast) var(--ease-out);
+}
+
+/* The global a:hover turns links rust; on the rust button that made the text vanish, so the label keeps its colour. */
+@media (hover: hover) and (pointer: fine) {
+  .cta:hover {
+    color: var(--paper);
+  }
 }
 
 .cta:active {
@@ -3513,7 +3528,8 @@ html {
   display: flex;
   gap: 4px 20px;
 }
-.posts-views a {
+.posts-views a,
+.posts-views button {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
@@ -3521,11 +3537,22 @@ html {
   text-decoration: none;
 }
 @media (hover: hover) and (pointer: fine) {
-  .posts-views a:hover {
+  .posts-views a:hover,
+  .posts-views button:hover {
     color: var(--ink);
   }
 }
-.posts-views a[aria-current="page"] {
+.posts-views button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.posts-views a[aria-current="page"],
+.posts-views button[aria-pressed="true"] {
   color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 6px;
@@ -3648,6 +3675,124 @@ html[data-posts-view] .posts-view-h {
   .posts-end { grid-column: auto; grid-area: end; flex-direction: row; align-items: center; gap: 16px; }
   .posts-views { gap: 4px 14px; }
   .posts-search { flex-basis: 100%; }
+}
+
+/* Great reads (/reads): rows reuse the posts list; year | title, company and why it matters | original link. */
+.dossier .reads-topicbar {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  column-gap: 22px;
+  margin-top: 4px;
+}
+.reads-topicbar-label {
+  margin: 20px 0 0;
+}
+/* Quiet by default: small mono text in the soft ink, the box fills rust once read. */
+.reads-read {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font-size: 11px;
+  cursor: pointer;
+}
+.reads-read .read-box {
+  width: 9px;
+  height: 9px;
+}
+.reads-read[aria-pressed="true"] {
+  color: var(--accent);
+}
+.reads-read[aria-pressed="true"] .read-box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+@media (hover: hover) and (pointer: fine) {
+  .reads-read:hover {
+    color: var(--ink);
+  }
+}
+@media (max-width: 767px) {
+  /* One scrolling row, so fifteen topics do not take six rows of 44px taps. */
+  .dossier .reads-topicbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 4px 20px;
+  }
+}
+.reads-theme {
+  margin-top: 32px;
+}
+.reads-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 130px;
+  align-items: start;
+  column-gap: 20px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.reads-year,
+.reads-co,
+.reads-topics {
+  color: var(--ink-soft);
+  font-size: 16px;
+}
+.reads-year {
+  padding-top: 2px;
+}
+.reads-title {
+  margin: 0;
+  font-size: 17px;
+}
+/* The title is the link: no underline, the colour shift on hover and the focus ring are its cues. */
+.reads-title a {
+  text-decoration: none;
+}
+.reads-co {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 0;
+}
+.reads-why {
+  margin: 8px 0 0;
+  max-width: 62ch;
+}
+.reads-topics {
+  margin: 6px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 20px;
+}
+.reads-topics a {
+  color: inherit;
+}
+/* These set color: inherit, which would beat the global a:hover; give them the same rust on hover. */
+@media (hover: hover) and (pointer: fine) {
+  .reads-topics a:hover,
+  .posts-topics a:hover,
+  .inside-source a:hover {
+    color: var(--accent);
+  }
+}
+@media (max-width: 767px) {
+  .reads-row {
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "year ext"
+      "main main";
+    column-gap: 16px;
+    padding: 10px 0;
+  }
+  .reads-year { grid-area: year; align-self: center; }
+  .reads-main { grid-area: main; }
+  .reads-read { grid-area: ext; justify-self: end; }
 }
 
 /* Contents rail: desktop only, in the left margin, one list per view (the script shows the chosen one).

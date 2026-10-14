@@ -1,0 +1,19 @@
+{
+  "id": "stripe-rate-limiters",
+  "title": "Scaling your API with rate limiters",
+  "company": "Stripe",
+  "kind": "post",
+  "published": "2017-03-30",
+  "theme": "Traffic and resilience",
+  "url": "https://stripe.com/blog/rate-limiters",
+  "whyItMatters": "Describes the rate limiters and load shedders Stripe uses to keep its API available to all of its users, and how it rolled them out without breaking existing workflows.",
+  "influence": "writeup",
+  "evidence": [
+    "helps keep the API available for everyone"
+  ],
+  "topics": [
+    "rate-limiting"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

@@ -7,12 +7,14 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ prefetch: () => {} }), u
 import About from "../app/about/page";
 import Background from "../app/background/page";
 import Glossary from "../app/glossary/page";
+import Reads from "../app/reads/page";
 import Privacy from "../app/privacy/page";
 import Terms from "../app/terms/page";
 import LearnPage from "../components/LearnPage";
 import TopicLesson from "../components/TopicLesson";
 import { backgroundUpdated } from "./background";
 import { getAllLearn } from "./learn";
+import { getAllReads, readsUpdated } from "./reads";
 import { getNews } from "./news";
 import { PAGE_DATES, learnUpdated, topicPageUpdated } from "./site";
 import { formatDate, getAllTopics, getDependents } from "./topics";
@@ -36,6 +38,7 @@ const pages: { name: string; html: string; date: string }[] = [
     html: render(LearnPage({ topic: topics.find((t) => t.slug === l.slug)!, learn: l, titles })),
   })),
   { name: "background", date: backgroundUpdated(), html: render(Background()) },
+  { name: "reads", date: readsUpdated(getAllReads(topics.map((t) => t.slug))), html: render(Reads()) },
   { name: "about", date: PAGE_DATES.about, html: render(About()) },
   { name: "glossary", date: PAGE_DATES.glossary, html: render(Glossary()) },
   { name: "terms", date: PAGE_DATES.terms, html: render(Terms()) },
@@ -43,8 +46,8 @@ const pages: { name: string; html: string; date: string }[] = [
 ];
 
 describe("every content page carries one date, at the bottom", () => {
-  it("covers every topic, every learn page and the five other pages", () => {
-    expect(pages.length).toBe(topics.length + getAllLearn(topics.map((t) => t.slug)).length + 5);
+  it("covers every topic, every learn page and the six other pages", () => {
+    expect(pages.length).toBe(topics.length + getAllLearn(topics.map((t) => t.slug)).length + 6);
   });
 
   for (const p of pages) {

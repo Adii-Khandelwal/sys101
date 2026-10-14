@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { inProgressSlugs, replaceProgress, useAllProgress } from "@/lib/progress";
+import { clearReadReads } from "@/lib/readsRead";
 import { forgetSeen, loadSeen } from "@/lib/tourSeen";
 import {
   deriveRead,
@@ -89,6 +90,7 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
     if (slug === "all") {
       const r = resetAll();
       replaceProgress(r.progress, r.read, {});
+      clearReadReads();
       forgetSeen(); // "everything" includes the tour: its links come back
       setToursSeen(false);
       setMessage("All progress in this browser was reset, and the tour links are back.");

@@ -1,0 +1,23 @@
+{
+  "id": "aws-jitter",
+  "title": "Exponential Backoff And Jitter",
+  "company": "Amazon Web Services",
+  "kind": "post",
+  "published": "2015-03-04",
+  "theme": "Traffic and resilience",
+  "url": "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/",
+  "whyItMatters": "Shows by simulation how backoff and jitter relieve contention among clients retrying the same write, and Amazon says most AWS SDKs now support exponential backoff and jitter.",
+  "influence": "stated",
+  "claim": {
+    "phrase": "Most AWS SDKs now support exponential backoff and jitter"
+  },
+  "evidence": [
+    "Optimistic concurrency control (OCC) is a time-honored way"
+  ],
+  "topics": [
+    "circuit-breakers",
+    "failover"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

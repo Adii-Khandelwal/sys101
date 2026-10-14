@@ -1,0 +1,24 @@
+{
+  "id": "tail-at-scale",
+  "title": "The Tail at Scale",
+  "company": "Google",
+  "kind": "paper",
+  "published": "2013",
+  "theme": "Traffic and resilience",
+  "url": "https://research.google/pubs/the-tail-at-scale/",
+  "whyItMatters": "Explains why rare slow responses matter more as systems fan out across many servers, and gRPC's request hedging guide calls the paper the seminal article on tail latency.",
+  "influence": "stated",
+  "claim": {
+    "phrase": "the seminal article",
+    "url": "https://grpc.io/docs/guides/request-hedging/"
+  },
+  "evidence": [
+    "keep the tail of the latency distribution"
+  ],
+  "topics": [
+    "load-balancing",
+    "circuit-breakers"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

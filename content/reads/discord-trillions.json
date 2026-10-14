@@ -1,0 +1,21 @@
+{
+  "id": "discord-trillions",
+  "title": "How Discord Stores Trillions of Messages",
+  "company": "Discord",
+  "kind": "post",
+  "published": "2023-03-06",
+  "theme": "Storing data",
+  "url": "https://discord.com/blog/how-discord-stores-trillions-of-messages",
+  "whyItMatters": "Tells how Discord's message store on Cassandra turned into a high-toil system with hot partitions, and how the team changed its architecture and migrated.",
+  "influence": "writeup",
+  "evidence": [
+    "high-toil system",
+    "hot partition"
+  ],
+  "topics": [
+    "databases",
+    "replication"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

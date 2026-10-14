@@ -1,0 +1,19 @@
+{
+  "id": "chubby",
+  "title": "The Chubby lock service for loosely-coupled distributed systems",
+  "company": "Google",
+  "kind": "paper",
+  "published": "2006",
+  "theme": "Platforms and building blocks",
+  "url": "https://research.google/pubs/the-chubby-lock-service-for-loosely-coupled-distributed-systems/",
+  "whyItMatters": "Describes Google's lock service, which favours availability and reliability over high performance, and how real use forced its design to change.",
+  "influence": "writeup",
+  "evidence": [
+    "availability and reliability, as opposed to high performance"
+  ],
+  "topics": [
+    "consensus"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}

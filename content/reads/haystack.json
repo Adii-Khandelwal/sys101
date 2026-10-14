@@ -1,0 +1,21 @@
+{
+  "id": "haystack",
+  "title": "Finding a Needle in Haystack: Facebook's Photo Storage",
+  "company": "Facebook",
+  "kind": "paper",
+  "published": "2010",
+  "theme": "Storing data",
+  "url": "https://www.usenix.org/legacy/event/osdi10/tech/full_papers/Beaver.pdf",
+  "whyItMatters": "Describes the object store Facebook designed for its photos application, and why an ordinary file system was a poor fit for photo reads.",
+  "influence": "writeup",
+  "evidence": [
+    "This paper describes Haystack"
+  ],
+  "topics": [
+    "cdns",
+    "caching"
+  ],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14",
+  "dateUrl": "https://www.usenix.org/conference/osdi10/finding-needle-haystack-facebooks-photo-storage"
+}

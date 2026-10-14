@@ -1,0 +1,20 @@
+{
+  "id": "jaeger",
+  "title": "Evolving Distributed Tracing at Uber Engineering",
+  "company": "Uber",
+  "kind": "post",
+  "published": "2017-02-02",
+  "theme": "Seeing and changing production",
+  "url": "https://www.uber.com/blog/distributed-tracing/",
+  "whyItMatters": "Tells how Uber's tracing system Jaeger spread through its microservices in 2016, and why the team moved from a pull to a push architecture.",
+  "influence": "stated",
+  "claim": {
+    "phrase": "integrated into hundreds of microservices"
+  },
+  "evidence": [
+    "large-scale internal adoption throughout 2016"
+  ],
+  "topics": [],
+  "openedOn": "2026-10-14",
+  "verifiedOn": "2026-10-14"
+}
