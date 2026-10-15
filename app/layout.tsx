@@ -17,7 +17,7 @@ const serif = Newsreader({
   axes: ["opsz"],
 });
 
-// Italic is used on a few notes only, so it is not preloaded: a page that never shows italic text never downloads it (about 130 kB less before first paint).
+// Not preloaded, so it does not compete with the first paint (about 130 kB); it still loads on any page that shows italic text, and every page has some.
 const serifItalic = Newsreader({
   subsets: ["latin"],
   variable: "--font-serif-italic",
