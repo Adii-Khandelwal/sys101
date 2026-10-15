@@ -1,5 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
+import { checkDiagram } from "./diagramCheck";
+import { httpsUrlProblem } from "./httpsUrl";
 
 // "Start from zero" learn pages: a beginner's path through one topic, built
 // only from official sources (see .claude/rules/learn-pages.md).
@@ -96,17 +98,6 @@ const VALID_SOURCE_YEAR = /^(\d{4}|no date shown|page shows last updated \d{4}-\
 /** Source ids cited inline in a piece of text. */
 export const citations = (text: string) => [...text.matchAll(CITE)].map((m) => m[1]);
 
-/** Diagrams are hand-written SVG; enforce the site's design rules (same as topic diagrams). */
-function checkDiagram(svg: string | undefined): string[] {
-  if (!nonEmpty(svg)) return ["is empty"];
-  const problems: string[] = [];
-  if (!/^<svg[\s>]/.test(svg!.trim())) problems.push("must start with <svg");
-  if (!/viewBox=/.test(svg!)) problems.push("needs a viewBox so it scales");
-  if (!/<title[^>]*>[^<]+<\/title>/.test(svg!)) problems.push("needs a <title> for screen readers");
-  if (/gradient|<filter|drop-shadow|<script|\son\w+=/i.test(svg!)) problems.push("uses gradients, filters, shadows or scripts");
-  return problems;
-}
-
 /** Every rule the build enforces on a learn page. Returns the problems found. */
 export function checkLearn(l: Learn, topicSlugs: string[]): string[] {
   const problems: string[] = [];
@@ -120,7 +111,7 @@ export function checkLearn(l: Learn, topicSlugs: string[]): string[] {
       if (!nonEmpty(s[f])) problems.push(`${where} is missing ${f}`);
     }
     if (nonEmpty(s.verifiedOn) && !/^\d{4}-\d{2}-\d{2}$/.test(s.verifiedOn)) problems.push(`${where}: verifiedOn must be YYYY-MM-DD`);
-    if (nonEmpty(s.url) && !/^https:\/\//.test(s.url)) problems.push(`${where}: url must be https`);
+    if (nonEmpty(s.url) && httpsUrlProblem(s.url)) problems.push(`${where}: url ${httpsUrlProblem(s.url)}`);
     // An Internet-Draft is a work in progress, not a standard: the source must say so and give its expiry.
     if (/datatracker\.ietf\.org\/doc\/draft-/.test(s.url ?? "")) {
       const note = s.note ?? "";

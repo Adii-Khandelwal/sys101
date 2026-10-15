@@ -27,6 +27,8 @@ describe("workflow files", () => {
         for (const [i, step] of (job.steps ?? []).entries()) {
           expect(Boolean(step.run) !== Boolean(step.uses), `${f} ${id} step ${i + 1} needs exactly one of run or uses`).toBe(true);
           if (step.if !== undefined) expect(typeof step.if, `${f} ${id} step ${i + 1} if`).toBe("string");
+          // A tag can be moved to other code; a commit hash cannot.
+          if (step.uses) expect(step.uses, `${f} ${id} step ${i + 1} must pin the action to a full commit hash`).toMatch(/@[0-9a-f]{40}$/);
         }
       }
     });

@@ -107,7 +107,7 @@ async function pdfToText(buf) {
       return (await run("pdftotext", ["-layout", tmp, "-"], { maxBuffer: 256 * 1024 * 1024 })).stdout;
     } catch {
       const py = "import sys,pypdf;r=pypdf.PdfReader(sys.argv[1]);print('\\n'.join((p.extract_text() or '') for p in r.pages))";
-      return (await run("python3", ["-c", py, tmp], { maxBuffer: 256 * 1024 * 1024 })).stdout;
+      return (await run("python3", ["-I", "-c", py, tmp], { maxBuffer: 256 * 1024 * 1024 })).stdout;
     }
   } finally {
     fs.rmSync(tmp, { force: true });

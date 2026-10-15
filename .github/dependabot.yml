@@ -1,0 +1,7 @@
+# Actions are pinned to commit hashes (lib/workflows.test.ts); this opens a pull request when a newer release exists.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

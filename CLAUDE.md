@@ -36,6 +36,7 @@ Path-scoped rule files load when you read, write or edit a matching file; open t
 | `news.md` | What's new, the allowlist, the routine, the guard workflow |
 | `logos.md` | Company marks, sources, the `add` command, brand rules, exceptions |
 | `offline.md` | Service worker, offline caching, warm-up |
+| `security.md` | Response headers and CSP, HTML sinks, URL checks, import limits, workflow pins |
 | `tooling.md` | Verification scripts and their network use |
 
 ## Post selection (strict, never use just any post)

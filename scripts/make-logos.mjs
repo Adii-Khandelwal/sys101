@@ -9,8 +9,10 @@ import { chromium } from "playwright";
 
 const sharp = createRequire(import.meta.url)("sharp");
 const CFG = "content/logos.json";
-const SVGL_DATA = "https://raw.githubusercontent.com/pheralb/svgl/main/src/data/svgs.ts";
-const SVGL = "https://raw.githubusercontent.com/pheralb/svgl/main/static/library/";
+// Pinned to a commit so what lands in public/logos cannot change under a later run. Bump it when svgl has added a mark you need.
+const SVGL_REF = "f9b726cee1d1f3c697a18c880185e89d9a55bb70";
+const SVGL_DATA = `https://raw.githubusercontent.com/pheralb/svgl/${SVGL_REF}/src/data/svgs.ts`;
+const SVGL = `https://raw.githubusercontent.com/pheralb/svgl/${SVGL_REF}/static/library/`;
 const cfg = JSON.parse(fs.readFileSync(CFG, "utf8"));
 const SI = `https://cdn.jsdelivr.net/npm/simple-icons@${cfg.simpleIcons.version}/`;
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");

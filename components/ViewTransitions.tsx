@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { glideToSection, whenVisible } from "@/lib/glide";
 import { prefersReducedMotion } from "@/lib/motion";
+import { safeDecode } from "@/lib/safeDecode";
 
 type Doc = Document & { startViewTransition?: (cb: () => Promise<void>) => unknown };
 
@@ -29,7 +30,7 @@ export function pageReady(pathname: string, cap = 1000) {
 async function glideToHash(url: URL) {
   if (location.pathname !== url.pathname) return; // the reader already went elsewhere (Back, another link): leave that page where it is
   window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
-  const id = decodeURIComponent(url.hash.slice(1));
+  const id = safeDecode(url.hash.slice(1));
   const target = id ? await whenVisible(id) : null;
   if (target) await glideToSection(target);
 }
@@ -76,7 +77,7 @@ export default function ViewTransitions() {
       if (url.origin !== location.origin) return;
       if (url.pathname === location.pathname) {
         // Same page: a section on it glides there (an unknown or hidden one is left to the browser).
-        const target = url.search === location.search && url.hash.length > 1 ? document.getElementById(decodeURIComponent(url.hash.slice(1))) : null;
+        const target = url.search === location.search && url.hash.length > 1 ? document.getElementById(safeDecode(url.hash.slice(1))) : null;
         if (!target || !target.getClientRects().length) return;
         e.preventDefault();
         history.replaceState(null, "", url.hash);

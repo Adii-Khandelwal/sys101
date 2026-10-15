@@ -12,6 +12,7 @@ import {
   resetAll,
   resetTopic,
   summary,
+  MAX_IMPORT_CHARS,
   validateImport,
   type LessonMeta,
   type Progress,
@@ -63,6 +64,11 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
 
   const choose = async (f: File) => {
     setConfirmReset(null);
+    // Refuse a huge file before reading it into memory.
+    if (f.size > MAX_IMPORT_CHARS) {
+      setPending(null);
+      return setMessage("Nothing was imported. That file is too large to be a sys101 progress export.");
+    }
     const r = validateImport(await f.text(), known);
     if (!r.ok) {
       setPending(null);

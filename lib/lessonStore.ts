@@ -89,7 +89,8 @@ export function parseProgress(raw: string | null): Progress | null {
     if (!v || typeof v !== "object" || (v.version !== VERSION && v.version !== OLD_VERSION)) return null;
     const topics: Record<string, TopicProgress> = {};
     if (v.topics && typeof v.topics === "object") {
-      for (const [slug, t] of Object.entries(v.topics)) topics[slug] = cleanTopic(t, slug, v.version);
+      // "__proto__" would set the prototype of this object instead of adding a topic.
+      for (const [slug, t] of Object.entries(v.topics)) if (slug !== "__proto__") topics[slug] = cleanTopic(t, slug, v.version);
     }
     return { version: VERSION, topics, posts: strings(v.posts) };
   } catch {
@@ -303,12 +304,16 @@ function strictTopic(v: unknown, slug: string, version: number): TopicProgress |
   return { done: [...t.done], visited: [...t.visited], answers, ...(typeof t.last === "string" ? { last: t.last } : {}) };
 }
 
+/** A real export is a few kilobytes; anything near this size is not one. */
+export const MAX_IMPORT_CHARS = 1_000_000;
+
 /**
  * Validate an uploaded export before anything is applied: app, version,
  * shape and value types. Topics and posts this site does not have are
  * dropped and counted, not treated as errors.
  */
 export function validateImport(text: string, known?: Known): ImportResult {
+  if (text.length > MAX_IMPORT_CHARS) return { ok: false, error: "That file is too large to be a sys101 progress export." };
   let v: unknown;
   try {
     v = JSON.parse(text);
@@ -328,7 +333,8 @@ export function validateImport(text: string, known?: Known): ImportResult {
   if (typeof updatedIn !== "object" || Array.isArray(updatedIn) || !Object.values(updatedIn).every((d) => typeof d === "string"))
     return { ok: false, error: "The dates in that file are damaged." };
 
-  const isTopic = (slug: string) => !known || known.slugs.includes(slug);
+  // "__proto__" would set the prototype of the topics object, whether or not a known list is given.
+  const isTopic = (slug: string) => slug !== "__proto__" && (!known || known.slugs.includes(slug));
   const isPost = (id: string) => !known || known.postIds.includes(id);
   let ignored = 0;
   const topics: Record<string, TopicProgress> = {};

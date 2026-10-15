@@ -18,6 +18,7 @@ import {
   syncRead,
   markVisited,
   toggleUnit,
+  MAX_IMPORT_CHARS,
   validateImport,
   mergeProgress,
   diffSummary,
@@ -88,6 +89,16 @@ describe("corrupt or missing storage", () => {
   });
 });
 
+describe("stored progress", () => {
+  it("ignores a __proto__ key instead of setting the prototype of the topics object", () => {
+    const raw = '{"version":2,"topics":{"__proto__":{"done":["why"]},"dns":{"done":["why"]}},"posts":[]}';
+    const p = parseProgress(raw);
+    expect(p).not.toBeNull();
+    expect(Object.getPrototypeOf(p!.topics)).toBe(Object.prototype);
+    expect(Object.keys(p!.topics)).toEqual(["dns"]);
+  });
+});
+
 describe("import validation", () => {
   const good = JSON.stringify(exportFile(toggleUnit(emptyProgress(), meta, "why"), ["dns"]));
 
@@ -95,6 +106,24 @@ describe("import validation", () => {
     const r = validateImport(good);
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.progress.topics.dns.done).toEqual(["why"]);
+  });
+
+  it("drops a __proto__ topic even when no known list is given", () => {
+    const file = JSON.parse(good);
+    const dns = JSON.stringify(file.progress.topics.dns);
+    file.progress.topics = JSON.parse(`{"__proto__":${dns},"dns":${dns}}`);
+    const r = validateImport(JSON.stringify(file));
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(Object.getPrototypeOf(r.progress.topics)).toBe(Object.prototype);
+      expect(Object.keys(r.progress.topics)).toEqual(["dns"]);
+    }
+  });
+
+  it("rejects a file too large to be an export before parsing it", () => {
+    const r = validateImport(" ".repeat(MAX_IMPORT_CHARS + 1));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/too large/);
   });
 
   it("rejects anything else with a reason", () => {
