@@ -1,0 +1,66 @@
+{
+  "topic": "storage-engines",
+  "updatedOn": "2026-10-15",
+  "items": [
+    {
+      "id": "isolation-levels",
+      "name": "Transaction isolation levels",
+      "explanation": "An isolation level sets what a transaction can see of other transactions running at the same time. Stricter levels such as repeatable read and serializable rule out more surprises, at the cost of more conflicts.",
+      "assumedBy": [
+        {
+          "postId": "myrocks-meta-2020",
+          "quote": "Default transaction isolation level in MySQL is Repeatable Read, and is used in UDB."
+        }
+      ],
+      "sources": [
+        {
+          "title": "PostgreSQL Documentation: 13.2. Transaction Isolation",
+          "publisher": "PostgreSQL Global Development Group",
+          "url": "https://www.postgresql.org/docs/current/transaction-iso.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-15"
+        }
+      ]
+    },
+    {
+      "id": "cassandra-quorum",
+      "name": "Quorum reads and writes in Cassandra",
+      "explanation": "Cassandra lets each read or write say how many replicas must answer. Quorum means a majority of them, so one slow or overloaded replica can slow the whole request.",
+      "assumedBy": [
+        {
+          "postId": "discord-messages-2023",
+          "quote": "Since we perform reads and writes with quorum consistency level, all queries to the nodes that serve the hot partition suffer latency increases, resulting in broader end-user impact."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Apache Cassandra Documentation: Dynamo",
+          "publisher": "Apache Cassandra",
+          "url": "https://cassandra.apache.org/doc/latest/cassandra/architecture/dynamo.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-15"
+        }
+      ]
+    },
+    {
+      "id": "snowflake-ids",
+      "name": "Snowflake IDs",
+      "explanation": "A snowflake ID is a 64-bit number whose top bits are a timestamp, so IDs sort by creation time and can be issued without one central counter.",
+      "assumedBy": [
+        {
+          "postId": "discord-messages-2023",
+          "quote": "Every ID we use is a Snowflake"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Discord Developer Documentation: API Reference, Snowflakes",
+          "publisher": "Discord",
+          "url": "https://discord.com/developers/docs/reference",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-15"
+        }
+      ]
+    }
+  ]
+}
