@@ -7,6 +7,14 @@ import { prefersReducedMotion } from "@/lib/motion";
 import { safeDecode } from "@/lib/safeDecode";
 
 type Doc = Document & { startViewTransition?: (cb: () => Promise<void>) => unknown };
+type Transition = { finished?: Promise<unknown>; skipTransition?: () => void };
+
+let running: Transition | undefined;
+
+/** Ends the cross-fade early, which shows the live page again instead of the frozen picture of the old one (NavPending needs that to be seen). */
+export function skipRunningTransition() {
+  running?.skipTransition?.();
+}
 
 /**
  * Resolve once the new page is really in the DOM: the URL has changed and no
@@ -54,7 +62,11 @@ export function navigateWithTransition(router: { push: (href: string, opts?: { s
     return pageReady(url.pathname).then(() => {
       if (url.hash) window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); // the new page is captured at its top
     });
-  }) as { finished?: Promise<unknown> } | undefined;
+  }) as Transition | undefined;
+  running = t;
+  void t?.finished?.finally(() => {
+    if (running === t) running = undefined;
+  });
   if (url.hash) void (t?.finished ?? Promise.resolve()).finally(() => glideToHash(url));
 }
 

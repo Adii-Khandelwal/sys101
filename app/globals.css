@@ -14,6 +14,13 @@
   --dur-page: 160ms;
   --dur-pulse: 1400ms;
   --dur-reduced: 80ms;
+  --flicker: 900ms; /* the opening screen: one bulb flicker */
+  --flicker-node-1: 120ms; /* the single node comes on */
+  --flicker-node-2: 520ms; /* two nodes come out of it */
+  --flicker-out: 500ms;
+  --flicker-line: 1000ms;
+  --flicker-word: 520ms;
+  --splash-hold: 1950ms; /* when the opening screen leaves on its own; keep equal to HOLD_MS in components/Splash.tsx */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
 }
@@ -2659,6 +2666,10 @@ button:active:not(:disabled),
     --dur-page: 0ms;
   }
 
+  .nav-pending.is-on .nav-pending-mark {
+    animation: none;
+  }
+
   body,
   .fade-swap,
   .graph-tooltip {
@@ -4582,4 +4593,138 @@ html[data-posts-view] .posts-view-h {
    room at its end, so even the footer's links can scroll up clear of the tooltip. */
 html[data-touring] body {
   padding-bottom: var(--tour-dock, 0px);
+}
+
+/* Opening screen (components/Splash.tsx): shown only while <html data-splash> is set, which an inline script does before paint. */
+.splash {
+  display: none;
+}
+html[data-splash] .splash {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity var(--dur-base) var(--ease-out);
+  /* Leaves by itself even if the scripts never load, so it can never cover the page for good. */
+  animation: splash-away var(--dur-base) var(--ease-out) var(--splash-hold) forwards;
+}
+@keyframes splash-away {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+html[data-splash] .splash.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+.splash-lockup {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  color: var(--ink);
+}
+.splash-mark {
+  display: flex;
+}
+.splash-mark .logo-node,
+.splash-mark .logo-line {
+  opacity: 0;
+}
+/* One node (the right one) flickers on, then the two others come out of it into place, flickering, and the lines join them. */
+.splash-mark .logo-node:nth-of-type(3) {
+  animation: splash-bulb var(--flicker) linear var(--flicker-node-1) forwards;
+}
+.splash-mark .logo-node:nth-of-type(1) {
+  animation:
+    splash-bulb var(--flicker) linear var(--flicker-node-2) forwards,
+    splash-out-up var(--flicker-out) var(--ease-out) var(--flicker-node-2) backwards;
+}
+.splash-mark .logo-node:nth-of-type(2) {
+  animation:
+    splash-bulb var(--flicker) linear var(--flicker-node-2) forwards,
+    splash-out-down var(--flicker-out) var(--ease-out) var(--flicker-node-2) backwards;
+}
+.splash-mark .logo-line {
+  animation: splash-in var(--dur-base) var(--ease-out) var(--flicker-line) forwards;
+}
+@keyframes splash-out-up {
+  from {
+    transform: translate(14px, 6px);
+  }
+}
+@keyframes splash-out-down {
+  from {
+    transform: translate(14px, -6px);
+  }
+}
+@keyframes splash-in {
+  to {
+    opacity: 1;
+  }
+}
+.splash-word {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(40px, 9vw, 64px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  opacity: 0;
+  animation: splash-bulb var(--flicker) linear var(--flicker-word) forwards;
+}
+/* On, dim, off, dim, on and staying on: opacity only. */
+@keyframes splash-bulb {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  22% {
+    opacity: 0.3;
+  }
+  34% {
+    opacity: 0.9;
+  }
+  48% {
+    opacity: 0;
+  }
+  62% {
+    opacity: 0.7;
+  }
+  74% {
+    opacity: 0.15;
+  }
+  88%,
+  100% {
+    opacity: 1;
+  }
+}
+
+/* A link to another page that is slow to arrive (components/NavPending.tsx): the mark, breathing, over the page. */
+.nav-pending {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.nav-pending.is-on {
+  opacity: 1;
+  pointer-events: auto;
+}
+.nav-pending-mark {
+  display: flex;
+}
+.nav-pending.is-on .nav-pending-mark {
+  animation: bubble-breathe var(--dur-pulse) var(--ease-in-out) infinite alternate;
 }

@@ -28,9 +28,9 @@ export const metadata = pageMeta({
   description: SITE_DESCRIPTION,
 });
 
-/** Fallback when a topic has no `group`: shallow topics are foundations, deep ones data. */
+/** Fallback when a topic has no `group`: shallow topics are scaling, deep ones data. */
 function groupFromDepth(depth: number): Group {
-  return depth === 0 ? "Foundations" : depth <= 2 ? "Scaling" : "Data";
+  return depth <= 2 ? "Scaling" : "Data";
 }
 
 export default function Home() {

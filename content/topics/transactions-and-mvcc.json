@@ -1,0 +1,453 @@
+{
+  "slug": "transactions-and-mvcc",
+  "title": "Transactions and MVCC",
+  "group": "Data",
+  "interviewRelevance": "core",
+  "concept": "A transaction bundles several changes into one all-or-nothing step, and an isolation level says what it may see of others running at the same time. Most modern databases give each transaction a snapshot by keeping several versions of a row (multiversion concurrency control, MVCC), so readers and writers do not wait for each other. The old versions have to be cleaned up, and in Postgres the transaction ids that order them have to be frozen before they wrap around.",
+  "prerequisites": [
+    "databases"
+  ],
+  "summary": {
+    "points": [
+      "A transaction bundles changes so they happen together or not at all, and MVCC keeps row versions so readers and writers do not block each other.",
+      "An isolation level sets when a transaction takes its snapshot: read committed takes one per statement, repeatable read one for the whole transaction.",
+      "Postgres transaction ids are 32 bits and compared in a circle, so vacuum has to freeze old rows or the database stops accepting writes.",
+      "Sentry restored writes five minutes after truncating one stuck table, and Mandrill's shard stopped on February 4, 2019 with a vacuum estimated at up to 40 days."
+    ],
+    "figures": [
+      {
+        "postId": "sentry-xid-2015",
+        "row": 1,
+        "label": "Five minutes after Sentry truncated the stuck table, writes were back"
+      },
+      {
+        "postId": "mandrill-xid-2019",
+        "row": 2,
+        "label": "Mandrill's vacuum was estimated at up to 40 days"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "databases": "Transactions and MVCC takes from databases the tables, rows and queries that a transaction groups together and that several versions of a row protect."
+  },
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain what a transaction promises, why databases keep several versions of a row, and what that costs to operate.",
+      "body": "Almost every useful change touches more than one row. Moving money takes a debit and a credit, and if a crash lands between them, someone loses money. A transaction bundles the steps so they all happen or none do, and so other transactions do not see the half-done state.\n\nThe harder question is what happens when many transactions run at once. Locking every row a reader touches makes readers and writers queue. Most modern databases instead use multiversion concurrency control: an update adds a new version of the row, and each transaction reads the versions its snapshot allows. PostgreSQL's documentation says reading never blocks writing and writing never blocks reading.\n\nThe price is that old versions pile up and need cleaning, and in Postgres the numbers that order the versions are only 32 bits wide. Two real outages show the bill. In 2015 Sentry's database stopped accepting writes and its service was down for most of a working day. In 2019 Mailchimp's Mandrill email service ran for about 40 hours on reduced service after one shard hit the same limit. In both, the cause was housekeeping that fell behind."
+    },
+    "mentalModel": {
+      "outcome": "After this you can describe row versions and snapshots in one picture and say what each isolation level lets you see.",
+      "body": "Think of a shared document with a full revision history. Nobody edits the current text in place. A writer adds a new revision, and a reader opens the document at the moment they started, and keeps reading that revision however many new ones appear. Readers never wait for writers, and writers never wait for readers. Two writers editing the same line do collide, and one has to wait or give up.\n\nA database does the same with rows. Each version records which transaction created it and which, if any, ended it. A snapshot says which transactions counted as committed when it was taken, so the database can pick the right version for each reader. The isolation level decides when the snapshot is taken. Read committed takes a new one for every statement, so a second query can see a commit the first did not. Repeatable read takes one for the whole transaction, so every query sees the same data.\n\nA stable view is not the same as a correct result. Two transactions can each read the same old data, each write a different row, and together break a rule. The strictest level, serializable, watches for that and fails one of them. At the weaker levels, application rules need explicit locks.",
+      "diagram": "<svg viewBox=\"0 0 560 208\" role=\"img\" aria-labelledby=\"dg-tx-model-t\" class=\"dg\"><title id=\"dg-tx-model-t\">One row with two versions. Version 1 shows balance 100 and was ended by transaction 52. Version 2 shows balance 60 and was created by transaction 52. A reader whose snapshot was taken before transaction 52 committed sees version 1; a reader whose snapshot was taken after sees version 2. Neither waits for the other.</title><defs><marker id=\"dg-tx-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"280\" y=\"20\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">One row, two versions, two readers</text><rect x=\"20\" y=\"36\" width=\"230\" height=\"40\" class=\"dg-box\"/><text x=\"135\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">version 1: balance 100</text><text x=\"135\" y=\"66\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">created by tx 40, ended by tx 52</text><rect x=\"310\" y=\"36\" width=\"230\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"425\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">version 2: balance 60</text><text x=\"425\" y=\"66\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">created by tx 52</text><path d=\"M250,56 L308,56\" class=\"dg-line\" marker-end=\"url(#dg-tx-model-a)\"/><rect x=\"20\" y=\"128\" width=\"230\" height=\"40\" class=\"dg-box\"/><text x=\"135\" y=\"142\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Reader A</text><text x=\"135\" y=\"158\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">snapshot before tx 52</text><rect x=\"310\" y=\"128\" width=\"230\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"425\" y=\"142\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Reader B</text><text x=\"425\" y=\"158\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">snapshot after tx 52</text><path d=\"M135,128 L135,78\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-tx-model-a)\"/><path d=\"M425,128 L425,78\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-tx-model-a)\"/><text x=\"280\" y=\"196\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Each reader sees the newest version its snapshot allows. Nobody waits for anybody.</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can trace a transaction through begin, write, commit and vacuum, and say how a database avoids running out of transaction ids.",
+      "steps": [
+        {
+          "step": "Begin takes a snapshot",
+          "explanation": "The transaction is given a view of which other transactions had committed at that moment. Under read committed each statement gets a new view; under repeatable read the first statement's view is kept to the end."
+        },
+        {
+          "step": "A write adds a version",
+          "explanation": "An update or delete does not overwrite. It marks the old version as ended by this transaction and, for an update, adds a new version created by it. Other transactions keep reading the old one until this one commits."
+        },
+        {
+          "step": "Commit makes it visible, rollback hides it",
+          "explanation": "On commit the new versions count as committed for any later snapshot. On rollback the transaction's versions are simply ignored, as if they never existed."
+        },
+        {
+          "step": "Conflicts are handled by waiting or failing",
+          "explanation": "Two writers to one row cannot both win. The second waits for the first to finish; under repeatable read or serializable, if the first committed, the second fails with a serialization error and the application must retry the whole transaction."
+        },
+        {
+          "step": "Old versions become dead",
+          "explanation": "When no snapshot can see a version any more, it is dead space. VACUUM reclaims it. A long-running transaction keeps old versions alive because its snapshot may still need them."
+        },
+        {
+          "step": "Ids are 32 bits, compared in a circle",
+          "explanation": "Postgres orders versions by transaction id. With 32 bits compared in a circle, about two billion ids are older than any given id and two billion are newer. A row that outlived two billion transactions would suddenly look like it was from the future and vanish. VACUUM prevents that by freezing old rows so they count as being in the past forever. If the counter gets too close to the limit, Postgres stops accepting writes until vacuum catches up."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 200\" role=\"img\" aria-labelledby=\"dg-tx-how-t\" class=\"dg\"><title id=\"dg-tx-how-t\">The life of a transaction in an MVCC database: begin and take a snapshot, write by adding a new row version, commit so the new version becomes visible or roll back, and later vacuum drops dead versions and freezes old transaction ids. Read committed takes a new snapshot for each statement; repeatable read keeps one snapshot for the whole transaction.</title><defs><marker id=\"dg-tx-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"10\" y=\"30\" width=\"120\" height=\"54\" class=\"dg-box dg-accent\"/><text x=\"70\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">1. Begin</text><text x=\"70\" y=\"67\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">take a snapshot</text><rect x=\"150\" y=\"30\" width=\"120\" height=\"54\" class=\"dg-box\"/><text x=\"210\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">2. Write</text><text x=\"210\" y=\"67\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">add a version</text><rect x=\"290\" y=\"30\" width=\"120\" height=\"54\" class=\"dg-box\"/><text x=\"350\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">3. Commit</text><text x=\"350\" y=\"67\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">version visible</text><rect x=\"430\" y=\"30\" width=\"120\" height=\"54\" class=\"dg-box\"/><text x=\"490\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">4. Vacuum</text><text x=\"490\" y=\"67\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">drop dead ones</text><path d=\"M130,57 L148,57\" class=\"dg-line\" marker-end=\"url(#dg-tx-how-a)\"/><path d=\"M270,57 L288,57\" class=\"dg-line\" marker-end=\"url(#dg-tx-how-a)\"/><path d=\"M410,57 L428,57\" class=\"dg-line\" marker-end=\"url(#dg-tx-how-a)\"/><text x=\"70\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">what you may see</text><text x=\"210\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">old version kept</text><text x=\"350\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">or rolled back</text><text x=\"490\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">and freeze old ids</text><rect x=\"10\" y=\"124\" width=\"540\" height=\"40\" class=\"dg-box\"/><text x=\"280\" y=\"146\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Read committed: a snapshot per statement. Repeatable read: one per transaction.</text><text x=\"280\" y=\"188\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Transaction ids are 32 bits and compared in a circle, so old ones must be frozen before they come round again</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can walk through diagnosing and recovering from a wraparound stop, and the settings and alerts that make it less likely.",
+      "steps": [
+        {
+          "step": "Spot the stop",
+          "explanation": "Sentry's database began refusing commands because it was close to its transaction id limit. Replicas were still readable, so the app could show data but not take writes, while events kept arriving and the queue and Redis buffers grew."
+        },
+        {
+          "step": "Do not interrupt the vacuum without a reason",
+          "explanation": "Sentry could not tell whether a vacuum was resumable or how long it would take, so it let the running autovacuums finish, fearing a restart would lengthen the downtime. It also flushed the event backlog so it would not pile up."
+        },
+        {
+          "step": "Find the one table still blocking",
+          "explanation": "Hours in, writes were still refused. Statistics showed all but one relation had been vacuumed, and the one left was a very large table of event-to-rollup mappings."
+        },
+        {
+          "step": "Drop what you can afford to lose",
+          "explanation": "That table only helped look up events by id and catch duplicates, and replicas held a backup, so Sentry truncated it and was fully restored five minutes later. Mandrill did the same in 2019 with two TB-sized tables, after estimating the vacuum at up to 40 days."
+        },
+        {
+          "step": "Tune the settings and add alerts",
+          "explanation": "Sentry gave vacuum more memory, six workers, a 15 second nap, no cost delay and a lower freeze age. Mandrill added alerting for transaction id wraparound within hours of recovery, having seen the counter at about half its limit three months earlier."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 130\" role=\"img\" aria-labelledby=\"dg-tx-ex-t\" class=\"dg\"><title id=\"dg-tx-ex-t\">Five steps from the Sentry outage: notice that the database has stopped accepting writes, let the running vacuum finish, find the one table still stuck, truncate it because its data was safe to lose, then tune vacuum and add monitoring.</title><defs><marker id=\"dg-tx-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"8\" y=\"36\" width=\"104\" height=\"54\" class=\"dg-box\"/><text x=\"60\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Spot the</text><text x=\"60\" y=\"74\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">stop</text><text x=\"60\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">writes refused</text><path d=\"M112,63 L116,63\" class=\"dg-line\" marker-end=\"url(#dg-tx-ex-a)\"/><rect x=\"118\" y=\"36\" width=\"104\" height=\"54\" class=\"dg-box\"/><text x=\"170\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Let the</text><text x=\"170\" y=\"74\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">vacuum run</text><text x=\"170\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">do not interrupt</text><path d=\"M222,63 L226,63\" class=\"dg-line\" marker-end=\"url(#dg-tx-ex-a)\"/><rect x=\"228\" y=\"36\" width=\"104\" height=\"54\" class=\"dg-box\"/><text x=\"280\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Find the</text><text x=\"280\" y=\"74\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">stuck table</text><text x=\"280\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">one huge table</text><path d=\"M332,63 L336,63\" class=\"dg-line\" marker-end=\"url(#dg-tx-ex-a)\"/><rect x=\"338\" y=\"36\" width=\"104\" height=\"54\" class=\"dg-box dg-accent\"/><text x=\"390\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Truncate</text><text x=\"390\" y=\"74\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">and recover</text><text x=\"390\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">safe to lose</text><path d=\"M442,63 L446,63\" class=\"dg-line\" marker-end=\"url(#dg-tx-ex-a)\"/><rect x=\"448\" y=\"36\" width=\"104\" height=\"54\" class=\"dg-box\"/><text x=\"500\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Tune and</text><text x=\"500\" y=\"74\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">monitor</text><text x=\"500\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">freeze age, alerts</text></svg>"
+    },
+    "mistakesOutcome": "After this you can avoid three common transaction and MVCC mistakes.",
+    "checkOutcome": "After this you can check you understand snapshots, isolation levels and transaction id wraparound.",
+    "quiz": [
+      {
+        "question": "A database lets readers and writers work on the same row at the same time without waiting for each other. What lets it do that?",
+        "options": [
+          "A lock on every row that readers must queue for before they can read it",
+          "A single copy of each row that is edited in place by whoever arrives first",
+          "Several versions of a row, each reader seeing the right one"
+        ],
+        "correct": 2,
+        "why": "In MVCC an update adds a new version instead of overwriting, so a reader keeps seeing the version its snapshot allows while the writer builds the next one. PostgreSQL's documentation says reading never blocks writing and writing never blocks reading.",
+        "wrong": [
+          "Queuing readers on locks is what MVCC avoids, so readers and writers would wait for each other.",
+          "Editing one copy in place leaves nothing for an older snapshot to read.",
+          ""
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "Two statements in the same transaction read the same row under read committed and see different values. What explains that?",
+        "options": [
+          "Each statement takes a fresh snapshot, so a commit between them is seen",
+          "The transaction took one snapshot at its start, and the row changed inside it",
+          "The second statement was sent to a replica that had not caught up yet"
+        ],
+        "correct": 0,
+        "why": "Read committed starts each statement from a new snapshot, so rows committed by others between two statements show up. Repeatable read keeps the first snapshot for the whole transaction.",
+        "wrong": [
+          "",
+          "That describes repeatable read, where both statements would see the same value.",
+          "Replicas are not part of the question: the effect happens on a single server."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "What does a repeatable read transaction in PostgreSQL do if it tries to update a row that another transaction changed and committed after the snapshot was taken?",
+        "options": [
+          "It overwrites the other change with its own and carries on as before",
+          "It fails with a serialization error and the application should retry",
+          "It waits until every other transaction in the database has finished"
+        ],
+        "correct": 1,
+        "why": "A repeatable read transaction cannot modify rows changed by others after it began. It is rolled back with an error, and the application retries the whole transaction against a fresh snapshot.",
+        "wrong": [
+          "Silently overwriting would lose the other transaction's committed update.",
+          "",
+          "It waits only for a transaction still in progress; once that one commits, the error follows."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why can a repeatable read transaction still produce a result that no one-at-a-time order of the transactions could produce?",
+        "options": [
+          "Its snapshot is refreshed in the middle of the transaction by the database",
+          "Dirty reads are allowed at that level, so uncommitted data leaks into reads",
+          "Two transactions read old data and write different rows that break a rule"
+        ],
+        "correct": 2,
+        "why": "Snapshot isolation stops reads from changing, but it does not stop two transactions from writing different rows based on what they read. Serializable adds monitoring to catch those cases.",
+        "wrong": [
+          "The snapshot stays fixed in repeatable read; that is its point.",
+          "Dirty reads, seeing uncommitted data, are not possible in PostgreSQL at any level.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Sentry's database refused writes even after most autovacuums had finished. What did the team find, and what did they do?",
+        "options": [
+          "The disks were full, so they added storage and restarted the database",
+          "One huge, low-value table was still unvacuumed, so they truncated it",
+          "The replicas had lagged far behind, so they promoted a new primary"
+        ],
+        "correct": 1,
+        "why": "Statistics showed every relation except one had been vacuumed. That table only supported lookups and duplicate checks, so Sentry truncated it and writes returned five minutes later.",
+        "wrong": [
+          "Disk space was not the reason writes were refused; the wraparound protection was.",
+          "",
+          "Replicas were still serving reads; promoting one would not free transaction ids."
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "Mandrill saw its transaction ids at about half the limit three months before the outage. Why was that a warning, not a relief?",
+        "options": [
+          "One shard took more writes, so its vacuum could fall behind",
+          "Half the limit is where Postgres begins refusing writes to protect itself",
+          "Ids restart in a cycle, so reaching half means a restart is due soon"
+        ],
+        "correct": 0,
+        "why": "The ids climbed that far at peak load, and one shard received more writes than the others. When its autovacuum fell behind, the counter reached the limit and writes stopped. The team had only added monitoring to the backlog.",
+        "wrong": [
+          "",
+          "Protection starts when fewer than about a million ids are left, not at half.",
+          "The counter does not restart on its own; vacuum has to freeze old rows."
+        ],
+        "teaches": "mistakes"
+      }
+    ],
+    "postsOutcome": "After this you can read how Sentry and Mandrill each ran into transaction id wraparound, with the figures they report.",
+    "differOutcome": "After this you can say how the two outages differ and what each one shows.",
+    "exercisesOutcome": "After this you can pick an isolation level, plan retries, and set up monitoring for transaction id wraparound.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A job reads a bank balance and then updates a different row based on it. Two copies of the job run at once under repeatable read, and the combined result sometimes breaks a rule. Which levels fix it, and what must the job do?",
+        "answer": "Run at serializable, which watches for the pattern and fails one of the two transactions, or take explicit locks on the rows the rule depends on. Either way the job must catch the serialization error or lock wait and retry the whole transaction from the start, because the second attempt will see the other's committed change in its snapshot.",
+        "tradeoffs": "Serializable and locks cost throughput and cause retries. Repeatable read is faster but leaves application rules unprotected.",
+        "wrongAnswers": [
+          "Assuming repeatable read means no anomalies.",
+          "Retrying only the failed statement, not the whole transaction.",
+          "Switching to read committed to fix it."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "design",
+        "prompt": "You run a write-heavy Postgres database. List what you configure and watch so transaction id wraparound never stops writes.",
+        "answer": "Keep autovacuum on and give it enough workers, memory and a low cost delay for your largest tables. Turn on autovacuum logging so a failed run is visible. Alert on the age of the oldest unfrozen transaction id per database and per table, with enough margin to act in hours. Watch for long-running transactions that hold old versions alive, and for shards or tables that take more writes than others. Know in advance which tables you could truncate to recover.",
+        "tradeoffs": "Aggressive vacuum uses I/O and CPU that compete with queries; a lazy one saves load now and risks an outage later.",
+        "wrongAnswers": [
+          "Turning off autovacuum to cut load.",
+          "Alerting only when writes already fail.",
+          "Assuming every shard has the same write rate."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "level": "scale",
+        "prompt": "A shard has stopped accepting writes because of wraparound and the vacuum estimate is days. What are your options and how do you choose between them?",
+        "answer": "First check how far the vacuum has got and which tables remain; one huge table can be the whole delay. If a blocking table's data can be rebuilt or is not critical, truncating or dropping it frees its ids quickly. Otherwise compare a dump and restore of the rest, which can be faster than the vacuum but is still slow for large tables. While you work, protect the rest of the system: queues, disks that fill with retries, and a deadline such as mail that expires. Decide with an estimate and a time box, and recheck it as numbers change.",
+        "tradeoffs": "Truncating loses data and is hard to undo; waiting keeps the data but extends downtime.",
+        "wrongAnswers": [
+          "Restarting vacuum repeatedly without an estimate.",
+          "Ignoring the failure effects on queues and disks.",
+          "Truncating a table without checking what depends on it."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "Transactions and MVCC describes one database on one machine. Distributed Transactions asks how to keep several databases agreeing when a change spans them, and Replication shows how the logs behind these versions are copied to other machines."
+    }
+  },
+  "posts": [
+    {
+      "id": "sentry-xid-2015",
+      "title": "Transaction ID Wraparound in Postgres",
+      "url": "https://blog.sentry.io/transaction-id-wraparound-in-postgres/",
+      "company": "Sentry",
+      "verifiedOn": "2026-10-15",
+      "published": "2015-07-23",
+      "ageNote": "From 2015, so older than the usual five years. It is here for a fundamental that has not changed: the current PostgreSQL 18 documentation still describes the same 32-bit transaction ids that wrap around unless vacuum freezes old rows. The hardware, settings and the Riak mention are from 2015.",
+      "digest": {
+        "problem": "On Monday, July 20, 2015, Sentry's hosted service was down for most of the US working day. Its Postgres database ran out of safe transaction ids, so it refused writes to protect itself. Sentry is a write-heavy application with some very large tables, and it had been tuning autovacuum to avoid exactly this.",
+        "constraints": "While writes were refused, Sentry kept taking in events, so the backlog in its queue and its Redis buffers kept growing. The team could not tell whether a vacuum could be resumed, how long it would take, or whether more memory would speed it up. Restarting in single-user mode might cost the hours already spent. Replicas were online, so the application could still read.",
+        "walkthrough": [
+          {
+            "step": "See what ran out",
+            "explanation": "Postgres gives each transaction that changes rows an id, and uses the ids to decide which row versions a transaction can see. The ids come from a counter with a ceiling. Postgres stops accepting commands when fewer than a million transactions are left, to avoid reusing an id and making old rows look new."
+          },
+          {
+            "step": "Bet on the running vacuums",
+            "explanation": "Once protection kicked in, the only way back without data loss was to vacuum the tables. The team chose to let the running autovacuums finish rather than restart them in single-user mode with more memory, fearing a restart would lengthen the downtime. It had already moved the primary to new hardware with more memory."
+          },
+          {
+            "step": "Protect the queue",
+            "explanation": "With writes refused, events kept arriving. To keep the backlog from making things worse the team decided to flush the entire backlog of events."
+          },
+          {
+            "step": "Find the one table that held things up",
+            "explanation": "Several hours in, the autovacuums had finished but Postgres still refused writes. Querying internal statistics showed that every relation except one had been vacuumed. That one mapped events to their rollups and was massive."
+          },
+          {
+            "step": "Accept a loss",
+            "explanation": "The table was used only to look up an event by id and to catch duplicates, and replicas gave a full backup, so the team truncated it. Five minutes later the system was fully restored. A test machine on the old hardware was still running a single-user vacuum about 24 hours later."
+          },
+          {
+            "step": "Tune so it does not happen again",
+            "explanation": "The team raised the memory given to vacuum, set autovacuum to six workers, a 15 second nap, no cost delay, and lowered the freeze age setting. It said the longer answer was splitting tables across databases and, eventually, moving away from a SQL-based architecture."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 144\" role=\"img\" aria-labelledby=\"dg-tx-sentry-t\" class=\"dg\"><title id=\"dg-tx-sentry-t\">Sentry&#x27;s outage in 2015: Postgres stopped accepting writes to protect against transaction id wraparound, replicas kept serving reads, the autovacuums finished everywhere but one huge table nearly three hours in, and truncating that table restored writes five minutes later.</title><defs><marker id=\"dg-tx-sentry-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"10\" y=\"20\" width=\"150\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"85\" y=\"39\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Postgres</text><text x=\"85\" y=\"55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">write protection on</text><rect x=\"205\" y=\"20\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"280\" y=\"39\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Autovacuums</text><text x=\"280\" y=\"55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">all finish but one</text><rect x=\"400\" y=\"20\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"475\" y=\"39\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Truncate that</text><text x=\"475\" y=\"55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">table: 5 minutes</text><path d=\"M160,45 L203,45\" class=\"dg-line\" marker-end=\"url(#dg-tx-sentry-a)\"/><path d=\"M355,45 L398,45\" class=\"dg-line\" marker-end=\"url(#dg-tx-sentry-a)\"/><text x=\"85\" y=\"90\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">reads still work on replicas</text><text x=\"280\" y=\"90\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">nearly 3 hours in</text><text x=\"475\" y=\"90\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">writes accepted again</text><text x=\"280\" y=\"130\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Later: freeze age 500 million, 6 workers, 15 s naptime, no vacuum cost delay</text></svg>",
+        "numbers": [
+          {
+            "value": "nearly 3 hours",
+            "meaning": "Time invested in waiting for vacuums to finish before the team found one table was still holding up writes"
+          },
+          {
+            "value": "Five minutes",
+            "meaning": "Time from truncating the stuck table to a fully restored system"
+          },
+          {
+            "value": "fewer than one million",
+            "meaning": "Transactions left before the maximum id at which Postgres stops accepting commands"
+          },
+          {
+            "value": "128GB to 256GB",
+            "meaning": "Memory on the new database machines, raised so the extra memory could go to vacuum"
+          },
+          {
+            "value": "500000000",
+            "meaning": "New freeze age for autovacuum, after running with too high a value"
+          },
+          {
+            "value": "max_workers = 6",
+            "meaning": "New number of autovacuum workers, up from the default of 3"
+          },
+          {
+            "value": "1GB",
+            "meaning": "Internal limit on the maintenance memory setting for the relevant paths, so the 100GB set aside was never used"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Waiting for the autovacuums that were already running, then truncating the one table that still blocked them.",
+          "rejected": "Restarting in single-user mode straight away to give vacuum more memory, which risked throwing away hours of vacuum work.",
+          "why": "The team could not estimate how long a vacuum would take or whether it could be resumed, and the stuck table held data that was cheap to lose."
+        },
+        "failures": "Autovacuum was behind on the biggest tables: the settings had too high a freeze age, only three workers and too much delay. One autovacuum failed or did not work, and the logs showed nothing because autovacuum logging was off. A later update said the 100GB given to maintenance memory had been wasted because of an internal 1GB limit.",
+        "takeaways": "Treat vacuum as part of keeping the database running, not as optional housekeeping. Know which tables you can afford to lose before an outage forces the choice, turn on autovacuum logging, and watch how close the id counter is to its limit."
+      }
+    },
+    {
+      "id": "mandrill-xid-2019",
+      "title": "What We Learned from the Recent Mandrill Outage",
+      "url": "https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/",
+      "company": "Mailchimp",
+      "verifiedOn": "2026-10-15",
+      "published": "2019-03-26",
+      "ageNote": "From 2019, so older than the usual five years. It is here for a fundamental that has not changed: the current PostgreSQL 18 documentation still describes the same 32-bit transaction ids and the same need for vacuum to freeze old rows. The incident timeline and company details are from 2019.",
+      "digest": {
+        "problem": "On February 4, 2019 Mandrill, Mailchimp's transactional email service, suffered a long outage after one of its Postgres databases hit transaction id wraparound protection and refused writes. The outage began at 05:35 UTC on February 4 and was resolved at 22:09 UTC on February 5, and during it only 80% of queued emails were being sent.",
+        "constraints": "Mandrill used several databases as one key-value store sharded by key. Jobs that wrote to the stuck shard failed and queued on app server disks. Queued mail older than 48 hours is deleted by default, so the team was racing a deadline. A vacuum of the stuck shard was going to take far too long.",
+        "walkthrough": [
+          {
+            "step": "Miss the early warning",
+            "explanation": "In November 2018 engineers saw transaction ids climbing to about half their limit at peak and noted that wraparound was not an immediate threat, so they put extra monitoring on the backlog."
+          },
+          {
+            "step": "Hit the limit on the hot shard",
+            "explanation": "The hashing that balanced load across shards favoured shard4, so it took more writes. Its autovacuum probably fell behind, though it may have failed outright and the team could not tell which. At 05:35 UTC on February 4 the database went into safety shutdown."
+          },
+          {
+            "step": "Lose hours to detection",
+            "explanation": "The first exception was logged overnight on Sunday and drowned out by unrelated exceptions in central reporting. An investigation opened at 11:58 UTC, retries of failed writes had raised the load on shard4, and the wraparound was found at 12:56 UTC. The vacuum started at 14:16 UTC."
+          },
+          {
+            "step": "Find that vacuum is too slow",
+            "explanation": "The full vacuum looked likely to take many days. After tuning it, the estimate was still days or weeks and the highest estimate was 40 days. A dump and restore also looked disastrously slow, even after leaving out two huge tables."
+          },
+          {
+            "step": "Fight the side effects",
+            "explanation": "Failed jobs and their logs queued on disk and filled the app servers, so the team replaced storage volumes. Moving job queue tables off shard4 helped little because those jobs also wrote to shard4."
+          },
+          {
+            "step": "Get creative and truncate",
+            "explanation": "At 16:30 UTC on February 5 a meeting looked at more radical options. The app could run without the Search and Url tables, and dropping tables would free their ids, so the team truncated them at 19:12 UTC. The vacuum finished about an hour later and sending from the backlog began at 21:36 UTC."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 194\" role=\"img\" aria-labelledby=\"dg-tx-mandrill-t\" class=\"dg\"><title id=\"dg-tx-mandrill-t\">Mandrill&#x27;s outage in 2019: one shard that the hashing favoured ran out of safe transaction ids at 05:35 UTC on February 4, the cause was found at 12:56 UTC, the vacuum was estimated at up to 40 days, and truncating two huge tables let sending resume at 21:36 UTC on February 5.</title><defs><marker id=\"dg-tx-mandrill-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"10\" y=\"20\" width=\"120\" height=\"50\" class=\"dg-box\"/><text x=\"70\" y=\"39\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Shard4</text><text x=\"70\" y=\"55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">hash favours it</text><rect x=\"150\" y=\"20\" width=\"120\" height=\"50\" class=\"dg-box\"/><text x=\"210\" y=\"39\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Autovacuum</text><text x=\"210\" y=\"55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">falls behind</text><rect x=\"290\" y=\"20\" width=\"120\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"350\" y=\"39\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Writes stop</text><text x=\"350\" y=\"55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">05:35 UTC</text><rect x=\"430\" y=\"20\" width=\"120\" height=\"50\" class=\"dg-box\"/><text x=\"490\" y=\"39\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Cause found</text><text x=\"490\" y=\"55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">12:56 UTC</text><path d=\"M130,45 L148,45\" class=\"dg-line\" marker-end=\"url(#dg-tx-mandrill-a)\"/><path d=\"M270,45 L288,45\" class=\"dg-line\" marker-end=\"url(#dg-tx-mandrill-a)\"/><path d=\"M410,45 L428,45\" class=\"dg-line\" marker-end=\"url(#dg-tx-mandrill-a)\"/><rect x=\"10\" y=\"110\" width=\"170\" height=\"44\" class=\"dg-box\"/><text x=\"95\" y=\"126\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Vacuum estimate</text><text x=\"95\" y=\"142\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">up to 40 days</text><rect x=\"195\" y=\"110\" width=\"170\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"126\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Truncate Search</text><text x=\"280\" y=\"142\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">and Url tables</text><rect x=\"380\" y=\"110\" width=\"170\" height=\"44\" class=\"dg-box\"/><text x=\"465\" y=\"126\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Sending resumes</text><text x=\"465\" y=\"142\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">21:36 UTC</text><path d=\"M180,132 L193,132\" class=\"dg-line\" marker-end=\"url(#dg-tx-mandrill-a)\"/><path d=\"M365,132 L378,132\" class=\"dg-line\" marker-end=\"url(#dg-tx-mandrill-a)\"/><text x=\"280\" y=\"180\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Feb 4 to Feb 6, 2019. Retries added load and disks on app servers filled.</text></svg>",
+        "numbers": [
+          {
+            "value": "05:35 UTC",
+            "meaning": "When the shard hit the wraparound limit on February 4, 2019"
+          },
+          {
+            "value": "80%",
+            "meaning": "Share of queued emails that were being sent during the outage"
+          },
+          {
+            "value": "40 days",
+            "meaning": "The highest estimate for how long the vacuum would take"
+          },
+          {
+            "value": "about half",
+            "meaning": "How far transaction ids had climbed toward the limit at peak load in November 2018, three months earlier"
+          },
+          {
+            "value": "48 hours",
+            "meaning": "Age after which Mandrill by default deletes queued mail"
+          },
+          {
+            "value": "19:12 UTC",
+            "meaning": "When the Search and Url tables were truncated; the vacuum finished roughly an hour later"
+          },
+          {
+            "value": "3-hour",
+            "meaning": "Length of incident commander rotations, with a handover meeting"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Truncating the two huge tables that could be rebuilt or were not needed, so the vacuum could finish.",
+          "rejected": "Waiting for the full vacuum, which could take up to 40 days, and relying on a dump and restore that was also too slow.",
+          "why": "The app could run without those tables, dropping them freed their transaction ids, and the clock on queued mail deletion left no time for the slower options."
+        },
+        "failures": "The early warning was put on the backlog. Detection was slow because the first error was buried in other exceptions. Logging needed a writable local disk, so the failure filled disks. Knowledge of the systems sat with a few people, and the team had little visibility into job health. The post says the team was lucky to have data it could delete at all.",
+        "takeaways": "Alert on how close the transaction id counter is to its limit, and on autovacuum falling behind on any shard, especially one that hashing makes hotter. Rehearse which data you could drop to recover, and keep error reports readable when many things fail at once."
+      }
+    }
+  ],
+  "comparison": "Both posts are the same failure seen from two companies. A write-heavy Postgres database ran out of safe transaction ids because vacuum fell behind, and the database refused writes to protect itself. Both recovered by truncating tables whose data they could afford to lose, after a vacuum that looked too slow, and both then tuned vacuum and added monitoring.\n\nThey differ in where the trouble started. Sentry's whole database was write-heavy, and the team had already been tuning autovacuum; the lesson there is how to decide while the clock runs. Mandrill's shard4 was made hotter by its hashing, the early sign at about half the limit went to the backlog, and the first error was buried among others; the lesson there is detection and reading signals. Mandrill also adds the human side: incident commanders with three-hour rotations, and a deadline set by mail that expires after 48 hours.",
+  "glossary": [
+    {
+      "term": "Transaction",
+      "definition": "A group of changes that happen together or not at all, and that other transactions do not see half-done."
+    },
+    {
+      "term": "Atomicity",
+      "definition": "The promise that a transaction either happens completely or not at all."
+    },
+    {
+      "term": "MVCC",
+      "definition": "Multiversion concurrency control: updates add new row versions so readers and writers do not block each other."
+    },
+    {
+      "term": "Snapshot",
+      "definition": "A view of which transactions had committed at a moment, used to choose which row version a reader sees."
+    },
+    {
+      "term": "Isolation level",
+      "definition": "A setting for what a transaction may see of others running at the same time, from read committed to serializable."
+    },
+    {
+      "term": "Snapshot isolation",
+      "definition": "Each transaction reads from one snapshot; PostgreSQL implements repeatable read this way."
+    },
+    {
+      "term": "Serialization failure",
+      "definition": "An error that tells a transaction it conflicted with another and must be retried from the start."
+    },
+    {
+      "term": "Vacuum",
+      "definition": "The Postgres job that reclaims dead row versions and freezes old transaction ids."
+    },
+    {
+      "term": "Transaction ID (XID)",
+      "definition": "A 32-bit number Postgres gives to a transaction that changes rows, used to order row versions."
+    },
+    {
+      "term": "Wraparound",
+      "definition": "When the transaction id counter comes round to old values, so old rows could look like they are from the future."
+    },
+    {
+      "term": "Freezing",
+      "definition": "Marking a row as old enough to be in the past for every transaction, so its id no longer matters."
+    }
+  ],
+  "mistakes": [
+    "Turning vacuum down to save load. Both Sentry and Mandrill ended up with databases that refused writes, and Sentry ran its autovacuum with too high a freeze age, three workers and too much delay.",
+    "Alerting on the symptom instead of the counter. Mandrill saw its transaction ids at about half the limit in November 2018 and put the extra monitoring on the backlog; the shard stopped on February 4 and the first error was buried among unrelated ones.",
+    "Not knowing what you can afford to lose. Sentry restored writes five minutes after truncating one lookup table, and Mandrill after truncating two huge tables, but both decided with the clock running."
+  ]
+}

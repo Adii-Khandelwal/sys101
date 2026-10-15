@@ -1,0 +1,27 @@
+{
+  "transactions-and-mvcc": {
+    "summary": {
+      "points": [
+        "A transaction bundles changes so they happen together or not at all, and MVCC keeps row versions so readers and writers do not block each other.",
+        "An isolation level sets when a transaction takes its snapshot: read committed takes one per statement, repeatable read one for the whole transaction.",
+        "Postgres transaction ids are 32 bits and compared in a circle, so vacuum has to freeze old rows or the database stops accepting writes.",
+        "Sentry restored writes five minutes after truncating one stuck table, and Mandrill's shard stopped on February 4, 2019 with a vacuum estimated at up to 40 days."
+      ],
+      "figures": [
+        {
+          "postId": "sentry-xid-2015",
+          "row": 1,
+          "label": "Five minutes after Sentry truncated the stuck table, writes were back"
+        },
+        {
+          "postId": "mandrill-xid-2019",
+          "row": 2,
+          "label": "Mandrill's vacuum was estimated at up to 40 days"
+        }
+      ]
+    },
+    "prerequisiteReasons": {
+      "databases": "Transactions and MVCC takes from databases the tables, rows and queries that a transaction groups together and that several versions of a row protect."
+    }
+  }
+}

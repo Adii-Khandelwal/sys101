@@ -1,3 +1,4 @@
+import HeadingText from "./HeadingText";
 import { diagramHtml } from "@/lib/diagramHtml";
 import Link from "next/link";
 import CompanyLogo from "./CompanyLogo";
@@ -146,7 +147,7 @@ export default function TopicDossier({ topic, prerequisites, dependents, titles,
           <span className="label">{topic.group ?? "Concept"}</span>
           {topic.interviewRelevance && <InterviewTag level={topic.interviewRelevance} />}
         </div>
-        <h1 data-pagefind-meta="title">{topic.title}</h1>
+        <h1 data-pagefind-meta="title"><HeadingText text={topic.title} /></h1>
         <p className="concept">{topic.concept}</p>
 
         <div className="relations" data-pagefind-ignore>

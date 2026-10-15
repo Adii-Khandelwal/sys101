@@ -1,3 +1,4 @@
+import HeadingText from "./HeadingText";
 import { diagramHtml } from "@/lib/diagramHtml";
 import Link from "next/link";
 import { Fragment } from "react";
@@ -72,7 +73,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
           <span className="label">Start from zero</span>
           <span className="label reading-time">{learnReadingLabel(learn)}</span>
         </div>
-        <h1 data-pagefind-meta="title">Start from zero: {topic.title}</h1>
+        <h1 data-pagefind-meta="title"><HeadingText text={`Start from zero: ${topic.title}`} /></h1>
         <p className="concept">{learn.promise}</p>
         <p className="learn-note" data-pagefind-ignore>
           A beginner&apos;s path through {topic.title}, built only from official sources. It is separate from your

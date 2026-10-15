@@ -1,3 +1,4 @@
+import HeadingText from "./HeadingText";
 import { diagramHtml } from "@/lib/diagramHtml";
 import Link from "next/link";
 import CompanyLogo from "./CompanyLogo";
@@ -128,7 +129,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
           {topic.interviewRelevance && <InterviewTag level={topic.interviewRelevance} />}
           <span className="label reading-time">{readingLabel(topic, news)}</span>
         </div>
-        <h1 data-pagefind-meta="title">{topic.title}</h1>
+        <h1 data-pagefind-meta="title"><HeadingText text={topic.title} /></h1>
         <p className="concept">{topic.concept}</p>
         <div className="lesson-top" data-pagefind-ignore>
           <ResumeLine meta={meta} names={names} />

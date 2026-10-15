@@ -1,0 +1,74 @@
+{
+  "topic": "transactions-and-mvcc",
+  "updatedOn": "2026-10-15",
+  "items": [
+    {
+      "id": "autovacuum-settings",
+      "name": "Autovacuum and its settings",
+      "explanation": "Autovacuum is a background process that vacuums tables for you. A few settings decide how many workers run, how often it wakes and how much it pauses to spare the server, so a busy database can set it to fall behind.",
+      "assumedBy": [
+        {
+          "postId": "sentry-xid-2015",
+          "quote": "Additionally, we had been running with far too much delay in vacuuming which meant lower load on the system, but more idle time in maintenance."
+        }
+      ],
+      "sources": [
+        {
+          "title": "PostgreSQL Documentation: 19.10. Vacuuming",
+          "publisher": "PostgreSQL Global Development Group",
+          "url": "https://www.postgresql.org/docs/current/runtime-config-vacuum.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-15"
+        }
+      ]
+    },
+    {
+      "id": "single-user-mode",
+      "name": "Postgres single-user mode",
+      "explanation": "A Postgres server can be started with --single, which runs one session straight on the data directory with no other clients. It is the way to run VACUUM on a database that refuses normal connections.",
+      "assumedBy": [
+        {
+          "postId": "sentry-xid-2015",
+          "quote": "One piece of general advice is to stop the database and restart in single-user mode, thus running vacuum in a more isolated and safe environment."
+        },
+        {
+          "postId": "mandrill-xid-2019",
+          "quote": "When Postgres shuts down to protect against wraparound, it needs to be put into standalone mode and cleaned using the VACUUM command."
+        }
+      ],
+      "sources": [
+        {
+          "title": "PostgreSQL Documentation: postgres, Single-User Mode",
+          "publisher": "PostgreSQL Global Development Group",
+          "url": "https://www.postgresql.org/docs/current/app-postgres.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-15"
+        }
+      ]
+    },
+    {
+      "id": "truncate",
+      "name": "TRUNCATE versus DELETE",
+      "explanation": "TRUNCATE empties a table without scanning its rows and gives the disk space back at once, where DELETE leaves dead rows for a later VACUUM. That is why it can finish quickly on a huge table.",
+      "assumedBy": [
+        {
+          "postId": "sentry-xid-2015",
+          "quote": "With our best estimations, we made the call to truncate the table."
+        },
+        {
+          "postId": "mandrill-xid-2019",
+          "quote": "After verifying that this would free the associated XIDs, we decided to truncate the tables."
+        }
+      ],
+      "sources": [
+        {
+          "title": "PostgreSQL Documentation: TRUNCATE",
+          "publisher": "PostgreSQL Global Development Group",
+          "url": "https://www.postgresql.org/docs/current/sql-truncate.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-15"
+        }
+      ]
+    }
+  ]
+}

@@ -754,6 +754,64 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | discord-messages-2023 | meaning | three months | https://discord.com/blog/how-discord-stores-trillions-of-messages | (before first heading) | found (other spelling) |
 | discord-messages-2023 | failures | 99.9999% | https://discord.com/blog/how-discord-stores-trillions-of-messages | A Very Big Migration | found |
 
+## Transactions and MVCC
+
+| Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
+|---|---|---|---|---|---|
+| sentry-xid-2015 | numbers | nearly 3 hours | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | Safeguards | found |
+| sentry-xid-2015 | numbers | Five minutes | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | Accepting Loss | found |
+| sentry-xid-2015 | numbers | fewer than one million | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | Transaction ID Wraparound | found |
+| sentry-xid-2015 | numbers | 128GB to 256GB | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | Looking Forward | found with different formatting |
+| sentry-xid-2015 | numbers | 500000000 | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | Looking Forward | found |
+| sentry-xid-2015 | numbers | max_workers = 6 | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | Looking Forward | found |
+| sentry-xid-2015 | numbers | 1GB | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | Looking Forward | found |
+| sentry-xid-2015 | problem | 20, | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | Transaction ID Wraparound in Postgres | found with different formatting |
+| sentry-xid-2015 | problem | 2015, | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | Transaction ID Wraparound in Postgres | found with different formatting |
+| sentry-xid-2015 | walkthrough | 24 hours | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | Accepting Loss | found |
+| sentry-xid-2015 | walkthrough | 15 second | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | Looking Forward | found with different formatting |
+| sentry-xid-2015 | walkthrough | Five minutes | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | (before first heading) | found (other spelling) |
+| sentry-xid-2015 | walkthrough | six workers | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | (before first heading) | hand-checked |
+| sentry-xid-2015 | meaning | 100GB | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | Recovering from Disaster | found |
+| sentry-xid-2015 | meaning | 3 Internal | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | (before first heading) | hand-checked |
+| sentry-xid-2015 | failures | 100GB | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | Recovering from Disaster | found |
+| sentry-xid-2015 | failures | 1GB | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | Looking Forward | found |
+| sentry-xid-2015 | failures | three workers | https://blog.sentry.io/transaction-id-wraparound-in-postgres/ | (before first heading) | found (other spelling) |
+| mandrill-xid-2019 | numbers | 05:35 UTC | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | What We Learned from the Recent Mandrill Outage | found |
+| mandrill-xid-2019 | numbers | 80% | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | What We Learned from the Recent Mandrill Outage | found |
+| mandrill-xid-2019 | numbers | 40 days | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | Worst Case Scenario | found |
+| mandrill-xid-2019 | numbers | about half | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | A Potential Problem | found |
+| mandrill-xid-2019 | numbers | 48 hours | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | What We Learned | found |
+| mandrill-xid-2019 | numbers | 19:12 UTC | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | Getting Creative | found |
+| mandrill-xid-2019 | numbers | 3-hour | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | Incident Response | found |
+| mandrill-xid-2019 | problem | 05 | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | What We Learned from the Recent Mandrill Outage | found |
+| mandrill-xid-2019 | problem | 35 | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | What We Learned from the Recent Mandrill Outage | found |
+| mandrill-xid-2019 | problem | 22 | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | What We Learned from the Recent Mandrill Outage | found |
+| mandrill-xid-2019 | problem | 09 | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | What We Learned from the Recent Mandrill Outage | found |
+| mandrill-xid-2019 | problem | 80% | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | What We Learned from the Recent Mandrill Outage | found |
+| mandrill-xid-2019 | problem | 4 and | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | (before first heading) | hand-checked |
+| mandrill-xid-2019 | constraints | 48 hours | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | What We Learned | found |
+| mandrill-xid-2019 | walkthrough | 05 | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | What We Learned from the Recent Mandrill Outage | found |
+| mandrill-xid-2019 | walkthrough | 35 | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | What We Learned from the Recent Mandrill Outage | found |
+| mandrill-xid-2019 | walkthrough | 11 | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | Wraparound Protection Triggered | found |
+| mandrill-xid-2019 | walkthrough | 58 | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | Wraparound Protection Triggered | found |
+| mandrill-xid-2019 | walkthrough | 12 | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | (before first heading) | found |
+| mandrill-xid-2019 | walkthrough | 56 | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | Wraparound Protection Triggered | found |
+| mandrill-xid-2019 | walkthrough | 14 | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | Wraparound Protection Triggered | found |
+| mandrill-xid-2019 | walkthrough | 16 | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | Wraparound Protection Triggered | found |
+| mandrill-xid-2019 | walkthrough | 40 days | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | Worst Case Scenario | found |
+| mandrill-xid-2019 | walkthrough | 30 | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | Integrations | found |
+| mandrill-xid-2019 | walkthrough | 19 | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | What We Learned from the Recent Mandrill Outage | found |
+| mandrill-xid-2019 | walkthrough | 21 | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | Getting Creative | found |
+| mandrill-xid-2019 | walkthrough | 36 | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | Getting Creative | found |
+| mandrill-xid-2019 | walkthrough | 4 the | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | (before first heading) | hand-checked |
+| mandrill-xid-2019 | walkthrough | 5 a | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | (before first heading) | found (other spelling) |
+| mandrill-xid-2019 | walkthrough | half their | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | (before first heading) | found (other spelling) |
+| mandrill-xid-2019 | walkthrough | two huge | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | (before first heading) | hand-checked |
+| mandrill-xid-2019 | meaning | 2018, | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | A Potential Problem | found |
+| mandrill-xid-2019 | meaning | three months | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | (before first heading) | hand-checked |
+| mandrill-xid-2019 | tradeoffs | 40 days | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | Worst Case Scenario | found |
+| mandrill-xid-2019 | tradeoffs | two huge | https://mailchimp.com/what-we-learned-from-the-recent-mandrill-outage/ | (before first heading) | hand-checked |
+
 ## Summary
 
 | Topic | Found | Found with different formatting | NOT FOUND | Small number found as "3" or "three" | Hand-checked | HAND CHECK still needed |
@@ -778,3 +836,4 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | replication | 9 | 8 | 0 | 8 | 1 | 0 |
 | sharding | 22 | 7 | 0 | 5 | 0 | 0 |
 | storage-engines | 21 | 14 | 0 | 9 | 0 | 0 |
+| transactions-and-mvcc | 38 | 4 | 0 | 4 | 7 | 0 |
