@@ -17,6 +17,19 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 - Roadmap logic: every topic lists what it builds on and what leads on from it.
 - Topic order is a standard curriculum: networking basics, databases, load balancing, caching, CDNs, consistent hashing, replication, sharding, indexing, CAP, consensus, distributed transactions, queues, pub-sub, event-driven design, rate limiting, circuit breakers, failover, then capstones.
 
+## Future plan (topics to add next)
+
+Researched in Oct 2026; the live site has 22 topics. Full sources, figures and risks are in `docs/roadmap.md` (read it only when planning a topic; every figure there still goes through `add-post`). Order, each topic with at most 3 prerequisites so the map layout test stays clean (test the placement on a stub first, `add-topic` step 1):
+
+1. Batch 1 (strong sources, existing prerequisites only): `overload-and-cascading-failures`, `safe-deployments`, `object-storage`, `real-time-delivery`.
+2. Batch 2: `log-based-streaming`, `autoscaling-and-capacity`, `time-clocks-and-ordering`, `consistency-models`.
+3. Batch 3 (needs `log-based-streaming`; two need a second source first): `change-data-capture`, `exactly-once-processing`, `stream-vs-batch-processing`, `disaster-recovery-and-backups`.
+4. Batch 4: `probabilistic-data-structures`, `api-design-rpc-rest-graphql`, `service-mesh-and-api-gateways`, `online-schema-migrations`.
+5. Parked, no source passes yet: `observability-and-slos` (needs a second company post), `multi-region-traffic-routing`, `search-and-inverted-indexes`.
+6. Capstones after batch 1 and 2: chat (first), metrics pipeline, file sync, payments ledger, social graph store; later: notifications, live video; ride dispatch not ready.
+
+Go-live bar for an announcement: batches 1 and 2 plus the chat capstone (30 topics). Open owner calls: do vendor or academic-led sources count under post rule 4, and is a thin-number topic (CDC) acceptable.
+
 ## Where the detail lives (`.claude/rules/`)
 
 Path-scoped rule files load when you read, write or edit a matching file; open the one you need before changing that area. Each holds the standing rules and the full specification for its area.
@@ -94,7 +107,7 @@ Apply system design thinking to this site: static generation, CDN caching, decou
 - A production build overwrites `.next` under a running `next dev` and breaks it. While the dev server is up, build into another directory and run the post-build checks against it with the same variable, then delete it: `NEXT_DIST_DIR=.next-build npx next build`, then `NEXT_DIST_DIR=.next-build node scripts/check-seo.mjs` (also `check-news`, `check-diagram-overflow`), then `rm -rf .next-build`. (`postbuild` reads `.next`, so Pagefind is skipped this way; run it only on a build that owns `.next`.) A hook blocks the unsafe form.
 - Topics live in `content/topics/<slug>.json`; the schema in `lib/topics.ts` is checked by the build. Keep it in sync with `topic-pages.md`. Tooling (verify:figures with docs/hand-checks.json, audit:figures, check:tour, check:ui, diagram overflow check, Pagefind index) is described in `tooling.md`.
 - The build fails on an empty section or quiz, a missing prerequisite, a prerequisite cycle, missing attribution or verifiedOn, or a bad diagram (gradients, filters, scripts, no `<title>`).
-- Planned work lives in `docs/ideas.md`; read it only when asked. `docs/verification-log.md`, `docs/review-progress.md`, `docs/tasks/` and `docs/drafts/` are working records, not rules.
+- Planned work lives in `docs/ideas.md` and the topic roadmap in `docs/roadmap.md`; read them only when asked or when choosing the next topic. `docs/verification-log.md`, `docs/review-progress.md`, `docs/tasks/` and `docs/drafts/` are working records, not rules.
 
 ## Verifying a change
 
@@ -108,7 +121,7 @@ Run only what the change touches, then once at the end:
 ## Git and releases
 
 - Work on a branch, never directly on `main`, and never on a branch whose PR is already merged: a later commit or push reaches no PR (the guard-branch hook blocks `git commit` and `git push` on `main` and on a branch with a merged PR; start a new one with `git switch -c <name> origin/main`). Before a push, also run `git fetch` and check `git log origin/main --merges -3`. Commit messages end with the co-author line the session gives. Push only when asked.
-- `gh` is installed at `/opt/homebrew/bin/gh` (not on Claude's PATH, so call it by full path) and needs a one-time `gh auth login` by the user; create a PR with `gh pr create` only when asked. By default, after pushing, open the compare page for the user: `open "https://github.com/Adii-Khandelwal/sys101/compare/main...<branch>?expand=1"`, and give a short description ready to paste (what changed, checks, anything to read before merging). Vercel builds a preview for each branch and deploys `main`; after a merge, check the live site (`https://sys101.vercel.app`) rather than assuming.
+- `gh` is installed at `/opt/homebrew/bin/gh` (not on Claude's PATH, so call it by full path) and needs a one-time `gh auth login` by the user; after every push, create the PR yourself with `gh pr create` (never leave it to the owner) and give the PR link, with a short description (what changed, checks, anything to read before merging; the PR body ends with the attribution line the session gives). Fall back to opening `https://github.com/Adii-Khandelwal/sys101/compare/main...<branch>?expand=1` only if `gh` fails. Vercel builds a preview for each branch and deploys `main`; after a merge, check the live site (`https://sys101.vercel.app`) rather than assuming.
 - Run `/ponytail-review` on the diff before every push of code changes and say what it found in the report.
 - `.github/CODEOWNERS` records who owns what; `.claude/**` and `CLAUDE.md` are listed because they change what an agent does.
 
