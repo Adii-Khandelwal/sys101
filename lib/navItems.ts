@@ -3,4 +3,5 @@ export const NAV_ITEMS = [
   { href: "/glossary", label: "Glossary" },
   { href: "/posts", label: "Blogs" },
   { href: "/reads", label: "Great reads" },
+  { href: "/new", label: "What's new" },
 ];
