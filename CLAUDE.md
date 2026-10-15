@@ -6,6 +6,8 @@ Standing rules for this project. Follow them in every task. This file is always 
 
 - CLAUDE.md wins over any skill, plugin, or design tool (Impeccable, Emil Kowalski skills, Taste Skill). Skills are advisory. If one suggests something banned here (shadows, gradients, bounce easing, em dashes, a banned font), skip it silently.
 - Task prompts use TASK / FILES / DONE WHEN / SKIP. Follow SKIP strictly. Prompts do not repeat these rules, so assume them.
+- Multi-agent by default (`docs/agents.md`): the main session is the admin (splits, assigns, merges, runs the final checks, decides) and does not do the pieces. Content and design: `worker-strong`, then `reviewer`, max 2 rounds. Menial work: batched into one `worker-cheap` call, no reviewer. Trivial tasks: admin directly. Big tasks: show a plan table and wait for "go". Max 3 workers, parallel only on different files.
+- Cheapest model that can do the piece; each agent gets only its files and the relevant rules. Every report gets one line: who did what, what the reviewer rejected, rough tokens per model. Never push unasked; commit only on a branch.
 - Claude Code treats memory as context, not enforcement. Anything that must never happen is a hook in `.claude/settings.json` (see Project configuration), not only a sentence here.
 
 ## Project
@@ -112,29 +114,11 @@ Run only what the change touches, then once at the end:
 
 ## Owner's ideas (the log)
 
-Every idea or preference the owner states is written down, here as one line and in full in the matching rule file, so none is lost. Add a line with each new one. Newest last.
-
-- Great reads (`/reads`, `reads.md`): a curated list of influential or excellent posts and papers, chosen by the owner, kept apart from the topic sources; each row says post or paper; the title is the link; no read-state in v1, later a small "Read" toggle (`progress-tracking.md`).
-- Filters on /reads: All/Posts/Papers, a Topic row under its own "Topic" heading, a text filter. The count line shows only while filtering.
-- Every search or filter box has the homepage search's behaviour: "/" focus, Escape, Enter to the first result, word-start matching ("uber" must not find "Kubernetes") (`accessibility-and-chrome.md`).
-- Links are not underlined unless inside a running sentence; hover turns them a colour (rust, ink in side lists), on every list of links (`accessibility-and-chrome.md`). No blue tap flash on a phone.
-- The homepage "Companies we learn from" list links each company to `/posts#<company>` and shows no counts (`homepage.md`).
-- The top bar: only the homepage "sys101" flies letter by letter. Elsewhere the page name fades in, then a thin rule and the current section name, lighter, replaced by each new section heading going down and back up; no rule before the page name; at the very end of a page only the last section shows (`motion.md`, lib/headerFade.ts).
-- The top bar shows no section names on About, Terms, Privacy and Your data.
-- Links to a section glide down to it (same page), or open the other page at its top and then glide down (`motion.md`, lib/glide.ts).
-- Start button text must stay visible on hover.
-- The homepage sources section is a static, wrapped row of dimmed marks and names titled "Companies we learn from" (no marquee, no exception to the banned list); its note says etcd is a project, not a company (`homepage.md`).
-- Homepage copy is short and made to make a visitor want to explore: no numbers in the intro, no "linked and dated" reassurance (`homepage.md`).
-- No post counts beside company, topic or year headings on /posts; the totals line sits at the bottom, and only the filter count shows at the top while filtering (`homepage.md`).
-- The content pages (Glossary, Blogs, Great reads, What's new; "Blogs" is the label for the /posts page, which also holds a few papers and docs) live in the header bar as a nav, a Menu button on narrow screens, because nobody scrolls to the footer to find them (`accessibility-and-chrome.md`).
-- The site's own logo mark sits beside the big homepage wordmark and at the start of the footer (`homepage.md`, `accessibility-and-chrome.md`). (`homepage.md`).
-- What's new (`/new`, `news.md`): a monthly page over every topic's news items, grouped by the month they were added, with a monthly routine run that sources them from the allowlisted sites only (`docs/routines/whats-new-monthly.md`).
-- Offline: after one online visit the whole site works with no connection, external links aside (`offline.md`).
-- Opening screen: on every load of the homepage only, one node of the mark comes on, two come out of it, and the name "sys101" comes on like a bulb (on, dim, off, on), then the site; a slow link to another page shows the mark breathing (`motion.md`).
+Every idea or preference the owner states goes in `docs/owner-ideas.md` (one line each, newest last) and in full in the matching rule file. Add a line with each new one.
 
 ## Keeping docs current
 
-- When the owner states an idea, preference or correction, add it to the Owner's ideas log above and to its rule file in the same change.
+- When the owner states an idea, preference or correction, add it to `docs/owner-ideas.md` and to its rule file in the same change.
 - Update docs with every commit. When a task adds or changes a standing rule, page type, schema, route, feature or convention, update the matching `.claude/rules/` file (or this file for a project-wide rule) and `README.md` in the same commit. Edit existing text; never duplicate a rule.
 - Put a new rule where it will load when it matters: path-scoped in `.claude/rules/<area>.md` (add the file's globs to its `paths`), or here only if it applies to every task. A new area gets a rule file and a row in the table above. Use a skill, not a rule, for a multi-step workflow.
 - Do not record one-off details or temporary state. Dated working records go in `docs/`.
@@ -179,7 +163,7 @@ When compacting, keep: the current task and its SKIP list, files changed and why
 ## Token discipline
 
 - Do the task. Don't restate it, plan out loud, or narrate steps. Read only the files the task needs; grep before opening, read line ranges, never re-read a file you just edited.
-- Make the smallest change that meets the task. Don't spawn subagents unless asked.
+- Make the smallest change that meets the task. Subagents follow the multi-agent rule above.
 - Run only the checks relevant to what changed, then one final build.
 - Don't fetch posts again for content already verified in content/topics/.
 - Final reply says "CLAUDE.md: updated <section>" (or "no change"), likewise README and the rule files, in one line. Max 8 lines overall: what changed (file names), what couldn't be verified, the next decision. No code listings or diffs unless asked.
