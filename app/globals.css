@@ -848,7 +848,8 @@ li {
 
 .index-groups {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* As many columns as keep each row wide enough for a title, the reading time and the dot; never narrower than that. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
   gap: 32px;
 }
 
@@ -888,8 +889,10 @@ li {
   white-space: nowrap;
 }
 
+/* The dot sits level with the first line (a long title wraps; 18px at line-height 1.55 is about 28px, so 10px centres it). */
 .index li .legend-dot {
-  align-self: center;
+  align-self: flex-start;
+  margin-top: 10px;
   width: 8px;
   height: 8px;
 }
