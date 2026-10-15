@@ -489,6 +489,7 @@ li {
 .search input::placeholder {
   color: var(--ink-soft);
   font-style: italic;
+  font-family: var(--font-serif-italic), Georgia, serif;
 }
 
 .search input:focus-visible {
@@ -505,6 +506,7 @@ li {
   margin: 8px 0 0;
   font-size: 15px;
   font-style: italic;
+  font-family: var(--font-serif-italic), Georgia, serif;
   color: var(--ink-soft);
   animation: fade-in var(--dur-fast) var(--ease-out);
 }
@@ -1420,6 +1422,7 @@ li {
   margin: 4px 0 0;
   color: var(--ink-soft);
   font-style: italic;
+  font-family: var(--font-serif-italic), Georgia, serif;
 }
 
 .primer {
@@ -1445,6 +1448,7 @@ li {
 .post h3 {
   font-size: 20px;
   font-style: italic;
+  font-family: var(--font-serif-italic), Georgia, serif;
   font-weight: 500;
   margin: 32px 0 8px;
 }
@@ -1646,6 +1650,7 @@ li {
   margin: -8px 0 20px;
   font-size: 15px;
   font-style: italic;
+  font-family: var(--font-serif-italic), Georgia, serif;
   color: var(--ink-soft);
 }
 
@@ -1926,6 +1931,7 @@ li {
   margin: 0 0 8px;
   font-size: 15px;
   font-style: italic;
+  font-family: var(--font-serif-italic), Georgia, serif;
   color: var(--ink-soft);
 }
 
@@ -2029,6 +2035,7 @@ li {
   margin: 8px 0 0;
   font-size: 15px;
   font-style: italic;
+  font-family: var(--font-serif-italic), Georgia, serif;
   color: var(--ink-soft);
 }
 
@@ -2069,6 +2076,7 @@ li {
 .outcome {
   margin: 0 0 16px;
   font-style: italic;
+  font-family: var(--font-serif-italic), Georgia, serif;
   color: var(--ink-soft);
 }
 
@@ -3082,6 +3090,7 @@ html {
 .learn-note {
   font-size: 15px;
   font-style: italic;
+  font-family: var(--font-serif-italic), Georgia, serif;
   color: var(--ink-soft);
 }
 
@@ -3171,6 +3180,7 @@ html {
   margin-top: 6px;
   font-size: 14px;
   font-style: italic;
+  font-family: var(--font-serif-italic), Georgia, serif;
   color: var(--ink-soft);
 }
 

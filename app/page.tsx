@@ -80,13 +80,13 @@ export default function Home() {
           </div>
           <p className="masthead-lead">Learn system design from what real companies built, broke and fixed.</p>
           <NextUp
-            start={{ slug: ordered[0].slug, title: ordered[0].title, minutes: readingMinutes(ordered[0], getNews(ordered[0].slug)) }}
+            start={{ slug: ordered[0].slug, title: ordered[0].title }}
             entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))}
             metas={ordered.map((t) => ({ slug: t.slug, postIds: t.posts.map((p) => p.id!), correct: (t.lesson?.quiz ?? []).map((q) => optionId(q.options[q.correct])) }))}
           />
           <p className="masthead-actions">
             <Link className="label" href="/about">
-              Why this exists
+              Why I made this
             </Link>
             <TourLink tour="home" />
           </p>
