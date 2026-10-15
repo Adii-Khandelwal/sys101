@@ -16,6 +16,7 @@
     "check:diagrams": "node scripts/check-diagram-overflow.mjs",
     "audit:figures": "node scripts/audit-figures.mjs",
     "check:tour": "node scripts/check-tour.mjs",
+    "check:offline": "node scripts/check-offline.mjs",
     "check:ui": "node scripts/ui-audit.mjs",
     "pipeline:fetch": "node pipeline/fetch-rss.mjs",
     "pipeline:summarize": "node pipeline/summarize.mjs",
