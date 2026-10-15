@@ -223,6 +223,9 @@ h1[tabindex="-1"]:focus {
   align-items: center;
   gap: 18px;
 }
+.masthead-title.is-landing {
+  opacity: 0;
+}
 
 .masthead h1 {
   font-size: 64px;
@@ -4606,12 +4609,19 @@ html[data-splash] .splash {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--paper);
   cursor: pointer;
   opacity: 1;
-  transition: opacity var(--dur-base) var(--ease-out);
-  /* Leaves by itself even if the scripts never load, so it can never cover the page for good. */
-  animation: splash-away var(--dur-base) var(--ease-out) var(--splash-hold) forwards;
+  /* Leaves by itself even if the scripts never load, so it can never cover the page for good. It waits out the flight below. */
+  animation: splash-away var(--dur-base) var(--ease-out) calc(var(--splash-hold) + var(--dur-slow) + var(--dur-fast)) forwards;
+}
+/* The cream backdrop is its own layer so it can fade while the mark and name fly into the masthead. */
+html[data-splash] .splash::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  opacity: 1;
+  transition: opacity var(--dur-slow) var(--ease-in-out);
 }
 @keyframes splash-away {
   to {
@@ -4620,10 +4630,14 @@ html[data-splash] .splash {
   }
 }
 html[data-splash] .splash.is-leaving {
-  opacity: 0;
   pointer-events: none;
 }
+html[data-splash] .splash.is-leaving::before {
+  opacity: 0;
+}
+/* The mark and name fly to the masthead's own (set inline by Splash.tsx); that one is hidden until they land. */
 .splash-lockup {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 18px;
@@ -4631,6 +4645,7 @@ html[data-splash] .splash.is-leaving {
 }
 .splash-mark {
   display: flex;
+  transition: transform var(--dur-slow) var(--ease-in-out);
 }
 .splash-mark .logo-node,
 .splash-mark .logo-line {
@@ -4675,6 +4690,7 @@ html[data-splash] .splash.is-leaving {
   letter-spacing: -0.01em;
   opacity: 0;
   animation: splash-bulb var(--flicker) linear var(--flicker-word) forwards;
+  transition: transform var(--dur-slow) var(--ease-in-out);
 }
 /* On, dim, off, dim, on and staying on: opacity only. */
 @keyframes splash-bulb {
