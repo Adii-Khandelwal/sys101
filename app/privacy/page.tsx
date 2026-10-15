@@ -31,6 +31,13 @@ export default function Privacy() {
         shown again, in the same place.
       </p>
 
+      <h2>Offline copy</h2>
+      <p>
+        After your first visit, a service worker saves a copy of the site&apos;s pages and files in your browser&apos;s cache, so you can
+        keep reading with no connection. The copy is only the public site, never your progress, and it stays on your device. Clearing your
+        browser&apos;s site data removes it.
+      </p>
+
       <h2>Server logs</h2>
       <p>
         The company hosting the site may keep standard server logs, such as IP address, browser type,

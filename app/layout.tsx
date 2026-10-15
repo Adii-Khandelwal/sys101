@@ -7,6 +7,7 @@ import SiteNav from "@/components/SiteNav";
 import HeaderTopic from "@/components/HeaderTopic";
 import BackToTop from "@/components/BackToTop";
 import ThemeToggle from "@/components/ThemeToggle";
+import OfflineSupport from "@/components/OfflineSupport";
 import { Analytics } from "@vercel/analytics/next";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
@@ -71,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <BackToTop />
         <Analytics />
+        <OfflineSupport />
       </body>
     </html>
   );
