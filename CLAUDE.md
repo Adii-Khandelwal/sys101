@@ -126,8 +126,9 @@ Every idea or preference the owner states is written down, here as one line and 
 - The homepage sources section is a static, wrapped row of dimmed marks and names titled "Companies we learn from" (no marquee, no exception to the banned list); its note says etcd is a project, not a company (`homepage.md`).
 - Homepage copy is short and made to make a visitor want to explore: no numbers in the intro, no "linked and dated" reassurance (`homepage.md`).
 - No post counts beside company, topic or year headings on /posts; the totals line sits at the bottom, and only the filter count shows at the top while filtering (`homepage.md`).
-- The content pages (Glossary, Blogs, Great reads; "Blogs" is the label for the /posts page, which also holds a few papers and docs) live in the header bar as a nav, a Menu button on narrow screens, because nobody scrolls to the footer to find them (`accessibility-and-chrome.md`).
+- The content pages (Glossary, Blogs, Great reads, What's new; "Blogs" is the label for the /posts page, which also holds a few papers and docs) live in the header bar as a nav, a Menu button on narrow screens, because nobody scrolls to the footer to find them (`accessibility-and-chrome.md`).
 - The site's own logo mark sits beside the big homepage wordmark and at the start of the footer (`homepage.md`, `accessibility-and-chrome.md`). (`homepage.md`).
+- What's new (`/new`, `news.md`): a monthly page over every topic's news items, grouped by the month they were added, with a monthly routine run that sources them from the allowlisted sites only (`docs/routines/whats-new-monthly.md`).
 - Offline: after one online visit the whole site works with no connection, external links aside (`offline.md`).
 - Opening screen: on every load of the homepage only, one node of the mark comes on, two come out of it, and the name "sys101" comes on like a bulb (on, dim, off, on), then the site; a slow link to another page shows the mark breathing (`motion.md`).
 

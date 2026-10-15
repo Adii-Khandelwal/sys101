@@ -101,6 +101,7 @@ Scripts worth knowing:
 | `npm run build` | Static build, then the news, SEO and diagram checks, then the Pagefind index. |
 | `npm run verify:figures` | Checks every figure against its source. Needs the network. |
 | `npm run verify:reads`, `verify:news`, `verify:background` | The same live check for Great reads, What's new and the Background page. |
+| `node scripts/news-month.mjs [YYYY-MM]` | The monthly What's new brief: each topic's approved sites and what is already listed. Offline. |
 | `npm run check:tour` | Drives the guided tours in a browser against a running server. |
 | `npm run check:ui` | Overflow, tooltips, split labels, broken images and layout shift at 1440 and 390 pixels, light and dark. |
 | `npm run check:topic -- <slug>` | Preflight for a new topic: its learn and background files, prerequisites, logos and docs that name a count. |

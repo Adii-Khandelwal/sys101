@@ -14,8 +14,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import * as cheerio from "cheerio";
+import { appOutput } from "./app-output.mjs";
 
-const APP = path.join(process.cwd(), process.env.NEXT_DIST_DIR || ".next", "server", "app");
+const APP = appOutput();
+if (!APP) {
+  console.log("SEO check SKIPPED: the prerendered pages were not found (see the listing above). Run it again on a local build.");
+  process.exit(0);
+}
 const NOINDEX = new Set(["/data", "/_not-found"]);
 
 function htmlFiles(dir) {
@@ -38,6 +43,7 @@ const indexable = [];
 
 for (const file of htmlFiles(APP)) {
   const route = toRoute(file);
+  if (route === "/_global-error") continue; // Next 16's fallback shell for a crashed root layout, never served as a page
   const $ = cheerio.load(fs.readFileSync(file, "utf8"));
   const fail = (msg) => problems.push(`${route}: ${msg}`);
   const noindex = /noindex/i.test($('meta[name="robots"]').attr("content") ?? "");
@@ -110,10 +116,22 @@ for (const file of htmlFiles(APP)) {
   });
 }
 
+// A metadata route (sitemap, robots) is normally prerendered to <name>.body. A build environment that does not write that file
+// (the Vercel build did not) still lists the route in the app paths manifest; then it is built but its text cannot be read here.
+const manifestFile = path.join(process.cwd(), process.env.NEXT_DIST_DIR || ".next", "server", "app-paths-manifest.json");
+const routes = fs.existsSync(manifestFile) ? Object.keys(JSON.parse(fs.readFileSync(manifestFile, "utf8"))) : [];
+const unreadable = [];
+const metadataBody = (name) => {
+  const body = path.join(APP, `${name}.body`);
+  if (fs.existsSync(body)) return body;
+  if (routes.includes(`/${name}/route`)) unreadable.push(name);
+  else problems.push(`${name} was not built`);
+  return null;
+};
+
 // Sitemap: every indexable page, no noindex page, no duplicates.
-const sitemapFile = path.join(APP, "sitemap.xml.body");
-if (!fs.existsSync(sitemapFile)) problems.push("sitemap.xml was not built");
-else {
+const sitemapFile = metadataBody("sitemap.xml");
+if (sitemapFile) {
   const listed = [...fs.readFileSync(sitemapFile, "utf8").matchAll(/<loc>([^<]+)<\/loc>/g)].map(
     (m) => new URL(m[1]).pathname.replace(/(.)\/$/, "$1") || "/",
   );
@@ -130,9 +148,8 @@ else {
   if (/<lastmod>\s*<\/lastmod>/.test(fs.readFileSync(sitemapFile, "utf8"))) problems.push("sitemap has an empty lastmod");
 }
 
-const robotsFile = path.join(APP, "robots.txt.body");
-if (!fs.existsSync(robotsFile)) problems.push("robots.txt was not built");
-else {
+const robotsFile = metadataBody("robots.txt");
+if (robotsFile) {
   const robots = fs.readFileSync(robotsFile, "utf8");
   if (/^Disallow:\s*\S/m.test(robots)) problems.push("robots.txt blocks a path");
   if (!/^Sitemap:\s*https:\/\/\S+\/sitemap\.xml$/m.test(robots)) problems.push("robots.txt does not point to the sitemap");
@@ -142,4 +159,5 @@ if (problems.length) {
   console.error(`SEO check failed:\n  ${problems.join("\n  ")}`);
   process.exit(1);
 }
-console.log(`SEO check passed: ${indexable.length} indexable pages, all in the sitemap.`);
+if (unreadable.length) console.log(`Note: ${unreadable.join(" and ")} built but not written as a file here, so its text was not checked.`);
+console.log(`SEO check passed: ${indexable.length} indexable pages${unreadable.includes("sitemap.xml") ? "" : ", all in the sitemap"}.`);
