@@ -14,8 +14,16 @@ import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 const serif = Newsreader({
   subsets: ["latin"],
   variable: "--font-serif",
-  style: ["normal", "italic"],
   axes: ["opsz"],
+});
+
+// Not preloaded, so it does not compete with the first paint (about 130 kB); it still loads on any page that shows italic text, and every page has some.
+const serifItalic = Newsreader({
+  subsets: ["latin"],
+  variable: "--font-serif-italic",
+  style: "italic",
+  axes: ["opsz"],
+  preload: false,
 });
 
 const mono = IBM_Plex_Mono({
@@ -45,7 +53,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   // Inline scripts set data-theme and data-posts-view on <html> before hydration, so React must not flag them.
   return (
-    <html lang="en" className={`${serif.variable} ${mono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${serif.variable} ${serifItalic.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
         {/* Set the theme before first paint so there is no flash. Reads the saved
             choice; with none, follows the OS. Mirrors ThemeToggle's storage key. */}

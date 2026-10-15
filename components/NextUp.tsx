@@ -34,7 +34,7 @@ export default function NextUp({
 }: {
   entries: IndexEntry[];
   metas: LessonMeta[];
-  start: { slug: string; title: string; minutes: number };
+  start: { slug: string; title: string };
 }) {
   const { progress, updated, read } = useAllProgress();
   const router = useRouter();
@@ -68,7 +68,7 @@ export default function NextUp({
         <Link className="cta" href={`/topic/${start.slug}`} data-own-transition onClick={(e) => open(e, start.slug)}>
           Start with {start.title}
         </Link>
-        <span className="label">Topic 01 · ~{start.minutes} min read</span>
+        <span className="label">Topic 01</span>
       </p>
     );
   }
