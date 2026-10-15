@@ -3,7 +3,7 @@ import { topicOrder } from "@/lib/order";
 import { getAllTopics } from "@/lib/topics";
 import { getAllLearn } from "@/lib/learn";
 import { getNews } from "@/lib/news";
-import { newsUpdated } from "@/lib/newsMonths";
+// import { newsUpdated } from "@/lib/newsMonths"; // for the /new entry below, hidden for now
 import { backgroundUpdated, getAllBackground } from "@/lib/background";
 import { getAllReads, readsUpdated } from "@/lib/reads";
 import { PAGE_DATES, absoluteUrl, learnUpdated, postsUpdated, topicPageUpdated } from "@/lib/site";
@@ -25,7 +25,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...(getAllBackground().length ? [entry("/background", backgroundUpdated())] : []),
     entry("/posts", postsUpdated(topics)),
     entry("/reads", readsUpdated(getAllReads(topics.map((t) => t.slug)))),
-    entry("/new", newsUpdated(topics.map((t) => ({ news: getNews(t.slug) }))) || PAGE_DATES.news),
+    // entry("/new", newsUpdated(topics.map((t) => ({ news: getNews(t.slug) }))) || PAGE_DATES.news),
     entry("/about", PAGE_DATES.about),
     entry("/glossary", PAGE_DATES.glossary),
     entry("/terms", PAGE_DATES.terms),
