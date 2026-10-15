@@ -10,9 +10,8 @@ export default function OfflineSupport() {
     if (conn?.saveData) return;
     const run = async () => {
       try {
-        const reg = await navigator.serviceWorker.register("/sw.js");
-        const sw = (await navigator.serviceWorker.ready) ?? reg;
-        sw.active?.postMessage("warm");
+        await navigator.serviceWorker.register("/sw.js");
+        (await navigator.serviceWorker.ready).active?.postMessage("warm");
       } catch {
         // Offline support is optional; the site works the same without it.
       }
