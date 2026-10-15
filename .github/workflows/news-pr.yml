@@ -88,7 +88,7 @@ jobs:
           # Nothing from the pull request may stay in the workspace: vitest and tsc would otherwise find its files.
           rm -rf pr
       - if: steps.guard.outputs.news == 'true'
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
