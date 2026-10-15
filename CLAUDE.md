@@ -109,7 +109,7 @@ Run only what the change touches, then once at the end:
 
 - Work on a branch, never directly on `main`, and never on a branch whose PR is already merged: a later commit or push reaches no PR (the guard-branch hook blocks `git commit` and `git push` on `main` and on a branch with a merged PR; start a new one with `git switch -c <name> origin/main`). Before a push, also run `git fetch` and check `git log origin/main --merges -3`. Commit messages end with the co-author line the session gives. Push only when asked.
 - `gh` is installed at `/opt/homebrew/bin/gh` (not on Claude's PATH, so call it by full path) and needs a one-time `gh auth login` by the user; create a PR with `gh pr create` only when asked. By default, after pushing, open the compare page for the user: `open "https://github.com/Adii-Khandelwal/sys101/compare/main...<branch>?expand=1"`, and give a short description ready to paste (what changed, checks, anything to read before merging). Vercel builds a preview for each branch and deploys `main`; after a merge, check the live site (`https://sys101.vercel.app`) rather than assuming.
-- Run `/ponytail-review` on the diff before every push of code changes and say what it found.
+- Run `/ponytail-review` on the diff before every push of code changes and say what it found in the report.
 - `.github/CODEOWNERS` records who owns what; `.claude/**` and `CLAUDE.md` are listed because they change what an agent does.
 
 ## Owner's ideas (the log)
@@ -118,7 +118,6 @@ Every idea or preference the owner states goes in `docs/owner-ideas.md` (one lin
 
 ## Keeping docs current
 
-- When the owner states an idea, preference or correction, add it to `docs/owner-ideas.md` and to its rule file in the same change.
 - Update docs with every commit. When a task adds or changes a standing rule, page type, schema, route, feature or convention, update the matching `.claude/rules/` file (or this file for a project-wide rule) and `README.md` in the same commit. Edit existing text; never duplicate a rule.
 - Put a new rule where it will load when it matters: path-scoped in `.claude/rules/<area>.md` (add the file's globs to its `paths`), or here only if it applies to every task. A new area gets a rule file and a row in the table above. Use a skill, not a rule, for a multi-step workflow.
 - Do not record one-off details or temporary state. Dated working records go in `docs/`.
@@ -153,7 +152,6 @@ Installed skills that fit this project (advisory; this file wins, and anything b
 
 - Ponytail (plugin, default level full) is active for code changes. Before adding a dependency, component, script or file, climb its ladder: does it need to exist, is it already in the repo, is there a native or standard way, is there an installed dependency.
 - CLAUDE.md wins. Ponytail never overrides the honesty rules, source verification, accessibility, tests, motion rules or the banned list. "Write less" is for code, not research: content work and audits still read every source in full.
-- Run /ponytail-review on the diff before every push of code changes, and say what it found in the report.
 - Shortcut comments (`shortcut: <limit>, <when to upgrade>`) are listed by /ponytail-debt; write the ledger to docs/debt.md only when asked.
 
 ## Compact instructions

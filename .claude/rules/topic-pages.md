@@ -19,19 +19,12 @@ paths:
 
 # Topic pages
 
-Applies when editing topic pages, their content JSON or the schema in lib/topics.ts. The build checks most of this.
+Applies when editing topic pages, their content JSON or the schema in lib/topics.ts. The build checks most of this. The sections below hold the detail; this list keeps only the rules they do not repeat.
 
 ## Standing rules
 
-- Order: Part A concept (Why it exists, Mental model, How it works, Worked example, Common mistakes, Check yourself), Part B real world (one section per post, then Where they differ), Design exercises, What to learn next, Original posts. Each section opens with "After this you can ...".
-- Concept text may come from general knowledge, but every figure or company claim must come from a verified post in the JSON. Never invent numbers.
-- Check yourself is 5 to 8 questions; the build enforces answer positions, no 2- or 3-cycle of positions, and the correct option longest in at most 2. QUIZ_STYLE_PENDING (lib/topics.ts) lists topics not yet reworked.
-- Diagrams are original inline SVG with a title and alt text. No data controls on topic pages (they live on /data).
 - A reading-time estimate ("~N min read") shows beside the group label on topic and learn pages and in the All-topics index (not on the homepage start button, which says only "Topic 01"); it is computed from the rendered prose plus a per-diagram allowance (lib/readingTime.ts), never hardcoded.
 - A post digest may carry one interactive `figure` (lib/figures.ts, .claude/rules/figures.md): its inputs are digest.numbers rows, labels are HTML outside the SVG, no gradients, filters, idle motion or auto-start; one per post, only where the source gives a mechanism.
-- Original posts lists company and year (just the company when the source shows no date); links open in a new tab with rel="noopener noreferrer".
-- Every content page ends with one "Page last updated <date>" line above the footer (PageUpdated), from content dates; no per-source "Checked on". `verifiedOn` is the date that entry was last edited; no code writes it. Never imply the author personally checked sources unless true.
-- "In short" (`summary`: 3 to 5 plain points, 0 to 3 labelled digest figures) sits under the concept; `prerequisiteReasons` gives one sentence per prerequisite (Builds on, Path rows, learn page). Checked in lib/topics.ts (figure labels: no colon, units spaced like "500 ms"); REQUIRE_NEW_FIELDS (now true) makes both mandatory. Details: .claude/rules/topic-pages.md.
 - Optional `description` on a topic replaces the generated meta description: one sentence of 8 words or more ending in a period, under 155 characters. Interview tags are hidden for now (SHOW_INTERVIEW_TAGS in lib/topics.ts); the field stays.
 - A source with no date (versioned docs) sets `published` to "no date shown" plus `edition`, shown instead of a date only when it gives one the page shows ("date unknown" shows nothing). `tradeoffs.rejected` is left out when the source names no alternative.
 - A paper says "This is a research paper, not a company blog post"; no internal phrasing like "the rules" on a page.
@@ -59,6 +52,7 @@ Applies when editing topic pages, their content JSON or the schema in lib/topics
 ## Page last updated
 
 - Every content page ends with one line, "Page last updated <date>", from the `PageUpdated` component, just above the footer. It replaces the per-source "Checked on" dates, the "As of" line under What's new, and the "Last updated" label that used to sit at the top of Terms and Privacy.
+- `verifiedOn` is the date that entry was last edited; no code writes it. Never imply the author personally checked sources unless true.
 - The date is derived, never typed on the page: a topic page uses its newest post `verifiedOn` or its What's new `asOf` (`topicPageUpdated` in lib/site.ts); a learn page its newest source `verifiedOn` (`learnUpdated`); /background the newest `updatedOn`; About, Glossary, Terms and Privacy use `PAGE_DATES`. The same dates feed the sitemap lastmod.
 - A source that shows no date shows no date: "no date shown" and "date unknown" never appear on a page (`postDateShown`, `companyWhen`). An `edition` label that gives a date the page shows ("page shows last modified June 14, 2021, v3.5 documentation") is still shown.
 - lib/pageUpdated.test.ts renders every topic, learn page and the five other pages and checks all of this.
