@@ -38,6 +38,7 @@ const indexable = [];
 
 for (const file of htmlFiles(APP)) {
   const route = toRoute(file);
+  if (route === "/_global-error") continue; // Next 16's fallback shell for a crashed root layout, never served as a page
   const $ = cheerio.load(fs.readFileSync(file, "utf8"));
   const fail = (msg) => problems.push(`${route}: ${msg}`);
   const noindex = /noindex/i.test($('meta[name="robots"]').attr("content") ?? "");

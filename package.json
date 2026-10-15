@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "verify:figures": "node scripts/verify-figures.mjs",
     "verify:news": "node scripts/verify-news.mjs",
     "verify:reads": "node scripts/verify-reads.mjs",
