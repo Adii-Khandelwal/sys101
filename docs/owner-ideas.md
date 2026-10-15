@@ -22,3 +22,4 @@ Moved out of CLAUDE.md to keep it short. Every idea or preference the owner stat
 - Opening screen: when the loader has fully drawn the logo, the mark and "sys101" move into the homepage masthead's own mark and name (`motion.md`).
 - What's new page (`/new`): hidden for now, code kept (app/_new, commented nav item, sitemap entry and test lines) so it can come back; the per-topic What's new sections stay (`news.md`).
 - Future plan: research all sensible next topics with their tech blogs, record them in CLAUDE.md ("Future plan", detail in `docs/roadmap.md`), aiming at a ready-to-announce version of the site (batches 1 and 2 plus the chat capstone).
+- Pull requests: after every push, create the PR with `gh pr create` and give the link; never leave the compare page for the owner to fill in (`CLAUDE.md` "Git and releases").
