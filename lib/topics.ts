@@ -444,6 +444,18 @@ export function checkReasons(topic: Topic): string[] {
   return problems;
 }
 
+/** Rules for a post's optional `stillCitedBy`: a title, a year and an https URL. */
+export function stillCitedProblems(s: Post["stillCitedBy"]): string[] {
+  if (!s) return [];
+  const problems: string[] = [];
+  if (!(nonEmpty(s.title) && nonEmpty(s.url) && s.year > 0)) problems.push("stillCitedBy needs title, url and year");
+  if (nonEmpty(s.url)) {
+    const bad = httpsUrlProblem(s.url);
+    if (bad) problems.push(`stillCitedBy.url ${bad}`);
+  }
+  return problems;
+}
+
 function validate(entries: { file: string; topic: Topic }[]): string[] {
   const problems: string[] = [];
   const slugs = new Set<string>();
@@ -516,13 +528,7 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
       else if (isOld(post.published) && !nonEmpty(post.ageNote)) {
         problems.push(`${where}: published ${post.published}, over ${OLD_POST_YEARS} years ago, so it needs an ageNote (CLAUDE.md rule 3)`);
       }
-      if (post.stillCitedBy && !(nonEmpty(post.stillCitedBy.title) && nonEmpty(post.stillCitedBy.url) && post.stillCitedBy.year > 0)) {
-        problems.push(`${where}: stillCitedBy needs title, url and year`);
-      if (post.stillCitedBy && nonEmpty(post.stillCitedBy.url)) {
-        const bad = httpsUrlProblem(post.stillCitedBy.url);
-        if (bad) problems.push(`${where}: stillCitedBy.url ${bad}`);
-      }
-      }
+      problems.push(...stillCitedProblems(post.stillCitedBy).map((p) => `${where}: ${p}`));
       for (const r of post.related ?? []) {
         if (!slugs.has(r)) problems.push(`${where}: related topic "${r}" has no topic file`);
       }
