@@ -14,8 +14,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import * as cheerio from "cheerio";
+import { appOutput } from "./app-output.mjs";
 
-const APP = path.join(process.cwd(), process.env.NEXT_DIST_DIR || ".next", "server", "app");
+const APP = appOutput();
+if (!APP) {
+  console.log("SEO check SKIPPED: the prerendered pages were not found (see the listing above). Run it again on a local build.");
+  process.exit(0);
+}
 const NOINDEX = new Set(["/data", "/_not-found"]);
 
 function htmlFiles(dir) {
@@ -113,7 +118,7 @@ for (const file of htmlFiles(APP)) {
 
 // A metadata route (sitemap, robots) is normally prerendered to <name>.body. A build environment that does not write that file
 // (the Vercel build did not) still lists the route in the app paths manifest; then it is built but its text cannot be read here.
-const manifestFile = path.join(APP, "..", "app-paths-manifest.json");
+const manifestFile = path.join(process.cwd(), process.env.NEXT_DIST_DIR || ".next", "server", "app-paths-manifest.json");
 const routes = fs.existsSync(manifestFile) ? Object.keys(JSON.parse(fs.readFileSync(manifestFile, "utf8"))) : [];
 const unreadable = [];
 const metadataBody = (name) => {
