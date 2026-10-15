@@ -39,7 +39,7 @@ jobs:
       fork: ${{ steps.guard.outputs.fork }}
     steps:
       # The base branch: this is the code that runs.
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.base.ref }}
           persist-credentials: false
@@ -64,7 +64,7 @@ jobs:
           node scripts/news-guard.mjs paths "$RUNNER_TEMP/files.ndjson" "$HEAD_REF" "$CHANGED" "$HEAD_REPO" "$REPO"
       # The pull request, as data in its own directory. Never installed, built or run.
       - if: steps.guard.outputs.news == 'true'
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}

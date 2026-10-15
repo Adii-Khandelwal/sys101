@@ -1,0 +1,27 @@
+{
+  "storage-engines": {
+    "summary": {
+      "points": [
+        "A storage engine decides how a database lays rows out on disk, and B-trees and LSM-trees move cost between reads, writes and space.",
+        "Meta found InnoDB wasted 25% to 30% of each block, and its LSM-tree engine made instances 62.3% smaller for the same data.",
+        "Discord's Cassandra nodes fell behind on compaction and tombstones, and moving to ScyllaDB cut 177 nodes to 72.",
+        "An LSM-tree buffers writes in memory, flushes sorted files and merges them later, trading cheap writes for extra read checks and background work."
+      ],
+      "figures": [
+        {
+          "postId": "myrocks-meta-2020",
+          "row": 0,
+          "label": "Meta's MyRocks instances were 62.3% smaller than compressed InnoDB"
+        },
+        {
+          "postId": "discord-messages-2023",
+          "row": 1,
+          "label": "Discord went from 177 Cassandra nodes to 72 ScyllaDB nodes"
+        }
+      ]
+    },
+    "prerequisiteReasons": {
+      "databases": "Storage Engines takes from databases the tables and rows that a database stores, since an engine decides how that data reaches the disk."
+    }
+  }
+}

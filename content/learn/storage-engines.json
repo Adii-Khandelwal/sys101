@@ -1,0 +1,379 @@
+{
+  "slug": "storage-engines",
+  "promise": "After this you can explain how B-tree and LSM-tree storage engines work, what each one costs, and follow the Meta and Discord posts on the topic page.",
+  "before": {
+    "prerequisites": [
+      "databases"
+    ],
+    "terms": [
+      {
+        "term": "Row",
+        "definition": "One record in a table, such as one order or one message."
+      },
+      {
+        "term": "Disk block",
+        "definition": "The unit a disk reads and writes at a time, so engines group data into pages that fit it."
+      },
+      {
+        "term": "Sorted order",
+        "definition": "Keeping entries ordered by key, so a lookup can jump to the right place instead of reading everything."
+      }
+    ],
+    "note": "Read Databases first, since a storage engine is the part of a database that stores its rows. Indexing helps but is not needed: this page explains B-trees from the start."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "A storage engine is the part of a database that keeps rows on disk and finds them again. MySQL makes the idea visible: it ships several engines, and its SHOW ENGINES statement lists the engines a server knows, whether each is available, and which one is the default [[mysql-engines]].",
+        "Disks read and write in blocks, so engines group data into fixed-size pages. PostgreSQL stores each table and index as an array of fixed-size pages, usually 8 kB [[pg-page]]. InnoDB's default index page is 16 KB [[mysql-physical]]. Changing one row means rewriting the page that holds it, and that single fact explains many of the costs later in this page.",
+        "The classic structure for finding a page quickly is the B-tree, a balanced tree of sorted pages. PostgreSQL describes its btree index as a multi-way balanced tree that can index any data type that sorts into a well-defined linear order [[pg-btree]]. That the tree stays shallow, so a lookup touches only a few pages, is general knowledge rather than something that page spells out."
+      ],
+      "terms": [
+        {
+          "term": "Storage engine",
+          "definition": "The part of a database that decides how rows are stored on disk and how they are found and changed."
+        },
+        {
+          "term": "Page",
+          "definition": "A fixed-size chunk of a file, such as 8 kB or 16 KB, that a B-tree engine reads and writes as a unit."
+        },
+        {
+          "term": "B-tree",
+          "definition": "A balanced tree of sorted pages, so any key is found by walking from the root down to one leaf page."
+        },
+        {
+          "term": "In-place update",
+          "definition": "Changing data by rewriting the page where it already lives."
+        }
+      ],
+      "reading": [
+        {
+          "source": "mysql-engines",
+          "section": "SHOW ENGINES Statement",
+          "what": "How a server lists the engines it supports and marks the default one."
+        },
+        {
+          "source": "pg-page",
+          "section": "66.6. Database Page Layout",
+          "what": "How a table or index is stored as fixed-size pages."
+        },
+        {
+          "source": "pg-btree",
+          "section": "65.1.1. Introduction",
+          "what": "What PostgreSQL's btree index is and what it can index."
+        }
+      ],
+      "canNow": [
+        "Say what a storage engine is and name two.",
+        "Explain why databases work in pages and what that costs on a small change.",
+        "Describe a B-tree in one sentence."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "A second design avoids editing files at all. RocksDB's overview names three parts: the memtable, an in-memory structure that takes new writes; the logfile, a sequentially written file that records them; and sorted files on disk. When the memtable fills up it is flushed to a sorted file, and the matching log can be deleted [[rocks-overview]].",
+        "Cassandra's documentation lists the same path in order: log the write in the commit log, write it to the memtable, flush the memtable, and store the data on disk in SSTables. It says the engine is built on log-structured merge (LSM) trees, which append instead of using the B-trees of traditional relational databases [[cass-storage]].",
+        "LevelDB's notes give concrete sizes. Its log turns into a sorted table at about 4 MB by default, and a copy of the log lives in memory as the memtable, which is consulted on every read [[leveldb-impl]]. RocksDB's memtable defaults to 64 MB, is a skip list unless you change it, and becomes read-only when it fills while a background thread flushes it [[rocks-memtable]].",
+        "A read has to look at more than one place. RocksDB's memtable page says the memtable is read before the sorted files because its data is newer [[rocks-memtable]]. The consequence is that an LSM-tree trades some read work for cheap, sequential writes."
+      ],
+      "terms": [
+        {
+          "term": "Memtable",
+          "definition": "The sorted in-memory buffer where an LSM-tree puts new writes."
+        },
+        {
+          "term": "Write-ahead log",
+          "definition": "A file that records each write before it is applied, so memory can be rebuilt after a crash."
+        },
+        {
+          "term": "SSTable",
+          "definition": "A sorted, immutable file produced when a memtable is flushed."
+        },
+        {
+          "term": "LSM-tree",
+          "definition": "A design that appends writes, keeps sorted immutable files and merges them in the background."
+        },
+        {
+          "term": "Flush",
+          "definition": "Writing a full memtable out to disk as a sorted file."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rocks-overview",
+          "section": "RocksDB Overview: the three basic constructs",
+          "what": "What the memtable, the sorted file and the log file do, and when a memtable is flushed."
+        },
+        {
+          "source": "cass-storage",
+          "section": "Storage Engine: the write path",
+          "what": "The four steps a write takes, from the commit log to SSTables."
+        },
+        {
+          "source": "leveldb-impl",
+          "section": "Files: Log files and Sorted tables",
+          "what": "How a log becomes a sorted table, with the sizes LevelDB uses."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 206\" role=\"img\" aria-labelledby=\"dg-learn-se-how-t\" class=\"dg\"><title id=\"dg-learn-se-how-t\">The life of a write in an LSM-tree: it is logged and put in the memtable, flushed to a sorted file when the memtable fills, and later merged into deeper levels by compaction. A read checks the memtable and then the files from newest to oldest, skipping files with a Bloom filter. A delete writes a marker that compaction later removes.</title><defs><marker id=\"dg-learn-se-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"10\" y=\"34\" width=\"150\" height=\"58\" class=\"dg-box dg-accent\"/><text x=\"85\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">1. Write</text><text x=\"85\" y=\"74\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">log + memtable</text><rect x=\"205\" y=\"34\" width=\"150\" height=\"58\" class=\"dg-box\"/><text x=\"280\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">2. Flush</text><text x=\"280\" y=\"74\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">sorted file, level 0</text><rect x=\"400\" y=\"34\" width=\"150\" height=\"58\" class=\"dg-box\"/><text x=\"475\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">3. Compact</text><text x=\"475\" y=\"73\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">merge into levels</text><path d=\"M160,63 L203,63\" class=\"dg-line\" marker-end=\"url(#dg-learn-se-how-a)\"/><path d=\"M355,63 L398,63\" class=\"dg-line\" marker-end=\"url(#dg-learn-se-how-a)\"/><text x=\"85\" y=\"110\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">append, then insert in memory</text><text x=\"280\" y=\"110\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">when the memtable is full</text><text x=\"475\" y=\"110\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">drops old and deleted entries</text><rect x=\"10\" y=\"130\" width=\"540\" height=\"40\" class=\"dg-box\"/><text x=\"280\" y=\"152\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Read: memtable, then files newest to oldest; Bloom filters skip files</text><text x=\"280\" y=\"194\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">A delete is a write: a marker hides older values until compaction removes both</text></svg>",
+      "canNow": [
+        "Trace a write through log, memtable and sorted file.",
+        "Say why a read checks the memtable first and several files after it.",
+        "Name the memtable, log and sorted file in an engine's own documentation."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "Sorted files pile up, so engines merge them. RocksDB's leveled compaction keeps a special level 0 of freshly flushed files, and every deeper level is one sorted run split into files. Each deeper level has a target size, and the targets grow exponentially. When level 0 has enough files they are merged into level 1, and when a level grows past its target a file is merged into the overlapping files of the next level [[rocks-leveled]].",
+        "LevelDB's notes give a worked example. Level 0 is merged into level 1 when it exceeds four files; level 1 holds up to 10 MB, level 2 up to 100 MB, and so on. Merges use only bulk reads and writes, which avoids slow seeks [[leveldb-impl]]. The same notes explain that a delete is stored as a marker that hides older values in older tables, so deleted data lingers until a merge removes it [[leveldb-impl]].",
+        "Reads stay fast with help. RocksDB can put a Bloom filter in every sorted file, a bit array that tells the engine a file may contain a key or definitely does not. At 9.9 bits per key the page quotes a 1% false positive rate, meaning one file in a hundred is checked for nothing [[rocks-bloom]].",
+        "The B-tree side has limits too. PostgreSQL notes an index entry cannot exceed about one third of a page [[pg-btree]], and InnoDB deliberately leaves a share of each page free so later inserts have room [[mysql-physical]]."
+      ],
+      "terms": [
+        {
+          "term": "Level",
+          "definition": "A group of sorted files in an LSM-tree; deeper levels are larger and hold older data."
+        },
+        {
+          "term": "Compaction",
+          "definition": "Merging sorted files into new ones, dropping overwritten and deleted entries."
+        },
+        {
+          "term": "Tombstone",
+          "definition": "A delete marker that hides older versions of a key until compaction removes both."
+        },
+        {
+          "term": "Bloom filter",
+          "definition": "A compact summary that says a key is definitely absent or maybe present, so a file can be skipped."
+        },
+        {
+          "term": "Fill factor",
+          "definition": "How full a B-tree page is left when it is built, leaving room for later inserts."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rocks-leveled",
+          "section": "Leveled Compaction: Structure of the files and Compactions",
+          "what": "How levels are sized and when a compaction is triggered."
+        },
+        {
+          "source": "rocks-bloom",
+          "section": "RocksDB Bloom Filter",
+          "what": "How a filter is used per file and how bits per key relate to false positives."
+        },
+        {
+          "source": "mysql-physical",
+          "section": "The Physical Structure of an InnoDB Index",
+          "what": "Page size and how full pages are after sequential and random inserts."
+        }
+      ],
+      "canNow": [
+        "Explain levels and what triggers a compaction.",
+        "Say why a delete does not free space at once in an LSM-tree.",
+        "Explain what a Bloom filter does and why a false alarm is only a small cost."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "Every engine pays somewhere. Cassandra's documentation says compaction is a necessary background activity for the merge phase of an LSM-tree, and that it creates write amplification: small files are read, merged and a new file is written, so every write is rewritten several times and adds background I/O [[cass-storage]].",
+        "A B-tree pays in a different place. InnoDB leaves one sixteenth of a page free for later inserts. Rows inserted in order leave pages about 15/16 full, but rows inserted in random order leave pages anywhere from half to 15/16 full [[mysql-physical]]. That unused space is the cost of updating in place.",
+        "So the decision depends on the workload. Many writes and a need to save space point towards an LSM-tree; read-mostly work with range scans and lookups by key points towards a B-tree. The two company posts on the topic page show exactly this: one team moved from a B-tree to an LSM-tree to save space, and another found what an LSM-tree costs to operate.",
+        "To explore, MySQL's SHOW ENGINES shows what a server supports [[mysql-engines]], and RocksDB's ldb tool lets you write and read a tiny database from a shell [[rocks-ldb]]."
+      ],
+      "terms": [
+        {
+          "term": "Write amplification",
+          "definition": "How many times data is written to disk for each time the application writes it."
+        },
+        {
+          "term": "Space amplification",
+          "definition": "How much disk is used for each byte of live data."
+        },
+        {
+          "term": "Read amplification",
+          "definition": "How many pages or files a read has to check."
+        },
+        {
+          "term": "Hot partition",
+          "definition": "A slice of data that gets so much traffic that it slows the machines holding it."
+        }
+      ],
+      "reading": [
+        {
+          "source": "cass-storage",
+          "section": "Storage Engine: compaction and write amplification",
+          "what": "Why background merging adds writes, and what the cost is."
+        },
+        {
+          "source": "mysql-physical",
+          "section": "The Physical Structure of an InnoDB Index",
+          "what": "How much of each page is left empty and why."
+        }
+      ],
+      "canNow": [
+        "Name the three amplifications and say where each engine pays.",
+        "Pick a family for a write-heavy or a read-heavy workload and give a reason.",
+        "Read the Meta and Discord posts with a clear idea of what they are measuring."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "LSM-trees are only good at writes and are bad at reads.",
+      "truth": "A read may check several places, but engines add Bloom filters so most sorted files are skipped, and they read the memtable first because its data is newer [[rocks-bloom]] [[rocks-memtable]]."
+    },
+    {
+      "myth": "A B-tree engine updates in place, so it never wastes space.",
+      "truth": "InnoDB leaves part of each page free for later inserts, and pages built from random inserts are anywhere from half full to 15/16 full [[mysql-physical]]."
+    },
+    {
+      "myth": "Compaction is optional housekeeping.",
+      "truth": "Cassandra's documentation calls compaction a necessary background activity for the merge phase of an LSM-tree, and notes that it creates write amplification [[cass-storage]]."
+    },
+    {
+      "myth": "Deleting a key frees its space at once.",
+      "truth": "In LevelDB a delete is stored as a marker that hides older values in older tables, so the data stays until a merge removes it [[leveldb-impl]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These look at storage engines from two sides. The first needs a MySQL server you can query; the next two need the ldb tool built from RocksDB. The database path /tmp/test_db and the keys a1 and b1 are examples from the RocksDB page cited below, so use a scratch location of your own. Output depends on your setup, so it is not shown here.",
+    "commands": [
+      {
+        "command": "SHOW ENGINES\\G",
+        "shows": "Lists each storage engine the server knows, whether it is supported and which one is the default. The page's example output lists engines such as MyISAM and CSV with their support level.",
+        "source": "mysql-engines"
+      },
+      {
+        "command": "./ldb --db=/tmp/test_db --create_if_missing put a1 b1",
+        "shows": "Creates a small RocksDB database and writes one key-value pair into it. The page's example prints OK.",
+        "source": "rocks-ldb",
+        "exampleNames": [
+          "/tmp/test_db",
+          "a1",
+          "b1"
+        ],
+        "warning": "This creates a database on disk at the path you give. Use a scratch directory on a test machine."
+      },
+      {
+        "command": "./ldb --db=/tmp/test_db scan",
+        "shows": "Reads every key in the database in sorted order. After the put above, the page's example output shows a1 mapped to b1.",
+        "source": "rocks-ldb",
+        "exampleNames": [
+          "/tmp/test_db"
+        ]
+      }
+    ]
+  },
+  "next": "Go back to the Storage Engines topic page for the worked example and the quiz, then read the two company posts: Meta moving a huge MySQL fleet from a B-tree to an LSM-tree, and Discord running and then leaving Cassandra.",
+  "sources": [
+    {
+      "id": "mysql-engines",
+      "title": "MySQL 8.0 Reference Manual: SHOW ENGINES Statement",
+      "url": "https://dev.mysql.com/doc/refman/8.0/en/show-engines.html",
+      "publisher": "Oracle (MySQL)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "pg-page",
+      "title": "PostgreSQL Documentation: 66.6. Database Page Layout",
+      "url": "https://www.postgresql.org/docs/current/storage-page-layout.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "pg-btree",
+      "title": "PostgreSQL Documentation: 65.1. B-Tree Indexes",
+      "url": "https://www.postgresql.org/docs/current/btree.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "mysql-physical",
+      "title": "MySQL 8.0 Reference Manual: The Physical Structure of an InnoDB Index",
+      "url": "https://dev.mysql.com/doc/refman/8.0/en/innodb-physical-structure.html",
+      "publisher": "Oracle (MySQL)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "rocks-overview",
+      "title": "RocksDB Wiki: RocksDB Overview",
+      "url": "https://github.com/facebook/rocksdb/wiki/RocksDB-Overview",
+      "publisher": "RocksDB project (Meta)",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2023-07-18",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "rocks-memtable",
+      "title": "RocksDB Wiki: MemTable",
+      "url": "https://github.com/facebook/rocksdb/wiki/MemTable",
+      "publisher": "RocksDB project (Meta)",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2021-09-15",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "rocks-leveled",
+      "title": "RocksDB Wiki: Leveled Compaction",
+      "url": "https://github.com/facebook/rocksdb/wiki/Leveled-Compaction",
+      "publisher": "RocksDB project (Meta)",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2023-11-14",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "rocks-bloom",
+      "title": "RocksDB Wiki: RocksDB Bloom Filter",
+      "url": "https://github.com/facebook/rocksdb/wiki/RocksDB-Bloom-Filter",
+      "publisher": "RocksDB project (Meta)",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2021-09-01",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "rocks-ldb",
+      "title": "RocksDB Wiki: Administration and Data Access Tool",
+      "url": "https://github.com/facebook/rocksdb/wiki/Administration-and-Data-Access-Tool",
+      "publisher": "RocksDB project (Meta)",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2023-09-08",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "cass-storage",
+      "title": "Apache Cassandra Documentation: Storage Engine",
+      "url": "https://cassandra.apache.org/doc/latest/cassandra/architecture/storage-engine.html",
+      "publisher": "Apache Cassandra",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15",
+      "note": "The page carries a notice that it describes a prerelease version of Cassandra; the write path it describes is the part used here."
+    },
+    {
+      "id": "leveldb-impl",
+      "title": "LevelDB: Implementation notes",
+      "url": "https://github.com/google/leveldb/blob/main/doc/impl.md",
+      "publisher": "Google (LevelDB project)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15"
+    }
+  ]
+}
