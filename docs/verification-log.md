@@ -402,6 +402,66 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | aws-static-stability-azs | meaning | three Availability | https://aws.amazon.com/builders-library/static-stability-using-availability-zones/ | (before first heading) | found (other spelling) |
 | aws-static-stability-azs | failures | 50 | https://aws.amazon.com/builders-library/static-stability-using-availability-zones/ | Static stability patterns | found |
 
+## HTTP, TCP and TLS
+
+| Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
+|---|---|---|---|---|---|
+| google-quic-2017 | numbers | about 88% | https://storage.googleapis.com/gweb-research2023-media/pubtools/4102.pdf | 6.2 Transport and Application Metrics | found |
+| google-quic-2017 | numbers | 8.0% and 3.6% | https://storage.googleapis.com/gweb-research2023-media/pubtools/4102.pdf | 1 INTRODUCTION | found with different formatting |
+| google-quic-2017 | numbers | 18.0% and 15.3% | https://storage.googleapis.com/gweb-research2023-media/pubtools/4102.pdf | 1 INTRODUCTION | found with different formatting |
+| google-quic-2017 | numbers | over 30% | https://storage.googleapis.com/gweb-research2023-media/pubtools/4102.pdf | 1 INTRODUCTION | found |
+| google-quic-2017 | numbers | about 7% | https://storage.googleapis.com/gweb-research2023-media/pubtools/4102.pdf | (before first heading) | found |
+| google-quic-2017 | numbers | 3.5 times, then about 2 times | https://storage.googleapis.com/gweb-research2023-media/pubtools/4102.pdf | (before first heading) | found (other spelling) |
+| google-quic-2017 | walkthrough | 3.5 | https://storage.googleapis.com/gweb-research2023-media/pubtools/4102.pdf | 3.2 Stream Multiplexing | found |
+| google-quic-2017 | walkthrough | 2 times | https://storage.googleapis.com/gweb-research2023-media/pubtools/4102.pdf | (before first heading) | hand-checked |
+| google-quic-2017 | failures | 3.5 | https://storage.googleapis.com/gweb-research2023-media/pubtools/4102.pdf | 3.2 Stream Multiplexing | found |
+| meta-quic-2020 | numbers | over 75 percent | https://engineering.fb.com/2020/10/21/networking-traffic/how-facebook-is-bringing-quic-to-billions/ | How Facebook is bringing QUIC to billions | found |
+| meta-quic-2020 | numbers | 6 percent | https://engineering.fb.com/2020/10/21/networking-traffic/how-facebook-is-bringing-quic-to-billions/ | The Facebook app | found |
+| meta-quic-2020 | numbers | 20 percent | https://engineering.fb.com/2020/10/21/networking-traffic/how-facebook-is-bringing-quic-to-billions/ | The Facebook app | found |
+| meta-quic-2020 | numbers | 5 percent | https://engineering.fb.com/2020/10/21/networking-traffic/how-facebook-is-bringing-quic-to-billions/ | How Facebook is bringing QUIC to billions | found |
+| meta-quic-2020 | numbers | up to 22 percent | https://engineering.fb.com/2020/10/21/networking-traffic/how-facebook-is-bringing-quic-to-billions/ | QUIC for all content | found |
+| meta-quic-2020 | numbers | 20 percent | https://engineering.fb.com/2020/10/21/networking-traffic/how-facebook-is-bringing-quic-to-billions/ | The Facebook app | found |
+| cloudflare-0rtt-2017 | numbers | about 60% | https://blog.cloudflare.com/introducing-0-rtt/ | Introducing Zero Round Trip Time Resumption (0-RTT) | found |
+| cloudflare-0rtt-2017 | numbers | about 40% | https://blog.cloudflare.com/introducing-0-rtt/ | Introducing Zero Round Trip Time Resumption (0-RTT) | found |
+| cloudflare-0rtt-2017 | numbers | 1000 ms | https://blog.cloudflare.com/introducing-0-rtt/ | The cost of latency | found with different formatting |
+| cloudflare-0rtt-2017 | numbers | 250 ms | https://blog.cloudflare.com/introducing-0-rtt/ | The cost of latency | found with different formatting |
+| cloudflare-0rtt-2017 | problem | 1.3 | https://blog.cloudflare.com/introducing-0-rtt/ | (before first heading) | found |
+| cloudflare-0rtt-2017 | walkthrough | 1.2 | https://blog.cloudflare.com/introducing-0-rtt/ | Phase 3: TLS Handshake (2 round trips) | found |
+| cloudflare-0rtt-2017 | walkthrough | 1.3 | https://blog.cloudflare.com/introducing-0-rtt/ | (before first heading) | found |
+| cloudflare-0rtt-2017 | walkthrough | two for | https://blog.cloudflare.com/introducing-0-rtt/ | (before first heading) | hand-checked |
+| cloudflare-0rtt-2017 | meaning | 250 ms | https://blog.cloudflare.com/introducing-0-rtt/ | The cost of latency | found with different formatting |
+| cloudflare-http3-2020 | numbers | 176 ms vs 201 ms | https://blog.cloudflare.com/http-3-vs-http-2/ | Benefits | found with different formatting |
+| cloudflare-http3-2020 | numbers | 12.4% | https://blog.cloudflare.com/http-3-vs-http-2/ | Benefits | found |
+| cloudflare-http3-2020 | numbers | 443 ms vs 458 ms | https://blog.cloudflare.com/http-3-vs-http-2/ | Benefits | found with different formatting |
+| cloudflare-http3-2020 | numbers | 2.33 s vs 2.30 s | https://blog.cloudflare.com/http-3-vs-http-2/ | Benefits | found with different formatting |
+| cloudflare-http3-2020 | numbers | 1 to 4% | https://blog.cloudflare.com/http-3-vs-http-2/ | (before first heading) | hand-checked |
+| cloudflare-http3-2020 | numbers | over 113,000 | https://blog.cloudflare.com/http-3-vs-http-2/ | Comparing HTTP/3 vs. HTTP/2 Performance | found |
+| cloudflare-http3-2020 | problem | 113,000 | https://blog.cloudflare.com/http-3-vs-http-2/ | Comparing HTTP/3 vs. HTTP/2 Performance | found |
+| cloudflare-http3-2020 | walkthrough | 176 ms | https://blog.cloudflare.com/http-3-vs-http-2/ | Benefits | found with different formatting |
+| cloudflare-http3-2020 | walkthrough | 201 ms | https://blog.cloudflare.com/http-3-vs-http-2/ | Benefits | found with different formatting |
+| cloudflare-http3-2020 | walkthrough | 12.4 | https://blog.cloudflare.com/http-3-vs-http-2/ | Benefits | found |
+| cloudflare-http3-2020 | walkthrough | 15 KB | https://blog.cloudflare.com/http-3-vs-http-2/ | Benefits | found with different formatting |
+| cloudflare-http3-2020 | walkthrough | 443 ms | https://blog.cloudflare.com/http-3-vs-http-2/ | Benefits | found with different formatting |
+| cloudflare-http3-2020 | walkthrough | 458 ms | https://blog.cloudflare.com/http-3-vs-http-2/ | Benefits | found with different formatting |
+| cloudflare-http3-2020 | walkthrough | 1 MB | https://blog.cloudflare.com/http-3-vs-http-2/ | (before first heading) | found with different formatting |
+| cloudflare-http3-2020 | walkthrough | 2.33 s | https://blog.cloudflare.com/http-3-vs-http-2/ | Benefits | found with different formatting |
+| cloudflare-http3-2020 | walkthrough | 2.30 s | https://blog.cloudflare.com/http-3-vs-http-2/ | Benefits | found with different formatting |
+| cloudflare-http3-2020 | walkthrough | 1 to | https://blog.cloudflare.com/http-3-vs-http-2/ | (before first heading) | hand-checked |
+| cloudflare-http3-2020 | walkthrough | 4 percent | https://blog.cloudflare.com/http-3-vs-http-2/ | (before first heading) | hand-checked |
+| cloudflare-http3-2020 | walkthrough | two page | https://blog.cloudflare.com/http-3-vs-http-2/ | (before first heading) | hand-checked |
+| cloudflare-http3-2020 | meaning | 15 KB | https://blog.cloudflare.com/http-3-vs-http-2/ | Benefits | found with different formatting |
+| cloudflare-http3-2020 | meaning | 1 MB | https://blog.cloudflare.com/http-3-vs-http-2/ | (before first heading) | found with different formatting |
+| cloudflare-pingora-reuse-2022 | numbers | 87.1% to 99.92% | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Pingora is faster in production | found |
+| cloudflare-pingora-reuse-2022 | numbers | 160x | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Pingora is faster in production | found |
+| cloudflare-pingora-reuse-2022 | numbers | a third as many | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Pingora is faster in production | found |
+| cloudflare-pingora-reuse-2022 | numbers | 5 ms and 80 ms | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Pingora is faster in production | found with different formatting |
+| cloudflare-pingora-reuse-2022 | numbers | 434 years | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Pingora is faster in production | found |
+| cloudflare-pingora-reuse-2022 | walkthrough | 87.1% | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Pingora is faster in production | found |
+| cloudflare-pingora-reuse-2022 | walkthrough | 99.92% | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Pingora is faster in production | found |
+| cloudflare-pingora-reuse-2022 | walkthrough | 160x | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Pingora is faster in production | found |
+| cloudflare-pingora-reuse-2022 | walkthrough | 434 | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Pingora is faster in production | found |
+| cloudflare-pingora-reuse-2022 | meaning | 95 | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Pingora is faster in production | found |
+
 ## Idempotency and Retries
 
 | Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
@@ -827,6 +887,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | dns | 18 | 7 | 0 | 4 | 4 | 0 |
 | event-driven-architecture | 14 | 3 | 0 | 13 | 3 | 0 |
 | failover | 10 | 5 | 0 | 4 | 5 | 0 |
+| http-tcp-tls | 29 | 19 | 0 | 1 | 6 | 0 |
 | idempotency-and-retries | 20 | 1 | 0 | 7 | 2 | 0 |
 | indexing | 45 | 7 | 0 | 1 | 0 | 0 |
 | load-balancing | 17 | 4 | 0 | 1 | 0 | 0 |

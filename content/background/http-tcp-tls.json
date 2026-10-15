@@ -1,0 +1,90 @@
+{
+  "topic": "http-tcp-tls",
+  "updatedOn": "2026-10-16",
+  "items": [
+    {
+      "id": "congestion-control",
+      "name": "Congestion control",
+      "explanation": "A sender cannot see how full the network is, so it guesses from losses and delays and slows down when it thinks a link is overloaded. Algorithms such as Reno, CUBIC and BBR make that guess differently, which changes how fast a transfer ramps up.",
+      "assumedBy": [
+        {
+          "postId": "meta-quic-2020",
+          "quote": "we had to address two main concerns: the CPU efficiency of mvfst and the effectiveness of our primary congestion control implementation"
+        },
+        {
+          "postId": "cloudflare-http3-2020",
+          "quote": "Implementation choices can affect performance, such as efficient packet transmission and choice of congestion control algorithm."
+        }
+      ],
+      "sources": [
+        {
+          "title": "RFC 5681: TCP Congestion Control",
+          "publisher": "IETF",
+          "url": "https://www.rfc-editor.org/rfc/rfc5681.html",
+          "year": "2009",
+          "verifiedOn": "2026-10-16"
+        }
+      ]
+    },
+    {
+      "id": "middleboxes",
+      "name": "Middleboxes",
+      "explanation": "Firewalls, NATs and proxies sit between client and server and read or rewrite packets on the way. Once they depend on a protocol's header layout, that layout is hard to change, which is why new transports struggle to spread.",
+      "assumedBy": [
+        {
+          "postId": "meta-quic-2020",
+          "quote": "TCP is also prone to ossification, where the protocol becomes difficult to upgrade because network middleboxes such as firewalls make assumptions about the packets’ format."
+        }
+      ],
+      "sources": [
+        {
+          "title": "RFC 3234: Middleboxes: Taxonomy and Issues",
+          "publisher": "IETF",
+          "url": "https://www.rfc-editor.org/rfc/rfc3234.html",
+          "year": "2002",
+          "verifiedOn": "2026-10-16"
+        }
+      ]
+    },
+    {
+      "id": "udp",
+      "name": "UDP",
+      "explanation": "UDP sends single packets with no connection, no ordering and no resending of lost ones. That leaves a protocol built on top free to add exactly the reliability it wants, which is what QUIC does.",
+      "assumedBy": [
+        {
+          "postId": "google-quic-2017",
+          "quote": "The use of UDP allows QUIC packets to traverse middleboxes."
+        }
+      ],
+      "sources": [
+        {
+          "title": "RFC 768: User Datagram Protocol",
+          "publisher": "IETF",
+          "url": "https://www.rfc-editor.org/rfc/rfc768.html",
+          "year": "1980",
+          "verifiedOn": "2026-10-16"
+        }
+      ]
+    },
+    {
+      "id": "nginx-worker-model",
+      "name": "The NGINX worker model",
+      "explanation": "NGINX runs several worker processes, and each request is handled start to finish by one of them. Each worker keeps its own pool of open upstream connections, so a request can only reuse a connection held by the worker it landed on.",
+      "assumedBy": [
+        {
+          "postId": "cloudflare-pingora-reuse-2022",
+          "quote": "The NGINX worker (process) architecture has operational drawbacks for our use cases that hurt our performance and efficiency."
+        }
+      ],
+      "sources": [
+        {
+          "title": "NGINX core module: worker_processes",
+          "publisher": "NGINX",
+          "url": "https://nginx.org/en/docs/ngx_core_module.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-16"
+        }
+      ]
+    }
+  ]
+}

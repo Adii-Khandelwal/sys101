@@ -5,7 +5,8 @@
   "interviewRelevance": "core",
   "concept": "Load balancing spreads requests across a pool of backends so that no single instance saturates. The hard parts are choosing which backends each client may talk to (subsetting), deciding where each request goes (round-robin, least-loaded, power of two choices), and reacting to load and health signals that are always slightly stale.",
   "prerequisites": [
-    "dns"
+    "dns",
+    "http-tcp-tls"
   ],
   "summary": {
     "points": [
@@ -27,7 +28,8 @@
     ]
   },
   "prerequisiteReasons": {
-    "dns": "Load balancing takes from DNS the idea of one name that stands for many servers, and the staleness of answers that clients keep using."
+    "dns": "Load balancing takes from DNS the idea of one name that stands for many servers, and the staleness of answers that clients keep using.",
+    "http-tcp-tls": "Balancing at the transport layer or the application layer only makes sense once you know what a TCP connection and an HTTP request are, and what each costs."
   },
   "posts": [
     {

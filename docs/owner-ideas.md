@@ -19,3 +19,5 @@ Moved out of CLAUDE.md to keep it short. Every idea or preference the owner stat
 - What's new (`/new`, `news.md`): a monthly page over every topic's news items, grouped by the month they were added, with a monthly routine run that sources them from the allowlisted sites only (`docs/routines/whats-new-monthly.md`).
 - Offline: after one online visit the whole site works with no connection, external links aside (`offline.md`).
 - Opening screen: on every load of the homepage only, one node of the mark comes on, two come out of it, and the name "sys101" comes on like a bulb (on, dim, off, on), then the site; a slow link to another page shows the mark breathing (`motion.md`).
+- Opening screen: when the loader has fully drawn the logo, the mark and "sys101" move into the homepage masthead's own mark and name (`motion.md`).
+- What's new page (`/new`): hidden for now, code kept (app/_new, commented nav item, sitemap entry and test lines) so it can come back; the per-topic What's new sections stay (`news.md`).

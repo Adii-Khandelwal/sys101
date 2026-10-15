@@ -1,3 +1,5 @@
+// Hidden for now: the leading underscore makes Next treat this folder as private, so /new is not a route. To bring the page back,
+// rename app/_new to app/new and uncomment the nav item (lib/navItems.ts), the sitemap entry (app/sitemap.ts) and the test lines (lib/pageUpdated.test.ts).
 import type { Metadata } from "next";
 import Link from "next/link";
 import CompanyLogo from "@/components/CompanyLogo";

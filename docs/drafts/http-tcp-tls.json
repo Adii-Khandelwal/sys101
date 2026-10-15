@@ -1,0 +1,17 @@
+{
+  "http-tcp-tls": {
+    "summary": {
+      "points": [
+        "Before a page can load, a browser opens a TCP connection, sets up encryption with TLS, and only then sends an HTTP request, and each step waits for a full round trip.",
+        "Distance sets the cost, not bandwidth, so the fixes all spend fewer round trips: reuse open connections, use TLS 1.3, resume old sessions, or move to QUIC.",
+        "Google and Meta moved real traffic to QUIC and HTTP/3 and measured faster searches, fewer errors and fewer video stalls, at the price of more server CPU.",
+        "Cloudflare found HTTP/3 faster to the first byte but slightly behind HTTP/2 on larger pages, and warns that 0-RTT data can be replayed."
+      ],
+      "figures": [
+        { "postId": "google-quic-2017", "row": 0, "label": "about 88% of QUIC handshakes completed with no round trip of delay" },
+        { "postId": "cloudflare-http3-2020", "row": 0, "label": "176 ms vs 201 ms average time to first byte, HTTP/3 against HTTP/2" },
+        { "postId": "cloudflare-pingora-reuse-2022", "row": 0, "label": "87.1% to 99.92% of requests reused an open connection for one customer" }
+      ]
+    },
+  }
+}

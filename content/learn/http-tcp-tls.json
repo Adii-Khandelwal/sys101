@@ -1,0 +1,412 @@
+{
+  "slug": "http-tcp-tls",
+  "promise": "After this you can follow the topic page and the posts.",
+  "before": {
+    "prerequisites": [],
+    "terms": [
+      {
+        "term": "Client and server",
+        "definition": "The client starts a conversation by sending a request; the server waits and answers it."
+      },
+      {
+        "term": "Packet",
+        "definition": "A small chunk of data sent across a network; a message is split into many of them."
+      },
+      {
+        "term": "Round trip",
+        "definition": "One message going to the other side and the reply coming back; it is the unit of waiting on a network."
+      }
+    ],
+    "note": "HTTP, TCP and TLS are a starting point on this map, with no prerequisite topics. If the three terms below are familiar, you are ready."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "When your browser loads a page, three layers of rules are at work. HTTP is the language of requests and responses: the client asks for a resource and the server replies with a status and a body. HTTP in turn needs a reliable pipe underneath it, and for most of the web's history that pipe has been TCP.",
+        "TCP gives two programs an ordered, reliable stream of bytes, even though the network below it loses and reorders packets. Before any data flows, the two sides set up the connection with a three-way handshake: one side sends a SYN, the other answers with a SYN and an acknowledgment, and the first side acknowledges that [[rfc9293]]. Closing is a separate step, and each side closes its own direction [[rfc9293]].",
+        "The handshake costs a round trip before the first request can go out. That is the root of most of what follows: much of the history of HTTP is about paying for fewer round trips and reusing connections once they exist [[mdn-http-evolution]].",
+        "HTTP itself began as a one-line protocol with no headers, then grew a version, status codes and headers in HTTP/1.0, and was standardized as HTTP/1.1 with reusable connections [[mdn-http-evolution]]."
+      ],
+      "terms": [
+        {
+          "term": "HTTP",
+          "definition": "The request and response language of the web: a method, a resource, headers, and a status in the reply."
+        },
+        {
+          "term": "TCP",
+          "definition": "A transport protocol that delivers an ordered, reliable stream of bytes between two programs."
+        },
+        {
+          "term": "Three-way handshake",
+          "definition": "The SYN, SYN-ACK, ACK exchange that sets up a TCP connection."
+        },
+        {
+          "term": "Latency",
+          "definition": "The time a message takes to cross the network; waiting for a reply costs a round trip of it."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rfc9293",
+          "section": "3.5 Establishing a Connection and 3.6 Closing a Connection",
+          "what": "The three-way handshake as a diagram of segments, and how each side closes its own direction."
+        },
+        {
+          "source": "mdn-http-evolution",
+          "section": "HTTP/0.9, HTTP/1.0 and HTTP/1.1",
+          "what": "What each early version added, in plain language."
+        }
+      ],
+      "canNow": [
+        "Say what HTTP, TCP and TLS each do.",
+        "Describe the three-way handshake.",
+        "Explain why opening a connection costs a round trip before any request."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "A new TCP connection does not start at full speed. The sender keeps a congestion window, a limit on how much data may be in flight before an acknowledgment comes back, and the receiver advertises its own window; the smaller of the two governs sending [[rfc5681]]. Slow start begins with a small window and grows it as acknowledgments arrive, probing for how much the network can carry [[rfc5681]].",
+        "The starting size matters because most web responses are short. The 2009 standard capped the initial window at a few segments (2, 3 or 4, depending on segment size) [[rfc5681]]. A later experimental document proposed raising the cap to 10 segments, with an upper bound of min(10*MSS, max(2*MSS, 14600)) bytes, and said the increase is optional [[rfc6928]]. A new connection is therefore slow for its first few round trips, which is a strong reason to reuse connections instead of opening new ones.",
+        "TLS adds security on top of TCP. Its handshake lets the two sides agree on a version and cryptographic algorithms, optionally authenticate each other, and derive shared keys; after that all application traffic is encrypted with them [[rfc8446]]. In TLS 1.3 the full handshake takes one round trip after the TCP handshake [[rfc8446]].",
+        "A client that has talked to a server before can resume. After a handshake the server can hand the client a pre-shared key identity; on a later connection the client offers it and the keys are derived from the earlier connection instead of a full handshake [[rfc8446]]. TLS 1.3 can go further with 0-RTT, sending data in the first flight, but that data has weaker guarantees: it is not forward secret and nothing stops it being replayed between connections [[rfc8446]].",
+        "So a first HTTPS request pays for the TCP handshake, then the TLS handshake, then the request itself, all on a connection whose window is still small."
+      ],
+      "terms": [
+        {
+          "term": "Congestion window",
+          "definition": "The sender's limit on unacknowledged data in flight, which grows as the network proves it can cope."
+        },
+        {
+          "term": "Slow start",
+          "definition": "The way a new connection grows its window from a small start."
+        },
+        {
+          "term": "TLS handshake",
+          "definition": "The exchange that agrees a version and algorithms, authenticates the server and derives encryption keys."
+        },
+        {
+          "term": "Session resumption",
+          "definition": "Reusing keys from an earlier connection to skip a full handshake."
+        },
+        {
+          "term": "0-RTT",
+          "definition": "Sending application data in the very first flight of a resumed TLS 1.3 connection."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rfc5681",
+          "section": "3.1 Slow Start and Congestion Avoidance",
+          "what": "The congestion window, the receiver window, slow start and the initial window caps."
+        },
+        {
+          "source": "rfc6928",
+          "section": "2 TCP Modification",
+          "what": "The proposal to raise the initial window to 10 segments, and the formula for the bound. This document is experimental."
+        },
+        {
+          "source": "rfc8446",
+          "section": "2 Protocol Overview, 2.2 Resumption and Pre-Shared Key, 2.3 0-RTT Data",
+          "what": "What the handshake achieves, how resumption works, and why 0-RTT data is weaker."
+        }
+      ],
+      "canNow": [
+        "Explain why a new connection is slow at first.",
+        "List the steps a first HTTPS request pays for.",
+        "Say what resumption saves and what 0-RTT risks."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "HTTP/1.1 connections are persistent by default: after a response, the same connection carries the next request unless either side sends a close option [[rfc9112]]. Pipelining lets a client send several requests without waiting, but the server must send the responses in the order the requests arrived [[rfc9112]]. One slow response therefore holds up everything behind it on that connection, and browsers worked around it by opening several connections.",
+        "HTTP/2 fixes this inside one connection. It splits traffic into streams that are interleaved on the same connection, so many requests proceed in parallel; each side can limit how many streams the other may have open at once [[rfc9113]]. Over TLS it is chosen during the handshake with ALPN, using the identifier h2 [[rfc9113]]. Flow control is credit-based and applies per stream and to the connection as a whole [[rfc9113]].",
+        "HTTP/2 still sits on one TCP connection, so a lost packet is retransmitted by TCP and can stall every stream [[mdn-http-evolution]]. QUIC removes that. It runs over UDP, handles loss for each stream separately, and folds the cryptographic and transport handshake into one [[rfc9000]], using TLS 1.3 inside it [[rfc9114]].",
+        "HTTP/3 maps HTTP onto QUIC streams. The client's first request goes on stream 0, then 4, 8 and so on, and servers are told to allow at least 100 request streams at once [[rfc9114]]. Client-started streams have even numbers, a rule of how QUIC numbers its streams [[rfc9000]]. HTTP/3 support is announced in the TLS handshake with the ALPN token h3 [[rfc9114]]."
+      ],
+      "terms": [
+        {
+          "term": "Persistent connection",
+          "definition": "A connection kept open to carry more than one request."
+        },
+        {
+          "term": "Head-of-line blocking",
+          "definition": "One stalled item holding up everything queued behind it."
+        },
+        {
+          "term": "Stream",
+          "definition": "One independent request and response exchange inside a shared connection."
+        },
+        {
+          "term": "Multiplexing",
+          "definition": "Interleaving many streams on a single connection."
+        },
+        {
+          "term": "ALPN",
+          "definition": "A TLS extension in which client and server agree on the application protocol, such as h2 or h3."
+        },
+        {
+          "term": "QUIC",
+          "definition": "A transport built on UDP with streams, loss recovery and TLS 1.3 built in; the base of HTTP/3."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rfc9112",
+          "section": "9.3 Persistence",
+          "what": "When a connection stays open, and what pipelining allows and requires."
+        },
+        {
+          "source": "rfc9113",
+          "section": "3.2 Starting HTTP/2 for https URIs, 5.1 Stream States, 5.2 Flow Control",
+          "what": "How h2 is negotiated, what streams are, and how flow control shares the connection."
+        },
+        {
+          "source": "rfc9000",
+          "section": "2.1 Stream Types and Identifiers and 7 Cryptographic and Transport Handshake",
+          "what": "How QUIC numbers streams and why its handshake is combined."
+        },
+        {
+          "source": "rfc9114",
+          "section": "3.2 Connection Establishment and 6.1 Bidirectional Streams",
+          "what": "How HTTP/3 starts over QUIC and uses a stream per request."
+        }
+      ],
+      "canNow": [
+        "Explain head-of-line blocking in HTTP/1.1.",
+        "Say what HTTP/2 multiplexing fixes and what it leaves behind.",
+        "Say why HTTP/3 moved to QUIC over UDP."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "The practical rule is to pay for a connection once. Clients reuse connections, servers keep them open, and curl does the same when you give it several URLs for one host [[curl-verbose]]. For HTTPS, curl defaults to HTTP/2 when the server supports it, and falls back to HTTP/1.1 when it does not [[curl-http2]].",
+        "HTTP/3 cannot be negotiated on an existing TCP connection the way HTTP/2 can, because it uses a different transport and needs its own connection [[curl-http3]]. The official way to bootstrap into it is the Alt-Svc mechanism: a server advertises that it also speaks h3, and the client remembers that for the next request rather than switching mid-request [[curl-http3]]. A fair share of QUIC attempts fail because networks block or throttle UDP, so clients race or fall back to an older version [[curl-http3]].",
+        "The trade-offs are concrete. Newer protocols cut waiting but need more of the stack to cooperate. 0-RTT trades safety against replay for speed. Large initial windows trade fairness for faster short transfers. When reading a company post, ask which of these round trips the team removed and what they gave up for it.",
+        "You can watch all this yourself. curl in verbose mode prints the connection, the TLS negotiation and the headers [[curl-verbose]], and openssl s_client shows the handshake from the TLS side [[openssl-s-client]]."
+      ],
+      "terms": [
+        {
+          "term": "Connection reuse",
+          "definition": "Sending later requests over a connection that is already open."
+        },
+        {
+          "term": "Alt-Svc",
+          "definition": "A response header by which a server says it is also reachable over another protocol or port, such as h3."
+        },
+        {
+          "term": "Fallback",
+          "definition": "Trying an older protocol when the newer one fails or is blocked."
+        }
+      ],
+      "reading": [
+        {
+          "source": "curl-http2",
+          "section": "HTTP/2",
+          "what": "How curl picks HTTP/2 for HTTPS URLs and falls back."
+        },
+        {
+          "source": "curl-http3",
+          "section": "HTTP/3",
+          "what": "Why HTTP/3 needs its own connection, how Alt-Svc bootstraps it, and what happens when QUIC is blocked."
+        },
+        {
+          "source": "curl-verbose",
+          "section": "Verbose",
+          "what": "How to read the lines curl prints about connecting, TLS and headers."
+        },
+        {
+          "source": "openssl-s-client",
+          "section": "Synopsis and options",
+          "what": "The command-line tool for opening a TLS connection and inspecting it."
+        }
+      ],
+      "canNow": [
+        "Explain why connection reuse matters more than any single protocol feature.",
+        "Say how a client finds out a server speaks HTTP/3.",
+        "Read a curl -v transcript and find the connection, TLS and protocol lines."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "HTTPS is a separate protocol from HTTP.",
+      "truth": "It is HTTP carried over a TLS connection; HTTP/2 over TLS is chosen during the TLS handshake with ALPN [[rfc9113]]."
+    },
+    {
+      "myth": "HTTP/2 removes all head-of-line blocking.",
+      "truth": "It removes it between requests, but all streams share one TCP connection, so a lost packet can still stall them [[mdn-http-evolution]]."
+    },
+    {
+      "myth": "HTTP/3 is a new set of HTTP rules.",
+      "truth": "It keeps the same semantics as earlier versions and changes the transport to QUIC [[mdn-http-evolution]]."
+    },
+    {
+      "myth": "TLS 1.3 0-RTT is just a faster handshake.",
+      "truth": "Its data is not forward secret and can be replayed between connections, so it is weaker than ordinary TLS data [[rfc8446]]."
+    },
+    {
+      "myth": "A browser opens a new connection for every request.",
+      "truth": "HTTP/1.1 connections are persistent by default, and HTTP/2 and HTTP/3 are built around reusing one [[rfc9112]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These use curl and openssl, which document the flags used here [[curl-verbose]] [[curl-http2]] [[openssl-s-client]]. The host example.com is the standard example name used in these docs' examples. Run them in a terminal and look for the lines described. Output depends on your tool versions and changes over time, so it is not shown here. A stock macOS curl may not support HTTP/3, so there is no HTTP/3 command.",
+    "commands": [
+      {
+        "command": "curl -v https://example.com",
+        "shows": "The TCP connection, the TLS negotiation (look for the ALPN line and the TLS version), then the request and response headers.",
+        "source": "curl-verbose"
+      },
+      {
+        "command": "curl -v --http2 https://example.com",
+        "shows": "The same, asking for HTTP/2 explicitly; look for the ALPN line saying the server accepted h2.",
+        "source": "curl-http2"
+      },
+      {
+        "command": "curl -v https://example.com https://example.com -o /dev/null -o /dev/null",
+        "shows": "Two requests in one command; the second should say it is re-using the existing connection instead of connecting again.",
+        "source": "curl-verbose"
+      },
+      {
+        "command": "openssl s_client -connect example.com:443 -servername example.com -tls1_3",
+        "shows": "A TLS 1.3 handshake from the TLS side: the certificate chain, the protocol and the cipher chosen.",
+        "source": "openssl-s-client",
+        "note": "Press Ctrl-C to leave it, or pipe an empty line in with echo."
+      },
+      {
+        "command": "openssl s_client -connect example.com:443 -servername example.com -tls1_3 -alpn h2",
+        "shows": "The same handshake offering h2; the output reports which application protocol the server selected.",
+        "source": "openssl-s-client"
+      }
+    ]
+  },
+  "next": "Go back to the HTTP, TCP and TLS topic page for the worked example and the quiz, then read the company posts that show these round trips being removed in production.",
+  "sources": [
+    {
+      "id": "rfc9293",
+      "title": "RFC 9293: Transmission Control Protocol (TCP)",
+      "url": "https://www.rfc-editor.org/rfc/rfc9293",
+      "publisher": "IETF",
+      "kind": "Internet standard",
+      "year": "2022",
+      "verifiedOn": "2026-10-16"
+    },
+    {
+      "id": "mdn-http-evolution",
+      "title": "Evolution of HTTP",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Evolution_of_HTTP",
+      "publisher": "MDN Web Docs",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-03-20",
+      "verifiedOn": "2026-10-16"
+    },
+    {
+      "id": "rfc5681",
+      "title": "RFC 5681: TCP Congestion Control",
+      "url": "https://www.rfc-editor.org/rfc/rfc5681",
+      "publisher": "IETF",
+      "kind": "Internet standard",
+      "year": "2009",
+      "verifiedOn": "2026-10-16"
+    },
+    {
+      "id": "rfc6928",
+      "title": "RFC 6928: Increasing TCP's Initial Window",
+      "url": "https://www.rfc-editor.org/rfc/rfc6928",
+      "publisher": "IETF",
+      "kind": "Experimental RFC",
+      "year": "2013",
+      "verifiedOn": "2026-10-16",
+      "note": "Experimental, not a standards-track specification."
+    },
+    {
+      "id": "rfc8446",
+      "title": "RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3",
+      "url": "https://www.rfc-editor.org/rfc/rfc8446",
+      "publisher": "IETF",
+      "kind": "Internet standard",
+      "year": "2018",
+      "verifiedOn": "2026-10-16"
+    },
+    {
+      "id": "rfc9112",
+      "title": "RFC 9112: HTTP/1.1",
+      "url": "https://www.rfc-editor.org/rfc/rfc9112",
+      "publisher": "IETF",
+      "kind": "Internet standard",
+      "year": "2022",
+      "verifiedOn": "2026-10-16"
+    },
+    {
+      "id": "rfc9113",
+      "title": "RFC 9113: HTTP/2",
+      "url": "https://www.rfc-editor.org/rfc/rfc9113",
+      "publisher": "IETF",
+      "kind": "Internet standard",
+      "year": "2022",
+      "verifiedOn": "2026-10-16"
+    },
+    {
+      "id": "rfc9000",
+      "title": "RFC 9000: QUIC: A UDP-Based Multiplexed and Secure Transport",
+      "url": "https://www.rfc-editor.org/rfc/rfc9000",
+      "publisher": "IETF",
+      "kind": "Internet standard",
+      "year": "2021",
+      "verifiedOn": "2026-10-16"
+    },
+    {
+      "id": "rfc9114",
+      "title": "RFC 9114: HTTP/3",
+      "url": "https://www.rfc-editor.org/rfc/rfc9114",
+      "publisher": "IETF",
+      "kind": "Internet standard",
+      "year": "2022",
+      "verifiedOn": "2026-10-16"
+    },
+    {
+      "id": "curl-http2",
+      "title": "everything curl: HTTP/2",
+      "url": "https://everything.curl.dev/http/versions/http2.html",
+      "publisher": "curl project",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-16"
+    },
+    {
+      "id": "curl-http3",
+      "title": "everything curl: HTTP/3",
+      "url": "https://everything.curl.dev/http/versions/http3.html",
+      "publisher": "curl project",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-16"
+    },
+    {
+      "id": "curl-verbose",
+      "title": "everything curl: Verbose",
+      "url": "https://everything.curl.dev/usingcurl/verbose/index.html",
+      "publisher": "curl project",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-16"
+    },
+    {
+      "id": "openssl-s-client",
+      "title": "OpenSSL documentation: openssl-s_client",
+      "url": "https://docs.openssl.org/master/man1/openssl-s_client/",
+      "publisher": "OpenSSL Project",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-16"
+    }
+  ]
+}

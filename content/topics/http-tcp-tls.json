@@ -1,0 +1,701 @@
+{
+  "slug": "http-tcp-tls",
+  "title": "HTTP, TCP and TLS",
+  "shortTitle": "HTTP and TLS",
+  "group": "Scaling",
+  "interviewRelevance": "common",
+  "concept": "Before a browser can show a page it must open a connection: a TCP handshake, a TLS handshake that sets up encryption, then an HTTP request. Each step waits a full round trip, so the cost is set by distance, not bandwidth. Reusing connections, newer TLS versions, 0-RTT resumption and QUIC with HTTP/3 are all ways to spend fewer round trips.",
+  "prerequisites": [],
+  "summary": {
+    "points": [
+      "A browser opens TCP, then sets up TLS, then sends the HTTP request, and each step waits a full round trip.",
+      "Distance, more than bandwidth, sets the cost, so the fixes all spend fewer round trips: reuse open connections, use TLS 1.3, resume old sessions, or move to QUIC.",
+      "Google and Meta moved real traffic to QUIC and measured faster searches, fewer errors and fewer video stalls, and Google measured more server CPU.",
+      "Cloudflare found HTTP/3 faster to the first byte but slightly behind HTTP/2 on larger pages, and warns that 0-RTT data can be replayed."
+    ],
+    "figures": [
+      {
+        "postId": "google-quic-2017",
+        "row": 0,
+        "label": "about 88% of QUIC handshakes completed with no round trip of delay"
+      },
+      {
+        "postId": "cloudflare-http3-2020",
+        "row": 0,
+        "label": "176 ms vs 201 ms average time to first byte, HTTP/3 against HTTP/2"
+      },
+      {
+        "postId": "cloudflare-pingora-reuse-2022",
+        "row": 0,
+        "label": "87.1% to 99.92% of requests reused an open connection for one customer"
+      }
+    ]
+  },
+  "posts": [
+    {
+      "id": "google-quic-2017",
+      "title": "The QUIC Transport Protocol: Design and Internet-Scale Deployment",
+      "url": "https://storage.googleapis.com/gweb-research2023-media/pubtools/4102.pdf",
+      "company": "Google",
+      "verifiedOn": "2026-10-16",
+      "published": "2017-08-21",
+      "ageNote": "This is a research paper, not a company blog post: the 2017 SIGCOMM paper. It is here for the fundamentals it explains, why TCP is hard to change, and what a combined handshake and independent streams buy. Its figures are Google's 2017 measurements and later QUIC and HTTP/3 versions differ in detail, so treat them as one early, large data point, not as today's numbers.",
+      "digest": {
+        "problem": "Web traffic ran on HTTP over TLS over TCP. Each layer added its own setup trips, one lost packet stalled every request sharing a TCP connection, and TCP could not easily be changed because firewalls and address translators inspect and sometimes rewrite its headers. Google wanted to improve the transport itself and could not wait for operating systems and network gear to change.",
+        "constraints": "The new protocol had to cross middleboxes that block anything unfamiliar, so it was built on UDP. It had to be deployable by shipping app and server updates, not kernel updates, so it ran in user space. It also had to be safe to roll out on a live service with billions of requests a day, while the team measured real users, not lab tests.",
+        "walkthrough": [
+          {
+            "step": "Run on UDP in user space",
+            "explanation": "QUIC was built as a user-space transport on top of UDP, so it passes through middleboxes and can change as fast as an app or server ships."
+          },
+          {
+            "step": "Merge the handshakes",
+            "explanation": "The cryptographic and transport handshakes happen together. The first connection to a server takes one round trip; a client that cached the server's details can send data with its first message."
+          },
+          {
+            "step": "Give each request its own stream",
+            "explanation": "Streams share one connection, but a lost UDP packet only holds up the streams whose data was in that packet."
+          },
+          {
+            "step": "Encrypt the transport headers",
+            "explanation": "Packets are authenticated and encrypted, which stops middleboxes from depending on the headers and so limits the ossification that froze TCP."
+          },
+          {
+            "step": "Identify connections by an ID",
+            "explanation": "A connection ID lets a connection survive a change of the client's address or port, such as a NAT rebinding."
+          },
+          {
+            "step": "Roll out slowly",
+            "explanation": "QUIC went into Chrome in 2013 behind a flag, then to a tiny share of users through an experiment framework, and grew as the team watched live metrics such as Search latency."
+          },
+          {
+            "step": "Measure the cost and cut it",
+            "explanation": "Server CPU use was about 3.5 times that of TLS over TCP at first. Optimised crypto, packet receive paths and data structures brought it to about 2 times."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 270\" role=\"img\" aria-labelledby=\"dg-hpt-gquic-t\" class=\"dg\"><title id=\"dg-hpt-gquic-t\">QUIC at Google: a first connection needs one round trip before the request, while a repeat connection sends the request with the handshake, which is how about 88 percent of QUIC handshakes ran.</title><defs><marker id=\"dg-hpt-gquic-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"26\" class=\"dg-note\" text-anchor=\"start\">First connection to a server</text><rect x=\"14\" y=\"36\" width=\"160\" height=\"44\" class=\"dg-box\"/><text x=\"94.0\" y=\"63.0\" class=\"dg-label\" text-anchor=\"middle\">Handshake</text><path d=\"M174,58 L214,58\" class=\"dg-line\" marker-end=\"url(#dg-hpt-gquic-a)\"/><rect x=\"214\" y=\"36\" width=\"160\" height=\"44\" class=\"dg-box\"/><text x=\"294.0\" y=\"63.0\" class=\"dg-label\" text-anchor=\"middle\">Request</text><text x=\"394\" y=\"62\" class=\"dg-note\" text-anchor=\"start\">1 round trip first</text><text x=\"14\" y=\"122\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">Repeat connection (about 88% of QUIC handshakes)</text><rect x=\"14\" y=\"132\" width=\"360\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"194.0\" y=\"159.0\" class=\"dg-label\" text-anchor=\"middle\">Handshake and request together</text><text x=\"394\" y=\"158\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">0 round trips first</text><text x=\"14\" y=\"214\" class=\"dg-note\" text-anchor=\"start\">Search latency: 8.0% lower on desktop, 3.6% on mobile</text><text x=\"14\" y=\"238\" class=\"dg-note\" text-anchor=\"start\">Over 30% of Google egress bytes ran on QUIC</text></svg>",
+        "numbers": [
+          {
+            "value": "about 88%",
+            "meaning": "Share of QUIC handshakes that completed with zero round trips of delay"
+          },
+          {
+            "value": "8.0% and 3.6%",
+            "meaning": "Average cut in Google Search latency for desktop and mobile users"
+          },
+          {
+            "value": "18.0% and 15.3%",
+            "meaning": "Cut in YouTube rebuffer rates for desktop and mobile users"
+          },
+          {
+            "value": "over 30%",
+            "meaning": "Share of Google's egress traffic, in bytes, carried by QUIC"
+          },
+          {
+            "value": "about 7%",
+            "meaning": "Google's estimate of QUIC's share of global Internet traffic"
+          },
+          {
+            "value": "3.5 times, then about 2 times",
+            "meaning": "Server CPU use of QUIC compared with TLS over TCP, before and after optimisation"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A new encrypted transport on UDP in user space, with a merged handshake and independent streams, rolled out gradually.",
+          "rejected": "Waiting for changes to TCP and the network gear around it; the paper says even simple TCP changes take upwards of a decade to deploy widely.",
+          "why": "The gains from fewer round trips and no cross-request blocking were large enough to justify a new protocol, and user space made it possible to deploy and iterate quickly. The price was CPU: QUIC stays more expensive than TLS over TCP."
+        },
+        "failures": "The first implementation was written for fast feature work and easy debugging, not CPU efficiency, and cost about 3.5 times the CPU of TLS over TCP. The team also built forward error correction into QUIC and removed it in early 2016 because its benefit was limited and it added code complexity. The paper lists performance limitations as well, for example user-space scheduling costs that show up at the lowest latencies.",
+        "takeaways": "Round trips, not bandwidth, are the cost to cut in connection setup, and a protocol that cannot change in the field will stop improving. Rolling out slowly against live metrics is how to find out what a change really does. A faster protocol can still cost more CPU, so budget for that."
+      }
+    },
+    {
+      "id": "meta-quic-2020",
+      "title": "How Facebook is bringing QUIC to billions",
+      "url": "https://engineering.fb.com/2020/10/21/networking-traffic/how-facebook-is-bringing-quic-to-billions/",
+      "company": "Meta",
+      "verifiedOn": "2026-10-16",
+      "published": "2020-10-21",
+      "ageNote": "From 2020, describing Facebook's QUIC rollout as of then, while QUIC and HTTP/3 were still being finalised by the IETF (the post expected the final document in 2021). The rollout method and the lessons about apps tuned to TCP are what to take from it. Its percentages are Meta's 2020 results and have not been rechecked against a newer source.",
+      "digest": {
+        "problem": "Facebook's apps talked to its servers over TCP and HTTP/2, where a lost packet blocks every stream on a connection and the protocol is hard to upgrade. Meta wanted the improvements of QUIC and HTTP/3 for people on slow or lossy networks, and needed to roll them out to billions of users without breaking the apps.",
+        "constraints": "Meta wrote its own QUIC implementation, mvfst, to move fast, and it had to fit its load balancer's zero-downtime release guarantees. The first version was built for developer speed, so its CPU efficiency was unproven, and so was how well its main congestion control, BBR, would cope with large transfers such as video.",
+        "walkthrough": [
+          {
+            "step": "Prove it on internal traffic",
+            "explanation": "QUIC went first onto a large share of internal traffic, including proxied public traffic, which exposed bugs and made the load balancer QUIC-aware before any user depended on it."
+          },
+          {
+            "step": "Start with dynamic requests",
+            "explanation": "In the Facebook app, QUIC was enabled for dynamic GraphQL requests, whose responses are small and do not stress the CPU or the congestion controller."
+          },
+          {
+            "step": "Fix the surprises",
+            "explanation": "Static content over TCP got more errors, because app logic that decided how many image and video requests to make was tuned to TCP timings and asked for too much at once under QUIC."
+          },
+          {
+            "step": "Make it scale",
+            "explanation": "Before enabling images and video, the team built tools to test CPU use and congestion control, then improved UDP pacing, sent packets in batches with GSO, and optimised the handling of unacknowledged data."
+          },
+          {
+            "step": "Turn on all content with video engineers",
+            "explanation": "Video engineers helped read the results. Bandwidth estimators that overestimated under QUIC and a flow-control limit tuned for TCP had to be adjusted."
+          },
+          {
+            "step": "Extend to Instagram and the web",
+            "explanation": "The same staged approach took QUIC to Instagram on iOS and Android, and Facebook and Instagram on the web enabled it too."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-hpt-fbquic-t\" class=\"dg\"><title id=\"dg-hpt-fbquic-t\">Meta&#x27;s QUIC rollout in three stages: dynamic requests first, then static content after CPU and congestion-control work, then all content including video.</title><defs><marker id=\"dg-hpt-fbquic-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"30\" width=\"160\" height=\"52\" class=\"dg-box\"/><text x=\"94.0\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\">Dynamic</text><text x=\"94.0\" y=\"69.5\" class=\"dg-label\" text-anchor=\"middle\">requests</text><path d=\"M174,56 L200,56\" class=\"dg-line\" marker-end=\"url(#dg-hpt-fbquic-a)\"/><rect x=\"200\" y=\"30\" width=\"160\" height=\"52\" class=\"dg-box\"/><text x=\"280.0\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\">Static content</text><text x=\"280.0\" y=\"69.5\" class=\"dg-label\" text-anchor=\"middle\">images, video</text><path d=\"M360,56 L386,56\" class=\"dg-line\" marker-end=\"url(#dg-hpt-fbquic-a)\"/><rect x=\"386\" y=\"30\" width=\"160\" height=\"52\" class=\"dg-box dg-accent\"/><text x=\"466.0\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\">All content</text><text x=\"466.0\" y=\"69.5\" class=\"dg-label\" text-anchor=\"middle\">video included</text><text x=\"94\" y=\"106\" class=\"dg-note\" text-anchor=\"middle\">6% fewer errors</text><text x=\"94\" y=\"122\" class=\"dg-note\" text-anchor=\"middle\">20% lower tail latency</text><text x=\"94\" y=\"138\" class=\"dg-note\" text-anchor=\"middle\">5% smaller headers</text><text x=\"280\" y=\"106\" class=\"dg-note\" text-anchor=\"middle\">first: CPU cost of mvfst</text><text x=\"280\" y=\"122\" class=\"dg-note\" text-anchor=\"middle\">and congestion control</text><text x=\"466\" y=\"106\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">video stalls down 20%</text><text x=\"466\" y=\"122\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">MTBR up to 22% better</text><text x=\"280\" y=\"190\" class=\"dg-note\" text-anchor=\"middle\">each stage found app logic tuned to TCP behaviour</text><text x=\"280\" y=\"214\" class=\"dg-note\" text-anchor=\"middle\">tests on a small share of users came first</text></svg>",
+        "numbers": [
+          {
+            "value": "over 75 percent",
+            "meaning": "Share of Meta's internet traffic using QUIC and HTTP/3"
+          },
+          {
+            "value": "6 percent",
+            "meaning": "Fewer request errors than HTTP/2 in the Facebook app, dynamic requests"
+          },
+          {
+            "value": "20 percent",
+            "meaning": "Lower tail latency than HTTP/2 for those requests"
+          },
+          {
+            "value": "5 percent",
+            "meaning": "Smaller response headers than HTTP/2 for those requests"
+          },
+          {
+            "value": "up to 22 percent",
+            "meaning": "Better mean time between video rebuffering events, depending on platform"
+          },
+          {
+            "value": "20 percent",
+            "meaning": "Lower rate of video stalls"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Build mvfst in house and roll QUIC out in stages, dynamic requests first, then static content once CPU use and congestion control were ready, then everything.",
+          "why": "A staged rollout let the team find that app heuristics tuned to TCP misbehaved under QUIC before the largest traffic was affected. Delaying static content until the CPU and congestion-control work was done kept the cost in check."
+        },
+        "failures": "Turning QUIC on for dynamic requests alone raised error rates for static content that still used TCP, which the team traced to a loading heuristic tuned with arbitrary thresholds. Under QUIC the app also overestimated bandwidth and played video at a quality the network could not hold, causing stalls, and a flow-control limit set for HTTP/2 over TCP performed badly until retuned.",
+        "takeaways": "A transport change reaches into app logic written around the old transport's behaviour, so measure the whole experience, not only the protocol. Stage a rollout from cheap and small requests to heavy ones, and measure CPU and congestion control before the heavy traffic arrives."
+      }
+    },
+    {
+      "id": "cloudflare-0rtt-2017",
+      "title": "Introducing Zero Round Trip Time Resumption (0-RTT)",
+      "url": "https://blog.cloudflare.com/introducing-0-rtt/",
+      "company": "Cloudflare",
+      "verifiedOn": "2026-10-16",
+      "published": "2017-03-15",
+      "ageNote": "From 2017, describing Cloudflare's TLS 1.3 0-RTT feature as of then, when only a few browser builds supported it. The post itself carries an update saying the feature is no longer enabled by default. Take it for the round-trip arithmetic and the replay trade-off, not as how Cloudflare runs 0-RTT today.",
+      "digest": {
+        "problem": "Setting up a secure connection costs several round trips before the first request can be sent. Since a round trip is bounded by distance, a visitor far from a server can wait a full second before the page starts. TLS 1.3 removes a trip for new connections but gives no gain for connections that resume an earlier session.",
+        "constraints": "Round-trip latency cannot be reduced below the speed of light, and mobile and satellite links add more. 0-RTT lets a returning client send its first request along with its opening message, but that data can be captured and replayed by an attacker, and a replayed request must not do harm, such as repeating a payment.",
+        "walkthrough": [
+          {
+            "step": "Count the trips",
+            "explanation": "A first HTTPS visit needs a DNS lookup, then one round trip for TCP, two for TLS 1.2 and one for the HTTP request. Resuming a TLS 1.2 session cuts the TLS part to one."
+          },
+          {
+            "step": "Cut with TLS 1.3",
+            "explanation": "TLS 1.3 needs one round trip for any connection, which speeds up new connections but not resumed ones, which were already at one."
+          },
+          {
+            "step": "Send data with the hello",
+            "explanation": "With 0-RTT, a returning client sends its first request inside its first message, removing the last setup round trip for resumed connections."
+          },
+          {
+            "step": "Face the replay risk",
+            "explanation": "An attacker who sees the encrypted early data can resend it, so the server may see the request twice."
+          },
+          {
+            "step": "Answer only safe requests",
+            "explanation": "Cloudflare answers 0-RTT only for GET requests with no query string, caps their size and how long they can be replayed, and sends everything else the normal way."
+          },
+          {
+            "step": "Tell the origin",
+            "explanation": "A header derived from the PSK binder uniquely identifies each 0-RTT request, so an origin can spot a repeat."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 290\" role=\"img\" aria-labelledby=\"dg-hpt-cf0rtt-t\" class=\"dg\"><title id=\"dg-hpt-cf0rtt-t\">Cloudflare&#x27;s 0-RTT: a returning visitor sends the first request inside the opening TLS message, saving a round trip, but an attacker can copy and resend it, so only safe GET requests are answered.</title><defs><marker id=\"dg-hpt-cf0rtt-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"24\" class=\"dg-note\" text-anchor=\"start\">Returning visitor, TLS 1.3</text><rect x=\"14\" y=\"34\" width=\"170\" height=\"44\" class=\"dg-box\"/><text x=\"99.0\" y=\"61.0\" class=\"dg-label\" text-anchor=\"middle\">Resume handshake</text><path d=\"M184,56 L224,56\" class=\"dg-line\" marker-end=\"url(#dg-hpt-cf0rtt-a)\"/><rect x=\"224\" y=\"34\" width=\"170\" height=\"44\" class=\"dg-box\"/><text x=\"309.0\" y=\"61.0\" class=\"dg-label\" text-anchor=\"middle\">Request</text><text x=\"410\" y=\"60\" class=\"dg-note\" text-anchor=\"start\">TLS: 1 round trip</text><text x=\"14\" y=\"112\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">Same visitor with 0-RTT</text><rect x=\"14\" y=\"122\" width=\"380\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"204.0\" y=\"149.0\" class=\"dg-label\" text-anchor=\"middle\">Early data: request sent with the hello</text><text x=\"410\" y=\"148\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">TLS: 0 round trips</text><text x=\"14\" y=\"204\" class=\"dg-note\" text-anchor=\"start\">The catch: replay</text><rect x=\"14\" y=\"214\" width=\"170\" height=\"44\" class=\"dg-box\"/><text x=\"99.0\" y=\"241.0\" class=\"dg-label\" text-anchor=\"middle\">Early data copied</text><path d=\"M184,236 L224,236\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-hpt-cf0rtt-a)\"/><rect x=\"224\" y=\"214\" width=\"170\" height=\"44\" class=\"dg-box dg-dashed\"/><text x=\"309.0\" y=\"241.0\" class=\"dg-label\" text-anchor=\"middle\">Server runs it twice</text><text x=\"410\" y=\"240\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">GET, no query string</text><text x=\"280\" y=\"282\" class=\"dg-note\" text-anchor=\"middle\">each round trip saved is worth more the farther away the visitor is</text></svg>",
+        "numbers": [
+          {
+            "value": "about 60%",
+            "meaning": "Share of connections that are first visits or return visits after a long gap"
+          },
+          {
+            "value": "about 40%",
+            "meaning": "Share of connections that resume a recent session"
+          },
+          {
+            "value": "1000 ms",
+            "meaning": "Delay before a site starts loading for a visitor 250 ms away, from the setup round trips"
+          },
+          {
+            "value": "250 ms",
+            "meaning": "Shorter wait with 0-RTT in the post's demo, run from San Francisco"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Offer 0-RTT, but answer only GET requests with no query string, limit their size and replay window, and flag them to the origin.",
+          "rejected": "Answering every kind of request over 0-RTT, which would expose requests that change state to replay.",
+          "why": "The post says applications should already survive replays, because browsers resend requests after network glitches, yet not all do. A conservative rule keeps the speed gain for common page loads and leaves the risky cases on the safer path."
+        },
+        "failures": "The post notes 0-RTT replay protection depends on applications following HTTP semantics, and admits some do not. Its own update says the feature is no longer enabled by default, so the original default was later reversed.",
+        "takeaways": "Latency is mostly round trips, so cut trips, not milliseconds. Every speedup that sends data earlier weakens a guarantee, so decide which requests can safely take it. Write endpoints so that a repeated request does no harm."
+      }
+    },
+    {
+      "id": "cloudflare-http3-2020",
+      "title": "Comparing HTTP/3 vs. HTTP/2 Performance",
+      "url": "https://blog.cloudflare.com/http-3-vs-http-2/",
+      "company": "Cloudflare",
+      "verifiedOn": "2026-10-16",
+      "published": "2020-04-14",
+      "ageNote": "From 2020, written while HTTP/3 was still an IETF draft (draft 27 at the time of writing). It compares the two protocols on Cloudflare's network with different congestion control on each, so the figures are one early measurement, not how HTTP/3 performs today. It is here for how the comparison was set up and what it showed.",
+      "digest": {
+        "problem": "HTTP/3 was promised to be faster than HTTP/2, mainly by avoiding head-of-line blocking and by starting connections sooner with 0-RTT. Cloudflare had over 113,000 zones with HTTP/3 turned on and wanted to see what the gain looked like in practice.",
+        "constraints": "HTTP/3 was still a draft, and parts of performance are not governed by it, such as packet transmission and the congestion control algorithm. Cloudflare's HTTP/2 stack used BBR v1 over TCP while its HTTP/3 used CUBIC, so the comparison was not like for like.",
+        "walkthrough": [
+          {
+            "step": "Explain the claimed gains",
+            "explanation": "On HTTP/2 over TCP one lost packet holds up every stream, while on HTTP/3 over UDP it only holds up the stream it belongs to. 0-RTT also lets repeat connections start faster."
+          },
+          {
+            "step": "Benchmark time to first byte",
+            "explanation": "On average HTTP/3 reached the first byte in 176 ms against 201 ms for HTTP/2, which Cloudflare called 12.4 percent better."
+          },
+          {
+            "step": "Test two page sizes",
+            "explanation": "A 15 KB page loaded in 443 ms over HTTP/3 against 458 ms over HTTP/2, but at 1 MB the advantage vanished: 2.33 s against 2.30 s."
+          },
+          {
+            "step": "Tune congestion control",
+            "explanation": "Cloudflare moved HTTP/3 from New Reno to CUBIC, which did better on larger transfers with packet loss, while its HTTP/2 stack used BBR v1."
+          },
+          {
+            "step": "Test a real page",
+            "explanation": "Using WebPageTest instances around the world and its own Browser Insights, it loaded its blog over both protocols."
+          },
+          {
+            "step": "Read the result",
+            "explanation": "HTTP/3 trailed HTTP/2 by about 1 to 4 percent on average in North America, with similar results in Europe, Asia and South America. Cloudflare suspected the congestion algorithms, not the protocol."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 280\" role=\"img\" aria-labelledby=\"dg-hpt-cfh3-t\" class=\"dg\"><title id=\"dg-hpt-cfh3-t\">Cloudflare&#x27;s 2020 measurements: HTTP/3 reached the first byte at 176 ms against 201 ms for HTTP/2, loaded a 15 KB page in 443 ms against 458 ms, and was slightly slower on a 1 MB page at 2.33 s against 2.30 s.</title><defs><marker id=\"dg-hpt-cfh3-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"24\" class=\"dg-note\" text-anchor=\"start\">Time to first byte, average</text><text x=\"80\" y=\"46\" class=\"dg-note\" text-anchor=\"end\">HTTP/2</text><rect x=\"90\" y=\"32\" width=\"221\" height=\"20\" class=\"dg-box\"/><text x=\"319\" y=\"47\" class=\"dg-note\" text-anchor=\"start\">201 ms</text><text x=\"80\" y=\"72\" class=\"dg-note\" text-anchor=\"end\">HTTP/3</text><rect x=\"90\" y=\"58\" width=\"194\" height=\"20\" class=\"dg-box dg-accent\"/><text x=\"292\" y=\"73\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">176 ms</text><text x=\"14\" y=\"106\" class=\"dg-note\" text-anchor=\"start\">15 KB test page</text><text x=\"80\" y=\"128\" class=\"dg-note\" text-anchor=\"end\">HTTP/2</text><rect x=\"90\" y=\"114\" width=\"229\" height=\"20\" class=\"dg-box\"/><text x=\"327\" y=\"129\" class=\"dg-note\" text-anchor=\"start\">458 ms</text><text x=\"80\" y=\"154\" class=\"dg-note\" text-anchor=\"end\">HTTP/3</text><rect x=\"90\" y=\"140\" width=\"222\" height=\"20\" class=\"dg-box dg-accent\"/><text x=\"320\" y=\"155\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">443 ms</text><text x=\"14\" y=\"188\" class=\"dg-note\" text-anchor=\"start\">1 MB test page</text><text x=\"80\" y=\"210\" class=\"dg-note\" text-anchor=\"end\">HTTP/2</text><rect x=\"90\" y=\"196\" width=\"230\" height=\"20\" class=\"dg-box\"/><text x=\"328\" y=\"211\" class=\"dg-note\" text-anchor=\"start\">2.30 s</text><text x=\"80\" y=\"236\" class=\"dg-note\" text-anchor=\"end\">HTTP/3</text><rect x=\"90\" y=\"222\" width=\"233\" height=\"20\" class=\"dg-box dg-accent\"/><text x=\"331\" y=\"237\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">2.33 s</text><text x=\"280\" y=\"270\" class=\"dg-note\" text-anchor=\"middle\">bars are drawn to scale within each group only</text></svg>",
+        "numbers": [
+          {
+            "value": "176 ms vs 201 ms",
+            "meaning": "Average time to first byte, HTTP/3 against HTTP/2"
+          },
+          {
+            "value": "12.4%",
+            "meaning": "Improvement in time to first byte that Cloudflare reported for HTTP/3"
+          },
+          {
+            "value": "443 ms vs 458 ms",
+            "meaning": "Load time of a 15 KB test page, HTTP/3 against HTTP/2"
+          },
+          {
+            "value": "2.33 s vs 2.30 s",
+            "meaning": "Load time of a 1 MB test page, HTTP/3 against HTTP/2"
+          },
+          {
+            "value": "1 to 4%",
+            "meaning": "How far HTTP/3 trailed HTTP/2 on average for a real page in North America"
+          },
+          {
+            "value": "over 113,000",
+            "meaning": "Zones that had activated HTTP/3 at the time"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Offer HTTP/3 alongside HTTP/2 and keep tuning it, here by moving to CUBIC, while measuring both against real pages.",
+          "why": "The gains were clearest where connection setup dominates, on small pages, and disappeared where bulk transfer and congestion control dominate. Offering both lets browsers use whichever works while the standard settles."
+        },
+        "failures": "On the real page test HTTP/3 was slower than HTTP/2 by a few percent. Cloudflare's own suspicion was that the difference came from BBR v1 on HTTP/2 against CUBIC on HTTP/3, not from the protocols, and it planned to run the same algorithm on both. So the result does not show which protocol is better in general.",
+        "takeaways": "A protocol's best case is not the typical case, so test with real pages and several sizes. Compare like with like: congestion control and implementation choices can outweigh protocol differences."
+      }
+    },
+    {
+      "id": "cloudflare-pingora-reuse-2022",
+      "title": "How we built Pingora, the proxy that connects Cloudflare to the Internet",
+      "url": "https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/",
+      "company": "Cloudflare",
+      "verifiedOn": "2026-10-16",
+      "published": "2022-09-14",
+      "related": [
+        "cdns"
+      ],
+      "digest": {
+        "problem": "Between a CDN and a customer's origin, every cache miss needs a connection, and a new connection costs a TCP and a TLS handshake before the first byte. Cloudflare's NGINX-based proxy kept a separate pool of open origin connections for each worker process, so a request could only reuse a connection owned by the worker it landed on. Adding workers to scale up scattered connections across more pools, and the reuse ratio fell.",
+        "constraints": "The proxy handles millions of requests per second and must forward unusual HTTP from across the internet. A request in NGINX is tied to a single worker, so load across CPU cores was uneven, and the post calls poor connection reuse the most critical of the problems with the old design.",
+        "walkthrough": [
+          {
+            "step": "Name the cost of a miss",
+            "explanation": "Reusing a pooled connection skips the TCP and TLS handshakes, so reuse is what speeds up time to first byte on the path back to the origin."
+          },
+          {
+            "step": "Find why reuse falls",
+            "explanation": "NGINX's pool is per worker, so more workers meant more isolated pools and fewer hits."
+          },
+          {
+            "step": "Share one pool",
+            "explanation": "Pingora uses threads, not processes, and all threads share a single pool, so any request can reuse any open connection."
+          },
+          {
+            "step": "Steal work between threads",
+            "explanation": "Idle threads take work from busy ones, so one slow request does not hold up a whole worker's queue."
+          },
+          {
+            "step": "Measure the result",
+            "explanation": "For one major customer the reuse ratio rose from 87.1% to 99.92%, cutting new connections to their origins 160x."
+          },
+          {
+            "step": "Add it up",
+            "explanation": "Across all customers Pingora makes a third as many new connections per second, which Cloudflare equates to 434 years of handshake time saved every day."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 230\" role=\"img\" aria-labelledby=\"dg-hpt-pingora-t\" class=\"dg\"><title id=\"dg-hpt-pingora-t\">Connection reuse at Cloudflare&#x27;s origin proxy: with one pool per NGINX worker 87.1 percent of requests reused an open connection, and with Pingora&#x27;s shared pool 99.92 percent did.</title><defs><marker id=\"dg-hpt-pingora-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"28\" class=\"dg-note\" text-anchor=\"start\">Requests that reused an open origin connection (one major customer)</text><text x=\"110\" y=\"62\" class=\"dg-note\" text-anchor=\"end\">Pool per worker</text><rect x=\"120\" y=\"46\" width=\"348\" height=\"24\" class=\"dg-box\"/><text x=\"460\" y=\"62\" class=\"dg-note\" text-anchor=\"end\">87.1%</text><text x=\"110\" y=\"112\" class=\"dg-note\" text-anchor=\"end\">Shared pool</text><rect x=\"120\" y=\"96\" width=\"400\" height=\"24\" class=\"dg-box dg-accent\"/><text x=\"512\" y=\"112\" class=\"dg-note dg-note-accent\" text-anchor=\"end\">99.92%</text><text x=\"14\" y=\"160\" class=\"dg-note\" text-anchor=\"start\">Each reuse skips a TCP and a TLS handshake.</text><text x=\"14\" y=\"182\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">160x fewer new connections to that customer's origins</text><text x=\"14\" y=\"204\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">A third as many new connections per second overall</text></svg>",
+        "numbers": [
+          {
+            "value": "87.1% to 99.92%",
+            "meaning": "Share of requests reusing an open connection, for one major customer"
+          },
+          {
+            "value": "160x",
+            "meaning": "Fewer new connections to that customer's origins"
+          },
+          {
+            "value": "a third as many",
+            "meaning": "New connections per second compared with the old service, across all customers"
+          },
+          {
+            "value": "5 ms and 80 ms",
+            "meaning": "Drop in median and 95th percentile time to first byte"
+          },
+          {
+            "value": "434 years",
+            "meaning": "Total handshake time saved per day"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A new proxy where threads share one pool of origin connections, instead of one pool per process.",
+          "rejected": "Continuing to invest in NGINX and possibly forking it, or moving to another third-party proxy such as Envoy, because the per-worker model would remain.",
+          "why": "The post says the latency gains were not from faster code, since the old service already answered in under a millisecond, but from architecture that shares connections, which means fewer handshakes."
+        },
+        "failures": "The reuse problem was a side effect of scaling: the usual way to add capacity, more workers, made connection reuse worse. The post says Cloudflare had workarounds for some of NGINX's limits, but wanted to fix the worker model itself, which is why it built a new proxy.",
+        "takeaways": "A handshake is a cost to avoid, and keeping connections open only helps if requests can find them, so pool design matters as much as the keep-alive setting. Scaling out by splitting state can quietly undo reuse."
+      }
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Round trip",
+      "definition": "One message to a server and its reply; a connection's setup cost is counted in round trips."
+    },
+    {
+      "term": "TCP",
+      "definition": "The protocol that delivers a reliable, ordered stream of bytes between two machines, set up with a handshake."
+    },
+    {
+      "term": "TLS",
+      "definition": "The protocol that encrypts a connection and lets the client check the server's identity with a certificate."
+    },
+    {
+      "term": "Handshake",
+      "definition": "The exchange of messages that sets up a connection or its encryption before any request is sent."
+    },
+    {
+      "term": "Keep-alive",
+      "definition": "Leaving a connection open after a response so later requests reuse it and skip the handshakes."
+    },
+    {
+      "term": "Slow start",
+      "definition": "TCP's way of beginning a new connection with a small sending window and growing it as acknowledgements return."
+    },
+    {
+      "term": "Multiplexing",
+      "definition": "Carrying several requests and responses at once over one connection, as separate streams."
+    },
+    {
+      "term": "Head-of-line blocking",
+      "definition": "A lost packet holding up everything queued behind it, as when one gap stalls every stream on a TCP connection."
+    },
+    {
+      "term": "Session resumption",
+      "definition": "Reconnecting with secrets kept from an earlier visit, so the TLS handshake is shorter."
+    },
+    {
+      "term": "0-RTT",
+      "definition": "Sending the first request along with the opening handshake message on a resumed connection, at the cost of replay risk."
+    },
+    {
+      "term": "Replay attack",
+      "definition": "An attacker copying a captured message and sending it again so the server acts on it twice."
+    },
+    {
+      "term": "QUIC",
+      "definition": "A transport built on UDP that merges the transport and encryption handshakes and keeps streams independent."
+    },
+    {
+      "term": "HTTP/3",
+      "definition": "The version of HTTP that runs over QUIC instead of TCP."
+    }
+  ],
+  "mistakes": [
+    "Opening a new connection for every request, or closing idle ones too soon. Each new connection pays a TCP and a TLS handshake, so reuse them through keep-alive and shared pools.",
+    "Treating 0-RTT as free. Early data can be replayed, so use it only for requests that are safe to repeat, and make sure anything that changes state cannot be triggered by a repeated GET.",
+    "Assuming HTTP/3 is always faster. It helps most where setup and packet loss dominate; on large transfers congestion control can matter more, so measure with real pages. Also check app logic tuned to the old transport's timing, since it can misbehave after a switch."
+  ],
+  "comparison": "All five sources are about spending fewer round trips before the first useful byte, and they work at different layers. Cloudflare's 0-RTT post and Google's paper both remove setup trips by letting a returning client send data with its first message, and Cloudflare's Pingora post gets the same saving between a proxy and an origin by keeping connections open and findable.\n\nThey diverge on where the cost lands. 0-RTT trades some security, since early data can be replayed, for speed, so Cloudflare restricted it to safe GET requests. QUIC trades CPU: Google measured about 3.5 times the server CPU of TLS over TCP at first, then about 2 times after tuning, and Meta spent a stage of its rollout on CPU and congestion control before moving video.\n\nThe evidence differs in how large the gain is. Google and Meta saw wins on real traffic, such as 8.0 percent lower Search latency on desktop and 20 percent fewer video stalls. Cloudflare's own 2020 test found HTTP/3 ahead on small pages but a few percent behind on larger ones, with different congestion control on each side, a reminder to compare like with like.",
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why opening a connection costs time and what each step is for.",
+      "body": "Once the name has been turned into an address, the browser still cannot ask for the page. It must set up a TCP connection, then a TLS session so that the traffic is private and the server proves who it is, and only then send an HTTP request. Each step needs a reply from the other side before the next can start.\n\nThat reply takes a round trip, and a round trip is limited by distance and by the network in between, not by how fast your connection is. Cloudflare's example is a visitor 250 ms away who waits about a second before a page starts to load. Everything in this topic is a way to spend fewer of those trips: keep connections open, shorten the handshakes, resume earlier sessions, or replace the transport."
+    },
+    "mentalModel": {
+      "outcome": "After this you can say what each layer does and why a lost packet hurts differently on TCP and QUIC.",
+      "body": "Think of a phone call. TCP is dialling and getting a reliable line: it delivers bytes in order, and if one is lost it holds everything behind it until the missing one is resent. TLS is agreeing a secret code and checking the other person is who they claim to be. HTTP is the conversation, the questions and answers.\n\nHTTP/1.1 sends one request at a time on a connection, so browsers open several. HTTP/2 sends many requests at once as streams on one TCP connection, but they share one ordered byte stream, so one lost packet stalls them all. HTTP/3 runs on QUIC, which sits on UDP, merges the transport and encryption handshakes, and keeps streams independent, so a loss only delays the stream it belongs to.",
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-hpt-model-t\" class=\"dg\"><title id=\"dg-hpt-model-t\">Two ways to carry a web request: HTTP/1.1 and HTTP/2 sit on TLS on TCP on IP, with TCP and TLS set up in separate steps; HTTP/3 sits on QUIC, which carries TLS 1.3 inside it, on UDP on IP.</title><defs><marker id=\"dg-hpt-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"135\" y=\"26\" class=\"dg-note\" text-anchor=\"middle\">HTTP/1.1 and HTTP/2</text><text x=\"425\" y=\"26\" class=\"dg-note\" text-anchor=\"middle\">HTTP/3</text><rect x=\"40\" y=\"44\" width=\"190\" height=\"40\" class=\"dg-box\"/><text x=\"135.0\" y=\"69.0\" class=\"dg-label\" text-anchor=\"middle\">HTTP</text><rect x=\"40\" y=\"94\" width=\"190\" height=\"40\" class=\"dg-box\"/><text x=\"135.0\" y=\"119.0\" class=\"dg-label\" text-anchor=\"middle\">TLS</text><rect x=\"40\" y=\"144\" width=\"190\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"135.0\" y=\"169.0\" class=\"dg-label\" text-anchor=\"middle\">TCP</text><rect x=\"40\" y=\"194\" width=\"190\" height=\"40\" class=\"dg-box\"/><text x=\"135.0\" y=\"219.0\" class=\"dg-label\" text-anchor=\"middle\">IP</text><rect x=\"330\" y=\"44\" width=\"190\" height=\"40\" class=\"dg-box\"/><text x=\"425.0\" y=\"69.0\" class=\"dg-label\" text-anchor=\"middle\">HTTP/3</text><rect x=\"330\" y=\"94\" width=\"190\" height=\"90\" class=\"dg-box dg-accent\"/><text x=\"425.0\" y=\"135.5\" class=\"dg-label\" text-anchor=\"middle\">QUIC</text><text x=\"425.0\" y=\"152.5\" class=\"dg-label\" text-anchor=\"middle\">TLS 1.3 inside</text><rect x=\"330\" y=\"194\" width=\"190\" height=\"40\" class=\"dg-box\"/><text x=\"425.0\" y=\"219.0\" class=\"dg-label\" text-anchor=\"middle\">UDP</text><text x=\"135\" y=\"258\" class=\"dg-note\" text-anchor=\"middle\">TCP first, then TLS: separate steps</text><text x=\"425\" y=\"258\" class=\"dg-note\" text-anchor=\"middle\">one combined handshake</text><text x=\"280\" y=\"288\" class=\"dg-note\" text-anchor=\"middle\">the cost is in round trips, not in bytes</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can list the steps of an HTTPS request and say which ones a reused connection skips.",
+      "steps": [
+        {
+          "step": "Look up the address",
+          "explanation": "DNS turns the hostname into an IP address. Resolver caches often make this step close to free."
+        },
+        {
+          "step": "Open the TCP connection",
+          "explanation": "The client sends a SYN, the server answers, and the client confirms. This takes one round trip. A new TCP connection also starts by sending slowly (slow start) and speeds up as acknowledgements come back."
+        },
+        {
+          "step": "Set up TLS",
+          "explanation": "Client and server agree on keys and the server presents a certificate. TLS 1.2 needs two round trips for this, TLS 1.3 needs one."
+        },
+        {
+          "step": "Send the request",
+          "explanation": "The HTTP request goes out encrypted and the response comes back. HTTP/2 and HTTP/3 can carry many requests at once on the same connection."
+        },
+        {
+          "step": "Reuse the connection",
+          "explanation": "With keep-alive, the next request skips the TCP and TLS steps and also benefits from a connection that has already sped up."
+        },
+        {
+          "step": "Resume or send early",
+          "explanation": "A returning client can reuse secrets from an earlier visit to shorten TLS. With 0-RTT it can send its first request with the opening message, saving a trip at the cost of possible replay."
+        },
+        {
+          "step": "Replace the transport",
+          "explanation": "QUIC does the transport and encryption setup together over UDP, so a first connection takes one round trip and a repeat connection can take none."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 220\" role=\"img\" aria-labelledby=\"dg-hpt-how-t\" class=\"dg\"><title id=\"dg-hpt-how-t\">Setting up an HTTPS request: a DNS lookup, a TCP handshake, a TLS handshake, then the HTTP request; reusing a connection skips the middle two steps.</title><defs><marker id=\"dg-hpt-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"30\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"69.0\" y=\"59.0\" class=\"dg-label\" text-anchor=\"middle\">DNS lookup</text><rect x=\"152\" y=\"30\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"209.0\" y=\"50.5\" class=\"dg-label\" text-anchor=\"middle\">TCP</text><text x=\"209.0\" y=\"67.5\" class=\"dg-label\" text-anchor=\"middle\">handshake</text><rect x=\"292\" y=\"30\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"349.0\" y=\"50.5\" class=\"dg-label\" text-anchor=\"middle\">TLS</text><text x=\"349.0\" y=\"67.5\" class=\"dg-label\" text-anchor=\"middle\">handshake</text><rect x=\"432\" y=\"30\" width=\"114\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"489.0\" y=\"50.5\" class=\"dg-label\" text-anchor=\"middle\">HTTP</text><text x=\"489.0\" y=\"67.5\" class=\"dg-label\" text-anchor=\"middle\">request</text><path d=\"M126,54 L152,54\" class=\"dg-line\" marker-end=\"url(#dg-hpt-how-a)\"/><path d=\"M266,54 L292,54\" class=\"dg-line\" marker-end=\"url(#dg-hpt-how-a)\"/><path d=\"M406,54 L432,54\" class=\"dg-line\" marker-end=\"url(#dg-hpt-how-a)\"/><text x=\"69\" y=\"98\" class=\"dg-note\" text-anchor=\"middle\">often cached</text><text x=\"209\" y=\"98\" class=\"dg-note\" text-anchor=\"middle\">1 round trip</text><text x=\"349\" y=\"98\" class=\"dg-note\" text-anchor=\"middle\">2 round trips</text><text x=\"349\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\">1 with TLS 1.3</text><text x=\"489\" y=\"98\" class=\"dg-note\" text-anchor=\"middle\">1 round trip</text><path d=\"M152,134 L152,144 L406,144 L406,134\" class=\"dg-line dg-dashed\"/><text x=\"279\" y=\"166\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">a kept-alive connection skips these two</text><text x=\"280\" y=\"206\" class=\"dg-note\" text-anchor=\"middle\">every step waits for the one before it</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can count the round trips for a given visit and see what each improvement saves.",
+      "steps": [
+        {
+          "step": "Pick the distance",
+          "explanation": "Take a visitor 250 ms away from the server, as in Cloudflare's example. One round trip costs 250 ms."
+        },
+        {
+          "step": "First visit on TLS 1.2",
+          "explanation": "One round trip for TCP, two for TLS and one for the request make four, so the response starts about 1000 ms after the browser begins, not counting DNS."
+        },
+        {
+          "step": "Same visit on TLS 1.3",
+          "explanation": "TLS needs one round trip instead of two, so the total is three round trips, about 750 ms."
+        },
+        {
+          "step": "Keep the connection",
+          "explanation": "A second request on the same open connection needs only the request round trip, about 250 ms."
+        },
+        {
+          "step": "Return after a while",
+          "explanation": "A returning visitor on TLS 1.3 still needs three round trips for a new connection. With 0-RTT the request rides with the hello and the total falls to two, about 500 ms."
+        },
+        {
+          "step": "Check what is safe",
+          "explanation": "Cloudflare answers 0-RTT only for GET requests without a query string, because an attacker can replay early data."
+        },
+        {
+          "step": "Try QUIC",
+          "explanation": "Google found about 88 percent of QUIC handshakes needed no extra round trip, and Meta found HTTP/3 lowered tail latency by 20 percent for its dynamic requests, though Cloudflare saw HTTP/3 trail HTTP/2 slightly on large pages."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 256\" role=\"img\" aria-labelledby=\"dg-hpt-ex-t\" class=\"dg\"><title id=\"dg-hpt-ex-t\">Time before a response starts for a visitor 250 ms away: 1000 ms for a first TLS 1.2 visit, 750 ms with TLS 1.3, and 500 ms for a returning visitor using 0-RTT.</title><defs><marker id=\"dg-hpt-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"24\" class=\"dg-note\" text-anchor=\"start\">TLS 1.2, first visit</text><rect x=\"14\" y=\"32\" width=\"380\" height=\"20\" class=\"dg-box\"/><text x=\"402\" y=\"47\" class=\"dg-note\" text-anchor=\"start\">1000 ms</text><text x=\"14\" y=\"76\" class=\"dg-note\" text-anchor=\"start\">TLS 1.3, first visit</text><rect x=\"14\" y=\"84\" width=\"285\" height=\"20\" class=\"dg-box\"/><text x=\"307\" y=\"99\" class=\"dg-note\" text-anchor=\"start\">750 ms</text><text x=\"14\" y=\"128\" class=\"dg-note\" text-anchor=\"start\">TLS 1.3, returning visitor</text><rect x=\"14\" y=\"136\" width=\"285\" height=\"20\" class=\"dg-box\"/><text x=\"307\" y=\"151\" class=\"dg-note\" text-anchor=\"start\">750 ms</text><text x=\"14\" y=\"180\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">TLS 1.3 with 0-RTT, returning visitor</text><rect x=\"14\" y=\"188\" width=\"190\" height=\"20\" class=\"dg-box dg-accent\"/><text x=\"212\" y=\"203\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">500 ms</text><text x=\"280\" y=\"242\" class=\"dg-note\" text-anchor=\"middle\">time before the response starts, visitor 250 ms away, DNS not counted</text></svg>"
+    },
+    "mistakesOutcome": "After this you can avoid the three most common ways connection setup goes wrong.",
+    "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
+    "quiz": [
+      {
+        "question": "A browser opens a new HTTPS connection over TLS 1.2 to a server 100 ms away. How long until it can send the HTTP request, not counting DNS?",
+        "options": [
+          "About 100 ms, because TCP and TLS are set up together in a single round trip",
+          "About 300 ms: one round trip for TCP and two for TLS 1.2",
+          "About 200 ms, one round trip for TCP and one for the TLS handshake",
+          "Nothing, because the request travels inside the very first SYN packet"
+        ],
+        "correct": 1,
+        "why": "TCP needs one round trip and TLS 1.2 needs two, so three round trips pass before the request goes out.",
+        "wrong": [
+          "TCP and TLS 1.2 do not share a round trip; the TLS messages start after the TCP connection exists.",
+          "",
+          "TLS 1.2 needs two round trips, not one, which is what TLS 1.3 later reduced.",
+          "A plain SYN packet carries no request, and TLS must finish before an HTTPS request can be sent."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Compared with TLS 1.2 plus session resumption, which connections does TLS 1.3 alone (no 0-RTT) make faster?",
+        "options": [
+          "Resumed connections only, since a resumed session skips the handshake altogether",
+          "Both new and resumed connections, each by exactly the same amount",
+          "It changes only the cipher, so neither one is faster",
+          "New connections, which save a round trip; resumed ones stay the same"
+        ],
+        "correct": 3,
+        "why": "TLS 1.3 needs one round trip for any connection. New ones used to need two, so they gain; resumed ones already needed one, so they do not.",
+        "wrong": [
+          "Resumed connections already needed one round trip in TLS 1.2, which is where TLS 1.3 sits too.",
+          "Only new connections gain a round trip; resumed ones stay the same.",
+          "TLS 1.3 also shortens the handshake, not only the cipher choice.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why does Cloudflare's 0-RTT answer only GET requests with no query string?",
+        "options": [
+          "0-RTT data can be replayed, so only requests that change nothing are safe",
+          "Other request types cannot be encrypted, so they must wait for the full handshake",
+          "Query strings are too long to fit in the first message of a handshake, so they are left out entirely"
+        ],
+        "correct": 0,
+        "why": "An attacker can copy the early data and resend it, so the request must be harmless if the server sees it twice.",
+        "wrong": [
+          "",
+          "All request types can be encrypted; the limit is about replay safety, not encryption.",
+          "The rule is about replay, not length, even though the post also caps the size of early requests."
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "On HTTP/2 over TCP, one packet carrying part of one response is lost. What happens to the other responses on the connection?",
+        "options": [
+          "They carry on, because HTTP/2 streams are independent of one another",
+          "They are all sent again from the beginning of the connection",
+          "They wait for the retransmit, because TCP delivers bytes in order"
+        ],
+        "correct": 2,
+        "why": "TCP hands data up in order, so everything behind the gap waits, which is head-of-line blocking. QUIC avoids it with independent streams.",
+        "wrong": [
+          "HTTP/2 streams are separate, but they share one TCP byte stream, so one gap holds all of them.",
+          "Only the missing packet is retransmitted, not the other responses.",
+          ""
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "Why did giving every thread one shared pool of origin connections cut handshakes at Cloudflare?",
+        "options": [
+          "It made each TCP and TLS handshake complete faster than before",
+          "Every request could reuse any open connection in the one pool",
+          "It stopped origins from ever closing idle connections",
+          "It moved the TLS handshake onto the visitor's browser"
+        ],
+        "correct": 1,
+        "why": "With a pool per worker, a request could only use connections owned by its worker. One shared pool raised the reuse ratio from 87.1% to 99.92% for one customer.",
+        "wrong": [
+          "The handshakes were not faster; there were far fewer of them.",
+          "",
+          "Origins can still close idle connections; the gain came from requests finding an open one.",
+          "The handshake is between the proxy and the origin, and was not moved to the browser."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "Meta enabled QUIC only for dynamic requests, yet error rates for static content over TCP rose. What was the cause?",
+        "options": [
+          "App loading logic tuned for TCP asked for too much at once",
+          "QUIC packets took bandwidth from the TCP downloads on the same link",
+          "The servers ran out of free ports for UDP"
+        ],
+        "correct": 0,
+        "why": "The app timed a dynamic request to decide how many static requests to issue, and its thresholds suited TCP, so it asked for too much at once under QUIC.",
+        "wrong": [
+          "",
+          "The post traces it to app heuristics, not to bandwidth sharing between the protocols.",
+          "The post names the app's loading heuristic as the cause, not port exhaustion."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "Cloudflare found HTTP/3 slightly slower than HTTP/2 on a 1 MB page in 2020. What does that suggest?",
+        "options": [
+          "HTTP/3 is always slower than HTTP/2 whenever the page being loaded is large",
+          "0-RTT makes large transfers slower because early data must be checked before sending",
+          "Setup savings matter most on small transfers; congestion control can decide larger ones",
+          "HTTP/3 suffers more from packet loss than HTTP/2 does, so large pages are hit hardest"
+        ],
+        "correct": 2,
+        "why": "On small pages the saved round trips dominate, while on bigger ones the congestion control (CUBIC on HTTP/3, BBR v1 on HTTP/2 in that test) matters more.",
+        "wrong": [
+          "One test with different congestion control shows no general rule about large pages.",
+          "0-RTT only affects the start of a connection, not the transfer afterwards.",
+          "",
+          "Packet loss is where HTTP/3 should help, since a lost packet only stalls one stream."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "postsOutcome": "After this you can describe how Google, Meta and Cloudflare spent fewer round trips and what each paid for it.",
+    "differOutcome": "After this you can explain where the five sources agree, where they pay different costs, and how strong each result is.",
+    "exercisesOutcome": "After this you can count round trips for a visit, design connection handling for a proxy, and plan a protocol rollout.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A user is 120 ms from your server. How long does a first visit over TLS 1.2 take before the response starts, and how long over TLS 1.3 with a reused connection for the second request?",
+        "answer": "A first TLS 1.2 visit needs four round trips (TCP, two for TLS, the request), so 480 ms, not counting DNS. On TLS 1.3 it is three, 360 ms. A second request on the open connection needs one round trip, 120 ms.",
+        "tradeoffs": "Keeping connections open uses memory and sockets on the server, so idle timeouts are a choice between reuse and resource use.",
+        "wrongAnswers": [
+          "Counting only one round trip because TCP and TLS happen together.",
+          "Forgetting the request's own round trip.",
+          "Assuming a second request pays the handshakes again."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "design",
+        "prompt": "Design how an edge proxy holds connections to customers' origin servers so that most requests need no new handshake, even as you add worker threads.",
+        "answer": "Keep one pool of open origin connections that every thread shares, not a pool per worker, so a request can use any idle connection. Set idle timeouts long enough for reuse, key pools by origin and protocol, and use work stealing so one slow request does not hold up others. Track the reuse ratio and new connections per second to see if it works.",
+        "tradeoffs": "A shared pool needs careful locking and holds connections open on the origin side, which can hit connection limits there.",
+        "wrongAnswers": [
+          "Adding more workers with their own pools to handle more traffic.",
+          "Closing each connection after its response to keep the origin simple.",
+          "Raising timeouts but keeping per-worker pools."
+        ],
+        "teaches": "posts"
+      },
+      {
+        "level": "scale",
+        "prompt": "Your mobile API grows ten times and many users are on slow, lossy networks. You want faster starts for returning users. Plan the transport changes and how to ship them safely.",
+        "answer": "Move to TLS 1.3 with session resumption, then allow 0-RTT only for GET requests that change nothing, have the proxy pass a unique marker to the origin so repeats can be spotted, and make non-idempotent endpoints replay-safe anyway. Offer HTTP/3 alongside HTTP/2 with fallback. Budget more CPU for QUIC, tune congestion control, and roll out in stages from small requests to heavy ones, watching tail latency and error rates. Check app logic tuned to TCP behaviour before turning it on.",
+        "tradeoffs": "More CPU per connection, a replay risk to manage, and a larger test matrix, in exchange for fewer round trips on the networks that suffer most.",
+        "wrongAnswers": [
+          "Enabling 0-RTT for every endpoint, including payments.",
+          "Switching everyone to HTTP/3 at once with no fallback.",
+          "Judging success only by median latency."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "A connection has to end somewhere, and one server cannot answer them all. Load balancing picks up from here: a Layer 4 balancer forwards TCP or UDP connections without reading them, while a Layer 7 balancer terminates the connection, reads the HTTP request and chooses a backend for each one. Everything you counted here, handshakes, reused connections and where TLS ends, decides which of the two fits."
+    }
+  }
+}
