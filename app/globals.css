@@ -3460,8 +3460,9 @@ html {
   .path-group-name::after {
     display: none;
   }
+  /* The owner removed "Mark group read" from the phone view; it stays on laptop widths. */
   .path-group-mark {
-    margin-left: auto;
+    display: none;
   }
 }
 
