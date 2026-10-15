@@ -58,7 +58,7 @@ describe("fading", () => {
       { slug: "mq", group: "Messaging" },
       { slug: "pubsub", group: "Messaging" },
       { slug: "cache", group: "Scaling" },
-      { slug: "dns", group: "Foundations" },
+      { slug: "dns", group: "Data" },
     ];
     expect([...groupSet("Messaging", nodes)].sort()).toEqual(["mq", "pubsub"]);
     expect([...groupSet("Scaling", nodes)]).toEqual(["cache"]);
@@ -111,6 +111,14 @@ describe("group labels", () => {
     const chosen = placeGroupLabel(spots, () => true, (s) => s.y < first.y);
     expect(chosen).toEqual(spots[1]);
     expect(chosen.x).toBe(first.x - first.r);
+  });
+
+  it("hang above the node, right edge on its centre and kept on the stage, when every nearer spot is blocked", () => {
+    const near = { x: 86, y: 300, r: 14 };
+    const spots = groupLabelSpots(near, 95, 120, false);
+    const chosen = placeGroupLabel(spots, (s) => s.x >= 0, (s) => s.x > 0);
+    expect(chosen).toEqual({ x: 0, y: near.y - near.r - 28 });
+    expect(groupLabelSpots(first, 80, 120, false)[3]).toEqual({ x: 720, y: 258 });
   });
 
   it("are never pinned to the stage's left edge, wherever the first node is", () => {

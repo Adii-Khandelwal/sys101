@@ -1,7 +1,7 @@
 {
   "slug": "databases",
   "title": "Databases",
-  "group": "Foundations",
+  "group": "Data",
   "interviewRelevance": "core",
   "concept": "A database keeps data safe across crashes and lets many clients read and change it at once. In Postgres, as Uber's account shows, a change is written to a write-ahead log before it reaches the data files, and that log is replayed to recover after a crash and shipped to replicas.",
   "prerequisites": [],
@@ -432,7 +432,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic that builds on this one.",
-      "body": "Replicas replay the primary's log, but that raises new questions: how many copies must hold a change before it counts, and who takes over when the primary fails. Replication picks up from there. To look inside a database first, Storage Engines: B-trees and LSM-trees shows how it lays rows out on disk."
+      "body": "Replicas replay the primary's log, but that raises new questions: how many copies must hold a change before it counts, and who takes over when the primary fails. Replication picks up from there. To look inside a database first, Storage Engines: B-trees and LSM-trees shows how it lays rows out on disk, and Transactions and MVCC shows how it keeps concurrent changes apart."
     }
   }
 }

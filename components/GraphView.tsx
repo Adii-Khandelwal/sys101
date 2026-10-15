@@ -968,10 +968,12 @@ export default function GraphView({ nodes, edges }: Props) {
       if (!pts.length) return [];
       // Measured in the 18px serif the label is drawn in, plus its 4px side padding; a per-letter guess was off by up to 10px.
       const width = (groupCtx ? groupCtx.measureText(name).width : name.length * 8) + 8;
-      const first = pts[0]; // first in index order
-      const spots = groupLabelSpots(first, width, ctx?.measureText(title.get(first.slug) ?? "").width ?? 0, effective === "vertical");
       const fits = (sp: { x: number }) => sp.x >= 0 && sp.x + width <= (size.width || Infinity);
-      const spot = placeGroupLabel(spots, fits, (sp) => blocked(sp.x, sp.y, width));
+      const free = (sp: { x: number; y: number }) => fits(sp) && !blocked(sp.x, sp.y, width);
+      const spotsOf = (p: Point) => groupLabelSpots(p, width, ctx?.measureText(title.get(p.slug) ?? "").width ?? 0, effective === "vertical");
+      // The first node in index order, unless every spot beside it is crossed by an edge: then the next node that has a free spot.
+      const owner = pts.find((p) => spotsOf(p).some(free)) ?? pts[0];
+      const spot = placeGroupLabel(spotsOf(owner), fits, (sp) => blocked(sp.x, sp.y, width));
       return [{ name, ...spot }];
     });
   }, [points, nodes, edgeSamples, size.width, effective, labelScale]);

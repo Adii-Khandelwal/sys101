@@ -43,7 +43,7 @@ export type Post = {
 };
 
 /** Index headings, in curriculum order. */
-export const GROUPS = ["Foundations", "Scaling", "Data", "Messaging", "Reliability"] as const;
+export const GROUPS = ["Scaling", "Data", "Messaging", "Reliability"] as const;
 export type Group = (typeof GROUPS)[number];
 
 /**

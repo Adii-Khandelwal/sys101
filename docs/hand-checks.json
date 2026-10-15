@@ -186,5 +186,33 @@
  "aws-timeouts-retries-backoff-2019|three times": {
   "verdict": "ok",
   "source": "post: \"three retries at each layer\"; \"first three tries, then nine tries\""
+ },
+ "sentry-xid-2015|six workers": {
+  "verdict": "ok",
+  "source": "post config: autovacuum_max_workers = 6 (default of 3 before)"
+ },
+ "sentry-xid-2015|three Internal": {
+  "verdict": "ok",
+  "source": "post: default of 3 autovacuum workers; the match joined adjacent meanings"
+ },
+ "mandrill-xid-2019|4 and": {
+  "verdict": "ok",
+  "source": "post: outage began 05:35 UTC on February 4, resolved February 5 at 22:09 UTC"
+ },
+ "mandrill-xid-2019|4 the": {
+  "verdict": "ok",
+  "source": "post: at 05:35 UTC on February 4 the database went into safety shutdown"
+ },
+ "mandrill-xid-2019|two huge": {
+  "verdict": "ok",
+  "source": "post: the Search and Url tables were omitted, on the order of TB"
+ },
+ "mandrill-xid-2019|three months": {
+  "verdict": "ok",
+  "source": "post: engineers saw the half-limit in November 2018, outage on February 4, 2019"
+ },
+ "sentry-xid-2015|3 Internal": {
+  "verdict": "ok",
+  "source": "post: default of 3 autovacuum workers; the match joined adjacent meanings"
  }
 }

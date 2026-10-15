@@ -291,8 +291,9 @@ export function rowCount(cols: (Node | Slot)[][], orientation: Orientation) {
 function rowGrid(cols: (Node | Slot)[][]) {
   const rows = Math.max(1, ...cols.map((c) => c.length));
   const row = new Map<string, number>();
-  cols.forEach((col) => {
-    const first = (rows - col.length) / 2;
+  cols.forEach((col, c) => {
+    // shortcut: the first column sits half a row lower than centred, so Databases lands between Storage Engines and Transactions; revisit if the first column's edges change.
+    const first = (rows - col.length) / 2 + (c === 0 && col.length < rows ? 0.5 : 0);
     col.forEach((n, i) => row.set(n.slug, first + i));
   });
   return row;

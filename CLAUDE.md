@@ -74,7 +74,7 @@ Handcrafted, not AI-template. Cream background, serif headings, restrained palet
 - Always: skeleton loaders, a real working demo, Terms and Privacy pages in the footer.
 - Review every page or UI piece before calling it done: render it at 1440px and 390px and check it reads as part of the whole (mono small-caps labels, generous whitespace, state shown by shape not colour alone).
 - Check spacing: text and adjacent controls must never run together. Prefer a flex row with `gap` over JSX `{" "}`. Catch this in development, never push it.
-- Company marks are the only icons: beside company names, from local files, never recoloured (`logos.md`). The one other mark is the site's own three-node `LogoMark` (components/Logo.tsx): in the header, beside the homepage wordmark and at the start of the footer, nowhere else and never as a background or watermark. Homepage: thin dividers, no cards or images.
+- Company marks are the only icons: beside company names, from local files, never recoloured (`logos.md`). The one other mark is the site's own three-node `LogoMark` (components/Logo.tsx): in the header, beside the homepage wordmark, at the start of the footer and on the opening screen (`Splash`) and the slow-navigation loader (`NavPending`), nowhere else and never as a background or watermark. Homepage: thin dividers, no cards or images.
 - On a UI request, fix every similar element across the page, not one spot, and check that no count or status appears twice on one page (client-rendered parts included).
 
 ## Architecture of the site itself
@@ -129,6 +129,7 @@ Every idea or preference the owner states is written down, here as one line and 
 - The content pages (Glossary, Blogs, Great reads; "Blogs" is the label for the /posts page, which also holds a few papers and docs) live in the header bar as a nav, a Menu button on narrow screens, because nobody scrolls to the footer to find them (`accessibility-and-chrome.md`).
 - The site's own logo mark sits beside the big homepage wordmark and at the start of the footer (`homepage.md`, `accessibility-and-chrome.md`). (`homepage.md`).
 - Offline: after one online visit the whole site works with no connection, external links aside (`offline.md`).
+- Opening screen: on every load of the homepage only, one node of the mark comes on, two come out of it, and the name "sys101" comes on like a bulb (on, dim, off, on), then the site; a slow link to another page shows the mark breathing (`motion.md`).
 
 ## Keeping docs current
 

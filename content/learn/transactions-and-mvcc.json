@@ -1,0 +1,322 @@
+{
+  "slug": "transactions-and-mvcc",
+  "promise": "After this you can explain what a transaction is, how snapshots let readers and writers work at once, what the isolation levels allow, and why Postgres can stop accepting writes, so you can follow the Sentry and Mailchimp outage posts on the topic page.",
+  "before": {
+    "prerequisites": [
+      "databases"
+    ],
+    "terms": [
+      {
+        "term": "Row",
+        "definition": "One record in a table, such as one account balance."
+      },
+      {
+        "term": "Query",
+        "definition": "A request to read or change rows, written in SQL."
+      },
+      {
+        "term": "Concurrent",
+        "definition": "Happening during the same stretch of time, so two requests can overlap."
+      }
+    ],
+    "note": "Read Databases first, since a transaction is a unit of work on a database's rows. Nothing else is needed: this page builds the rest from the start."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "A transaction bundles several steps into one all-or-nothing operation. PostgreSQL's tutorial uses a bank payment: debit Alice, credit Bob, and update the branch totals. Either every update happens or none of them does, and the steps in between are not visible to other transactions [[pg-tutorial]].",
+        "Two more promises come with it. Once the database reports a transaction complete, it has been written to permanent storage, so a crash just after cannot lose it. And while a transaction is open, other transactions cannot see its half-finished changes [[pg-tutorial]].",
+        "You mark a transaction by surrounding its commands with BEGIN and COMMIT. If you change your mind partway, ROLLBACK cancels every update so far. Without BEGIN, PostgreSQL treats each single statement as its own transaction [[pg-tutorial]]."
+      ],
+      "terms": [
+        {
+          "term": "Transaction",
+          "definition": "A group of steps that either all take effect or none do."
+        },
+        {
+          "term": "Commit",
+          "definition": "Ending a transaction so all its changes become permanent and visible together."
+        },
+        {
+          "term": "Rollback",
+          "definition": "Cancelling a transaction so none of its changes take effect."
+        },
+        {
+          "term": "Atomic",
+          "definition": "All or nothing, as seen by other transactions."
+        }
+      ],
+      "reading": [
+        {
+          "source": "pg-tutorial",
+          "section": "3.4. Transactions",
+          "what": "The bank payment example and the BEGIN, COMMIT and ROLLBACK commands."
+        }
+      ],
+      "canNow": [
+        "Say what a transaction promises.",
+        "Name BEGIN, COMMIT and ROLLBACK and say what each does.",
+        "Explain why a payment between two accounts needs one."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "When many transactions run at once, the database has to decide what each one sees. PostgreSQL does this with a multiversion model, MVCC: each SQL statement sees a snapshot of the data as it was some time ago, whatever other transactions are doing to the rows now [[pg-mvcc]].",
+        "The payoff is in the locks. In an MVCC system the locks taken to read data do not conflict with the locks taken to write it, so reading never blocks writing and writing never blocks reading [[pg-mvcc]]. MySQL's InnoDB works the same way for plain SELECT statements: a consistent read sets no locks, so other sessions are free to change the table while it runs [[mysql-consistent]].",
+        "InnoDB gives a transaction a timepoint. If another transaction deletes a row and commits after that timepoint, you still see the row. Inserts and updates are treated the same way [[mysql-consistent]].",
+        "SQLite shows the idea in its simplest form. In its write-ahead-log mode, a reader keeps an unchanging snapshot of the database from the moment its read transaction started, while a writer appends to a separate log file [[sqlite-isolation]]."
+      ],
+      "terms": [
+        {
+          "term": "MVCC",
+          "definition": "Multiversion concurrency control: keeping several versions of data so each reader sees a consistent snapshot."
+        },
+        {
+          "term": "Snapshot",
+          "definition": "The view of the data as it was at one moment, which a statement or transaction reads from."
+        },
+        {
+          "term": "Consistent read",
+          "definition": "A plain read that uses a snapshot and takes no locks."
+        },
+        {
+          "term": "Lock",
+          "definition": "A claim on data that makes other transactions wait."
+        }
+      ],
+      "reading": [
+        {
+          "source": "pg-mvcc",
+          "section": "13.1. Introduction",
+          "what": "What MVCC is and why reading never blocks writing."
+        },
+        {
+          "source": "mysql-consistent",
+          "section": "17.7.2.3 Consistent Nonlocking Reads",
+          "what": "How InnoDB gives a transaction a timepoint and reads without locks."
+        },
+        {
+          "source": "sqlite-isolation",
+          "section": "Isolation And Concurrency",
+          "what": "How WAL mode lets readers keep a snapshot while a writer appends."
+        }
+      ],
+      "canNow": [
+        "Explain MVCC in one sentence.",
+        "Say why readers do not wait for writers under MVCC.",
+        "Describe what a snapshot is."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "How much of other transactions you may see is the isolation level. The SQL standard defines four, in terms of surprises that must not occur: a dirty read sees uncommitted data, a nonrepeatable read sees a row change between two reads, a phantom read sees the set of matching rows change, and a serialization anomaly gives a result no one-at-a-time order could produce [[pg-iso]].",
+        "PostgreSQL's default is Read Committed, where each SELECT sees data committed before that statement began, so two reads in one transaction can differ. In Repeatable Read the snapshot is taken at the first statement, so successive reads agree, and an update of a row that another transaction changed fails with an error and the whole transaction must be retried [[pg-iso]].",
+        "Repeatable Read still allows a surprise. The page gives an example in which a read-only transaction sees a control record saying a batch finished but misses one of the batch's detail rows, because it read an older version of the control record [[pg-iso]]. Serializable closes that gap: it works like Repeatable Read but also watches for conditions that could break serial order, and rolls one transaction back when it finds one. The page's example has two transactions each summing one class of rows and inserting the result into the other class [[pg-iso]].",
+        "InnoDB's default is Repeatable Read. It offers all four standard levels, and Read Committed gives each consistent read its own fresh snapshot [[mysql-isolation]]. When MVCC is not enough, explicit locks are available: SELECT FOR UPDATE locks the rows it returns so other writers wait until the transaction ends [[pg-locking]]."
+      ],
+      "terms": [
+        {
+          "term": "Isolation level",
+          "definition": "A setting for how much of other running transactions a transaction can see."
+        },
+        {
+          "term": "Read committed",
+          "definition": "Each statement sees only data committed before that statement began."
+        },
+        {
+          "term": "Repeatable read",
+          "definition": "The whole transaction reads from one snapshot, so repeated reads agree."
+        },
+        {
+          "term": "Serializable",
+          "definition": "Results are as if the transactions had run one after another."
+        },
+        {
+          "term": "Serialization failure",
+          "definition": "An error telling the application to retry a transaction."
+        }
+      ],
+      "reading": [
+        {
+          "source": "pg-iso",
+          "section": "13.2. Transaction Isolation",
+          "what": "The four phenomena, the level table, and the Repeatable Read and Serializable examples."
+        },
+        {
+          "source": "mysql-isolation",
+          "section": "17.7.2.1 Transaction Isolation Levels",
+          "what": "How InnoDB offers each standard level and which one is the default."
+        },
+        {
+          "source": "pg-locking",
+          "section": "13.3.2. Row-Level Locks",
+          "what": "What FOR UPDATE locks and who it blocks."
+        }
+      ],
+      "canNow": [
+        "Name the four phenomena and the four levels.",
+        "Say why Repeatable Read can still give a wrong answer and Serializable cannot.",
+        "Say what an application must do after a serialization failure."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "MVCC keeps old row versions, and something has to clear them away. PostgreSQL's transaction IDs are 32 bits, compared with modulo arithmetic, so for any ID two billion are older and two billion are newer. A row version that survives more than two billion transactions would suddenly look like it is in the future [[pg-vacuum]].",
+        "The cure is vacuuming. The documentation says every table must be vacuumed at least once every two billion transactions, because VACUUM marks old rows as frozen, meaning the inserting transaction is certain to be visible to everyone [[pg-vacuum]]. Autovacuum is launched on a table that might hold old unfrozen rows even if autovacuum is disabled [[pg-vacuum]].",
+        "If it falls behind, the server warns when about three million transactions are left and then refuses commands that assign new transaction IDs, with the hint to run a database-wide VACUUM [[pg-vacuum]]. The two outage posts on the topic page are what that looks like in production.",
+        "The choice of level is a trade-off. MySQL's manual says Read Committed suits work such as bulk reporting where lock overhead matters more than repeatable results, and that Serializable is used mainly in specialized situations [[mysql-isolation]]. SQLite takes the opposite route: with one writer at a time, its transactions show serializable isolation [[sqlite-isolation]]."
+      ],
+      "terms": [
+        {
+          "term": "Transaction ID (XID)",
+          "definition": "The 32-bit number Postgres gives a transaction to decide which row versions it can see."
+        },
+        {
+          "term": "Vacuum",
+          "definition": "A maintenance task that clears old row versions and freezes old rows."
+        },
+        {
+          "term": "Freezing",
+          "definition": "Marking a row as inserted far enough in the past that everyone can see it."
+        },
+        {
+          "term": "Wraparound",
+          "definition": "The ID counter passing its limit and starting over, so old IDs look new."
+        }
+      ],
+      "reading": [
+        {
+          "source": "pg-vacuum",
+          "section": "24.1.5. Preventing Transaction ID Wraparound Failures",
+          "what": "Why IDs wrap, what freezing is, and what the server does when it gets close."
+        },
+        {
+          "source": "mysql-isolation",
+          "section": "17.7.2.1 Transaction Isolation Levels",
+          "what": "When to relax or tighten the level."
+        }
+      ],
+      "canNow": [
+        "Explain why Postgres needs vacuum to keep running.",
+        "Say what happens when the server nears wraparound.",
+        "Pick a level for a payment and for a report and give a reason."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "A transaction locks everything it touches until it finishes.",
+      "truth": "Under MVCC, a plain read uses a snapshot and takes no locks, so reading never blocks writing and writing never blocks reading [[pg-mvcc]] [[mysql-consistent]]."
+    },
+    {
+      "myth": "Repeatable Read is as safe as running transactions one at a time.",
+      "truth": "PostgreSQL's page shows a read-only transaction at this level seeing a finished-batch marker without one of the batch's rows, and says business rules enforced at this level may need explicit locks [[pg-iso]]."
+    },
+    {
+      "myth": "The isolation levels mean the same in every database.",
+      "truth": "PostgreSQL's Read Uncommitted behaves like Read Committed and its Repeatable Read also prevents phantom reads [[pg-iso]], while InnoDB defaults to Repeatable Read and uses different locking strategies for each level [[mysql-isolation]]."
+    },
+    {
+      "myth": "Vacuum is optional tidying that you can turn off.",
+      "truth": "The documentation says every table must be vacuumed at least once every two billion transactions, and autovacuum is launched for that purpose even when it is disabled [[pg-vacuum]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These look at transactions from two sides. The first is the payment example from the PostgreSQL tutorial and needs a table of accounts that you create yourself; the second asks a PostgreSQL server how far each database is from the transaction-ID limit. Output depends on your setup, so it is not shown here.",
+    "commands": [
+      {
+        "command": "BEGIN;",
+        "shows": "Starts a transaction block in PostgreSQL. Commands after it are held together until COMMIT makes them permanent or ROLLBACK cancels them.",
+        "source": "pg-tutorial"
+      },
+      {
+        "command": "SELECT datname, age(datfrozenxid) FROM pg_database;",
+        "shows": "Lists each database with the age of its oldest unfrozen transaction ID, which the page describes as the number of transactions from the cutoff ID to the current one.",
+        "source": "pg-vacuum"
+      }
+    ]
+  },
+  "next": "Go back to the Transactions and MVCC topic page for the worked example and the quiz, then read the two outage posts: Sentry's 2015 write-up and Mailchimp's 2019 write-up of Mandrill, both about the same Postgres failure.",
+  "sources": [
+    {
+      "id": "pg-tutorial",
+      "title": "PostgreSQL Documentation: 3.4. Transactions",
+      "url": "https://www.postgresql.org/docs/current/tutorial-transactions.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "pg-mvcc",
+      "title": "PostgreSQL Documentation: 13.1. Introduction (Concurrency Control)",
+      "url": "https://www.postgresql.org/docs/current/mvcc-intro.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "pg-iso",
+      "title": "PostgreSQL Documentation: 13.2. Transaction Isolation",
+      "url": "https://www.postgresql.org/docs/current/transaction-iso.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "pg-locking",
+      "title": "PostgreSQL Documentation: 13.3. Explicit Locking",
+      "url": "https://www.postgresql.org/docs/current/explicit-locking.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "pg-vacuum",
+      "title": "PostgreSQL Documentation: 24.1. Routine Vacuuming",
+      "url": "https://www.postgresql.org/docs/current/routine-vacuuming.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "mysql-consistent",
+      "title": "MySQL 8.4 Reference Manual: 17.7.2.3 Consistent Nonlocking Reads",
+      "url": "https://dev.mysql.com/doc/refman/8.4/en/innodb-consistent-read.html",
+      "publisher": "Oracle (MySQL)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "mysql-isolation",
+      "title": "MySQL 8.4 Reference Manual: 17.7.2.1 Transaction Isolation Levels",
+      "url": "https://dev.mysql.com/doc/refman/8.4/en/innodb-transaction-isolation-levels.html",
+      "publisher": "Oracle (MySQL)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15"
+    },
+    {
+      "id": "sqlite-isolation",
+      "title": "SQLite: Isolation In SQLite",
+      "url": "https://www.sqlite.org/isolation.html",
+      "publisher": "SQLite project",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-15"
+    }
+  ]
+}

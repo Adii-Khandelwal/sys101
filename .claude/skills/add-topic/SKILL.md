@@ -16,7 +16,7 @@ A topic is not done until its learn page exists, every check below is green and 
 
 ## 1. Place it
 
-Pick `slug` (lowercase, hyphens, equals the file name), `title`, optional `shortTitle` (the page title stays under 60 characters with " · sys101"), `group` (one of `GROUPS` in `lib/topics.ts`: Foundations, Scaling, Data, Messaging, Reliability; a new group is a code change to `GROUPS` and the graph, so ask first), and `prerequisites` (every one must already exist; no cycle). The curriculum order in CLAUDE.md "Project" decides where it sits. Show the user the slug, group, prerequisites and one line on why before going on.
+Pick `slug` (lowercase, hyphens, equals the file name), `title`, optional `shortTitle` (the page title stays under 60 characters with " · sys101"), `group` (one of `GROUPS` in `lib/topics.ts`: Scaling, Data, Messaging, Reliability; a new group is a code change to `GROUPS` and the graph, so ask first), and `prerequisites` (every one must already exist; no cycle). The curriculum order in CLAUDE.md "Project" decides where it sits. Show the user the slug, group, prerequisites and one line on why before going on.
 
 ## 2. Posts
 

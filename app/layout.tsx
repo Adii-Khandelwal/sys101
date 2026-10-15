@@ -7,6 +7,8 @@ import SiteNav from "@/components/SiteNav";
 import HeaderTopic from "@/components/HeaderTopic";
 import BackToTop from "@/components/BackToTop";
 import ThemeToggle from "@/components/ThemeToggle";
+import Splash from "@/components/Splash";
+import NavPending from "@/components/NavPending";
 import OfflineSupport from "@/components/OfflineSupport";
 import { Analytics } from "@vercel/analytics/next";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
@@ -62,12 +64,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `(function(){try{var t=localStorage.getItem('sys101:theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`,
           }}
         />
+        {/* Opening screen: every load or refresh of the homepage only, never for reduced motion or automation. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(location.pathname!=='/'||navigator.webdriver||matchMedia('(prefers-reduced-motion: reduce)').matches)return;document.documentElement.setAttribute('data-splash','1')}catch(e){}})()`,
+          }}
+        />
         {/* Without JavaScript, reveals cannot open, so show their content. */}
         <noscript>
           <style>{`.reveal{grid-template-rows:1fr}.reveal-content{opacity:1;transform:none}.reveal-wrap>button{display:none}`}</style>
         </noscript>
       </head>
       <body>
+        <Splash />
+        <NavPending />
         <ViewTransitions />
         <header className="site-header">
           <div className="site-header-inner">
