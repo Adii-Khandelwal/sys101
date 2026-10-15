@@ -35,6 +35,7 @@ Path-scoped rule files load when you read, write or edit a matching file; open t
 | `reads.md` | Great reads (/reads): selection, `influence` rule, data, `verify:reads` |
 | `news.md` | What's new, the allowlist, the routine, the guard workflow |
 | `logos.md` | Company marks, sources, the `add` command, brand rules, exceptions |
+| `offline.md` | Service worker, offline caching, warm-up |
 | `tooling.md` | Verification scripts and their network use |
 
 ## Post selection (strict, never use just any post)
@@ -126,6 +127,7 @@ Every idea or preference the owner states is written down, here as one line and 
 - No post counts beside company, topic or year headings on /posts; the totals line sits at the bottom, and only the filter count shows at the top while filtering (`homepage.md`).
 - The content pages (Glossary, Blogs, Great reads; "Blogs" is the label for the /posts page, which also holds a few papers and docs) live in the header bar as a nav, a Menu button on narrow screens, because nobody scrolls to the footer to find them (`accessibility-and-chrome.md`).
 - The site's own logo mark sits beside the big homepage wordmark and at the start of the footer (`homepage.md`, `accessibility-and-chrome.md`). (`homepage.md`).
+- Offline: after one online visit the whole site works with no connection, external links aside (`offline.md`).
 
 ## Keeping docs current
 
