@@ -8,6 +8,7 @@ import type { PostRow, PostsIndex as Data } from "@/lib/posts";
 import { sourceKinds } from "@/lib/sourceKinds";
 import { matchesAll } from "@/lib/searchMatch";
 import { focusFirstResult, useSlashFocus } from "@/lib/useSlashFocus";
+import { safeDecode } from "@/lib/safeDecode";
 
 const VIEWS = [
   { id: "topic", label: "By topic" },
@@ -17,7 +18,7 @@ const VIEWS = [
 type View = (typeof VIEWS)[number]["id"];
 
 // Runs as the page parses, so the chosen view shows with no flash. A #company or #topic link opens the view that holds it.
-const PICK_VIEW = `(function(){var d=document.documentElement,q=new URLSearchParams(location.search).get("view"),v=["topic","company","year"].indexOf(q)>-1?q:null,h=decodeURIComponent(location.hash.slice(1)),e=h&&document.getElementById(h);if(!v&&e){var s=e.closest("[data-view]");if(s)v=s.getAttribute("data-view")}d.dataset.postsView=v||"topic";if(e)e.scrollIntoView()})()`;
+const PICK_VIEW = `(function(){var d=document.documentElement,q=new URLSearchParams(location.search).get("view"),v=["topic","company","year"].indexOf(q)>-1?q:null,h=(function(s){try{return decodeURIComponent(s)}catch(x){return s}})(location.hash.slice(1)),e=h&&document.getElementById(h);if(!v&&e){var s=e.closest("[data-view]");if(s)v=s.getAttribute("data-view")}d.dataset.postsView=v||"topic";if(e)e.scrollIntoView()})()`;
 
 const matches = (p: PostRow, q: string) => !q || matchesAll(`${p.title} ${p.company}`, q);
 
@@ -38,7 +39,7 @@ export default function PostsIndex({ data }: { data: Data }) {
     const d = document.documentElement;
     const q = new URLSearchParams(location.search).get("view");
     const named = VIEWS.find((v) => v.id === q)?.id;
-    const hit = location.hash ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+    const hit = location.hash ? document.getElementById(safeDecode(location.hash.slice(1))) : null;
     d.dataset.postsView = named ?? (hit?.closest("[data-view]")?.getAttribute("data-view") || d.dataset.postsView || "topic");
     const sync = () => setView((document.documentElement.dataset.postsView as View) || "topic");
     sync();

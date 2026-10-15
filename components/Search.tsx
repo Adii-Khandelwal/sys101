@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { containsAll, finishedWords } from "@/lib/searchMatch";
 import { useSlashFocus } from "@/lib/useSlashFocus";
+import { safeExcerpt } from "@/lib/searchExcerpt";
 
 type Result = { url: string; title: string; section?: string; excerpt: string };
 
@@ -153,8 +154,8 @@ export default function Search() {
                   <li key={r.url}>
                     <Link href={r.url}>{r.title}</Link>
                     {r.section && <span className="search-section label">{r.section}</span>}
-                    {/* Pagefind escapes page text and only adds <mark> around matches. */}
-                    <p dangerouslySetInnerHTML={{ __html: r.excerpt }} />
+                    {/* Pagefind escapes page text and adds <mark> around matches; safeExcerpt keeps only that tag. */}
+                    <p dangerouslySetInnerHTML={{ __html: safeExcerpt(r.excerpt) }} />
                   </li>
                 ))}
               </ul>

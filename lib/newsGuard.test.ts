@@ -223,6 +223,11 @@ describe("the workflow never runs pull request code", () => {
     expect(yml.slice(at("automerge:"))).toContain("startsWith(github.head_ref, 'claude/')");
     expect(yml.slice(at("automerge:"))).toContain("vars.NEWS_AUTOMERGE == 'true'");
   });
+  it("binds the file list, the checkout and the auto-merge to one commit", () => {
+    expect(at("--jq .head.sha")).toBeGreaterThan(at("pulls/$PR/files"));
+    expect(at("--jq .head.sha")).toBeLessThan(at("path: pr"));
+    expect(yml.slice(at("automerge:"))).toContain('gh pr merge --auto --squash --match-head-commit "$HEAD_SHA"');
+  });
   it("has CODEOWNERS for everything that changes what runs or what the site teaches", () => {
     const owners = fs.readFileSync(path.join(root, ".github/CODEOWNERS"), "utf8");
     for (const p of ["/.github/**", "/scripts/**", "/lib/**", "/package.json", "/package-lock.json", "/vitest.config.ts", "/content/topics/**", "/content/learn/**"]) {

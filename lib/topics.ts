@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { checkFigure, type FigureSpec } from "./figures";
+import { checkDiagram } from "./diagramCheck";
+import { httpsUrlProblem } from "./httpsUrl";
 
 /** A post rewritten in our own words, in reading order. */
 export type Digest = {
@@ -442,17 +444,6 @@ export function checkReasons(topic: Topic): string[] {
   return problems;
 }
 
-/** Diagrams are hand-written SVG; enforce the site's design rules on them. */
-function checkDiagram(svg: string | undefined): string[] {
-  if (!nonEmpty(svg)) return ["is empty"];
-  const problems: string[] = [];
-  if (!/^<svg[\s>]/.test(svg!.trim())) problems.push("must start with <svg");
-  if (!/viewBox=/.test(svg!)) problems.push("needs a viewBox so it scales");
-  if (!/<title[^>]*>[^<]+<\/title>/.test(svg!)) problems.push("needs a <title> for screen readers");
-  if (/gradient|<filter|drop-shadow|<script|\son\w+=/i.test(svg!)) problems.push("uses gradients, filters, shadows or scripts");
-  return problems;
-}
-
 function validate(entries: { file: string; topic: Topic }[]): string[] {
   const problems: string[] = [];
   const slugs = new Set<string>();
@@ -513,6 +504,10 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
       for (const field of ["title", "url", "company"] as const) {
         if (!nonEmpty(post[field])) problems.push(`${where}: ${field} is empty`);
       }
+      if (nonEmpty(post.url)) {
+        const bad = httpsUrlProblem(post.url);
+        if (bad) problems.push(`${where}: url ${bad}`);
+      }
       if (!isPastDate(post.verifiedOn)) problems.push(`${where}: verifiedOn must be a YYYY-MM-DD date, not in the future`);
       if (isUndated(post)) {
         if (!nonEmpty(post.edition)) problems.push(`${where}: an undated source needs an edition label such as "no date shown, v3.5 documentation"`);
@@ -523,6 +518,10 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
       }
       if (post.stillCitedBy && !(nonEmpty(post.stillCitedBy.title) && nonEmpty(post.stillCitedBy.url) && post.stillCitedBy.year > 0)) {
         problems.push(`${where}: stillCitedBy needs title, url and year`);
+      if (post.stillCitedBy && nonEmpty(post.stillCitedBy.url)) {
+        const bad = httpsUrlProblem(post.stillCitedBy.url);
+        if (bad) problems.push(`${where}: stillCitedBy.url ${bad}`);
+      }
       }
       for (const r of post.related ?? []) {
         if (!slugs.has(r)) problems.push(`${where}: related topic "${r}" has no topic file`);

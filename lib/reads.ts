@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { Topic } from "./topics";
+import { httpsUrlProblem } from "./httpsUrl";
 
 export const READ_THEMES = [
   "Storing data",
@@ -60,11 +61,8 @@ export function readProblems(reads: Read[], topicSlugs: string[], files: string[
     if (!READ_THEMES.includes(r.theme)) bad(`unknown theme "${r.theme}"`);
     const links = [r.url, r.dateUrl, r.claim?.url].filter(Boolean) as string[];
     for (const u of links) {
-      let url: URL | null = null;
-      try {
-        url = new URL(u);
-      } catch {}
-      if (!url || url.protocol !== "https:" || url.username || url.password) bad(`"${u}" must be an https URL without credentials`);
+      const problem = httpsUrlProblem(u);
+      if (problem) bad(problem);
     }
     if (seen.url.has(r.url)) bad("duplicate url");
     seen.url.add(r.url);
