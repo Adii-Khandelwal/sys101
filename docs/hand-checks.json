@@ -214,5 +214,29 @@
  "sentry-xid-2015|3 Internal": {
   "verdict": "ok",
   "source": "post: default of 3 autovacuum workers; the match joined adjacent meanings"
+ },
+ "google-quic-2017|2 times": {
+  "verdict": "ok",
+  "source": "paper: CPU cost cut to approximately twice that of TLS/TCP after optimizations (3.5 times before)"
+ },
+ "cloudflare-0rtt-2017|two for": {
+  "verdict": "ok",
+  "source": "post: for TLS 1.2 and earlier the TLS setup takes two round trips; TCP one, HTTP one"
+ },
+ "cloudflare-http3-2020|1 to 4%": {
+  "verdict": "ok",
+  "source": "post: HTTP/3 trails HTTP/2 by about 1-4% on average in North America"
+ },
+ "cloudflare-http3-2020|1 to": {
+  "verdict": "ok",
+  "source": "same sentence: about 1-4% on average in North America, similar in Europe, Asia, South America"
+ },
+ "cloudflare-http3-2020|4 percent": {
+  "verdict": "ok",
+  "source": "same sentence (1-4%); the match joined into 12.4 percent better first byte"
+ },
+ "cloudflare-http3-2020|two page": {
+  "verdict": "ok",
+  "source": "post tests a 15KB page and a 1MB page"
  }
 }
