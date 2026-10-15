@@ -3481,6 +3481,22 @@ html {
   font-size: 19px;
 }
 
+/* /new: the same item layout as a topic's What's new, one block per month, then per topic. */
+.news-month {
+  margin-top: 48px;
+}
+.news-topic h3 {
+  margin: 24px 0 0;
+  font-size: 20px;
+}
+.news-topic h3 a {
+  text-decoration: none;
+}
+.news-quiet {
+  color: var(--ink-soft);
+  margin: 12px 0 0;
+}
+
 /* ── Background page: what the posts of each topic assume ── */
 :root {
   /* A faint wash of the accent, so it follows both themes and needs no literal colour. */

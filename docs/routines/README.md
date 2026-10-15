@@ -162,7 +162,7 @@ Remove every connector (Slack, Google Drive, email, issue trackers and the rest)
 
 ## 5. Schedule
 
-Weekly, for example Mondays 07:00 UTC. It looks at 3 topics a run, so 18 topics are all covered every 6 weeks. Run it once by hand first and read the pull request before turning on the schedule.
+Weekly, for example Mondays 07:00 UTC (or monthly: `docs/routines/whats-new-monthly.md` adds a block to the prompt and says how, so that `/new` has a month to show). It looks at 3 topics a run, so 18 topics are all covered every 6 weeks. Run it once by hand first and read the pull request before turning on the schedule.
 
 ## 6. What the workflow does
 
