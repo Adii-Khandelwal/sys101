@@ -1,0 +1,457 @@
+{
+  "slug": "storage-engines",
+  "title": "Storage Engines: B-trees and LSM-trees",
+  "shortTitle": "Storage Engines",
+  "group": "Data",
+  "interviewRelevance": "core",
+  "concept": "A storage engine is the layer of a database that decides how data is laid out on disk and how it is found, changed and removed. B-tree engines keep sorted pages and update them in place; LSM-tree engines collect writes in memory, write them out as immutable sorted files and merge the files in the background. The choice moves cost between reads, writes, disk space and background work.",
+  "prerequisites": [
+    "databases"
+  ],
+  "summary": {
+    "points": [
+      "A storage engine decides how a database lays rows out on disk, and B-trees and LSM-trees move cost between reads, writes and space.",
+      "Meta found InnoDB wasted 25% to 30% of each block, and its LSM-tree engine made instances 62.3% smaller for the same data.",
+      "Discord's Cassandra nodes fell behind on compaction and tombstones, and moving to ScyllaDB cut 177 nodes to 72.",
+      "An LSM-tree buffers writes in memory, flushes sorted files and merges them later, trading cheap writes for extra read checks and background work."
+    ],
+    "figures": [
+      {
+        "postId": "myrocks-meta-2020",
+        "row": 0,
+        "label": "Meta's MyRocks instances were 62.3% smaller than compressed InnoDB"
+      },
+      {
+        "postId": "discord-messages-2023",
+        "row": 1,
+        "label": "Discord went from 177 Cassandra nodes to 72 ScyllaDB nodes"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "databases": "Storage Engines takes from databases the tables and rows that a database stores, since an engine decides how that data reaches the disk."
+  },
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why databases offer more than one storage engine and what each one costs.",
+      "body": "Every database has to answer two questions about its data: where does a row live on disk, and what happens on disk when it changes. The part that answers them is the storage engine. Two designs cover most of the field. A B-tree engine keeps data in sorted pages and changes a page where it lives. An LSM-tree engine never edits a file: it collects writes in memory, writes them out as sorted files and merges the files in the background.\n\nThe choice stops being academic when hardware or workload changes. Meta ran its main user database on InnoDB, a B-tree engine, and when it moved from spinning disks to flash, the limit changed from operations per second to storage capacity. 25% to 30% of each block was wasted, and changing one row rewrote a whole 8 KB page. Discord ran its messages on Cassandra, an LSM-tree database, and spent more and more on-call time keeping up with background merging and with the garbage collector of the language it was written in. Both teams changed engines and both got better results, after they understood what the new design would charge them."
+    },
+    "mentalModel": {
+      "outcome": "After this you can describe a B-tree and an LSM-tree in one picture each and say where each one pays.",
+      "body": "Think of two ways to keep an address book. A B-tree is a bound book with a page for each part of the alphabet. To change an entry you open its page and rewrite it in place. Finding anything is quick, but a small change still touches a whole page, and pages fill unevenly, so some are left half empty.\n\nAn LSM-tree is a stack of notebooks. New entries go on a scratch pad, and a log beside it records them so a crash loses nothing. When the pad is full you copy it neatly into a new sorted notebook and put it on the pile. Nothing is ever erased in place. To look something up you check the scratch pad and then each notebook from newest to oldest, and now and then you merge notebooks into bigger ones so the pile stays short and old, overwritten entries finally disappear.\n\nThat difference explains the trade-offs in this topic. The B-tree pays when it writes (edit pages in place, leave gaps for later inserts) and reads cheaply. The LSM-tree writes cheaply and sequentially and pays later: reads may check several files, and the merging uses disk and CPU in the background.",
+      "diagram": "<svg viewBox=\"0 0 560 296\" role=\"img\" aria-labelledby=\"dg-se-model-t\" class=\"dg\"><title id=\"dg-se-model-t\">Two storage engines side by side. A B-tree keeps data in pages and rewrites a page where it lives, so a read is one walk down the tree but a small change rewrites a whole page. An LSM-tree writes to a memory buffer and a log, flushes sorted files, and merges them into larger levels in the background, so writes are cheap and reads look in several places.</title><defs><marker id=\"dg-se-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"135\" y=\"22\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">B-tree: edit pages in place</text><rect x=\"80\" y=\"38\" width=\"110\" height=\"32\" class=\"dg-box\"/><text x=\"135\" y=\"56.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">root page</text><rect x=\"10\" y=\"110\" width=\"78\" height=\"38\" class=\"dg-box\"/><text x=\"49\" y=\"131.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">page</text><rect x=\"97\" y=\"110\" width=\"78\" height=\"38\" class=\"dg-box\"/><text x=\"136\" y=\"131.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">page</text><rect x=\"184\" y=\"110\" width=\"78\" height=\"38\" class=\"dg-box\"/><text x=\"223\" y=\"131.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">page</text><rect x=\"97\" y=\"110\" width=\"78\" height=\"38\" class=\"dg-box dg-accent\"/><text x=\"136\" y=\"123\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">page</text><text x=\"136\" y=\"139\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">rewritten</text><path d=\"M110,70 L50,108\" class=\"dg-line\" marker-end=\"url(#dg-se-model-a)\"/><path d=\"M135,70 L136,108\" class=\"dg-line\" marker-end=\"url(#dg-se-model-a)\"/><path d=\"M160,70 L222,108\" class=\"dg-line\" marker-end=\"url(#dg-se-model-a)\"/><text x=\"135\" y=\"178\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">write: change the page where it lives</text><text x=\"135\" y=\"196\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">read: one walk down the tree</text><text x=\"135\" y=\"214\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">cost: half-empty pages, whole-page writes</text><path d=\"M280,16 L280,290\" class=\"dg-line dg-dashed\"/><text x=\"420\" y=\"22\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">LSM-tree: append, then merge</text><rect x=\"296\" y=\"38\" width=\"110\" height=\"32\" class=\"dg-box dg-accent\"/><text x=\"351\" y=\"56.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">memtable</text><rect x=\"424\" y=\"38\" width=\"126\" height=\"32\" class=\"dg-box\"/><text x=\"487\" y=\"56.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">write-ahead log</text><rect x=\"296\" y=\"98\" width=\"254\" height=\"30\" class=\"dg-box\"/><text x=\"423\" y=\"115.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">level 0: newly flushed files</text><rect x=\"296\" y=\"144\" width=\"254\" height=\"30\" class=\"dg-box\"/><text x=\"423\" y=\"161.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">level 1: merged, larger</text><rect x=\"296\" y=\"190\" width=\"254\" height=\"30\" class=\"dg-box\"/><text x=\"423\" y=\"207.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">level 2: merged, larger still</text><path d=\"M351,70 L351,96\" class=\"dg-line\" marker-end=\"url(#dg-se-model-a)\"/><path d=\"M423,128 L423,142\" class=\"dg-line\" marker-end=\"url(#dg-se-model-a)\"/><path d=\"M423,174 L423,188\" class=\"dg-line\" marker-end=\"url(#dg-se-model-a)\"/><text x=\"480\" y=\"140\" class=\"dg-note\" text-anchor=\"start\" font-size=\"10\">merge</text><text x=\"420\" y=\"244\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">write: append to the log and to memory</text><text x=\"420\" y=\"262\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">read: look in the newest data first</text><text x=\"420\" y=\"280\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">cost: merging in the background</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can trace a write, a read and a delete through an LSM-tree and say where the cost lands.",
+      "steps": [
+        {
+          "step": "A write goes to a log and to memory",
+          "explanation": "The engine appends the change to a write-ahead log on disk, so a crash cannot lose it, and inserts it into the memtable, a sorted structure in memory. Neither step edits an existing file."
+        },
+        {
+          "step": "A full memtable becomes a sorted file",
+          "explanation": "When the memtable reaches its size limit it is frozen and written out as a sorted, immutable file, often called an SSTable. The part of the log it covered can then be deleted. Files are never edited afterwards."
+        },
+        {
+          "step": "A read looks in the newest data first",
+          "explanation": "The engine checks the memtable, then the files from newest to oldest, because newer data wins. A Bloom filter beside each file is a small summary that says a key is definitely absent or maybe present, so most files are skipped. A B-tree does one walk from root to leaf."
+        },
+        {
+          "step": "Compaction merges files",
+          "explanation": "Files are grouped into levels that grow in size. The engine picks files from one level and merges them with the overlapping files in the next, keeping the result sorted and dropping overwritten values and deleted keys. This keeps reads short but rewrites the same data several times."
+        },
+        {
+          "step": "A delete is a write",
+          "explanation": "Because files are never edited, a delete writes a marker, called a tombstone, that hides older versions of the key. Only compaction, once it reaches the oldest data, removes the marker and the values under it. Many tombstones slow range scans."
+        },
+        {
+          "step": "Count the three amplifications",
+          "explanation": "Write amplification is the bytes written to disk for each byte the application writes; read amplification is how many places a read must look; space amplification is the disk used for each byte of live data. A B-tree rewrites a whole page for a small change and wastes space in half-empty pages. An LSM-tree rewrites data during compaction and keeps stale data until it is merged. No engine wins all three."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 206\" role=\"img\" aria-labelledby=\"dg-se-how-t\" class=\"dg\"><title id=\"dg-se-how-t\">The life of a write in an LSM-tree: it is logged and put in the memtable, flushed to a sorted file when the memtable fills, and later merged into deeper levels by compaction. A read checks the memtable and then the files from newest to oldest, skipping files with a Bloom filter. A delete writes a marker that compaction later removes.</title><defs><marker id=\"dg-se-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"10\" y=\"34\" width=\"150\" height=\"58\" class=\"dg-box dg-accent\"/><text x=\"85\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">1. Write</text><text x=\"85\" y=\"74\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">log + memtable</text><rect x=\"205\" y=\"34\" width=\"150\" height=\"58\" class=\"dg-box\"/><text x=\"280\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">2. Flush</text><text x=\"280\" y=\"74\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">sorted file, level 0</text><rect x=\"400\" y=\"34\" width=\"150\" height=\"58\" class=\"dg-box\"/><text x=\"475\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">3. Compact</text><text x=\"475\" y=\"73\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">merge into levels</text><path d=\"M160,63 L203,63\" class=\"dg-line\" marker-end=\"url(#dg-se-how-a)\"/><path d=\"M355,63 L398,63\" class=\"dg-line\" marker-end=\"url(#dg-se-how-a)\"/><text x=\"85\" y=\"110\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">append, then insert in memory</text><text x=\"280\" y=\"110\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">when the memtable is full</text><text x=\"475\" y=\"110\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">drops old and deleted entries</text><rect x=\"10\" y=\"130\" width=\"540\" height=\"40\" class=\"dg-box\"/><text x=\"280\" y=\"152\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Read: memtable, then files newest to oldest; Bloom filters skip files</text><text x=\"280\" y=\"194\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">A delete is a write: a marker hides older values until compaction removes both</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can walk through a real engine decision, the measurements it needs and the checks to run before switching.",
+      "steps": [
+        {
+          "step": "Find the real bottleneck",
+          "explanation": "Meta's UDB servers moved to flash, where the limit was no longer operations per second but capacity. Turning on InnoDB compression had saved about half the space, which was not enough, and 25% to 30% of each block was lost to fragmentation."
+        },
+        {
+          "step": "Set a goal you can measure",
+          "explanation": "Meta aimed to halve the number of UDB servers. That meant the new engine had to use no more than half the space of compressed InnoDB while keeping CPU and I/O comparable."
+        },
+        {
+          "step": "Check the read path honestly",
+          "explanation": "LSM-tree reads were expected to be worse, and early benchmarks showed CPU, not I/O, was the harder gap. Meta added prefix Bloom filters so range scans skip files, bytewise-comparable keys, and a reverse key order that made common descending scans about 15% faster."
+        },
+        {
+          "step": "Replay real traffic before switching",
+          "explanation": "Meta captured production queries from an InnoDB replica and replayed them against a test MyRocks replica, and ran a tool that compared the data each engine returned. Behaviour differences showed up here, such as repeatable read being implemented as snapshot isolation, which raised errors until queries were reviewed."
+        },
+        {
+          "step": "Measure, then keep watching",
+          "explanation": "MyRocks instances ended up at 37.7% of the InnoDB size and were nearly 40% more CPU efficient on replicas that only applied writes. The watching never stops: Discord's migration stalled on tombstones that had never been compacted, and compacting that range finished it."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 130\" role=\"img\" aria-labelledby=\"dg-se-ex-t\" class=\"dg\"><title id=\"dg-se-ex-t\">Five steps for moving an engine: find the real bottleneck, set a size goal, check the read path, run shadow traffic through both engines, then measure and keep watching compaction and deletes.</title><defs><marker id=\"dg-se-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"8\" y=\"36\" width=\"104\" height=\"54\" class=\"dg-box\"/><text x=\"60\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Find the</text><text x=\"60\" y=\"74\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">bottleneck</text><text x=\"60\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">capacity, not IOPS</text><path d=\"M112,63 L116,63\" class=\"dg-line\" marker-end=\"url(#dg-se-ex-a)\"/><rect x=\"118\" y=\"36\" width=\"104\" height=\"54\" class=\"dg-box\"/><text x=\"170\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Set a</text><text x=\"170\" y=\"74\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">size goal</text><text x=\"170\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">half the space</text><path d=\"M222,63 L226,63\" class=\"dg-line\" marker-end=\"url(#dg-se-ex-a)\"/><rect x=\"228\" y=\"36\" width=\"104\" height=\"54\" class=\"dg-box\"/><text x=\"280\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Check the</text><text x=\"280\" y=\"74\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">read path</text><text x=\"280\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">Bloom filters, CPU</text><path d=\"M332,63 L336,63\" class=\"dg-line\" marker-end=\"url(#dg-se-ex-a)\"/><rect x=\"338\" y=\"36\" width=\"104\" height=\"54\" class=\"dg-box\"/><text x=\"390\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Shadow</text><text x=\"390\" y=\"74\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">real traffic</text><text x=\"390\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">same queries, both engines</text><path d=\"M442,63 L446,63\" class=\"dg-line\" marker-end=\"url(#dg-se-ex-a)\"/><rect x=\"448\" y=\"36\" width=\"104\" height=\"54\" class=\"dg-box dg-accent\"/><text x=\"500\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Measure,</text><text x=\"500\" y=\"74\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">then watch</text><text x=\"500\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">compaction, deletes</text></svg>"
+    },
+    "mistakesOutcome": "After this you can avoid three common storage-engine mistakes.",
+    "checkOutcome": "After this you can check you understand how B-trees and LSM-trees trade reads, writes and space.",
+    "quiz": [
+      {
+        "question": "A team moves its database to flash drives and finds that storage space, not drive speed, is now the limit. Which B-tree weakness do they look at first?",
+        "options": [
+          "The cost of merging files in the background",
+          "Pages left partly empty by random writes and page splits",
+          "Pauses from the garbage collector of the engine's language"
+        ],
+        "correct": 1,
+        "why": "Pages that split and refill unevenly leave gaps, and Meta measured 25% to 30% of each InnoDB block wasted this way, which matters most when capacity is the limit.",
+        "wrong": [
+          "Merging files is a cost of an LSM-tree, and the engine in this question is a B-tree.",
+          "",
+          "A garbage collector is a runtime cost of engines written in languages such as Java; it does not explain empty space inside B-tree pages."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "In the stack-of-notebooks picture of an LSM-tree, what plays the part of the scratch pad where new entries land first?",
+        "options": [
+          "The newest level of sorted files, written to disk at the last flush",
+          "The memtable, a sorted buffer in memory",
+          "A Bloom filter that is kept beside every sorted file"
+        ],
+        "correct": 1,
+        "why": "New writes go into the memtable and are also appended to a write-ahead log, so a crash cannot lose them. The memtable later becomes a sorted file.",
+        "wrong": [
+          "The newest files are the first notebook on the pile, but they only exist after the scratch pad has been flushed.",
+          "",
+          "A Bloom filter is a small summary that helps a read skip a file; it holds no entries of its own."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "Why does a read from an LSM-tree usually cost more than a read from a B-tree?",
+        "options": [
+          "It can need a look in the memtable and in several files",
+          "Its files are stored in no particular order, so it must scan them all",
+          "Each read has to wait until the background compaction finishes"
+        ],
+        "correct": 0,
+        "why": "The key may be in the memtable or in any of several sorted files, so the engine checks the newest data first and uses Bloom filters to skip files. A B-tree walks one path from root to leaf.",
+        "wrong": [
+          "",
+          "The files are sorted, which is what makes binary search and merging possible.",
+          "Compaction runs in the background and reads do not wait for it, although a backlog makes reads slower."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "What does deleting a key actually do inside an LSM-tree?",
+        "options": [
+          "It erases the entry from the sorted file that holds it, in place",
+          "It rewrites the whole level so the key disappears at once, everywhere",
+          "It writes a marker that hides older values until compaction"
+        ],
+        "correct": 2,
+        "why": "Files are never edited, so a delete is a new write: a tombstone that hides older values. Compaction removes the tombstone and the values it hides when it reaches them.",
+        "wrong": [
+          "Sorted files are immutable, so an entry cannot be erased in place.",
+          "Rewriting a level for every delete would make deletes far more expensive than writes.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Meta wanted to cut the number of UDB database servers in half. What did that require of the new engine?",
+        "options": [
+          "Writes faster than InnoDB, whatever the CPU cost",
+          "Using no more than half the space of compressed InnoDB, with CPU and I/O about the same",
+          "A new query language for the applications"
+        ],
+        "correct": 1,
+        "why": "The goal was to halve the fleet, so the engine had to fit the same data in half the space while keeping CPU and I/O comparable. Meta measured instances at 37.7% of the InnoDB size.",
+        "wrong": [
+          "Write speed was not the target, and extra CPU would have cancelled the saving in servers.",
+          "",
+          "The point of a pluggable engine was to keep SQL and the client protocol unchanged."
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "Discord's migration to ScyllaDB stuck at 99.9999% complete. What was holding up the last ranges?",
+        "options": [
+          "Large ranges of tombstones that had never been compacted away",
+          "Hot partitions that could not be read at all",
+          "A garbage collection pause in the new cluster"
+        ],
+        "correct": 0,
+        "why": "Deletion markers stay until compaction reaches them, and the migrator timed out reading ranges full of them. Compacting that range finished the migration within seconds.",
+        "wrong": [
+          "",
+          "A hot partition slows reads but was not what stopped the migrator in the last ranges.",
+          "ScyllaDB has no garbage collector; the old Cassandra cluster was the one with garbage collection pauses."
+        ],
+        "teaches": "mistakes"
+      }
+    ],
+    "postsOutcome": "After this you can read how Meta and Discord ran LSM-trees at scale, with the figures they report.",
+    "differOutcome": "After this you can say how the two posts differ and what each one shows about the trade-offs.",
+    "exercisesOutcome": "After this you can choose and roll out a storage engine for a given workload.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A table of events is written all day and read mostly by key. It sits on flash drives, and disk space is now the limit. Which engine family do you try first, and what do you measure before switching?",
+        "answer": "Try an LSM-tree engine, because it avoids in-place updates and fragmentation and compresses well. Before switching, run the same traffic through both engines and compare instance size, CPU time for the same load, read latency at the tail, and bytes written to the drives. Decide with those numbers, not with the design's reputation.",
+        "tradeoffs": "An LSM-tree can save space and write less, but it can use more CPU on reads and range scans, and its background compaction needs headroom.",
+        "wrongAnswers": [
+          "Switching because LSM-trees are newer.",
+          "Measuring only space and skipping CPU and read latency.",
+          "Assuming the B-tree engine has no wasted space because it updates in place."
+        ],
+        "teaches": "example"
+      },
+      {
+        "level": "design",
+        "prompt": "A fleet of replicated MySQL shards uses a B-tree engine. You want to try an LSM-tree engine without risking the data. Describe a rollout you can undo.",
+        "answer": "Keep the SQL layer and replication as they are and add replicas that use the new engine beside the old ones, so a few replica sets run both and can be compared continuously. Capture production queries and replay them against a test replica of the new engine, compare the data the two engines return, and review queries whose behaviour changes, such as ones that depend on gap locks. Run the new engine on a minority of replicas for months, keep the primary on the old engine until it has run through peak load, and only then change primaries.",
+        "tradeoffs": "Running two engines costs extra servers and attention for a while, but it makes every step reversible and gives you real comparison data.",
+        "wrongAnswers": [
+          "Converting every replica and primary in one weekend.",
+          "Testing with a synthetic benchmark only.",
+          "Assuming isolation behaviour is identical between engines."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "scale",
+        "prompt": "Your LSM-tree message store keeps falling behind on compaction, and reads get slower while nodes merge. List what you check and in what order.",
+        "answer": "First look for hot partitions, because one very busy key can slow every query on its nodes; coalesce identical reads upstream and route a key to one instance. Then compare compaction throughput with the write rate and look at how many tombstones sit in the hot ranges, since deletes pile up until compaction reaches them. Check whether pauses from the runtime, such as a garbage collector, line up with the latency spikes. Only then consider changing the engine or adding nodes, and plan any migration with reads compared on both sides.",
+        "tradeoffs": "Tuning compaction harder reduces read cost but increases write amplification and background I/O; adding nodes spreads load but does not fix a single hot key.",
+        "wrongAnswers": [
+          "Adding nodes first and leaving a hot key as it is.",
+          "Turning compaction off to stop the latency spikes.",
+          "Ignoring deletes because they only remove data."
+        ],
+        "teaches": "mistakes"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "Storage Engines is a good place to pause and look at the map again. Revisit Indexing to see how the sorted structures here underpin search, or Replication to see how the logs that engines write are copied between machines."
+    }
+  },
+  "posts": [
+    {
+      "id": "myrocks-meta-2020",
+      "title": "MyRocks: LSM-Tree Database Storage Engine Serving Facebook's Social Graph",
+      "url": "https://www.vldb.org/pvldb/vol13/p3217-matsunobu.pdf",
+      "company": "Meta",
+      "verifiedOn": "2026-10-15",
+      "published": "no date shown",
+      "edition": "VLDB 2020, PVLDB volume 13, issue 12",
+      "ageNote": "This is a research paper, not a company blog post: the 2020 paper from the Meta engineers who built MyRocks. It is here for a fundamental that has not changed: how a B-tree and an LSM-tree trade space, write cost and read cost on flash. The paper describes the system as of 2020, and the figures are from Meta's own fleet then.",
+      "digest": {
+        "problem": "Meta kept its main social-graph database, UDB, in MySQL on the InnoDB engine and stored tens of petabytes of data in it. When the servers moved from spinning disks to flash, the limit changed from operations per second to storage capacity. InnoDB wasted space, wrote more to flash than it needed to, and sometimes stalled on bursts of writes. The team wanted a smaller engine that wrote less, without rewriting the applications above it.",
+        "constraints": "Many different client applications used UDB, so changing the database interface could take years. The engine had to fit behind MySQL's SQL layer and replication. No LSM-tree database had a proven record on flash at scale when the work began. UDB still served many reads, which an LSM-tree handles worse than a B-tree, and the goal was to use no more than half the space of compressed InnoDB while keeping CPU and I/O close to InnoDB's.",
+        "walkthrough": [
+          {
+            "step": "Find what flash changed",
+            "explanation": "Meta added flash in 2010 and dropped disks entirely in 2013. Capacity became the limit, so the team turned on InnoDB compression in 2011. That saved about half the space, which was not enough."
+          },
+          {
+            "step": "Name the B-tree's space problems",
+            "explanation": "Index fragmentation wasted 25% to 30% of each block, and defragmenting could not keep up with a steady stream of random writes. Compression was capped because a page had to keep a fixed size, so a page that compressed to 5 KB still used 8 KB. Each row also carried 13 bytes of transaction bookkeeping."
+          },
+          {
+            "step": "Put RocksDB behind MySQL",
+            "explanation": "MyRocks is a MySQL storage engine built on RocksDB, so the SQL layer, client protocols and replication stayed as they were. Writes go to a log and a memtable, flush to sorted files in levels, and compaction merges levels and removes dead data."
+          },
+          {
+            "step": "Close the read-path gaps",
+            "explanation": "A range scan in an LSM-tree needs a seek in every sorted run, so the team added prefix Bloom filters that skip runs with no matching prefix. It also used keys that compare bytewise, a reverse key order so common descending scans read forward, and a SingleDelete marker that can be dropped early so deletes stop slowing scans."
+          },
+          {
+            "step": "Test on real traffic, then migrate",
+            "explanation": "A tool called MyShadow captured production queries from an InnoDB replica and replayed them against a test MyRocks replica, and a separate tool compared the data returned by InnoDB and MyRocks. Repeatable read behaved differently in the new engine, so some queries produced errors until they were reviewed and moved to read committed where that was safe. In production, each replica set first ran two MyRocks replicas beside four InnoDB ones with an InnoDB primary, for months, before MyRocks became primary. The migration of UDB finished in August 2017."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 204\" role=\"img\" aria-labelledby=\"dg-se-myrocks-t\" class=\"dg\"><title id=\"dg-se-myrocks-t\">Meta kept MySQL&#x27;s SQL layer, client protocol and replication, and swapped the storage engine underneath from InnoDB, a B+tree, to MyRocks, an LSM-tree on RocksDB. InnoDB wasted 25 to 30 percent of each block; MyRocks instances were 62.3 percent smaller for the same data.</title><defs><marker id=\"dg-se-myrocks-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"60\" y=\"18\" width=\"440\" height=\"40\" class=\"dg-box\"/><text x=\"280\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">MySQL: SQL, client protocol, replication (unchanged)</text><rect x=\"60\" y=\"112\" width=\"200\" height=\"58\" class=\"dg-box\"/><text x=\"160\" y=\"135\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">InnoDB</text><text x=\"160\" y=\"152\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">B+tree, updates in place</text><rect x=\"300\" y=\"112\" width=\"200\" height=\"58\" class=\"dg-box dg-accent\"/><text x=\"400\" y=\"135\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">MyRocks on RocksDB</text><text x=\"400\" y=\"152\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">LSM-tree, sorted files</text><path d=\"M160,58 L160,110\" class=\"dg-line\" marker-end=\"url(#dg-se-myrocks-a)\"/><path d=\"M400,58 L400,110\" class=\"dg-line\" marker-end=\"url(#dg-se-myrocks-a)\"/><path d=\"M262,141 L298,141\" class=\"dg-line\" marker-end=\"url(#dg-se-myrocks-a)\"/><text x=\"280\" y=\"100\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">swap the engine, keep the layers above</text><text x=\"160\" y=\"192\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">25 to 30% of each block wasted</text><text x=\"400\" y=\"192\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">instances 62.3% smaller</text></svg>",
+        "numbers": [
+          {
+            "value": "62.3% smaller",
+            "meaning": "MyRocks instance size for UDB data compared with compressed InnoDB; instances were 37.7% of the InnoDB size"
+          },
+          {
+            "value": "25% to 30%",
+            "meaning": "Share of each InnoDB block wasted by index fragmentation"
+          },
+          {
+            "value": "13 bytes",
+            "meaning": "Per-row transaction overhead in InnoDB, a 6-byte transaction id and a 7-byte roll pointer, against a 7-byte sequence number in RocksDB"
+          },
+          {
+            "value": "8 KB",
+            "meaning": "InnoDB page size in UDB: changing one row rewrote the whole page, and a page compressed to 5 KB still took 8 KB"
+          },
+          {
+            "value": "nearly 40%",
+            "meaning": "How much more CPU efficient MyRocks was than InnoDB on a replica that only applied replicated writes"
+          },
+          {
+            "value": "about 15%",
+            "meaning": "Faster descending scans from the reverse key comparator"
+          },
+          {
+            "value": "less than half",
+            "meaning": "How many database servers UDB needed after the move"
+          },
+          {
+            "value": "2 of 6",
+            "meaning": "MyRocks instances in each replica set at the start of the migration, beside four InnoDB instances, with the primary kept on InnoDB"
+          },
+          {
+            "value": "August 2017",
+            "meaning": "When the migration of UDB from InnoDB to MyRocks was completed"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "MyRocks, a MySQL storage engine on RocksDB's LSM-tree, plus new RocksDB features for the read path.",
+          "rejected": "Staying on compressed InnoDB with defragmentation, and moving to a different database that would have meant rewriting the applications.",
+          "why": "An LSM-tree avoids in-place page updates and fragmentation and compresses well, and the pluggable engine kept SQL, client protocols and replication unchanged."
+        },
+        "failures": "An LSM-tree read path used more CPU than InnoDB at first, and piles of deletion markers slowed range scans until the team added the SingleDelete type. Isolation also differed: MyRocks implements repeatable read as snapshot isolation, where InnoDB used gap locks, so primaries running MyRocks returned visibly more errors until queries were reviewed.",
+        "takeaways": "Choose an engine from the measured bottleneck, keep the layers above it unchanged, replay real traffic before switching, and compare CPU as well as space, because that is where an LSM-tree can lose."
+      }
+    },
+    {
+      "id": "discord-messages-2023",
+      "title": "How Discord Stores Trillions of Messages",
+      "url": "https://discord.com/blog/how-discord-stores-trillions-of-messages",
+      "company": "Discord",
+      "verifiedOn": "2026-10-15",
+      "published": "2023-03-06",
+      "related": [
+        "consistent-hashing"
+      ],
+      "digest": {
+        "problem": "Discord's messages lived in Cassandra: 12 nodes holding billions of messages in 2017 grew to 177 nodes holding trillions by early 2022. The cluster was high toil. The on-call team was paged often, latency was unpredictable, and some maintenance became too expensive to run.",
+        "constraints": "Messages are partitioned by channel and a time bucket, so a very busy channel becomes a hot partition. Reads and writes use quorum, so one hot partition slows every query to the nodes that hold it. The new database had to take trillions of messages with no downtime, and fast, because the old cluster needed constant firefighting.",
+        "walkthrough": [
+          {
+            "step": "See why reads cost more than writes",
+            "explanation": "A Cassandra write goes to a commit log and a memtable and is flushed to disk later. A read has to check the memtable and possibly several SSTables, so it is the more expensive operation, and a hot partition makes it worse."
+          },
+          {
+            "step": "Watch compaction fall behind",
+            "explanation": "When compactions lagged, reads got more expensive and latency cascaded as a node tried to catch up. Engineers took nodes out of rotation to compact, brought them back to collect hints, and repeated, a routine they called the gossip dance. They also spent a lot of time tuning the JVM's garbage collector, because its pauses caused latency spikes."
+          },
+          {
+            "step": "Shield the database",
+            "explanation": "New Rust data services sit between the API and the database. They coalesce identical requests so a popular row is read once, and consistent-hash routing by channel ID sends all requests for a channel to the same instance."
+          },
+          {
+            "step": "Move to ScyllaDB",
+            "explanation": "ScyllaDB is Cassandra-compatible, written in C++ with a shard-per-core design and no garbage collector. The team waited until the ScyllaDB developers made reverse queries fast enough, then migrated every database, with messages last."
+          },
+          {
+            "step": "Migrate quickly and finish the tail",
+            "explanation": "A first plan with a Spark migrator was estimated at three months. A migrator rewritten in Rust cut the estimate to nine days and ran at up to 3.2 million messages per second. It stalled at 99.9999% on ranges full of tombstones that Cassandra had never compacted away; compacting that range finished it. Reads were compared across both databases before the switch in May 2022."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 200\" role=\"img\" aria-labelledby=\"dg-se-discord-t\" class=\"dg\"><title id=\"dg-se-discord-t\">Discord put Rust data services between its API and the database to combine reads for hot rows, then moved the messages from 177 Cassandra nodes, which struggled with compaction and garbage collection pauses, to 72 ScyllaDB nodes, which have no garbage collector. Historical message reads went from a p99 of 40 to 125 milliseconds to 15 milliseconds.</title><defs><marker id=\"dg-se-discord-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"10\" y=\"20\" width=\"100\" height=\"36\" class=\"dg-box\"/><text x=\"60\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">API</text><rect x=\"150\" y=\"20\" width=\"150\" height=\"36\" class=\"dg-box\"/><text x=\"225\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Data services</text><rect x=\"340\" y=\"20\" width=\"110\" height=\"36\" class=\"dg-box dg-accent\"/><text x=\"395\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Database</text><path d=\"M110,38 L148,38\" class=\"dg-line\" marker-end=\"url(#dg-se-discord-a)\"/><path d=\"M300,38 L338,38\" class=\"dg-line\" marker-end=\"url(#dg-se-discord-a)\"/><text x=\"225\" y=\"76\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">one query per hot row, routed by channel</text><rect x=\"40\" y=\"106\" width=\"210\" height=\"56\" class=\"dg-box\"/><text x=\"145\" y=\"128\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Cassandra: 177 nodes</text><text x=\"145\" y=\"145\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">compaction and GC trouble</text><rect x=\"320\" y=\"106\" width=\"210\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"425\" y=\"128\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">ScyllaDB: 72 nodes</text><text x=\"425\" y=\"145\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">no garbage collector</text><path d=\"M250,134 L318,134\" class=\"dg-line\" marker-end=\"url(#dg-se-discord-a)\"/><text x=\"145\" y=\"184\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">historical reads: p99 40 to 125 ms</text><text x=\"425\" y=\"184\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">historical reads: p99 15 ms</text></svg>",
+        "numbers": [
+          {
+            "value": "12 nodes to 177 nodes",
+            "meaning": "Cassandra cluster size for messages, from 2017 to the beginning of 2022, as messages grew from billions to trillions"
+          },
+          {
+            "value": "177 nodes to 72 nodes",
+            "meaning": "Cluster size after moving the messages database to ScyllaDB"
+          },
+          {
+            "value": "9 TB",
+            "meaning": "Disk per ScyllaDB node, up from an average of about 4 TB per Cassandra node"
+          },
+          {
+            "value": "15 ms",
+            "meaning": "Historical message read p99 on ScyllaDB, down from between 40 ms and 125 ms on Cassandra"
+          },
+          {
+            "value": "5 ms",
+            "meaning": "Message insert p99 on ScyllaDB, down from between 5 ms and 70 ms on Cassandra"
+          },
+          {
+            "value": "up to 3.2 million",
+            "meaning": "Messages per second moved by the Rust migrator"
+          },
+          {
+            "value": "nine days",
+            "meaning": "Estimated migration time with the Rust migrator, against three months for the first plan"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "ScyllaDB, a C++ Cassandra-compatible database with no garbage collector, behind new Rust data services that coalesce and route requests.",
+          "rejected": "Staying on Cassandra with the data services alone, which reduced hot-partition trouble but did not remove it.",
+          "why": "Compaction backlogs and garbage collection pauses were the root of much of the on-call toil, and ScyllaDB promised faster repairs, stronger workload isolation and no garbage collector."
+        },
+        "failures": "Cassandra could not keep up with compaction, hot partitions slowed whole clusters, and long garbage collection pauses sometimes needed an operator to reboot and nurse a node. The migration stalled at 99.9999% on uncompacted tombstones. The post also says ScyllaDB has issues of its own and that hot partitions can still happen there.",
+        "takeaways": "In an LSM-tree database, compaction, deletion markers and the runtime can matter as much as the data structure. Shield hot keys before the database, and validate a migration by comparing real reads on both sides."
+      }
+    }
+  ],
+  "comparison": "Both posts are about LSM-trees meeting real operating pressure, from opposite sides. Meta started with a B-tree engine and moved to an LSM-tree engine to save space and writes. Discord started with an LSM-tree database, Cassandra, and moved to another, ScyllaDB, because of what the first one cost to operate. Meta's changes were inside the engine: Bloom filters, key encodings and a new deletion marker. Discord's were around it and under it: request coalescing, routing by channel, and a database without a garbage collector.\n\nThey also charge different bills. Meta measured space and CPU across a large fleet and paid in read-path engineering and in behaviour differences such as isolation. Discord paid in the costs an LSM-tree postpones: compaction backlogs, tombstones and hot partitions. The evidence is the figures each reports, such as instances 62.3% smaller at Meta and 177 nodes becoming 72 at Discord. Neither post shows that one family is better; they show what each design charges and when.",
+  "glossary": [
+    {
+      "term": "Storage engine",
+      "definition": "The part of a database that decides how data is laid out on disk and how it is read, changed and deleted."
+    },
+    {
+      "term": "B-tree",
+      "definition": "A balanced tree of sorted pages that is updated in place, so a lookup is one walk from root to leaf."
+    },
+    {
+      "term": "LSM-tree",
+      "definition": "A log-structured merge tree: writes go to memory and a log, are flushed as sorted immutable files, and are merged in the background."
+    },
+    {
+      "term": "Memtable",
+      "definition": "The sorted in-memory buffer where an LSM-tree puts new writes before they are flushed to a file."
+    },
+    {
+      "term": "SSTable",
+      "definition": "A sorted, immutable file written when a memtable is flushed or when files are merged."
+    },
+    {
+      "term": "Write-ahead log",
+      "definition": "An append-only file that records each change before it is applied, so a crash cannot lose it."
+    },
+    {
+      "term": "Compaction",
+      "definition": "Merging sorted files into new ones, dropping overwritten and deleted entries and keeping reads short."
+    },
+    {
+      "term": "Bloom filter",
+      "definition": "A small summary that says a key is definitely absent or maybe present, so a read can skip a file."
+    },
+    {
+      "term": "Tombstone",
+      "definition": "A marker written for a delete that hides older versions of a key until compaction removes both."
+    },
+    {
+      "term": "Write amplification",
+      "definition": "The bytes written to disk for each byte the application writes, including rewrites during compaction or page updates."
+    },
+    {
+      "term": "Space amplification",
+      "definition": "The disk used for each byte of live data, including fragmentation and stale versions."
+    }
+  ],
+  "mistakes": [
+    "Assuming a B-tree is always the safe default. Meta found InnoDB wasted 25% to 30% of each block to fragmentation, and changing one row rewrote a whole 8 KB page.",
+    "Treating compaction as free housekeeping. Discord's Cassandra nodes fell behind on compactions, reads got more expensive, and engineers cycled nodes out of rotation to let them catch up.",
+    "Forgetting that a delete is a write. In an LSM-tree it leaves a marker until compaction reaches it: Discord's migration stalled at 99.9999% on uncompacted tombstones, and Meta added a SingleDelete type because markers slowed range scans."
+  ]
+}

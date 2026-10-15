@@ -432,7 +432,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic that builds on this one.",
-      "body": "Replicas replay the primary's log, but that raises new questions: how many copies must hold a change before it counts, and who takes over when the primary fails. Replication picks up from there."
+      "body": "Replicas replay the primary's log, but that raises new questions: how many copies must hold a change before it counts, and who takes over when the primary fails. Replication picks up from there. To look inside a database first, Storage Engines: B-trees and LSM-trees shows how it lays rows out on disk."
     }
   }
 }
