@@ -37,15 +37,17 @@ async function cacheFirst(req) {
 async function networkFirst(req, url) {
   const cache = await caches.open(PAGES);
   const key = pageKey(req, url);
-  try {
-    const res = await withTimeout(fetch(req), NETWORK_TIMEOUT_MS);
+  const hit = await cache.match(key, { ignoreVary: true });
+  const network = fetch(req).then((res) => {
     // A redirected response cannot answer a navigation, so it is not stored.
     if (res.ok && !res.redirected) cache.put(key, res.clone());
     return res;
+  });
+  // Only give up on a slow network when there is a saved copy to show instead.
+  try {
+    return await (hit ? withTimeout(network, NETWORK_TIMEOUT_MS) : network);
   } catch {
-    const hit = await cache.match(key, { ignoreVary: true });
-    if (hit) return hit;
-    return Response.error();
+    return hit || Response.error();
   }
 }
 
