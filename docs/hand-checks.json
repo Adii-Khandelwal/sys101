@@ -238,5 +238,41 @@
  "cloudflare-http3-2020|two page": {
   "verdict": "ok",
   "source": "post tests a 15KB page and a 1MB page"
+ },
+ "s3-warfield-2023|two jobs": {
+  "verdict": "ok",
+  "source": "post: redundancy schemes protect data from hardware failures, and \"redundancy also helps manage heat\" by spreading load"
+ },
+ "slack-jan-4-outage-2021|two directions": {
+  "verdict": "ok",
+  "source": "post: unhealthy instances were replaced, and the autoscaler first downscaled the web tier, then scaled up"
+ },
+ "github-aug-17-outage-2026|6 came": {
+  "verdict": "ok",
+  "source": "post: the August 6 incident and the August 17 incident; neither came from a code or configuration change"
+ },
+ "github-aug-17-outage-2026|four HAProxy": {
+  "verdict": "ok",
+  "source": "thread: eventually four HAProxy nodes exhausted their flow limits"
+ },
+ "metastable-failures-osdi-2022|1 lists": {
+  "verdict": "ok",
+  "source": "paper: Table 1 lists 21 metastable failures from public reports; the 22nd is from Twitter (section 4)"
+ },
+ "metastable-failures-osdi-2022|1 also": {
+  "verdict": "ok",
+  "source": "paper: Table 1 (21 from public reports) plus one at Twitter"
+ },
+ "crowdstrike-channel-291-2024|Two sides": {
+  "verdict": "ok",
+  "source": "RCA: the template type defined 21 inputs while the integration code supplied 20 values"
+ },
+ "crowdstrike-channel-291-2024|two more instances": {
+  "verdict": "ok",
+  "source": "RCA: On July 19, 2024, two additional IPC Template Instances were deployed"
+ },
+ "github-aug-17-outage-2026|ten times": {
+  "verdict": "ok",
+  "source": "incident thread #205164 (not the blog page): a latent VS Code retry bug \"amplified traffic by approximately 10x\""
  }
 }

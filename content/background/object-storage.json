@@ -1,0 +1,38 @@
+{
+  "topic": "object-storage",
+  "updatedOn": "2026-10-16",
+  "items": [
+    {
+      "id": "inode",
+      "name": "Files, inodes and file system metadata",
+      "explanation": "On a Unix-like file system every file has an inode, a record of information about the file such as its size and ownership.",
+      "assumedBy": [
+        {
+          "postId": "haystack-facebook-2010",
+          "quote": "requires at least one inode, which is hundreds of bytes"
+        }
+      ],
+      "sources": [
+        {
+          "title": "inode(7), Linux manual page",
+          "publisher": "Linux man-pages project",
+          "url": "https://man7.org/linux/man-pages/man7/inode.7.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-16"
+        }
+      ]
+    },
+    {
+      "id": "quorum-consensus",
+      "name": "Quorum and consensus protocols",
+      "explanation": "Machines agree on one answer by voting, so a majority decides even if some fail. It is powerful but hard to build correctly.",
+      "assumedBy": [
+        {
+          "postId": "dropbox-magic-pocket-2016",
+          "quote": "MP eschews quorum-style consensus or distributed coordination as much as possible"
+        }
+      ],
+      "topicPage": "consensus"
+    }
+  ]
+}

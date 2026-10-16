@@ -1,0 +1,34 @@
+{
+  "overload-and-cascading-failures": {
+    "summary": {
+      "points": [
+        "Overload turns into a cascading failure when retries, restarts and replacements add more load than the original problem, so a system can stay down after its trigger ends.",
+        "Slack's 2021 outage began with a cloud network limit, and the recovery path then overloaded itself when a request for 1,200 servers hit provisioning limits.",
+        "GitHub's 2026 outage began as a capacity failure, and client retry loops during recovery had to be stopped before traffic could safely return.",
+        "A research paper on public incident reports found retries to be the most common reason a failure sustained itself, and load shedding the usual way out."
+      ],
+      "figures": [
+        {
+          "postId": "slack-jan-4-outage-2021",
+          "row": 0,
+          "label": "The autoscaler asked for 1,200 servers while the network was degraded"
+        },
+        {
+          "postId": "github-aug-17-outage-2026",
+          "row": 0,
+          "label": "The August 17 outage lasted 7 hours and 47 minutes"
+        },
+        {
+          "postId": "metastable-failures-osdi-2022",
+          "row": 1,
+          "label": "Metastable failures caused at least 4 of 15 major AWS outages in a decade"
+        }
+      ]
+    },
+    "prerequisiteReasons": {
+      "circuit-breakers": "Overload topics build on circuit breakers and load shedding, which are the main defences once a dependency is failing or a server is past its limit.",
+      "rate-limiting": "Rate limiting caps what one client can send, and this topic shows what happens when the total load still passes capacity and clients retry.",
+      "load-balancing": "Load balancers decide where requests go and which instances count as healthy, so their health checks and panic mode shape how an overload spreads."
+    }
+  }
+}

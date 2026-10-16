@@ -1,0 +1,20 @@
+{
+  "safe-deployments": {
+    "summary": {
+      "points": [
+        "A safe rollout exposes a change to a small share of real traffic first, watches it, and widens only if it behaves.",
+        "Configuration and data files need the same stages as code, because a bad file can break every machine as fast as bad code.",
+        "Amazon describes the mechanism: a one-box stage, waves of growing size, alarms that roll back, and a bake time between stages.",
+        "Cloudflare's feature file and CrowdStrike's content update each reached a very large fleet with no small first step to stop them."
+      ],
+      "figures": [
+        { "postId": "cloudflare-outage-2025", "row": 0, "label": "Feature limit of 200 features, against about 60 in use" },
+        { "postId": "aws-hands-off-deployments", "row": 1, "label": "A one-box stage serves at most ten percent of requests" },
+        { "postId": "crowdstrike-channel-291-2024", "row": 0, "label": "Template defined 21 fields, 20 values were supplied" }
+      ]
+    },
+    "prerequisiteReasons": {
+      "load-balancing": "Safe deployments take from load balancing the way traffic is split across servers, which lets a new version take a small share first."
+    }
+  }
+}

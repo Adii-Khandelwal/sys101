@@ -1,0 +1,66 @@
+{
+  "topic": "overload-and-cascading-failures",
+  "updatedOn": "2026-10-16",
+  "items": [
+    {
+      "id": "autoscaling-group",
+      "name": "Auto Scaling group",
+      "explanation": "A set of cloud servers managed as one unit. It keeps a chosen number of instances running, replaces unhealthy ones, and adds or removes instances between a minimum and a maximum size that you set.",
+      "assumedBy": [
+        {
+          "postId": "slack-jan-4-outage-2021",
+          "quote": "The large number of broken instances caused us to hit our pre-configured autoscaling-group size limits, which determine the maximum number of instances in our web tier."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Auto Scaling groups",
+          "publisher": "Amazon Web Services",
+          "url": "https://docs.aws.amazon.com/autoscaling/ec2/userguide/auto-scaling-groups.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-16"
+        }
+      ]
+    },
+    {
+      "id": "transit-gateway",
+      "name": "Transit Gateway and VPCs",
+      "explanation": "A VPC is a private network inside a cloud account. A transit gateway is a managed hub that connects many VPCs, so traffic between them flows through it and shares its capacity.",
+      "assumedBy": [
+        {
+          "postId": "slack-jan-4-outage-2021",
+          "quote": "We use AWS Transit Gateways (TGWs) as hubs to link our VPCs."
+        }
+      ],
+      "sources": [
+        {
+          "title": "What is AWS Transit Gateway for Amazon VPC?",
+          "publisher": "Amazon Web Services",
+          "url": "https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-16"
+        }
+      ]
+    },
+    {
+      "id": "open-files-limit",
+      "name": "The open files limit",
+      "explanation": "Linux caps how many files a process may hold open at once, and network connections count as files. A process that reaches the cap gets errors when it tries to open another.",
+      "assumedBy": [
+        {
+          "postId": "slack-jan-4-outage-2021",
+          "quote": "the most significant one was the Linux open files limit, but we also exceeded an AWS quota limit"
+        }
+      ],
+      "sources": [
+        {
+          "title": "getrlimit(2): get/set resource limits (RLIMIT_NOFILE)",
+          "publisher": "Linux man-pages project",
+          "url": "https://man7.org/linux/man-pages/man2/getrlimit.2.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-16"
+        }
+      ]
+    }
+  ]
+}

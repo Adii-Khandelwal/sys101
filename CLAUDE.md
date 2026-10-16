@@ -19,16 +19,16 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 
 ## Future plan (topics to add next)
 
-Researched in Oct 2026 and revised after the owner review; the live site has 22 topics. Full sources, figures and risks are in `docs/roadmap.md` (read it only when planning a topic; every figure there still goes through `add-post`). Order, each topic with at most 3 prerequisites so the map layout test stays clean (test the placement on a stub first, `add-topic` step 1). Each source appears in one place only.
+Researched in Oct 2026 and revised after the owner review; the site has 26 topics (batch 1 built on branch `batch-1-topics`, not yet live). Full sources, figures and risks are in `docs/roadmap.md` (read it only when planning a topic; every figure there still goes through `add-post`). Order, each topic with at most 3 prerequisites so the map layout test stays clean (test the placement on a stub first, `add-topic` step 1). Each source appears in one place only.
 
-1. Batch 1 (existing prerequisites only): `overload-and-cascading-failures` (weakest: look for a retry-amplification post), `safe-deployments`, `object-storage`, `real-time-delivery`.
+1. Batch 1 (built, awaiting merge; prerequisites were trimmed to keep the map clean): `overload-and-cascading-failures` (weakest: look for a retry-amplification post), `safe-deployments`, `object-storage`, `real-time-delivery`.
 2. Batch 2: `log-based-streaming` (CDC is a section), `autoscaling-and-capacity`, `time-clocks-and-consistency` (consistency models merged in).
 3. Batch 3: `stream-vs-batch-processing`, `disaster-recovery-and-backups`, `exactly-once-processing` (only after a second company source).
 4. Batch 4: `probabilistic-data-structures`, `api-design-rpc-rest-graphql`, `service-mesh-and-api-gateways`, `online-schema-migrations`.
 5. Parked, no passing source yet: `observability-and-slos`, `multi-region-traffic-routing`. Search is not a new node: add the Notion 2026 reindexing post to the existing `indexing` topic (an `add-post` task).
 6. Capstones after batch 1 and 2: metrics pipeline, file sync (needs one more source), payments ledger, social graph store (TAO); chat needs sources of its own (Slack 2023 belongs to `real-time-delivery`); later: notifications, live video; ride dispatch not ready.
 
-Go-live bar for an announcement: batches 1 and 2 (29 topics); add the chat capstone once it has sources. Post rule 4 as decided by the owner: papers by teams that ran the system, MongoDB Atlas and the CrowdStrike RCA count; Confluent and Debezium are explanation only.
+Go-live bar for an announcement: batches 1 and 2 (seven new topics); add the chat capstone once it has sources. Post rule 4 as decided by the owner: papers by teams that ran the system, MongoDB Atlas and the CrowdStrike RCA count; Confluent and Debezium are explanation only.
 
 ## Where the detail lives (`.claude/rules/`)
 

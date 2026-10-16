@@ -18,7 +18,7 @@ Applies when editing the map, its layout or the node-open transition.
 - Layout is deterministic and static. Draw only the transitive reduction by default. No edge crosses a label or node.
 - Node states never rely on color alone: unread (thin outline), ready (thicker outline + centre dot), in progress (rust outline + rust centre dot, for a topic deliberately started), read (filled rust). In progress ranks above ready. The Path view shows the same legend (components/StateLegend.tsx) above its list, and names what each topic builds on before the reasons.
 - Pan is desktop-only and starts at INTERACTIVE_MIN_NODES topics; zoom is keyboard-only (`+`/`-`/`0`). Zoom and Show all links have no on-screen buttons (camera and edge-filter state stay); the one exception is a "Fit to size" text button on an interactive map, disabled while the view is fitted. A phone gets the fixed map. Keep a plain text index and keyboard use as the fallback.
-- After adding a topic, check the map at 1280px, 1440px, and 390px for zero crossings and overlaps. At 1280px also test that sideways page scroll and map pan do not conflict.
+- After adding a topic, check the map at 1280px and 1440px for zero crossings and overlaps (a phone has no map, only the Path view, so there is no 390px map check). At 1280px also test that sideways page scroll and map pan do not conflict.
 
 ## Specification
 

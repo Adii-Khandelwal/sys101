@@ -1,0 +1,256 @@
+{
+  "slug": "real-time-delivery",
+  "promise": "After this you can explain how a server pushes data to a client over an open connection, the difference between WebSockets and server-sent events, and why keeping connections open changes how a service is run.",
+  "before": {
+    "prerequisites": [
+      "http-tcp-tls"
+    ],
+    "terms": [
+      {
+        "term": "Request and response",
+        "definition": "The usual web pattern: a client sends a request and the server sends one reply, after which the exchange is over."
+      },
+      {
+        "term": "TCP connection",
+        "definition": "A reliable two-way channel between two programs that stays up until one side closes it."
+      },
+      {
+        "term": "Server",
+        "definition": "A program that waits for connections from clients and does work for them."
+      }
+    ],
+    "note": "The HTTP, TCP and TLS topic explains the connection that every technique here starts from. If the three terms above are familiar, you are ready."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "On the web, the client normally speaks first. It sends a request, the server answers, and the server has no way to bring up anything new later. That is awkward for a chat message or a live score, where the server learns something new at a moment the client cannot guess.",
+        "The old workaround is polling, where the client asks again and again. The WebSocket standard describes it as an abuse of HTTP that needs a separate TCP connection for each incoming message, carries an HTTP header on every message from the client, and forces the page to keep track of which request belongs to which reply [[rfc6455]].",
+        "Two web features fix this by keeping a connection open. A WebSocket opens a single two-way channel between a browser and a server, so each side can send without polling [[mdn-websockets]]. Server-sent events are simpler and one-way: the page opens an EventSource, and the server keeps sending messages over that connection [[whatwg-sse]]."
+      ],
+      "terms": [
+        {
+          "term": "Polling",
+          "definition": "Asking the server repeatedly whether anything has changed."
+        },
+        {
+          "term": "WebSocket",
+          "definition": "A protocol that gives a browser and a server one two-way connection over a single TCP connection [[rfc6455]]."
+        },
+        {
+          "term": "Server-sent events",
+          "definition": "A browser feature in which a page opens an EventSource and the server pushes messages to it over HTTP [[whatwg-sse]]."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rfc6455",
+          "section": "1.1 Background",
+          "what": "Why polling over HTTP was a poor fit for two-way communication, and what the WebSocket Protocol offers instead."
+        },
+        {
+          "source": "mdn-websockets",
+          "section": "The introduction at the top of the page",
+          "what": "What the WebSocket API is for, in one paragraph."
+        }
+      ],
+      "canNow": [
+        "Say why polling is a poor way to learn about changes quickly.",
+        "Name a two-way and a one-way way to keep a connection open.",
+        "Say who speaks first in an ordinary web request."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "A WebSocket starts as an ordinary HTTP request. The client sends a GET with an Upgrade: websocket header and a few Sec-WebSocket headers, and the server answers with 101 Switching Protocols. After that the same TCP connection carries WebSocket messages instead of HTTP [[rfc6455]]. The protocol uses port 80 for plain connections and port 443 when it is tunnelled over TLS [[rfc6455]].",
+        "Either side can end the connection by sending a Close control frame. The other side replies with its own Close frame, and then the first side closes the TCP connection, which tells both sides that no more data is coming [[rfc6455]].",
+        "Server-sent events use plain HTTP. The server answers with the content type text/event-stream and keeps writing lines such as data: followed by text. Messages can carry an event: name, and the default type is message [[whatwg-sse]]. The browser decodes the stream as UTF-8 and calls your handlers as events arrive [[whatwg-sse]]."
+      ],
+      "terms": [
+        {
+          "term": "Upgrade handshake",
+          "definition": "The opening HTTP exchange in which the client asks to switch to WebSocket and the server agrees with 101 Switching Protocols [[rfc6455]]."
+        },
+        {
+          "term": "Close frame",
+          "definition": "A control frame that starts the closing handshake of a WebSocket connection [[rfc6455]]."
+        },
+        {
+          "term": "text/event-stream",
+          "definition": "The content type of a server-sent events response [[whatwg-sse]]."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rfc6455",
+          "section": "1.2 Protocol Overview, and 1.4 Closing Handshake",
+          "what": "The opening request and reply, and how either side closes the connection."
+        },
+        {
+          "source": "whatwg-sse",
+          "section": "9.2.1 Introduction",
+          "what": "A short example of a client and a stream in the text/event-stream format."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 200\" role=\"img\" aria-labelledby=\"dg-learn-real-time-delivery-how-t\" class=\"dg\"><title id=\"dg-learn-real-time-delivery-how-t\">Three ways to get updates: polling asks again and again, long polling holds each request open until there is news, and a WebSocket or event stream stays open so the server can send at any time.</title><defs><marker id=\"dg-learn-real-time-delivery-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"18\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Polling</text><rect x=\"14\" y=\"28\" width=\"90\" height=\"36\" class=\"dg-box\"/><text x=\"59\" y=\"50.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><rect x=\"300\" y=\"28\" width=\"90\" height=\"36\" class=\"dg-box\"/><text x=\"345\" y=\"50.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Server</text><path d=\"M104,40 L300,40\" class=\"dg-line\" marker-end=\"url(#dg-learn-real-time-delivery-how-a)\"/><path d=\"M300,54 L104,54\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-learn-real-time-delivery-how-a)\"/><text x=\"452\" y=\"38\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">asks, gets nothing, asks again</text><text x=\"14\" y=\"90\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Long polling</text><rect x=\"14\" y=\"100\" width=\"90\" height=\"36\" class=\"dg-box\"/><text x=\"59\" y=\"122.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><rect x=\"300\" y=\"100\" width=\"90\" height=\"36\" class=\"dg-box\"/><text x=\"345\" y=\"122.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Server</text><path d=\"M104,112 L300,112\" class=\"dg-line\" marker-end=\"url(#dg-learn-real-time-delivery-how-a)\"/><path d=\"M300,126 L104,126\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-learn-real-time-delivery-how-a)\"/><text x=\"452\" y=\"110\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">answer waits for news</text><text x=\"14\" y=\"162\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Open connection</text><rect x=\"14\" y=\"172\" width=\"90\" height=\"22\" class=\"dg-box\"/><text x=\"59\" y=\"187.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><rect x=\"300\" y=\"172\" width=\"90\" height=\"22\" class=\"dg-box\"/><text x=\"345\" y=\"187.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Server</text><path d=\"M104,183 L300,183\" class=\"dg-line\" marker-end=\"url(#dg-learn-real-time-delivery-how-a)\"/><text x=\"452\" y=\"182\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">either side can send</text></svg>",
+      "canNow": [
+        "Describe how a WebSocket starts from an HTTP request.",
+        "Say what the 101 response means.",
+        "Describe what a server-sent events stream looks like on the wire."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "A long-lived connection can quietly die, so both protocols give ways to check it. The WebSocket standard defines Ping and Pong control frames: a Ping can be a keepalive or a way to check that the other side still responds, and a Pong may also be sent unprompted as a one-way heartbeat [[rfc6455]]. Server-sent events have a similar trick: legacy proxies are known to drop HTTP connections after a short idle time, so authors can send a comment line, one that starts with a colon, every 15 seconds or so [[whatwg-sse]].",
+        "Reconnecting is where the two differ most. An EventSource reconnects by itself if the connection closes, and a server can tell it to stop by answering with 204 No Content [[whatwg-sse]]. Each event can carry an id, and on reconnect the browser sends the last one in a Last-Event-ID header, so the server can resume from there. A server can set the wait before reconnecting with a retry field [[whatwg-sse]]. The WebSocket sources cited here describe no matching resume feature, so an application would have to handle that itself.",
+        "Closing has a vocabulary too. Status code 1001 means an endpoint is going away, for example because a server is going down or a browser has left the page [[rfc6455]]."
+      ],
+      "terms": [
+        {
+          "term": "Ping and Pong",
+          "definition": "WebSocket control frames used to check that the other end is alive [[rfc6455]]."
+        },
+        {
+          "term": "Last-Event-ID",
+          "definition": "A header the browser sends when an EventSource reconnects, carrying the last event id it saw [[whatwg-sse]]."
+        },
+        {
+          "term": "1001 Going Away",
+          "definition": "The WebSocket close code for an endpoint that is going away, such as a server going down [[rfc6455]]."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rfc6455",
+          "section": "5.5.2 Ping and 5.5.3 Pong, and 7.4.1 Defined Status Codes",
+          "what": "What the heartbeat frames are for and what the close codes mean."
+        },
+        {
+          "source": "whatwg-sse",
+          "section": "9.2.4 The Last-Event-ID header, and 9.2.7 Authoring notes",
+          "what": "How a stream resumes after a drop, and the advice about legacy proxies."
+        }
+      ],
+      "canNow": [
+        "Explain what a heartbeat is for.",
+        "Explain how server-sent events resume after a drop.",
+        "Say what close code 1001 signals."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "The WebSocket standard itself says that in setups with load balancers and several servers, a separate set of hosts for WebSocket connections is probably easier to manage than mixing them with ordinary HTTP servers. It also says traffic from interactive messaging does not look like standard HTTP traffic and can put unusual load on some components [[rfc6455]]. This is the start of running a connection layer as its own fleet, which the posts on the topic page describe at very large scale.",
+        "Volume can be a problem too. MDN notes that the WebSocket interface does not support backpressure, so if messages arrive faster than the application can handle them, the device can run out of memory or become unresponsive, or both. It points to WebSocketStream, which is non-standard and supported by one engine, and to WebTransport, which it expects to replace WebSockets for many uses but which is more complex and less widely supported [[mdn-websockets]].",
+        "Server-sent events have their own limit. The standard warns that browsers cap connections per server, so several pages open to the same site, each with an EventSource, can run into trouble [[whatwg-sse]]. MDN adds that an open WebSocket may stop a page from being kept in the browser's back-forward cache, so connections should be closed when the user is done [[mdn-websockets]]."
+      ],
+      "terms": [
+        {
+          "term": "Backpressure",
+          "definition": "A way for a receiver that is falling behind to slow the sender down. MDN says the WebSocket interface lacks it [[mdn-websockets]]."
+        },
+        {
+          "term": "WebTransport",
+          "definition": "A newer low-level API that MDN expects to replace WebSockets for many uses [[mdn-websockets]]."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rfc6455",
+          "section": "1.8 Establishing a Connection",
+          "what": "The advice on running WebSocket traffic on its own hosts, and on ports 80 and 443."
+        },
+        {
+          "source": "mdn-websockets",
+          "section": "The introduction, about WebSocketStream, WebTransport and the back-forward cache",
+          "what": "The limits of the WebSocket interface and what MDN says may replace it."
+        },
+        {
+          "source": "whatwg-sse",
+          "section": "9.2.7 Authoring notes",
+          "what": "The advice on proxies and on connection limits when many pages hold a stream."
+        }
+      ],
+      "canNow": [
+        "Say why a connection layer is often its own fleet.",
+        "Say what backpressure is and why WebSockets lack it.",
+        "Name one limit of server-sent events in a browser."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "A WebSocket is a separate network that replaces HTTP.",
+      "truth": "It starts as an HTTP request that the server answers with 101 Switching Protocols, and then it uses the same TCP connection [[rfc6455]]."
+    },
+    {
+      "myth": "Server-sent events are just a worse WebSocket.",
+      "truth": "They only send from server to client, but the browser reconnects on its own and can resume from the last event id [[whatwg-sse]]. For one-way updates that is enough."
+    },
+    {
+      "myth": "If a connection is open, it is working.",
+      "truth": "A connection can die silently, which is why the WebSocket standard defines Ping and Pong frames to check it [[rfc6455]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These are examples to read, copied from the standards. You can type the two JavaScript lines into a browser console if you have a stream to point at, but there is no output to show here. The names updates.cgi, addHandler and /chat are the specs' own example names, and nothing here runs unless a server exists at that address.",
+    "commands": [
+      {
+        "command": "var source = new EventSource('updates.cgi');",
+        "shows": "Opens an event stream from the given address. The page gives it as the way a client starts receiving server-sent events.",
+        "source": "whatwg-sse",
+        "note": "Spec example name, not a real address."
+      },
+      {
+        "command": "source.addEventListener('add', addHandler, false);",
+        "shows": "Registers a handler for events whose event: name is add. The default event type is message.",
+        "source": "whatwg-sse",
+        "note": "Spec example name, not a real function."
+      },
+      {
+        "command": "GET /chat HTTP/1.1",
+        "shows": "The first line of the client's WebSocket opening handshake, followed by headers such as Upgrade: websocket. The server's reply starts with HTTP/1.1 101 Switching Protocols.",
+        "source": "rfc6455",
+        "note": "This is a line of the example, not something to type into a terminal."
+      }
+    ]
+  },
+  "next": "Go back to the Real-time Delivery topic page for the worked example and the quiz, then read the two company posts: [Slack](/topic/real-time-delivery#slack-realtime-messaging-2023) on routing messages to the right channel server, and [Netflix](/topic/real-time-delivery#netflix-pushy-2024) on running hundreds of millions of connections.",
+  "sources": [
+    {
+      "id": "rfc6455",
+      "title": "RFC 6455: The WebSocket Protocol",
+      "url": "https://datatracker.ietf.org/doc/html/rfc6455",
+      "publisher": "IETF",
+      "kind": "Internet standard",
+      "year": "2011",
+      "verifiedOn": "2026-10-16"
+    },
+    {
+      "id": "whatwg-sse",
+      "title": "HTML Standard, section 9.2: Server-sent events",
+      "url": "https://html.spec.whatwg.org/multipage/server-sent-events.html",
+      "publisher": "WHATWG",
+      "kind": "Internet standard",
+      "year": "page shows last updated 2026-10-14",
+      "verifiedOn": "2026-10-16",
+      "note": "A living standard, so details can change."
+    },
+    {
+      "id": "mdn-websockets",
+      "title": "WebSocket API (WebSockets)",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API",
+      "publisher": "MDN Web Docs",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-09-12",
+      "verifiedOn": "2026-10-16"
+    }
+  ]
+}

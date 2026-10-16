@@ -425,7 +425,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic that builds on this one.",
-      "body": "Every replica still holds all the data, so replication cannot help a table that is too big or too busy for one machine. Sharding picks up from there, building on Consistent Hashing as well."
+      "body": "Every replica still holds all the data, so replication cannot help a table that is too big or too busy for one machine. Sharding picks up from there, building on Consistent Hashing as well. Object Storage is a later case of the same idea: keeping objects safe across many drives with copies and erasure coding."
     }
   }
 }

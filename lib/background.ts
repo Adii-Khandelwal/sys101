@@ -42,11 +42,19 @@ export function isTaughtLater(item: Pick<BackgroundItem, "topicPage">, slug: str
   return !!item.topicPage && (numbers.get(item.topicPage) ?? 0) > (numbers.get(slug) ?? 0);
 }
 
+// One ordering per topics array: validating every file used to redo it once per file, which grows with the topic count.
+const numbersCache = new WeakMap<Topic[], Map<string, number>>();
+const numbersOf = (topics: Topic[]) => {
+  let n = numbersCache.get(topics);
+  if (!n) numbersCache.set(topics, (n = topicNumbers(topicOrder(topics))));
+  return n;
+};
+
 /** Everything wrong with one background file. Run at load, so a bad file fails the build like a bad topic does. */
 export function validateBackground(file: string, b: Background, topics: Topic[]): string[] {
   const problems: string[] = [];
   const bySlug = new Map(topics.map((t) => [t.slug, t]));
-  const numbers = topicNumbers(topicOrder(topics));
+  const numbers = numbersOf(topics);
   const topic = bySlug.get(b.topic);
   if (`${b.topic}.json` !== file) problems.push(`${file}: topic "${b.topic}" does not match the file name`);
   if (!topic) return [...problems, `${file}: no topic "${b.topic}"`];

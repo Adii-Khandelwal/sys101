@@ -244,7 +244,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic that builds on this one.",
-      "body": "A rate limiter protects a service from too much traffic. The next topics, Circuit Breakers and Load Shedding and then Failover, cover what to do when a dependency is already failing."
+      "body": "A rate limiter protects a service from too much traffic. The next topics, Circuit Breakers and Load Shedding and then Failover, cover what to do when a dependency is already failing. Overload and Cascading Failures then covers what happens when limits and breakers are not enough and a failure spreads. Safe Deployments then borrows the same habit of capping what one change can touch, applied to releases."
     }
   },
   "posts": [

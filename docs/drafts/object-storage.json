@@ -1,0 +1,21 @@
+{
+  "object-storage": {
+    "summary": {
+      "points": [
+        "Object storage keeps a small index of where each object lives apart from the large pile of drives that hold the bytes.",
+        "Facebook found that per-photo file metadata was the bottleneck, so it packed photos into large files and kept the offsets in memory.",
+        "Amazon spreads each object's erasure coded shards over its own set of drives so no customer's reads land on a few hot disks.",
+        "Dropbox groups blocks into buckets, runs one Master per cell, and adds capacity by adding cells."
+      ],
+      "figures": [
+        { "postId": "s3-warfield-2023", "row": 0, "label": "Drive capacity has improved 7.2 million times since 1956, seek time only 150x" },
+        { "postId": "haystack-facebook-2010", "row": 4, "label": "28% less cost per usable terabyte than the NAS design" },
+        { "postId": "dropbox-magic-pocket-2016", "row": 0, "label": "A typical cell holds 50 PB of raw data" }
+      ]
+    },
+    "prerequisiteReasons": {
+      "replication": "Object stores keep several copies or coded shards of every object, so replication explains why redundancy is needed and what it costs in space and repair work.",
+      "sharding": "Object stores spread keys and data over many drives and cells, so sharding explains how data is split across machines and why balance matters."
+    }
+  }
+}

@@ -12,7 +12,7 @@ A feature is not done until it works on a phone and a laptop. Read `.claude/rule
 3. **Run the automated check:** `npm run check:ui` (all sitemap pages x 1440 and 390 x light and dark): sideways scroll, hover-tooltip sources, short labels split over lines, broken company marks, layout shift. Fix what it reports. Add a case to `scripts/ui-audit.mjs` when a new class of bug shows up.
 4. **Specific checks by area:**
    - Homepage: the map's top edge is visible at 1440x800 and 390x844; the right edges (pitch, search underline, Map/Path, Fit to size) line up; the start button reads for a first visit, with one started topic, with several, and when everything is read (seed `localStorage` keys `sys101:read`, `sys101:progress`, `sys101:updated`).
-   - Map: after adding or moving anything, zero crossings and overlaps at 1280, 1440 and 390; group labels clear of rings, lines and labels.
+   - Map: after adding or moving anything, zero crossings and overlaps at 1280 and 1440 (a phone has no map, only the Path view); group labels clear of rings, lines and labels.
    - Tours: `npm run check:tour`; no jumps (page, outline and tooltip share one eased clock).
    - Toggles: every "Mark done" style control undoes on a second click.
    - Touch: taps are 44px (pseudo-element areas count), phone wording names no key.

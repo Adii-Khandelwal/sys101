@@ -1,0 +1,66 @@
+{
+  "topic": "real-time-delivery",
+  "updatedOn": "2026-10-16",
+  "items": [
+    {
+      "id": "envoy",
+      "name": "Envoy",
+      "explanation": "An open source proxy that sits in front of services, forwards their traffic and can end TLS. Slack uses it as the first stop for the websocket connections that clients open.",
+      "assumedBy": [
+        {
+          "postId": "slack-realtime-messaging-2023",
+          "quote": "Envoy is used at Slack as a load-balancing solution for various services and TLS termination."
+        }
+      ],
+      "sources": [
+        {
+          "title": "What is Envoy",
+          "publisher": "Envoy project",
+          "url": "https://www.envoyproxy.io/docs/envoy/latest/intro/what_is_envoy",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-16"
+        }
+      ]
+    },
+    {
+      "id": "service-discovery",
+      "name": "Service discovery (Consul)",
+      "explanation": "A catalog where services register where they are, so other services can look them up by name instead of by a fixed address. Consul is the tool Slack names for this.",
+      "assumedBy": [
+        {
+          "postId": "slack-realtime-messaging-2023",
+          "quote": "The diagram below shows how CSs are registered in Consul, our service discovery tool."
+        }
+      ],
+      "sources": [
+        {
+          "title": "What is service discovery?",
+          "publisher": "HashiCorp",
+          "url": "https://developer.hashicorp.com/consul/docs/concepts/service-discovery",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-16"
+        }
+      ]
+    },
+    {
+      "id": "network-load-balancer",
+      "name": "Network load balancer (NLB)",
+      "explanation": "An AWS load balancer that spreads incoming TCP, UDP and TLS connections across a group of targets. Netflix names its connection limits as one reason to hold more connections on each node.",
+      "assumedBy": [
+        {
+          "postId": "netflix-pushy-2024",
+          "quote": "would have to shard Pushy further to get around NLB connection limits"
+        }
+      ],
+      "sources": [
+        {
+          "title": "What is a Network Load Balancer?",
+          "publisher": "Amazon Web Services",
+          "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/network/introduction.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-16"
+        }
+      ]
+    }
+  ]
+}
