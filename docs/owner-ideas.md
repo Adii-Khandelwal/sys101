@@ -24,3 +24,4 @@ Moved out of CLAUDE.md to keep it short. Every idea or preference the owner stat
 - Phone view: no "Mark group read" button in the Path view (still on laptop widths) (`progress-tracking.md`).
 - Future plan: research all sensible next topics with their tech blogs, record them in CLAUDE.md ("Future plan", detail in `docs/roadmap.md`), aiming at a ready-to-announce version of the site (batches 1 and 2 plus the chat capstone).
 - Pull requests: after every push, create the PR with `gh pr create` and give the link; never leave the compare page for the owner to fill in (`CLAUDE.md` "Git and releases").
+- Roadmap revision: merge consistency models into time and clocks, fold CDC into log-based streaming, no separate search node (add a post to Indexing and Search), each source in one place only; accept papers by teams that ran the system, MongoDB Atlas and the CrowdStrike RCA, not Confluent or Debezium (`docs/roadmap.md`, CLAUDE.md "Future plan").
