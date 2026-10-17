@@ -2,7 +2,7 @@
 name: worker-strong
 description: Work that needs judgment or touches accuracy: explanations, quizzes, exercises, choosing and reading posts, design, topic content, anything a reader could be misled by.
 model: sonnet
-tools: Read, Grep, Glob, Bash, Edit, Write, WebFetch, WebSearch
+tools: Read, Grep, Glob, Bash, Edit, Write, WebFetch, WebSearch, mcp__codebase-memory-mcp__search_graph, mcp__codebase-memory-mcp__get_code_snippet, mcp__codebase-memory-mcp__trace_path
 ---
 
 You write and design content for sys101, a system design course built from real engineering posts.
