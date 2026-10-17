@@ -438,7 +438,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic that builds on this one.",
-      "body": "Pub-sub builds on this: instead of one consumer taking each message, every subscriber gets a copy. Rate limits came up in both posts, Slack's relay and Meta's per-team limits, and Rate Limiting is a separate topic on the map. A message that is delivered twice is a retry, and Idempotency and Retries covers how to make repeating the work safe."
+      "body": "Pub-sub builds on this: instead of one consumer taking each message, every subscriber gets a copy. Log-based Streaming goes a step further: the messages stay in an ordered log after they are read, so consumers can replay them and new ones can start from the past. Rate limits came up in both posts, Slack's relay and Meta's per-team limits, and Rate Limiting is a separate topic on the map. A message that is delivered twice is a retry, and Idempotency and Retries covers how to make repeating the work safe."
     }
   }
 }

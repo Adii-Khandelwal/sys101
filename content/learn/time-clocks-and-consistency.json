@@ -1,0 +1,299 @@
+{
+  "slug": "time-clocks-and-consistency",
+  "promise": "After this you can explain why two machines disagree about time, how NTP and logical clocks deal with it, what linearizable and eventual consistency promise, and follow the Meta, Facebook and MongoDB posts.",
+  "before": {
+    "prerequisites": [
+      "distributed-transactions"
+    ],
+    "terms": [
+      {
+        "term": "Replica",
+        "definition": "A copy of the same data held on another machine, kept so reads can spread out and a machine can fail without losing data."
+      },
+      {
+        "term": "Timestamp",
+        "definition": "A number or date and time attached to an event or a write, used to say when it happened or which came later."
+      },
+      {
+        "term": "Transaction",
+        "definition": "A group of reads and writes that should take effect together or not at all."
+      }
+    ],
+    "note": "You do not need the full Distributed Transactions topic for the stages below. It helps on the topic page, where the order in which commits happen matters. If the three terms are familiar, you are ready."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "A computer keeps time with a small quartz crystal that vibrates at a set rate, and it counts the vibrations. No two crystals are identical and temperature changes the rate, so one clock runs fast and another runs slow [[cam-dist-sys]]. That rate error is called drift. The notes measure it in parts per million: 1 ppm is one microsecond gained or lost every second, about 86 ms a day [[cam-dist-sys]]. They say most computer clocks stay within about 50 ppm [[cam-dist-sys]], and the chrony FAQ says a typical computer clock drifts by less than 100 ppm [[chrony-faq]].",
+        "Because of drift, two machines that start in agreement slowly disagree. The difference between two clocks at one moment is called skew [[cam-dist-sys]]. To keep it small, a machine regularly asks a server with a better source of time, such as an atomic clock or a GPS receiver, using a protocol such as NTP or PTP [[cam-dist-sys]].",
+        "Time of day has another wrinkle. The Earth does not rotate at a steady speed, so UTC sometimes adds a leap second to stay close to it. Software that ignores leap seconds can break, and a common fix is to smear the extra second over several hours [[cam-dist-sys]].",
+        "Machines also carry two different clocks. A time-of-day clock gives the date and time and can jump when it is corrected. A monotonic clock only moves forward and is meant for measuring how long something took on one machine, so it is the right one for timing a function [[cam-dist-sys]]."
+      ],
+      "terms": [
+        {
+          "term": "Drift",
+          "definition": "How fast or slow a clock runs compared with true time."
+        },
+        {
+          "term": "Skew",
+          "definition": "The difference between two clocks at one moment."
+        },
+        {
+          "term": "Leap second",
+          "definition": "A second added to UTC now and then to keep it in step with the Earth's rotation."
+        },
+        {
+          "term": "Time-of-day clock",
+          "definition": "A clock that reports a date and time and can jump forward or backward when corrected."
+        },
+        {
+          "term": "Monotonic clock",
+          "definition": "A clock that only moves forward, used to measure elapsed time on one machine."
+        }
+      ],
+      "reading": [
+        {
+          "source": "cam-dist-sys",
+          "section": "Section 3.1 Physical clocks and the start of 3.2 Clock synchronisation and monotonic clocks",
+          "what": "Quartz clocks, drift in ppm, atomic clocks, GPS, UTC, leap seconds and the two kinds of clock."
+        },
+        {
+          "source": "chrony-faq",
+          "section": "Question 2.6, How can I make the system clock more secure?",
+          "what": "The part that says how much a typical computer clock drifts."
+        }
+      ],
+      "canNow": [
+        "Explain why two clocks on two machines drift apart.",
+        "Say what drift and skew mean.",
+        "Pick the right clock for timing a function."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "NTP estimates the gap between a client's clock and a server's with four timestamps. The client sends a request stamped t1 by its own clock. The server notes when it received it (t2) and when it sent the reply (t3). The client notes when the reply arrived (t4). The round trip minus the server's processing time is the network delay, and half of it is taken as the one-way delay [[cam-dist-sys]].",
+        "The weak point is the assumption behind that halving: that the delay is the same in both directions. If one direction is queued behind other traffic, the estimate is off and the client cannot tell [[cam-dist-sys]]. The chrony FAQ says the same in its own terms: a clock can look stable to nanoseconds and still be off by milliseconds because of asymmetric network delay [[chrony-faq]]. To limit random error, NTP takes several samples, applies statistics to them and can ask several servers, discarding outliers [[cam-dist-sys]].",
+        "Once the client has an estimate it corrects its clock. A small error is closed gently by running the clock a little faster or slower, called slewing. A larger one is closed by stepping, which sets the clock directly, so applications see time jump. A very large error is left for a person to fix. In the notes' example, slewing is used below 125 ms, stepping up to 1,000 s, and anything beyond that is refused [[cam-dist-sys]]. In chrony, stepping has to be allowed with the makestep directive [[chrony-faq]].",
+        "To improve accuracy, the chrony FAQ advises using servers that are well synchronised, stable and close, and at least three or four of them, so a server giving false time can be detected. It also says to turn on hardware timestamping if the network card supports it, which makes the stamps on NTP packets steadier [[chrony-faq]]."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 206\" role=\"img\" aria-labelledby=\"dg-learn-tcc-ntp-t\" class=\"dg\"><title id=\"dg-learn-tcc-ntp-t\">An NTP exchange. The client sends a request stamped t1, the server receives it at t2 and replies at t3, and the client receives the reply at t4. From the four times the client estimates the offset and the network delay.</title><defs><marker id=\"dg-learn-tcc-ntp-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"85\" y=\"6\" width=\"90\" height=\"26\" class=\"dg-box\"/><text x=\"130\" y=\"23.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><rect x=\"385\" y=\"6\" width=\"90\" height=\"26\" class=\"dg-box\"/><text x=\"430\" y=\"23.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Server</text><path d=\"M130,32 L130,150\" class=\"dg-line dg-dashed\"/><path d=\"M430,32 L430,150\" class=\"dg-line dg-dashed\"/><path d=\"M130,52 L430,80\" class=\"dg-line\" marker-end=\"url(#dg-learn-tcc-ntp-a)\"/><path d=\"M430,100 L130,128\" class=\"dg-line\" marker-end=\"url(#dg-learn-tcc-ntp-a)\"/><text x=\"118\" y=\"56\" class=\"dg-note\" text-anchor=\"end\" font-size=\"12\">t1</text><text x=\"442\" y=\"84\" class=\"dg-note\" text-anchor=\"start\" font-size=\"12\">t2</text><text x=\"442\" y=\"104\" class=\"dg-note\" text-anchor=\"start\" font-size=\"12\">t3</text><text x=\"118\" y=\"132\" class=\"dg-note\" text-anchor=\"end\" font-size=\"12\">t4</text><text x=\"280\" y=\"62\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"12\">request</text><text x=\"280\" y=\"124\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"12\">response</text><text x=\"280\" y=\"172\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"12\">offset = ((t2 - t1) + (t3 - t4)) / 2</text><text x=\"280\" y=\"192\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"12\">delay = (t4 - t1) - (t3 - t2)</text></svg>",
+      "terms": [
+        {
+          "term": "Stratum",
+          "definition": "How many hops a time server is from the primary source: stratum 0 is the atomic clock or GPS receiver, stratum 1 syncs directly to it, and so on."
+        },
+        {
+          "term": "Slewing",
+          "definition": "Closing a small clock error by running the clock slightly faster or slower."
+        },
+        {
+          "term": "Stepping",
+          "definition": "Closing a larger clock error by setting the clock directly, which makes time jump."
+        },
+        {
+          "term": "Hardware timestamp",
+          "definition": "A time stamp put on a packet by the network card itself, not by software, so it has less unpredictable delay."
+        }
+      ],
+      "reading": [
+        {
+          "source": "cam-dist-sys",
+          "section": "Section 3.2 Clock synchronisation and monotonic clocks",
+          "what": "How NTP works out the offset from four timestamps, and how slewing, stepping and refusing differ."
+        },
+        {
+          "source": "chrony-faq",
+          "section": "Question 2.7, How can I improve the accuracy of the system clock with NTP sources?",
+          "what": "How many servers to use and how hardware timestamping helps."
+        },
+        {
+          "source": "chrony-faq",
+          "section": "Question 3.4, Is chronyd allowed to step the system clock?",
+          "what": "How chrony slews by default and how makestep allows a step."
+        }
+      ],
+      "canNow": [
+        "List the four NTP timestamps and what each one records.",
+        "Say why the equal-delay assumption can make the estimate wrong.",
+        "Say when a clock is slewed and when it is stepped."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "Even with good synchronisation, clocks cannot order messages reliably. The notes show a case: one user's message is stamped t1 on a fast clock, a reply is stamped t2 on a slower clock, and t2 comes out smaller than t1 although the reply was sent after the message was read [[cam-dist-sys]]. So distributed systems define order by cause. Event a happens before event b if both are on one node and a came first, or if a is the sending of a message and b is its receipt, or if a chain of such links joins them. Events with no chain between them are concurrent [[cam-dist-sys]].",
+        "A Lamport clock is a counter that follows that rule. Each node adds one for every event, and a receiver moves its counter past the number carried by the message. If a happened before b, a gets the smaller number, but a smaller number does not prove that a happened before b. A vector clock keeps one counter per node and can also tell that two events were concurrent [[cam-dist-sys]].",
+        "Google's route is to make physical time trustworthy enough. TrueTime is a clock available on all Google servers that lets an application make a timestamp T that is guaranteed to be greater than any earlier timestamp T' whose generation finished before T started [[gcp-truetime]]. Spanner uses it so that if one transaction finishes before another starts to commit, nobody ever sees the second without the first, which Google calls external consistency [[gcp-truetime]]. The Google page gives a bank example: if a server with a lagging clock stamped a debit earlier than the deposit that came before it, a snapshot read could show the debit without the deposit [[gcp-truetime]]."
+      ],
+      "terms": [
+        {
+          "term": "Happens-before",
+          "definition": "The order given by cause: same node in sequence, a message send before its receipt, and chains of those."
+        },
+        {
+          "term": "Concurrent events",
+          "definition": "Two events with no chain of messages between them, so neither could have influenced the other."
+        },
+        {
+          "term": "Lamport clock",
+          "definition": "A counter that gives a causally earlier event a smaller number."
+        },
+        {
+          "term": "Vector clock",
+          "definition": "A list of counters, one per node, that can show when two events were concurrent."
+        },
+        {
+          "term": "External consistency",
+          "definition": "In Spanner's words, if one transaction finishes before another starts to commit, nobody sees the second without the first."
+        }
+      ],
+      "reading": [
+        {
+          "source": "cam-dist-sys",
+          "section": "Section 3.3 Causality and happens-before, and 4.1 Logical time",
+          "what": "Why physical timestamps can disagree with causality, and how Lamport and vector clocks work."
+        },
+        {
+          "source": "gcp-truetime",
+          "section": "TrueTime and external consistency, then Timestamps and MVCC",
+          "what": "What TrueTime guarantees and why Spanner needs it for proper timestamps."
+        }
+      ],
+      "canNow": [
+        "Explain why a later reply can carry an earlier physical timestamp.",
+        "Say what a Lamport clock guarantees and what it does not.",
+        "Say what TrueTime promises about timestamps."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "Linearizability is the strongest common guarantee. Every operation behaves as if it took effect at one instant between its start and its end, as if there were a single copy of the data. It is not the same thing as serializability, which is about transactions [[cam-dist-sys]]. It has costs: more messages and waiting, a leader that can become a bottleneck, and no progress for a node that cannot reach a quorum [[cam-dist-sys]]. That last cost is the CAP trade-off, which only forces a choice when there is a network partition. The notes call the \"pick two of three\" framing misleading [[cam-dist-sys]].",
+        "Eventual consistency gives up the single-copy illusion. Each replica answers from its own state without waiting, and if updates stop, all replicas end up the same. Concurrent updates still need a rule, such as last writer wins, which can lose an update, or a merge [[cam-dist-sys]]. A CRDT is a replicated data type whose merge rule gives the same result whatever order updates arrive in, which is what lets replicas converge without coordination [[cam-dist-sys]].",
+        "Azure Cosmos DB shows the menu in a product. It offers five levels: strong, bounded staleness, session, consistent prefix and eventual [[azure-cosmos-consistency]]. Strong gives linearizability. Bounded staleness limits lag to a number of versions or a time. Session gives read-your-writes within one session using a token, and the page calls it the most widely used level [[azure-cosmos-consistency]]. The levels cost something: strong and bounded staleness read from two replicas, so read throughput is half of the weaker levels [[azure-cosmos-consistency]]. With strong consistency across regions, write latency is two round trips between the two farthest regions plus 10 ms at the 99th percentile, and accounts whose regions are more than 5,000 miles (8,000 km) apart are blocked from strong by default [[azure-cosmos-consistency]].",
+        "In practice you also ask how wrong your own clock might be. The chrony FAQ says its estimate of the maximum error is the sum of the root dispersion, half the root delay, and the correction still to apply [[chrony-faq]]. That is the window idea in a real tool: the clock reports a value and a bound on how far off it could be."
+      ],
+      "terms": [
+        {
+          "term": "Linearizability",
+          "definition": "Each operation appears to take effect at one instant between its start and end, as if there were one copy of the data."
+        },
+        {
+          "term": "Eventual consistency",
+          "definition": "If updates stop, all replicas end up with the same value."
+        },
+        {
+          "term": "CRDT",
+          "definition": "A replicated data type that merges updates in any order to the same state."
+        },
+        {
+          "term": "Session consistency",
+          "definition": "A guarantee that within one client session, reads see that session's own earlier writes."
+        },
+        {
+          "term": "Bounded staleness",
+          "definition": "A guarantee that reads lag the writes by at most a set number of versions or a set time."
+        }
+      ],
+      "reading": [
+        {
+          "source": "cam-dist-sys",
+          "section": "Section 7.2 Linearizability and 7.3 Eventual consistency, then the CRDT part of 8.1",
+          "what": "What linearizability means, what it costs, how CAP applies, and how replicas converge."
+        },
+        {
+          "source": "azure-cosmos-consistency",
+          "section": "Guarantees associated with consistency levels, then Consistency levels and latency and Consistency levels and throughput",
+          "what": "What each of the five levels guarantees and what it costs."
+        },
+        {
+          "source": "chrony-faq",
+          "section": "Question 7.2, How accurate is my system clock?",
+          "what": "How chrony estimates the maximum error of its clock."
+        }
+      ],
+      "canNow": [
+        "Say what linearizability promises and what it costs.",
+        "Say when eventual consistency is a reasonable choice.",
+        "Describe session consistency and when bounded staleness helps.",
+        "Explain how a clock can report a bound on its own error."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "Once NTP is running, all machines agree on the time.",
+      "truth": "The notes say synchronisation always leaves some uncertainty about the exact skew, especially when delay differs by direction, so a reply can still get an earlier timestamp than the message it answers [[cam-dist-sys]]."
+    },
+    {
+      "myth": "Linearizable and serializable mean the same thing.",
+      "truth": "The notes separate them: serializability is about transactions having the effect of some serial order, while linearizability fixes what operations must return given their real-time order. A system can offer both, which is called strict serializability [[cam-dist-sys]]."
+    },
+    {
+      "myth": "Eventual consistency means data is lost or wrong.",
+      "truth": "Replicas answer from local state and converge when updates stop. Conflicts between concurrent updates need a rule. Last writer wins can drop one of them, while a more refined merge can keep both changes [[cam-dist-sys]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These are two read-only checks from the chrony FAQ [[chrony-faq]]. They need a Linux machine with chrony running, and the second needs a network card whose driver reports its timestamping support.",
+    "commands": [
+      {
+        "command": "chronyc -N sources -a",
+        "shows": "The FAQ says that since version 4.0 this prints all time sources, including ones whose address is not known yet, with their names as written in the configuration.",
+        "source": "chrony-faq"
+      },
+      {
+        "command": "ethtool -T",
+        "shows": "The FAQ says this command can be used to check whether a network card supports hardware timestamping.",
+        "source": "chrony-faq",
+        "note": "Add the name of your network interface after it. The page shows the command without one."
+      }
+    ]
+  },
+  "next": "Go back to the Time, Clocks and Consistency topic page for the worked example and the quiz, then read the four sources: [Meta's NTP service](/topic/time-clocks-and-consistency#ntp-meta-2020) on measuring real clock error, [Meta's PTP rollout](/topic/time-clocks-and-consistency#ptp-meta-2022) on windows and commit-wait, [Facebook's consistency measurement](/topic/time-clocks-and-consistency#existential-facebook-2015) on how rare stale reads are, and [MongoDB's tunable consistency](/topic/time-clocks-and-consistency#mongodb-tunable-2019) on what teams choose and what it costs.",
+  "sources": [
+    {
+      "id": "cam-dist-sys",
+      "title": "Distributed Systems, lecture notes by Martin Kleppmann (Computer Science Tripos Part IB)",
+      "url": "https://www.cl.cam.ac.uk/teaching/2122/ConcDisSys/dist-sys-notes.pdf",
+      "publisher": "University of Cambridge",
+      "kind": "University course notes",
+      "year": "2021",
+      "verifiedOn": "2026-10-17",
+      "note": "Michaelmas term 2021/22 version."
+    },
+    {
+      "id": "gcp-truetime",
+      "title": "Spanner: TrueTime and external consistency",
+      "url": "https://cloud.google.com/spanner/docs/true-time-external-consistency",
+      "publisher": "Google Cloud",
+      "kind": "Vendor documentation",
+      "year": "page shows last updated 2026-10-13",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "chrony-faq",
+      "title": "chrony: Frequently Asked Questions",
+      "url": "https://chrony-project.org/faq.html",
+      "publisher": "chrony project",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-08-27",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "azure-cosmos-consistency",
+      "title": "Consistency level choices, Azure Cosmos DB",
+      "url": "https://learn.microsoft.com/en-us/azure/cosmos-db/consistency-levels",
+      "publisher": "Microsoft",
+      "kind": "Vendor documentation",
+      "year": "page shows last updated 2026-04-27",
+      "verifiedOn": "2026-10-17"
+    }
+  ]
+}

@@ -1,0 +1,283 @@
+{
+  "slug": "log-based-streaming",
+  "promise": "After this you can explain what an append-only log is, how Kafka lets many consumers read it at their own pace, and why that makes replay and database change feeds possible.",
+  "before": {
+    "prerequisites": [
+      "message-queues"
+    ],
+    "terms": [
+      {
+        "term": "Message",
+        "definition": "A unit of data passed between systems, such as \"order 42 was placed\"."
+      },
+      {
+        "term": "Producer and consumer",
+        "definition": "A producer sends messages; a consumer reads and processes them."
+      },
+      {
+        "term": "Append",
+        "definition": "Add to the end of something without changing what is already there."
+      }
+    ],
+    "note": "Read Message Queues first: a queue removes a message once it is handled, and a log is what you get when it stays. Pub-Sub and Replication also help, but the terms above are enough to begin."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "A message queue hands each message to one consumer and then forgets it. A log keeps messages in the order they were written and lets any number of readers go through them, each at its own pace. The Kafka documentation describes event streaming as capturing events as they happen, storing them durably for later, processing them as they occur or afterwards, and routing them to other systems [[kafka-intro]].",
+        "In Kafka the unit is the event, also called a record or message. Events are kept in topics, which the docs compare to a folder in a file system, with events as the files. A topic can have zero, one or many producers and consumers, and unlike traditional messaging, events are not deleted after they are consumed. You set per topic how long to retain them [[kafka-intro]]."
+      ],
+      "terms": [
+        {
+          "term": "Event",
+          "definition": "A record that something happened, with a key, a value and a timestamp [[kafka-intro]]."
+        },
+        {
+          "term": "Topic",
+          "definition": "A named place events are written to and read from; many producers and many consumers can share one [[kafka-intro]]."
+        },
+        {
+          "term": "Retention",
+          "definition": "A per-topic setting for how long events are kept before old ones are discarded [[kafka-intro]]."
+        }
+      ],
+      "reading": [
+        {
+          "source": "kafka-intro",
+          "section": "What is event streaming? and Main Concepts and Terminology",
+          "what": "What event streaming means and the vocabulary of events, topics, producers and consumers."
+        }
+      ],
+      "canNow": [
+        "Say how a log differs from a queue in what happens after a message is read.",
+        "Name an event, a topic and a retention setting.",
+        "Say what the data stays available for."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "A topic is divided into partitions that live on different brokers, so many clients can read and write at once. Events with the same key go to the same partition, and Kafka guarantees that a consumer of a partition reads its events in the order they were written [[kafka-intro]]. There is no such promise across partitions.",
+        "On disk a partition is a directory of log files. Each message is identified by a 64-bit offset, and each file is named after the offset of its first message [[kafka-log]]. A consumer fetches from an offset and gets back a chunk of log, and it can rewind to re-consume data [[kafka-design]].",
+        "Because each partition is read by exactly one consumer in a consumer group at a time, a consumer's position in a partition is a single integer, the offset of the next message to read. The docs call this state very small and say it can be checkpointed [[kafka-design]].",
+        "Every partition has one leader and zero or more followers. All writes go to the leader, and followers copy its log [[kafka-design]]. The docs note a replication factor of 3 as a common production setting [[kafka-intro]]."
+      ],
+      "terms": [
+        {
+          "term": "Partition",
+          "definition": "One ordered slice of a topic, placed on a broker [[kafka-intro]]."
+        },
+        {
+          "term": "Offset",
+          "definition": "A message's position in its partition [[kafka-log]]."
+        },
+        {
+          "term": "Consumer group",
+          "definition": "Consumers that share a topic, with each partition read by one member at a time [[kafka-design]]."
+        },
+        {
+          "term": "Leader and follower",
+          "definition": "The leader of a partition takes writes, and the followers copy it [[kafka-design]]."
+        }
+      ],
+      "reading": [
+        {
+          "source": "kafka-design",
+          "section": "The Consumer, then Consumer Position",
+          "what": "How consumers fetch by offset, and why tracking a position is cheap."
+        },
+        {
+          "source": "kafka-log",
+          "section": "The first two paragraphs and Reads",
+          "what": "How a partition is stored as files and how a read from an offset is found."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 182\" role=\"img\" aria-labelledby=\"dg-lbs-learn-t\" class=\"dg\"><title id=\"dg-lbs-learn-t\">One partition drawn as cells numbered 0 to 7. Group 1 has read up to position 7 and Group 2 up to position 2, and each group stores just that one number.</title><defs><marker id=\"dg-lbs-learn-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"18\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">One partition</text><rect x=\"14\" y=\"28\" width=\"44\" height=\"36\" class=\"dg-box\"/><text x=\"36\" y=\"50.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">0</text><rect x=\"58\" y=\"28\" width=\"44\" height=\"36\" class=\"dg-box\"/><text x=\"80\" y=\"50.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">1</text><rect x=\"102\" y=\"28\" width=\"44\" height=\"36\" class=\"dg-box\"/><text x=\"124\" y=\"50.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">2</text><rect x=\"146\" y=\"28\" width=\"44\" height=\"36\" class=\"dg-box\"/><text x=\"168\" y=\"50.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">3</text><rect x=\"190\" y=\"28\" width=\"44\" height=\"36\" class=\"dg-box\"/><text x=\"212\" y=\"50.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">4</text><rect x=\"234\" y=\"28\" width=\"44\" height=\"36\" class=\"dg-box\"/><text x=\"256\" y=\"50.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">5</text><rect x=\"278\" y=\"28\" width=\"44\" height=\"36\" class=\"dg-box\"/><text x=\"300\" y=\"50.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">6</text><rect x=\"322\" y=\"28\" width=\"44\" height=\"36\" class=\"dg-box\"/><text x=\"344\" y=\"50.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">7</text><rect x=\"14\" y=\"100\" width=\"180\" height=\"36\" class=\"dg-box\"/><text x=\"104\" y=\"122.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Group 1 reads at 7</text><path d=\"M104,100 L344,66\" class=\"dg-line\" marker-end=\"url(#dg-lbs-learn-a)\"/><rect x=\"214\" y=\"100\" width=\"180\" height=\"36\" class=\"dg-box\"/><text x=\"304\" y=\"122.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Group 2 reads at 2</text><path d=\"M304,100 L124,66\" class=\"dg-line\" marker-end=\"url(#dg-lbs-learn-a)\"/><text x=\"14\" y=\"170\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Each group stores one number per partition. Reading does not delete anything.</text></svg>",
+      "canNow": [
+        "Explain why events with one key are read in order.",
+        "Say what an offset is and what a consumer group stores.",
+        "Say what leaders and followers do."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "Kafka relies on the file system and the operating system's page cache instead of keeping a cache of its own. Its design page argues that linear reads and writes are the most predictable pattern and well optimised by the OS, and that appending to a file keeps operations at constant cost whatever the data size [[kafka-design]]. That is why it can keep messages for a long time, for example a week [[kafka-design]].",
+        "Deletion happens one log segment at a time, by age or by size [[kafka-log]]. Log compaction is a different kind of retention: it removes records whose key has a newer record, so the log keeps at least the final state of every key, in order, and offsets never change [[kafka-design]].",
+        "Delivery is at-least-once by default. Committing offsets before processing gives at-most-once, and Kafka's transactions can give exactly-once between topics by writing the output and the consumer's offset together [[kafka-design]]."
+      ],
+      "terms": [
+        {
+          "term": "Segment",
+          "definition": "One file of a partition's log; the oldest segments are deleted first [[kafka-log]]."
+        },
+        {
+          "term": "Log compaction",
+          "definition": "Retention that keeps the latest record for each key [[kafka-design]]."
+        },
+        {
+          "term": "At-least-once",
+          "definition": "A message may be delivered more than once, but is not lost; Kafka's default [[kafka-design]]."
+        }
+      ],
+      "reading": [
+        {
+          "source": "kafka-design",
+          "section": "Persistence and Log Compaction",
+          "what": "Why a disk log is fast enough, and what compaction guarantees."
+        },
+        {
+          "source": "kafka-design",
+          "section": "Message Delivery Semantics",
+          "what": "What at-most-once, at-least-once and exactly-once mean for a consumer that commits offsets."
+        }
+      ],
+      "canNow": [
+        "Say why Kafka leans on the page cache and sequential writes.",
+        "Tell time-based deletion from compaction.",
+        "Explain how committing before or after processing changes what a crash costs."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "The Kafka use cases page lists messaging, website activity tracking, metrics, log aggregation, stream processing, event sourcing and a commit log for other systems [[kafka-uses]]. Kafka Connect can run connectors that move data in and out of other systems, such as a connector that captures every change to a set of PostgreSQL tables [[kafka-intro]].",
+        "Durability and availability pull against each other. A producer can wait for 0, 1 or all in-sync replicas, and a minimum in-sync set can make a partition refuse writes it could not protect. The docs describe this as a trade-off between consistency and availability, and the choice of whether an out-of-sync replica may become leader is the same trade-off [[kafka-design]].",
+        "Retention is a cost choice. Keeping more lets a consumer rewind further or a new consumer start from the beginning, and it takes more disk. The Uber paper on the topic page shows the other side of the choice: Uber keeps Kafka retention to a few days and replays older data from archives."
+      ],
+      "terms": [
+        {
+          "term": "In-sync replica",
+          "definition": "A follower that is caught up with the leader; writes count as safe once those have them [[kafka-design]]."
+        },
+        {
+          "term": "Kafka Connect",
+          "definition": "Tooling for connectors that import and export data between Kafka and other systems [[kafka-intro]]."
+        }
+      ],
+      "reading": [
+        {
+          "source": "kafka-uses",
+          "section": "The whole page",
+          "what": "The uses the Kafka project lists, from messaging to a commit log."
+        },
+        {
+          "source": "kafka-design",
+          "section": "Replication, including the availability and durability guarantees",
+          "what": "How in-sync replicas, acks and the minimum in-sync size trade safety for availability."
+        }
+      ],
+      "canNow": [
+        "Name uses of a log beyond a queue replacement.",
+        "Describe how the acknowledgement setting changes what a producer is promised.",
+        "Say what longer retention costs and buys."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "A log-based system is a queue with a different name.",
+      "truth": "A queue is built around removing messages once they are handled. In Kafka, events are not deleted after consumption, and a consumer can rewind to an old offset and read again [[kafka-intro]] [[kafka-design]]."
+    },
+    {
+      "myth": "All events in a topic are in one global order.",
+      "truth": "Order is guaranteed within a partition. Events with the same key go to the same partition, but different partitions have no shared order [[kafka-intro]]."
+    },
+    {
+      "myth": "A log keeps everything forever.",
+      "truth": "Retention is a per-topic setting after which old events are discarded, and compaction keeps only the latest record per key [[kafka-intro]] [[kafka-design]]."
+    },
+    {
+      "myth": "The broker must remember which messages each consumer has handled.",
+      "truth": "In Kafka a consumer's position per partition is just one integer, which makes the bookkeeping very small [[kafka-design]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These use the command-line tools that ship with Apache Kafka against a local or test cluster. They come from the Kafka quickstart, with its example topic quickstart-events, which the page shows with Kafka 4.3.1 and a local Java 17 or newer. The page shows its own output; yours depends on your cluster.",
+    "exampleNames": [
+      "quickstart-events"
+    ],
+    "commands": [
+      {
+        "command": "bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server localhost:9092",
+        "shows": "Creates a topic to hold events.",
+        "source": "kafka-quickstart",
+        "warning": "This creates a topic on the cluster at localhost:9092. Run it only against a test or local cluster."
+      },
+      {
+        "command": "bin/kafka-topics.sh --describe --topic quickstart-events --bootstrap-server localhost:9092",
+        "shows": "Details of the topic, such as its partition count and replicas.",
+        "source": "kafka-quickstart"
+      },
+      {
+        "command": "bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server localhost:9092",
+        "shows": "A simple producer: by default each line you enter becomes a separate event. Stop it with Ctrl-C.",
+        "source": "kafka-quickstart",
+        "warning": "This writes events to the topic. Run it only against a test or local cluster."
+      },
+      {
+        "command": "bin/kafka-console-consumer.sh --topic quickstart-events --from-beginning --bootstrap-server localhost:9092",
+        "shows": "Reads the topic from the first event. Run it again and the same events appear again, because reading removes nothing. Stop it with Ctrl-C.",
+        "source": "kafka-quickstart"
+      }
+    ]
+  },
+  "next": "Go back to the [Log-based Streaming topic page](/topic/log-based-streaming) for the worked example and the quiz, then read the four sources: [LinkedIn's 2013 essay on the log](/topic/log-based-streaming#linkedin-the-log-2013), [Netflix on change-data-capture](/topic/log-based-streaming#netflix-dblog-2020), [Uber's Kafka platform](/topic/log-based-streaming#uber-realtime-infra-2021) and [LinkedIn's Northguard](/topic/log-based-streaming#linkedin-northguard-2025).",
+  "sources": [
+    {
+      "id": "kafka-intro",
+      "title": "Apache Kafka: Introduction",
+      "url": "https://kafka.apache.org/43/getting-started/introduction/",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-05-22",
+      "verifiedOn": "2026-10-17",
+      "note": "Kafka 4.3 documentation (the address ends in /43/)."
+    },
+    {
+      "id": "kafka-design",
+      "title": "Apache Kafka: Design",
+      "url": "https://kafka.apache.org/43/design/design/",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-05-22",
+      "verifiedOn": "2026-10-17",
+      "note": "Kafka 4.3 documentation (the address ends in /43/)."
+    },
+    {
+      "id": "kafka-log",
+      "title": "Apache Kafka: Implementation, Log",
+      "url": "https://kafka.apache.org/43/implementation/log/",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-05-22",
+      "verifiedOn": "2026-10-17",
+      "note": "Kafka 4.3 documentation (the address ends in /43/)."
+    },
+    {
+      "id": "kafka-uses",
+      "title": "Apache Kafka: Use Cases",
+      "url": "https://kafka.apache.org/43/getting-started/uses/",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-05-22",
+      "verifiedOn": "2026-10-17",
+      "note": "Kafka 4.3 documentation (the address ends in /43/)."
+    },
+    {
+      "id": "kafka-quickstart",
+      "title": "Apache Kafka: Quickstart",
+      "url": "https://kafka.apache.org/43/getting-started/quickstart/",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-06-25",
+      "verifiedOn": "2026-10-17",
+      "note": "The page shows Kafka 4.3.1 and says a local Java 17 or newer is needed."
+    }
+  ]
+}

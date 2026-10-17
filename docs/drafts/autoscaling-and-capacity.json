@@ -1,0 +1,33 @@
+{
+  "autoscaling-and-capacity": {
+    "summary": {
+      "points": [
+        "Autoscaling matches the capacity a service has to the demand it faces, by adding or removing copies or by resizing them.",
+        "New capacity takes minutes to arrive, so a good rule grows quickly, shrinks slowly and keeps a minimum and a maximum.",
+        "Google's Autopilot cuts the gap between reserved and used resources by setting task counts and limits from usage history.",
+        "MongoDB forecasts demand that scaling cannot change, and trusts a forecast only where its recent accuracy has been good.",
+        "In production MongoDB scales up on predictions and leaves scaling down to the reactive rule. The post calls this first version conservative."
+      ],
+      "figures": [
+        {
+          "postId": "google-autopilot-2020",
+          "row": 0,
+          "label": "Average slack of 23% vs 46%, automatic against manual soft limits"
+        },
+        {
+          "postId": "google-autopilot-2020",
+          "row": 1,
+          "label": "Jobs severely hit by out-of-memory kills fell by 10 times"
+        },
+        {
+          "postId": "mongodb-predictive-autoscaling-2026",
+          "row": 1,
+          "label": "Short-term trend forecast beat the naive baseline 68% of the time"
+        }
+      ]
+    },
+    "prerequisiteReasons": {
+      "load-balancing": "Autoscaling changes how many servers sit behind a load balancer, so it relies on traffic being spread evenly across whatever servers exist at that moment."
+    }
+  }
+}

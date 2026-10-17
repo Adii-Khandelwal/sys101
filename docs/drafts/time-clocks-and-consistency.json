@@ -1,0 +1,21 @@
+{
+  "time-clocks-and-consistency": {
+    "summary": {
+      "points": [
+        "Two machines' clocks always differ by a small unknown error, so comparing their timestamps cannot reliably order events that happen close together.",
+        "Meta shrank that error by moving from ntpd to chrony and then to PTP with hardware timestamps, and hands out a window of uncertainty, not one time.",
+        "With a window, a system can wait out the uncertainty before acting, which orders operations without asking several replicas.",
+        "Facebook measured that stronger consistency would change only a tiny share of reads, and in a 2019 Atlas sample most MongoDB operations used cheaper defaults.",
+        "Logical clocks and CRDTs avoid physical time entirely, at the price of ordering only causally related events or only data that merges cleanly."
+      ],
+      "figures": [
+        { "postId": "ptp-meta-2022", "row": 0, "label": "Early PTP showed a roughly 100x performance difference over NTP for commit-wait reads" },
+        { "postId": "existential-facebook-2015", "row": 0, "label": "0.0004% of vertex reads would differ under linearizability" },
+        { "postId": "mongodb-tunable-2019", "row": 1, "label": "99.60% of reads in a sample of Atlas nodes used the default local level" }
+      ]
+    },
+    "prerequisiteReasons": {
+      "distributed-transactions": "Distributed transactions need an agreed order of commits, so you should know why that order matters before seeing how clocks and consistency levels help or hurt."
+    }
+  }
+}

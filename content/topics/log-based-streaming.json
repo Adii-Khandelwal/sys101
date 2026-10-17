@@ -1,0 +1,560 @@
+{
+  "slug": "log-based-streaming",
+  "title": "Log-based Streaming",
+  "group": "Messaging",
+  "prerequisites": [
+    "message-queues"
+  ],
+  "summary": {
+    "points": [
+      "A log keeps records in order and lets each reader keep its own position, so reading removes nothing and many readers share one stream.",
+      "Replay is the main gain: a consumer with a bug rewinds its position and reads again, and a new consumer starts from the oldest retained record.",
+      "Order holds only inside a partition, so events that must stay in sequence share a key, and retention or compaction decides how much history stays.",
+      "Netflix's DBLog feeds a log from databases by blending chunked table selects with the short-lived transaction log, using watermark events instead of locks.",
+      "Uber keeps Kafka retention to a few days and federates clusters, while LinkedIn's Northguard replicates small segments so brokers balance themselves."
+    ],
+    "figures": [
+      {
+        "postId": "linkedin-the-log-2013",
+        "row": 0,
+        "label": "Kafka took over 60 billion unique writes a day"
+      },
+      {
+        "postId": "uber-realtime-infra-2021",
+        "row": 1,
+        "label": "Uber found Kafka clusters work best under 150 nodes"
+      },
+      {
+        "postId": "linkedin-northguard-2025",
+        "row": 0,
+        "label": "Kafka ran at over 32T records/day across 150 clusters"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "message-queues": "A log is what a queue becomes when messages stay after they are read, so the producer, consumer and delivery ideas from queues carry over."
+  },
+  "concept": "A log-based streaming system stores messages in an append-only, ordered log and lets each consumer read it by position instead of removing messages as they are taken. Because the log is kept for a chosen time, many consumers can read the same data at their own pace, and a consumer that had a bug can go back and read again. The price is that you now manage partitions, retention and consumer positions yourself, and ordering holds only inside one partition.",
+  "lesson": {
+    "why": {
+      "outcome": "After this you can say why some systems keep messages after they are read, and what that makes possible.",
+      "body": "A queue treats a message as a job: someone takes it, does the work, acknowledges, and it is gone. That is right for tasks, and wrong when several systems need the same data. A new search index wants everything that ever happened. A fraud team wants to replay last week. A consumer with a bug needs to run again over the data it got wrong.\n\nLinkedIn's Northguard post puts the need plainly: subscribers must process all the data from a publisher, not only the latest updates, and because subscribers have bugs they must be able to reprocess it too. A log answers this by making the data permanent for a while and moving the bookkeeping to the reader. The producer appends, and every reader remembers its own place.\n\nThis topic follows from Message Queues, and it shares its vocabulary with Pub-Sub: a topic, producers, consumers. What changes is that reading deletes nothing, so the same stream can feed many readers, a database copy, or a repair job. Replication, covered earlier, is what keeps the log alive when a machine dies."
+    },
+    "mentalModel": {
+      "outcome": "After this you can picture a log as a numbered tape that only grows at one end, with a bookmark per reader.",
+      "body": "Picture a long paper tape. The producer writes at the end and never edits what is already there. Every entry has a number, its position. Each reader holds a bookmark and moves forward at its own speed. A slow reader does not hold back a fast one, and a new reader can start at the beginning, at the end, or anywhere between.\n\nJay Kreps, writing about the log at LinkedIn, points out that the position works like a timestamp that does not depend on any physical clock. You can describe a reader's whole state by one number: how far along the tape it is.\n\nThe tape cannot be infinite. Old pages are cut off after a retention period, or, for data keyed by an ID, old versions of the same key are dropped so only the newest stays. Both are choices you make about how much history to pay for.",
+      "diagram": "<svg viewBox=\"0 0 560 224\" role=\"img\" aria-labelledby=\"dg-lbs-model-t\" class=\"dg\"><title id=\"dg-lbs-model-t\">A log drawn as numbered cells from 0 to 7 with a producer adding at the newest end. Reader A has read up to position 2 and Reader B up to position 6, each keeping its own place.</title><defs><marker id=\"dg-lbs-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"20\" y=\"48\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">oldest</text><text x=\"372\" y=\"48\" class=\"dg-note\" text-anchor=\"end\" font-size=\"11\">newest</text><rect x=\"20\" y=\"56\" width=\"44\" height=\"40\" class=\"dg-box\"/><text x=\"42\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">0</text><rect x=\"64\" y=\"56\" width=\"44\" height=\"40\" class=\"dg-box\"/><text x=\"86\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">1</text><rect x=\"108\" y=\"56\" width=\"44\" height=\"40\" class=\"dg-box\"/><text x=\"130\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">2</text><rect x=\"152\" y=\"56\" width=\"44\" height=\"40\" class=\"dg-box\"/><text x=\"174\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">3</text><rect x=\"196\" y=\"56\" width=\"44\" height=\"40\" class=\"dg-box\"/><text x=\"218\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">4</text><rect x=\"240\" y=\"56\" width=\"44\" height=\"40\" class=\"dg-box\"/><text x=\"262\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">5</text><rect x=\"284\" y=\"56\" width=\"44\" height=\"40\" class=\"dg-box\"/><text x=\"306\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">6</text><rect x=\"328\" y=\"56\" width=\"44\" height=\"40\" class=\"dg-box\"/><text x=\"350\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">7</text><rect x=\"420\" y=\"56\" width=\"124\" height=\"40\" class=\"dg-box\"/><text x=\"482\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Producer</text><path d=\"M420,76 L374,76\" class=\"dg-line\" marker-end=\"url(#dg-lbs-model-a)\"/><text x=\"482\" y=\"114\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">adds only at the end</text><rect x=\"65\" y=\"150\" width=\"130\" height=\"36\" class=\"dg-box\"/><text x=\"130\" y=\"172.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Reader A: at 2</text><path d=\"M130,150 L130,98\" class=\"dg-line\" marker-end=\"url(#dg-lbs-model-a)\"/><rect x=\"241\" y=\"150\" width=\"130\" height=\"36\" class=\"dg-box\"/><text x=\"306\" y=\"172.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Reader B: at 6</text><path d=\"M306,150 L306,98\" class=\"dg-line\" marker-end=\"url(#dg-lbs-model-a)\"/><text x=\"20\" y=\"212\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Each reader keeps only its own position. The log never changes when a reader moves.</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can follow a record from producer to consumer and name what gives each guarantee.",
+      "steps": [
+        {
+          "step": "The producer appends to a partition",
+          "explanation": "A topic is split into partitions so many machines can share the writes. The producer picks a partition, usually by hashing a key such as a customer ID, so records with the same key land in the same partition. Each record gets the next position there."
+        },
+        {
+          "step": "Order holds inside one partition",
+          "explanation": "A partition is a totally ordered log. Two partitions have no shared order, so only events that must stay in sequence should share a key. This is the same idea as sharding, applied to a log."
+        },
+        {
+          "step": "The broker stores and copies it",
+          "explanation": "The leader of the partition writes the record to disk and its followers copy it. A record counts as safe once the right set of replicas has it. Replication is what lets a leader fail without losing the log."
+        },
+        {
+          "step": "Consumers read by position",
+          "explanation": "A consumer asks for records starting at an offset and gets a chunk back. In a consumer group, each partition is read by one member at a time, so the group splits the work. Its progress is saved as one number per partition."
+        },
+        {
+          "step": "Retention trims the log",
+          "explanation": "Deletion happens a segment at a time, by age or size, or compaction keeps the newest record per key. Without a limit the log grows forever."
+        },
+        {
+          "step": "A database can be the source",
+          "explanation": "Change-data-capture reads a database's own transaction log and publishes each row change to a topic. Because the transaction log is short-lived, a full copy of the rows is loaded alongside, which is the case DBLog solves."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 232\" role=\"img\" aria-labelledby=\"dg-lbs-how-t\" class=\"dg\"><title id=\"dg-lbs-how-t\">A topic with three partitions, each a short log numbered from 0. Producers choose a partition by key, and one consumer group reads each partition with a single reader.</title><defs><marker id=\"dg-lbs-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"70\" width=\"100\" height=\"96\" class=\"dg-box\"/><text x=\"64\" y=\"106.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Producers</text><text x=\"64\" y=\"122.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">key picks</text><text x=\"64\" y=\"138.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">a partition</text><text x=\"170\" y=\"22\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Partition 0</text><rect x=\"170\" y=\"30\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"190\" y=\"52.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">0</text><rect x=\"210\" y=\"30\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"230\" y=\"52.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">1</text><rect x=\"250\" y=\"30\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"270\" y=\"52.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">2</text><rect x=\"290\" y=\"30\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"310\" y=\"52.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">3</text><rect x=\"330\" y=\"30\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"350\" y=\"52.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">4</text><path d=\"M114,118 L168,48\" class=\"dg-line\" marker-end=\"url(#dg-lbs-how-a)\"/><path d=\"M372,48 L428,90\" class=\"dg-line\" marker-end=\"url(#dg-lbs-how-a)\"/><text x=\"170\" y=\"88\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Partition 1</text><rect x=\"170\" y=\"96\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"190\" y=\"118.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">0</text><rect x=\"210\" y=\"96\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"230\" y=\"118.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">1</text><rect x=\"250\" y=\"96\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"270\" y=\"118.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">2</text><rect x=\"290\" y=\"96\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"310\" y=\"118.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">3</text><rect x=\"330\" y=\"96\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"350\" y=\"118.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">4</text><path d=\"M114,118 L168,114\" class=\"dg-line\" marker-end=\"url(#dg-lbs-how-a)\"/><path d=\"M372,114 L428,118\" class=\"dg-line\" marker-end=\"url(#dg-lbs-how-a)\"/><text x=\"170\" y=\"154\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Partition 2</text><rect x=\"170\" y=\"162\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"190\" y=\"184.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">0</text><rect x=\"210\" y=\"162\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"230\" y=\"184.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">1</text><rect x=\"250\" y=\"162\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"270\" y=\"184.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">2</text><rect x=\"290\" y=\"162\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"310\" y=\"184.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">3</text><rect x=\"330\" y=\"162\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"350\" y=\"184.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">4</text><path d=\"M114,118 L168,180\" class=\"dg-line\" marker-end=\"url(#dg-lbs-how-a)\"/><path d=\"M372,180 L428,146\" class=\"dg-line\" marker-end=\"url(#dg-lbs-how-a)\"/><rect x=\"430\" y=\"70\" width=\"116\" height=\"96\" class=\"dg-box dg-accent\"/><text x=\"488\" y=\"106.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Consumers</text><text x=\"488\" y=\"122.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">each partition</text><text x=\"488\" y=\"138.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">has one reader</text><text x=\"14\" y=\"220\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Order holds inside a partition only. Each partition is also copied to follower brokers.</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can walk through three consumers, a bug fix and a crash on one topic.",
+      "steps": [
+        {
+          "step": "One topic, two groups",
+          "explanation": "An orders service appends an event to the orders topic whenever an order changes, keyed by order ID. A billing group and a search-indexer group each read the whole topic, each with its own offsets. Neither affects the other."
+        },
+        {
+          "step": "The indexer has a bug",
+          "explanation": "A mapping bug put wrong data in the search index for recent orders. The team fixes the code, then moves the indexer's position back to just before the bad period. It re-reads those records and rewrites the index. Billing is untouched."
+        },
+        {
+          "step": "A new team arrives",
+          "explanation": "An analytics team creates a third group and starts at the oldest retained record. It catches up at its own pace, then follows new events. The producer needed no change."
+        },
+        {
+          "step": "A consumer crashes",
+          "explanation": "The billing process dies mid-batch. A replacement takes the partition and resumes from the last saved position. If the position was saved after the work, a few records are seen twice, so billing must be safe to repeat. If it was saved before, those records are lost, so billing saves after."
+        },
+        {
+          "step": "A broker dies",
+          "explanation": "A follower for each affected partition becomes leader and everyone carries on. The records at risk are those the required replicas had not confirmed, which is why producers choose how many replicas must confirm a write."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 224\" role=\"img\" aria-labelledby=\"dg-lbs-example-t\" class=\"dg\"><title id=\"dg-lbs-example-t\">One orders topic with positions 0 to 9. Billing is caught up near the end, the search indexer has been rewound to position 3 to repair a bug, and a new analytics group starts at position 0.</title><defs><marker id=\"dg-lbs-example-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"62\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">orders</text><rect x=\"100\" y=\"44\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"120\" y=\"66.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">0</text><rect x=\"140\" y=\"44\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"160\" y=\"66.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">1</text><rect x=\"180\" y=\"44\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"200\" y=\"66.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">2</text><rect x=\"220\" y=\"44\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"240\" y=\"66.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">3</text><rect x=\"260\" y=\"44\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"280\" y=\"66.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">4</text><rect x=\"300\" y=\"44\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"320\" y=\"66.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">5</text><rect x=\"340\" y=\"44\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"360\" y=\"66.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">6</text><rect x=\"380\" y=\"44\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"400\" y=\"66.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">7</text><rect x=\"420\" y=\"44\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"440\" y=\"66.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">8</text><rect x=\"460\" y=\"44\" width=\"40\" height=\"36\" class=\"dg-box\"/><text x=\"480\" y=\"66.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">9</text><rect x=\"365\" y=\"128\" width=\"110\" height=\"36\" class=\"dg-box\"/><text x=\"420\" y=\"150.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Billing</text><path d=\"M420,128 L440,82\" class=\"dg-line\" marker-end=\"url(#dg-lbs-example-a)\"/><rect x=\"185\" y=\"124\" width=\"110\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"240\" y=\"142.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Search indexer</text><text x=\"240\" y=\"158.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">rewound to 3</text><path d=\"M240,124 L240,82\" class=\"dg-line\" marker-end=\"url(#dg-lbs-example-a)\"/><rect x=\"65\" y=\"128\" width=\"110\" height=\"36\" class=\"dg-box\"/><text x=\"120\" y=\"150.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Analytics</text><path d=\"M120,128 L120,82\" class=\"dg-line\" marker-end=\"url(#dg-lbs-example-a)\"/><text x=\"420\" y=\"184\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">caught up</text><text x=\"240\" y=\"184\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">re-reads after the fix</text><text x=\"120\" y=\"184\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">new, starts at 0</text><text x=\"14\" y=\"210\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Three consumer groups read one topic at three different positions.</text></svg>"
+    },
+    "mistakesOutcome": "After this you can spot three ways a log-based design goes wrong.",
+    "checkOutcome": "After this you can check you understand offsets, ordering, retention and why CDC needs more than the log.",
+    "quiz": [
+      {
+        "question": "A search indexer had a bug and indexed three days of updates wrongly. Why can a log-based system repair this more easily than a classic queue?",
+        "options": [
+          "Its consumers are faster, so three days of data can be handled in seconds",
+          "Messages stay in the log after they are read, so the indexer can move its position back and read them again",
+          "It blocks producers from sending bad data in the first place"
+        ],
+        "correct": 1,
+        "why": "A classic queue removes a message once it is acknowledged. A log keeps it for the retention period and a consumer's position is only a number, so rewinding is cheap.",
+        "wrong": [
+          "Speed does not help if the messages are already gone; a queue that deleted them has nothing left to read.",
+          "",
+          "The log does not look at what producers send, so it cannot stop bad data."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "Order events are written with the customer ID as the key, to a topic with several partitions. What order can a consumer rely on?",
+        "options": [
+          "Events for one customer come out in the order they were written, with no promise between customers on different partitions",
+          "All events in the topic come out in one global order, whatever partition they were written to",
+          "Events come out in an unpredictable order, even for one customer"
+        ],
+        "correct": 0,
+        "why": "The same key goes to the same partition, and a partition is a totally ordered log. Different partitions are read in parallel with no shared order.",
+        "wrong": [
+          "",
+          "A global order would force every write through one place, which is what partitioning avoids.",
+          "The key is what gives you a predictable order for one customer."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "What is a consumer's offset in a partition?",
+        "options": [
+          "A lock the broker holds on the next unread message",
+          "A copy of the last message that consumer processed, kept on the broker",
+          "One number that says how far into the partition it has read"
+        ],
+        "correct": 2,
+        "why": "The log itself never changes when someone reads it, so the only state a reader needs is its position. That is why tracking many consumers is cheap.",
+        "wrong": [
+          "Reading takes no lock; many consumers can read the same partition at once.",
+          "Storing a copy of messages per consumer would defeat the point. The position is a number.",
+          ""
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "Why does a change-data-capture tool like DBLog also select rows from tables, instead of reading only the database's transaction log?",
+        "options": [
+          "A transaction log usually keeps limited history, so it cannot rebuild the whole table on its own",
+          "Selecting rows is faster than reading the log, so DBLog uses selects instead of the log in normal running",
+          "The log holds only table names, never row values"
+        ],
+        "correct": 0,
+        "why": "Logs are trimmed. To start a new copy or repair a bad one you need the full current rows, and the log supplies the changes from then on.",
+        "wrong": [
+          "",
+          "DBLog keeps reading the log all the time. The selects run in chunks beside it for the initial load or a repair.",
+          "Log events carry the changed row values, which is what the downstream copy needs."
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "A consumer commits its offset first and then processes a batch. It crashes halfway through. What happens when it restarts?",
+        "options": [
+          "The whole batch is processed again, so duplicates are normal",
+          "The unprocessed part of the batch is skipped and lost",
+          "The broker replays the batch before the consumer asks for it"
+        ],
+        "correct": 1,
+        "why": "The stored position already points past the batch, so the consumer resumes after it. Committing before the work gives at-most-once delivery; committing after gives at-least-once.",
+        "wrong": [
+          "That happens when the offset is committed after processing. Here the commit came first.",
+          "",
+          "Brokers never push; the consumer asks from its stored position."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "A topic holds the current address for each customer, keyed by customer ID, and must keep a complete copy of the latest state without growing forever. Which retention fits?",
+        "options": [
+          "Delete everything older than one day",
+          "Keep every record forever, so nothing is ever lost and any past state can be rebuilt",
+          "Log compaction, which keeps the newest record for each key"
+        ],
+        "correct": 2,
+        "why": "Compaction drops older records whose key has a newer one, so the log is still a complete backup of the latest state while old versions go away.",
+        "wrong": [
+          "A customer who has not moved for a day would vanish from the topic.",
+          "That keeps the state but grows without bound as every old address stays.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why did LinkedIn make the segment, a small piece of a log, the unit of replication in Northguard, instead of the whole partition?",
+        "options": [
+          "So that each record can be copied to followers on its own, with its own set of replicas",
+          "So that the replication factor can be set to zero",
+          "So a new broker just receives new segments and nothing old moves"
+        ],
+        "correct": 2,
+        "why": "Segments are created often, so a broker added to the cluster starts taking its share with the next segments. With whole logs as the unit, balancing meant moving big logs or running a separate balancing service.",
+        "wrong": [
+          "Segments hold many records. The point is to avoid moving large pieces around.",
+          "Replication stays on; the change is what gets replicated, not whether.",
+          ""
+        ],
+        "teaches": "example"
+      }
+    ],
+    "postsOutcome": "After this you can describe four real systems built around a log: LinkedIn's 2013 essay on the idea, Netflix's change-data-capture tool, Uber's Kafka platform and LinkedIn's replacement for Kafka.",
+    "differOutcome": "After this you can say what the four sources share and where they pull in different directions.",
+    "exercisesOutcome": "After this you can apply a log to a new feed, design a database change feed, and plan growth in readers.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A shop sends page-view events through a queue to one analytics service. A fraud team now wants the same events, and wants to replay the last two days after a rule change. What do you change, and what do you pay for it?",
+        "answer": "Move the events to a log topic with retention of at least two days, ideally a few more. Give each team its own consumer group so each has its own position. The fraud team starts at an offset from two days ago to replay. The analytics service is unchanged except that it now stores an offset instead of acknowledging messages.",
+        "tradeoffs": "You pay disk for the retention period, and consumers must handle seeing a record twice after a crash. You gain independence: a slow or broken team no longer blocks the others, and nothing has to be sent again by the producer.",
+        "wrongAnswers": [
+          "Add a second queue and have the producer send every event twice, which couples the producer to every consumer.",
+          "Keep the single queue and have the fraud team read the analytics database, which has lost the original events."
+        ],
+        "teaches": "why"
+      },
+      {
+        "level": "design",
+        "prompt": "Keep a search index in sync with an orders database without writing to both from the application. How do you feed the index, and how do you load rows that existed before you started?",
+        "answer": "Read the database's transaction log with a change-data-capture process and publish each row change to a topic keyed by primary key. The indexer consumes the topic and upserts by key, so repeats are harmless. For the existing rows, run chunked selects by primary key in order, interleaved with the log using watermark events as DBLog does, so a stale select result cannot overwrite a newer log event. Save the chunk progress so a restart resumes.",
+        "tradeoffs": "Reading the log avoids dual writes, which can disagree when one write fails. It adds a moving part to run and a lag between database and index. Compaction on the topic lets a new consumer bootstrap from the topic itself, at the cost of losing intermediate versions of a row.",
+        "wrongAnswers": [
+          "Write to the database and the index in the application, which leaves them out of step when one fails.",
+          "Lock the tables and copy them once, which blocks application writes for as long as the copy takes."
+        ],
+        "teaches": "example"
+      },
+      {
+        "level": "scale",
+        "prompt": "Your topic has 12 partitions and 12 consumers in one group, and traffic will grow ten times. What stops you from just adding consumers, and what are your options?",
+        "answer": "In one group each partition is read by one member, so more than 12 consumers leaves some idle. To read in parallel you need more partitions, but changing the count changes which partition a key maps to, so ordering for existing keys breaks across the change. Uber hit the same cap and built a proxy that fans messages out to a pool of workers over gRPC. Also watch the cluster: Uber found about 150 nodes was the ideal ceiling and added clusters behind a federation layer.",
+        "tradeoffs": "More partitions raise parallelism and metadata load together. A consumer proxy lifts the cap but adds a service in the read path. Federation scales the cluster at the price of a metadata server that must stay correct.",
+        "wrongAnswers": [
+          "Add 120 consumers to the group, where most would sit idle.",
+          "Add partitions without thinking about key ordering, which can make one key's events arrive out of order across the change."
+        ],
+        "teaches": "how"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic to read.",
+      "body": "Stream processing and batch pipelines read logs like this one, and they will be covered in a later topic. Event-driven Architecture shows how services react to events, including the outbox pattern from Zapier, which solves the dual-write problem DBLog addresses from the other side. Idempotency and Retries explains how to make the repeats a log allows safe. Consensus explains the agreement protocol behind Northguard's metadata, and Replication covers how the copies stay in step."
+    }
+  },
+  "posts": [
+    {
+      "id": "linkedin-the-log-2013",
+      "title": "The Log: What every software engineer should know about real-time data's unifying abstraction",
+      "url": "https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying",
+      "company": "LinkedIn",
+      "verifiedOn": "2026-10-17",
+      "published": "2013-12-16",
+      "ageNote": "From December 2013. It is here for the idea, which the other posts on this page build on: a log as the shared record that many systems read at their own pace. The mechanisms it describes (partitioning, replication, log compaction) are also in the current Kafka documentation, which was opened for this topic. The 2013 figures are old, and LinkedIn's 2025 post below gives a far larger scale. The copy opened was an archive copy of the page.",
+      "related": [
+        "pub-sub",
+        "replication"
+      ],
+      "digest": {
+        "problem": "LinkedIn was moving from one central relational database to many specialised systems: search, a social graph, key-value stores, Hadoop and more. Each needed the same data, and building a custom pipe between every pair of systems would not scale. Jay Kreps, who built Kafka there, explains the log that became the answer.",
+        "constraints": "Subscribers run at very different speeds, from an hourly batch load to an up-to-the-second query system. A destination should know only the log, not the system the data came from. The log must stay fast enough to carry a whole consumer website's activity.",
+        "walkthrough": [
+          {
+            "step": "A log is the simplest storage abstraction",
+            "explanation": "It is an append-only sequence of records in order. Each entry gets a number, which acts as a timestamp that does not depend on any physical clock."
+          },
+          {
+            "step": "Databases already use logs",
+            "explanation": "A write-ahead log records what will change before the data structures are touched, so a crash can be repaired. The same log is shipped to replicas to keep them in sync."
+          },
+          {
+            "step": "One log per source, many readers",
+            "explanation": "Each data source is modelled as its own log. Every subscriber reads forward, copies each new record into its own store and remembers how far it got, so it can crash, come back and resume. Neither the source nor the log knows which destinations exist."
+          },
+          {
+            "step": "Why not connect systems directly",
+            "explanation": "LinkedIn tried custom data loads for each source and destination. With dozens of systems, connecting every pair would need on the order of N squared pipelines, and each new source needed hand configuration that kept failing."
+          },
+          {
+            "step": "Making the log scale",
+            "explanation": "Kafka splits the log into partitions, each totally ordered, with no order across partitions. Each partition is copied to replicas with one leader. Batching reads and writes and avoiding byte copies lets it run near disk and network speed."
+          },
+          {
+            "step": "Log compaction for restoring state",
+            "explanation": "Instead of deleting old records outright, drop records whose key has a newer one. The log stays a complete backup of the source's latest state but can no longer rebuild every past state."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 238\" role=\"img\" aria-labelledby=\"dg-lbs-kreps-t\" class=\"dg\"><title id=\"dg-lbs-kreps-t\">Three data sources write to one central log, and four systems (search index, Hadoop, cache and another database) each read from it, so each system connects once instead of to every other system.</title><defs><marker id=\"dg-lbs-kreps-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"24\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"64\" y=\"48.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Database</text><path d=\"M114,44 L196,100.4\" class=\"dg-line\" marker-end=\"url(#dg-lbs-kreps-a)\"/><rect x=\"14\" y=\"92\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"64\" y=\"116.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">App events</text><path d=\"M114,112 L196,114\" class=\"dg-line\" marker-end=\"url(#dg-lbs-kreps-a)\"/><rect x=\"14\" y=\"160\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"64\" y=\"184.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Metrics</text><path d=\"M114,180 L196,127.6\" class=\"dg-line\" marker-end=\"url(#dg-lbs-kreps-a)\"/><rect x=\"198\" y=\"70\" width=\"150\" height=\"88\" class=\"dg-box dg-accent\"/><text x=\"273\" y=\"102.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Central log</text><text x=\"273\" y=\"118.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">ordered, kept</text><text x=\"273\" y=\"134.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">for replay</text><rect x=\"426\" y=\"14\" width=\"120\" height=\"36\" class=\"dg-box\"/><text x=\"486\" y=\"36.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Search index</text><path d=\"M348,98 L426,32\" class=\"dg-line\" marker-end=\"url(#dg-lbs-kreps-a)\"/><rect x=\"426\" y=\"68\" width=\"120\" height=\"36\" class=\"dg-box\"/><text x=\"486\" y=\"90.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Hadoop</text><path d=\"M348,108.8 L426,86\" class=\"dg-line\" marker-end=\"url(#dg-lbs-kreps-a)\"/><rect x=\"426\" y=\"122\" width=\"120\" height=\"36\" class=\"dg-box\"/><text x=\"486\" y=\"144.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Cache</text><path d=\"M348,119.6 L426,140\" class=\"dg-line\" marker-end=\"url(#dg-lbs-kreps-a)\"/><rect x=\"426\" y=\"176\" width=\"120\" height=\"36\" class=\"dg-box\"/><text x=\"486\" y=\"198.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Other database</text><path d=\"M348,130.4 L426,194\" class=\"dg-line\" marker-end=\"url(#dg-lbs-kreps-a)\"/><text x=\"280\" y=\"226\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Each system connects once, to the log, instead of once to every other system.</text></svg>",
+        "numbers": [
+          {
+            "value": "Over 60 billion",
+            "meaning": "Unique message writes through Kafka per day at LinkedIn in 2013; several hundred billion if writes from mirroring between datacentres are counted"
+          },
+          {
+            "value": "Several hundred",
+            "meaning": "Event types defined on LinkedIn's central event log in 2013, covering page views, ad impressions, searches, service calls and exceptions"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "One central log that every system writes to and reads from.",
+          "rejected": "A custom pipeline between each pair of data systems.",
+          "why": "A new system then needs one connection instead of one per partner, and consumers do not need to know where data came from. Kreps accepts the lack of a global order across partitions and says it was not a major limit in practice."
+        },
+        "failures": "Before the log, LinkedIn's Hadoop loads were a long slog: getting data out of Oracle was slow, the data warehouse's processing was unsuitable, every new source needed custom setup, and a problem in any pipeline left the Hadoop cluster working on bad data. Compaction also has a cost: older versions of a record are gone.",
+        "takeaways": "Use the log as shared infrastructure that many systems read, not as a private queue. Position numbers show how up to date each reader is. Choose retention or compaction on purpose."
+      }
+    },
+    {
+      "id": "netflix-dblog-2020",
+      "title": "DBLog: A Watermark Based Change-Data-Capture Framework",
+      "url": "https://arxiv.org/pdf/2010.12597",
+      "company": "Netflix",
+      "verifiedOn": "2026-10-17",
+      "published": "2020-10-23",
+      "ageNote": "This is a research paper, not a company blog post: a 2020 paper by Netflix engineers. It is here for a mechanism that has not changed, which is how to combine a database's short-lived transaction log with a full table copy without locks. Its comparison with Databus, Debezium, Maxwell and MySQLStreamer reflects those tools as the authors described them in 2020, and they may have changed since.",
+      "related": [
+        "databases",
+        "replication"
+      ],
+      "digest": {
+        "problem": "Netflix services often use several databases at once, for example MySQL, PostgreSQL, Aurora or Cassandra for operational data and Elasticsearch for search. Keeping them in sync with dual writes or distributed transactions had limits. Change-data-capture, reading the transaction log, is an alternative, but a transaction log does not hold the full history, so the full table state must be captured too.",
+        "constraints": "The authors list six needs: trigger a full capture at any time, pause and resume it, keep log events flowing while it runs, never deliver an old version of a row after a newer one, avoid table locks, and work across databases without vendor-specific features.",
+        "walkthrough": [
+          {
+            "step": "Capture the transaction log",
+            "explanation": "The database must emit an event for each changed row in commit order. MySQL and PostgreSQL do this through their replication protocols. Each event carries a log sequence number."
+          },
+          {
+            "step": "Select the table in chunks",
+            "explanation": "Rows are read in ascending primary key order, a chunk at a time, each starting after the last key of the previous chunk. DBLog stores the last row of each finished chunk in ZooKeeper so it can pause and resume."
+          },
+          {
+            "step": "Mark a window with watermarks",
+            "explanation": "DBLog updates a single-row table at the source with a new UUID. That update appears in the log, so it is a marker. A low watermark is written, the chunk is selected, then a high watermark is written."
+          },
+          {
+            "step": "Resolve conflicts in memory",
+            "explanation": "Log events between the two watermarks are sent on, and any chunk row whose key changed in that window is removed. When the high watermark arrives, the remaining chunk rows are appended to the output and normal log processing continues."
+          },
+          {
+            "step": "Deliver in one format",
+            "explanation": "Events go out in the same format whether they came from the log or a select. The output is often Kafka; with log compaction on, a new consumer can bootstrap by reading the topic."
+          },
+          {
+            "step": "Stay available",
+            "explanation": "One DBLog process is active and others wait on standby. ZooKeeper is used to elect the active one."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 268\" role=\"img\" aria-labelledby=\"dg-lbs-dblog-t\" class=\"dg\"><title id=\"dg-lbs-dblog-t\">A row of transaction log events k1, k4, a low watermark, k2, k5, a high watermark, k3 and k6. A chunk of table rows is selected between the two watermarks, rows for keys k2 and k5 are dropped from it, and the output carries events up to the high watermark, then the remaining chunk rows, then later events.</title><defs><marker id=\"dg-lbs-dblog-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"62\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Log</text><rect x=\"100\" y=\"44\" width=\"50\" height=\"34\" class=\"dg-box\"/><text x=\"125\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">k1</text><rect x=\"150\" y=\"44\" width=\"50\" height=\"34\" class=\"dg-box\"/><text x=\"175\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">k4</text><rect x=\"200\" y=\"44\" width=\"50\" height=\"34\" class=\"dg-box dg-accent\"/><text x=\"225\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">low</text><rect x=\"250\" y=\"44\" width=\"50\" height=\"34\" class=\"dg-box\"/><text x=\"275\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">k2</text><rect x=\"300\" y=\"44\" width=\"50\" height=\"34\" class=\"dg-box\"/><text x=\"325\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">k5</text><rect x=\"350\" y=\"44\" width=\"50\" height=\"34\" class=\"dg-box dg-accent\"/><text x=\"375\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">high</text><rect x=\"400\" y=\"44\" width=\"50\" height=\"34\" class=\"dg-box\"/><text x=\"425\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">k3</text><rect x=\"450\" y=\"44\" width=\"50\" height=\"34\" class=\"dg-box\"/><text x=\"475\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">k6</text><rect x=\"200\" y=\"100\" width=\"200\" height=\"48\" class=\"dg-box\"/><text x=\"300\" y=\"120.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Select a chunk here,</text><text x=\"300\" y=\"136.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">drop its rows for k2, k5</text><path d=\"M300,148 L300,184\" class=\"dg-line\" marker-end=\"url(#dg-lbs-dblog-a)\"/><rect x=\"100\" y=\"186\" width=\"400\" height=\"48\" class=\"dg-box\"/><text x=\"300\" y=\"206.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Output: events up to high,</text><text x=\"300\" y=\"222.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">then chunk rows, then later events.</text><text x=\"14\" y=\"256\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">low and high are watermark events written by DBLog into the same log it reads.</text></svg>",
+        "numbers": [
+          {
+            "value": "Tens of microservices",
+            "meaning": "How many Netflix services used DBLog in production when the paper was written"
+          },
+          {
+            "value": "Trillions of operations per day",
+            "meaning": "What the paper says Netflix's hundreds of microservices do in the data layer"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Watermark-based chunk selects interleaved with the transaction log, using only common database features.",
+          "rejected": "Locking snapshots (as Debezium does for some databases), pausing the log during a dump, per-table copy tables and a separate bootstrap service.",
+          "why": "By the authors' own table, the others lock tables, stall the log, risk delivering old rows after new ones, or depend on vendor features. The watermark approach needs no locks, but it needs a primary key on each table, an efficient range scan on it, and reads that see committed changes."
+        },
+        "failures": "The paper describes no production incident. It states limits: it only selects from tables that have a primary key, and it does capture schema changes but leaves out how, for lack of space.",
+        "takeaways": "A log and a snapshot answer different questions: the log says what changed and the snapshot says what is. Put markers inside the log so you can order the two without locking the source."
+      }
+    },
+    {
+      "id": "uber-realtime-infra-2021",
+      "title": "Real-time Data Infrastructure at Uber",
+      "url": "https://arxiv.org/pdf/2104.00087",
+      "company": "Uber",
+      "verifiedOn": "2026-10-17",
+      "published": "2021-03-31",
+      "ageNote": "This is a research paper, not a company blog post: the SIGMOD 2021 paper by Uber engineers, with figures as of October 2020. It is here for how a company runs Kafka as shared infrastructure, which does not depend on the exact numbers. Uber's setup may have changed since, so read it as a 2020 account.",
+      "related": [
+        "pub-sub",
+        "message-queues"
+      ],
+      "digest": {
+        "problem": "Uber's business is real time: drivers, riders and restaurants produce data all day, and decisions such as incentives and fraud checks have to be made in seconds. Trillions of messages and petabytes of data a day pass through Kafka. Stock Kafka needed changes to run that way for thousands of applications.",
+        "constraints": "Tolerate the failure of one cluster, keep clusters at a size that performs, let thousands of applications and many languages consume without client-library upgrades taking months, and avoid both dropped and stuck messages.",
+        "walkthrough": [
+          {
+            "step": "Federate the clusters",
+            "explanation": "Clients see one logical cluster while a metadata server routes each request to the real cluster. Uber found the ideal cluster size was under 150 nodes, so it adds clusters when one fills up. Moving a topic between clusters no longer needs a consumer restart."
+          },
+          {
+            "step": "Add a dead letter queue",
+            "explanation": "Stock Kafka offers two choices for a message that cannot be processed: drop it or retry forever and block the rest. After several retries, Uber's consumers publish the message to a dead letter topic, where users can purge it or retry it on demand."
+          },
+          {
+            "step": "Add a consumer proxy",
+            "explanation": "Clients with batching and compression logic were hard to support at tens of thousands of applications, and upgrading them took months. A proxy reads from Kafka and pushes messages to a gRPC service, which also removes the cap that consumers in a group cannot outnumber partitions."
+          },
+          {
+            "step": "Keep retention short and backfill elsewhere",
+            "explanation": "Because of the scale and the work of replacing nodes, Uber limits Kafka retention to a few days. That rules out replaying history from Kafka, so backfill runs in Flink against archived data in Hive, in two styles."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 256\" role=\"img\" aria-labelledby=\"dg-lbs-uber-t\" class=\"dg\"><title id=\"dg-lbs-uber-t\">Uber's Kafka setup: producers talk to a federation metadata server that routes to one of several Kafka clusters, and a consumer proxy reads from the clusters and pushes messages to a gRPC service, sending failures to a dead letter topic.</title><defs><marker id=\"dg-lbs-uber-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"30\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"64\" y=\"54.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Producers</text><path d=\"M114,50 L150,50\" class=\"dg-line\" marker-end=\"url(#dg-lbs-uber-a)\"/><rect x=\"152\" y=\"22\" width=\"130\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"217\" y=\"46.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Federation</text><text x=\"217\" y=\"62.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">metadata server</text><path d=\"M282,40 L340,32\" class=\"dg-line\" marker-end=\"url(#dg-lbs-uber-a)\"/><path d=\"M282,62 L340,82\" class=\"dg-line\" marker-end=\"url(#dg-lbs-uber-a)\"/><rect x=\"342\" y=\"14\" width=\"120\" height=\"36\" class=\"dg-box\"/><text x=\"402\" y=\"36.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Kafka cluster A</text><rect x=\"342\" y=\"64\" width=\"120\" height=\"36\" class=\"dg-box\"/><text x=\"402\" y=\"86.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Kafka cluster B</text><text x=\"480\" y=\"36\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">add a cluster</text><text x=\"480\" y=\"52\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">when one is full</text><path d=\"M402,100 L402,140\" class=\"dg-line\" marker-end=\"url(#dg-lbs-uber-a)\"/><rect x=\"342\" y=\"142\" width=\"120\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"402\" y=\"168.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Consumer proxy</text><path d=\"M342,164 L300,164\" class=\"dg-line\" marker-end=\"url(#dg-lbs-uber-a)\"/><rect x=\"184\" y=\"146\" width=\"114\" height=\"36\" class=\"dg-box\"/><text x=\"241\" y=\"168.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">gRPC service</text><path d=\"M402,186 L402,210\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-lbs-uber-a)\"/><rect x=\"342\" y=\"212\" width=\"120\" height=\"30\" class=\"dg-box\"/><text x=\"402\" y=\"231.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Dead letter topic</text></svg>",
+        "numbers": [
+          {
+            "value": "Trillions of messages, petabytes of data per day",
+            "meaning": "Kafka traffic at Uber as of October 2020, across all regions"
+          },
+          {
+            "value": "Under 150 nodes",
+            "meaning": "What Uber's own data showed as the ideal Kafka cluster size, which is why it federates clusters"
+          },
+          {
+            "value": "A few days",
+            "meaning": "How long Uber keeps data in Kafka, which prevents using Kafka alone as the long history"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Short Kafka retention, with batch archives (Hive) used for long replays through Flink backfill modes.",
+          "rejected": "The Kappa architecture, which reuses streaming code for replays but needs very long retention in Kafka.",
+          "why": "At Uber's volume, and with node replacement to think about, long retention was too costly to operate. The price is two storage tiers and backfill tooling that reads from both."
+        },
+        "failures": "The paper explains why stock Kafka fell short rather than describing one outage: failed messages either vanish or block a partition, clusters much past about 150 nodes stop being ideal, and fat client libraries are very slow to upgrade fleet-wide.",
+        "takeaways": "Pick retention to fit what you can pay for. When thousands of teams share a log, move complexity out of the client, hide the physical cluster, and give failed messages somewhere to go."
+      }
+    },
+    {
+      "id": "linkedin-northguard-2025",
+      "title": "Introducing Northguard and Xinfra: scalable log storage at LinkedIn",
+      "url": "https://www.linkedin.com/blog/engineering/infrastructure/introducing-northguard-and-xinfra",
+      "company": "LinkedIn",
+      "verifiedOn": "2026-10-17",
+      "published": "2025-06-25",
+      "related": [
+        "replication",
+        "consensus"
+      ],
+      "digest": {
+        "problem": "LinkedIn built Kafka 15 years ago and still runs it at 32 trillion records a day, 17 PB a day, across 400K topics on more than 10K machines in 150 clusters. Metadata and cluster size became bottlenecks, over 100 clusters needed a whole ecosystem of tools to manage, and partitions as the unit of replication hurt availability and consistency, and durability guarantees were too weak for critical applications.",
+        "constraints": "Scale data and metadata together, make operations light-touch with even load by design, keep strong consistency and durability, and migrate thousands of applications, including critical ones, with no downtime.",
+        "walkthrough": [
+          {
+            "step": "Small units: records, segments, ranges, topics",
+            "explanation": "A segment is a run of records and is the unit of replication. It stays active until it is sealed, which happens at 1 GB, after an hour, or on replica failure. A range is a chain of segments for part of the key space, and a topic is a set of ranges that cover it."
+          },
+          {
+            "step": "Log striping",
+            "explanation": "Because each segment has its own replica set, a new broker just becomes a replica for new segments. No existing data has to move and unlucky combinations sort themselves out."
+          },
+          {
+            "step": "Sharded metadata",
+            "explanation": "Metadata lives in vnodes, each a Raft group, spread over a hash ring by consistent hashing. A coordinator is the leader of a vnode, and it starts re-replication when a segment is under-replicated."
+          },
+          {
+            "step": "Minimal global state",
+            "explanation": "Brokers learn the basic facts about the cluster by gossip using the SWIM protocol, so any broker can route a metadata request to the right vnode leader."
+          },
+          {
+            "step": "Stronger write path",
+            "explanation": "The primary store batches appends, writes a write-ahead log, appends to segment files, calls fsync on them and updates a sparse index in RocksDB. LinkedIn's table compares Kafka's lazy syncs against fsync on all replicas before the produce ack."
+          },
+          {
+            "step": "Xinfra for migration",
+            "explanation": "A virtual pub/sub layer lets a topic have epochs in Kafka and in Northguard. Producers move first with dual writes for safe rollback, then consumers, and dual writes are turned off last."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 246\" role=\"img\" aria-labelledby=\"dg-lbs-north-t\" class=\"dg\"><title id=\"dg-lbs-north-t\">A Northguard range made of three segments, two sealed and one active, each with its own replica set of brokers. A segment seals at 1 GB, after 1 hour or on replica failure, and the next segment can use different brokers.</title><defs><marker id=\"dg-lbs-north-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"90\" y=\"50\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">One range: a log for part of the key space</text><rect x=\"90\" y=\"60\" width=\"108\" height=\"44\" class=\"dg-box\"/><text x=\"144\" y=\"78.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Segment 1</text><text x=\"144\" y=\"94.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">sealed</text><path d=\"M144,104 L144,142\" class=\"dg-line\" marker-end=\"url(#dg-lbs-north-a)\"/><rect x=\"90\" y=\"144\" width=\"108\" height=\"44\" class=\"dg-box\"/><text x=\"144\" y=\"162.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Replica set</text><text x=\"144\" y=\"178.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">1</text><rect x=\"206\" y=\"60\" width=\"108\" height=\"44\" class=\"dg-box\"/><text x=\"260\" y=\"78.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Segment 2</text><text x=\"260\" y=\"94.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">sealed</text><path d=\"M260,104 L260,142\" class=\"dg-line\" marker-end=\"url(#dg-lbs-north-a)\"/><rect x=\"206\" y=\"144\" width=\"108\" height=\"44\" class=\"dg-box\"/><text x=\"260\" y=\"162.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Replica set</text><text x=\"260\" y=\"178.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">2</text><rect x=\"322\" y=\"60\" width=\"108\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"376\" y=\"78.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Segment 3</text><text x=\"376\" y=\"94.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">active</text><path d=\"M376,104 L376,142\" class=\"dg-line\" marker-end=\"url(#dg-lbs-north-a)\"/><rect x=\"322\" y=\"144\" width=\"108\" height=\"44\" class=\"dg-box\"/><text x=\"376\" y=\"162.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Replica set</text><text x=\"376\" y=\"178.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">3</text><text x=\"14\" y=\"218\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">A segment seals at 1 GB, after 1 hour, or when a replica fails. The next segment can</text><text x=\"14\" y=\"234\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">land on different brokers, so a new broker fills up without moving old data.</text></svg>",
+        "numbers": [
+          {
+            "value": "32T records/day",
+            "meaning": "LinkedIn's Kafka volume before Northguard, also given as 17 PB/day on 400K topics, 10K+ machines and 150 clusters"
+          },
+          {
+            "value": "1 GB or 1 hour",
+            "meaning": "When an active Northguard segment is sealed, other than on replica failure"
+          },
+          {
+            "value": "N (128+)",
+            "meaning": "How many coordinators and sharded state machines Northguard's table lists, against one controller in Kafka"
+          },
+          {
+            "value": "Over 90%",
+            "meaning": "Share of applications running Xinfra clients, with thousands of topics already moved from Kafka to Northguard"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Segments as the unit of replication, with sharded Raft metadata and stronger sync rules.",
+          "rejected": "Staying with Kafka partitions as the unit, where balancing, replacing and recovering data need outside services and consistency is traded for availability.",
+          "why": "Smaller units balance by themselves and keep producers available while a replica fails. The cost is a new system to build and test, plus a large migration behind a virtual layer. The post says performance meets LinkedIn's SLOs for Kafka and gives no latency percentiles, so treat the speed claims as LinkedIn's own."
+        },
+        "failures": "The post is a design write-up and reports no incident. It says the old setup struggled at scale: stressed controller and metadata, weak durability for critical applications, and consistency often given up for availability.",
+        "takeaways": "A smaller replication unit makes a cluster balance itself. Hide the physical system behind a virtual layer before you migrate, and migrate with dual writes so you can roll back."
+      }
+    }
+  ],
+  "comparison": "All four sources treat the log as shared infrastructure that many readers consume at their own pace, with position as the only per-reader state. Kreps states the idea in 2013, Uber and LinkedIn run it on Kafka at the scale of trillions of records a day, and Netflix feeds a log from databases.\n\nThey differ in what they worry about. Kreps wants one log instead of pipes between every pair of systems. Netflix worries about the start of the story: a database's own log is short-lived, so it blends table selects into the log using watermarks. Uber shortens retention to a few days and moves replay to a batch archive. LinkedIn goes the other way and rebuilds the log with smaller units of replication, so the cluster can balance and heal itself.\n\nThe evidence is uneven. The Netflix and Uber papers are by the teams that ran the systems, but DBLog's comparison with other tools is the authors' own table, and Uber's figures date from October 2020. LinkedIn's 2025 post gives volumes and a design comparison, with no latency percentiles.",
+  "glossary": [
+    {
+      "term": "Log",
+      "definition": "An append-only, ordered sequence of records where each entry has a position."
+    },
+    {
+      "term": "Offset",
+      "definition": "A record's position in a partition, also what a consumer stores to remember how far it has read."
+    },
+    {
+      "term": "Topic",
+      "definition": "A named stream of records, split into partitions."
+    },
+    {
+      "term": "Partition",
+      "definition": "One ordered slice of a topic. Order is guaranteed inside it, not across partitions."
+    },
+    {
+      "term": "Consumer group",
+      "definition": "A set of consumers that share a topic's partitions so each partition has one reader at a time."
+    },
+    {
+      "term": "Retention",
+      "definition": "How long, or how much, a log keeps before dropping old data."
+    },
+    {
+      "term": "Log compaction",
+      "definition": "Retention that keeps the newest record for each key and drops older ones."
+    },
+    {
+      "term": "Change-data-capture (CDC)",
+      "definition": "Reading a database's transaction log to publish each row change as an event."
+    },
+    {
+      "term": "Watermark",
+      "definition": "A marker event written into a log to show where a window starts or ends."
+    },
+    {
+      "term": "Segment",
+      "definition": "A piece of a log stored as one file, and in Northguard the unit of replication."
+    }
+  ],
+  "mistakes": [
+    "Expecting one global order. Order holds only inside a partition, so events that must stay in sequence need the same key.",
+    "Committing the consumer's position before the work is done. A crash then loses the unfinished records. Commit after the work and make the work safe to repeat.",
+    "Treating the log as a permanent archive. Retention trims it, as Uber's few days show, and a database's own transaction log is trimmed too. Keep a snapshot or use compaction for state you must be able to rebuild."
+  ]
+}

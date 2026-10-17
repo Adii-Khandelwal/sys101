@@ -246,7 +246,7 @@
     ],
     "next": {
       "outcome": "After this you can choose the next topic that builds on distributed transactions.",
-      "body": "Distributed transactions lean directly on Consensus for durable agreement and on Sharding for the data they span, and they inherit the CAP trade-off between staying consistent and staying available. The saga alternative connects back to Message Queues and Event-driven Architecture, where each step and its compensation are messages. Failover keeps the coordinator and participants alive."
+      "body": "Distributed transactions lean directly on Consensus for durable agreement and on Sharding for the data they span, and they inherit the CAP trade-off between staying consistent and staying available. The saga alternative connects back to Message Queues and Event-driven Architecture, where each step and its compensation are messages. Failover keeps the coordinator and participants alive. Time, Clocks and Consistency comes next: it shows why commit order depends on clocks that disagree, how Meta narrowed that error, and what weaker consistency levels cost and save."
     }
   },
   "posts": [

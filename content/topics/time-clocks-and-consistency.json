@@ -1,0 +1,643 @@
+{
+  "slug": "time-clocks-and-consistency",
+  "title": "Time, Clocks and Consistency",
+  "group": "Data",
+  "interviewRelevance": "common",
+  "concept": "Machines in a distributed system do not share a clock. Each has a quartz clock that drifts and is nudged back toward true time over a network, so two machines can disagree about which of two events came first. Systems answer in three ways: bound the clock error and wait it out, count events instead of seconds, or choose a weaker consistency level that does not need an exact order. The consistency models are the names for what a read is allowed to return as a result.",
+  "prerequisites": [
+    "distributed-transactions"
+  ],
+  "summary": {
+    "points": [
+      "Two machines' clocks always differ by a small unknown error, so comparing their timestamps cannot reliably order events that happen close together.",
+      "Meta shrank that error by moving from ntpd to chrony and then to PTP with hardware timestamps, and hands out a window of uncertainty, not one time.",
+      "With a window, a system can wait out the uncertainty before acting, which orders operations without asking several replicas.",
+      "Facebook measured that stronger consistency would change only a tiny share of reads, and in a 2019 Atlas sample most MongoDB operations used cheaper defaults.",
+      "Logical clocks and CRDTs avoid physical time entirely, at the price of ordering only causally related events or only data that merges cleanly."
+    ],
+    "figures": [
+      {
+        "postId": "ptp-meta-2022",
+        "row": 0,
+        "label": "Early PTP showed a roughly 100x performance difference over NTP for commit-wait reads"
+      },
+      {
+        "postId": "existential-facebook-2015",
+        "row": 0,
+        "label": "0.0004% of vertex reads would differ under linearizability"
+      },
+      {
+        "postId": "mongodb-tunable-2019",
+        "row": 1,
+        "label": "99.60% of reads in a sample of Atlas nodes used the default local level"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "distributed-transactions": "Distributed transactions need an agreed order of commits, so you should know why that order matters before seeing how clocks and consistency levels help or hurt."
+  },
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why comparing timestamps from two machines is unsafe and name the three ways systems cope.",
+      "body": "On one machine, the order of events is whatever that machine's clock and CPU say. Once data lives on several machines, questions such as which write came last, or whether this read sees that write, depend on comparing times taken on different machines.\n\nThat comparison is weaker than it looks. Each machine has a cheap quartz clock that runs a little fast or slow, and a time protocol over the network keeps nudging it back toward true time. The correction is never exact, because the network delay is not known and is not always the same in both directions. Two timestamps that are close together can therefore be in the wrong order, and a rule such as \"the newest timestamp wins\" can quietly keep the older write.\n\nThere are three ways out. Bound the clock error and wait it out, so an order is safe once the uncertainty has passed. Stop using seconds and count events, which orders only what is causally connected. Or accept a weaker consistency level, where a read may be slightly stale, and decide per kind of data how stale is acceptable. The systems on this page use all three, and the posts put numbers on what each one costs."
+    },
+    "mentalModel": {
+      "outcome": "After this you can picture a timestamp as a range of possible true times and say when two events can be ordered by clock alone.",
+      "body": "Think of every timestamp as a range, not a point. A clock reading says the true time is somewhere around here, and the width of the range is how wrong the clock might be. Two events can be ordered by time only when their ranges do not overlap. When they overlap, the clocks cannot tell you which came first.\n\nThat gives three levers. Make the ranges narrower with better clocks and better network hardware, which is the work Meta describes. Wait until the ranges stop overlapping before you act on an order, which is called a commit-wait. Or skip physical time and build the order from messages, so that a reply is always after the message it answers.\n\nConsistency models sit on top of this. Linearizability means every operation looks as if it happened at one instant between its start and its end, so a read never returns something older than a write that already finished. Weaker models, such as reading your own writes, keeping order within a session, or eventual consistency, give up part of that promise in return for fewer round trips and better availability.",
+      "diagram": "<svg viewBox=\"0 0 560 240\" role=\"img\" aria-labelledby=\"dg-tcc-model-t\" class=\"dg\"><title id=\"dg-tcc-model-t\">Two pairs of events drawn as ranges on a true-time axis. When the ranges overlap, the order is unknown. When the first range ends before the second begins, the first event is safely earlier.</title><defs><marker id=\"dg-tcc-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"12\" y=\"24\" class=\"dg-note\" text-anchor=\"start\" font-size=\"12\">Ranges overlap: either event could be first</text><rect x=\"60\" y=\"34\" width=\"200\" height=\"22\" class=\"dg-box\"/><circle cx=\"160\" cy=\"45\" r=\"3\" class=\"dg-dot\"/><rect x=\"180\" y=\"64\" width=\"200\" height=\"22\" class=\"dg-box dg-accent\"/><circle cx=\"280\" cy=\"75\" r=\"3\" class=\"dg-dot-accent\"/><text x=\"270\" y=\"49\" class=\"dg-note\" text-anchor=\"start\" font-size=\"12\">event one</text><text x=\"390\" y=\"79\" class=\"dg-note\" text-anchor=\"start\" font-size=\"12\">event two</text><text x=\"12\" y=\"126\" class=\"dg-note\" text-anchor=\"start\" font-size=\"12\">Ranges do not overlap: event one is safely earlier</text><rect x=\"60\" y=\"136\" width=\"160\" height=\"22\" class=\"dg-box\"/><circle cx=\"140\" cy=\"147\" r=\"3\" class=\"dg-dot\"/><rect x=\"270\" y=\"166\" width=\"160\" height=\"22\" class=\"dg-box dg-accent\"/><circle cx=\"350\" cy=\"177\" r=\"3\" class=\"dg-dot-accent\"/><text x=\"230\" y=\"151\" class=\"dg-note\" text-anchor=\"start\" font-size=\"12\">event one</text><text x=\"440\" y=\"181\" class=\"dg-note\" text-anchor=\"start\" font-size=\"12\">event two</text><path d=\"M12,212 L548,212\" class=\"dg-line\" marker-end=\"url(#dg-tcc-model-a)\"/><text x=\"548\" y=\"206\" class=\"dg-note\" text-anchor=\"end\" font-size=\"12\">true time</text><text x=\"12\" y=\"232\" class=\"dg-note\" text-anchor=\"start\" font-size=\"12\">dot = what the clock says, bar = where the true time could be</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can follow a clock from drift to a safe ordering, and say what a window of uncertainty, a logical clock and a CRDT each add.",
+      "steps": [
+        {
+          "step": "Every clock drifts",
+          "explanation": "A quartz crystal counts time, but its frequency varies with manufacturing and temperature, so one clock runs a little fast and another a little slow. That rate error is drift, and the difference between two clocks at one moment is skew. Left alone, skew grows."
+        },
+        {
+          "step": "A time protocol estimates the offset",
+          "explanation": "An NTP client exchanges four timestamps with a server and estimates how far its clock is from the server's, assuming the network delay is the same in both directions. That assumption is the weak point. The client then speeds up or slows down its clock to close a small error, or steps it to close a large one. The estimate is only an estimate, a point Meta's NTP post makes by measuring the real error with separate equipment."
+        },
+        {
+          "step": "Better hardware shrinks the error",
+          "explanation": "Stamping packets in the network card instead of in software removes the unpredictable delay of the operating system. PTP, a protocol built around those hardware timestamps and around switches that report the delay they add, goes further. Across Meta's two posts the error falls from milliseconds with ntpd, to hundreds of microseconds with chrony, to windows of hundreds of nanoseconds with PTP."
+        },
+        {
+          "step": "Report a window, not a time",
+          "explanation": "A careful time service does not return now. It returns an earliest and a latest time that contain the true time with a stated confidence, and the application decides what to do with the range. Meta's fbclock works this way, and so does the TrueTime service behind Spanner, which the CAP Theorem topic covers."
+        },
+        {
+          "step": "Wait out the window",
+          "explanation": "Before telling a client that a write is done, or before answering a read at a given timestamp, the system waits until the window has passed. After that wait, any later operation, even on another machine, gets a later time. The pause is as long as the window, so a narrower window means a shorter pause."
+        },
+        {
+          "step": "With no bound, count events",
+          "explanation": "A Lamport clock is a counter. Each node adds one for every event and, on receiving a message, moves to one more than the larger of its own counter and the one in the message. If one event could have caused another, the first gets the smaller number. Vector clocks keep a counter per node, which also lets them tell that two events were concurrent. Neither says anything about wall-clock time."
+        },
+        {
+          "step": "Choose how fresh each read must be",
+          "explanation": "A linearizable read costs waiting or round trips to a quorum, so many systems let each operation choose. MongoDB exposes this as write concern and read concern per operation. A write concern sets how many nodes must hold a write before it is acknowledged. A read concern chooses between data that is committed to a majority and so will not be rolled back, and newer data that might still be rolled back. The paper's usage sample shows how often teams kept the cheaper defaults."
+        },
+        {
+          "step": "Merge instead of ordering: CRDTs",
+          "explanation": "A CRDT, a conflict-free replicated data type, is built so that replicas can apply updates in any order, and even twice, and still reach the same state, because its merge rule is commutative, associative and idempotent. Counters and sets are common examples. Replicas never wait for each other, which gives strong eventual consistency, but it only suits data whose merge you can define, and a last-writer-wins register still silently drops a concurrent update."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 180\" role=\"img\" aria-labelledby=\"dg-tcc-how-t\" class=\"dg\"><title id=\"dg-tcc-how-t\">Five steps from a drifting clock to a safe order: a drifting quartz clock, sync with a time server, a time plus error window, waiting out the window, then an order that is safe to use. A dashed branch says that without a usable bound, logical clocks count events instead.</title><defs><marker id=\"dg-tcc-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"24\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"62\" y=\"48.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Drifting</text><text x=\"62\" y=\"64.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">quartz clock</text><path d=\"M112,52 L124,52\" class=\"dg-line\" marker-end=\"url(#dg-tcc-how-a)\"/><rect x=\"124\" y=\"24\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"174\" y=\"48.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Sync with</text><text x=\"174\" y=\"64.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">a time server</text><path d=\"M224,52 L236,52\" class=\"dg-line\" marker-end=\"url(#dg-tcc-how-a)\"/><rect x=\"236\" y=\"24\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"286\" y=\"48.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Time plus</text><text x=\"286\" y=\"64.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">error window</text><path d=\"M336,52 L348,52\" class=\"dg-line\" marker-end=\"url(#dg-tcc-how-a)\"/><rect x=\"348\" y=\"24\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"398\" y=\"48.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Wait out</text><text x=\"398\" y=\"64.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">the window</text><path d=\"M448,52 L460,52\" class=\"dg-line\" marker-end=\"url(#dg-tcc-how-a)\"/><rect x=\"460\" y=\"24\" width=\"88\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"504\" y=\"48.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Order is</text><text x=\"504\" y=\"64.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">safe to use</text><path d=\"M286,80 L286,108\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-tcc-how-a)\"/><rect x=\"100\" y=\"108\" width=\"372\" height=\"46\" class=\"dg-box dg-dashed\"/><text x=\"286\" y=\"127.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">No usable bound on the error?</text><text x=\"286\" y=\"143.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Count events instead: logical clocks</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can walk through a stale read after a write and compare a quorum read, a timestamped read and a weaker setting.",
+      "steps": [
+        {
+          "step": "The symptom",
+          "explanation": "A user changes a display name and reloads. The write went to the leader, but the read is served by a replica in another region that has not received it yet, so the old name appears. Meta's PTP post calls this a violation of linearizability, because the read returned something older than a write that had already finished."
+        },
+        {
+          "step": "The expensive fix",
+          "explanation": "Send the read to several replicas and take the majority answer. It is correct, but every read now costs extra work and waits on a network round trip between replicas."
+        },
+        {
+          "step": "The clock fix, write side",
+          "explanation": "The leader gives the write a timestamp T from its clock, waits out its window of uncertainty, and acknowledges. The acknowledgement carries T."
+        },
+        {
+          "step": "The clock fix, read side",
+          "explanation": "The next read carries a read timestamp no earlier than T. The replica holds the read until it has applied every write up to that time plus the window, and then answers from its own data. No other replica is asked."
+        },
+        {
+          "step": "Why the window size matters",
+          "explanation": "The hold lasts as long as the replica needs to catch up, plus the window. A window of several milliseconds is paid on every such read. A window of hundreds of nanoseconds almost disappears. In Meta's comparison of commit-wait reads, an early PTP setup was roughly 100x better than its NTP setup."
+        },
+        {
+          "step": "The cheaper alternative",
+          "explanation": "For many fields exact freshness is not worth even that. A like count can lag. A per-session token gives read-your-writes without a tight clock, which the Start from zero page shows with Azure Cosmos DB. In the MongoDB paper's 2019 sample of Atlas nodes, most operations used the weaker defaults."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 270\" role=\"img\" aria-labelledby=\"dg-tcc-example-t\" class=\"dg\"><title id=\"dg-tcc-example-t\">A write and a later read with a timestamp. The client writes to the leader, which picks a timestamp T, waits out the clock window and acknowledges. The leader replicates to a replica. The client then reads from the replica with a time after T, and the replica holds the read until it has caught up to T plus the window before answering.</title><defs><marker id=\"dg-tcc-example-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"8\" width=\"100\" height=\"28\" class=\"dg-box\"/><text x=\"70\" y=\"26.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><rect x=\"230\" y=\"8\" width=\"100\" height=\"28\" class=\"dg-box\"/><text x=\"280\" y=\"26.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Leader</text><rect x=\"440\" y=\"8\" width=\"100\" height=\"28\" class=\"dg-box\"/><text x=\"490\" y=\"26.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Replica</text><path d=\"M70,36 L70,264\" class=\"dg-line dg-dashed\"/><path d=\"M280,36 L280,264\" class=\"dg-line dg-dashed\"/><path d=\"M490,36 L490,264\" class=\"dg-line dg-dashed\"/><path d=\"M70,64 L280,64\" class=\"dg-line\" marker-end=\"url(#dg-tcc-example-a)\"/><text x=\"175\" y=\"56\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"12\">1. write x = 2</text><rect x=\"205\" y=\"74\" width=\"150\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"90.7\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Pick timestamp T,</text><text x=\"280\" y=\"105.7\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">wait out the window</text><path d=\"M280,140 L490,140\" class=\"dg-line\" marker-end=\"url(#dg-tcc-example-a)\"/><text x=\"385\" y=\"132\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"12\">2. replicate x = 2 at T</text><path d=\"M280,162 L70,162\" class=\"dg-line\" marker-end=\"url(#dg-tcc-example-a)\"/><text x=\"175\" y=\"154\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"12\">3. ok</text><path d=\"M70,196 L490,196\" class=\"dg-line\" marker-end=\"url(#dg-tcc-example-a)\"/><text x=\"240\" y=\"188\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"12\">4. read x at a time after T</text><rect x=\"420\" y=\"206\" width=\"140\" height=\"36\" class=\"dg-box dg-accent\"/><text x=\"490\" y=\"220.7\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">Hold read until</text><text x=\"490\" y=\"235.7\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">T plus the window</text><path d=\"M490,258 L70,258\" class=\"dg-line\" marker-end=\"url(#dg-tcc-example-a)\"/><text x=\"280\" y=\"250\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"12\">5. x = 2</text></svg>"
+    },
+    "mistakesOutcome": "After this you can spot the three most common ways teams misuse clocks and consistency settings.",
+    "checkOutcome": "After this you can test yourself on clock error, windows, logical clocks and consistency levels.",
+    "quiz": [
+      {
+        "question": "Two servers stamp two writes with their own clocks, and the stamps are very close together. Why can the write with the lower stamp still have happened later?",
+        "options": [
+          "Timestamps are rounded to the nearest second before they are stored",
+          "Databases sort timestamps as text, which orders some of them wrongly",
+          "Each clock is off by a different small amount, and the gap between the stamps can be smaller than that error",
+          "A server's clock stops running while it waits on the network"
+        ],
+        "correct": 2,
+        "why": "Quartz clocks drift and synchronisation leaves an error of its own, so two stamps closer together than that error cannot be put in a reliable order. Meta's NTP post measured the real offset of ntpd spreading across 13 ms in its lab.",
+        "wrong": [
+          "Stamps are not rounded to whole seconds, and rounding would not explain a wrong order between two different machines.",
+          "Timestamps sort correctly as numbers. The trouble is the clocks that produced them, not how they are sorted.",
+          "",
+          "Clocks keep running while a server waits. The error comes from drift and from imperfect correction."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "In the picture where each timestamp is a range of possible true times, when can you safely say one event happened before another?",
+        "options": [
+          "When the first event's range ends before the second event's range begins",
+          "When the first event's timestamp is lower than the second event's timestamp",
+          "When both events were stamped by the same time server, whatever the ranges",
+          "When the two ranges overlap by less than half of their width, which is close enough"
+        ],
+        "correct": 0,
+        "why": "If the two ranges do not overlap, every possible true time for the first event is earlier than every possible true time for the second, so the order is certain.",
+        "wrong": [
+          "",
+          "A lower reading is only the middle of a range. With overlapping ranges the true order can be the other way round.",
+          "Two machines served by the same server still end up with different small errors, so their ranges can still overlap.",
+          "A partial overlap still leaves both orders possible. There is no safe amount of overlap."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "A time service returns an earliest and a latest time instead of one time. What should a system do with that window before it promises an order?",
+        "options": [
+          "Take the midpoint of the window and treat it as the exact time, since that is the best single guess",
+          "Store only the start of the window and ignore the end",
+          "Send the window back to the time server so it can correct its own clock",
+          "Wait until the window has passed before treating the event as ordered"
+        ],
+        "correct": 3,
+        "why": "Waiting out the window, the commit-wait, guarantees that any later operation gets a later time. Meta's PTP post describes blocking a read until the read timestamp plus the window of uncertainty.",
+        "wrong": [
+          "The midpoint throws away the uncertainty the window reports, which brings back the wrong-order problem.",
+          "Ignoring the end of the window hides how late the true time could be.",
+          "The window is the output of the sync process, not a request for the server to fix anything.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "A user saves a change and the next page load shows the old value because the read hit a lagging replica. According to Meta's PTP post, how does precise time avoid asking many replicas?",
+        "options": [
+          "Send each read to every replica and wait for a majority of them to agree",
+          "Give the read a timestamp and hold it at the replica until the replica has caught up to that time plus the window",
+          "Keep the read result in a client cache for ever, so a second read never reaches a replica",
+          "Send every write to the replica twice, so one copy is sure to arrive in time"
+        ],
+        "correct": 1,
+        "why": "With trustworthy timestamps the replica can simply wait until it is up to date for the read's time, which saves the extra reads and the round trip that a quorum needs.",
+        "wrong": [
+          "That is the quorum approach the post describes as costing extra resources and a long round trip, which timestamps are meant to avoid.",
+          "",
+          "A cache that never expires would serve stale data to everyone, so it makes the staleness problem worse.",
+          "Sending a write twice does not tell the replica when a read is safe to answer."
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "A job times a function with the time-of-day clock and sometimes reports a negative duration. What is the likely cause and the fix?",
+        "options": [
+          "The disk is full, so free some space before timing the function again",
+          "Logical clocks run backwards on loaded machines, so switch to vector clocks everywhere",
+          "The sync daemon stepped the clock, so measure elapsed time with a monotonic clock",
+          "The time zone changed during the run, so record all durations in local time"
+        ],
+        "correct": 2,
+        "why": "When NTP corrects a large error it steps the time-of-day clock, so it can jump forward or backward in the middle of a measurement. A monotonic clock only moves forward and is meant for elapsed time on one machine.",
+        "wrong": [
+          "Disk space has no effect on what a clock returns.",
+          "Logical clocks are counters that never run backwards, and they are not used to time a function.",
+          "",
+          "Time zones are offsets applied for display. They do not make a clock move backwards."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "In the MongoDB paper's sample of Atlas deployments, which behaviour did most operations use?",
+        "options": [
+          "The defaults: local reads and w:1 writes",
+          "Majority reads and majority writes, because users prefer safety",
+          "Linearizable reads and majority writes, because users expect the newest data",
+          "Snapshot reads with w:2 writes, to balance safety and speed"
+        ],
+        "correct": 0,
+        "why": "Local reads were 99.60% of reads and the default w:1 was 79.17% of writes. The authors conclude that users generally accept the defaults, and they note the counts are low because the nodes had just restarted.",
+        "wrong": [
+          "",
+          "Majority was 0.13% of reads and 15.86% of writes. Users say they would like it but move to weaker levels when it feels slow.",
+          "Linearizable reads were under 0.01% of reads in the table.",
+          "Snapshot reads were under 0.01% of reads in the table, so they were not the common choice."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Facebook measured that 0.0004% of vertex reads would differ under linearizability, and MongoDB found most users keep the weaker defaults. What do the two sources suggest together?",
+        "options": [
+          "Strong consistency is not worth the cost in any system, because the measurements show that anomalies are too rare to matter anywhere",
+          "Weaker consistency produces visible errors on a large share of reads",
+          "Clock error has no effect on either system, so time synchronisation can be ignored",
+          "Weaker levels often show anomalies rarely enough that teams accept them, but each team still has to check its own data"
+        ],
+        "correct": 3,
+        "why": "Both sources show weaker levels working well in practice, and both give reasons: failovers are rare (MongoDB), or writes are rare and requests stay local (Facebook). Both are samples, one from Facebook's graph in 2015 and one from Atlas, so they do not prove the same rate for another system.",
+        "wrong": [
+          "The Facebook paper says its numbers measure the benefit of stronger consistency, and some applications still need it, so the sources do not say it is never worth paying for.",
+          "A rate of 0.0004% is small, not large, and MongoDB users mostly accept the defaults.",
+          "Facebook widened every interval by 35 ms for clock skew, so clock error clearly mattered to the measurement itself.",
+          ""
+        ],
+        "teaches": "model"
+      }
+    ],
+    "postsOutcome": "After this you can describe how Meta cut clock error, how Facebook measured stale reads, and how MongoDB lets teams choose per operation.",
+    "differOutcome": "After this you can say what the four sources share, where they diverge and how strong each one's evidence is.",
+    "exercisesOutcome": "After this you can fix an ordering bug caused by clocks, pick a read-your-writes design and plan for a bigger clock wait.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A profile service resolves two updates to the same profile by keeping the one with the newest wall-clock timestamp from the app server that handled it. Users report that an older edit sometimes wins. Why does it happen and what do you change?",
+        "answer": "The two app servers have different small clock errors, so an edit made later on a slower clock can get the lower timestamp and lose. Stop ordering by wall-clock time across machines. Have one place assign the order, such as the database leader giving each update a version number, or make each update say which version it was based on and reject it if that version is no longer current. If concurrent edits must both be kept, record them with a vector clock and merge or ask the user.",
+        "tradeoffs": "A single place to assign versions adds a hop and a bottleneck, and a compare-and-set rejects some updates that then need a retry. Last-write-wins is simplest, but with clocks that can differ it silently drops one update.",
+        "wrongAnswers": [
+          "Run NTP more often. That narrows the error but cannot reduce it to zero, so close timestamps can still be misordered.",
+          "Add a few milliseconds to every timestamp. It shifts all clocks the same way and fixes nothing between two machines.",
+          "Switch to a bigger timestamp type. Resolution is not the problem, accuracy is."
+        ],
+        "teaches": "why"
+      },
+      {
+        "level": "design",
+        "prompt": "A profile service has a leader in one region and replicas in two others. A user must always see their own edits after saving, but other users may see them a moment later. Choose between a quorum read, a timestamped read that waits, and a session token, and say what you would build.",
+        "answer": "Use a session token. After a write the client keeps a token that says how far the data had advanced, and later reads go to any replica that has reached that point, or wait for it or retry elsewhere. This gives read-your-writes for that user only, which is all the requirement asks for, and it needs no tight clocks. A timestamped read that waits gives a stronger guarantee for everyone but needs a bounded clock window on every replica. A quorum read works but adds an extra round trip to every read.",
+        "tradeoffs": "A session token does not help a user who switches devices unless the token travels with them, and other users can see old data for a while. The timestamped read protects every reader but ties your latency to the clock window and replication lag.",
+        "wrongAnswers": [
+          "Use linearizable reads everywhere. It is correct but pays the cost for every reader, though only the author needs the guarantee.",
+          "Read from the leader for every request. It works but removes the point of having regional replicas.",
+          "Retry the read until the value changes. The client cannot know what the new value should be, so it cannot tell when to stop."
+        ],
+        "teaches": "example"
+      },
+      {
+        "level": "scale",
+        "prompt": "Your database uses commit-wait with a clock window of several milliseconds. Write latency is acceptable today, but traffic is going up 10x and the same machines will hold locks while they wait. What can you change, and in what order?",
+        "answer": "First check how much of the latency is the window rather than replication. If the window dominates, shrink it: enable hardware timestamps, add time sources closer to the servers, and move from NTP-grade sync toward a precision protocol, as Meta's NTP and PTP posts did. Second, shorten the time anything is held during the wait, for example by releasing resources that do not depend on the timestamp. Third, move data that tolerates staleness to a weaker level, since the MongoDB data shows many teams accept it. Test the change under 10x load rather than assume the wait scales linearly.",
+        "tradeoffs": "Precision time needs new hardware, network support and monitoring, which Meta describes as years of work. Weaker levels save latency but push conflict handling and stale reads onto the application.",
+        "wrongAnswers": [
+          "Remove the wait. Without it, a later operation can get an earlier time, which breaks the ordering the system exists to give.",
+          "Add more app servers. The wait is set by clock error, so more servers do not make it shorter.",
+          "Lower the window by trusting the sync daemon's own error estimate. Meta shows those estimates can be far from the measured error."
+        ],
+        "teaches": "how"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on clocks and consistency.",
+      "body": "Time and consistency touch everything that copies data. Revisit Replication and the CAP Theorem with these clocks in mind, and read Consensus to see how a group can agree on an order without trusting clocks at all. The CAP Theorem topic covers Spanner, which uses a bounded clock to order commits."
+    }
+  },
+  "posts": [
+    {
+      "id": "ntp-meta-2020",
+      "title": "Building a more accurate time service at Facebook scale",
+      "url": "https://engineering.fb.com/2020/03/18/production-engineering/ntp-service/",
+      "company": "Meta",
+      "verifiedOn": "2026-10-17",
+      "published": "2020-03-18",
+      "ageNote": "This is a March 2020 account of Meta's NTP service. Meta's 2022 PTP post, also on this page, describes PTP as the successor to NTP at Meta, so the NTP numbers describe the earlier setup. It stays because the lesson holds on any system: a daemon's own error estimate is not the real error until something independent measures it.",
+      "digest": {
+        "problem": "Meta needed to know the true time difference between any two servers in a data center, so that datastore writes would not mix up the order of transactions, and needed servers across many data centers synced to better than a millisecond. The ntpd service it ran was accurate to about 10 ms.",
+        "constraints": "A time daemon's offset estimate rests on assumptions: the network path is symmetric, the operating system sends a packet immediately after stamping it, and oscillator temperature and voltage are steady. Linux is not a real-time system, so a packet stamped in software may leave later. Leap seconds can make servers miss events if time jumps. Checking the result needed an independent measure of the true offset, which meant special hardware.",
+        "walkthrough": [
+          {
+            "step": "Layer the service",
+            "explanation": "Stratum 0 is GNSS satellites with atomic clocks. Stratum 1 is Meta's own atomic clock synced to GNSS. Stratum 2 is a pool of NTP servers that smears leap seconds. Stratum 3 is a tier configured for larger scale that receives smeared time. The post notes a system can have as many as 16 layers, depending on scale and precision needs."
+          },
+          {
+            "step": "Swap ntpd for chrony",
+            "explanation": "Meta tested both daemons. Resource use was close, with chrony using about 1 MiB less RAM. With ntpd the monitored offset stayed within about ±1.5 ms. After the switch it was in the range of microseconds, and the estimated error window fell to hundreds of microseconds. When chrony syncs to another chrony it uses an extended NTP protocol that tightens the error further."
+          },
+          {
+            "step": "Distrust the daemon's own numbers",
+            "explanation": "ntpd reported an offset of 0.185 ms, but the post explains that such a figure is probably within about 2 ms either way. Meta measured the real offset with a 1PPS pulse signal and an oscilloscope, which showed about 3.5 ms for ntpd and sometimes 10 ms, and then with a lab device that has its own atomic clock and stamps NTP packets itself."
+          },
+          {
+            "step": "Turn on hardware timestamps",
+            "explanation": "With software stamping, the time between filling in the timestamp and the packet leaving is unknown. A network card that stamps packets in hardware cuts that gap to under 10 ns. In the lab, ntpd's offset ranged from -10 ms to 3 ms, chrony stayed within -200 µs to 200 µs, and in most cases chrony with hardware timestamps stayed within -100 µs to 100 µs."
+          },
+          {
+            "step": "Smear the leap second",
+            "explanation": "For the public service on time.facebook.com the team chose chrony's approach: start smearing when the leap second happens and spread it over about 18 hours, using a smooth sine curve that is safer for applications."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 190\" role=\"img\" aria-labelledby=\"dg-tcc-ntp-t\" class=\"dg\"><title id=\"dg-tcc-ntp-t\">Meta's NTP layers: GNSS satellites at stratum 0, Meta's atomic clock at stratum 1, a pool of NTP servers at stratum 2 where leap seconds are smeared, a larger tier at stratum 3, then servers running chrony. A dashed box shows a lab device with its own atomic clock measuring the true offset.</title><defs><marker id=\"dg-tcc-ntp-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"20\" width=\"100\" height=\"62\" class=\"dg-box\"/><text x=\"62\" y=\"39.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Stratum 0</text><text x=\"62\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">GNSS</text><text x=\"62\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">satellites</text><path d=\"M112,51 L124,51\" class=\"dg-line\" marker-end=\"url(#dg-tcc-ntp-a)\"/><rect x=\"124\" y=\"20\" width=\"100\" height=\"62\" class=\"dg-box\"/><text x=\"174\" y=\"39.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Stratum 1</text><text x=\"174\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Meta atomic</text><text x=\"174\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">clock</text><path d=\"M224,51 L236,51\" class=\"dg-line\" marker-end=\"url(#dg-tcc-ntp-a)\"/><rect x=\"236\" y=\"20\" width=\"100\" height=\"62\" class=\"dg-box\"/><text x=\"286\" y=\"39.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Stratum 2</text><text x=\"286\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">pool, smears</text><text x=\"286\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">leap second</text><path d=\"M336,51 L348,51\" class=\"dg-line\" marker-end=\"url(#dg-tcc-ntp-a)\"/><rect x=\"348\" y=\"20\" width=\"100\" height=\"62\" class=\"dg-box\"/><text x=\"398\" y=\"39.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Stratum 3</text><text x=\"398\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">larger-scale</text><text x=\"398\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">tier</text><path d=\"M448,51 L460,51\" class=\"dg-line\" marker-end=\"url(#dg-tcc-ntp-a)\"/><rect x=\"460\" y=\"20\" width=\"88\" height=\"62\" class=\"dg-box dg-accent\"/><text x=\"504\" y=\"39.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Servers</text><text x=\"504\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">running</text><text x=\"504\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">chrony</text><rect x=\"100\" y=\"124\" width=\"372\" height=\"46\" class=\"dg-box dg-dashed\"/><text x=\"286\" y=\"143.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Lab device with its own atomic clock</text><text x=\"286\" y=\"159.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">stamps NTP packets to measure the true offset</text><path d=\"M504,82 L440,124\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-tcc-ntp-a)\"/></svg>",
+        "numbers": [
+          {
+            "value": "10 ms to 100 µs",
+            "meaning": "The accuracy improvement the post describes from moving off ntpd, in its own summary"
+          },
+          {
+            "value": "13 ms",
+            "meaning": "Spread of ntpd's measured offset in the lab, from -10 ms to 3 ms"
+          },
+          {
+            "value": "-200 µs to 200 µs",
+            "meaning": "Range chrony showed against the same lab device"
+          },
+          {
+            "value": "-100 µs to 100 µs",
+            "meaning": "Range chrony showed in most cases with hardware timestamps enabled"
+          },
+          {
+            "value": "about 18 hours",
+            "meaning": "How long the public service smears a leap second after it occurs"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Replace ntpd with chrony across the fleet, use hardware timestamps where the network card supports them, and verify with an independent lab device.",
+          "rejected": "Staying on ntpd, and verifying by hand with an oscilloscope, which the post calls extremely hard and impractical at Facebook scale. The 1PPS loopback and the lab device were used instead, and the post lists the downsides of 1PPS: coaxial cabling, custom hardware and a user-space daemon.",
+          "why": "chrony was far more precise at similar resource use, and the lab device was portable, needed no extra cabling and had error in nanoseconds. The post still says NTP has limits, so it points to PTP for the next step."
+        },
+        "failures": "The daemons' estimates could not be trusted, and the ntpd offset showed a 10 ms drop that repeated after every restart. Not every network card supports hardware timestamps, and the 1PPS tests needed coaxial cable, special cards and a daemon in user space that added its own error.",
+        "takeaways": "Do not take a clock's self-reported error as the real error; measure it with something independent. Better software and hardware timestamps move the error from milliseconds to hundreds of microseconds, which makes ordering across servers usable, but NTP itself still has limits."
+      }
+    },
+    {
+      "id": "ptp-meta-2022",
+      "title": "How Precision Time Protocol is being deployed at Meta",
+      "url": "https://engineering.fb.com/2022/11/21/production-engineering/precision-time-protocol-at-meta/",
+      "company": "Meta",
+      "verifiedOn": "2026-10-17",
+      "published": "2022-11-21",
+      "related": [
+        "distributed-transactions"
+      ],
+      "digest": {
+        "problem": "A client writes and then reads, and the read lands on a replica that has not received the write, which breaks linearizability. A quorum read fixes it but costs extra resources and a long round trip. If every machine has precise timestamps, the replica can instead wait until it has caught up to the read's timestamp.",
+        "constraints": "The idea only works if clocks are in sync or the offset is known, and the offset changes with correction, drift and temperature. Meta therefore uses a Window of Uncertainty, and a read blocks until its timestamp plus that window. A time appliance had to support up to 1 million clients without losing accuracy, and the PTP servers Meta evaluated handled around 50K clients at best. Switch buffers can delay packets by up to a couple of milliseconds.",
+        "walkthrough": [
+          {
+            "step": "Make time at the source",
+            "explanation": "A GNSS antenna with a clear view of the sky feeds a Time Appliance. Its Time Card holds an atomic clock and a GNSS receiver, and Meta works with several vendors under the Open Compute Project so one bug or attack cannot affect every source."
+          },
+          {
+            "step": "Hand it to the network card",
+            "explanation": "Every PTP packet is stamped by the network card, so the card's own clock must be disciplined. Copying the clock through PCIe, the CPU and NUMA lost about 1 to 2 microseconds, so Meta runs a cable carrying a pulse-per-second signal from the Time Card to the card, and keeps the offset within a ±50 ns window."
+          },
+          {
+            "step": "Serve a million clients",
+            "explanation": "Because the precision comes from hardware stamps, the server does not need to be a tuned C program or an FPGA. Meta wrote ptp4u in Go, and with minor optimisation it supported over 1 million concurrent clients per device, as checked by an IEEE 1588v2 certified device."
+          },
+          {
+            "step": "Let switches report their delay",
+            "explanation": "Instead of boundary clocks, Meta relies on transparent clocks, where each switch writes how long a packet spent inside it into a correction field. With one switch not doing this, the path delay estimate blew up, even going negative, and the offset moved from about 100 ns to about -400 µs."
+          },
+          {
+            "step": "Hand out a window, not a time",
+            "explanation": "The fbclock API returns an earliest and a latest time. In one example the window was 694 ns. Meta wants the true time inside the window with confidence above 99.9999%; in its experiment a total error of about 92 ns times 4.745 gave a window of about 436 ns. When the connection to a time server is lost, the window grows at a rate based on the oscillator's stability."
+          },
+          {
+            "step": "Check the checker",
+            "explanation": "PTP clients trust the server they pick, with no quorum as NTP has, so fbclock also compares other time servers. If the majority of offsets are high, the server the client follows is the outlier, and the client is flagged as not linearizable."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 210\" role=\"img\" aria-labelledby=\"dg-tcc-ptp-t\" class=\"dg\"><title id=\"dg-tcc-ptp-t\">Meta's PTP chain. A GNSS antenna feeds a Time Card with an atomic clock, which feeds the network card clock within 50 nanoseconds. PTP packets cross switches that add their delay to each packet, reach a client network card, and the fbclock API returns an earliest and latest time.</title><defs><marker id=\"dg-tcc-ptp-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"14\" width=\"150\" height=\"56\" class=\"dg-box\"/><text x=\"87\" y=\"38.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">GNSS antenna</text><text x=\"87\" y=\"54.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">open sky view</text><path d=\"M162,42 L205,42\" class=\"dg-line\" marker-end=\"url(#dg-tcc-ptp-a)\"/><rect x=\"205\" y=\"14\" width=\"150\" height=\"56\" class=\"dg-box\"/><text x=\"280\" y=\"38.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Time Card</text><text x=\"280\" y=\"54.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">atomic clock + GNSS</text><path d=\"M355,42 L398,42\" class=\"dg-line\" marker-end=\"url(#dg-tcc-ptp-a)\"/><rect x=\"398\" y=\"14\" width=\"150\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"473\" y=\"38.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Server NIC clock</text><text x=\"473\" y=\"54.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">within ±50 ns</text><text x=\"280\" y=\"96\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"12\">PTP packets cross the data center network</text><path d=\"M473,70 L473,106 L87,106 L87,130\" class=\"dg-line\" marker-end=\"url(#dg-tcc-ptp-a)\"/><rect x=\"12\" y=\"130\" width=\"150\" height=\"60\" class=\"dg-box\"/><text x=\"87\" y=\"148.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Switches</text><text x=\"87\" y=\"164.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">add their own delay</text><text x=\"87\" y=\"180.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">to each packet</text><path d=\"M162,160 L205,160\" class=\"dg-line\" marker-end=\"url(#dg-tcc-ptp-a)\"/><rect x=\"205\" y=\"130\" width=\"150\" height=\"60\" class=\"dg-box\"/><text x=\"280\" y=\"148.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client NIC clock</text><text x=\"280\" y=\"164.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">ptp4l keeps it</text><text x=\"280\" y=\"180.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">in step</text><path d=\"M355,160 L398,160\" class=\"dg-line\" marker-end=\"url(#dg-tcc-ptp-a)\"/><rect x=\"398\" y=\"130\" width=\"150\" height=\"60\" class=\"dg-box dg-accent\"/><text x=\"473\" y=\"148.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">fbclock API</text><text x=\"473\" y=\"164.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">earliest and latest</text><text x=\"473\" y=\"180.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">time</text></svg>",
+        "numbers": [
+          {
+            "value": "roughly 100x",
+            "meaning": "The performance difference the post reports between an early PTP version and Meta's NTP for commit-wait reads"
+          },
+          {
+            "value": "±50 ns",
+            "meaning": "Window within which Meta monitors the offset between the Time Card and the network card clock"
+          },
+          {
+            "value": "over 1 million clients",
+            "meaning": "Concurrent clients one ptp4u server handled, verified by an independent certified device"
+          },
+          {
+            "value": "around 50K clients",
+            "meaning": "What the other PTP servers Meta tried could serve per server at best"
+          },
+          {
+            "value": "436 ns",
+            "meaning": "Window of Uncertainty in Meta's experiment that contains the true time with confidence over 99.9999%"
+          },
+          {
+            "value": "up to a couple of milliseconds",
+            "meaning": "How long switches with large buffers can delay a packet, which is why transparent clocks are used"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "PTP with hardware timestamps in the network cards, transparent clocks in the switches, a Go server and a client API that returns a window.",
+          "rejected": "Keeping NTP, which the team first thought would do until an early PTP test showed about a 100x difference, and boundary clocks, which need special equipment and demand more holdover stability. Software timestamps were also dropped after they reached hundreds of microseconds on a busy host.",
+          "why": "The commit-wait design gets cheaper as the window shrinks, so a tight window saves compute and latency across the fleet. Hardware stamps and switch-reported delay are what make that window small and honest."
+        },
+        "failures": "One popular network card kept only 128 hardware timestamps and could not tell PTP packets from others, so real stamps were displaced and offsets spiked; Meta added an outlier filter. By default one server could attract all clients, which led to sharding and a Priority3 field. Cards shared between several hosts confused the client software, and software timestamps proved too loose.",
+        "takeaways": "Knowing how wrong a clock is matters as much as having a good clock. A narrow, honestly reported window turns time into a cheap way to order operations, but it needs work end to end: antenna, atomic clock, network card, switches, client and monitoring."
+      }
+    },
+    {
+      "id": "existential-facebook-2015",
+      "title": "Existential Consistency: Measuring and Understanding Consistency at Facebook",
+      "url": "https://sigops.org/s/conferences/sosp/2015/current/2015-Monterey/240-lu-online.pdf",
+      "company": "Meta",
+      "verifiedOn": "2026-10-17",
+      "published": "no date shown",
+      "edition": "SOSP 2015 paper, by Facebook and University of Southern California researchers",
+      "related": [
+        "replication",
+        "cap"
+      ],
+      "ageNote": "This is a research paper, not a company blog post: the SOSP 2015 paper by researchers at Facebook and the University of Southern California, listed here under Meta. The numbers come from a 12-day trace in August 2015 and no source opened for this page says Facebook's rates are the same today. It stays because it is a rare measurement, on a production system, of how often a weaker consistency model shows up as a wrong answer, and because the method of widening intervals by the clock skew carries over to any system.",
+      "digest": {
+        "problem": "Stronger consistency means fewer surprises for users and simpler programs, but it costs performance. To the authors' knowledge, no earlier work had measured, on a large production web service, how often an eventually consistent system returns something a stronger model would not allow. Facebook's social graph store is a two-level cache over a sharded database with one master per shard, with eventual consistency across the whole system.",
+        "constraints": "The request logs come from web servers whose clocks are synced by NTP, so every timestamp carries skew. The logging was not lossless, because web servers favour user traffic over logging, and missing writes created false anomalies. The trace covers only a sample of one object in every million, and only objects with both reads and writes can show an anomaly.",
+        "walkthrough": [
+          {
+            "step": "Log each request's start and end",
+            "explanation": "Web servers record a timestamp before each request and another after the response, and ship them to a separate logging system and a data warehouse. The checkers run offline at the end of each day, so late log lines have arrived."
+          },
+          {
+            "step": "Widen by the clock skew",
+            "explanation": "The 99.9th percentile clock skew across web servers was 35 ms. The authors subtract 35 ms from every start time and add 35 ms to every end time, so anything flagged is a real anomaly. This makes the results a lower bound on the true count."
+          },
+          {
+            "step": "Filter what cannot be wrong",
+            "explanation": "An object with only reads has nothing to propagate and an object with only writes has no reads to be stale. After filtering, at most 25.7% of requests to vertices could show an anomaly."
+          },
+          {
+            "step": "Check each model offline",
+            "explanation": "Checkers test linearizability, per-object sequential consistency and read-after-write consistency at three scopes: within a cluster, within a region, and globally. Non-local models such as causal and sequential consistency are bounded using how the models relate to each other."
+          },
+          {
+            "step": "Read the result",
+            "explanation": "About 0.00039% of vertex reads, which the paper's abstract rounds to 0.0004%, would return a different result under linearizability. Most are stale reads caused by replication lag. Read-after-write anomalies rise as the scope widens, from 519 within a cluster to 1,558 within a region to 3,399 globally."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 180\" role=\"img\" aria-labelledby=\"dg-tcc-exist-t\" class=\"dg\"><title id=\"dg-tcc-exist-t\">How Facebook measured consistency: web servers log the start and end of sampled requests to a warehouse, daily offline checkers compare them against consistency models, and the result is an anomaly rate per model. Every request interval is first widened by 35 milliseconds for clock skew.</title><defs><marker id=\"dg-tcc-exist-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"20\" width=\"112\" height=\"62\" class=\"dg-box\"/><text x=\"68\" y=\"39.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Web servers</text><text x=\"68\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">log start and</text><text x=\"68\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">end of requests</text><path d=\"M124,51 L152,51\" class=\"dg-line\" marker-end=\"url(#dg-tcc-exist-a)\"/><rect x=\"152\" y=\"20\" width=\"112\" height=\"62\" class=\"dg-box\"/><text x=\"208\" y=\"47.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Data</text><text x=\"208\" y=\"63.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">warehouse</text><path d=\"M264,51 L292,51\" class=\"dg-line\" marker-end=\"url(#dg-tcc-exist-a)\"/><rect x=\"292\" y=\"20\" width=\"112\" height=\"62\" class=\"dg-box\"/><text x=\"348\" y=\"47.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Daily offline</text><text x=\"348\" y=\"63.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">checkers</text><path d=\"M404,51 L432,51\" class=\"dg-line\" marker-end=\"url(#dg-tcc-exist-a)\"/><rect x=\"432\" y=\"20\" width=\"116\" height=\"62\" class=\"dg-box dg-accent\"/><text x=\"490\" y=\"47.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Anomaly rate</text><text x=\"490\" y=\"63.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">per model</text><rect x=\"12\" y=\"116\" width=\"536\" height=\"46\" class=\"dg-box dg-dashed\"/><text x=\"280\" y=\"135.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Each request interval is widened by 35 ms (99.9th percentile clock skew)</text><text x=\"280\" y=\"151.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">so that every flagged read is a real anomaly</text><path d=\"M68,116 L68,82\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-tcc-exist-a)\"/></svg>",
+        "numbers": [
+          {
+            "value": "0.0004%",
+            "meaning": "Share of vertex reads that would return a different result under linearizability; the results table gives 0.00039%"
+          },
+          {
+            "value": "12-day",
+            "meaning": "Length of the trace, from August 20 to August 31, 2015"
+          },
+          {
+            "value": "35 ms",
+            "meaning": "The 99.9th percentile clock skew across web servers, used to widen every request's start and end"
+          },
+          {
+            "value": "over 2.7 billion",
+            "meaning": "Requests in the sampled trace"
+          },
+          {
+            "value": "25.7%",
+            "meaning": "Upper bound on the share of vertex requests that could show an anomaly after filtering"
+          },
+          {
+            "value": "519 to 3,399",
+            "meaning": "How read-after-write anomalies grow from cluster scope to region scope to global scope"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Measure offline from sampled request logs, and count only anomalies that survive widening every interval by the clock skew.",
+          "rejected": "Using the raw logged timestamps, which could count clock error as an anomaly. When skew makes the answer uncertain, the paper errs toward reporting fewer anomalies.",
+          "why": "Counting only certain anomalies keeps the result trustworthy as a lower bound, and a low sampling rate avoids harming the production system."
+        },
+        "failures": "The trace is incomplete, so a read that reflects a missing write looks like an anomaly, and the authors saw many such false positives and had to filter them. The checkers cover the consistency models that a sample can test; for causal and sequential consistency the paper gives only bounds.",
+        "takeaways": "In this production system, a weaker model returned a different answer from a linearizable one on a very small share of vertex reads, and most of those came from replication lag. The cost of weakness can be measured, and an honest measurement has to account for its own clock error."
+      }
+    },
+    {
+      "id": "mongodb-tunable-2019",
+      "title": "Tunable Consistency in MongoDB",
+      "url": "https://www.vldb.org/pvldb/vol12/p2071-schultz.pdf",
+      "company": "MongoDB",
+      "verifiedOn": "2026-10-17",
+      "published": "no date shown",
+      "edition": "VLDB 2019 paper, by MongoDB engineers",
+      "related": [
+        "replication",
+        "consensus"
+      ],
+      "ageNote": "This is a research paper, not a company blog post: the 2019 VLDB paper by MongoDB engineers. The usage counts come from Atlas nodes running version 4.0.6, and the tests used MongoDB 4.0 releases. No source opened for this page says whether defaults or usage have changed since, so read the percentages as a 2019 snapshot. It stays because it shows, with data, how a database lets each operation choose between latency and safety.",
+      "digest": {
+        "problem": "Distributed databases offer high availability but can make client applications pay to keep strong consistency at all times. MongoDB lets each operation choose its own consistency level through write concern and read concern, and the paper asks which levels people actually use and what each costs.",
+        "constraints": "A write acknowledged only by the primary can be lost if the primary fails before replicating it. Waiting for a majority needs round trips to other nodes, which is cheap inside a data center and expensive across regions. The authors also note the usage counts are low, because every node had recently restarted to upgrade to 4.0.6.",
+        "walkthrough": [
+          {
+            "step": "Offer levels per operation",
+            "explanation": "Write concern w:1 acknowledges once the primary has the write, and w:majority waits for a majority of the replica set. Read concern local may return data not yet committed to a majority, while majority reads only committed data."
+          },
+          {
+            "step": "Measure what people choose",
+            "explanation": "From 14,820 Atlas instances running 4.0.6, 99.60% of reads used the default local level and 0.13% used majority. For writes, 79.17% used the default w:1 and 15.86% used majority. The authors read this as users generally accepting the defaults."
+          },
+          {
+            "step": "Ask why",
+            "explanation": "MongoDB's consultants said choices are usually driven by latency. Users would prefer majority reads and writes, but switch to weaker levels when stronger ones feel too slow. The authors argue this works because failovers are infrequent and the data lost is usually small."
+          },
+          {
+            "step": "Measure the latency cost",
+            "explanation": "Inside one availability zone, an average w:1 write took 1.25 ms and w:majority took 3.18 ms. With replicas in three regions, w:1 took 2.16 ms for a client near the primary while w:majority took 185 ms."
+          },
+          {
+            "step": "Measure the safety cost",
+            "explanation": "In a 1-hour insert workload on a 3-node replica set, with nodes killed and restarted on a schedule, w:1 writes that were acknowledged and later lost grew with network delay. Durable acknowledged writes were 99.968% with no added delay, 99.883% with 100 ms and 99.399% with 200 ms."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 230\" role=\"img\" aria-labelledby=\"dg-tcc-mongo-t\" class=\"dg\"><title id=\"dg-tcc-mongo-t\">A MongoDB replica set with a primary and two secondaries. A client writes to the primary, which replicates to both secondaries. With write concern w:1 the write is acknowledged once the primary has it. With w:majority it is acknowledged once a majority has it.</title><defs><marker id=\"dg-tcc-mongo-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"60\" width=\"90\" height=\"50\" class=\"dg-box\"/><text x=\"57\" y=\"89.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><path d=\"M102,85 L170,85\" class=\"dg-line\" marker-end=\"url(#dg-tcc-mongo-a)\"/><rect x=\"170\" y=\"60\" width=\"110\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"225\" y=\"89.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Primary</text><path d=\"M280,75 L400,45\" class=\"dg-line\" marker-end=\"url(#dg-tcc-mongo-a)\"/><path d=\"M280,95 L400,135\" class=\"dg-line\" marker-end=\"url(#dg-tcc-mongo-a)\"/><rect x=\"400\" y=\"20\" width=\"140\" height=\"50\" class=\"dg-box\"/><text x=\"470\" y=\"49.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Secondary 1</text><rect x=\"400\" y=\"110\" width=\"140\" height=\"50\" class=\"dg-box\"/><text x=\"470\" y=\"139.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Secondary 2</text><text x=\"12\" y=\"188\" class=\"dg-note\" text-anchor=\"start\" font-size=\"12\">w:1 = acknowledged once the primary has the write</text><text x=\"12\" y=\"208\" class=\"dg-note\" text-anchor=\"start\" font-size=\"12\">w:majority = acknowledged once a majority has it</text></svg>",
+        "numbers": [
+          {
+            "value": "14,820 instances",
+            "meaning": "Atlas deployments sampled, whose counts run since each node last restarted and so are low"
+          },
+          {
+            "value": "99.60%",
+            "meaning": "Share of reads that used the default local level"
+          },
+          {
+            "value": "0.13%",
+            "meaning": "Share of reads that used the majority level"
+          },
+          {
+            "value": "79.17%",
+            "meaning": "Share of writes that used the default w:1"
+          },
+          {
+            "value": "15.86%",
+            "meaning": "Share of writes that used w:majority"
+          },
+          {
+            "value": "1.25 ms vs 3.18 ms",
+            "meaning": "Average write latency for w:1 and w:majority inside one availability zone"
+          },
+          {
+            "value": "2.16 ms vs 185 ms",
+            "meaning": "Average write latency for w:1 and w:majority across three regions, for a client in the primary's region"
+          },
+          {
+            "value": "99.968%, 99.883%, 99.399%",
+            "meaning": "Share of acknowledged w:1 writes that stayed durable under failures with 0, 100 and 200 ms of added delay"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Let every operation pick its own read and write concern, with cheaper local reads and w:1 writes as the defaults.",
+          "rejected": "Making majority the only option for every operation, which users say they would prefer for safety but abandon when it is too slow.",
+          "why": "Failovers are rare and the data lost is usually small, so many workloads accept the weaker levels, while data that must not be lost, such as a student loan site's long forms, uses majority."
+        },
+        "failures": "A w:1 write can be lost when a primary fails before it replicates, and the loss grows with replication delay: 1,297 of 4,039,799 acknowledged writes were lost with no added delay, against 22,174 of 3,687,984 at 200 ms. Majority writes across regions are slow. The test setups differ between experiments, so the paper compares levels only within one experiment, and one odd result in a cross-zone test is put down to noise.",
+        "takeaways": "A single consistency setting is the wrong unit. Letting each operation choose lets teams pay for safety only where loss is costly, and most operations in the sample kept the weaker defaults."
+      }
+    }
+  ],
+  "comparison": "All four sources deal with the gap between what a clock or a replica says and what is true. Meta's two posts shrink the clock error itself, Facebook's paper measures how often a weaker model gives a wrong answer, and MongoDB's paper shows the per-operation choices teams make between safety and speed.\n\nThey diverge on where the cost is paid. Meta pays in hardware and operations (atomic clocks, special network cards, switch support, monitoring) so that strong guarantees stay cheap, with error windows of hundreds of microseconds with chrony in 2020 and hundreds of nanoseconds with PTP in 2022. Facebook and MongoDB look at the other side and find that a weaker level is often good enough: 0.0004% of vertex reads differed from a linearizable system, and in MongoDB's 2019 Atlas sample most reads and about four in five writes used the defaults.\n\nThe evidence is not equal. Meta's numbers come from measurements against independent equipment, but they are the company's own deployments. Facebook's 2015 trace used web servers synced by NTP with a 35 ms skew, a much looser clock than Meta later reports, though in different setups, so compare the direction and not the numbers. MongoDB's Atlas counts were taken since each node restarted, and its loss figures come from a simulated failure test rather than from production incidents.",
+  "glossary": [
+    {
+      "term": "Clock drift",
+      "definition": "How fast or slow a clock runs compared with true time, often given in parts per million."
+    },
+    {
+      "term": "Clock skew",
+      "definition": "The difference between two clocks at one moment."
+    },
+    {
+      "term": "NTP",
+      "definition": "Network Time Protocol: a client estimates its offset from a server using four timestamps, assuming the network delay is the same in both directions."
+    },
+    {
+      "term": "PTP",
+      "definition": "Precision Time Protocol: a time protocol built on hardware timestamps in network cards and on switches that report the delay they add."
+    },
+    {
+      "term": "Window of Uncertainty",
+      "definition": "A range from earliest to latest that is claimed to contain the true time with a stated confidence."
+    },
+    {
+      "term": "Commit-wait",
+      "definition": "Waiting out the window of uncertainty before acting on a timestamp, so that later operations get later times."
+    },
+    {
+      "term": "Logical clock",
+      "definition": "A counter that orders events by cause instead of by seconds. Lamport clocks and vector clocks are two kinds."
+    },
+    {
+      "term": "Linearizability",
+      "definition": "Each operation appears to happen at one instant between its start and its end, so a read never returns older data than a write that already finished."
+    },
+    {
+      "term": "Eventual consistency",
+      "definition": "If updates stop, all replicas end up with the same value, with no promise about how long it takes."
+    },
+    {
+      "term": "CRDT",
+      "definition": "A conflict-free replicated data type: its merge rule gives the same state whatever order updates arrive in."
+    },
+    {
+      "term": "Write concern and read concern",
+      "definition": "MongoDB's per-operation settings for how many nodes must hold a write before it is acknowledged and how committed the data returned by a read must be."
+    }
+  ],
+  "mistakes": [
+    "Ordering events from different machines by wall-clock timestamps, or using the newest timestamp to pick a winner, without asking how far apart the clocks can be.",
+    "Timing a function with the time-of-day clock. A sync correction can step it backwards in the middle of the measurement; use a monotonic clock for elapsed time on one machine.",
+    "Trusting a sync daemon's own error estimate, or treating consistency as a single strong-or-eventual switch. Meta measured real errors against independent equipment, and MongoDB lets every operation choose its level."
+  ]
+}

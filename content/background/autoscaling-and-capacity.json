@@ -1,0 +1,47 @@
+{
+  "topic": "autoscaling-and-capacity",
+  "updatedOn": "2026-10-17",
+  "items": [
+    {
+      "id": "replica-set",
+      "name": "Replica sets in MongoDB",
+      "explanation": "A replica set is a group of MongoDB servers that keep the same data. One member is the primary and the others are secondaries. MongoDB scales a whole replica set by moving its servers to a bigger or smaller tier together.",
+      "assumedBy": [
+        {
+          "postId": "mongodb-predictive-autoscaling-2026",
+          "quote": "Most MongoDB Atlas replica sets have daily seasonality."
+        }
+      ],
+      "topicPage": "replication",
+      "sources": [
+        {
+          "title": "Replication (MongoDB Manual)",
+          "publisher": "MongoDB",
+          "url": "https://www.mongodb.com/docs/manual/replication/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-17"
+        }
+      ]
+    },
+    {
+      "id": "mstl",
+      "name": "MSTL time-series decomposition",
+      "explanation": "MSTL splits a series of measurements into a trend, several repeating seasonal parts such as daily and weekly cycles, and what is left over. MongoDB uses it to forecast a few hours of demand from several weeks of history.",
+      "assumedBy": [
+        {
+          "postId": "mongodb-predictive-autoscaling-2026",
+          "quote": "Our forecasting model, MSTL (multi-seasonal trend decomposition using LOESS)"
+        }
+      ],
+      "sources": [
+        {
+          "title": "statsmodels.tsa.seasonal.MSTL",
+          "publisher": "statsmodels",
+          "url": "https://www.statsmodels.org/stable/generated/statsmodels.tsa.seasonal.MSTL.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-17"
+        }
+      ]
+    }
+  ]
+}
