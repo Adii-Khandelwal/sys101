@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import HeadingText from "./HeadingText";
 import GlossTerm from "./GlossTerm";
+import CopyLink from "./CopyLink";
 import { glossaryId, markTerms } from "@/lib/glossaryMatch";
 import { diagramHtml } from "@/lib/diagramHtml";
 import Link from "next/link";
@@ -193,6 +194,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
 
           <section id="why" aria-labelledby="why-h">
             <h2 id="why-h">Why it exists</h2>
+            <CopyLink id="why" />
             <Outcome text={l.why.outcome} />
             <Paragraphs text={l.why.body} g={glossFor()} />
             <MarkDone meta={meta} unit="why" />
@@ -200,6 +202,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
 
           <section id="model" aria-labelledby="model-h">
             <h2 id="model-h">Mental model</h2>
+            <CopyLink id="model" />
             <Outcome text={l.mentalModel.outcome} />
             <Paragraphs text={l.mentalModel.body} g={glossFor()} />
             <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.mentalModel.diagram) }} />
@@ -216,6 +219,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
 
           <section id="how" aria-labelledby="how-h">
             <h2 id="how-h">How it works</h2>
+            <CopyLink id="how" />
             <Outcome text={l.howItWorks.outcome} />
             <ol className="walkthrough">
               {l.howItWorks.steps.map((s) => (
@@ -230,6 +234,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
 
           <section id="example" aria-labelledby="example-h">
             <h2 id="example-h">Worked example</h2>
+            <CopyLink id="example" />
             <Outcome text={l.workedExample.outcome} />
             <ol className="walkthrough">
               {l.workedExample.steps.map((s) => (
@@ -244,6 +249,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
 
           <section id="mistakes" aria-labelledby="mistakes-h">
             <h2 id="mistakes-h">Common mistakes</h2>
+            <CopyLink id="mistakes" />
             <Outcome text={l.mistakesOutcome} />
             <ol className="mistakes">
               {topic.mistakes.map((m) => (
@@ -257,6 +263,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             <h2 id="check-h" data-tour="check">
               Check yourself
             </h2>
+            <CopyLink id="check" />
             <Outcome text={l.checkOutcome} />
             <QuizBlock meta={meta} quiz={l.quiz} names={names} />
           </section>
@@ -294,6 +301,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
           {topic.posts.length >= 2 && topic.comparison && (
             <section id="differ" className="closing" aria-labelledby="differ-h">
               <h2 id="differ-h">Where they differ</h2>
+              <CopyLink id="differ" />
               <Outcome text={l.differOutcome} />
               {topic.comparison.split("\n\n").map((para) => (
                 <p key={para.slice(0, 40)}>{gDiffer(para)}</p>
@@ -305,6 +313,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             <h2 id="exercises-h" data-tour="exercises">
               Design exercises
             </h2>
+            <CopyLink id="exercises" />
             <Outcome text={l.exercisesOutcome} />
             <ol className="exercises">
               {l.exercises.map((x) => (
