@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import IntentLink from "./IntentLink";
 import { markTopics, useInProgressTopics, useReadTopics } from "@/lib/progress";
 import { readyTopics, type IndexEntry } from "@/lib/nextUp";
@@ -15,6 +16,9 @@ export type PathEntry = {
   reasons?: Record<string, string>;
 };
 
+/** A group longer than this shows its first topics, then a button for the rest. */
+const COLLAPSED_SHOWS = 5;
+
 type Props = {
   /** All topics in curriculum order, carrying prerequisites and group. */
   entries: PathEntry[];
@@ -29,6 +33,8 @@ type Props = {
  * This is the graph's fallback and the mobile homepage (docs/ideas.md ideas 5, 6).
  */
 export default function PathView({ entries, headingId = "path-heading" }: Props) {
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const blocks = useRef<Record<string, HTMLDivElement | null>>({});
   const read = useReadTopics();
   const inProgress = new Set(useInProgressTopics());
   const indexEntries: IndexEntry[] = entries.map((e) => ({ slug: e.slug, title: e.title, prerequisites: e.prerequisites }));
@@ -59,8 +65,29 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
         const slugs = g.items.map((e) => e.slug);
         const readInGroup = slugs.filter((s) => read.includes(s)).length;
         const allRead = readInGroup === slugs.length;
+        const long = g.items.length > COLLAPSED_SHOWS;
+        const open = !long || !!expanded[g.name];
+        const listId = `path-list-${g.name.toLowerCase().replace(/\W+/g, "-")}`;
+        const toggle = () => {
+          setExpanded((x) => ({ ...x, [g.name]: !open }));
+          // Collapsing from far down the group would leave the page below it: bring the group's heading back into view.
+          if (open) {
+            requestAnimationFrame(() => {
+              const el = blocks.current[g.name];
+              if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ block: "start" });
+            });
+          }
+        };
         return (
-          <div key={g.name} className="path-group" data-tour={g.name === groups[0].name ? "map" : undefined}>
+          <div
+            key={g.name}
+            ref={(el) => {
+              blocks.current[g.name] = el;
+            }}
+            className="path-group"
+            data-collapsed={!open}
+            data-tour={g.name === groups[0].name ? "map" : undefined}
+          >
             <h3 className="label path-group-name">
               <span>
                 {g.name} · {slugs.length} of {entries.length} topics
@@ -77,12 +104,12 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
                 {allRead ? "Mark group unread" : "Mark group read"}
               </button>
             </h3>
-            <ol className="path-list">
-            {g.items.map((e) => {
+            <ol className="path-list" id={listId}>
+            {g.items.map((e, i) => {
               const st = state(e.slug);
               const buildsOn = e.prerequisites.map((p) => titleOf.get(p) ?? p);
               return (
-                <li key={e.slug} className={`path-item is-${st}`}>
+                <li key={e.slug} className={`path-item is-${st}`} data-extra={i >= COLLAPSED_SHOWS || undefined}>
                   <span className="path-number" aria-hidden="true">
                     {e.number}
                   </span>
@@ -126,6 +153,13 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
               );
             })}
           </ol>
+            {long && (
+              <div className="path-more">
+                <button type="button" className="text-button label" aria-expanded={open} aria-controls={listId} onClick={toggle}>
+                  {open ? "Show fewer" : `Show ${g.items.length - COLLAPSED_SHOWS} more`}
+                </button>
+              </div>
+            )}
         </div>
         );
       })}

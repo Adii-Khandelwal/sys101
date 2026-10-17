@@ -1239,6 +1239,40 @@ li {
   color: var(--accent);
 }
 
+/* A long group shows its first topics; the rest appear on request and fade in (opacity only). */
+.path-group {
+  scroll-margin-top: calc(var(--header-h) + 8px);
+}
+
+.path-group[data-collapsed="true"] .path-item[data-extra] {
+  display: none;
+}
+
+.path-group[data-collapsed="false"] .path-item[data-extra] {
+  animation: fade-in var(--dur-base) var(--ease-out);
+}
+
+/* The button sits in the title column, under the last visible topic. */
+@media (prefers-reduced-motion: reduce) {
+  .path-group[data-collapsed="false"] .path-item[data-extra] {
+    animation: none;
+  }
+}
+
+.path-more {
+  display: grid;
+  grid-template-columns: 2.4ch 22px 1fr;
+  column-gap: 14px;
+}
+
+.path-more button {
+  grid-column: 3;
+  justify-self: start;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
 .path-list {
   list-style: none;
   margin: 0;
