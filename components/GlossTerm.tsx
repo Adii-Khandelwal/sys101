@@ -1,0 +1,107 @@
+"use client";
+
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import Link from "next/link";
+
+/**
+ * A glossary term inside lesson prose. Without JavaScript it is a plain link to its entry on /glossary. With it, hover,
+ * focus or a tap opens a small popover with the definition and a "See in glossary" link; Escape closes it and puts focus
+ * back on the term. Fading is opacity and transform only, on the motion tokens (instant under reduced motion).
+ */
+export default function GlossTerm({ href, definition, children }: { href: string; definition: string; children: string }) {
+  const id = useId();
+  const root = useRef<HTMLSpanElement>(null);
+  const term = useRef<HTMLAnchorElement>(null);
+  const pop = useRef<HTMLSpanElement>(null);
+  const pinned = useRef(false);
+  const [open, setOpen] = useState(false);
+  const [shift, setShift] = useState(0);
+  const [up, setUp] = useState(false);
+
+  const close = () => {
+    pinned.current = false;
+    setOpen(false);
+  };
+
+  // Keep the popover inside the viewport: flip it above the term when there is no room below, and slide it sideways back in.
+  // Measured on open and again on scroll or resize while open (a tap can scroll the page).
+  useLayoutEffect(() => {
+    if (!open) return;
+    const place = () => {
+      if (!root.current || !pop.current) return;
+      const margin = 12;
+      const r = root.current.getBoundingClientRect();
+      const h = pop.current.offsetHeight + margin;
+      setUp(r.bottom + h > window.innerHeight && r.top > h);
+      const max = document.documentElement.clientWidth - margin - pop.current.offsetWidth;
+      setShift(Math.round(Math.min(0, max - r.left) + Math.max(0, margin - r.left)));
+    };
+    place();
+    window.addEventListener("scroll", place, { passive: true });
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", place);
+      window.removeEventListener("resize", place);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const outside = (e: PointerEvent) => {
+      if (!root.current?.contains(e.target as Node)) close();
+    };
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
+  }, [open]);
+
+  return (
+    <span
+      ref={root}
+      className="gloss"
+      onPointerEnter={(e) => e.pointerType === "mouse" && setOpen(true)}
+      onPointerLeave={(e) => e.pointerType === "mouse" && !pinned.current && setOpen(false)}
+      onFocus={(e) => e.target.matches(":focus-visible") && setOpen(true)}
+      onBlur={(e) => !root.current?.contains(e.relatedTarget as Node | null) && close()}
+      onKeyDown={(e) => {
+        if (e.key !== "Escape" || !open) return;
+        e.stopPropagation();
+        close();
+        term.current?.focus();
+      }}
+    >
+      <a
+        ref={term}
+        className="gloss-term"
+        data-popover
+        data-own-transition // the global link handler would navigate; a click here only opens the popover
+        href={href}
+        aria-describedby={id}
+        aria-expanded={open}
+        onClick={(e) => {
+          // A plain click opens the popover; the popover's own link goes to the glossary.
+          e.preventDefault();
+          if (open && pinned.current) return close();
+          pinned.current = true;
+          setOpen(true);
+        }}
+      >
+        {children}
+      </a>
+      <span
+        ref={pop}
+        className="gloss-pop"
+        role="dialog"
+        aria-label={children}
+        data-open={open}
+        data-up={up}
+        data-pagefind-ignore
+        style={{ left: shift }}
+      >
+        <span id={id}>{definition}</span>
+        <Link href={href} className="gloss-more" tabIndex={open ? 0 : -1}>
+          See in glossary
+        </Link>
+      </span>
+    </span>
+  );
+}

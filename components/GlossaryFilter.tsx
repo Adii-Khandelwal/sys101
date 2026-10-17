@@ -4,6 +4,8 @@ import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import LearnRail from "./LearnRail";
 import { StripBackToTop } from "./BackToTop";
+import HighlightTarget from "./HighlightTarget";
+import { glossaryId } from "@/lib/glossaryMatch";
 import { matchesAll } from "@/lib/searchMatch";
 import { focusFirstResult, useSlashFocus } from "@/lib/useSlashFocus";
 
@@ -36,6 +38,7 @@ export default function GlossaryFilter({ groups, heading }: { groups: GlossaryGr
 
   return (
     <>
+      <HighlightTarget selector=".glossary-terms > div" />
       {entries.length > 0 && (
         <>
           <LearnRail entries={entries} scope="section" />
@@ -84,7 +87,7 @@ export default function GlossaryFilter({ groups, heading }: { groups: GlossaryGr
             </h2>
             <dl className="glossary-terms">
               {g.terms.map((t) => (
-                <div key={t.term}>
+                <div key={t.term} id={glossaryId(g.slug, t.term)}>
                   <dt>{t.term}</dt>
                   <dd>{t.definition}</dd>
                 </div>

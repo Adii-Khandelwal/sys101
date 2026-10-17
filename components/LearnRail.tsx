@@ -1,6 +1,7 @@
 "use client";
 
 import { glideToSection } from "@/lib/glide";
+import { prefersReducedMotion } from "@/lib/motion";
 import { useEffect, useRef, useState } from "react";
 
 export type LearnEntry = { id: string; name: string };
@@ -77,6 +78,12 @@ export default function LearnRail({
   useEffect(() => {
     const row = list.current?.querySelector<HTMLElement>(`[data-id="${current}"]`);
     setMarkerY(row ? row.offsetTop : null);
+    // A long list scrolls inside the rail: bring the current row into view there, never moving the page.
+    const box = list.current?.closest<HTMLElement>(".lesson-rail");
+    if (row && box && box.scrollHeight > box.clientHeight) {
+      const top = row.offsetTop - box.clientHeight / 2;
+      box.scrollTo({ top, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    }
   }, [current]);
 
   /** Jump to a section, clear of the sticky header, and move focus to its heading. */
