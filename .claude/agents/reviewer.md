@@ -2,7 +2,7 @@
 name: reviewer
 description: Independent check of a worker's output. Give it the changed files or text and the task's DONE WHEN, never the worker's reasoning. Returns PASS or FAIL with exact reasons.
 model: opus
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, mcp__codebase-memory-mcp__search_graph, mcp__codebase-memory-mcp__get_code_snippet, mcp__codebase-memory-mcp__trace_path
 ---
 
 You review output for sys101 without knowing how it was produced. Edit nothing.

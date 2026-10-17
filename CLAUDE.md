@@ -7,6 +7,7 @@ Standing rules for this project. Follow them in every task. This file is always 
 - CLAUDE.md wins over any skill, plugin, or design tool (Impeccable, Emil Kowalski skills, Taste Skill). Skills are advisory. If one suggests something banned here (shadows, gradients, bounce easing, em dashes, a banned font), skip it silently.
 - Task prompts use TASK / FILES / DONE WHEN / SKIP. Follow SKIP strictly. Prompts do not repeat these rules, so assume them.
 - Multi-agent by default (`docs/agents.md`): the main session is the admin (splits, assigns, merges, runs the final checks, decides) and does not do the pieces. Content and design: `worker-strong`, then `reviewer`, max 2 rounds. Menial work: batched into one `worker-cheap` call, no reviewer. Trivial tasks: admin directly. Big tasks: show a plan table and wait for "go". Max 3 workers, parallel only on different files.
+- Code questions (callers, where a function is defined, structure): use the codebase-memory MCP tools (`search_graph`, `trace_path`, `get_code_snippet`) before grep; fall back to grep for text, JSON content and config.
 - Cheapest model that can do the piece; each agent gets only its files and the relevant rules. Every report gets one line: who did what, what the reviewer rejected, rough tokens per model. Never push unasked; commit only on a branch.
 - Claude Code treats memory as context, not enforcement. Anything that must never happen is a hook in `.claude/settings.json` (see Project configuration), not only a sentence here.
 
@@ -19,7 +20,7 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 
 ## Future plan (topics to add next)
 
-Researched in Oct 2026 and revised after the owner review; the site has 29 topics (batch 1 is merged; batch 2 is built on branch `batch-2-topics`, not yet merged). Full sources, figures and risks are in `docs/roadmap.md` (read it only when planning a topic; every figure there still goes through `add-post`). Order, each topic with at most 3 prerequisites so the map layout test stays clean (test the placement on a stub first, `add-topic` step 1). Each source appears in one place only.
+Researched in Oct 2026 and revised after the owner review; the site has 31 topics (batches 1 and 2 are merged; batch 3 shipped `disaster-recovery-and-backups` and `stream-vs-batch-processing`; `exactly-once-processing` waits for a second company source; the map layout fix in `chooseLayers` is what lets both coexist). Full sources, figures and risks are in `docs/roadmap.md` (read it only when planning a topic; every figure there still goes through `add-post`). Order, each topic with at most 3 prerequisites so the map layout test stays clean (test the placement on a stub first, `add-topic` step 1). Each source appears in one place only.
 
 1. Batch 1 (merged; prerequisites were trimmed to keep the map clean): `overload-and-cascading-failures` (weakest: look for a retry-amplification post), `safe-deployments`, `object-storage`, `real-time-delivery`.
 2. Batch 2 (built on `batch-2-topics`, awaiting merge; each has one prerequisite and `autoscaling-and-capacity` is titled "Capacity", because the map layout test fails with more edges or a longer label): `log-based-streaming` (CDC is a section), `autoscaling-and-capacity`, `time-clocks-and-consistency` (consistency models merged in).

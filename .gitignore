@@ -17,3 +17,6 @@ docs/audit/design/
 # Claude Code personal overrides
 .claude/settings.local.json
 CLAUDE.local.md
+
+# codebase-memory-mcp index lives in ~/.cache; ignore a repo-local copy if one is ever created
+.codebase-memory/
