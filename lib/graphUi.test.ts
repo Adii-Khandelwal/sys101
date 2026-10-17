@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { INTERACTIVE_MIN_NODES, groupSet, mapIsInteractive, mapIsInteractiveAt, FADED_LABEL, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "./graphUi";
+import { INTERACTIVE_MIN_NODES, groupSet, mapIsInteractive, mapIsInteractiveAt, INK_SOFT, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "./graphUi";
 
 describe("tooltip placement", () => {
   const tip = { w: 280, h: 72 };
@@ -39,7 +39,7 @@ describe("tooltip placement", () => {
 
 describe("fading", () => {
   it("faded labels keep WCAG AA contrast on the paper colour", () => {
-    expect(contrast(FADED_LABEL, PAPER)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(INK_SOFT, PAPER)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(INK, PAPER)).toBeGreaterThanOrEqual(4.5);
   });
 

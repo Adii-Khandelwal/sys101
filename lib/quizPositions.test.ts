@@ -37,7 +37,7 @@ describe("quiz answer positions", () => {
 
 describe("quiz style checks", () => {
   const long = (correct: number, longestIsCorrect: boolean) => ({
-    options: ["aa", "bb", "cc"].map((o, j) => (j === correct ? (longestIsCorrect ? "the longest option here" : "mid") : "a medium length one")),
+    options: ["aa", "bb", "cc"].map((_, j) => (j === correct ? (longestIsCorrect ? "the longest option here" : "mid") : "a medium length one")),
     correct,
   });
 

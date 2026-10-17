@@ -6,10 +6,9 @@ import { httpsUrlProblem } from "./httpsUrl";
 import { SITE_NAME, SITE_URL, absoluteUrl, metaDescription } from "./site";
 
 /** A source the capstone cites. Same fields as a topic post, without the digest (the post itself lives on its topic). */
-export type CapstoneSource = Pick<Post, "title" | "url" | "company" | "published" | "verifiedOn"> & { id: string };
+type CapstoneSource = Pick<Post, "title" | "url" | "company" | "published" | "verifiedOn"> & { id: string };
 
 export type NodeState = "ok" | "degraded" | "down";
-export const NODE_STATES: readonly NodeState[] = ["ok", "degraded", "down"];
 
 export type Capstone = {
   slug: string;

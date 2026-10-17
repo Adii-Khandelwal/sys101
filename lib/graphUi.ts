@@ -9,9 +9,6 @@ const ACCENT_DARK = "#7a2c15";
 
 /** Unrelated nodes and edges keep 60% of their colour while a node is highlighted. */
 const FADE = 0.6;
-/** Faded labels use the secondary ink, which keeps WCAG AA contrast on the paper colour. */
-export const FADED_LABEL = INK_SOFT;
-
 /** The map's palette. Defaults are the light theme; readThemeColors() reads the live CSS vars. */
 export type ThemeColors = {
   ink: string;
