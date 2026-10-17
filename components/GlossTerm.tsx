@@ -14,11 +14,13 @@ export default function GlossTerm({ href, definition, children }: { href: string
   const term = useRef<HTMLAnchorElement>(null);
   const pop = useRef<HTMLSpanElement>(null);
   const pinned = useRef(false);
+  const leaving = useRef<number>(undefined);
   const [open, setOpen] = useState(false);
   const [shift, setShift] = useState(0);
   const [up, setUp] = useState(false);
 
   const close = () => {
+    clearTimeout(leaving.current);
     pinned.current = false;
     setOpen(false);
   };
@@ -58,8 +60,16 @@ export default function GlossTerm({ href, definition, children }: { href: string
     <span
       ref={root}
       className="gloss"
-      onPointerEnter={(e) => e.pointerType === "mouse" && setOpen(true)}
-      onPointerLeave={(e) => e.pointerType === "mouse" && !pinned.current && setOpen(false)}
+      onPointerEnter={(e) => {
+        if (e.pointerType !== "mouse") return;
+        clearTimeout(leaving.current);
+        setOpen(true);
+      }}
+      // A short grace period, so a mouse path that drifts off the term and back does not close the popover.
+      onPointerLeave={(e) => {
+        if (e.pointerType !== "mouse" || pinned.current) return;
+        leaving.current = window.setTimeout(() => setOpen(false), 150);
+      }}
       onFocus={(e) => e.target.matches(":focus-visible") && setOpen(true)}
       onBlur={(e) => !root.current?.contains(e.relatedTarget as Node | null) && close()}
       onKeyDown={(e) => {
