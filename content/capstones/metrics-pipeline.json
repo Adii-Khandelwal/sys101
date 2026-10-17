@@ -1,0 +1,564 @@
+{
+  "slug": "metrics-pipeline",
+  "title": "Metrics and monitoring pipeline",
+  "summary": "Design the system that collects millions of data points a minute, keeps recent ones fast to read and still alerts when parts of it fail. Compare Facebook's Gorilla, Google's Monarch and Uber's M3.",
+  "topics": [
+    {
+      "slug": "sharding",
+      "role": "Splits the series across machines so no single node holds them all, and lets a query fan out."
+    },
+    {
+      "slug": "replication",
+      "role": "Keeps a second copy so a lost node or region does not lose recent data."
+    },
+    {
+      "slug": "cap",
+      "role": "Frames the choice between a complete answer and an answer now when parts are unreachable."
+    },
+    {
+      "slug": "failover",
+      "role": "Moves reads and shards to healthy machines when one fails."
+    },
+    {
+      "slug": "storage-engines",
+      "role": "Decides how points are encoded in memory and on disk."
+    },
+    {
+      "slug": "caching",
+      "role": "Keeps the recent window in fast memory in front of slower history."
+    },
+    {
+      "slug": "stream-vs-batch-processing",
+      "role": "Decides whether data is reduced as it arrives or in a later pass."
+    },
+    {
+      "slug": "overload-and-cascading-failures",
+      "role": "Covers what writers do when the system cannot keep up: buffer, then drop."
+    },
+    {
+      "slug": "consensus",
+      "role": "Lets a small group agree on which node owns which shard."
+    }
+  ],
+  "brief": {
+    "text": "A company runs thousands of services, and each one reports numbers about itself every few seconds. Engineers read them on dashboards, and automated checks watch them to raise alerts. Design the store behind this. It has to take a huge, steady stream of writes, answer recent queries almost instantly, and keep working when machines or a whole region fail, because it is what tells you that other things are failing.",
+    "requirements": [
+      {
+        "label": "1. Write volume",
+        "value": "700 million data points added per minute",
+        "sourceId": "gorilla"
+      },
+      {
+        "label": "2. Series count",
+        "value": "2 billion unique time series, each named by a string key",
+        "sourceId": "gorilla"
+      },
+      {
+        "label": "3. Window kept hot",
+        "value": "The most recent 26 hours",
+        "sourceId": "gorilla"
+      },
+      {
+        "label": "4. Query load",
+        "value": "More than 40,000 queries per second at peak",
+        "sourceId": "gorilla"
+      },
+      {
+        "label": "5. Read speed",
+        "value": "Reads succeed in under one millisecond",
+        "sourceId": "gorilla"
+      },
+      {
+        "label": "6. Survive failure",
+        "value": "Two in-memory replicas that are not co-located, and reads keep working when one server crashes",
+        "sourceId": "gorilla"
+      },
+      {
+        "label": "7. No circular dependency",
+        "value": "The monitoring system cannot depend on the storage systems it monitors for its alerting path",
+        "sourceId": "monarch"
+      }
+    ]
+  },
+  "decisions": [
+    {
+      "id": "memory",
+      "question": "Where should the recent data live?",
+      "options": [
+        {
+          "label": "On disk behind a read-through cache",
+          "why": "Cheap, but a dashboard asking for the newest point can miss the cache and fall through to the slow store."
+        },
+        {
+          "label": "In memory, as a write-through window of recent data, with history kept elsewhere",
+          "why": "New points land in fast memory as they arrive, so the common recent query never touches the slow store."
+        },
+        {
+          "label": "In memory for everything, forever",
+          "why": "Fast for all queries, but the cost of holding years of data in RAM is far beyond what the queries need."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Facebook",
+        "text": "Gorilla acts as a write-through cache of the most recent 26 hours. The team saw that at least 85% of queries to its older store asked for data from the past 26 hours, so a window that size serves most reads.",
+        "sourceId": "gorilla"
+      }
+    },
+    {
+      "id": "consistency",
+      "question": "A zone is cut off and some data cannot be reached. What should a query do?",
+      "options": [
+        {
+          "label": "Wait until every part answers, so the result is complete",
+          "why": "Complete, but an outage then takes longer to notice, which defeats the point of monitoring."
+        },
+        {
+          "label": "Fail the query and ask the user to retry",
+          "why": "Honest, but the dashboard or alert goes blank exactly when it is needed."
+        },
+        {
+          "label": "Return what it has and mark the result as possibly incomplete",
+          "why": "The reader gets the freshest answer now and knows how far to trust it."
+        }
+      ],
+      "answerIndex": 2,
+      "realChoice": {
+        "company": "Google",
+        "text": "Monarch trades consistency for availability and partition tolerance. It drops delayed writes, returns partial data for queries when needed, and flags that the data may be incomplete.",
+        "sourceId": "monarch"
+      }
+    },
+    {
+      "id": "copies",
+      "question": "How should the copies be arranged?",
+      "options": [
+        {
+          "label": "Three replicas in one region written by quorum, with queries fanning out to other regions",
+          "why": "Strong inside the region and cheap across regions, but a whole region loss takes its data with it until you query elsewhere."
+        },
+        {
+          "label": "One copy in memory, rebuilt from disk after a failure",
+          "why": "Simplest and cheapest, but a crash leaves a gap where reads cannot be served."
+        },
+        {
+          "label": "Two independent full copies in different regions, each fed in parallel",
+          "why": "Either region can answer alone, and a region failure is handled by reading from the other."
+        }
+      ],
+      "answerIndex": 2,
+      "realChoice": {
+        "company": "Facebook",
+        "text": "Gorilla keeps two completely independent instances in separate regions. A write is streamed to each with no attempt to guarantee consistency, and reads go to the closest available one. When one region fails, reads are retried in the other.",
+        "sourceId": "gorilla"
+      }
+    },
+    {
+      "id": "collect",
+      "question": "How does data get from the thing being measured into the store?",
+      "options": [
+        {
+          "label": "The store discovers each source and pulls from it",
+          "why": "The store controls the pace, but it needs discovery services and proxies for every source."
+        },
+        {
+          "label": "A central poller scrapes every source on a schedule",
+          "why": "Easy to reason about, but one poller becomes the bottleneck and the single point of failure."
+        },
+        {
+          "label": "Each source pushes its data to the store",
+          "why": "Sources only need an address to send to, which removes the discovery machinery."
+        }
+      ],
+      "answerIndex": 2,
+      "realChoice": {
+        "company": "Google",
+        "text": "Early versions of Monarch discovered monitored entities and pulled from them, which needed discovery services and proxies and hurt scalability. Moving to push removed those dependencies.",
+        "sourceId": "monarch"
+      }
+    },
+    {
+      "id": "aggregate",
+      "question": "Where should the data be reduced to a coarser form?",
+      "options": [
+        {
+          "label": "In a nightly batch job over stored data",
+          "why": "Easy to run, but every point is stored raw first and the job must read it all back."
+        },
+        {
+          "label": "At query time, over the raw points",
+          "why": "Nothing is lost, but each dashboard repeats the same expensive reduction."
+        },
+        {
+          "label": "At collection time, as the points arrive",
+          "why": "The reduction happens once, and nothing has to be pulled back out of storage to do it."
+        }
+      ],
+      "answerIndex": 2,
+      "realChoice": {
+        "company": "Uber",
+        "text": "M3 downsamples at the time of collection. Doing it later would mean pulling large volumes of stored data back out, which costs network, CPU and disk. Storage policies pick retention and downsampling by matching a metric's tags.",
+        "sourceId": "m3"
+      }
+    }
+  ],
+  "sizing": {
+    "inputs": [
+      {
+        "id": "points_per_min",
+        "label": "Data points added per minute",
+        "min": 1000000,
+        "max": 2000000000,
+        "step": 1000000,
+        "default": 700000000,
+        "unit": "points/min"
+      },
+      {
+        "id": "bytes_per_point",
+        "label": "Bytes per point, stored (16 uncompressed, 1.37 in Gorilla)",
+        "min": 0.5,
+        "max": 16,
+        "step": 0.01,
+        "default": 1.37,
+        "unit": "B"
+      },
+      {
+        "id": "retention_hours",
+        "label": "Hours kept in memory",
+        "min": 1,
+        "max": 168,
+        "step": 1,
+        "default": 26,
+        "unit": "hours"
+      },
+      {
+        "id": "replicas",
+        "label": "Full copies kept",
+        "min": 1,
+        "max": 4,
+        "step": 1,
+        "default": 2,
+        "unit": "copies"
+      },
+      {
+        "id": "node_ram_gb",
+        "label": "RAM per machine (your assumption)",
+        "min": 8,
+        "max": 1024,
+        "step": 8,
+        "default": 256,
+        "unit": "GB"
+      }
+    ],
+    "outputs": [
+      {
+        "label": "Points held per copy",
+        "formula": "points_per_min * 60 * retention_hours / 1000000000",
+        "unit": "billion points"
+      },
+      {
+        "label": "Memory for one copy",
+        "formula": "points_per_min * 60 * retention_hours * bytes_per_point / 1000000000",
+        "unit": "GB"
+      },
+      {
+        "label": "Memory for all copies",
+        "formula": "points_per_min * 60 * retention_hours * bytes_per_point * replicas / 1000000000000",
+        "unit": "TB"
+      },
+      {
+        "label": "The same copy at 16 bytes per point",
+        "formula": "points_per_min * 60 * retention_hours * 16 / 1000000000000",
+        "unit": "TB"
+      },
+      {
+        "label": "Machines needed, with your RAM figure",
+        "formula": "ceil(points_per_min * 60 * retention_hours * bytes_per_point * replicas / 1000000000 / node_ram_gb)",
+        "unit": "machines"
+      }
+    ]
+  },
+  "diagram": {
+    "title": "Metrics pipeline: writers, ingest, in-memory store, a second copy and the query path",
+    "nodes": [
+      {
+        "id": "writers",
+        "label": "Writers and agents",
+        "topic": "overload-and-cascading-failures",
+        "company": "Facebook",
+        "tradeoff": "Gorilla's write clients buffer one minute of data while shards move and drop older points to make room for newer ones. It prefers recent data over complete data.",
+        "to": [
+          "ingest"
+        ]
+      },
+      {
+        "id": "ingest",
+        "label": "Ingest (push)",
+        "topic": "cap",
+        "company": "Google",
+        "tradeoff": "Sources push to Monarch, which removes the discovery services and proxies that pulling needed. Separately, Monarch drops delayed writes rather than wait on them.",
+        "to": [
+          "aggregator"
+        ]
+      },
+      {
+        "id": "aggregator",
+        "label": "Aggregation at collection",
+        "topic": "stream-vs-batch-processing",
+        "company": "Uber",
+        "tradeoff": "M3 downsamples as data is collected, so nothing is read back later. The cost is that a rule can only roll up metrics from one Prometheus instance for now, as of the 2018 post.",
+        "to": [
+          "memstore"
+        ]
+      },
+      {
+        "id": "shardmap",
+        "label": "Shard map",
+        "topic": "consensus",
+        "company": "Facebook",
+        "tradeoff": "A Paxos-based ShardManager assigns shards to nodes and spreads a failed node's shards over the rest. Writers wait in a buffer during the move.",
+        "to": [
+          "memstore"
+        ]
+      },
+      {
+        "id": "memstore",
+        "label": "In-memory store",
+        "topic": "caching",
+        "company": "Facebook",
+        "tradeoff": "Recent data is held in RAM, compressed to an average of 1.37 bytes per point instead of 16. Anything older has to come from another store.",
+        "to": [
+          "replica",
+          "longterm"
+        ]
+      },
+      {
+        "id": "replica",
+        "label": "Second copy, other region",
+        "topic": "replication",
+        "company": "Facebook",
+        "tradeoff": "Each region gets every write with no attempt at consistency, so either can answer alone. The two copies can disagree.",
+        "to": []
+      },
+      {
+        "id": "longterm",
+        "label": "Long-term store",
+        "topic": "storage-engines",
+        "company": "Uber",
+        "tradeoff": "M3 lets a metric's tags choose its retention and resolution, such as 2 days raw or 30 days at one minute. Coarser data lasts longer but loses detail.",
+        "to": []
+      },
+      {
+        "id": "query",
+        "label": "Query tier",
+        "topic": "sharding",
+        "company": "Google",
+        "tradeoff": "Monarch queries run through a root, zone and leaf tree and can return partial results. A result may be fast and incomplete.",
+        "to": [
+          "memstore"
+        ]
+      },
+      {
+        "id": "alerting",
+        "label": "Alerting",
+        "topic": "failover",
+        "company": "Google",
+        "tradeoff": "Monarch keeps data in memory so alerts do not depend on storage systems that themselves rely on monitoring. The price is the cost of RAM.",
+        "to": [
+          "query"
+        ]
+      }
+    ],
+    "failures": [
+      {
+        "id": "node-lost",
+        "label": "One in-memory node is lost",
+        "effects": [
+          {
+            "nodeId": "memstore",
+            "state": "degraded"
+          },
+          {
+            "nodeId": "writers",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "region-lost",
+        "label": "A whole region is lost",
+        "effects": [
+          {
+            "nodeId": "memstore",
+            "state": "down"
+          },
+          {
+            "nodeId": "replica",
+            "state": "degraded"
+          },
+          {
+            "nodeId": "query",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "ingest-spike",
+        "label": "A write spike overwhelms ingest",
+        "effects": [
+          {
+            "nodeId": "ingest",
+            "state": "degraded"
+          },
+          {
+            "nodeId": "writers",
+            "state": "degraded"
+          },
+          {
+            "nodeId": "aggregator",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "storage-down",
+        "label": "The long-term store is unavailable",
+        "effects": [
+          {
+            "nodeId": "longterm",
+            "state": "down"
+          },
+          {
+            "nodeId": "query",
+            "state": "degraded"
+          }
+        ]
+      }
+    ]
+  },
+  "compare": "Gorilla and Monarch both keep the newest data in memory, and both accept an incomplete answer sooner than a blocked one. Gorilla writes to two regions without trying to make them agree, and Monarch drops late writes and returns partial query results. M3 adds a third design for retention: it downsamples as data arrives.\n\nThey split on copies and reach. Gorilla keeps two independent full instances in separate regions. M3 writes each metric to three replicas inside one region by quorum and sends queries out to remote regions rather than replicating across them. Monarch splits its data into 38 zones and joins them with a global query tree, and its recovery log is written on a best-effort basis so the system keeps running if the file systems behind it are down.\n\nRead the dates with care. Gorilla is a 2015 paper and holds a 26-hour window in front of a separate long-term store. Monarch is a 2020 paper describing Google's system. M3 is a 2018 post. Each describes its system at that time.",
+  "quiz": [
+    {
+      "question": "Why did Gorilla's team reject a separate Memcache write-through cache for recent data?",
+      "options": [
+        "It could not hold data for 26 hours",
+        "Appending to a series needs a read and a write, which would flood the cache server with traffic",
+        "It did not support replication across regions"
+      ],
+      "correct": 1,
+      "why": "Adding a point to an existing series would require a read/write cycle, and that causes extremely high traffic to the cache server.",
+      "wrong": [
+        "The reason given is traffic, not capacity.",
+        "",
+        "The paper's objection is the append cycle, not regions."
+      ],
+      "teaches": "caching"
+    },
+    {
+      "question": "Monarch cannot reach part of its data during a network partition. What does it do with a query?",
+      "options": [
+        "Blocks until every zone has answered, so the result is complete",
+        "Rejects the query so that nobody acts on a partial picture",
+        "Returns partial data and flags it as possibly incomplete"
+      ],
+      "correct": 2,
+      "why": "Monarch drops delayed writes and returns partial data, with a mechanism to show that the data may be incomplete.",
+      "wrong": [
+        "Blocking would delay detection of the very outage being investigated.",
+        "Rejecting leaves dashboards and alerts blank when they are most needed.",
+        ""
+      ],
+      "teaches": "cap"
+    },
+    {
+      "question": "A Gorilla node dies and its shards are being reassigned. What happens to the points still arriving?",
+      "options": [
+        "Writers buffer about a minute and drop older points",
+        "They queue on disk for as long as the node stays down, then replay",
+        "They go only to the instance in the other region and nowhere else"
+      ],
+      "correct": 0,
+      "why": "The buffers hold one minute of data and discard older points to make room for newer ones, which usually covers the shard move.",
+      "wrong": [
+        "",
+        "Gorilla favours recent data over a full backlog.",
+        "Writes are streamed to both instances; the buffer covers the move in the same region."
+      ],
+      "teaches": "failover"
+    },
+    {
+      "question": "What lets Gorilla fit a point in an average of 1.37 bytes instead of 16?",
+      "options": [
+        "Sampling less often than the 15-second granularity it requires",
+        "Keeping only the newest value of each series, since older ones live elsewhere",
+        "Delta-of-delta timestamps and XOR of values"
+      ],
+      "correct": 2,
+      "why": "These two encodings compress each series as a stream, down to 1.37 bytes per point on average, a 12x reduction.",
+      "wrong": [
+        "The 15-second granularity is a stated requirement, not a saving.",
+        "Gorilla keeps a window of points for each series.",
+        ""
+      ],
+      "teaches": "storage-engines"
+    },
+    {
+      "question": "Why does M3 downsample at the time of collection?",
+      "options": [
+        "Raw points cannot be stored in M3DB at all, so they must be reduced first",
+        "Later rollups mean pulling large volumes of stored data back out",
+        "It removes the need for any per-metric retention rules at all"
+      ],
+      "correct": 1,
+      "why": "Downsampling later needs the same read-then-aggregate work as a compaction, so M3 avoids it by reducing data as it arrives and saves network, CPU and disk IO.",
+      "wrong": [
+        "M3 has a policy of 2 days with no downsampling, so raw data is kept.",
+        "",
+        "Rules still pick retention and resolution by matching tags."
+      ],
+      "teaches": "stream-vs-batch-processing"
+    },
+    {
+      "question": "How does Uber's M3 give one view across regions without replicating across them?",
+      "options": [
+        "Metrics stay in the local region, and queries fan out to remote ones",
+        "Every region writes synchronously to every other region, so each holds a full copy",
+        "A central region copies all of the data each night for global queries"
+      ],
+      "correct": 0,
+      "why": "Replication stays inside a region, and a query fans out to local and remote M3DB instances and coordinators and returns compressed blocks.",
+      "wrong": [
+        "",
+        "Cross-region replication is the cost M3 avoids.",
+        "M3 does not describe a nightly copy."
+      ],
+      "teaches": "replication"
+    }
+  ],
+  "sources": [
+    {
+      "id": "gorilla",
+      "title": "Gorilla: A Fast, Scalable, In-Memory Time Series Database",
+      "url": "https://www.vldb.org/pvldb/vol8/p1816-teller.pdf",
+      "company": "Facebook",
+      "published": "2015",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "monarch",
+      "title": "Monarch: Google's Planet-Scale In-Memory Time Series Database",
+      "url": "https://www.vldb.org/pvldb/vol13/p3181-adams.pdf",
+      "company": "Google",
+      "published": "2020",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "m3",
+      "title": "M3: Uber's Open Source, Large-scale Metrics Platform for Prometheus",
+      "url": "https://www.uber.com/blog/m3/",
+      "company": "Uber",
+      "published": "2018-08-07",
+      "verifiedOn": "2026-10-17"
+    }
+  ]
+}
