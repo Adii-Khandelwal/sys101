@@ -666,7 +666,7 @@ li {
 .graph-stage {
   position: relative;
   min-width: 100%;
-  height: clamp(278px, calc(var(--rows, 1) * 120px + 158px), 70vh);
+  height: clamp(250px, calc(var(--rows, 1) * 120px + 130px), 70vh);
   overflow: hidden;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
@@ -692,17 +692,23 @@ li {
   color: var(--ink-soft);
 }
 
-/* Group names on the map: faint, never interactive. */
+/* Group names in a row above the map: each is a button that highlights that group's topics. */
+.graph-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 20px;
+  margin: 0 0 4px;
+}
 .graph-group {
-  position: absolute;
-  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
   white-space: nowrap;
   color: var(--ink-soft);
-  opacity: 0.8;
-  /* It is a real button now: strip the default chrome, keep the mono label. */
   appearance: none;
   margin: 0;
-  padding: 2px 4px;
+  padding: 0;
   border: 0;
   background: transparent;
   font: inherit;
@@ -710,11 +716,10 @@ li {
   text-transform: inherit;
   cursor: pointer;
   border-radius: 2px;
-  transition: color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+  transition: color var(--dur-fast) var(--ease-out);
 }
 @media (hover: hover) and (pointer: fine) {
   .graph-group:hover {
-    opacity: 1;
     color: var(--ink);
   }
 }
@@ -724,8 +729,9 @@ li {
 }
 /* Pressed: this group's topics are the highlighted ones. */
 .graph-group[aria-pressed="true"] {
-  opacity: 1;
   color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .legend-mark {
@@ -4120,6 +4126,7 @@ html[data-posts-view] .posts-view-h {
   .search,
   .posts-tools,
   .graph-toolbar,
+  .graph-groups,
   .mark-done,
   .reveal-wrap > button,
   .site-footer,

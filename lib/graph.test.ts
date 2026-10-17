@@ -23,7 +23,7 @@ import {
 type E = { from: string; to: string };
 const keys = (es: E[]) => es.map((e) => `${e.from}->${e.to}`).sort();
 const PAD = 48;
-const PAD_TOP = 86;
+const PAD_TOP = 58;
 
 describe("transitive reduction", () => {
   it("drops the shortcut in a small chain", () => {
@@ -61,7 +61,7 @@ function plan(nodes: { slug: string; title: string }[], edges: E[], stageWidth: 
   const rows = rowCount(cols, orientation);
   // Horizontal keeps the CSS stage-height cap; vertical (stacked) grows to fit every
   // node at full spacing, matching the uncapped .graph-stage[data-orientation="vertical"].
-  const rawHeight = rows * 120 + 158;
+  const rawHeight = rows * 120 + 130;
   const height = (orientation === "horizontal" ? Math.min(rawHeight, 700) : rawHeight) - PAD - PAD_TOP;
   const stage = { minX: -PAD + 8, maxX: width + PAD - 8, minY: -PAD + 8, maxY: height + PAD_TOP - 24 };
   const lay = orientation === "horizontal" ? chooseLayers(cols, drawn, { width, height, labelWidth }, stage) : cols;

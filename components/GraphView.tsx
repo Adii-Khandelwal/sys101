@@ -19,8 +19,6 @@ import {
   mapIsInteractiveAt,
   nextHighlight,
   placeTooltip,
-  groupLabelSpots,
-  placeGroupLabel,
   type HighlightEvent,
 } from "@/lib/graphUi";
 import { createPortal } from "react-dom";
@@ -59,7 +57,7 @@ const LABEL_SIZE = 18;
 const EDGE_EMPHASIS = 2; // highlighted edges are drawn this many times their base width
 const NARROW = PHONE; // below this the map stacks top to bottom; matches the CSS and the mobile Path default
 const PADDING = 48; // px between the stage edge and the outermost nodes
-const PADDING_TOP = 86; // node centres sit this far down, so the first row is 56px+ below the controls
+const PADDING_TOP = 58; // node centres sit this far below the stage top, so the first row clears the top rule and the edges stay TOP_CLEAR below it
 const TOP_CLEAR = 24; // edges stay this far below the legend and controls line
 /**
  * Sigma's own wheel, drag and double-click handling stays off (it checks
@@ -217,7 +215,6 @@ export default function GraphView({ nodes, edges }: Props) {
 
   // Hidden edges as screen-space curves, kept in step with the camera.
   const hiddenBends = useRef(new Map<string, number>());
-  const [edgeSamples, setEdgeSamples] = useState<{ key: string; points: { x: number; y: number }[] }>({ key: "", points: [] });
   const [extraPaths, setExtraPaths] = useState<{ from: string; to: string; d: string }[]>([]);
   const bySlug = useMemo(() => new Map(nodes.map((n) => [n.slug, n])), [nodes]);
 
@@ -289,24 +286,11 @@ export default function GraphView({ nodes, edges }: Props) {
       return { from: e.from, to: e.to, d: `M${A.x},${A.y} Q${C.x},${C.y} ${B.x},${B.y}` };
     });
     setExtraPaths((prev) => (prev.map((p) => p.d).join() === paths.map((p) => p.d).join() ? prev : paths));
-    // Drawn edges as screen points, so group labels can sit where no edge passes.
-    const samples: { x: number; y: number }[] = [];
-    graph.forEachEdge((_edge, attr, source, target) => {
-      const a = graph.getNodeAttributes(source);
-      const b = graph.getNodeAttributes(target);
-      const c = (attr.curvature as number) ?? 0;
-      const ctrl = { x: (a.x + b.x) / 2 - (b.y - a.y) * c, y: (a.y + b.y) / 2 + (b.x - a.x) * c };
-      const [A, C, B] = [a, ctrl, b].map((p) => renderer.graphToViewport({ x: p.x, y: p.y }));
-      for (let i = 0; i <= 40; i++) {
-        const t = i / 40;
-        samples.push({ x: (1 - t) ** 2 * A.x + 2 * t * (1 - t) * C.x + t ** 2 * B.x, y: (1 - t) ** 2 * A.y + 2 * t * (1 - t) * C.y + t ** 2 * B.y });
-      }
-    });
-    const key = samples.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join();
-    setEdgeSamples((prev) => (prev.key === key ? prev : { key, points: samples }));
   }, []);
 
   const activate = useCallback((slug: string | null) => {
+    // A pinned group keeps its highlight while the pointer or focus moves over nodes: only the tooltip follows.
+    if (activeGroupRef.current) return setActive(slug);
     activeRef.current = slug;
     activeGroupRef.current = null;
     setActiveGroup(null);
@@ -921,7 +905,8 @@ export default function GraphView({ nodes, edges }: Props) {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && clear({ type: "escape" });
     const onScroll = () => clear({ type: "scroll" });
     const onDown = (e: PointerEvent) => {
-      if (!stage.current?.contains(e.target as Node)) clear({ type: "touchOutside" });
+      // The group row is part of the map: its own click toggles the group, so pressing it must not clear it first.
+      if (!stage.current?.contains(e.target as Node) && !(e.target as Element).closest?.(".graph-groups")) clear({ type: "touchOutside" });
     };
     const onLeave = () => clear({ type: "leave" });
     const canvas = container.current;
@@ -943,40 +928,12 @@ export default function GraphView({ nodes, edges }: Props) {
 
   const activePoint = active ? points.find((p) => p.slug === active) : undefined;
 
-  // Group labels: pinned to the stage's left edge on their row when the group
-  // has one row, otherwise above (or else below) its first node, always where
-  // no edge, node or label is.
-  const groupLabels = useMemo(() => {
-    const at = new Map(points.map((p) => [p.slug, p]));
-    const ctx = typeof document === "undefined" ? null : document.createElement("canvas").getContext("2d");
-    if (ctx) ctx.font = `500 ${LABEL_SIZE * labelScale}px ${getComputedStyle(document.body).fontFamily}`;
-    const title = new Map(nodes.map((n) => [n.slug, n.title]));
-    const blocked = (x: number, y: number, w: number, h = 24) => {
-      const [l, r, t, b] = [x - 6, x + w + 6, y - 4, y + h + 4];
-      if (edgeSamples.points.some((p) => p.x > l && p.x < r && p.y > t && p.y < b)) return true;
-      return points.some((p) => {
-        const lw = ctx?.measureText(title.get(p.slug) ?? "").width ?? 0;
-        const boxes = [[p.x - p.r, p.y - p.r, p.x + p.r, p.y + p.r], [p.x + p.r + 8, p.y - 11, p.x + p.r + 8 + lw, p.y + 11]];
-        return boxes.some(([bl, bt, br, bb]) => l < br && r > bl && t < bb && b > bt);
-      });
-    };
-    const groupCtx = ctx ? document.createElement("canvas").getContext("2d") : null;
-    if (groupCtx) groupCtx.font = `400 18px ${getComputedStyle(document.body).fontFamily}`;
-    const names = [...new Set(nodes.map((n) => n.group).filter((g): g is string => !!g))];
-    return names.flatMap((name) => {
-      const pts = nodes.filter((n) => n.group === name).map((n) => at.get(n.slug)).filter((p): p is Point => !!p);
-      if (!pts.length) return [];
-      // Measured in the 18px serif the label is drawn in, plus its 4px side padding; a per-letter guess was off by up to 10px.
-      const width = (groupCtx ? groupCtx.measureText(name).width : name.length * 8) + 8;
-      const fits = (sp: { x: number }) => sp.x >= 0 && sp.x + width <= (size.width || Infinity);
-      const free = (sp: { x: number; y: number }) => fits(sp) && !blocked(sp.x, sp.y, width);
-      const spotsOf = (p: Point) => groupLabelSpots(p, width, ctx?.measureText(title.get(p.slug) ?? "").width ?? 0, effective === "vertical");
-      // The first node in index order, unless every spot beside it is crossed by an edge: then the next node that has a free spot.
-      const owner = pts.find((p) => spotsOf(p).some(free)) ?? pts[0];
-      const spot = placeGroupLabel(spotsOf(owner), fits, (sp) => blocked(sp.x, sp.y, width));
-      return [{ name, ...spot }];
-    });
-  }, [points, nodes, edgeSamples, size.width, effective, labelScale]);
+  // The group names shown in the row above the map, with how many topics each holds.
+  const groupNames = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const n of nodes) if (n.group) counts.set(n.group, (counts.get(n.group) ?? 0) + 1);
+    return [...counts];
+  }, [nodes]);
   const activeNode = active ? bySlug.get(active) : undefined;
 
   // Right edge of each column's widest label. The sideways scroll snaps so its window ends on one of
@@ -1040,6 +997,14 @@ export default function GraphView({ nodes, edges }: Props) {
         </div>
       </div>
 
+      <div className="graph-groups label" role="group" aria-label="Highlight a group of topics">
+        {groupNames.map(([name, count]) => (
+          <button key={name} type="button" className="graph-group" aria-label={`${name}, ${count} topics`} aria-pressed={activeGroup === name} onClick={() => activateGroup(name)}>
+            {name} <span aria-hidden="true">·</span> {count}
+          </button>
+        ))}
+      </div>
+
       <div ref={scrollWrap} className="graph-scrollwrap">
         {/* Snap points live here, not in the stage: the stage clips, so it is its own scroll container. */}
         {snapEnds.map((end) => (
@@ -1063,25 +1028,10 @@ export default function GraphView({ nodes, edges }: Props) {
         {!ready && <GraphSkeleton />}
         <div ref={container} className="graph-canvas" aria-hidden="true" />
 
-        {/* Faint group names: click one to highlight just that group's topics. */}
-        {groupLabels.map((g) => (
-          <button
-            key={g.name}
-            type="button"
-            className="graph-group label"
-            style={{ left: g.x, top: g.y }}
-            aria-pressed={activeGroup === g.name}
-            aria-label={`Highlight the ${g.name} topics`}
-            onClick={() => activateGroup(g.name)}
-          >
-            {g.name}
-          </button>
-        ))}
-
         {/* Edges implied by a longer path: faint and dashed, on hover or focus of either end, or always with "Show all links". */}
         <svg className="graph-extra" aria-hidden="true">
           {extraPaths
-            .filter((p) => (interactive && showAll) || active === p.from || active === p.to)
+            .filter((p) => (interactive && showAll) || (!activeGroup && (active === p.from || active === p.to)))
             .map((p) => (
               <path key={`${p.from}->${p.to}`} d={p.d} />
             ))}
