@@ -39,6 +39,9 @@
       "svgl": "github_light.svg",
       "svglDark": "github_dark.svg"
     },
+    "GitLab": {
+      "svgl": "gitlab.svg"
+    },
     "Google": {
       "svgl": "google.svg"
     },
