@@ -695,7 +695,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic that builds on this one.",
-      "body": "A connection has to end somewhere, and one server cannot answer them all. Load balancing picks up from here: a Layer 4 balancer forwards TCP or UDP connections without reading them, while a Layer 7 balancer terminates the connection, reads the HTTP request and chooses a backend for each one. Everything you counted here, handshakes, reused connections and where TLS ends, decides which of the two fits."
+      "body": "A connection has to end somewhere, and one server cannot answer them all. Load balancing picks up from here: a Layer 4 balancer forwards TCP or UDP connections without reading them, while a Layer 7 balancer terminates the connection, reads the HTTP request and chooses a backend for each one. Everything you counted here, handshakes, reused connections and where TLS ends, decides which of the two fits. Real-time Delivery builds on the connection side: holding very many connections open with WebSockets and routing each message to the right one."
     }
   }
 }

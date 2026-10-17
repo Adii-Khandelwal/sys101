@@ -53,10 +53,10 @@ Then the two fields that are written by script, not by hand: `node scripts/topic
 
 1. `node scripts/check-topic.mjs <slug>` (`npm run check:topic -- <slug>`). Fix every FAIL. Decide every WARN: fix it, or say in the report why it stays. It checks the files exist, prerequisites, summary, reasons, logos, duplicate post ids, the prerequisites' "What to learn next" text, and docs that state a topic count.
 2. `npm run readme:stats` (README counts are computed; `lib/readme.test.ts` fails until you run it). Fix any other doc the check named, in the same change.
-3. `npx tsc --noEmit`, `npm run lint`, `npm test` (graph crossing and overlap tests at 1440, 1280 and 390, topic and learn checks, logos).
+3. `npx tsc --noEmit`, `npm run lint`, `npm test` (graph crossing and overlap tests at 1440 and 1280, topic and learn checks, logos).
 4. A build into another directory, then `NEXT_DIST_DIR=.next-build node scripts/check-seo.mjs`, `check-news.mjs`, `check-diagram-overflow.mjs` (and `npm run check:tour` if the top of a topic page changed), then `rm -rf .next-build`.
 5. `npm run verify:figures` (network) for the new numbers; it rewrites `docs/verification-log.md`, so commit that with the topic. A lone digit or number word it cannot judge says HAND CHECK: read the source and record it in `docs/hand-checks.json`.
-6. Look at it with the `verify-ui` skill: the map at 1280, 1440 and 390 (zero crossings, no overlaps, sideways page scroll and map pan not in conflict at 1280), the topic page, its learn page, `/background` and `/posts`, light and dark. `npm run check:ui` for overflow, tooltips, split labels, broken images and layout shift.
+6. Look at it with the `verify-ui` skill: the map at 1280 and 1440 (no map on a phone; zero crossings, no overlaps, sideways page scroll and map pan not in conflict at 1280), the topic page, its learn page, `/background` and `/posts`, light and dark. `npm run check:ui` for overflow, tooltips, split labels, broken images and layout shift.
 7. Run `/ponytail-review` on the diff.
 
 ## 8. Report and hand-off

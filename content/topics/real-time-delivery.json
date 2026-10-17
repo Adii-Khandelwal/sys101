@@ -1,0 +1,442 @@
+{
+  "slug": "real-time-delivery",
+  "title": "Real-time Delivery",
+  "group": "Scaling",
+  "concept": "Real-time delivery lets a server send data to a client the moment it exists, instead of waiting for the client to ask. It works by keeping a connection open, which turns the server into something that remembers who is connected. That memory is the hard part: messages must be routed to the right server, a lost server must not cause a stampede of reconnects, and one message may have to reach very many clients.",
+  "prerequisites": [
+    "http-tcp-tls"
+  ],
+  "summary": {
+    "points": [
+      "A held-open connection lets the server speak first, which removes polling delay and empty requests but makes servers remember who is connected.",
+      "Every message must be routed to the one server holding the target connection, found by a registry lookup or by hashing an ID.",
+      "Slack hashes channel IDs to channel servers that fan messages out to gateways, so a failed server touches only a few teams for a short time.",
+      "Netflix scales Pushy on connection count and picks node density by the reconnect herd it can absorb when a node dies."
+    ],
+    "figures": [
+      {
+        "postId": "slack-realtime-messaging-2023",
+        "row": 0,
+        "label": "16 million channels per host at peak on the channel servers"
+      },
+      {
+        "postId": "netflix-pushy-2024",
+        "row": 1,
+        "label": "99.999% message delivery reliability over the last few months"
+      },
+      {
+        "postId": "netflix-pushy-2024",
+        "row": 2,
+        "label": "200,000 connections per node on average, with room to go higher"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "http-tcp-tls": "Real-time delivery starts from an HTTP request that is upgraded or held open, and it depends on how a TCP connection stays up and recovers."
+  },
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why some products keep a connection open instead of answering one request at a time, and what that costs.",
+      "body": "Ordinary web traffic is request and response: the client speaks, the server answers, and the exchange ends. That works for loading a page. It is awkward for a chat message, a score update or a TV screen that should refresh when a row changes, because the server has no way to speak first.\n\nThe workaround is polling. The client asks again every few seconds whether anything is new. Most answers are empty, the delay is as long as the polling interval, and every device keeps costing the backend requests whether or not anything happened. Netflix describes exactly this for its TV interface before it moved to a persistent connection: the UI asked for row updates every few seconds, which created needless requests and wasted effort on devices with little spare resource.\n\nKeeping one connection open fixes the delay and the waste, and creates a new problem. A normal server forgets a client the moment it answers. A server with open connections holds state about thousands or millions of clients, and every other part of the system now has to find the right server for each message."
+    },
+    "mentalModel": {
+      "outcome": "After this you can picture real-time delivery as a switchboard of open connections, and name the three ways to hold one open.",
+      "body": "Think of a telephone switchboard. Each client has dialled in and stays on the line. A message from the backend is useless until someone knows which line the person is on, so the switchboard keeps a directory: this user is connected to that gateway server. To deliver, look up the line and speak down it.\n\nThere are three common ways to keep the line open. Long polling asks as usual, but the server holds the request open until it has something to say, and the client asks again straight away. Server-sent events keep one HTTP response open and stream text events from server to client only. A WebSocket upgrades an HTTP connection into a two-way channel where either side can send at any time.\n\nWhichever you choose, the connection ties a client to one particular server, and the rest of the design is about that fact.",
+      "diagram": "<svg viewBox=\"0 0 560 220\" role=\"img\" aria-labelledby=\"dg-rtd-model-t\" class=\"dg\"><title id=\"dg-rtd-model-t\">Real-time delivery in one picture: clients hold open connections to gateway servers, and a backend service looks up which gateway holds the target connection before pushing a message down it.</title><defs><marker id=\"dg-rtd-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"14\" width=\"104\" height=\"44\" class=\"dg-box\"/><text x=\"66\" y=\"40.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client A</text><rect x=\"14\" y=\"88\" width=\"104\" height=\"44\" class=\"dg-box\"/><text x=\"66\" y=\"114.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client B</text><rect x=\"14\" y=\"162\" width=\"104\" height=\"44\" class=\"dg-box\"/><text x=\"66\" y=\"188.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client C</text><rect x=\"196\" y=\"40\" width=\"154\" height=\"130\" class=\"dg-box dg-accent\"/><text x=\"273\" y=\"93.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Gateway servers</text><text x=\"273\" y=\"109.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">hold the open</text><text x=\"273\" y=\"125.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">connections</text><rect x=\"420\" y=\"14\" width=\"126\" height=\"52\" class=\"dg-box\"/><text x=\"483\" y=\"36.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Backend</text><text x=\"483\" y=\"52.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">service</text><rect x=\"420\" y=\"130\" width=\"126\" height=\"52\" class=\"dg-box\"/><text x=\"483\" y=\"152.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Registry:</text><text x=\"483\" y=\"168.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">who is where</text><path d=\"M118,36 L196,80\" class=\"dg-line\" marker-end=\"url(#dg-rtd-model-a)\"/><path d=\"M118,110 L196,105\" class=\"dg-line\" marker-end=\"url(#dg-rtd-model-a)\"/><path d=\"M118,184 L196,140\" class=\"dg-line\" marker-end=\"url(#dg-rtd-model-a)\"/><path d=\"M420,40 L350,70\" class=\"dg-line\" marker-end=\"url(#dg-rtd-model-a)\"/><path d=\"M486,66 L486,130\" class=\"dg-line\" marker-end=\"url(#dg-rtd-model-a)\"/><path d=\"M350,140 L420,156\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-rtd-model-a)\"/><text x=\"486\" y=\"102\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">1. look up</text><text x=\"400\" y=\"56\" class=\"dg-note\" text-anchor=\"end\" font-size=\"11\">2. push</text><text x=\"385\" y=\"160\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">registers</text><text x=\"280\" y=\"200\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The connection stays open, so the server can speak first.</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can walk through how a connection is opened, found, used and kept healthy.",
+      "steps": [
+        {
+          "step": "Open the connection",
+          "explanation": "The client makes a normal HTTPS request. For a WebSocket the request asks to upgrade, and after the server agrees both sides keep the same TCP connection for messages in either direction. A load balancer picks the server for this first request, and from then on the client is tied to it."
+        },
+        {
+          "step": "Register where it lives",
+          "explanation": "The server that holds the connection records who is on it. Some systems write each connection into a shared registry that maps a device or user to a server. Others avoid a registry by making the location computable, for example by hashing a channel ID, which Slack does with consistent hashing."
+        },
+        {
+          "step": "Route a message to the right server",
+          "explanation": "A backend service with something to say looks up the target in the registry, or computes it from the hash, and sends the message to that server. That server writes it down the open connection."
+        },
+        {
+          "step": "Fan out when many are listening",
+          "explanation": "A chat message goes to everyone in a channel, so one incoming message becomes many outgoing ones. A common shape is a server that owns the channel and sends to each gateway that has a subscriber, with each gateway writing to its own clients."
+        },
+        {
+          "step": "Keep the connection honest",
+          "explanation": "A connection can die without telling anyone, for example when a phone loses signal. Heartbeats prove it is still alive, idle connections are cleaned up, and a server that sends on a dead connection finds out late. Clients must reconnect on their own, usually with a staggered delay."
+        },
+        {
+          "step": "Drain and replace servers",
+          "explanation": "To deploy or replace a gateway, ask it to close its connections gradually so clients reconnect elsewhere a few at a time. If a server just dies, all of its clients reconnect at once, which is why the number of connections per server is a design choice about blast radius."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 130\" role=\"img\" aria-labelledby=\"dg-rtd-how-t\" class=\"dg\"><title id=\"dg-rtd-how-t\">Five parts of real-time delivery: open the connection, register where it lives, route a message to the right server, fan it out to clients, and keep the connection healthy through heartbeats, draining and reconnects.</title><defs><marker id=\"dg-rtd-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"34\" width=\"96\" height=\"52\" class=\"dg-box\"/><text x=\"62\" y=\"56.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Open the</text><text x=\"62\" y=\"72.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">connection</text><rect x=\"122\" y=\"34\" width=\"96\" height=\"52\" class=\"dg-box\"/><text x=\"170\" y=\"56.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Register</text><text x=\"170\" y=\"72.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">where it is</text><rect x=\"230\" y=\"34\" width=\"96\" height=\"52\" class=\"dg-box\"/><text x=\"278\" y=\"56.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Route to</text><text x=\"278\" y=\"72.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">the server</text><rect x=\"338\" y=\"34\" width=\"96\" height=\"52\" class=\"dg-box\"/><text x=\"386\" y=\"56.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Fan out</text><text x=\"386\" y=\"72.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">to clients</text><rect x=\"446\" y=\"34\" width=\"100\" height=\"52\" class=\"dg-box\"/><text x=\"496\" y=\"56.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Heartbeat,</text><text x=\"496\" y=\"72.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">drain, resume</text><path d=\"M110,60 L122,60\" class=\"dg-line\" marker-end=\"url(#dg-rtd-how-a)\"/><path d=\"M218,60 L230,60\" class=\"dg-line\" marker-end=\"url(#dg-rtd-how-a)\"/><path d=\"M326,60 L338,60\" class=\"dg-line\" marker-end=\"url(#dg-rtd-how-a)\"/><path d=\"M434,60 L446,60\" class=\"dg-line\" marker-end=\"url(#dg-rtd-how-a)\"/><text x=\"280\" y=\"116\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The first four steps send one message. The last one keeps the whole system alive.</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can trace one chat message from sender to every connected reader, including what happens when a server is lost.",
+      "steps": [
+        {
+          "step": "Three people join a channel",
+          "explanation": "Client A and Client B connect to Gateway 1, and Client C connects to Gateway 2. Each gateway tells the channel's owner server that it has subscribers, which makes the owner a map of gateways, not of people."
+        },
+        {
+          "step": "A sends a message",
+          "explanation": "Client A sends the text to an app server over an ordinary request. The app server hashes the channel ID to find which server owns the channel and hands it the message."
+        },
+        {
+          "step": "The owner fans out",
+          "explanation": "The channel owner sends the message once to each gateway with a subscriber, so two copies leave the owner, not one per reader. Each gateway writes it to the open connections of its own members, so Client B and Client C see it."
+        },
+        {
+          "step": "Gateway 2 fails",
+          "explanation": "Client C's connection drops. The client waits a short random delay and reconnects through the load balancer, which sends it to a healthy gateway. That gateway fetches C's channels and subscribes, and C resumes receiving. With thousands of clients on Gateway 2 the random delay is what stops them arriving in the same instant."
+        },
+        {
+          "step": "The owner server fails instead",
+          "explanation": "The hash decides who owns a channel, so a replacement owner is brought up for that part of the hash space. Only the channels that hashed there are delayed, and gateways resubscribe to the new owner."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-rtd-example-t\" class=\"dg\"><title id=\"dg-rtd-example-t\">A channel with three members: Client A sends through an app server, the channel's owner server fans the message out to two gateways, and each gateway writes it to the open connection of Client B or Client C.</title><defs><marker id=\"dg-rtd-example-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"100\" width=\"76\" height=\"50\" class=\"dg-box\"/><text x=\"52\" y=\"121.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client A</text><text x=\"52\" y=\"137.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">sends</text><rect x=\"110\" y=\"100\" width=\"90\" height=\"50\" class=\"dg-box\"/><text x=\"155\" y=\"121.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">App</text><text x=\"155\" y=\"137.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">server</text><rect x=\"214\" y=\"100\" width=\"116\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"272\" y=\"121.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Channel owner</text><text x=\"272\" y=\"137.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">(by hash)</text><rect x=\"350\" y=\"40\" width=\"80\" height=\"50\" class=\"dg-box\"/><text x=\"390\" y=\"69.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Gateway 1</text><rect x=\"350\" y=\"160\" width=\"80\" height=\"50\" class=\"dg-box\"/><text x=\"390\" y=\"189.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Gateway 2</text><rect x=\"466\" y=\"40\" width=\"80\" height=\"50\" class=\"dg-box\"/><text x=\"506\" y=\"69.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client B</text><rect x=\"466\" y=\"160\" width=\"80\" height=\"50\" class=\"dg-box\"/><text x=\"506\" y=\"189.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client C</text><path d=\"M90,125 L110,125\" class=\"dg-line\" marker-end=\"url(#dg-rtd-example-a)\"/><path d=\"M200,125 L214,125\" class=\"dg-line\" marker-end=\"url(#dg-rtd-example-a)\"/><path d=\"M330,115 L350,75\" class=\"dg-line\" marker-end=\"url(#dg-rtd-example-a)\"/><path d=\"M330,135 L350,185\" class=\"dg-line\" marker-end=\"url(#dg-rtd-example-a)\"/><path d=\"M430,65 L466,65\" class=\"dg-line\" marker-end=\"url(#dg-rtd-example-a)\"/><path d=\"M430,185 L466,185\" class=\"dg-line\" marker-end=\"url(#dg-rtd-example-a)\"/><text x=\"280\" y=\"236\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">B and C already hold open connections. The owner only needs to know which gateways have members.</text></svg>"
+    },
+    "mistakesOutcome": "After this you can spot the three mistakes that most often break a real-time system.",
+    "checkOutcome": "After this you can answer six questions that test whether you could place and size the connection layer.",
+    "quiz": [
+      {
+        "question": "A backend service wants to push a message to one user right now. Which fact does it need that an ordinary request-response service never does?",
+        "options": [
+          "Which database shard holds the user's profile and settings",
+          "Which server is holding that user's open connection",
+          "How many HTTP headers the user's last request carried"
+        ],
+        "correct": 1,
+        "why": "A server cannot call a client. It can only write to a connection that is already open, so it must know which server holds that connection.",
+        "wrong": [
+          "Where the profile is stored matters for reading data, not for reaching a client that is connected right now.",
+          "",
+          "Header counts have nothing to do with where a pushed message has to go."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "A TV app polls every few seconds and nearly every reply says nothing changed. What does a held-open connection change?",
+        "options": [
+          "Each single message travels across the network faster",
+          "Later messages no longer need to be authenticated",
+          "Messages are sent only when there is something to say"
+        ],
+        "correct": 2,
+        "why": "With a connection already open, the server sends an update when it has one, so the empty round trips disappear. Netflix moved its TV row updates this way to cut request rates and device cost.",
+        "wrong": [
+          "The network path is the same; what falls is the number of empty exchanges, and delay is no longer set by a polling timer.",
+          "Open connections are still authenticated when they are set up, and the check does not vanish.",
+          ""
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "One gateway node holds a very large number of connections and then crashes. What is the main risk of packing so many onto one node?",
+        "options": [
+          "All its devices reconnect at once and hit the rest of the fleet",
+          "The load balancer will refuse to route any traffic to a node that large",
+          "Each message has to be copied once per connection before it is sent"
+        ],
+        "correct": 0,
+        "why": "Every device on the failed node reconnects immediately, so the herd grows with the connections per node. Netflix says this is why it chose a balance of 200,000 connections per node on average, not as many as the hardware could take.",
+        "wrong": [
+          "",
+          "Load balancers do not reject a node for holding many connections; the limit is the herd, not routing.",
+          "Fan-out copies a message per recipient, but that is a cost of sending, not what a crash causes."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "A chat system hashes each channel ID to pick the server that owns it, and a replacement for a dead server is ready within seconds. Whose messages are affected meanwhile?",
+        "options": [
+          "Every channel in the system, until a full restart completes",
+          "Only people connected from the dead server's region",
+          "Only channels that hash to that server, and only briefly"
+        ],
+        "correct": 2,
+        "why": "The hash assigns each channel to one owner, so a failure touches only its share of channels. Slack spreads each team's channels across all channel servers, so a replacement affects a few teams for under 20 seconds.",
+        "wrong": [
+          "A channel server owns a slice of the hash space, not the whole system, so other slices carry on.",
+          "Region matters for gateways, which hold connections; the owner is chosen by channel, not by where users sit.",
+          ""
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "A live scoreboard only ever sends updates from the server to the browser. Which choice fits best?",
+        "options": [
+          "A WebSocket, since it is the only mechanism that can push data",
+          "Server-sent events, which reconnect on their own after a drop",
+          "Polling once a minute, since pushing needs a custom protocol"
+        ],
+        "correct": 1,
+        "why": "Server-sent events are one-way HTTP streams, and the browser reconnects by itself, which is all a scoreboard needs. A WebSocket would also work but adds a two-way channel nobody uses.",
+        "wrong": [
+          "WebSocket is not the only way to push; long polling and server-sent events both do it.",
+          "",
+          "Pushing over an HTTP stream needs no custom protocol, and a minute of polling is a minute of staleness."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "A server keeps writing to a connection that the device already lost, with no error. What reduces this?",
+        "options": [
+          "Heartbeats and removing idle connections",
+          "Retrying every send three times in a row",
+          "Raising the connection limit on each node"
+        ],
+        "correct": 0,
+        "why": "A lost connection only shows up when something checks it, so heartbeats find it early and idle cleanup removes it. Netflix added heartbeats, idle cleanup and better connection tracking after seeing silent failures, mainly on older devices.",
+        "wrong": [
+          "",
+          "Retrying on a dead connection repeats the same failure and adds load.",
+          "A higher limit means more connections to go stale, not fewer."
+        ],
+        "teaches": "mistakes"
+      }
+    ],
+    "postsOutcome": "After this you can explain how Slack and Netflix hold and route very large numbers of open connections.",
+    "differOutcome": "After this you can say why the two designs find a connection differently and what each choice costs.",
+    "exercisesOutcome": "After this you can size and design a push system and say what breaks when it grows.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "An app has two million users online. Each phone polls for new orders every five seconds, and about one reply in a thousand has anything new. Roughly how many requests per second does polling cost, how many are useful, and what would you change?",
+        "answer": "Two million users every five seconds is about 400,000 requests per second, and about one in a thousand, so roughly 400 per second, carries news. Hold a connection open per phone and push an order when it arrives, so the backend does work only for the useful ones. Expect to pay in memory for two million open connections and in a registry that says which gateway holds which phone.",
+        "tradeoffs": "You swap many cheap stateless requests for fewer messages and a large pool of stateful connections. Delay falls from the polling interval to near zero, but deploys, failures and reconnects now need a plan.",
+        "wrongAnswers": [
+          "Poll every second instead, which multiplies the load fivefold and still leaves most replies empty.",
+          "Raise the polling interval to a minute, which cuts load but makes orders a minute late.",
+          "Cache the order list on the phone, which does not tell the phone that a new order exists."
+        ],
+        "teaches": "why"
+      },
+      {
+        "level": "design",
+        "prompt": "Design delivery of a 'your friend came online' notice to every device on an account, where each device holds a connection to some gateway. How does the sender find the gateways, and what do you do if a device is offline?",
+        "answer": "Keep a registry that maps each device to the gateway holding its connection, written when the connection opens and expired when it should be gone. The sender asks the registry for the account's devices, sends to each gateway, and each gateway writes to the device. Return a status from each gateway so the caller knows what was delivered, and treat an offline device as normal: drop the notice, or store it for the next connect if it matters.",
+        "tradeoffs": "A registry gives exact targeting and works for messages aimed at one device, but it is another store to scale and to keep fresh. Hashing an ID needs no registry but suits groups, not individual devices.",
+        "wrongAnswers": [
+          "Broadcast to every gateway and let each one check, which wastes work on every message.",
+          "Have devices poll for notices, which brings back the delay this design removes.",
+          "Store the gateway address on the device, which goes stale as soon as the device reconnects elsewhere."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "scale",
+        "prompt": "Your fleet holds 50,000 connections per node and you expect ten times as many devices next year. What would you consider before simply adding nodes, and what number would you tune first?",
+        "answer": "Ten times the devices at the same density means ten times the nodes, which raises cost and may hit load balancer connection limits, so first test a higher number of connections per node. The ceiling is the reconnect herd when a node dies, so raise density only as far as the rest of the fleet can absorb that many reconnects, and stagger client reconnect timing. Scale on connection count, not CPU, because parked connections use little CPU. Also check the registry write rate, since every reconnect rewrites an entry.",
+        "tradeoffs": "Higher density saves hosts and gives more room under load balancer connection limits, at the price of a larger blast radius per failure. Netflix settled on 200,000 average with room to 400,000, but the right figure depends on how fast your fleet can absorb a herd.",
+        "wrongAnswers": [
+          "Scale on CPU like the stateless services, which stays flat while connections pile up.",
+          "Pack as many connections per node as the memory allows, which makes every node failure a stampede.",
+          "Remove heartbeats to save bandwidth, which leaves dead connections counted as live."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick which topic to read next.",
+      "body": "Real-time delivery sits on top of the connection ideas in HTTP, TCP and TLS. Load Balancing shows how the first request of each connection is spread, and Consistent Hashing explains the ring Slack uses to place channels, which this topic mentions but does not teach. Pub-Sub covers the many-readers side of fan-out, and Failover covers what happens when the server holding a connection disappears."
+    }
+  },
+  "posts": [
+    {
+      "id": "slack-realtime-messaging-2023",
+      "title": "Real-time Messaging",
+      "url": "https://slack.engineering/real-time-messaging/",
+      "company": "Slack",
+      "verifiedOn": "2026-10-16",
+      "published": "2023-04-11",
+      "related": [
+        "consistent-hashing"
+      ],
+      "digest": {
+        "problem": "Slack has to show chat messages and events to every online person in a channel almost immediately, across regions, with people connected all day. The post describes the servers that hold the connections and the servers that decide where each message goes.",
+        "constraints": "Tens of millions of clients are connected at once. A team's channels must be findable by any part of the system, servers can fail, and the post shows most users online between 9am and 5pm local time, with peaks at 11am and 2pm, plus spikes at the top of each hour. It gives no message rate, no memory per host and no delivery percentile.",
+        "walkthrough": [
+          {
+            "step": "A client connects through a gateway",
+            "explanation": "On start-up the client gets a token and connection details from the web app, then opens a websocket to the nearest edge region. Envoy hands it to a gateway server, which loads the user's channel list and subscribes to the channel servers that hold those channels."
+          },
+          {
+            "step": "Channel servers own channels",
+            "explanation": "Each channel server is stateful and keeps some history of its channels in memory. The channel ID is hashed, and consistent hashing maps it to one server. A channel here can be a user, team, file or huddle as well as a normal channel."
+          },
+          {
+            "step": "A message finds its channel server",
+            "explanation": "The sender calls the web app, which passes the message to an admin server. The admin server looks up the channel server on the hash ring and routes it there. The channel server sends it to every gateway server in the world subscribed to that channel, and each gateway writes to its connected clients."
+          },
+          {
+            "step": "Events and typing take the same path",
+            "explanation": "Events are updates that change client state, such as a reaction or a joined channel. Transient events such as typing are not stored and travel from the client's websocket to its gateway, then on to the channel server and out again. Reminders and scheduled messages cause regular spikes at the top of the hour."
+          },
+          {
+            "step": "Failures are replaced fast",
+            "explanation": "Ring managers keep the hash ring and swap out unhealthy channel servers. Because each team's channels are spread over all channel servers, a replacement touches few teams. Gateways live in several regions, and a draining mechanism moves users from a failed region to the nearest healthy one."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 270\" role=\"img\" aria-labelledby=\"dg-rtd-slack-t\" class=\"dg\"><title id=\"dg-rtd-slack-t\">Slack's path for one message: the sender calls the web app, an admin server finds the channel server through a consistent hash ring, the channel server sends to every gateway server subscribed to the channel, and each gateway writes to its connected clients. Ring managers replace failed channel servers.</title><defs><marker id=\"dg-rtd-slack-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"24\" width=\"110\" height=\"52\" class=\"dg-box\"/><text x=\"67\" y=\"46.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Sender</text><text x=\"67\" y=\"62.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">client</text><rect x=\"150\" y=\"24\" width=\"110\" height=\"52\" class=\"dg-box\"/><text x=\"205\" y=\"46.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Webapp</text><text x=\"205\" y=\"62.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">API</text><rect x=\"288\" y=\"24\" width=\"110\" height=\"52\" class=\"dg-box\"/><text x=\"343\" y=\"46.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Admin</text><text x=\"343\" y=\"62.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">server</text><rect x=\"421\" y=\"24\" width=\"130\" height=\"52\" class=\"dg-box dg-accent\"/><text x=\"486\" y=\"46.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Channel server</text><text x=\"486\" y=\"62.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">owns the channel</text><rect x=\"426\" y=\"150\" width=\"120\" height=\"52\" class=\"dg-box\"/><text x=\"486\" y=\"172.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Ring managers</text><text x=\"486\" y=\"188.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">(CHARMs)</text><rect x=\"288\" y=\"150\" width=\"110\" height=\"52\" class=\"dg-box\"/><text x=\"343\" y=\"172.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Gateway</text><text x=\"343\" y=\"188.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">servers</text><rect x=\"150\" y=\"150\" width=\"110\" height=\"52\" class=\"dg-box\"/><text x=\"205\" y=\"172.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Clients in</text><text x=\"205\" y=\"188.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">the channel</text><path d=\"M122,50 L150,50\" class=\"dg-line\" marker-end=\"url(#dg-rtd-slack-a)\"/><path d=\"M260,50 L288,50\" class=\"dg-line\" marker-end=\"url(#dg-rtd-slack-a)\"/><path d=\"M398,50 L421,50\" class=\"dg-line\" marker-end=\"url(#dg-rtd-slack-a)\"/><path d=\"M450,76 L398,160\" class=\"dg-line\" marker-end=\"url(#dg-rtd-slack-a)\"/><path d=\"M288,176 L260,176\" class=\"dg-line\" marker-end=\"url(#dg-rtd-slack-a)\"/><path d=\"M486,150 L486,76\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-rtd-slack-a)\"/><text x=\"280\" y=\"236\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Gateways hold the websockets and sit in several regions. Channel servers hold channels in memory.</text><text x=\"400\" y=\"118\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">to every subscribed gateway</text></svg>",
+        "numbers": [
+          {
+            "value": "16 million channels per host",
+            "meaning": "The post's figure for channel servers at peak. Its closing section says tens of millions of channels per host, so treat the exact number with care."
+          },
+          {
+            "value": "Under 20 seconds",
+            "meaning": "Time for a replacement channel server to be ready to serve traffic"
+          },
+          {
+            "value": "500 ms",
+            "meaning": "Delivery time across the world as the post states it; no percentile or measurement method is given"
+          },
+          {
+            "value": "Tens of millions",
+            "meaning": "Connected clients, in the post's own words"
+          },
+          {
+            "value": "Under 20 seconds of elevated latency",
+            "meaning": "What users of the affected teams' channels see while a channel server is replaced"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Stateful in-memory channel servers placed by consistent hashing, with separate regional gateway servers that hold the websockets.",
+          "why": "Hashing gives admin servers a way to find a channel's owner from a ring that the ring managers publish. Spreading a team's channels over all channel servers means a failure touches few teams. Gateways in several regions let a client connect to a nearby one and let a bad region be drained."
+        },
+        "failures": "The post tells no incident story. It does state what a channel server failure costs, which is a short period of higher latency for the few teams whose channels lived there, and that a bad region can be drained. It gives no delivery error rate.",
+        "takeaways": "Separate the servers that hold connections from the servers that own the data and route by an ID. Make routing computable so no lookup sits on the path, and spread each customer thinly so one failure is small."
+      }
+    },
+    {
+      "id": "netflix-pushy-2024",
+      "title": "Pushy to the Limit: Evolving Netflix's WebSocket proxy for the future",
+      "url": "https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658",
+      "company": "Netflix",
+      "verifiedOn": "2026-10-16",
+      "published": "2024-09-10",
+      "ageNote": "From September 2024. The live page refused automated requests, so figures were read from an archive copy and not re-checked on the live page.",
+      "digest": {
+        "problem": "Netflix wanted backend services to send messages to TVs and phones on demand, without each device polling. Pushy grew from tens of millions to hundreds of millions of concurrent connections in about five years, and its early scaling rules had become costly.",
+        "constraints": "Devices include old hardware with poor connection behaviour. Pushy mostly holds idle connections, so CPU says little about load. Connections per node trade fleet cost and load balancer limits against the number of devices that reconnect when a node dies.",
+        "walkthrough": [
+          {
+            "step": "Replace polling with a persistent connection",
+            "explanation": "Devices keep a WebSocket to Pushy. Before this, the TV interface polled a service every few seconds for row updates. Now the origin service pushes updates when they are ready, and voice commands reach the device the same way."
+          },
+          {
+            "step": "Track which node holds which device",
+            "explanation": "A push registry stores device connection metadata so a sender can find the right Pushy node. It ran on Dynomite, a Netflix wrapper around Redis, which needed manual scaling, and was moved to an internal key-value service that scales itself."
+          },
+          {
+            "step": "Scale on connections and stagger reconnects",
+            "explanation": "CPU stays low because most connections are parked, so the fleet scales on connection count, faster the further past target. Devices reconnect about every 30 minutes with some spread, which keeps connections balanced across nodes."
+          },
+          {
+            "step": "Raise density, but only so far",
+            "explanation": "The old rule added instances at 60,000 connections on average, which meant thousands of instances. The team moved to 200,000 on average with room to 400,000, limited by the herd of devices that would reconnect together if a node dropped."
+          },
+          {
+            "step": "Close the silent-failure gap",
+            "explanation": "Pushy sometimes sent on connections that had died without telling it. Adding heartbeats, idle connection cleanup and better connection tracking, plus client reconnect fixes, raised delivery reliability further."
+          },
+          {
+            "step": "Add direct push and device-to-device messages",
+            "explanation": "A sender can skip the queue, look up the target node in the registry and send straight to it, getting a status back so it can retry. Device-to-device messages use the same lookup, with caching to keep the registry off the hot path."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-rtd-pushy-t\" class=\"dg\"><title id=\"dg-rtd-pushy-t\">Netflix's Pushy: a backend service reaches a device either through a message queue and processor (indirect) or by looking up the device's Pushy node in the push registry and sending directly. Pushy nodes hold the WebSocket connections and record each device in the registry.</title><defs><marker id=\"dg-rtd-pushy-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"95\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"62\" y=\"119.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Backend</text><text x=\"62\" y=\"135.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">service</text><rect x=\"150\" y=\"24\" width=\"134\" height=\"52\" class=\"dg-box\"/><text x=\"217\" y=\"46.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Queue and</text><text x=\"217\" y=\"62.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">message processor</text><rect x=\"150\" y=\"170\" width=\"134\" height=\"52\" class=\"dg-box\"/><text x=\"217\" y=\"192.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Push registry:</text><text x=\"217\" y=\"208.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">device to node</text><rect x=\"323\" y=\"95\" width=\"128\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"387\" y=\"119.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Pushy nodes</text><text x=\"387\" y=\"135.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">hold WebSockets</text><rect x=\"480\" y=\"95\" width=\"66\" height=\"56\" class=\"dg-box\"/><text x=\"513\" y=\"127.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Devices</text><path d=\"M112,110 L150,55\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-rtd-pushy-a)\"/><path d=\"M284,50 L323,105\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-rtd-pushy-a)\"/><path d=\"M112,136 L150,190\" class=\"dg-line\" marker-end=\"url(#dg-rtd-pushy-a)\"/><path d=\"M112,123 L323,123\" class=\"dg-line\" marker-end=\"url(#dg-rtd-pushy-a)\"/><path d=\"M451,123 L480,123\" class=\"dg-line\" marker-end=\"url(#dg-rtd-pushy-a)\"/><path d=\"M323,142 L284,185\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-rtd-pushy-a)\"/><text x=\"220\" y=\"16\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">indirect, best effort</text><text x=\"221\" y=\"117\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">direct push, with a status back</text><text x=\"380\" y=\"196\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">registers each connection</text></svg>",
+        "numbers": [
+          {
+            "value": "Hundreds of millions",
+            "meaning": "Concurrent WebSocket connections, up from tens of millions about five years earlier"
+          },
+          {
+            "value": "99.999%",
+            "meaning": "Message delivery reliability over the last few months, the post's own headline figure"
+          },
+          {
+            "value": "200,000 connections per node",
+            "meaning": "Average after the change, with room to go up to 400,000"
+          },
+          {
+            "value": "60,000 connections per instance",
+            "meaning": "The earlier scale-out target; for a couple hundred million devices it meant thousands of instances"
+          },
+          {
+            "value": "300,000 messages per second",
+            "meaning": "What Pushy regularly reaches"
+          },
+          {
+            "value": "About 30 minutes",
+            "meaning": "How often devices reconnect, with some staggering"
+          },
+          {
+            "value": "160,000 and 50,000 messages per second",
+            "meaning": "Direct and indirect pushes, averaged over a recent 24 hours"
+          },
+          {
+            "value": "Under 1 ms median, under 4 ms at the 99th percentile",
+            "meaning": "Device-to-device latency from message arriving at Pushy to response sent, with lookups cached"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Fewer, denser nodes (200,000 connections on average), scaled on connection count, with staggered periodic reconnects to rebalance.",
+          "rejected": "Staying at 60,000 connections per node and adding instances, and pushing density as high as hardware allowed.",
+          "why": "The low density needed thousands of instances and pressed on load balancer connection limits. Very high density would make one node failure send a huge herd of devices back at once. The post settles between the two."
+        },
+        "failures": "Silent connection failures, where Pushy wrote to a connection that had already failed without notice, were an edge case that lowered delivery. Fixes were heartbeats, idle cleanup, better tracking and client-side reconnect changes. Brief periods of slower reads from the key-value store also raised some latencies.",
+        "takeaways": "Size connection nodes by the reconnect herd you can absorb, as well as by what the hardware holds. Scale on connection count when connections are mostly idle, and treat a registry lookup as the cost to cache."
+      }
+    }
+  ],
+  "comparison": "Both systems keep a large fleet of servers whose job is to hold open connections, and both need a way to get a message to the right one. They agree that the connection holders are stateful, that clients must reconnect on their own, and that a failed server is a routine event to plan for.\n\nThey differ in how they find the target. Slack sends a channel's messages to the server that owns the channel, found by hashing the channel ID, and that server fans out to every gateway with a subscriber, since one message has many readers. Netflix mostly sends to one device, so it keeps a registry that maps each device to its node and looks it up, caching the answer when speed matters.\n\nThe evidence is in what each post measures. Slack counts channels per host and the time to replace a channel server, because its risk is a slice of channels going quiet. Netflix counts connections per node and delivery reliability, because its risk is a reconnect herd. The units differ, so the two sets of numbers should not be compared directly.",
+  "glossary": [
+    {
+      "term": "Polling",
+      "definition": "The client asks the server again and again whether anything is new."
+    },
+    {
+      "term": "Long polling",
+      "definition": "The client asks and the server holds the request open until it has something to send, then the client asks again."
+    },
+    {
+      "term": "WebSocket",
+      "definition": "A two-way channel that starts as an HTTP request and then stays open for messages in either direction."
+    },
+    {
+      "term": "Server-sent events",
+      "definition": "A one-way stream of text events from server to browser over a long-lived HTTP response, with automatic reconnect."
+    },
+    {
+      "term": "Gateway server",
+      "definition": "A server whose job is to hold clients' open connections and pass messages to and from them."
+    },
+    {
+      "term": "Fan-out",
+      "definition": "Turning one incoming message into many outgoing ones, one for each listener."
+    },
+    {
+      "term": "Heartbeat",
+      "definition": "A small message sent on a schedule to prove a connection is still alive."
+    },
+    {
+      "term": "Thundering herd",
+      "definition": "Many clients retrying or reconnecting at the same moment, overloading what is left."
+    },
+    {
+      "term": "Draining",
+      "definition": "Gradually closing a server's connections so clients move elsewhere before it stops."
+    }
+  ],
+  "mistakes": [
+    "Scaling the connection layer on CPU. Most connections sit idle, so CPU stays low while connection count climbs. Netflix scales Pushy on the number of connections instead.",
+    "Letting every client reconnect immediately and together. After a drop or deploy, clients that retry at once overload the servers that remain. Add a random delay and drain gradually.",
+    "Trusting a connection because it has not reported an error. A device that loses signal may say nothing, so use heartbeats and clean up idle connections, or messages go into the void."
+  ]
+}

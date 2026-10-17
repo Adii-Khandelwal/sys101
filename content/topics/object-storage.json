@@ -1,0 +1,553 @@
+{
+  "slug": "object-storage",
+  "title": "Object Storage",
+  "group": "Data",
+  "interviewRelevance": "common",
+  "concept": "Object storage keeps data as whole objects, each found by a key, instead of as blocks on a disk or files in a directory tree. A small metadata index says where each object lives, and the bytes sit on many cheap drives, protected by copies or by erasure coding, so capacity grows by adding machines.",
+  "prerequisites": [
+    "storage-engines",
+    "replication",
+    "sharding"
+  ],
+  "summary": {
+    "points": [
+      "Object storage keeps a small index of where each object lives apart from the large pile of drives that hold the bytes.",
+      "Facebook found that per-photo file metadata was the bottleneck, so it packed photos into large files and kept the offsets in memory.",
+      "Amazon spreads each object's erasure coded shards over its own set of drives so no customer's reads land on a few hot disks.",
+      "Dropbox groups blocks into buckets, runs one Master per cell, and adds capacity by adding cells."
+    ],
+    "figures": [
+      {
+        "postId": "s3-warfield-2023",
+        "row": 0,
+        "label": "Drive capacity has improved 7.2 million times since 1956, seek time only 150x"
+      },
+      {
+        "postId": "haystack-facebook-2010",
+        "row": 4,
+        "label": "28% less cost per usable terabyte than the NAS design"
+      },
+      {
+        "postId": "dropbox-magic-pocket-2016",
+        "row": 0,
+        "label": "A typical cell holds 50 PB of raw data"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "storage-engines": "Object stores pack many small objects into large volume files on each drive, so storage engines explain how data is laid out on one disk.",
+    "replication": "Object stores keep several copies or coded shards of every object, so replication explains why redundancy is needed and what it costs in space and repair work.",
+    "sharding": "Object stores spread keys and data over many drives and cells, so sharding explains how data is split across machines and why balance matters."
+  },
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why photos, backups and uploads go in an object store instead of a file server or a database.",
+      "body": "A database is good at small records you query and update. A file server is good at a directory tree that people browse and edit. Neither is built for billions of large, rarely changed things such as photos, videos, backups and uploads, which are written once and read many times.\n\nObject storage is built for exactly that. You give the system a name (a key) and some bytes, and later you ask for the bytes by name. There is no directory tree to walk, no edit in the middle of a file, and almost no per-object bookkeeping beyond where it lives. Dropping those features is what lets it grow to petabytes.\n\nThe hard parts are the ones you already know from replication and sharding, now applied to disks. Drives fail every day, so every object needs redundancy. Drives are slow at random access, so reads must be spread over many of them. And the lookup that turns a name into a location can become the bottleneck, so it has to stay small."
+    },
+    "mentalModel": {
+      "outcome": "After this you can picture an object store as a small index of locations in front of a very large pile of drives.",
+      "body": "Think of a warehouse with a ledger. The ledger is short: for each key it records where the item sits. The warehouse is huge: shelves of drives holding the bytes. A customer hands over a key, the clerk checks the ledger, then fetches the item from its shelf.\n\nThat split between the metadata path and the data path explains most designs. The ledger must be fast and consistent, so it is kept small and often held in memory or in an ordinary database. The warehouse only has to be cheap, durable and wide, so it is spread across as many drives as possible.\n\nObjects are usually immutable. To change one you write a new version, which keeps the data path simple: no locks on part of a file, no in-place rewrites, and a copy that is written is a copy that stays the same.",
+      "diagram": "<svg viewBox=\"0 0 560 220\" role=\"img\" aria-labelledby=\"dg-os-model-t\" class=\"dg\"><title id=\"dg-os-model-t\">An object store: a client sends put or get with a key to a front end, which looks the key up in a small metadata index and then reads or writes the object bytes on many drives.</title><defs><marker id=\"dg-os-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"85\" width=\"100\" height=\"50\" class=\"dg-box\"/><text x=\"62\" y=\"106.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><text x=\"62\" y=\"122.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">put / get</text><rect x=\"160\" y=\"85\" width=\"110\" height=\"50\" class=\"dg-box\"/><text x=\"215\" y=\"106.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Front end</text><text x=\"215\" y=\"122.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">by key</text><rect x=\"340\" y=\"20\" width=\"200\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"440\" y=\"44.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Metadata index</text><text x=\"440\" y=\"60.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">key to location</text><rect x=\"340\" y=\"140\" width=\"200\" height=\"56\" class=\"dg-box\"/><text x=\"440\" y=\"164.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Data nodes</text><text x=\"440\" y=\"180.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">object bytes on drives</text><path d=\"M112,110 L160,110\" class=\"dg-line\" marker-end=\"url(#dg-os-model-a)\"/><path d=\"M270,100 L340,60\" class=\"dg-line\" marker-end=\"url(#dg-os-model-a)\"/><path d=\"M270,120 L340,160\" class=\"dg-line\" marker-end=\"url(#dg-os-model-a)\"/><text x=\"440\" y=\"100\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">small, kept fast</text><text x=\"440\" y=\"214\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">large, spread over many drives</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can follow one write through an object store and say where redundancy and placement come in.",
+      "steps": [
+        {
+          "step": "Receive the object under a key",
+          "explanation": "A front end accepts a put with a key and the bytes. Large objects may arrive in pieces, but each ends up as one named thing in a bucket, which is just a container that groups keys."
+        },
+        {
+          "step": "Add redundancy",
+          "explanation": "Replication stores whole copies on several drives, which is simple and good for reads but costs full capacity for each copy. Erasure coding splits the object into k data shards and adds m parity shards, and any k of the k plus m shards rebuild it. It survives the same number of lost drives for less extra space, at the price of more work to read and repair."
+        },
+        {
+          "step": "Choose where the shards go",
+          "explanation": "Placement decides which drives hold which shards. Spreading different objects over different sets of drives keeps any one drive from becoming a hot spot, the same goal as sharding, applied to disks."
+        },
+        {
+          "step": "Write in parallel",
+          "explanation": "Shards are written to their drives at the same time, and the write succeeds once enough of them are safely stored."
+        },
+        {
+          "step": "Record the location",
+          "explanation": "Only after the data is stored does the metadata index learn where it is. A reader asks the index for the key, then fetches the shards. If the data was never recorded, the object does not exist."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 170\" role=\"img\" aria-labelledby=\"dg-os-how-t\" class=\"dg\"><title id=\"dg-os-how-t\">Five steps of storing an object: receive it, split it into shards, choose drives, write the shards in parallel, then record where it is in the metadata index.</title><defs><marker id=\"dg-os-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"40\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"62\" y=\"64.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Receive</text><text x=\"62\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">the object</text><path d=\"M112,68 L124,68\" class=\"dg-line\" marker-end=\"url(#dg-os-how-a)\"/><rect x=\"124\" y=\"40\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"174\" y=\"64.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Split into</text><text x=\"174\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">shards</text><path d=\"M224,68 L236,68\" class=\"dg-line\" marker-end=\"url(#dg-os-how-a)\"/><rect x=\"236\" y=\"40\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"286\" y=\"64.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Pick drives</text><text x=\"286\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">to spread it</text><path d=\"M336,68 L348,68\" class=\"dg-line\" marker-end=\"url(#dg-os-how-a)\"/><rect x=\"348\" y=\"40\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"398\" y=\"64.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Write shards</text><text x=\"398\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">in parallel</text><path d=\"M448,68 L460,68\" class=\"dg-line\" marker-end=\"url(#dg-os-how-a)\"/><rect x=\"460\" y=\"40\" width=\"100\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"510\" y=\"64.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Record the</text><text x=\"510\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">location</text><text x=\"280\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">A read runs the same path backwards: look up the location, then fetch the shards.</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can trace a read after a drive failure and say what repair has to do.",
+      "steps": [
+        {
+          "step": "Store an object",
+          "explanation": "An object is split into four data shards, and two parity shards are computed from them. The six shards go on six different drives. The index records the key and the six locations."
+        },
+        {
+          "step": "A drive dies",
+          "explanation": "The drive holding shard D2 fails. Nothing is lost, because four of the six shards are enough and five remain."
+        },
+        {
+          "step": "Read the object",
+          "explanation": "The reader asks the index for the key and fetches shards. D2 is unavailable, so it reads D1, D3, D4 and one parity shard, and recomputes the missing data. The caller sees the object, perhaps a little slower."
+        },
+        {
+          "step": "Repair in the background",
+          "explanation": "A repair process rebuilds D2 onto a healthy drive and updates the index. Until then the object has fewer spare shards, so repair speed matters: the longer the gap, the greater the chance that more drives fail first."
+        },
+        {
+          "step": "Why placement helps repair",
+          "explanation": "If the many objects on the dead drive each had their shards on different other drives, the rebuild reads from many drives at once instead of hammering a few, so recovery is quick."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 180\" role=\"img\" aria-labelledby=\"dg-os-worked-t\" class=\"dg\"><title id=\"dg-os-worked-t\">An object stored as four data shards and two parity shards. The drive holding D2 has failed, and the object is rebuilt from the four remaining shards D1, D3, D4 and P1.</title><defs><marker id=\"dg-os-worked-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"50\" width=\"72\" height=\"46\" class=\"dg-box\"/><text x=\"56\" y=\"69.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">D1</text><text x=\"56\" y=\"85.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">data</text><rect x=\"99\" y=\"50\" width=\"90\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"144\" y=\"69.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">D2</text><text x=\"144\" y=\"85.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">drive failed</text><rect x=\"196\" y=\"50\" width=\"72\" height=\"46\" class=\"dg-box\"/><text x=\"232\" y=\"69.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">D3</text><text x=\"232\" y=\"85.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">data</text><rect x=\"284\" y=\"50\" width=\"72\" height=\"46\" class=\"dg-box\"/><text x=\"320\" y=\"69.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">D4</text><text x=\"320\" y=\"85.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">data</text><rect x=\"372\" y=\"50\" width=\"72\" height=\"46\" class=\"dg-box\"/><text x=\"408\" y=\"69.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">P1</text><text x=\"408\" y=\"85.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">parity</text><rect x=\"460\" y=\"50\" width=\"72\" height=\"46\" class=\"dg-box\"/><text x=\"496\" y=\"69.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">P2</text><text x=\"496\" y=\"85.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">parity</text><text x=\"280\" y=\"130\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Four data shards plus two parity shards, one per drive. Any four of the six rebuild the object.</text><text x=\"280\" y=\"152\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">With D2 gone, the reader fetches D1, D3, D4 and P1 and recomputes D2.</text></svg>"
+    },
+    "mistakesOutcome": "After this you can spot the usual wrong assumptions about object stores.",
+    "checkOutcome": "After this you can test yourself on metadata, erasure coding, placement and cells.",
+    "quiz": [
+      {
+        "question": "A photo site stores every photo as its own file on a file server, and reads slow down as the photo count grows. According to the Haystack paper, which cost dominates?",
+        "options": [
+          "Moving the large photo bytes across the network between data centers",
+          "Reading the file's metadata from disk before the photo itself",
+          "Directory names that grow longer than the path limit allows",
+          "The CDN refusing to cache files that are small in size"
+        ],
+        "correct": 1,
+        "why": "The paper found that metadata lookups needed several disk operations before the photo could be read, and that this limited read throughput.",
+        "wrong": [
+          "Bandwidth was not the limit the paper identified; disk operations for metadata were.",
+          "",
+          "Path length is not what the paper blames.",
+          "The paper explains why a CDN alone does not solve the long tail of less popular photos, not that it refuses small files."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "An object is stored as k data shards plus m parity shards, and any k shards can rebuild it. Compared with keeping several full copies, what does this give you?",
+        "options": [
+          "Faster reads from every drive in the whole set",
+          "No need for an index of shard locations at all",
+          "Protection from any number of drive failures",
+          "Same failure tolerance, less extra space"
+        ],
+        "correct": 3,
+        "why": "Parity shards add only m shards of overhead, while full copies add a whole object each time, so the same number of survivable failures costs less space.",
+        "wrong": [
+          "Reads of replicas can be simpler and faster; erasure coding adds work to read and repair.",
+          "The index is still needed to say which drives hold which shards.",
+          "It tolerates up to m lost shards, not any number.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "In Dropbox's Magic Pocket, the Master of a cell goes down. What does the post say keeps working?",
+        "options": [
+          "Reads, and writes until the open volumes fill up",
+          "Nothing, since every request passes through it",
+          "Reads only, because writes fail the moment it stops",
+          "Writes only, since reads need it to find blocks"
+        ],
+        "correct": 0,
+        "why": "The post says the Master is not on the data plane: the cell keeps serving reads, and can take writes until it runs out of buckets that the Master would normally create.",
+        "wrong": [
+          "",
+          "The post says no live traffic flows through the Master.",
+          "The post says writes can continue until the cell runs out of buckets, so they do not fail at once.",
+          "Reads do not need the Master, because the Block Index and Replication Table answer them."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "Why does S3 put the pieces of different objects on different sets of drives?",
+        "options": [
+          "A whole bucket can then live safely on a single large drive",
+          "Erasure coding becomes unnecessary for most of the data",
+          "Reads spread over many drives, so none runs hot",
+          "Each customer gets its own private drives that nobody else uses"
+        ],
+        "correct": 2,
+        "why": "Spreading objects widely keeps any one customer's accesses from piling onto a few disks, which would create hot spots and slow requests down.",
+        "wrong": [
+          "The opposite: the post says buckets are spread across millions of drives.",
+          "Objects are still erasure coded; placement is a separate choice.",
+          "",
+          "A customer's data takes a very small share of any given disk, and disks are shared."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "Drive capacity keeps growing much faster than seek speed. What does that mean for a fleet of very large drives?",
+        "options": [
+          "Each terabyte can serve more random reads per second",
+          "Each terabyte gets fewer random reads per second",
+          "Reads get faster because each drive holds more",
+          "Seeks stop mattering because objects are large"
+        ],
+        "correct": 1,
+        "why": "Seek time barely improves while capacity multiplies, so the random reads available per terabyte fall. Amazon's post works out one I/O per second per 2 TB at 200 TB drives.",
+        "wrong": [
+          "That is the reverse of what the numbers show.",
+          "",
+          "Holding more does not make the arm move faster.",
+          "Seeks still limit random reads, which is why data placement matters."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "Dropbox adds capacity by bringing up a new cell instead of growing one cell without limit. What is the reason in the post?",
+        "options": [
+          "A single Master per cell caps how large a cell can grow",
+          "Cells replace erasure coding as the way to save disk space",
+          "Cells make it possible to edit stored blocks in place later",
+          "Every cell must keep a full copy of every other cell's data"
+        ],
+        "correct": 0,
+        "why": "A single Master per cell keeps coordination simple, but it limits the cell to roughly a hundred petabytes. More cells also isolate failures from each other.",
+        "wrong": [
+          "",
+          "Cells hold both replicated and erasure coded data; they are a unit of scale, not an alternative to coding.",
+          "Blocks are immutable in Magic Pocket.",
+          "Cells are logically independent; copies across zones are made by cross-zone replication."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Haystack packs many photos into one large file. Which problem does that fix?",
+        "options": [
+          "Edits to a photo can then happen in place without rewrites",
+          "Per-photo metadata becomes small enough to hold in memory",
+          "Deleted photos free their disk space right at the time of delete",
+          "A CDN is no longer needed to serve the most popular photos"
+        ],
+        "correct": 1,
+        "why": "With few large files, each photo needs only an offset and size, so the Store machine keeps them all in memory and a read costs about one disk operation.",
+        "wrong": [
+          "Haystack is append-only; updates add a new copy of the photo.",
+          "",
+          "Deleting only sets a flag; space is reclaimed later by compaction.",
+          "The paper still uses a CDN for the most popular photos."
+        ],
+        "teaches": "how"
+      }
+    ],
+    "postsOutcome": "After this you can read how Facebook, Amazon and Dropbox each store enormous numbers of objects.",
+    "differOutcome": "After this you can tell which choices the three systems share and where they differ.",
+    "exercisesOutcome": "After this you can design a store for small files and plan for failure and growth.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A service keeps 100 million small thumbnails, one file each on a network file server. Reads are slow although network bandwidth sits idle. What is probably happening, and what do you change?",
+        "answer": "Each read first needs several disk operations to find the file (directory, inode, then data), so metadata lookups are the limit, not the bytes. Pack many thumbnails into a few large append-only volume files and keep an in-memory map from key to file, offset and size. A read then goes straight to the offset with one disk operation. Updates append a new copy and deletes set a flag.",
+        "tradeoffs": "You must now build and operate the packing layer, handle crash recovery of the in-memory map, and reclaim space from deleted entries with a later compaction.",
+        "wrongAnswers": [
+          "Add a bigger cache in front. The long tail of rarely read thumbnails still misses it.",
+          "Buy faster network links. The network is idle, so it is not the limit.",
+          "Put each thumbnail in a database row. That moves the metadata cost without removing it."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "design",
+        "prompt": "Design the storage layer for 4 MB immutable blocks. New uploads are read heavily for an hour and rarely after. You want low cost per terabyte and survival of a drive failure. What do you store where?",
+        "answer": "Write new blocks as full replicas on a few machines, which gives fast reads and a simple write path. Group blocks into larger containers, because a 4 MB block is too small a unit to move around, and later erasure code the containers once they stop being hot, to cut capacity overhead. Keep a metadata index from block key to container, and another small table from container to the drives holding it. A coordinator watches drive health and rebuilds lost shards onto other drives.",
+        "tradeoffs": "Replication first costs extra space for a while and a conversion step later. Erasure coded reads cost more work when a drive is down. A central coordinator is simple but limits how large one cluster can grow.",
+        "wrongAnswers": [
+          "Erasure code every block the moment it arrives. Hot reads then pay the reconstruction cost during the busiest hour.",
+          "Keep one copy and rely on backups. A single drive failure then loses data until a restore finishes.",
+          "Store each block as a separate file with a deep directory tree, which brings back the metadata problem."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "scale",
+        "prompt": "Your cluster's single coordinator is near its memory limit, and the next generation of drives is ten times larger with the same seek time. What changes do you plan?",
+        "answer": "Stop growing the one cluster: add new self-contained cells, each with its own coordinator, and route new writes to cells with space. For the drives, random reads per terabyte drop tenfold, so spread each object over more drives, keep hot data replicated or cached, and cool data in erasure coded form on the big drives. Watch for hot drives, since a few busy ones make the slowest requests slow for everyone.",
+        "tradeoffs": "More cells mean a routing layer and imbalance between cells to manage. Spreading data wider raises the repair fan-out and the number of drives a single read can touch.",
+        "wrongAnswers": [
+          "Shard the coordinator across many machines with a consensus protocol. It can work but adds the complexity cells avoid.",
+          "Fill the larger drives completely. Their I/O per terabyte is the new limit, so fullness makes hot spots worse.",
+          "Treat the larger drives as faster. Capacity grew; seek time did not."
+        ],
+        "teaches": "how"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "Object storage is where large, write-once data ends up. Next, look at what feeds it and what sits in front of it, starting with Caching and CDNs for the hot photos, and then at Replication and Sharding again with the placement and repair ideas from this page in mind."
+    }
+  },
+  "posts": [
+    {
+      "id": "s3-warfield-2023",
+      "title": "Building and operating a pretty big storage system called S3",
+      "url": "https://www.allthingsdistributed.com/2023/07/building-and-operating-a-pretty-big-storage-system.html",
+      "company": "Amazon",
+      "verifiedOn": "2026-10-16",
+      "published": "2023-07-27",
+      "related": [
+        "replication",
+        "sharding"
+      ],
+      "digest": {
+        "problem": "S3 stores data on hard drives, and drives have grown enormously in capacity while the time to seek to a spot on the platter has barely moved. At a huge scale the real task becomes spreading read and write demand across a very large set of drives so that no drive becomes a hot spot.",
+        "constraints": "Seek time is mechanical, so each drive can only do so many random accesses. The post's own estimate is that at 200 TB drives, dividing random accesses fairly across the data allows one I/O per second per 2 TB. Amazon does not know at write time how an object will be read, so it must choose where to put it before it knows. Services are owned by many teams, with hundreds of microservices.",
+        "walkthrough": [
+          {
+            "step": "Name the physics",
+            "explanation": "Since the first hard drive in 1956, capacity has improved 7.2 million times, but seek time only 150 times, because the arm and platter are mechanical. Bigger drives therefore serve fewer random reads for each terabyte they hold."
+          },
+          {
+            "step": "Define heat",
+            "explanation": "Heat is the number of requests landing on a given disk at once. Poorly balanced heat makes a few busy drives, which stall requests, and the stalls spread up the software stack as a small share of slow requests, the tail latency."
+          },
+          {
+            "step": "Use redundancy for placement",
+            "explanation": "Replication is costly in capacity but good for reads, since a request can be steered to a less busy copy. For most data S3 uses erasure coding, such as Reed-Solomon, with k identity shards and m parity shards, where any k of the k plus m shards can serve the object."
+          },
+          {
+            "step": "Spread objects widely",
+            "explanation": "An object may be encoded across tens of drives, but different objects go to different sets of drives on purpose. A customer's data then takes a very small slice of any one disk, and a burst of reads is served by a large number of disks."
+          },
+          {
+            "step": "Let scale smooth the load",
+            "explanation": "Single workloads are bursty and mostly idle, but when millions are added together, the combined demand becomes smooth and predictable, so no one workload moves the aggregate peak. The post says buckets of tens of thousands of customers are spread across millions of drives."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 228\" role=\"img\" aria-labelledby=\"dg-os-s3-t\" class=\"dg\"><title id=\"dg-os-s3-t\">Three objects, each erasure coded across its own different set of drives, so reads from one customer land on many drives instead of a few.</title><defs><marker id=\"dg-os-s3-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"20\" width=\"120\" height=\"46\" class=\"dg-box\"/><text x=\"72\" y=\"47.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Object A</text><rect x=\"12\" y=\"86\" width=\"120\" height=\"46\" class=\"dg-box\"/><text x=\"72\" y=\"113.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Object B</text><rect x=\"12\" y=\"152\" width=\"120\" height=\"46\" class=\"dg-box\"/><text x=\"72\" y=\"179.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Object C</text><rect x=\"220\" y=\"20\" width=\"330\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"385\" y=\"47.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Shards on drives 3, 17, 41, 52 ...</text><rect x=\"220\" y=\"86\" width=\"330\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"385\" y=\"113.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Shards on drives 8, 22, 29, 60 ...</text><rect x=\"220\" y=\"152\" width=\"330\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"385\" y=\"179.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Shards on drives 5, 14, 37, 48 ...</text><path d=\"M132,43 L220,43\" class=\"dg-line\" marker-end=\"url(#dg-os-s3-a)\"/><path d=\"M132,109 L220,109\" class=\"dg-line\" marker-end=\"url(#dg-os-s3-a)\"/><path d=\"M132,175 L220,175\" class=\"dg-line\" marker-end=\"url(#dg-os-s3-a)\"/><text x=\"385\" y=\"216\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Each object gets its own set of drives, so one customer's burst spreads wide.</text></svg>",
+        "numbers": [
+          {
+            "value": "7.2 million times",
+            "meaning": "How much drive capacity has improved since the 1956 IBM RAMAC, which the post writes as 7.2M"
+          },
+          {
+            "value": "150x",
+            "meaning": "How much seek time has improved over the same span, because it is mechanical"
+          },
+          {
+            "value": "1 I/O per second per 2 TB",
+            "meaning": "The random access the post expects each terabyte to get on 200 TB drives, if accesses are divided fairly"
+          },
+          {
+            "value": "hundreds",
+            "meaning": "Number of microservices that make up S3, each owned by its own team"
+          },
+          {
+            "value": "tens of drives",
+            "meaning": "How many drives a single object may be erasure coded across"
+          },
+          {
+            "value": "millions of drives",
+            "meaning": "How many drives the buckets of tens of thousands of customers are spread across"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Erasure coding for most data, with each object placed on its own set of drives, so that load from any customer spreads over a very large number of disks.",
+          "rejected": "Predicting hot data and placing it specially, which the author found basically impossible at small scale, and plain replication of everything, which is expensive in capacity.",
+          "why": "Redundancy that is spread widely cuts cost and also steers requests away from busy drives, and at S3's scale the combined demand is smooth enough that a good spread works without predicting access."
+        },
+        "failures": "A hot spot does not take the system down. Requests queue behind a busy drive, a few come back slow, and if the imbalance is not managed it raises latency for everything. The post also says that some of the team boundaries among the hundreds of microservices are clunky and costly to fix.",
+        "takeaways": "Bigger drives mean less random I/O per terabyte, so placement matters more as drives grow. Redundancy and placement do two jobs at once, surviving failures and spreading load. The post is Amazon's own 2023 account of its system."
+      }
+    },
+    {
+      "id": "haystack-facebook-2010",
+      "title": "Finding a needle in Haystack: Facebook's photo storage",
+      "url": "https://www.usenix.org/legacy/event/osdi10/tech/full_papers/Beaver.pdf",
+      "company": "Meta",
+      "verifiedOn": "2026-10-16",
+      "published": "no date shown",
+      "edition": "OSDI 2010 paper, written by Facebook engineers",
+      "ageNote": "This is a research paper, not a company blog post: the 2010 OSDI paper by Facebook engineers, listed here under Meta. It is here for a fundamental that the later posts on this page also meet: the cost of per-object metadata and the habit of grouping many small items into large containers (Dropbox aggregates 4 MB blocks into 1 GB buckets for a related reason). The figures are Facebook's 2010 numbers, and no source opened for this page describes Facebook's photo storage today.",
+      "related": [
+        "caching",
+        "cdns"
+      ],
+      "digest": {
+        "problem": "Facebook stored each photo as its own file on network-attached storage appliances over NFS. Serving photos that a CDN did not hold, the long tail of less popular ones, needed too many disk operations because the file system metadata had to be read from disk before the photo could be.",
+        "constraints": "The data is written once, read often, never modified and rarely deleted. The paper reports over 260 billion images and more than 20 petabytes, one billion new photos (about 60 TB) each week, and over one million images per second at peak. The design had to be cheap, fault-tolerant, simple and deployable in a few months.",
+        "walkthrough": [
+          {
+            "step": "Find the real bottleneck",
+            "explanation": "With thousands of files in a directory, a single image could cost more than 10 disk operations. After cutting directories to hundreds of images each it still cost about 3: directory metadata, then the inode, then the file. Caching file handles helped only a little, because rarely read photos are rarely in a cache."
+          },
+          {
+            "step": "Pack photos into big files",
+            "explanation": "Haystack stores many photos in one very large file, for example 100 GB per physical volume, with each photo as a record called a needle. This leaves very little file system metadata per photo."
+          },
+          {
+            "step": "Keep the lookup in memory",
+            "explanation": "Each Store machine holds a map from photo key to file offset and size in main memory, so a read goes straight to the right place on disk. The paper aims for at most one disk operation per read."
+          },
+          {
+            "step": "Separate three components",
+            "explanation": "The Directory maps logical volumes to physical ones and builds the URLs. The Cache shelters write-enabled Store machines from reads of popular, recently uploaded photos. The Store holds the data, and a photo is written to every physical volume of its logical volume, on different machines."
+          },
+          {
+            "step": "Append and flag",
+            "explanation": "Writes append to the volume file and update the in-memory map. A delete just sets a flag, and the space is reclaimed later by compaction. An index file checkpoints the map so a rebooted machine rebuilds it quickly."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 218\" role=\"img\" aria-labelledby=\"dg-os-hay-t\" class=\"dg\"><title id=\"dg-os-hay-t\">Haystack: the browser asks the CDN or cache, which asks a Store machine. The Store machine finds the photo's offset and size in memory and reads it from a large volume file with one disk operation.</title><defs><marker id=\"dg-os-hay-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"20\" width=\"100\" height=\"46\" class=\"dg-box\"/><text x=\"62\" y=\"47.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Browser</text><rect x=\"150\" y=\"20\" width=\"110\" height=\"46\" class=\"dg-box\"/><text x=\"205\" y=\"39.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">CDN or</text><text x=\"205\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Cache</text><rect x=\"300\" y=\"20\" width=\"250\" height=\"46\" class=\"dg-box\"/><text x=\"425\" y=\"47.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Store machine</text><path d=\"M112,43 L150,43\" class=\"dg-line\" marker-end=\"url(#dg-os-hay-a)\"/><path d=\"M260,43 L300,43\" class=\"dg-line\" marker-end=\"url(#dg-os-hay-a)\"/><rect x=\"312\" y=\"80\" width=\"226\" height=\"42\" class=\"dg-box dg-accent\"/><text x=\"425\" y=\"105.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">In memory: key to offset, size</text><rect x=\"302\" y=\"138\" width=\"246\" height=\"42\" class=\"dg-box\"/><text x=\"425\" y=\"163.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Volume file: needle needle needle ...</text><path d=\"M425,122 L425,138\" class=\"dg-line\" marker-end=\"url(#dg-os-hay-a)\"/><rect x=\"12\" y=\"138\" width=\"130\" height=\"42\" class=\"dg-box\"/><text x=\"77\" y=\"155.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Directory</text><text x=\"77\" y=\"171.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">volume mapping</text><text x=\"160\" y=\"114\" class=\"dg-label\" text-anchor=\"start\" font-size=\"12\">web server builds the URL</text><text x=\"425\" y=\"204\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">One disk read per photo: the offset is already in memory.</text></svg>",
+        "numbers": [
+          {
+            "value": "260 billion",
+            "meaning": "Images Facebook stored, since each uploaded photo is kept in four sizes"
+          },
+          {
+            "value": "20 petabytes",
+            "meaning": "More than this amount of photo data was stored"
+          },
+          {
+            "value": "60 TB",
+            "meaning": "About this much new data per week from one billion new photos"
+          },
+          {
+            "value": "over one million",
+            "meaning": "Images served per second at peak"
+          },
+          {
+            "value": "28%",
+            "meaning": "About this much less cost per usable terabyte than the NAS design"
+          },
+          {
+            "value": "4x",
+            "meaning": "About this many more reads per second per usable terabyte than the NAS design"
+          },
+          {
+            "value": "10 disk operations",
+            "meaning": "More than this were common to read one image when directories held thousands of files"
+          },
+          {
+            "value": "100 GB",
+            "meaning": "Size of a physical volume file in the paper's example"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A custom object store of large append-only volume files, with all photo lookup metadata held in memory and every photo written to several machines.",
+          "rejected": "The NFS and NAS design with one file per photo, plus caching on top of it. The paper says it also explored a GFS-like system, and that MySQL, NAS and Hadoop were not well suited to the long tail of photo reads.",
+          "why": "Metadata in memory cuts disk operations to the one that reads the data, which raised throughput and lowered cost per terabyte, and the simple design shipped in months."
+        },
+        "failures": "The old design hit more than 10 disk operations per image. Caching alone gave little, because the long tail is rarely cached. In Haystack, deleted space is lost until compaction, and appends make in-place edits such as rotations into new copies.",
+        "takeaways": "Per-object metadata can cost more than the data. Packing many objects into large files and keeping a small location map in memory turns reads into one disk operation. A CDN helps with popular items, not with the long tail."
+      }
+    },
+    {
+      "id": "dropbox-magic-pocket-2016",
+      "title": "Inside the Magic Pocket",
+      "url": "https://dropbox.tech/infrastructure/inside-the-magic-pocket",
+      "company": "Dropbox",
+      "verifiedOn": "2026-10-16",
+      "published": "2016-05-06",
+      "ageNote": "From May 2016. It is here for the structure it explains: a metadata path separate from the data path, a limit on cell size and why. Dropbox has published later posts on Magic Pocket, including a 2026 storage efficiency post listed on the page, so details such as cell size may have changed.",
+      "related": [
+        "replication",
+        "sharding"
+      ],
+      "digest": {
+        "problem": "Dropbox needed its own storage for file content, written as encrypted blocks of up to 4 MB, that could grow from prototypes of double-digit petabytes to many exabytes in about six months. Data has to be durable and fast to read, but most of it is cold.",
+        "constraints": "Blocks never change once written, so changes are tracked in a separate system higher up. Hard drives hold the data, with SSDs kept for databases and caches. Recently uploaded data is read heavily, so it is replicated at first and erasure coded later. The team was less than half a dozen people, which pushed toward simple parts.",
+        "walkthrough": [
+          {
+            "step": "Blocks, buckets, volumes",
+            "explanation": "A block is named by its hash. Because 4 MB is too small a unit to move around when a disk fails, blocks are aggregated into 1 GB logical buckets. A volume is a bucket stored on a set of machines, either replicated or erasure coded."
+          },
+          {
+            "step": "Find a block",
+            "explanation": "The Block Index is a large sharded MySQL cluster that maps a block hash to a cell, bucket and checksum. Dropbox first planned a dedicated key-value store, but MySQL was already operated at scale in the company and did the job."
+          },
+          {
+            "step": "Locate the bucket",
+            "explanation": "Within a cell, the Replication Table, also MySQL but small enough to sit in memory, maps a bucket to its volume and to the object storage devices (OSDs) that hold it. An open volume can take new writes, a closed one is immutable."
+          },
+          {
+            "step": "Put and get",
+            "explanation": "A put checks that the block does not exist, picks an open volume, and writes to all its OSDs before adding the Block Index entry. If an OSD fails, it retries with another volume. A get reads the index, then the table, then one OSD, and reconstructs from other OSDs only if that one is down."
+          },
+          {
+            "step": "Repair by a single Master",
+            "explanation": "One Master per cell watches OSDs. After one is offline for 15 minutes it closes the volumes on it and plans a rebuild that copies from hundreds of other OSDs at once. The Master is not on the data path, so reads continue without it."
+          },
+          {
+            "step": "Add cells",
+            "explanation": "A cell holds around 50 PB raw. The central Master limits a cell to around a hundred petabytes before memory and CPU become the bottleneck, so capacity grows by bringing up more cells, which also contains cascading failures."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 216\" role=\"img\" aria-labelledby=\"dg-os-magic-t\" class=\"dg\"><title id=\"dg-os-magic-t\">Inside one Magic Pocket cell: a frontend looks the block up in the Block Index, finds its volume and disks in the Replication Table, and reads the disks. The Master watches and repairs but is not on the read path.</title><defs><marker id=\"dg-os-magic-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"30\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"62\" y=\"62.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Frontend</text><rect x=\"150\" y=\"30\" width=\"120\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"210\" y=\"54.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Block Index</text><text x=\"210\" y=\"70.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">hash to bucket</text><rect x=\"308\" y=\"30\" width=\"120\" height=\"56\" class=\"dg-box\"/><text x=\"368\" y=\"54.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Replication</text><text x=\"368\" y=\"70.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Table</text><rect x=\"466\" y=\"30\" width=\"82\" height=\"56\" class=\"dg-box\"/><text x=\"507\" y=\"54.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">OSDs</text><text x=\"507\" y=\"70.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">disks</text><path d=\"M112,58 L150,58\" class=\"dg-line\" marker-end=\"url(#dg-os-magic-a)\"/><path d=\"M270,58 L308,58\" class=\"dg-line\" marker-end=\"url(#dg-os-magic-a)\"/><path d=\"M428,58 L466,58\" class=\"dg-line\" marker-end=\"url(#dg-os-magic-a)\"/><rect x=\"230\" y=\"130\" width=\"200\" height=\"50\" class=\"dg-box\"/><text x=\"330\" y=\"151.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Master, one per cell</text><text x=\"330\" y=\"167.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">repair and bookkeeping</text><path d=\"M330,130 L368,86\" class=\"dg-line\" marker-end=\"url(#dg-os-magic-a)\"/><text x=\"330\" y=\"204\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">The Master is not on the data path: reads continue if it is down.</text></svg>",
+        "numbers": [
+          {
+            "value": "50 PB",
+            "meaning": "Raw data held by a typical cell, the unit added when more space is needed"
+          },
+          {
+            "value": "a hundred petabytes",
+            "meaning": "Roughly the cell size at which the Master's memory and CPU become the bottleneck, written as a hundred petabytes"
+          },
+          {
+            "value": "1 GB",
+            "meaning": "Size of a bucket, the logical container that groups blocks for replication and erasure coding"
+          },
+          {
+            "value": "4 MB",
+            "meaning": "Largest size of a block of file content"
+          },
+          {
+            "value": "6 months",
+            "meaning": "About how long the system took to grow from double-digit petabyte prototypes to multi-exabyte"
+          },
+          {
+            "value": "15 minutes",
+            "meaning": "How long an OSD is offline before the Master starts a repair"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A single Master per cell for placement and repair, a sharded MySQL cluster for the block index, and a retry-based write path, with scale from adding cells.",
+          "rejected": "Quorum-style consensus between many nodes, a dedicated key-value store, a distributed hash table or a trie for the index, and a quorum write protocol that could cut some retries.",
+          "why": "Central coordination is easier to build and reason about, and the post says timeouts managed carefully already give low tail latency, so they accepted a cap per cell and chose simplicity."
+        },
+        "failures": "Traffic once grew suddenly and saturated the routers between network clusters, which forced changes to data placement, request routing and finally the inter-cluster network. The post also recounts a database frontend freezing for an hour while the Master failed and restarted, which the generation number protocol had to survive.",
+        "takeaways": "Keep the metadata path small and separate from the data path. Aggregate small items into larger containers so repair is manageable. Prefer a central coordinator with a size cap plus many cells over a complex distributed protocol."
+      }
+    }
+  ],
+  "comparison": "All three systems keep a small metadata lookup apart from the large data path, and none edits data in place. Facebook adds new photos to large volume files, Dropbox writes immutable blocks into volumes, and S3 spreads encoded objects over drives. Each also groups or spreads data to avoid one slow disk: Haystack packs photos so a lookup costs memory instead of disk reads, and S3 and Magic Pocket spread data so reads and repairs use many drives.\n\nThey differ in what limits them. Haystack, from 2010, is bound by per-file metadata and fixes it by packing photos and holding the location map in memory. Magic Pocket is bound by coordination and fixes it with one Master per cell, capped near a hundred petabytes, and many cells. S3, in 2023, is bound by drive physics, since capacity grew 7.2 million times and seeks 150 times, so it works on heat and placement. Haystack writes full copies to several machines; Magic Pocket starts with copies and later erasure codes; S3 describes both replication and erasure coding.\n\nThe evidence differs. The Haystack paper gives cost and throughput against its own NFS design (about 28% less per usable terabyte, about 4x the reads), while the Dropbox post gives sizes and limits without a comparison, and the S3 post reasons from drive specifications. Haystack is from 2010 and Dropbox from 2016, so check their details before applying them today.",
+  "glossary": [
+    {
+      "term": "Object",
+      "definition": "A named piece of data plus its metadata, stored and fetched whole by key, not edited in place."
+    },
+    {
+      "term": "Key",
+      "definition": "The name that identifies an object inside its bucket."
+    },
+    {
+      "term": "Bucket",
+      "definition": "A container that groups objects. Dropbox also uses the word for a 1 GB container of blocks."
+    },
+    {
+      "term": "Erasure coding",
+      "definition": "Splitting data into k data shards and adding m parity shards, so any k of the k plus m rebuild it."
+    },
+    {
+      "term": "Parity shard",
+      "definition": "A computed shard that lets lost data shards be rebuilt."
+    },
+    {
+      "term": "Metadata index",
+      "definition": "The small lookup that turns a key into the place where the bytes are stored."
+    },
+    {
+      "term": "Cell",
+      "definition": "A self-contained storage cluster with its own coordinator, used as the unit for adding capacity."
+    },
+    {
+      "term": "Hot spot",
+      "definition": "A drive that receives far more requests than its neighbours and slows the requests that wait on it."
+    }
+  ],
+  "mistakes": [
+    "Treating an object store like a file system. There is no directory tree to walk and no partial edit; to change an object you write a new one.",
+    "Looking only at the bytes. At large scale the metadata lookup and the number of disk operations per read, not the data size, often decide throughput.",
+    "Choosing replication or erasure coding as a single answer. Fresh, hot data and cold data can sit best in different forms, with the cost of reconstruction paid only when it is needed."
+  ]
+}

@@ -244,7 +244,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic that builds on this one.",
-      "body": "Breakers and shedders keep a failing or overloaded part from taking everything down. The next topic, Failover, covers switching to a healthy copy. Idempotency and Retries covers the other half of surviving a failing dependency: making a call safe to repeat, and keeping retries from adding to the overload."
+      "body": "Breakers and shedders keep a failing or overloaded part from taking everything down. The next topic, Failover, covers switching to a healthy copy. Idempotency and Retries covers the other half of surviving a failing dependency: making a call safe to repeat, and keeping retries from adding to the overload. Overload and Cascading Failures picks up from there: how one overloaded part drags down the next, and how recovery itself can overload a service."
     }
   },
   "posts": [

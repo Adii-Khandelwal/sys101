@@ -5,7 +5,6 @@ import {
   LABEL_START,
   MIN_LABEL_GAP,
   MIN_LABEL_SCALE,
-  fitLabelScale,
   chooseLayers,
   crossings,
   drawnCrossings,
@@ -24,7 +23,7 @@ import {
 type E = { from: string; to: string };
 const keys = (es: E[]) => es.map((e) => `${e.from}->${e.to}`).sort();
 const PAD = 48;
-const PAD_TOP = 86;
+const PAD_TOP = 58;
 
 describe("transitive reduction", () => {
   it("drops the shortcut in a small chain", () => {
@@ -36,7 +35,7 @@ describe("transitive reduction", () => {
     const topics = fs.readdirSync(dir).map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")));
     const edges = topics.flatMap((t) => t.prerequisites.map((p: string) => ({ from: p, to: t.slug })));
     const reduced = transitiveReduction(edges);
-    expect(keys(edges).filter((k) => !keys(reduced).includes(k)).sort()).toEqual(["caching->rate-limiting", "databases->indexing", "dns->cdns", "replication->cap", "replication->consensus", "replication->failover", "sharding->distributed-transactions"]);
+    expect(keys(edges).filter((k) => !keys(reduced).includes(k)).sort()).toEqual(["caching->rate-limiting", "databases->indexing", "dns->cdns", "load-balancing->overload-and-cascading-failures", "load-balancing->safe-deployments", "rate-limiting->overload-and-cascading-failures", "replication->cap", "replication->consensus", "replication->failover", "replication->object-storage", "sharding->distributed-transactions"]);
   });
 
   it("leaves a graph with no redundant edges unchanged", () => {
@@ -52,38 +51,6 @@ describe("transitive reduction", () => {
 });
 
 
-/**
- * The fewest edge crossings any one-topic-per-row order can have when every edge bends to the same
- * side (as the stacked map draws them): two edges cross when their endpoints interleave. Found by
- * trying every topological order with pruning. When a graph is not a one-page drawing this is above
- * zero, and the stacked map cannot do better than it.
- */
-function minStackedCrossings(slugs: string[], edges: E[]) {
-  const drawn = transitiveReduction(edges);
-  const preds = new Map(slugs.map((n) => [n, drawn.filter((e) => e.to === n).map((e) => e.from)]));
-  let best = Infinity;
-  const pos = new Map<string, number>();
-  const placed: [number, number][] = [];
-  const go = (count: number) => {
-    if (count >= best) return;
-    if (pos.size === slugs.length) return void (best = count);
-    for (const n of slugs) {
-      if (pos.has(n) || !preds.get(n)!.every((p) => pos.has(p))) continue;
-      const k = pos.size;
-      let added = 0;
-      const mine: [number, number][] = preds.get(n)!.map((p) => [pos.get(p)!, k]);
-      for (const [i] of mine) for (const [a, b] of placed) if (a < i && i < b) added++;
-      pos.set(n, k);
-      placed.push(...mine);
-      go(count + added);
-      placed.length -= mine.length;
-      pos.delete(n);
-    }
-  };
-  go(0);
-  return best;
-}
-
 // Lay a graph out the way GraphView does, with label widths estimated at
 // 9.2px per character (Newsreader 500 at 18px averages under 9px).
 function plan(nodes: { slug: string; title: string }[], edges: E[], stageWidth: number, orientation: Orientation, perChar = 9.2, scale = 1) {
@@ -94,7 +61,7 @@ function plan(nodes: { slug: string; title: string }[], edges: E[], stageWidth: 
   const rows = rowCount(cols, orientation);
   // Horizontal keeps the CSS stage-height cap; vertical (stacked) grows to fit every
   // node at full spacing, matching the uncapped .graph-stage[data-orientation="vertical"].
-  const rawHeight = rows * 120 + 158;
+  const rawHeight = rows * 120 + 130;
   const height = (orientation === "horizontal" ? Math.min(rawHeight, 700) : rawHeight) - PAD - PAD_TOP;
   const stage = { minX: -PAD + 8, maxX: width + PAD - 8, minY: -PAD + 8, maxY: height + PAD_TOP - 24 };
   const lay = orientation === "horizontal" ? chooseLayers(cols, drawn, { width, height, labelWidth }, stage) : cols;
@@ -119,13 +86,6 @@ describe("layout: no edge crosses a label or node, labels keep their gap", () =>
   const nodes = topics.map((t) => ({ slug: t.slug, title: t.title }));
   const edges = topics.flatMap((t) => t.prerequisites.map((p: string) => ({ from: p, to: t.slug })));
 
-  // With seven columns the labels no longer fit at full size on a 1440px screen; they shrink (never below MIN_LABEL_SCALE) to keep the horizontal map.
-  const labelScale = (stageWidth: number, perChar: number) => {
-    const base = new Map(nodes.map((n) => [n.slug, n.title.length * perChar]));
-    const drawn = transitiveReduction(edges);
-    return fitLabelScale(layers(nodes, drawn), { width: stageWidth - PAD * 2, height: 300, edges: drawn }, base);
-  };
-
   it("the current topics: a full-size horizontal map, laid out across the width it needs, is clean and wider than a 1320px stage", () => {
     // The desktop map is always horizontal at full-size labels, laid out across the width its
     // labels need; when that exceeds the viewport the stage renders at the content width and the
@@ -142,36 +102,6 @@ describe("layout: no edge crosses a label or node, labels keep their gap", () =>
     expect(r.crossed).toEqual([]);
   }, 30000);
 
-  it("the current topics at 1440px for any realistic label width: horizontal if it fits, stacked if not", () => {
-    for (const perChar of [7.5, 8, 8.5, 9.2, 10]) {
-      const scale = labelScale(1320, perChar);
-      const wide = scale === null ? null : plan(nodes, edges, 1320, "horizontal", perChar, scale);
-      const r = wide ?? plan(nodes, edges, 1320, "vertical", perChar);
-      expect([perChar, r.collisions]).toEqual([perChar, []]);
-      expect(r.crossed.length, `${perChar}: ${r.crossed}`).toBeLessThanOrEqual(wide ? 0 : minStackedCrossings(nodes.map((n) => n.slug), edges));
-      if (wide) expect(r.topGap).toBeGreaterThanOrEqual(24);
-    }
-  }, 60000);
-
-  it("the current topics stacked at 1280px (stage 1200px), where the horizontal map no longer fits", () => {
-    const wide = plan(nodes, edges, 1200, "horizontal", 7.8);
-    expect(wide.required).toBeGreaterThan(wide.width);
-    const r = plan(nodes, edges, 1200, "vertical", 7.8);
-    expect(r.collisions).toEqual([]);
-    expect(r.crossed).toEqual([]);
-  }, 30000);
-
-  it("the current topics stacked at 390px (stage 358px), at the real label width", () => {
-    const r = plan(nodes, edges, 358, "vertical", 7.8);
-    // Failover builds on Replication, Consensus and Circuit Breakers, so its edge from Circuit Breakers is long and a
-    // 358px stage has too little room on the left to bend it clear of the topics it passes. Known, listed here so
-    // any other collision still fails. The same goes for Sharding's edge from Consistent Hashing, which Transactions
-    // and MVCC pushes into a label. The phone's default view is the Path list, not this map.
-    expect(r.collisions).toEqual(["circuit-breakers->failover", "consistent-hashing->sharding"]);
-    // Nor can any single-column order draw these edges without one crossing.
-    expect(r.crossed.length, r.crossed.join()).toBeLessThanOrEqual(minStackedCrossings(nodes.map((n) => n.slug), edges));
-  });
-
   it("the current topics: a full-size horizontal map laid out across its content width is clean", () => {
     // The desktop map no longer shrinks or stacks: it is always horizontal at full-size labels,
     // laid out across the width those labels need, and the wrapper scrolls when that exceeds the
@@ -186,6 +116,18 @@ describe("layout: no edge crosses a label or node, labels keep their gap", () =>
     expect(r.crossed).toEqual([]);
     expect(r.gap).toBeGreaterThanOrEqual(MIN_LABEL_GAP);
   }, 60000);
+
+  it("the current topics are clean across label widths, with room under the legend row", () => {
+    for (const perChar of [7.5, 9.2]) {
+      const base = new Map(nodes.map((n) => [n.slug, n.title.length * perChar]));
+      const drawn = transitiveReduction(edges);
+      const required = fitPositions(layers(nodes, drawn), "horizontal", { width: 1320 - PAD * 2, height: 300, labelWidth: base, edges: drawn }).required;
+      const r = plan(nodes, edges, required + PAD * 2, "horizontal", perChar);
+      expect([perChar, r.collisions]).toEqual([perChar, []]);
+      expect([perChar, r.crossed]).toEqual([perChar, []]);
+      expect(r.topGap).toBeGreaterThanOrEqual(24);
+    }
+  }, 120000);
 
   it("the smallest label scale keeps labels at 12px or more", () => {
     expect(MIN_LABEL_SCALE).toBeGreaterThanOrEqual(0.8);

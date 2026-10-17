@@ -1,0 +1,20 @@
+{
+  "real-time-delivery": {
+    "summary": {
+      "points": [
+        "A held-open connection lets the server speak first, which removes polling delay and empty requests but makes servers remember who is connected.",
+        "Every message must be routed to the one server holding the target connection, found by a registry lookup or by hashing an ID.",
+        "Slack hashes channel IDs to channel servers that fan messages out to gateways, so a failed server touches only a few teams for a short time.",
+        "Netflix scales Pushy on connection count and picks node density by the reconnect herd it can absorb when a node dies."
+      ],
+      "figures": [
+        { "postId": "slack-realtime-messaging-2023", "row": 0, "label": "16 million channels per host at peak on the channel servers" },
+        { "postId": "netflix-pushy-2024", "row": 1, "label": "99.999% message delivery reliability over the last few months" },
+        { "postId": "netflix-pushy-2024", "row": 2, "label": "200,000 connections per node on average, with room to go higher" }
+      ]
+    },
+    "prerequisiteReasons": {
+      "http-tcp-tls": "Real-time delivery starts from an HTTP request that is upgraded or held open, and it depends on how a TCP connection stays up and recovers."
+    }
+  }
+}

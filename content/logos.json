@@ -92,7 +92,9 @@
       "simpleIcons": "zapier"
     }
   },
-  "withoutLogo": {},
+  "withoutLogo": {
+    "CrowdStrike": "No usable mark: svgl has none, Simple Icons removed it, and the only copy found (Hunter) is a white wordmark that vanishes on the light theme and repeats the name. Recolouring is not allowed, so it stays without a mark until a symbol with both themes is available."
+  },
   "hunter": {
     "about": "Last resort for a company neither svgl nor Simple Icons has: https://logos.hunter.io/<domain>, no key, trademarks stay with their owners. Raster, so it is trimmed and saved as WebP; check it on both themes."
   }

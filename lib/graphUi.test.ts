@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { INTERACTIVE_MIN_NODES, groupLabelSpots, groupSet, placeGroupLabel, mapIsInteractive, mapIsInteractiveAt, FADED_LABEL, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "./graphUi";
+import { INTERACTIVE_MIN_NODES, groupSet, mapIsInteractive, mapIsInteractiveAt, FADED_LABEL, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "./graphUi";
 
 describe("tooltip placement", () => {
   const tip = { w: 280, h: 72 };
@@ -93,49 +93,6 @@ describe("map controls", () => {
     expect(mapIsInteractiveAt(11, false)).toBe(false);
     expect(mapIsInteractiveAt(12, false)).toBe(true);
     expect(mapIsInteractiveAt(13, false)).toBe(true);
-  });
-});
-
-describe("group labels", () => {
-  const first = { x: 800, y: 300, r: 14 };
-
-  it("sit above the first node, left edge on the node's left edge", () => {
-    const [above, below] = groupLabelSpots(first, 80, 120, false);
-    expect(above).toEqual({ x: 786, y: 258 });
-    expect(below).toEqual({ x: 786, y: 322 });
-    expect(placeGroupLabel(groupLabelSpots(first, 80, 120, false), () => true, () => false)).toEqual(above);
-  });
-
-  it("go below the node, same alignment, when above is blocked", () => {
-    const spots = groupLabelSpots(first, 80, 120, false);
-    const chosen = placeGroupLabel(spots, () => true, (s) => s.y < first.y);
-    expect(chosen).toEqual(spots[1]);
-    expect(chosen.x).toBe(first.x - first.r);
-  });
-
-  it("hang above the node, right edge on its centre and kept on the stage, when every nearer spot is blocked", () => {
-    const near = { x: 86, y: 300, r: 14 };
-    const spots = groupLabelSpots(near, 95, 120, false);
-    const chosen = placeGroupLabel(spots, (s) => s.x >= 0, (s) => s.x > 0);
-    expect(chosen).toEqual({ x: 0, y: near.y - near.r - 28 });
-    expect(groupLabelSpots(first, 80, 120, false)[3]).toEqual({ x: 720, y: 258 });
-  });
-
-  it("are never pinned to the stage's left edge, wherever the first node is", () => {
-    for (const x of [30, 400, 800, 1200]) {
-      const [spot] = groupLabelSpots({ ...first, x }, 80, 120, false);
-      expect(spot.x).toBe(x - first.r);
-    }
-  });
-
-  it("go right of the node's own label on a stacked map", () => {
-    const [spot] = groupLabelSpots(first, 80, 120, true);
-    expect(spot).toEqual({ x: first.x + first.r + 8 + 120 + 16, y: first.y - 8 });
-  });
-
-  it("use the first spot when none is free", () => {
-    const spots = groupLabelSpots(first, 80, 120, false);
-    expect(placeGroupLabel(spots, () => false, () => true)).toEqual(spots[0]);
   });
 });
 

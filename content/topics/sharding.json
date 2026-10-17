@@ -448,7 +448,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic that builds on this one.",
-      "body": "Indexing and Search builds on this: an index has to be sharded too, and the shard key decides whether a search touches one machine or all of them."
+      "body": "Indexing and Search builds on this: an index has to be sharded too, and the shard key decides whether a search touches one machine or all of them. Object Storage is another use of it: placing objects across many drives and machines."
     }
   }
 }

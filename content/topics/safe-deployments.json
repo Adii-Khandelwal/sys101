@@ -1,0 +1,494 @@
+{
+  "slug": "safe-deployments",
+  "title": "Safe Deployments",
+  "group": "Reliability",
+  "concept": "A safe deployment puts a change in front of a small share of real traffic first, watches it, and widens only if it behaves. The same steps apply to configuration and data files, because a bad file can break every machine as quickly as bad code.",
+  "prerequisites": [
+    "load-balancing",
+    "rate-limiting"
+  ],
+  "summary": {
+    "points": [
+      "A safe rollout exposes a change to a small share of real traffic first, watches it, and widens only if it behaves.",
+      "Configuration and data files need the same stages as code, because a bad file can break every machine as fast as bad code.",
+      "Amazon describes the mechanism: a one-box stage, waves of growing size, alarms that roll back, and a bake time between stages.",
+      "Cloudflare's feature file went to the whole network with no stage in between, and CrowdStrike's report names staged rings as a fix for its content update."
+    ],
+    "figures": [
+      {
+        "postId": "cloudflare-outage-2025",
+        "row": 0,
+        "label": "Feature limit of 200 features, against about 60 in use"
+      },
+      {
+        "postId": "aws-hands-off-deployments",
+        "row": 1,
+        "label": "A one-box stage typically serves at most ten percent of requests"
+      },
+      {
+        "postId": "crowdstrike-channel-291-2024",
+        "row": 0,
+        "label": "Template defined 21 fields, 20 values were supplied"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "load-balancing": "Safe deployments take from load balancing the way traffic is split across servers, which lets a new version take a small share first.",
+    "rate-limiting": "Safe deployments reuse the idea behind rate limiting: cap how much of the system one change can touch at once, and raise the cap only when the checks hold."
+  },
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why a change should reach a small part of a fleet first, and why files count as changes.",
+      "body": "A load balancer lets many servers share traffic. That is also what makes a bad change dangerous: if every server takes the new version at once, every server fails at once, and the same load balancer sends users to all of them.\n\nSo teams limit the blast radius of each change. The new version goes to one box first, then to a small wave, then to larger waves, with a pause and a check between each. If the check fails, the change is rolled back before most users see it.\n\nThis applies to more than code. A configuration file, a feature flag or a generated data file is a change too. Two of the posts below are outages where the thing pushed was a file, and it reached a huge fleet before anyone could stop it."
+    },
+    "mentalModel": {
+      "outcome": "After this you can picture a rollout as rings of growing exposure with a gate between them.",
+      "body": "Picture a set of rings around the old version. The innermost ring is a single box. Each ring out holds more machines and more traffic. A change may enter a ring only after it has sat in the one before it, with alarms watching, for long enough that a slow problem would have shown.\n\nThe gates are the point. Each gate asks the same question: do the new machines look as healthy as the old ones? If not, the change goes back to the old version, and only the machines in rings it already reached have to recover.\n\nThe cost is time. More rings and longer waits mean a smaller blast radius and a slower rollout, and teams set that balance by how much a failure would cost.",
+      "diagram": "<svg viewBox=\"0 0 560 200\" role=\"img\" aria-labelledby=\"dg-sd-model-t\" class=\"dg\"><title id=\"dg-sd-model-t\">A change goes through widening rings: one box, a small wave, a bigger wave, then everywhere. A gate with a watch period sits between rings, and a failed gate sends the change back to the old version.</title><defs><marker id=\"dg-sd-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"76\" width=\"100\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"64\" y=\"105.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">One box</text><text x=\"64\" y=\"66\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">tiny share</text><path d=\"M114,101 L158,101\" class=\"dg-line\" marker-end=\"url(#dg-sd-model-a)\"/><text x=\"121\" y=\"92\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">gate</text><rect x=\"158\" y=\"76\" width=\"100\" height=\"50\" class=\"dg-box\"/><text x=\"208\" y=\"105.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Small wave</text><text x=\"208\" y=\"66\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">one Region</text><path d=\"M258,101 L302,101\" class=\"dg-line\" marker-end=\"url(#dg-sd-model-a)\"/><text x=\"265\" y=\"92\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">gate</text><rect x=\"302\" y=\"76\" width=\"100\" height=\"50\" class=\"dg-box\"/><text x=\"352\" y=\"105.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Bigger wave</text><text x=\"352\" y=\"66\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">more Regions</text><path d=\"M402,101 L446,101\" class=\"dg-line\" marker-end=\"url(#dg-sd-model-a)\"/><text x=\"409\" y=\"92\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">gate</text><rect x=\"446\" y=\"76\" width=\"100\" height=\"50\" class=\"dg-box\"/><text x=\"496\" y=\"105.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Everywhere</text><text x=\"496\" y=\"66\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">the rest</text><path d=\"M496,126 L496,150 L156,150\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-sd-model-a)\"/><rect x=\"8\" y=\"136\" width=\"148\" height=\"28\" class=\"dg-box\"/><text x=\"82\" y=\"154.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Old version restored</text><text x=\"280\" y=\"182\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">A failed check at any gate sends the change back to the old version.</text><text x=\"280\" y=\"28\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Each ring exposes more traffic to the change than the one before.</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can walk a change through the stages of a safe rollout.",
+      "steps": [
+        {
+          "step": "Test before production",
+          "explanation": "Run unit and integration tests, and deploy to pre-production environments that look as much like production as possible."
+        },
+        {
+          "step": "Start with one box",
+          "explanation": "Put the change on the smallest unit, one server or container, beside the old version so it takes a small share of live traffic."
+        },
+        {
+          "step": "Compare with the old version",
+          "explanation": "Watch error rates and latency for the new box on its own. A small share of traffic can hide a problem in the fleet-wide numbers."
+        },
+        {
+          "step": "Wait",
+          "explanation": "Keep watching for a set time after the stage finishes. This bake time catches problems that surface slowly."
+        },
+        {
+          "step": "Widen in waves",
+          "explanation": "Move to a small group, then bigger ones. Early waves are cautious, and later waves can cover more machines at once once confidence has grown."
+        },
+        {
+          "step": "Roll back automatically",
+          "explanation": "If an alarm fires, put the previous version back without waiting for a person to decide."
+        },
+        {
+          "step": "Treat files like code",
+          "explanation": "Configuration, flags and generated data go through the same stages, because they can break machines just as well."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 230\" role=\"img\" aria-labelledby=\"dg-sd-how-t\" class=\"dg\"><title id=\"dg-sd-how-t\">Pipeline for a safe rollout: build and test, a one-box stage, then waves. Alarms are watched at every stage after testing, and any alarm restores the previous version where it was deployed.</title><defs><marker id=\"dg-sd-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"34\" width=\"80\" height=\"50\" class=\"dg-box\"/><text x=\"52\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Build and</text><text x=\"52\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">test</text><path d=\"M92,59 L126,59\" class=\"dg-line\" marker-end=\"url(#dg-sd-how-a)\"/><rect x=\"126\" y=\"34\" width=\"80\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"166\" y=\"63.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">One box</text><path d=\"M206,59 L240,59\" class=\"dg-line\" marker-end=\"url(#dg-sd-how-a)\"/><rect x=\"240\" y=\"34\" width=\"80\" height=\"50\" class=\"dg-box\"/><text x=\"280\" y=\"63.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Wave 1</text><path d=\"M320,59 L354,59\" class=\"dg-line\" marker-end=\"url(#dg-sd-how-a)\"/><rect x=\"354\" y=\"34\" width=\"80\" height=\"50\" class=\"dg-box\"/><text x=\"394\" y=\"63.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Wave 2</text><path d=\"M434,59 L468,59\" class=\"dg-line\" marker-end=\"url(#dg-sd-how-a)\"/><rect x=\"468\" y=\"34\" width=\"80\" height=\"50\" class=\"dg-box\"/><text x=\"508\" y=\"55.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Later</text><text x=\"508\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">waves</text><path d=\"M166,84 L166,128\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-sd-how-a)\"/><path d=\"M280,84 L280,128\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-sd-how-a)\"/><path d=\"M394,84 L394,128\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-sd-how-a)\"/><path d=\"M508,84 L508,128\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-sd-how-a)\"/><rect x=\"126\" y=\"128\" width=\"422\" height=\"44\" class=\"dg-box\"/><text x=\"337\" y=\"154.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Alarms on error rate and latency, watched through each bake</text><path d=\"M126,150 L100,150\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-sd-how-a)\"/><rect x=\"12\" y=\"128\" width=\"88\" height=\"44\" class=\"dg-box\"/><text x=\"56\" y=\"147.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Old version</text><text x=\"56\" y=\"163.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">restored</text><text x=\"56\" y=\"118\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">roll back</text><text x=\"280\" y=\"200\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Config and data files take the same path as code.</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can apply the stages to a real outage and see where one would have stopped it.",
+      "steps": [
+        {
+          "step": "The incident",
+          "explanation": "Cloudflare's Bot Management feature file is rebuilt every five minutes and sent to every machine. A permissions change made it come out with duplicate rows, and it doubled in size. The proxy allows 200 features, and about 60 are normally in use."
+        },
+        {
+          "step": "What happened",
+          "explanation": "The file reached the machines quickly. Each one hit the limit and the proxy code panicked. Failures began at 11:20, and a known good file was back by 14:30."
+        },
+        {
+          "step": "Same file, one machine first",
+          "explanation": "Suppose the file went to one machine before the rest. That machine would panic, its fault rate would jump, and the file would not be promoted. This is a thought exercise, not what Cloudflare did."
+        },
+        {
+          "step": "A cheap check before the push",
+          "explanation": "A size check on the file against the limit the loader enforces could refuse it before it leaves the generator."
+        },
+        {
+          "step": "Why one good run is not enough",
+          "explanation": "Good and bad files came out in turns as the cluster was updated, so one clean file proves little. A gate needs to watch several generations."
+        },
+        {
+          "step": "Rollback",
+          "explanation": "Cloudflare's fix was to stop new files and put a known good one in the queue by hand. A staged system makes this automatic."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 236\" role=\"img\" aria-labelledby=\"dg-sd-example-t\" class=\"dg\"><title id=\"dg-sd-example-t\">Two ways to ship a new feature file. Pushed to every machine at once, all proxies fail. Staged through one machine first, the failure shows on one machine and the push stops.</title><defs><marker id=\"dg-sd-example-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"22\" class=\"dg-note dg-note-accent\" text-anchor=\"start\" font-size=\"11\">Pushed everywhere at once</text><rect x=\"14\" y=\"32\" width=\"110\" height=\"46\" class=\"dg-box\"/><text x=\"69\" y=\"59.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">New file</text><rect x=\"190\" y=\"32\" width=\"150\" height=\"46\" class=\"dg-box\"/><text x=\"265\" y=\"59.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Every machine</text><rect x=\"406\" y=\"32\" width=\"140\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"476\" y=\"59.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">All proxies fail</text><path d=\"M124,55 L190,55\" class=\"dg-line\" marker-end=\"url(#dg-sd-example-a)\"/><path d=\"M340,55 L406,55\" class=\"dg-line\" marker-end=\"url(#dg-sd-example-a)\"/><text x=\"14\" y=\"122\" class=\"dg-note dg-note-accent\" text-anchor=\"start\" font-size=\"11\">Staged</text><rect x=\"14\" y=\"132\" width=\"110\" height=\"46\" class=\"dg-box\"/><text x=\"69\" y=\"159.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">New file</text><rect x=\"190\" y=\"132\" width=\"150\" height=\"46\" class=\"dg-box\"/><text x=\"265\" y=\"159.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">One machine first</text><rect x=\"406\" y=\"132\" width=\"140\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"476\" y=\"159.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Fails there, stop</text><path d=\"M124,155 L190,155\" class=\"dg-line\" marker-end=\"url(#dg-sd-example-a)\"/><path d=\"M340,155 L406,155\" class=\"dg-line\" marker-end=\"url(#dg-sd-example-a)\"/><text x=\"280\" y=\"214\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Thought exercise: the file is the same, only the order of exposure changes.</text></svg>"
+    },
+    "mistakesOutcome": "After this you can spot the usual ways a rollout fails to protect anyone.",
+    "checkOutcome": "After this you can check you can reason about stages, bake time and files as changes.",
+    "quiz": [
+      {
+        "question": "A team tests a new configuration file carefully, then pushes it to every server at the same moment. What risk is left?",
+        "options": [
+          "None, because a configuration file is only data and cannot crash a server that reads it",
+          "A defect the tests missed reaches the whole fleet at once",
+          "Only that the push takes noticeably longer to finish than a staged one would"
+        ],
+        "correct": 1,
+        "why": "Tests never match production fully, so some defects arrive anyway. Pushing to everyone at once means the first sign of trouble is the whole fleet failing.",
+        "wrong": [
+          "A configuration file being only data does not make it safe: the Cloudflare feature file and CrowdStrike's content update were not code releases, and each caused a serious failure.",
+          "",
+          "The push taking longer is not the risk. A single push is quicker, which is exactly why it has no point where a problem can be caught early."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "What is a one-box stage?",
+        "options": [
+          "The new version on the smallest unit, such as one server or container, taking a small share of real traffic while the rest stays on the old version",
+          "A test copy of the service that gets no real traffic",
+          "A deployment to one Region before any other"
+        ],
+        "correct": 0,
+        "why": "One box is the first and smallest exposure. Because it serves only a small share of traffic, its own metrics are watched, since the fleet-wide numbers would hide its problems.",
+        "wrong": [
+          "",
+          "A copy with no real traffic would not exercise the change the way users do; the one box serves a share of live requests.",
+          "A deployment to one Region is a wave. A one-box stage sits inside a wave, before the main fleet gets the change."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "A change finishes deploying in the first Region and shows no errors. Why wait before moving to the next stage?",
+        "options": [
+          "Because the deployment tool needs some time to free up its own resources first",
+          "Because the next Region is running a different version of the load balancer",
+          "Some problems are slow burning, so the pipeline keeps watching"
+        ],
+        "correct": 2,
+        "why": "Bake time is a pause with the alarms still active. A change that fails slowly would otherwise spread to more Regions before the first one shows it.",
+        "wrong": [
+          "The wait is not about the deployment tool. It exists to give problems time to appear.",
+          "The next Region's load balancer version is not involved. The reason is time for slow problems to surface.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "In the Cloudflare outage, why did the proxy software fail on the new feature file?",
+        "options": [
+          "An attacker sent a flood of requests that overloaded the whole network",
+          "The file had more features than the limit the software allowed, so the code failed on load",
+          "The file was corrupted while it travelled between the data centers"
+        ],
+        "correct": 1,
+        "why": "A database permissions change made the generator output duplicate rows, which doubled the file. The proxy preallocates memory for a set number of features, hit its limit and panicked.",
+        "wrong": [
+          "An attacker flooding the network was not the cause: Cloudflare first suspected an attack, but the post says it was an internal change, not malicious activity.",
+          "",
+          "Corruption in travel is not what happened: the file was complete and arrived intact, and its content was the problem."
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "CrowdStrike's tests passed even though the template type defined 21 fields and the code supplied 20. Why?",
+        "options": [
+          "The test machines had more memory than the machines customers were running",
+          "The sensor is built to quietly ignore any field after the twentieth one",
+          "The tests used a wildcard for the 21st field, so it was never read"
+        ],
+        "correct": 2,
+        "why": "A wildcard in field 21 matched without touching the missing value. The crash came only after an update that used a real match on field 21.",
+        "wrong": [
+          "More memory on the test machines had no part in it. The cause was which values the test content used.",
+          "Ignoring fields after the twentieth is not what the sensor does; once content asked for field 21, the code read past the end of its 20 values.",
+          ""
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "A one-box stage serves a small share of traffic, and the service-wide error alarm stays quiet. What should the rollback decision also look at?",
+        "options": [
+          "Metrics scoped to the one box alone",
+          "Nothing more, because a quiet service alarm means the change is safe to promote",
+          "The CPU use of the deployment tool that is running the rollout"
+        ],
+        "correct": 0,
+        "why": "A small share of traffic can hide a high failure rate on the box inside a healthy fleet-wide number. Amazon adds alarms scoped to the one box for this reason.",
+        "wrong": [
+          "",
+          "A quiet service alarm does not make the change safe to promote; it can simply mean the one box is too small to move it.",
+          "The deployment tool's own CPU says nothing about the change under test."
+        ],
+        "teaches": "how"
+      }
+    ],
+    "postsOutcome": "After this you can read how Amazon builds a safe pipeline and how two companies failed to have one for files.",
+    "differOutcome": "After this you can say what the three posts share and where their evidence differs.",
+    "exercisesOutcome": "After this you can design a rollout for code, then for a file, then for a much bigger fleet.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "You run a service on 100 servers behind a load balancer and have a new version to ship. Describe the stages you would use, what you watch between them, and when you roll back.",
+        "answer": "Start with one server taking a small share of traffic. Compare its error rate and latency with the servers still on the old version. If it is clean for a set time, move to a small group, then a larger one, then everyone, with a wait after each step. Roll back automatically if the alarms fire, by putting the previous version back on the servers that got the change.",
+        "tradeoffs": "More stages and longer waits cut the damage a bad version can do, but each one delays the fix or feature reaching users. Several changes queueing behind a slow pipeline also make it harder to tell which one caused a problem.",
+        "wrongAnswers": [
+          "Deploy to all 100 at once and watch the dashboards, because a rollback is available.",
+          "Deploy to 50 servers at once, since half the fleet can absorb a failure.",
+          "Test only in staging; production deployment then needs no stages."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "design",
+        "prompt": "A configuration file is regenerated every five minutes and pushed to every edge machine. A bad file once took the proxies down. Redesign how the file is released.",
+        "answer": "Check the file before it leaves the generator: its size and feature count against what the loaders accept. Publish it to one machine first and watch that machine's fault rate, then widen in rings with a pause between. Keep the last known good file ready, make the loader fall back to it instead of crashing, and add a switch that stops new files from being published.",
+        "tradeoffs": "A file that updates every few minutes leaves little room for long bake times. Slower rings mean slower reaction to real threats, so the checks before publishing and the fallback in the loader carry more of the safety.",
+        "wrongAnswers": [
+          "Raise the loader's size limit so a larger file fits.",
+          "Generate files less often and still push them everywhere at once.",
+          "Rely on the status page to tell you when a file is bad."
+        ],
+        "teaches": "example"
+      },
+      {
+        "level": "scale",
+        "prompt": "Your fleet grows to many Regions and the staged rollout now takes a week. Product wants changes live in a day. What do you change, and what do you keep?",
+        "answer": "Make waves grow so that early waves are tiny and slow while later waves cover many Regions in parallel with shorter bake times, and keep a one-box stage in each. Split configuration, feature flags and code into separate pipelines so a blocked code change does not hold up the rest. Keep automatic rollback on alarms, and allow a faster path for urgent fixes only with extra review.",
+        "tradeoffs": "Every shortcut raises the chance that a problem reaches several Regions before it shows. The saving comes from putting the waiting where confidence is lowest, at the start, and trusting automation later.",
+        "wrongAnswers": [
+          "Remove bake time from every stage.",
+          "Deploy to all Regions at once and keep a rollback button.",
+          "Skip the one-box stage because the fleet is large."
+        ],
+        "teaches": "mistakes"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick a related topic to read next.",
+      "body": "Safe deployment limits how much a bad change can break. Related topics, Circuit Breakers and Failover, cover what to do when something is already failing in production. Overload and Cascading Failures covers how one failing part drags the rest down."
+    }
+  },
+  "posts": [
+    {
+      "id": "aws-hands-off-deployments",
+      "title": "Automating safe, hands-off deployments",
+      "url": "https://aws.amazon.com/builders-library/automating-safe-hands-off-deployments/",
+      "company": "Amazon Web Services",
+      "verifiedOn": "2026-10-16",
+      "published": "2020-06-18",
+      "ageNote": "From June 2020. It is here for the mechanism of waves, one-box stages and bake time, which does not depend on Amazon's current tooling. No newer Amazon source opened here confirms the article's details still match today's pipelines, and its numbers are examples.",
+      "digest": {
+        "problem": "Amazon wanted changes to reach production many times a day without an engineer watching each one. The article describes the pipeline that makes this safe: tests, then production in stages, with automatic rollback. The goal is to stop a bad change from hurting several Regions or several Availability Zones at once.",
+        "constraints": "Safety and speed pull against each other. Deploying to 24 Regions or 76 Availability Zones one at a time carries the lowest risk but could take weeks. The article's numbers for waves and bake times are examples from a typical team, and each team sets its own.",
+        "walkthrough": [
+          {
+            "step": "Every kind of change gets a pipeline",
+            "explanation": "Code, infrastructure, operating system patches and configuration such as feature flags each run in their own pipeline with the same safety steps, including automatic rollback. The article says a bad feature flag change can hurt production as much as bad code."
+          },
+          {
+            "step": "Pre-production stages",
+            "explanation": "Alpha and beta check function. Gamma is built to be as close to production as possible, with the same alarms and continuous canary tests, and runs in several Regions. Gamma also has a one-box stage that checks the new code works beside the old code."
+          },
+          {
+            "step": "Production in waves",
+            "explanation": "The first wave goes to a low-traffic Region, one Availability Zone or cell at a time. The second goes to a busy Region where users are likely to exercise every new code path. Later waves cover more Regions in parallel: in the article's example, three Regions, then up to 12, then the rest."
+          },
+          {
+            "step": "One box, then a rolling update",
+            "explanation": "Each wave starts with a one-box stage that typically serves at most ten percent of the Region's or zone's requests. If it looks bad, the pipeline rolls back without promoting the change. Then a rolling deployment replaces at most 33 percent of boxes at a time, so at least 66 percent of capacity keeps serving."
+          },
+          {
+            "step": "Alarms trigger rollback",
+            "explanation": "A high-severity alarm watches fault rates, latency and resource use, and it both pages the on-call engineer and rolls the deployment back. One-box stages also use alarms scoped to that single box, because a small share of traffic may not move the service-wide alarm."
+          },
+          {
+            "step": "Bake time between stages",
+            "explanation": "The pipeline keeps watching after a stage finishes, to catch slow-burning problems. Early waves bake longer. A typical pipeline waits at least one hour after a one-box stage, at least 12 hours after the first regional wave and two to four hours after the others, and can require a minimum number of requests, such as 100 to one API, before promoting."
+          },
+          {
+            "step": "Blockers and time windows",
+            "explanation": "The pipeline will not start a deployment while the team's alarm is already firing, and it starts deployments only inside time windows that leave out nights, weekends and office holidays, so an on-call engineer is quickly reachable if manual recovery is needed."
+          }
+        ],
+        "numbers": [
+          {
+            "value": "four or five business days",
+            "meaning": "How long a typical pipeline takes to reach all Regions with its default bake times"
+          },
+          {
+            "value": "ten percent",
+            "meaning": "The most requests a one-box stage typically serves in a Region or Availability Zone"
+          },
+          {
+            "value": "33 percent",
+            "meaning": "The most boxes replaced at a time in a typical rolling deployment, leaving at least 66 percent serving"
+          },
+          {
+            "value": "1 hour, 12 hours, 2 to 4 hours",
+            "meaning": "Minimum bake times in a typical pipeline: after a one-box stage, after the first regional wave, and after the other waves"
+          },
+          {
+            "value": "24 Regions or 76 Availability Zones",
+            "meaning": "The size of the set that deploying one at a time would take weeks to cover"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Waves of growing size with a one-box stage, bake time and automatic rollback, and longer bake time in the early waves.",
+          "rejected": "Deploying to each Region or Availability Zone one at a time, which has the lowest risk but could take weeks.",
+          "why": "Waves give most of the safety of going slowly. Confidence builds in the first waves, so later waves can cover more Regions in parallel and bake for less time."
+        },
+        "failures": "The article's guard rails can be loosened: for a security fix or a large-scale event, bake time can be dialed down, but only with scrutiny from Principal Engineers, only minimal changes in flight and active watching.",
+        "takeaways": "Treat configuration and flags like code in the pipeline. Limit each step's exposure, watch metrics scoped to the new version, wait after each step, and roll back by machine rather than by a person's decision.",
+        "diagram": "<svg viewBox=\"0 0 560 170\" role=\"img\" aria-labelledby=\"dg-sd-aws-t\" class=\"dg\"><title id=\"dg-sd-aws-t\">Amazon's example production pipeline: waves of growing size, from one low-traffic Region up to the remaining Regions, each wave starting with its own one-box stage, with the minimum bake time after each stage.</title><defs><marker id=\"dg-sd-aws-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"13\" y=\"50\" width=\"84\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"55\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Each wave:</text><text x=\"55\" y=\"87.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">1 box first</text><text x=\"55.0\" y=\"118\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">bake 1 h+</text><text x=\"55.0\" y=\"132\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">after it</text><rect x=\"107\" y=\"50\" width=\"76\" height=\"50\" class=\"dg-box\"/><text x=\"145\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Wave 1</text><text x=\"145\" y=\"87.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">low traffic</text><text x=\"145.0\" y=\"118\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">bake 12 h+</text><path d=\"M183,75 L197,75\" class=\"dg-line\" marker-end=\"url(#dg-sd-aws-a)\"/><rect x=\"197\" y=\"50\" width=\"76\" height=\"50\" class=\"dg-box\"/><text x=\"235\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Wave 2</text><text x=\"235\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">busy</text><text x=\"235\" y=\"87.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Region</text><text x=\"235.0\" y=\"118\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">bake 2 to 4 h+</text><path d=\"M273,75 L287,75\" class=\"dg-line\" marker-end=\"url(#dg-sd-aws-a)\"/><rect x=\"287\" y=\"50\" width=\"76\" height=\"50\" class=\"dg-box\"/><text x=\"325\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Wave 3</text><text x=\"325\" y=\"87.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">3 Regions</text><text x=\"325.0\" y=\"118\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">bake 2 to 4 h+</text><path d=\"M363,75 L377,75\" class=\"dg-line\" marker-end=\"url(#dg-sd-aws-a)\"/><rect x=\"377\" y=\"50\" width=\"76\" height=\"50\" class=\"dg-box\"/><text x=\"415\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Wave 4</text><text x=\"415\" y=\"87.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">up to 12</text><text x=\"415.0\" y=\"118\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">bake 2 to 4 h+</text><path d=\"M453,75 L467,75\" class=\"dg-line\" marker-end=\"url(#dg-sd-aws-a)\"/><rect x=\"467\" y=\"50\" width=\"76\" height=\"50\" class=\"dg-box\"/><text x=\"505\" y=\"71.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Wave 5</text><text x=\"505\" y=\"87.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">the rest</text><text x=\"505.0\" y=\"118\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">bake 2 to 4 h+</text><text x=\"280\" y=\"26\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Example waves from the article; each team sets its own numbers.</text><text x=\"280\" y=\"152\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Alarm on the whole service rolls the change back at any point.</text></svg>"
+      }
+    },
+    {
+      "id": "cloudflare-outage-2025",
+      "title": "Cloudflare outage on November 18, 2025",
+      "url": "https://blog.cloudflare.com/18-november-2025-outage/",
+      "company": "Cloudflare",
+      "verifiedOn": "2026-10-16",
+      "published": "2025-11-18",
+      "digest": {
+        "problem": "On 18 November 2025 Cloudflare's network began failing to deliver core traffic. The cause was an internal change, not an attack: a database permissions change made a query output duplicate rows, which doubled a configuration file used by the Bot Management system, and the larger file was sent to every machine.",
+        "constraints": "The feature file is refreshed every few minutes and published to the whole network on purpose, so Cloudflare can react to new bots quickly. The proxy preallocates memory for a fixed number of features, so a file over that number cannot be loaded.",
+        "walkthrough": [
+          {
+            "step": "A permissions change",
+            "explanation": "At 11:05 a change made a ClickHouse table's underlying tables visible to users. A query that built the feature list had never filtered by database name, so it started to return duplicate rows."
+          },
+          {
+            "step": "The file doubles",
+            "explanation": "The query ran every five minutes on a cluster that was only partly updated. Some runs gave a good file and some a bad one, so the system recovered and failed in turns, until every node produced the bad file."
+          },
+          {
+            "step": "Pushed to the whole network",
+            "explanation": "Each generated file was propagated rapidly to the machines that run the proxy. The post describes no stage between generation and the entire network."
+          },
+          {
+            "step": "The limit is hit",
+            "explanation": "The module allows 200 features, well above the roughly 60 in use. A file with more than 200 triggered a panic in the proxy code, which returned HTTP 5xx errors for traffic that used the bots module."
+          },
+          {
+            "step": "Misleading symptoms",
+            "explanation": "The coming and going failures, plus the company's status page going down at the same time by coincidence, led the team to suspect a large attack at first."
+          },
+          {
+            "step": "Recovery",
+            "explanation": "They stopped the creation and spread of new files, put a known good file in the distribution queue by hand and restarted the core proxy. Main impact was resolved at 14:30 and all services were normal at 17:06."
+          }
+        ],
+        "numbers": [
+          {
+            "value": "200 features",
+            "meaning": "Limit in the Bot Management module, against about 60 features in use; the bad file went past it"
+          },
+          {
+            "value": "every five minutes",
+            "meaning": "How often the feature file was generated by the query, then pushed across the network"
+          },
+          {
+            "value": "11:05 to 14:30",
+            "meaning": "From the permissions change to the main impact being resolved with a known good file (UTC); failures began at 11:20"
+          },
+          {
+            "value": "17:06",
+            "meaning": "When all Cloudflare systems were functioning normally again (UTC)"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Publishing the feature file frequently and to the whole network, so defenses can follow attackers' changes fast.",
+          "rejected": "The post names no alternative release path for the file.",
+          "why": "Rapid rollout of the file is described as critical because bad actors change tactics quickly. The cost was that a bad file reached everything in minutes."
+        },
+        "failures": "The post lists follow-up work: treating Cloudflare-generated configuration files with the same hardening as user input, adding more global kill switches, preventing error reports from overwhelming system resources and reviewing failure modes across the proxy modules. It does not describe a staged rollout of the file.",
+        "takeaways": "A file generated by your own system is still input to the machines that load it. Without a first small step and a quick way to stop it, the speed that makes a push useful also spreads its mistakes.",
+        "diagram": "<svg viewBox=\"0 0 560 200\" role=\"img\" aria-labelledby=\"dg-sd-cf-t\" class=\"dg\"><title id=\"dg-sd-cf-t\">Cloudflare, 18 November 2025: a database permissions change doubled a feature file, the file went to every machine, passed a size limit in the proxy code, and the proxy failed.</title><defs><marker id=\"dg-sd-cf-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"8\" y=\"56\" width=\"112\" height=\"50\" class=\"dg-box\"/><text x=\"64\" y=\"77.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Permissions</text><text x=\"64\" y=\"93.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">change 11:05</text><path d=\"M120,81 L152,81\" class=\"dg-line\" marker-end=\"url(#dg-sd-cf-a)\"/><rect x=\"152\" y=\"56\" width=\"112\" height=\"50\" class=\"dg-box\"/><text x=\"208\" y=\"77.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">File doubles</text><text x=\"208\" y=\"93.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">in size</text><path d=\"M264,81 L296,81\" class=\"dg-line\" marker-end=\"url(#dg-sd-cf-a)\"/><rect x=\"296\" y=\"56\" width=\"112\" height=\"50\" class=\"dg-box\"/><text x=\"352\" y=\"77.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Sent to all</text><text x=\"352\" y=\"93.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">machines</text><path d=\"M408,81 L440,81\" class=\"dg-line\" marker-end=\"url(#dg-sd-cf-a)\"/><rect x=\"440\" y=\"56\" width=\"112\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"496\" y=\"77.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Over limit,</text><text x=\"496\" y=\"93.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">proxy panics</text><text x=\"280\" y=\"32\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The file is rebuilt every five minutes and pushed network-wide.</text><text x=\"280\" y=\"140\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Failures began 11:20. A known good file was back by 14:30. Normal at 17:06.</text><text x=\"280\" y=\"168\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The post describes no stage between generator and network.</text></svg>"
+      }
+    },
+    {
+      "id": "crowdstrike-channel-291-2024",
+      "title": "Channel File 291 Incident Root Cause Analysis",
+      "url": "https://www.crowdstrike.com/wp-content/uploads/2024/08/Channel-File-291-Incident-Root-Cause-Analysis-08.06.2024.pdf",
+      "company": "CrowdStrike",
+      "verifiedOn": "2026-10-16",
+      "published": "2024-08-06",
+      "digest": {
+        "problem": "A content update for CrowdStrike's Falcon sensor caused Windows systems to crash. The update was Rapid Response Content, which the report calls configuration data and not code, delivered through channel files. This is the company's own root cause analysis of Channel File 291.",
+        "constraints": "Content updates are meant to respond to new threats at operational speed without a new sensor release. A template type is compiled into the sensor, while the template instances that use it arrive later as content.",
+        "walkthrough": [
+          {
+            "step": "Two sides disagree on the field count",
+            "explanation": "The new template type for named-pipe activity defined 21 input fields, but the sensor code that called the content interpreter supplied only 20 values."
+          },
+          {
+            "step": "Testing misses it",
+            "explanation": "The test content used a wildcard for the 21st field in every instance, so the 21st value was never actually read. A stress test and the first several field deployments also passed."
+          },
+          {
+            "step": "The checker shares the wrong assumption",
+            "explanation": "The Content Validator assumed 21 inputs, so it accepted a new instance that matched a real value on field 21."
+          },
+          {
+            "step": "The update lands",
+            "explanation": "On July 19, 2024 two more instances were deployed, one with a non-wildcard match on field 21. The interpreter read beyond its 20 values at the next notification from the operating system, and the system crashed."
+          },
+          {
+            "step": "Fixes",
+            "explanation": "The report lists compile-time checks of field counts, a runtime bounds check, tests with non-wildcard criteria for every field, new validator checks, and a test for every new template instance."
+          },
+          {
+            "step": "Staged deployment",
+            "explanation": "Each template instance gets a staged rollout. After canary testing it is promoted ring by ring or rolled back, with bake-in time after each promotion, and customers get more control over where and when content updates are deployed."
+          }
+        ],
+        "numbers": [
+          {
+            "value": "21 fields, 20 values",
+            "meaning": "The template type defined 21 input fields but the code supplied 20 values to the interpreter"
+          },
+          {
+            "value": "12 test cases",
+            "meaning": "Size of the static automated set used for the template type, whose test content used a wildcard in the 21st field"
+          },
+          {
+            "value": "July 19, 2024",
+            "meaning": "The day two more template instances were deployed and the problem began"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Staged rings with canary testing and bake-in time for every template instance, plus extra validation, bounds checks and customer deployment controls.",
+          "rejected": "The report does not name a rejected alternative.",
+          "why": "It says staged deployment limits the harm of failures such as crashes or performance issues, because each ring is meant to find a problem before the next, wider one."
+        },
+        "failures": "The report says each template instance should be deployed in a staged rollout and that the content system was updated with more deployment layers; it does not describe the earlier rollout in detail. Tests, a stress test and a validator all passed because they shared the same wrong assumption or used a wildcard that hid the gap.",
+        "takeaways": "Content that can crash a kernel-level agent needs the same rings as code. Tests that avoid real values and a validator built on the same mistaken assumption are not independent checks.",
+        "diagram": "<svg viewBox=\"0 0 560 216\" role=\"img\" aria-labelledby=\"dg-sd-cs-t\" class=\"dg\"><title id=\"dg-sd-cs-t\">CrowdStrike, July 2024: a template type defined 21 input fields but the code supplied 20; tests used a wildcard for field 21 so they passed; a later content update checked field 21, the sensor read past the 20 values and crashed.</title><defs><marker id=\"dg-sd-cs-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"24\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"95\" y=\"45.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Template type</text><text x=\"95\" y=\"61.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">defines 21 fields</text><rect x=\"210\" y=\"24\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"285\" y=\"45.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Code supplies</text><text x=\"285\" y=\"61.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">20 values</text><rect x=\"400\" y=\"24\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"475\" y=\"45.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Tests use wildcard</text><text x=\"475\" y=\"61.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">for field 21</text><path d=\"M170,49 L210,49\" class=\"dg-line\" marker-end=\"url(#dg-sd-cs-a)\"/><path d=\"M360,49 L400,49\" class=\"dg-line\" marker-end=\"url(#dg-sd-cs-a)\"/><rect x=\"400\" y=\"114\" width=\"150\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"475\" y=\"135.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">July 19 update</text><text x=\"475\" y=\"151.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">checks field 21</text><rect x=\"210\" y=\"114\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"285\" y=\"135.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Read past</text><text x=\"285\" y=\"151.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">the 20 values</text><rect x=\"20\" y=\"114\" width=\"150\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"95\" y=\"143.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Sensors crash</text><path d=\"M475,74 L475,114\" class=\"dg-line\" marker-end=\"url(#dg-sd-cs-a)\"/><path d=\"M400,139 L360,139\" class=\"dg-line\" marker-end=\"url(#dg-sd-cs-a)\"/><path d=\"M210,139 L170,139\" class=\"dg-line\" marker-end=\"url(#dg-sd-cs-a)\"/><text x=\"280\" y=\"196\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Staged rings with bake time are part of the fix; each rollout step is meant to catch this first.</text></svg>"
+      }
+    }
+  ],
+  "comparison": "All three posts treat a change as something that must earn wider exposure. Amazon describes the full mechanism: a one-box stage, waves of growing size, alarms that roll back and a bake time between stages, and it runs configuration and flags through the same pipeline as code. Cloudflare describes what happens when a generated file goes to the whole network with no stage between generator and fleet, and CrowdStrike's report adds staged rings after a content update crashed systems.\n\nThey diverge on what stood between the change and the fleet. In Cloudflare's account the file was regenerated every five minutes and sent to the network, and the fix started with stopping it and putting a known good file back by hand. CrowdStrike's report lists staged rings, canary testing and bake-in time as a remediation, and lists customer control over deployment too. Amazon's article is a design for prevention and is not an incident report, so it reports no failure of its own.\n\nThe evidence is uneven. Amazon's numbers are examples from a typical team, and the article is from 2020. The two incident posts come from the companies involved, and each lists fixes without showing that they work yet.",
+  "glossary": [
+    {
+      "term": "Blast radius",
+      "definition": "How much of a system a single bad change can affect before it is stopped."
+    },
+    {
+      "term": "Canary",
+      "definition": "A small part of the service that gets a change first and is compared with the rest."
+    },
+    {
+      "term": "One-box stage",
+      "definition": "A first deployment step to the smallest unit, such as one server or container, taking a small share of traffic."
+    },
+    {
+      "term": "Wave",
+      "definition": "A group of Regions or machines that receive a change together, with later waves larger than earlier ones."
+    },
+    {
+      "term": "Bake time",
+      "definition": "The wait after a stage finishes, with alarms still watched, to catch problems that show up slowly."
+    },
+    {
+      "term": "Rollback",
+      "definition": "Putting the previous version, file or setting back after a change is found to be bad."
+    },
+    {
+      "term": "Configuration push",
+      "definition": "Sending a new settings or data file to running machines, which can break them as surely as new code."
+    }
+  ],
+  "mistakes": [
+    "Treating configuration and data files as safer than code. Cloudflare's feature file reached the whole network within minutes, and CrowdStrike's content update crashed systems, yet neither was a code release.",
+    "Promoting a change the moment its deployment finishes, or watching only fleet-wide metrics. Amazon adds bake time for slow-burning problems and rolls back on metrics scoped to a one-box stage.",
+    "Testing only with easy inputs. CrowdStrike's test content used a wildcard in the one field that held the gap, so the tests passed."
+  ]
+}

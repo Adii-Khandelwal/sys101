@@ -1,0 +1,245 @@
+{
+  "slug": "object-storage",
+  "promise": "After this you can explain what an object, a bucket and a key are, how an object store spreads and protects data with erasure coding, and why the metadata lookup is the part that has to stay small.",
+  "before": {
+    "prerequisites": [
+      "replication",
+      "sharding"
+    ],
+    "terms": [
+      {
+        "term": "Hard drive",
+        "definition": "A disk with spinning platters and a moving arm. It stores a lot cheaply but is slow at jumping to random places."
+      },
+      {
+        "term": "File",
+        "definition": "A named block of bytes in a directory tree, which a program can open, change and save."
+      },
+      {
+        "term": "Metadata",
+        "definition": "Data about data, such as a name, a size or where something is stored."
+      }
+    ],
+    "note": "You do not need the full Replication and Sharding topics for the stages below. They help on the topic page, where the posts spread copies and pieces of data over many machines. If the three terms are familiar, you are ready."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "A database stores records you query. A file system stores files in folders. Object storage is a third kind: you keep objects in a bucket and fetch each by name.",
+        "Amazon's S3 documentation defines the parts. An object is a file and any metadata that describes it, and a bucket is a container for objects [[aws-s3-intro]]. Each object has a key, which is its unique identifier within the bucket [[aws-s3-intro]]. You create a bucket first, then upload data to it as objects [[aws-s3-intro]]. The docs also say buckets and the objects in them are private by default [[aws-s3-intro]].",
+        "S3's page also states a consistency rule: it gives strong read-after-write consistency for PUT and DELETE requests on objects, in all Regions [[aws-s3-intro]]. That is how S3 behaves, and other object stores may promise less."
+      ],
+      "terms": [
+        {
+          "term": "Object",
+          "definition": "In S3's docs: a file and any metadata that describes the file."
+        },
+        {
+          "term": "Bucket",
+          "definition": "In S3's docs: a container for objects."
+        },
+        {
+          "term": "Key",
+          "definition": "In S3's docs: the unique identifier of an object within its bucket."
+        },
+        {
+          "term": "Read-after-write consistency",
+          "definition": "After a write succeeds, a read of that object returns the new data."
+        }
+      ],
+      "reading": [
+        {
+          "source": "aws-s3-intro",
+          "section": "How Amazon S3 works, the Buckets, Objects and Keys parts",
+          "what": "What an object, a bucket and a key are, and that they are private by default."
+        },
+        {
+          "source": "aws-s3-intro",
+          "section": "Features of Amazon S3, the Strong consistency part",
+          "what": "What S3 promises about reads that follow a write."
+        }
+      ],
+      "canNow": [
+        "Say what an object, a bucket and a key are.",
+        "Say what read-after-write consistency means."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "Behind the key, the bytes live on many drives, and a lookup says which ones. Ceph, an open source storage system, shows the idea in its own docs: RADOS is the object store under every Ceph service, and clients can reach it through object, block and file interfaces [[ceph-architecture]]. Its architecture pages cover CRUSH, placement groups and erasure coding, which are the pieces that decide where data goes [[ceph-architecture]].",
+        "MinIO's docs show how one object is protected. It groups drives into erasure sets, and for each write it splits the object into data shards and parity shards [[minio-erasure]]. Parity shards are a mathematical representation of the object used to rebuild data shards [[minio-erasure]]. The sizes are written N = K + M: N shards in the set, K for data and M for parity [[minio-erasure]]. MinIO uses Reed-Solomon coding, and needs any K shards to read an object [[minio-erasure]].",
+        "So the request path has two parts: find the key, then read or write the shards."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 170\" role=\"img\" aria-labelledby=\"dg-learn-os-how-t\" class=\"dg\"><title id=\"dg-learn-os-how-t\">Reading an object: the request names a key, a lookup turns the key into drive locations, and the bytes come back from those drives.</title><defs><marker id=\"dg-learn-os-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"55\" width=\"110\" height=\"56\" class=\"dg-box\"/><text x=\"67\" y=\"79.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Request</text><text x=\"67\" y=\"95.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">GET photo.jpg</text><rect x=\"165\" y=\"55\" width=\"120\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"225\" y=\"79.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Look up the</text><text x=\"225\" y=\"95.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">key</text><rect x=\"328\" y=\"55\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"378\" y=\"79.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Find the</text><text x=\"378\" y=\"95.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">drives</text><rect x=\"471\" y=\"55\" width=\"77\" height=\"56\" class=\"dg-box\"/><text x=\"509.5\" y=\"79.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Return</text><text x=\"509.5\" y=\"95.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">bytes</text><path d=\"M122,83 L165,83\" class=\"dg-line\" marker-end=\"url(#dg-learn-os-how-a)\"/><path d=\"M285,83 L328,83\" class=\"dg-line\" marker-end=\"url(#dg-learn-os-how-a)\"/><path d=\"M428,83 L471,83\" class=\"dg-line\" marker-end=\"url(#dg-learn-os-how-a)\"/><text x=\"280\" y=\"150\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">The name is a key. A small index maps it to where the bytes live.</text></svg>",
+      "terms": [
+        {
+          "term": "RADOS",
+          "definition": "Per Ceph's docs, the object store under every Ceph service."
+        },
+        {
+          "term": "Erasure set",
+          "definition": "In MinIO's docs: a group of drives that an object's shards are spread across."
+        },
+        {
+          "term": "Data shard and parity shard",
+          "definition": "In MinIO's docs: data shards hold a part of the object, parity shards hold what is needed to rebuild data shards."
+        }
+      ],
+      "reading": [
+        {
+          "source": "ceph-architecture",
+          "section": "The page itself, the How Ceph Stores Data list",
+          "what": "Where the object store sits in Ceph and which pages cover placement and erasure coding."
+        },
+        {
+          "source": "minio-erasure",
+          "section": "The first part, up to Shard distribution across an erasure set",
+          "what": "How drives form erasure sets and how an object becomes data and parity shards."
+        }
+      ],
+      "canNow": [
+        "Describe a request as a key lookup followed by shard reads.",
+        "Say what N = K + M means in an erasure set.",
+        "Say that any K shards are enough to read an object, in MinIO's design."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "Parity is a dial. MinIO's docs say that higher parity means more resilience to drive or node failure but less usable storage, and lower parity means the reverse [[minio-erasure]]. Its example uses one node with sixteen 1 TB drives: with EC:4 parity the usable space is 12 TiB, a ratio of 0.750, and with EC:8 it is 8 TiB, a ratio of 0.500 [[minio-erasure]].",
+        "Writes work on a quorum. MinIO attempts to write all N shards in parallel and returns success after at least K of them are acknowledged [[minio-erasure]]. When parity is exactly half the set, the write needs K + 1, which prevents a split brain where an isolated half writes the same object on its own [[minio-erasure]]. In that case the set can still serve reads while it refuses writes [[minio-erasure]].",
+        "Lost shards are rebuilt. If an object still has read quorum, MinIO can heal damaged shards from any data or parity shard [[minio-erasure]]. The same page notes that parity settings do not update automatically for objects written earlier [[minio-erasure]]."
+      ],
+      "terms": [
+        {
+          "term": "Parity",
+          "definition": "In MinIO's docs, the number of parity shards, written EC:M; it sets how many drives can fail."
+        },
+        {
+          "term": "Read quorum and write quorum",
+          "definition": "The least number of shards that must be readable or written for the operation to work."
+        },
+        {
+          "term": "Healing",
+          "definition": "Rebuilding lost shards from the ones that remain."
+        }
+      ],
+      "reading": [
+        {
+          "source": "minio-erasure",
+          "section": "Parity is configurable up to half the erasure set, Read quorum, Write quorum and the Erasure parity and storage efficiency table",
+          "what": "How parity trades capacity against failures and when reads or writes stop."
+        }
+      ],
+      "canNow": [
+        "Explain why more parity means less usable space.",
+        "Say why a write can succeed with some shards missing.",
+        "Say why a set with exactly half parity needs one more acknowledgement."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "S3 gives several storage classes for different use: S3 Standard for frequent access, infrequent-access classes that cost less to store, and Glacier classes for archives [[aws-s3-intro]]. It also offers lifecycle rules that move objects between classes or expire them, versioning to restore deleted or overwritten objects, and replication to buckets in other Regions [[aws-s3-intro]].",
+        "MinIO's docs say production deployments must use parity of EC:3 or higher, and that lower values suit development and testing only [[minio-erasure]]. For Kubernetes deployments they also describe spread zones, which place data and parity shards in separate failure domains such as racks or availability zones, so one failure does not hit many shards of the same set [[minio-erasure]].",
+        "Ceph's architecture page closes with a note about sizing: heartbeats, peering, rebalancing and recovery run on the same hosts that store the data, so every server needs CPU, RAM and network for them [[ceph-architecture]]. Keeping data safe has a running cost as well as a storage cost."
+      ],
+      "terms": [
+        {
+          "term": "Storage class",
+          "definition": "In S3's docs: a choice of cost and access speed for stored objects, from frequent access to archive."
+        },
+        {
+          "term": "Failure domain",
+          "definition": "A group of things that can fail together, such as a rack or an availability zone."
+        },
+        {
+          "term": "Lifecycle rule",
+          "definition": "In S3's docs: a configuration that moves objects to other storage classes or expires them."
+        }
+      ],
+      "reading": [
+        {
+          "source": "aws-s3-intro",
+          "section": "Features of Amazon S3, the Storage classes and Storage management parts",
+          "what": "How S3 lets you pay less for data you read rarely, and how it handles old and deleted data."
+        },
+        {
+          "source": "minio-erasure",
+          "section": "Parity is configurable up to half the erasure set, and Distributing erasure sets across failure domains",
+          "what": "The minimum parity for production and why shards are spread across failure domains."
+        },
+        {
+          "source": "ceph-architecture",
+          "section": "Why This Matters for Sizing",
+          "what": "Why every storage server needs spare CPU, memory and network for recovery work."
+        }
+      ],
+      "canNow": [
+        "Say why some data belongs in a cheaper, slower class.",
+        "Say why shards should not share a failure domain.",
+        "Explain why repair work adds to a server's load."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "An object store is a file system with a different name.",
+      "truth": "S3's docs describe general purpose buckets as a flat storage structure of keys, and say that directory buckets are the type that organize objects into directories [[aws-s3-intro]]."
+    },
+    {
+      "myth": "Erasure coding means keeping several full copies.",
+      "truth": "MinIO's docs describe splitting an object into data and parity shards, one per drive, and rebuilding from any K of them [[minio-erasure]]."
+    },
+    {
+      "myth": "More redundancy is always better.",
+      "truth": "MinIO's docs say higher parity raises resilience but lowers usable storage, so parity is chosen as a balance [[minio-erasure]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "This is one command to read, from MinIO's erasure coding page [[minio-erasure]]. It needs a MinIO AIStor deployment and the mc client. The page names the command but shows no arguments or sample output, so none are shown here.",
+    "commands": [
+      {
+        "command": "mc admin object info",
+        "shows": "The page says it outputs a summary of an object and where each shard (or part) sits, with part number, pool number, node, erasure set, drive, filename and size.",
+        "source": "minio-erasure"
+      }
+    ]
+  },
+  "next": "Go back to the Object Storage topic page for the worked example and the quiz, then read the three systems: [Haystack](/topic/object-storage#haystack-facebook-2010) on packing photos so metadata stays in memory, [Dropbox's Magic Pocket](/topic/object-storage#dropbox-magic-pocket-2016) on buckets, cells and a single Master, and [Amazon S3](/topic/object-storage#s3-warfield-2023) on drive physics and placement.",
+  "sources": [
+    {
+      "id": "aws-s3-intro",
+      "title": "What is Amazon S3?",
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-16"
+    },
+    {
+      "id": "ceph-architecture",
+      "title": "Architecture, Ceph Documentation",
+      "url": "https://docs.ceph.com/en/latest/architecture/",
+      "publisher": "Ceph Foundation",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-16"
+    },
+    {
+      "id": "minio-erasure",
+      "title": "Erasure Coding, MinIO AIStor Documentation",
+      "url": "https://docs.min.io/aistor/operations/core-concepts/erasure-coding/",
+      "publisher": "MinIO",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-16"
+    }
+  ]
+}

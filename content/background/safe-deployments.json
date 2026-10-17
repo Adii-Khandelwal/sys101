@@ -1,0 +1,46 @@
+{
+  "topic": "safe-deployments",
+  "updatedOn": "2026-10-16",
+  "items": [
+    {
+      "id": "regions-and-availability-zones",
+      "name": "Regions and Availability Zones",
+      "explanation": "A Region is a physical location where a cloud provider clusters data centers, and an Availability Zone is a group of data centers inside it with its own power and networking. Amazon's waves go Region by Region and zone by zone, so a failure stays in one zone first.",
+      "assumedBy": [
+        {
+          "postId": "aws-hands-off-deployments",
+          "quote": "Teams split regional deployments into even smaller-scoped deployments by deploying to individual Availability Zones"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Regions and Availability Zones (AWS Global Infrastructure)",
+          "publisher": "Amazon Web Services",
+          "url": "https://aws.amazon.com/about-aws/global-infrastructure/regions_az/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-16"
+        }
+      ]
+    },
+    {
+      "id": "clickhouse-distributed-tables",
+      "name": "Distributed tables in ClickHouse",
+      "explanation": "ClickHouse spreads data over shards, and a Distributed table stores nothing itself but lets a query run across the underlying tables on many servers. Cloudflare's query read system.columns without filtering by database, so when an 11:05 grant made the underlying r0 tables' metadata visible too, the query returned duplicate rows.",
+      "assumedBy": [
+        {
+          "postId": "cloudflare-outage-2025",
+          "quote": "To query data from all shards, we have so-called distributed tables"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Distributed table engine (ClickHouse documentation)",
+          "publisher": "ClickHouse",
+          "url": "https://clickhouse.com/docs/engines/table-engines/special/distributed",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-16"
+        }
+      ]
+    }
+  ]
+}

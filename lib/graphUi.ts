@@ -160,33 +160,6 @@ export function placeTooltip(
 }
 
 
-type LabelNode = { x: number; y: number; r: number };
-type LabelSpot = { x: number; y: number };
-
-/**
- * Where a group label may sit, best first. Every label is placed the same way, relative to its
- * first node: on a horizontal map, directly above it with the label's left edge on the node's left
- * edge, else directly below it the same way. A stacked map has no room above or below a row, so the
- * label goes right of the node's own label. Left of the node comes next, then above or below with the label's
- * right edge on the node's centre (clamped to the stage), for a node whose edges leave to the right; right of its
- * label is the last resort. A label is never pinned to the stage edge otherwise.
- */
-export function groupLabelSpots(first: LabelNode, labelWidth: number, firstTitleWidth: number, stacked: boolean): LabelSpot[] {
-  // 28 above and 8 below clear the ring by a few px even for descenders (g, y) in the serif label.
-  const above = { x: first.x - first.r, y: first.y - first.r - 28 };
-  const below = { x: first.x - first.r, y: first.y + first.r + 8 };
-  const left = { x: first.x - first.r - labelWidth - 8, y: first.y - 8 };
-  const right = { x: first.x + first.r + 8 + firstTitleWidth + 16, y: first.y - 8 };
-  const aboveLeft = { x: Math.max(0, first.x - labelWidth), y: above.y };
-  const belowLeft = { x: Math.max(0, first.x - labelWidth), y: below.y };
-  return stacked ? [right, above, below, left] : [above, below, left, aboveLeft, belowLeft, right];
-}
-
-/** The first spot that is on the stage and not blocked; else the first spot. */
-export function placeGroupLabel(spots: LabelSpot[], fits: (s: LabelSpot) => boolean, blocked: (s: LabelSpot) => boolean) {
-  return spots.find((s) => fits(s) && !blocked(s)) ?? spots[0];
-}
-
 /**
  * The prerequisite lines in a map tooltip. `finish` names what is still unread. `builtOn` lists all prerequisites, and
  * is left out only when it would repeat `finish` word for word (nothing read yet).

@@ -1,0 +1,253 @@
+{
+  "slug": "safe-deployments",
+  "promise": "After this you can explain what a canary, a rolling update and a rollback are, why a new version should reach a small share of traffic first, and why configuration changes need the same care as code.",
+  "before": {
+    "prerequisites": [
+      "load-balancing"
+    ],
+    "terms": [
+      {
+        "term": "Deployment",
+        "definition": "Putting a new version of a program, or a new setting, onto the machines that serve users."
+      },
+      {
+        "term": "Version",
+        "definition": "One numbered or tagged build of a program. The old version is what runs now, and the new version is what you want to ship."
+      },
+      {
+        "term": "Metric",
+        "definition": "A number measured over time, such as how many requests fail or how long a reply takes."
+      }
+    ],
+    "note": "Load Balancing is the one topic this builds on, since a new version takes its share of traffic through a load balancer. The stages below explain the rest. If the three terms are familiar, you are ready."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "A deployment replaces what is running with a new version. The simplest way is to do it everywhere at once, and the risk is plain: if the new version has a bug, everyone meets it at the same moment.",
+        "Kubernetes shows the common first improvement. In a rolling update it replaces the current Pods with new ones step by step, and waits for the new Pods to start before removing the old ones [[k8s-rolling-update]]. By default the number of Pods that may be unavailable and the number of new Pods that may be added at one time are both one, and either can be set as a number or a percentage [[k8s-rolling-update]].",
+        "The same page says updates are versioned, so a Deployment can be reverted to an earlier version [[k8s-rolling-update]]. That revert is a rollback: putting the last known good version back.",
+        "Google's SRE workbook goes one step further and defines canarying as a partial and time-limited deployment of a change, followed by an evaluation that decides whether to go on [[sre-canarying]]. The part that gets the change is the canary and the rest is the control [[sre-canarying]]."
+      ],
+      "terms": [
+        {
+          "term": "Rolling update",
+          "definition": "Replacing the old version with the new one step by step instead of all at once."
+        },
+        {
+          "term": "Rollback",
+          "definition": "Returning to an earlier, working version of a deployment."
+        },
+        {
+          "term": "Canary",
+          "definition": "In the SRE workbook, the part of a service that receives a change first, with the rest as the control."
+        },
+        {
+          "term": "Control",
+          "definition": "The part of the service that stays on the old version so the canary can be compared with it."
+        }
+      ],
+      "reading": [
+        {
+          "source": "k8s-rolling-update",
+          "section": "Updating an application and Roll back an update",
+          "what": "How a rolling update replaces Pods step by step, and how a bad update is undone."
+        },
+        {
+          "source": "sre-canarying",
+          "section": "What Is Canarying?",
+          "what": "The definition of a canary and the control, and why defects still reach production after testing."
+        }
+      ],
+      "canNow": [
+        "Say what a rolling update and a rollback are.",
+        "Explain what a canary and a control are.",
+        "Say why releasing to everyone at once is the riskiest option."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "Argo Rollouts names the common strategies. Rolling update slowly replaces the old version with the new one. Recreate stops the old version before starting the new one, so there is downtime. Blue-green runs both versions side by side, with only the old one taking production traffic until you switch. Canary sends a subset of users to the new version while the rest stay on the old one [[argo-rollouts-concepts]].",
+        "Argo calls the wider idea progressive delivery: release in a controlled, gradual way, limit who sees the new version, watch for correct behavior, then increase exposure while checking it [[argo-rollouts-concepts]].",
+        "The check is a comparison. The SRE workbook splits traffic between the old and new versions and then looks at a key metric, such as HTTP response codes, for each version separately. If the canary's error rate is too far from the control's, the deployment is bad, and the response is to pause and roll back, or to call a human [[sre-canarying]]. If the two are similar, the rollout goes on [[sre-canarying]].",
+        "Looking per version matters. The workbook shows that when a canary is a small part of production, its errors are barely visible in the overall error rate [[sre-canarying]]."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 210\" role=\"img\" aria-labelledby=\"dg-learn-safe-deployments-how-t\" class=\"dg\"><title id=\"dg-learn-safe-deployments-how-t\">A canary rollout: a load balancer sends most traffic to the old version and a small share to the new one, then a check compares the two. If the new version looks worse, the change is rolled back; if not, its share grows.</title><defs><marker id=\"dg-learn-safe-deployments-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"70\" width=\"100\" height=\"50\" class=\"dg-box\"/><text x=\"64\" y=\"99.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Users</text><rect x=\"170\" y=\"70\" width=\"110\" height=\"50\" class=\"dg-box\"/><text x=\"225\" y=\"99.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Load balancer</text><rect x=\"350\" y=\"28\" width=\"120\" height=\"50\" class=\"dg-box\"/><text x=\"410\" y=\"49.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Old version</text><text x=\"410\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">most traffic</text><rect x=\"350\" y=\"112\" width=\"120\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"410\" y=\"133.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">New version</text><text x=\"410\" y=\"149.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">small share</text><path d=\"M114,95 L170,95\" class=\"dg-line\" marker-end=\"url(#dg-learn-safe-deployments-how-a)\"/><path d=\"M280,86 L350,56\" class=\"dg-line\" marker-end=\"url(#dg-learn-safe-deployments-how-a)\"/><path d=\"M280,104 L350,134\" class=\"dg-line dg-accent\" marker-end=\"url(#dg-learn-safe-deployments-how-a)\"/><rect x=\"480\" y=\"70\" width=\"76\" height=\"50\" class=\"dg-box\"/><text x=\"518\" y=\"99.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">Compare</text><path d=\"M470,60 L480,84\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-learn-safe-deployments-how-a)\"/><path d=\"M470,130 L480,106\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-learn-safe-deployments-how-a)\"/><text x=\"280\" y=\"192\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Fine: widen the share. Worse than the old version: roll back.</text></svg>",
+      "terms": [
+        {
+          "term": "Blue-green",
+          "definition": "Running the old and new versions side by side and switching all traffic at once."
+        },
+        {
+          "term": "Progressive delivery",
+          "definition": "In Argo's words, releasing updates in a controlled and gradual way, usually with metrics deciding promotion or rollback."
+        },
+        {
+          "term": "Promotion",
+          "definition": "Moving a change to the next, wider stage after it passes its check."
+        }
+      ],
+      "reading": [
+        {
+          "source": "argo-rollouts-concepts",
+          "section": "Deployment Strategies",
+          "what": "One short description each of rolling update, recreate, blue-green and canary."
+        },
+        {
+          "source": "sre-canarying",
+          "section": "A Roll Forward Deployment Versus a Simple Canary Deployment",
+          "what": "A worked example with figures that compare the canary and the live version."
+        }
+      ],
+      "canNow": [
+        "Name four deployment strategies and say how they differ.",
+        "Explain how a canary is judged against a control.",
+        "Say why per-version metrics matter."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "Choosing what to measure is part of the work. The workbook prefers metrics that indicate a problem for users, such as return codes and latency, over CPU use, which can be noisy and lead people to ignore the canary [[sre-canarying]].",
+        "It also warns against comparing the same service before and after a change. Time itself changes the metrics, such as a weekday against a weekend, so the degradation could have happened in the control too [[sre-canarying]]. Comparing a canary with a control at the same time avoids that.",
+        "A canary can have several stages. The first is small and uses the clearest signals, such as crashes and failed requests. After it passes, the next stage uses a larger share [[sre-canarying]]. The workbook also advises running only one canary at a time [[sre-canarying]].",
+        "The same care applies to things that are not code. The workbook says that in Google's experience a majority of incidents are triggered by binary or configuration pushes, and that feature flags let you separate a feature launch from a binary release [[sre-canarying]]."
+      ],
+      "terms": [
+        {
+          "term": "Feature flag",
+          "definition": "A setting that turns a feature on or off without a new binary, so a launch can be separated from a release."
+        },
+        {
+          "term": "Before/after evaluation",
+          "definition": "Judging a change by comparing a service with itself over time, which the workbook calls risky."
+        }
+      ],
+      "reading": [
+        {
+          "source": "sre-canarying",
+          "section": "Selecting and Evaluating Metrics, and Separating Components That Change at Different Rates",
+          "what": "What makes a good canary metric and why config and flags need their own care."
+        }
+      ],
+      "canNow": [
+        "Choose a metric that suits a canary.",
+        "Say why before/after comparison is risky.",
+        "Explain why configuration pushes need staging too."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "Argo's guide says Blue-green is the easier strategy to start with and also the more limited, and suggests moving to canaries as you gain confidence in your metrics and application [[argo-rollouts-concepts]]. Not every application can run two versions at once, which it calls a possible showstopper for canaries, especially for legacy applications [[argo-rollouts-concepts]].",
+        "Blue-green switches all traffic at once, so the guide's table lists its failure blast radius as massive. Canaries list it as low [[argo-rollouts-concepts]]. A canary also needs a way to control traffic finely, and advanced canary features assume a traffic manager such as a service mesh or ingress controller [[argo-rollouts-concepts]].",
+        "Speed is the other side. The workbook says a canary must run long enough to be representative, and that the length depends on how often you release: a team that deploys many times a day needs a much shorter canary than one that deploys weekly [[sre-canarying]]. It also notes that performance defects usually show only under heavy load, so an off-peak canary may miss them [[sre-canarying]].",
+        "The risk is also easy to bound. The workbook's example: a defect that fails 20% of requests, on a 5% canary, gives about a 1% overall error rate, and the impact on the error budget is proportional to the traffic exposed [[sre-canarying]]."
+      ],
+      "terms": [
+        {
+          "term": "Error budget",
+          "definition": "The amount of unreliability a service may spend in a period, which a canary uses only a small part of."
+        },
+        {
+          "term": "Traffic manager",
+          "definition": "A service mesh, ingress controller or gateway that can split traffic finely between versions."
+        }
+      ],
+      "reading": [
+        {
+          "source": "argo-rollouts-concepts",
+          "section": "Which strategy to choose",
+          "what": "The table comparing blue-green and canary on complexity, flexibility and blast radius."
+        },
+        {
+          "source": "sre-canarying",
+          "section": "Choosing a Canary Population and Duration",
+          "what": "Why size, duration, time of day and metrics all affect how representative a canary is."
+        }
+      ],
+      "canNow": [
+        "Choose between blue-green and canary for a given service.",
+        "Explain why canary duration depends on release frequency.",
+        "Estimate the exposure of a bad canary."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "A rolling update and a canary are the same thing.",
+      "truth": "Argo describes a rolling update as slowly replacing the old version, and a canary as exposing a subset of users while the rest stay on the old one, then replacing it once the new version is verified [[argo-rollouts-concepts]]. Kubernetes's rolling update keeps capacity as it replaces Pods [[k8s-rolling-update]]; a canary adds a check against a control [[sre-canarying]]."
+    },
+    {
+      "myth": "Configuration changes are safe, so only code needs staged rollout.",
+      "truth": "The SRE workbook says a majority of incidents in Google's experience are triggered by binary or configuration pushes [[sre-canarying]]."
+    },
+    {
+      "myth": "If the overall error rate looks fine, the canary is fine.",
+      "truth": "With a small canary, the workbook says its errors are barely visible in the overall rate, so it looks at the metric by version [[sre-canarying]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These commands come from the Kubernetes tutorial on rolling updates [[k8s-rolling-update]]. They need a running cluster and the tutorial's example Deployment, so reading them is enough if you have none. The tutorial's shell commands use POSIX syntax.",
+    "commands": [
+      {
+        "command": "kubectl get deployments",
+        "shows": "Lists your Deployments. The tutorial uses it to check the state of an update.",
+        "source": "k8s-rolling-update"
+      },
+      {
+        "command": "kubectl set image deployments/kubernetes-bootcamp kubernetes-bootcamp=docker.io/jocatalin/kubernetes-bootcamp:v2",
+        "shows": "Changes the app's image to version 2 and starts a rolling update. The tutorial then checks Pods with get pods.",
+        "source": "k8s-rolling-update",
+        "warning": "This changes a Deployment and replaces running Pods. Run it only on a local or test cluster."
+      },
+      {
+        "command": "kubectl rollout status deployments/kubernetes-bootcamp",
+        "shows": "Confirms the update has finished.",
+        "source": "k8s-rolling-update"
+      },
+      {
+        "command": "kubectl rollout undo deployments/kubernetes-bootcamp",
+        "shows": "Reverts the Deployment to the last known good version, which the tutorial shows after deploying a v10 image that does not exist.",
+        "source": "k8s-rolling-update",
+        "warning": "This changes a Deployment and replaces running Pods. Run it only on a local or test cluster."
+      }
+    ]
+  },
+  "next": "Go back to the Safe Deployments topic page for the worked example and the quiz, then read the three posts: [Amazon's hands-off deployments](/topic/safe-deployments#aws-hands-off-deployments) for waves, one-box stages and bake time, [Cloudflare's 2025 outage](/topic/safe-deployments#cloudflare-outage-2025) for a generated file pushed to a whole network, and [CrowdStrike's root cause analysis](/topic/safe-deployments#crowdstrike-channel-291-2024) for a content update. The sources on this page do not define one-box stages or bake time.",
+  "sources": [
+    {
+      "id": "sre-canarying",
+      "title": "Canarying Releases (Chapter 16, The Site Reliability Workbook)",
+      "url": "https://sre.google/workbook/canarying-releases/",
+      "publisher": "Google",
+      "kind": "Book chapter",
+      "year": "2018",
+      "verifiedOn": "2026-10-16"
+    },
+    {
+      "id": "k8s-rolling-update",
+      "title": "Performing a Rolling Update",
+      "url": "https://kubernetes.io/docs/tutorials/kubernetes-basics/update/update-intro/",
+      "publisher": "Kubernetes",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-03-12",
+      "verifiedOn": "2026-10-16"
+    },
+    {
+      "id": "argo-rollouts-concepts",
+      "title": "Concepts (Argo Rollouts)",
+      "url": "https://argo-rollouts.readthedocs.io/en/stable/concepts/",
+      "publisher": "Argo Rollouts project",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-16"
+    }
+  ]
+}

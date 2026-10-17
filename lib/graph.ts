@@ -308,23 +308,6 @@ function rowSpan(cols: (Node | Slot)[][]) {
 /** Labels may shrink to this share of their full size to keep the horizontal map on narrower stages. */
 export const MIN_LABEL_SCALE = 0.8;
 
-/**
- * The largest label scale, from 1 down to MIN_LABEL_SCALE in steps of 0.01, at which the horizontal
- * layout fits `box.width` (columns need room for their widest label at that scale). Null when even
- * the smallest scale does not fit, which is when the map stacks instead.
- */
-export function fitLabelScale(
-  cols: (Node | Slot)[][],
-  box: { width: number; height: number; edges?: Edge[] },
-  baseLabelWidth: Map<string, number>,
-) {
-  for (let s = 1; s >= MIN_LABEL_SCALE - 1e-9; s = Math.round((s - 0.01) * 100) / 100) {
-    const labelWidth = new Map([...baseLabelWidth].map(([slug, w]) => [slug, w * s] as const));
-    if (fitPositions(cols, "horizontal", { ...box, labelWidth }).required <= box.width) return s;
-  }
-  return null;
-}
-
 export const NODE_RADIUS = 14;
 /** A label starts this far right of its node's centre. */
 export const LABEL_START = NODE_RADIUS + 8;

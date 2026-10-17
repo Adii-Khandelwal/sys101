@@ -1,0 +1,525 @@
+{
+  "slug": "overload-and-cascading-failures",
+  "title": "Overload and Cascading Failures",
+  "group": "Reliability",
+  "interviewRelevance": "common",
+  "concept": "Overload becomes a cascading failure when the system's own reactions, such as client retries, restarts and replacing instances that look unhealthy, add more load than the original problem did. Capacity only counts when requests finish in time, so a system pushed past its limit can lose most of its useful work and, in the worst case, stay down after the cause is gone.",
+  "prerequisites": [
+    "circuit-breakers",
+    "rate-limiting",
+    "load-balancing"
+  ],
+  "summary": {
+    "points": [
+      "Overload turns into a cascading failure when retries, restarts and replacements add more load than the original problem, so a system can stay down after its trigger ends.",
+      "Slack's 2021 outage began with a cloud network limit, and the recovery path then overloaded itself when a request for 1,200 servers hit provisioning limits.",
+      "GitHub's 2026 outage began as a capacity failure, and client retry loops during recovery had to be stopped before traffic could safely return.",
+      "A research paper on public incident reports found retries to be the most common reason a failure sustained itself, and load shedding the usual way out."
+    ],
+    "figures": [
+      {
+        "postId": "slack-jan-4-outage-2021",
+        "row": 0,
+        "label": "The autoscaler asked for 1,200 servers while the network was degraded"
+      },
+      {
+        "postId": "github-aug-17-outage-2026",
+        "row": 0,
+        "label": "The August 17 outage lasted 7 hours and 47 minutes"
+      },
+      {
+        "postId": "metastable-failures-osdi-2022",
+        "row": 4,
+        "label": "Retries were the sustaining effect in more than 50% of the studied incidents"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "circuit-breakers": "Overload topics build on circuit breakers and load shedding, which are the main defences once a dependency is failing or a server is past its limit.",
+    "rate-limiting": "Rate limiting caps what one client can send, and this topic shows what happens when the total load still passes capacity and clients retry.",
+    "load-balancing": "Load balancers decide where requests go and which instances count as healthy, so their health checks and panic mode shape how an overload spreads."
+  },
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why a system that is slightly over capacity can fail far worse than the overload alone would suggest.",
+      "body": "Circuit breakers stop calls to a failing dependency, rate limiters cap one noisy client, and load balancers spread requests across machines. Each helps in its own place. This topic is about what happens when the whole system is pushed past its limit anyway, and how the reactions meant to help can make it worse.\n\nThe idea to hold on to is goodput: the requests that finish correctly and fast enough for the caller to use. Throughput counts everything sent. When a server is overloaded it slows down, replies arrive after the client has given up, and the work behind them is thrown away. Clients retry, which adds load, which slows the server more.\n\nThe result can be a failure that outlives its cause. A traffic peak or a network problem pushes the system over, a feedback loop takes over, and the system stays down after the peak is gone. The posts below show it at Slack, at GitHub and across many public incident reports."
+    },
+    "mentalModel": {
+      "outcome": "After this you can describe an overload as a trigger, an amplifier and a loop that sustains itself.",
+      "body": "Picture a shop with one till. Customers who wait too long walk out, but the cashier has already scanned their items, so that work is wasted. Some of them come back and rejoin the queue. The queue grows even though fewer people are being served. Hiring a second cashier does not help while the queue is full of people who will leave before they reach the front.\n\nThree parts describe most cases. A trigger pushes the system over its limit for a while: a traffic peak, a lost cache, a slow network, a bad deploy. An amplifier turns the overload into extra work: retries, health checks that pull healthy machines out, new instances that start cold. A sustaining effect is an amplifier acting as a loop, one that keeps going after the trigger has ended. Researchers call a system in that state metastable: after the trigger is gone it stays in the failed, low-goodput state, held there by the loop.\n\nFor design this means the trigger is rarely the first thing to fix. Once the loop is running, the way out is to cut load below what the system can finish, or to add capacity, until the loop breaks.",
+      "diagram": "<svg viewBox=\"0 0 560 240\" role=\"img\" aria-labelledby=\"dg-oc-model-t\" class=\"dg\"><title id=\"dg-oc-model-t\">A feedback loop: overload makes replies slower than client timeouts, late replies are wasted and clients retry, and retries and restarts add load that keeps the system overloaded.</title><defs><marker id=\"dg-oc-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"30\" y=\"30\" width=\"200\" height=\"52\" class=\"dg-box dg-accent\"/><text x=\"130.0\" y=\"52.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Load passes capacity,</text><text x=\"130.0\" y=\"68.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">work queues up</text><rect x=\"330\" y=\"30\" width=\"200\" height=\"52\" class=\"dg-box\"/><text x=\"430.0\" y=\"52.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Replies arrive later</text><text x=\"430.0\" y=\"68.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">than client timeouts</text><rect x=\"330\" y=\"130\" width=\"200\" height=\"52\" class=\"dg-box\"/><text x=\"430.0\" y=\"152.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Late replies are wasted,</text><text x=\"430.0\" y=\"168.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">clients retry</text><rect x=\"30\" y=\"130\" width=\"200\" height=\"52\" class=\"dg-box\"/><text x=\"130.0\" y=\"152.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Retries and restarts</text><text x=\"130.0\" y=\"168.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">add more load</text><path d=\"M230,56 L330,56\" class=\"dg-line\" marker-end=\"url(#dg-oc-model-a)\"/><path d=\"M430,82 L430,130\" class=\"dg-line\" marker-end=\"url(#dg-oc-model-a)\"/><path d=\"M330,156 L230,156\" class=\"dg-line\" marker-end=\"url(#dg-oc-model-a)\"/><path d=\"M130,130 L130,82\" class=\"dg-line\" marker-end=\"url(#dg-oc-model-a)\"/><text x=\"280\" y=\"214\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Ending the first trigger does not break the loop once it is running.</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can walk through how an overload grows, why it persists, and what breaks the loop.",
+      "steps": [
+        {
+          "step": "Run near the limit",
+          "explanation": "Systems are sized and cached so that normal load fits with little to spare. That is efficient, and it leaves them exposed: one shock can push them over. The metastable failures paper calls this the vulnerable state."
+        },
+        {
+          "step": "A trigger adds load or removes capacity",
+          "explanation": "A traffic peak, a lost cache, a failed rack, a slow network link or a bad deploy. The trigger may last only minutes."
+        },
+        {
+          "step": "Latency crosses the client timeout",
+          "explanation": "Past a certain load each request takes longer. Once replies take longer than the caller is willing to wait, the caller gives up and the server's work is wasted. Goodput falls while throughput stays high."
+        },
+        {
+          "step": "Amplifiers add work",
+          "explanation": "Retries multiply requests. Health checks fail under load, so machines are taken out of rotation and the rest carry more. New instances start with empty caches, and the tools that start them can overload too."
+        },
+        {
+          "step": "The loop sustains itself",
+          "explanation": "When the extra work matches the lost capacity, the overload continues after the trigger ends. In the paper, retries were the sustaining effect in more than half of the incidents it studied."
+        },
+        {
+          "step": "Recovery means cutting load or adding capacity",
+          "explanation": "Fixing the trigger is the first instinct but often not enough. Reject or pause traffic until the system is below what it can finish, cap the amplifier (for example, fewer retries), or add capacity, then bring load back in stages."
+        },
+        {
+          "step": "Design so the loop cannot start",
+          "explanation": "Cap retries with budgets and backoff, set deadlines, reject early and cheaply, load test beyond the breaking point, and keep recovery tools independent of the system they repair."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-oc-how-t\" class=\"dg\"><title id=\"dg-oc-how-t\">Goodput against offered load: it rises to the system capacity, then without load shedding it collapses as late replies and retries waste work, while with load shedding it stays flat at capacity.</title><defs><marker id=\"dg-oc-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><path d=\"M60,30 L60,210\" class=\"dg-line\"/><path d=\"M60,210 L520,210\" class=\"dg-line\"/><path d=\"M240,70 L240,210\" class=\"dg-line dg-dashed\"/><path d=\"M60,210 L240,70\" class=\"dg-line\"/><path d=\"M240,70 C290,72 330,150 380,196 L500,204\" class=\"dg-line\"/><path d=\"M240,70 L500,70\" class=\"dg-line dg-dashed\"/><text x=\"66\" y=\"24\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Goodput</text><text x=\"290\" y=\"238\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Offered load</text><text x=\"240\" y=\"226\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">capacity</text><text x=\"400\" y=\"150\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">collapse without</text><text x=\"400\" y=\"164\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">load shedding</text><text x=\"400\" y=\"56\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">with shedding: holds</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can follow a lost cache into a retry loop with numbers.",
+      "steps": [
+        {
+          "step": "Start with the paper's example",
+          "explanation": "A database handles 300 requests per second. A cache with a 90% hit rate lets the service take 3,000 requests per second, because only the 10% that miss, 300 per second, reach the database. The retry steps below are our simplified illustration."
+        },
+        {
+          "step": "Notice it runs at its limit",
+          "explanation": "The design is efficient and vulnerable at the same time: the database is at its limit whenever the cache is working."
+        },
+        {
+          "step": "The cache fails",
+          "explanation": "All 3,000 requests per second now reach a database that can finish 300. That is ten times its capacity, so replies slow down and pass the callers' timeouts."
+        },
+        {
+          "step": "Callers retry",
+          "explanation": "Say each caller retries twice. The paper notes that a policy of at most two retries cannot amplify work more than three times, so the database can see up to 9,000 attempts per second, 30 times what it can finish."
+        },
+        {
+          "step": "The cache returns, the failure stays",
+          "explanation": "The cache is cold, and the database queue is full of requests whose callers have left. Retries keep the queue full, so goodput stays near zero."
+        },
+        {
+          "step": "Break the loop",
+          "explanation": "Cut or pause traffic well below 3,000 per second, cap the retries, let the cache warm, then raise the load in stages."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-oc-ex-t\" class=\"dg\"><title id=\"dg-oc-ex-t\">A database that handles 300 requests per second behind a cache with a 90 percent hit rate: normally it sees 300, after the cache is lost it sees 3,000, and with two retries per caller it can see up to 9,000.</title><defs><marker id=\"dg-oc-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"24\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">1  Normal</text><rect x=\"14\" y=\"30\" width=\"150\" height=\"46\" class=\"dg-box\"/><text x=\"89.0\" y=\"49.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Clients</text><text x=\"89.0\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">3,000 requests/s</text><rect x=\"205\" y=\"30\" width=\"150\" height=\"46\" class=\"dg-box\"/><text x=\"280.0\" y=\"49.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Cache answers</text><text x=\"280.0\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">90% of them</text><rect x=\"396\" y=\"30\" width=\"150\" height=\"46\" class=\"dg-box\"/><text x=\"471.0\" y=\"49.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Database sees</text><text x=\"471.0\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">300/s: at its limit</text><path d=\"M164,53 L205,53\" class=\"dg-line\" marker-end=\"url(#dg-oc-ex-a)\"/><path d=\"M355,53 L396,53\" class=\"dg-line\" marker-end=\"url(#dg-oc-ex-a)\"/><text x=\"14\" y=\"112\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">2  Cache lost</text><rect x=\"14\" y=\"118\" width=\"150\" height=\"46\" class=\"dg-box\"/><text x=\"89.0\" y=\"137.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Clients</text><text x=\"89.0\" y=\"153.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">3,000 requests/s</text><rect x=\"205\" y=\"118\" width=\"150\" height=\"46\" class=\"dg-box\"/><text x=\"280.0\" y=\"137.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Cache is gone,</text><text x=\"280.0\" y=\"153.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">answers nothing</text><rect x=\"396\" y=\"118\" width=\"150\" height=\"46\" class=\"dg-box\"/><text x=\"471.0\" y=\"137.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Database sees</text><text x=\"471.0\" y=\"153.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">3,000/s: 10x limit</text><path d=\"M164,141 L205,141\" class=\"dg-line\" marker-end=\"url(#dg-oc-ex-a)\"/><path d=\"M355,141 L396,141\" class=\"dg-line\" marker-end=\"url(#dg-oc-ex-a)\"/><text x=\"14\" y=\"200\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">3  Timeouts, retries</text><rect x=\"14\" y=\"206\" width=\"150\" height=\"46\" class=\"dg-box\"/><text x=\"89.0\" y=\"225.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Each caller retries</text><text x=\"89.0\" y=\"241.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">twice</text><rect x=\"205\" y=\"206\" width=\"150\" height=\"46\" class=\"dg-box\"/><text x=\"280.0\" y=\"225.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Calls time out,</text><text x=\"280.0\" y=\"241.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">retries pile on</text><rect x=\"396\" y=\"206\" width=\"150\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"471.0\" y=\"225.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Database sees</text><text x=\"471.0\" y=\"241.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">up to 9,000/s</text><path d=\"M164,229 L205,229\" class=\"dg-line\" marker-end=\"url(#dg-oc-ex-a)\"/><path d=\"M355,229 L396,229\" class=\"dg-line\" marker-end=\"url(#dg-oc-ex-a)\"/><text x=\"280\" y=\"288\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Bringing the cache back does not drain the retries already queued.</text></svg>"
+    },
+    "mistakesOutcome": "After this you can spot three ways teams make an overload worse.",
+    "checkOutcome": "After this you can test your grasp of goodput, retry loops and recovery.",
+    "quiz": [
+      {
+        "question": "A service is at its limit and its replies start to arrive after the client timeout. What happens to goodput?",
+        "options": [
+          "It stays the same, because the server is still working as hard as it was before the timeouts began",
+          "It falls, because late replies cannot be used and the work behind them is wasted",
+          "It rises, because every request that timed out gets another chance through the callers' retries",
+          "It cannot be known until the traffic drops back to its normal level again"
+        ],
+        "correct": 1,
+        "why": "A reply that arrives after the caller gave up counts for nothing, so the server spends effort and goodput falls even while throughput stays high.",
+        "wrong": [
+          "It does not stay the same: the server is busy, but busy is not useful, and goodput counts only replies the caller can still use.",
+          "",
+          "It does not rise: retries add load, so they lower the share of requests that finish in time instead of raising it.",
+          "It can be known during the overload: goodput can be measured from the replies that arrive in time."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "In a metastable failure, which part is the sustaining effect?",
+        "options": [
+          "The traffic peak, lost cache or slow network link that started the overload in the first place",
+          "The alert that pages the on-call engineer",
+          "The load balancer that routes the requests",
+          "A feedback loop, such as retries, that keeps the system overloaded after the trigger ends"
+        ],
+        "correct": 3,
+        "why": "The sustaining effect is the loop itself, which is why the system stays down once the trigger is gone.",
+        "wrong": [
+          "The traffic peak, lost cache or slow link is the trigger, and it can be over while the failure goes on.",
+          "The alert only reports the failure; it does not cause or hold it.",
+          "A load balancer may be involved, but routing requests is not what defines the sustaining effect.",
+          ""
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "Which change most directly limits retry amplification?",
+        "options": [
+          "A retry budget with randomized backoff, so failed calls cannot multiply without limit",
+          "A longer client timeout, so fewer requests are counted as failed",
+          "Retrying at once, so errors clear sooner"
+        ],
+        "correct": 0,
+        "why": "A budget caps the total extra requests and backoff spreads them out, so a small error does not become a flood.",
+        "wrong": [
+          "",
+          "A longer client timeout holds callers' resources longer and hides the overload instead of reducing the load.",
+          "Retrying at once makes the retries arrive together at the moment the server is weakest."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "A database that can finish 300 requests per second sits behind a cache, and 3,000 requests per second arrive. The cache fails and every caller retries twice. About how many attempts per second can reach the database?",
+        "options": [
+          "300, the database's own limit",
+          "3,000, the load before any retries",
+          "9,000, three attempts for each request",
+          "30,000, ten attempts for each request, if every one fails"
+        ],
+        "correct": 2,
+        "why": "Each of the 3,000 requests can become three attempts, so up to 9,000 per second reach a database that can finish 300.",
+        "wrong": [
+          "300 is the database's limit, not what reaches it.",
+          "3,000 is the load before any retries are added.",
+          "",
+          "30,000 would need ten attempts per request, which is many more than two retries per caller."
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "Slack's trigger was an AWS Transit Gateway that did not scale fast enough. Why did adding 1,200 servers not restore capacity quickly?",
+        "options": [
+          "The new servers were too small to take any of the load",
+          "Slack's load balancers refused to accept any new instance",
+          "Provision-service, working over the same degraded network, hit the Linux open files limit and an AWS quota, so most new instances never became ready"
+        ],
+        "correct": 2,
+        "why": "The tool that prepares new instances was itself overloaded, so the scale-up produced many instances that were not serving.",
+        "wrong": [
+          "The size of the new servers is not the problem; the post does not describe it as one.",
+          "The load balancers did not refuse new instances; the post reports no such refusal, and the instances were never fully provisioned.",
+          ""
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "What does a load balancer's panic mode do, as Slack used it during recovery?",
+        "options": [
+          "It spreads requests across all instances when many are failing health checks",
+          "It stops sending any traffic to the service until every health check passes again",
+          "It sends all traffic to one standby site that is kept ready for failures",
+          "It adds new instances to the pool until the failing health checks pass"
+        ],
+        "correct": 0,
+        "why": "When most health checks fail because of a sick network, trusting them would leave almost no instances in rotation, so panic mode uses all of them.",
+        "wrong": [
+          "",
+          "Panic mode does not stop traffic; that would turn a degraded service into an outage.",
+          "Panic mode does not send traffic to a standby site; it changes which instances are used.",
+          "Panic mode does not add instances; that is the job of provisioning, which was the broken part."
+        ],
+        "teaches": "how"
+      }
+    ],
+    "postsOutcome": "After this you can read how Slack, GitHub and a research team saw overload grow and persist.",
+    "differOutcome": "After this you can say where each account found the amplifier and how strong its evidence is.",
+    "exercisesOutcome": "After this you can calculate retry multiplication, plan a recovery and prepare for a predictable peak.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A gateway retries a failed call up to 3 times, and the frontend behind it also retries up to 3 times. The backend is overloaded and failing every request. How many attempts can one user action cause at the backend, and what would you change?",
+        "answer": "Each layer makes up to 4 attempts (the first plus 3 retries), and the layers multiply, so one action can cause 16 attempts at the backend. Retry at one layer only, give each process a retry budget, use randomized backoff, and return a clear overloaded status that callers do not retry.",
+        "tradeoffs": "Fewer retries means some short blips show up as errors to users. A budget keeps most of the benefit of retrying and removes the multiplication.",
+        "wrongAnswers": [
+          "Raise the retry count so more requests eventually succeed.",
+          "Retry faster so the backend recovers sooner.",
+          "Add more retry layers so each one is simpler."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "design",
+        "prompt": "A service went down at a traffic peak. Traffic is back to normal an hour later but the service is still failing, and graphs show queues full and retries high. Give the first three things you do, in order.",
+        "answer": "First, confirm the loop: check retry rates and queue depth against normal traffic. Second, cut load below what the service can finish, by rejecting or pausing callers at the edge, or, as GitHub did, blocking inbound token requests from the retrying clients at the load balancers with a 403, and lower retry limits. Third, bring traffic back in stages, site by site or in percentages, while caches and connections warm up.",
+        "tradeoffs": "Cutting traffic causes visible errors for users, but a partial recovery that collapses again costs more. Restarting everything at once or only adding servers can make a cold-cache loop worse.",
+        "wrongAnswers": [
+          "Wait, since the peak is over.",
+          "Restart every server at the same moment.",
+          "Add servers and keep traffic at full volume."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "level": "scale",
+        "prompt": "Your traffic jumps from its quietest time of the year to one of its biggest days, as Slack's did after the holidays, and parts of your stack are managed by a cloud provider. What do you do ahead of that day?",
+        "answer": "Find every scaling limit that is not under your control (managed network components, quotas, instance limits) and ask for higher limits before the day. Load test the path that creates capacity, not only the serving path, at more than you expect to need. Keep monitoring off the shared path, and decide in advance which traffic to shed first.",
+        "tradeoffs": "Early capacity and larger tests cost money all year for one day of benefit. The alternative is to rely on automatic scaling, which Slack's gateways showed can be too slow for a jump this large.",
+        "wrongAnswers": [
+          "Trust the provider's automatic scaling, since it is managed.",
+          "Test only the serving path, since that is what users see.",
+          "Raise the autoscaling maximum and change nothing else."
+        ],
+        "teaches": "why"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick a related topic to read next.",
+      "body": "Related topics: Circuit Breakers and Rate Limiting are the defences this topic leans on. Failover covers moving traffic to another site or replica when a part fails, which is also how an overload can spread to the site that receives the traffic. Idempotency and Retries goes deeper on making retried requests safe to repeat."
+    }
+  },
+  "posts": [
+    {
+      "id": "slack-jan-4-outage-2021",
+      "title": "Slack's Outage on January 4th 2021",
+      "url": "https://slack.engineering/slacks-outage-on-january-4th-2021/",
+      "company": "Slack",
+      "verifiedOn": "2026-10-16",
+      "published": "2021-02-01",
+      "ageNote": "From February 2021. It is here for fundamentals that do not depend on Slack's current setup: how a recovery path can overload itself, and what a load balancer panic mode does. The post does not say whether provision-service, the health checks or the autoscaling settings have changed since, so treat the details as Slack's setup in 2021.",
+      "related": [
+        "load-balancing"
+      ],
+      "digest": {
+        "problem": "On the first working day of 2021, error rates at Slack crept up during the Americas morning, and then the dashboard and alerting service went down too. A partly broken cloud network made calls from the web tier to its backends slow. At the 7am PST mini-peak, when reminders and automated messages arrive at the top of the hour, the web tier saturated and Slack became unavailable. Trying to add capacity then hit the limits of the tool that creates it.",
+        "constraints": "Responders had to debug without their usual dashboards, using internal consoles, command line tools, logs and direct queries to the metrics backends. The network was still unhealthy during the repair, so every call between systems was slower than normal. Slack's yearly traffic is unusual: very quiet over the holidays, then one of its biggest days when everyone returns and client caches are cold.",
+        "walkthrough": [
+          {
+            "step": "The network degrades",
+            "explanation": "One of the AWS Transit Gateways that links Slack's VPCs became overloaded and dropped packets. Calls from the web tier to its backends took longer, which tied up web tier resources."
+          },
+          {
+            "step": "The mini-peak tips the web tier over",
+            "explanation": "Slack scales for the traffic spikes at the top and middle of each hour. The 7am spike on top of packet loss saturated the web tier, and Slack went down."
+          },
+          {
+            "step": "Automation reacts in two directions",
+            "explanation": "Instances that could not reach their backends were marked unhealthy and replaced. Separately, the autoscaler first scaled down, because waiting threads lowered CPU use, then scaled up sharply as worker thread use rose. Scale-down also ended responders' SSH sessions, so it was switched off."
+          },
+          {
+            "step": "The scale-up fails",
+            "explanation": "The autoscaler tried to add 1,200 servers between 7:01am and 7:15am PST. Provision-service, which configures and tests new instances, talked to its dependencies over the same bad network. It hit the Linux open files limit and an AWS quota, so most new instances were never ready to serve."
+          },
+          {
+            "step": "Broken instances use up the headroom",
+            "explanation": "The pile of unfinished instances reached the autoscaling group size limits, which were set as multiples of normal peak need. Responders cleared them while others kept chasing the network. The dashboard service could not be re-created either, because provision-service was overloaded."
+          },
+          {
+            "step": "Panic mode and recovery",
+            "explanation": "Provision-service was working again around 8:15am PST. Load balancers saw a very high rate of failed health checks, but they have a panic mode that spreads requests across all instances when many fail. With retries and circuit breaking, that got Slack to degraded rather than down by around 9:15am PST. AWS then found the gateway saturation and raised capacity by hand."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-oc-slack-t\" class=\"dg\"><title id=\"dg-oc-slack-t\">Slack on January 4th 2021: a saturated cloud network gateway made the web tier wait, the autoscaler asked for 1,200 servers, the provisioning service hit its limits, most new instances never served, and load balancer panic mode brought Slack back to degraded.</title><defs><marker id=\"dg-oc-slack-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"24\" width=\"160\" height=\"60\" class=\"dg-box\"/><text x=\"94.0\" y=\"50.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Transit Gateway</text><text x=\"94.0\" y=\"66.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">drops packets</text><rect x=\"200\" y=\"24\" width=\"160\" height=\"60\" class=\"dg-box\"/><text x=\"280.0\" y=\"50.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Web tier waits,</text><text x=\"280.0\" y=\"66.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">saturates at 7:00</text><rect x=\"386\" y=\"24\" width=\"160\" height=\"60\" class=\"dg-box\"/><text x=\"466.0\" y=\"50.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Autoscaler asks for</text><text x=\"466.0\" y=\"66.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">1,200 servers</text><rect x=\"386\" y=\"134\" width=\"160\" height=\"60\" class=\"dg-box dg-accent\"/><text x=\"466.0\" y=\"160.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">provision-service</text><text x=\"466.0\" y=\"176.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">hits two limits</text><rect x=\"200\" y=\"134\" width=\"160\" height=\"60\" class=\"dg-box\"/><text x=\"280.0\" y=\"160.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Most new instances</text><text x=\"280.0\" y=\"176.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">never serve traffic</text><rect x=\"14\" y=\"134\" width=\"160\" height=\"60\" class=\"dg-box\"/><text x=\"94.0\" y=\"160.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Panic mode: balance</text><text x=\"94.0\" y=\"176.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">across all instances</text><path d=\"M174,54 L200,54\" class=\"dg-line\" marker-end=\"url(#dg-oc-slack-a)\"/><path d=\"M360,54 L386,54\" class=\"dg-line\" marker-end=\"url(#dg-oc-slack-a)\"/><path d=\"M466,84 L466,134\" class=\"dg-line\" marker-end=\"url(#dg-oc-slack-a)\"/><path d=\"M386,164 L360,164\" class=\"dg-line\" marker-end=\"url(#dg-oc-slack-a)\"/><path d=\"M200,164 L174,164\" class=\"dg-line\" marker-end=\"url(#dg-oc-slack-a)\"/><text x=\"280\" y=\"230\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Trigger: AWS raised the gateway capacity by hand; the network was normal by 10:40am PST.</text></svg>",
+        "numbers": [
+          {
+            "value": "1,200 servers",
+            "meaning": "Instances the autoscaler tried to add to the web tier between 7:01am and 7:15am PST"
+          },
+          {
+            "value": "99%",
+            "meaning": "Share of Slack messages sent successfully at 6.57am PST (the post writes the time that way), already well below normal"
+          },
+          {
+            "value": "over 99.999%",
+            "meaning": "Slack's usual message-send success rate, per the post"
+          },
+          {
+            "value": "two separate resource bottlenecks",
+            "meaning": "Limits provision-service hit: the Linux open files limit, the most significant, and an AWS quota"
+          },
+          {
+            "value": "around 8:15am PST",
+            "meaning": "When provision-service was back in operation and healthy instances began to enter service"
+          },
+          {
+            "value": "10:40am PST",
+            "meaning": "When AWS's capacity change had rolled out across all Availability Zones and error rates and latency returned to normal"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Run the dashboard and alerting service in the same VPC as its databases, so it does not depend on the Transit Gateways. Load test provision-service regularly, review health-checking and autoscaling settings so they do not overload it again, and request an early capacity increase for the gateways at the end of the next holiday season.",
+          "why": "Monitoring has to keep working when other things fail, and the scale-up path had never been tested at this size. The gateways are managed by AWS and were meant to scale on their own, but they did not scale fast enough for a jump from the quietest to one of the busiest days of the year."
+        },
+        "failures": "The trigger was a limit in a managed cloud network component, not a retry storm. The damage grew in the response: scale-down interrupted debugging, the scale-up exhausted the provisioning service, broken instances used up group size limits, and the monitoring service sat behind the same sick network it was meant to watch.",
+        "takeaways": "A recovery path is part of the system and can be overloaded by the same event. Test it at larger scale than you expect to need, keep monitoring off the shared failing path, and know what your load balancer does when most health checks fail."
+      }
+    },
+    {
+      "id": "github-aug-17-outage-2026",
+      "title": "The August 17 outage, and the work ahead",
+      "url": "https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/",
+      "company": "GitHub",
+      "verifiedOn": "2026-10-16",
+      "published": "2026-08-20",
+      "related": [
+        "idempotency-and-retries"
+      ],
+      "digest": {
+        "problem": "On August 17, 2026, GitHub was degraded or down for 7 hours and 47 minutes. A new traffic peak outgrew a critical component in its Central US data center. The resulting capacity pressure spread, causing authentication failures and disrupting github.com, Actions, APIs, pull requests, issues and Copilot. Most services came back first, but some Copilot services took longer.",
+        "constraints": "GitHub says neither this outage nor the one on August 6 came from a code or configuration change. Both were capacity failures: critical components were not scaled before demand reached them. Monthly commits had grown from 1.4 billion to 2.9 billion since April. The detail in this digest about request rates comes from GitHub's incident thread for the outage, which the blog post links to for the full root cause analysis.",
+        "walkthrough": [
+          {
+            "step": "A component fails to scale",
+            "explanation": "Traffic reached a new peak and a critical piece of infrastructure in Central US did not scale with it. The blog post gives no more detail; the incident thread names an Istio sidecar that hit its concurrency limit and did not autoscale because the policy watched the host service and not the sidecar."
+          },
+          {
+            "step": "Pressure spreads",
+            "explanation": "According to the thread, load balancer network saturation followed, and eventually four HAProxy nodes exhausted their flow limits, which slowed the gateway authentication path. Optimistic retry logic then overloaded internal load balancers. Pausing HAProxy on those nodes at once brought broad recovery."
+          },
+          {
+            "step": "Traffic is rerouted and staged back",
+            "explanation": "Teams rerouted traffic, isolated affected infrastructure and restored services in stages. The thread says some traffic moved from Central US to Northern Virginia in the meantime."
+          },
+          {
+            "step": "Clients keep the overload alive",
+            "explanation": "Errors in some Copilot services started a client-side retry loop that raised traffic during recovery, and GitHub had to stop that behaviour before restoring traffic safely. The thread puts Copilot Token Service traffic at 70K to 100K requests per second against a normal 7K to 9K, and says a latent VS Code retry bug amplified traffic by about ten times."
+          },
+          {
+            "step": "Mitigation",
+            "explanation": "The thread lists temporarily reducing gateway retries with a code change, blocking token requests at the load balancers with a 403, and ramping traffic back up site by site so callers could succeed."
+          },
+          {
+            "step": "Follow-up changes",
+            "explanation": "GitHub says it will apply consistent retry limits, retry budgets and variable timeouts between services, and review lower-priority CPU and memory alerts for components that could fail in a sudden spike. Its larger plan adds capacity, speeds the move to Azure and removes shared dependencies between critical systems."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-oc-gh-t\" class=\"dg\"><title id=\"dg-oc-gh-t\">GitHub on August 17 2026: a traffic peak outgrew a component in Central US, load balancers saturated and authentication slowed, some traffic was rerouted to Northern Virginia, a latent VS Code client retry bug sent Copilot Token Service traffic to 70K to 100K requests per second, and recovery needed retries cut, token requests blocked with a 403 and traffic ramped back site by site.</title><defs><marker id=\"dg-oc-gh-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"24\" width=\"160\" height=\"60\" class=\"dg-box\"/><text x=\"94.0\" y=\"50.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Peak outgrows a</text><text x=\"94.0\" y=\"66.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Central US component</text><rect x=\"200\" y=\"24\" width=\"160\" height=\"60\" class=\"dg-box\"/><text x=\"280.0\" y=\"50.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Load balancers</text><text x=\"280.0\" y=\"66.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">saturate, auth slows</text><rect x=\"386\" y=\"24\" width=\"160\" height=\"60\" class=\"dg-box\"/><text x=\"466.0\" y=\"50.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Some traffic is</text><text x=\"466.0\" y=\"66.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">rerouted to N. Virginia</text><rect x=\"386\" y=\"134\" width=\"160\" height=\"60\" class=\"dg-box dg-accent\"/><text x=\"466.0\" y=\"160.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">VS Code retry bug:</text><text x=\"466.0\" y=\"176.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">70K to 100K RPS</text><rect x=\"200\" y=\"134\" width=\"160\" height=\"60\" class=\"dg-box\"/><text x=\"280.0\" y=\"160.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Cut retries, block</text><text x=\"280.0\" y=\"176.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">token calls with 403</text><rect x=\"14\" y=\"134\" width=\"160\" height=\"60\" class=\"dg-box\"/><text x=\"94.0\" y=\"160.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Ramp traffic back</text><text x=\"94.0\" y=\"176.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">site by site</text><path d=\"M174,54 L200,54\" class=\"dg-line\" marker-end=\"url(#dg-oc-gh-a)\"/><path d=\"M360,54 L386,54\" class=\"dg-line\" marker-end=\"url(#dg-oc-gh-a)\"/><path d=\"M466,84 L466,134\" class=\"dg-line\" marker-end=\"url(#dg-oc-gh-a)\"/><path d=\"M386,164 L360,164\" class=\"dg-line\" marker-end=\"url(#dg-oc-gh-a)\"/><path d=\"M200,164 L174,164\" class=\"dg-line\" marker-end=\"url(#dg-oc-gh-a)\"/><text x=\"280\" y=\"230\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The client retry bug lifted token traffic from a normal 7K to 9K RPS (GitHub incident thread).</text></svg>",
+        "numbers": [
+          {
+            "value": "7 hours and 47 minutes",
+            "meaning": "How long the August 17 outage lasted, per the blog post"
+          },
+          {
+            "value": "70–100K RPS",
+            "meaning": "Copilot Token Service traffic during the retry loop, against a normal 7–9K RPS; from GitHub's incident thread (community discussion 205164), not the blog post"
+          },
+          {
+            "value": "approximately 10x",
+            "meaning": "Traffic amplification from a latent VS Code retry bug, per the same incident thread, not the blog post"
+          },
+          {
+            "value": "approximately 20%",
+            "meaning": "Peak error rate for web and API traffic, per the incident thread; archive and raw-content downloads reached about 50%"
+          },
+          {
+            "value": "1.4 billion to 2.9 billion",
+            "meaning": "Growth in monthly commits since April, which GitHub says explains the pressure but does not excuse the outage"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Consistent retry limits, retry budgets and variable timeouts across service-to-service calls, plus faster capacity growth and fewer shared dependencies between critical systems.",
+          "why": "GitHub's own account is that the failure was about capacity that was not added in time, and that retries turned a recovery into a second overload. The blog post names no alternative it weighed."
+        },
+        "failures": "The first failure was a scaling gap, but recovery stalled on the clients: a failed Copilot token call could produce many extra requests and enter a loop, so traffic could not simply be restored. The thread also notes scraping attacks on codeload endpoints as a complicating factor.",
+        "takeaways": "Retries that are fine in small numbers become load that blocks recovery at scale. Put limits and budgets on them before an incident, and expect to restore traffic gradually, one site at a time, instead of all at once."
+      }
+    },
+    {
+      "id": "metastable-failures-osdi-2022",
+      "title": "Metastable Failures in the Wild",
+      "url": "https://www.usenix.org/system/files/osdi22-huang-lexiang.pdf",
+      "company": "Twitter",
+      "verifiedOn": "2026-10-16",
+      "published": "2022-07-11",
+      "ageNote": "This is a research paper, not a company blog post: the 2022 OSDI paper by authors at The Pennsylvania State University, the University of New Hampshire and Twitter. It is here for a fundamental that does not depend on any one system: how overload can sustain itself after its trigger is gone. The incident reports it studies are from 2011 to 2021, and the paper does not claim they describe those systems today.",
+      "digest": {
+        "problem": "Bronson and colleagues had described metastable failures, a kind of overload that persists after the trigger ends, using simplified examples from Facebook. The authors of this paper ask how common the pattern is by reading hundreds of public incident reports from cloud providers and smaller companies.",
+        "constraints": "Incident reports differ in format and detail, so the authors had to use judgment, and they mark the cases where the report is unclear. Their sample is limited to outages that were severe enough to get a public report.",
+        "walkthrough": [
+          {
+            "step": "Define the states",
+            "explanation": "A system is stable when it recovers from temporary overload, vulnerable when it handles high load only while nothing goes wrong, and metastable when a sustaining effect keeps it overloaded with very low goodput after the trigger has gone."
+          },
+          {
+            "step": "Why systems sit in the vulnerable state",
+            "explanation": "It is efficient. The paper's example is a database that handles 300 requests per second behind a cache with a 90% hit rate, which lets the service take 3,000 requests per second. A cache failure then sends the database up to 3,000 requests per second when it can finish 300."
+          },
+          {
+            "step": "Study real incidents",
+            "explanation": "Table 1 lists 21 failures from public reports across AWS, Google, Azure, IBM and smaller projects, and a 22nd comes from inside Twitter. The authors record the services hit, the trigger, the sustaining effect and the mitigation for each."
+          },
+          {
+            "step": "Sort triggers and amplifiers",
+            "explanation": "A trigger either adds load (a spike) or removes capacity (a lost rack, inefficient code). The amplification is either extra work (retries, queue growth) or lost capacity (such as garbage collection taking CPU). At Twitter, queueing raised memory pressure and mark-and-sweep work, which slowed jobs further."
+          },
+          {
+            "step": "Find the common recovery",
+            "explanation": "Fixing the trigger is the first instinct, and usually not enough. The system has to be pushed below its stable level by shedding load, by changing policy to cap amplification, or by adding capacity. A policy of at most two retries cannot amplify work more than three times, while an uncapped policy leaves no stable region."
+          },
+          {
+            "step": "Reproduce it",
+            "explanation": "The authors built three example applications that show different metastable failures in a controlled setting and released them as open source."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 240\" role=\"img\" aria-labelledby=\"dg-oc-meta-t\" class=\"dg\"><title id=\"dg-oc-meta-t\">The metastable failure model: a system runs in a stable state, then a vulnerable state where it is efficient but exposed, and a trigger such as a load spike or lost capacity can tip it into a metastable state that a sustaining effect keeps in place after the trigger ends.</title><defs><marker id=\"dg-oc-meta-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"36\" width=\"160\" height=\"60\" class=\"dg-box\"/><text x=\"94.0\" y=\"62.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Stable:</text><text x=\"94.0\" y=\"78.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">recovers from spikes</text><rect x=\"200\" y=\"36\" width=\"160\" height=\"60\" class=\"dg-box\"/><text x=\"280.0\" y=\"62.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Vulnerable: fine</text><text x=\"280.0\" y=\"78.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">until a trigger</text><rect x=\"386\" y=\"36\" width=\"160\" height=\"60\" class=\"dg-box dg-accent\"/><text x=\"466.0\" y=\"62.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Metastable: stays</text><text x=\"466.0\" y=\"78.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">down after trigger</text><path d=\"M174,66 L200,66\" class=\"dg-line\" marker-end=\"url(#dg-oc-meta-a)\"/><path d=\"M360,66 L386,66\" class=\"dg-line\" marker-end=\"url(#dg-oc-meta-a)\"/><text x=\"187\" y=\"24\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">run hot for efficiency</text><text x=\"373\" y=\"24\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">load spike or lost capacity</text><rect x=\"200\" y=\"140\" width=\"160\" height=\"52\" class=\"dg-box\"/><text x=\"280.0\" y=\"162.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Sustaining effect:</text><text x=\"280.0\" y=\"178.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">retries, queues, GC</text><path d=\"M466,96 L466,118 L360,118 L360,140\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-oc-meta-a)\"/><text x=\"280\" y=\"222\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Recovery: shed load below the stable level, cap amplification, or add capacity.</text></svg>",
+        "numbers": [
+          {
+            "value": "22 failures from 11 organizations",
+            "meaning": "The in-depth study; Table 1 lists 21 from public reports"
+          },
+          {
+            "value": "at least 4 of 15",
+            "meaning": "Major Amazon Web Services outages in the last decade that the paper attributes to metastable failures"
+          },
+          {
+            "value": "4.17 hours",
+            "meaning": "Duration of the Google incident dated 03/12/19 in Table 1 (load spike and config change, cascading overload, mitigated by load shedding and stopping a config deploy)"
+          },
+          {
+            "value": "21.5 hours",
+            "meaning": "Duration of the Google Compute Engine incident dated 10/31/19 in Table 1 (software bug, sustained by retries, mitigated by load shedding, reboots and more capacity)"
+          },
+          {
+            "value": "more than 50%",
+            "meaning": "Share of the studied incidents in which retries were the sustaining effect, the most common one"
+          },
+          {
+            "value": "1.5 to 73.53 hours",
+            "meaning": "Range of outage durations the paper reports in its text; Table 1 also lists shorter ones, and 4 to 10 hours is the most common among the incidents that report a duration"
+          },
+          {
+            "value": "300 RPS, 90%, 3,000 RPS",
+            "meaning": "The paper's example: a database limit, a cache hit rate, and the load the service then takes"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A model with two trigger types and two amplification types, built from public incident reports, then reproduced in three example applications.",
+          "why": "Public reports lack the detail to prove a cause, so the authors flag unclear cases, add one first-hand case from Twitter, and check the model by reproducing the failures."
+        },
+        "failures": "Rolling back or hot-fixing a trigger often did not end an incident, because the sustaining effect kept the system down. Without understanding the loop, operators found it hard to tell how much load to shed, which led to long mitigations and extra damage such as server reboots.",
+        "takeaways": "Look for the loop, not only the trigger. Retries are the most common sustaining effect, so cap them, and plan recovery as a way to get load below the stable level, then raise it in steps."
+      }
+    }
+  ],
+  "comparison": "GitHub's account and the paper describe overload as a loop, not a single break: work that is wasted or repeated adds load, and that load causes more waste. Slack's account shows an amplifier in the recovery path instead, and its outage eased once provision-service was fixed. In all three, something built to help made things worse: Slack's scale-up, GitHub's retrying clients and the retry policies the paper finds in more than half of its cases.\n\nThey differ in where the amplifier sat. At Slack it was in the recovery path: the service that creates servers was overloaded by the demand for servers, over a network that was already unhealthy. At GitHub it was in the callers: a failed token call produced more calls, so restoring traffic had to be done in stages. The paper steps back from single incidents and sorts triggers (load spikes or lost capacity) from sustaining effects (retries, queue growth, garbage collection).\n\nThe evidence is of different kinds. Slack and GitHub are first-hand accounts of single incidents, and Slack's trigger was a limit in a cloud network component, so its lesson is about the recovery path. GitHub's request-rate figures come from its incident thread, not the blog post. The paper works from public reports and says where it had to use judgment because details were missing.",
+  "glossary": [
+    {
+      "term": "Goodput",
+      "definition": "The part of the traffic a system handles correctly and fast enough for the caller to use. Throughput counts every request, goodput counts only the useful ones."
+    },
+    {
+      "term": "Cascading failure",
+      "definition": "A failure that grows by positive feedback, where one part failing raises the chance that other parts fail."
+    },
+    {
+      "term": "Metastable failure",
+      "definition": "An overload that a feedback loop keeps going after the trigger that started it has ended."
+    },
+    {
+      "term": "Sustaining effect",
+      "definition": "The feedback loop, such as retries or growing queues, that holds a system in an overloaded state."
+    },
+    {
+      "term": "Retry budget",
+      "definition": "A cap on how many retries a client or service may send in a period, so failed calls cannot multiply without limit."
+    },
+    {
+      "term": "Panic mode",
+      "definition": "A load balancer setting that spreads requests across all instances when many are failing health checks, instead of trusting the checks."
+    }
+  ],
+  "mistakes": [
+    "Treating the trigger as the whole cause. Rolling back a change or waiting for a peak to end does not help once retries or a growing queue are keeping the system overloaded.",
+    "Retrying without limits. Retries at several layers multiply, and retries without randomized delay tend to arrive together. Set a budget and back off with jitter.",
+    "Using the failing path to recover. Slack's provisioning service shared the sick network and hit its own limits when asked for 1,200 servers, so recovery tools need their own capacity and tests at larger scale."
+  ]
+}
