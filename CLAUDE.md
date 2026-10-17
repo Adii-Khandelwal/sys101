@@ -20,16 +20,15 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 
 ## Future plan (topics to add next)
 
-Researched in Oct 2026 and revised after the owner review; the site has 33 topics (batches 1 and 2 are merged; batch 3 shipped `disaster-recovery-and-backups` and `stream-vs-batch-processing`; batch 4 has `probabilistic-data-structures` and `api-design-rpc-rest-graphql`; `exactly-once-processing` waits for a second company source; the map layout fix in `chooseLayers` is what lets both coexist). Full sources, figures and risks are in `docs/roadmap.md` (read it only when planning a topic; every figure there still goes through `add-post`). Order, each topic with at most 3 prerequisites so the map layout test stays clean (test the placement on a stub first, `add-topic` step 1). Each source appears in one place only.
+Researched in Oct 2026 and revised after the owner review. Status on 17 Oct 2026: the site has 33 topics and one capstone. Batches 1 to 3 are merged. Batch 4 has shipped `probabilistic-data-structures` and `api-design-rpc-rest-graphql`; the Notion 2026 reindexing post is on `indexing`. The capstone page type (`/capstones`, `/capstone/<slug>`, `.claude/rules/capstones.md`) is built with the metrics pipeline capstone (PRs #51, #52 and #53, the home tour step, all merged). Glossary terms now appear inline in lesson text with popovers (`topic-pages.md`). Full sources, figures and risks are in `docs/roadmap.md` (read it only when planning a topic; every figure there still goes through `add-post`). Each topic has at most 3 prerequisites so the map layout test stays clean (test the placement on a stub first, `add-topic` step 1; the `chooseLayers` fix lets short columns shift). Each source appears in one place only.
 
-1. Batch 1 (merged; prerequisites were trimmed to keep the map clean): `overload-and-cascading-failures` (weakest: look for a retry-amplification post), `safe-deployments`, `object-storage`, `real-time-delivery`.
-2. Batch 2 (built on `batch-2-topics`, awaiting merge; each has one prerequisite and `autoscaling-and-capacity` is titled "Capacity", because the map layout test fails with more edges or a longer label): `log-based-streaming` (CDC is a section), `autoscaling-and-capacity`, `time-clocks-and-consistency` (consistency models merged in).
-3. Batch 3: `stream-vs-batch-processing`, `disaster-recovery-and-backups`, `exactly-once-processing` (only after a second company source).
-4. Batch 4: `probabilistic-data-structures`, `api-design-rpc-rest-graphql`, `service-mesh-and-api-gateways`, `online-schema-migrations`.
-5. Parked, no passing source yet: `observability-and-slos`, `multi-region-traffic-routing`. Search is not a new node: add the Notion 2026 reindexing post to the existing `indexing` topic (an `add-post` task).
-6. Capstones after batch 1 and 2: metrics pipeline, file sync (needs one more source), payments ledger, social graph store (TAO); chat needs sources of its own (Slack 2023 belongs to `real-time-delivery`); later: notifications, live video; ride dispatch not ready.
+Still to do:
 
-Go-live bar for an announcement: batches 1 and 2 (seven new topics); add the chat capstone once it has sources. Post rule 4 as decided by the owner: papers by teams that ran the system, MongoDB Atlas and the CrowdStrike RCA count; Confluent and Debezium are explanation only.
+1. Batch 4 remainder: `service-mesh-and-api-gateways` (nothing after 2018) and `online-schema-migrations` (would fit as 'Schema Migrations', 1 prerequisite `databases`; gh-ost and Stripe posts have no numbers, so it waits for a source with numbers).
+2. Parked until a source passes: `observability-and-slos`, `multi-region-traffic-routing`, `exactly-once-processing` (needs a second company source).
+3. Capstones: file sync (needs one more source), payments ledger, social graph store (TAO); chat needs sources of its own (Slack 2023 belongs to `real-time-delivery`); later notifications and live video; ride dispatch not ready. Each new capstone is a content JSON plus research.
+
+Go-live bar for an announcement is met for topics (batches 1 and 2); add the chat capstone once it has sources. Post rule 4 as decided by the owner: papers by teams that ran the system, MongoDB Atlas and the CrowdStrike RCA count; Confluent and Debezium are explanation only.
 
 ## Where the detail lives (`.claude/rules/`)
 

@@ -1,5 +1,7 @@
 # Future topics roadmap
 
+> Status 17 Oct 2026: batches 1 to 3 merged, plus probabilistic-data-structures and api-design-rpc-rest-graphql from batch 4 (33 topics), the Notion post on indexing, and the metrics pipeline capstone. Open: service-mesh, online-schema-migrations, the parked topics, and the other capstones. The text below is the original research and is not rewritten.
+
 > Research plan from October 2026, not verified content. The posts and figures below come from research notes read through fetch tools and some Wayback copies. Before any of them goes into a topic file, run the `add-post` skill (raw-page figure check, exact-URL grep against `content/topics/*.json`, logo check). Revised after the owner review and a second research pass (Oct 2026). Read this file only when planning or choosing the next topic; the short version is in CLAUDE.md "Future plan".
 
 # Seven topics are ready to build next

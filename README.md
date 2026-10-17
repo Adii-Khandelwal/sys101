@@ -41,6 +41,10 @@ It is one person's learning project, built in the open.
   <img src="docs/readme/learn-light.png" alt="The Start from zero page for DNS: a list of stages down the left, then the title, a note that it is built only from official sources, and three terms to know before starting." width="100%">
 </picture>
 
+**Put it together.** Capstones at `/capstones` combine finished topics into one system, starting with a metrics pipeline: decide first, size it with a calculator, click through the diagram, break it, compare with the real design, then a quiz. Each shows which of its topics you have read.
+
+**Terms in place.** The first use of a topic's own terms in each section opens a short definition, with a link to the Glossary.
+
 **Progress stays in your browser.** There are no accounts and nothing is sent to a server. You can export, import or reset what you have marked on the Your data page.
 
 ---
