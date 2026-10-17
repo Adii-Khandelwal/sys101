@@ -1,0 +1,458 @@
+{
+  "slug": "api-design-rpc-rest-graphql",
+  "title": "API Design",
+  "group": "Messaging",
+  "concept": "An API is the contract between a service and the callers that depend on it. Choosing a style decides who controls the shape of the data and what the wire format costs: RPC with a schema and binary encoding, REST with resources and HTTP, or GraphQL where the caller names the fields. A contract that works for years also needs rules for change and limits that match the work each call causes.",
+  "prerequisites": [
+    "idempotency-and-retries"
+  ],
+  "summary": {
+    "points": [
+      "An API is a contract, and the style you pick decides whether the service author, the server or the caller controls the shape of the data.",
+      "LinkedIn swapped JSON for Protobuf under its Rest.li endpoints and used symbol tables to give schema fields the numbers Protobuf needs.",
+      "Shopify prices a GraphQL query from its structure before running it, so a limit follows the work a request causes.",
+      "Stripe keeps old callers working by pinning each account to a dated version and translating responses back from the current shape."
+    ],
+    "figures": [
+      {
+        "postId": "protobuf-restli-linkedin-2023",
+        "row": 1,
+        "label": "up to 60% reduction in latency and 8% improvement in resource utilization"
+      },
+      {
+        "postId": "graphql-cost-shopify-2021",
+        "row": 0,
+        "label": "clients receive 50 points per second up to a limit of 1,000 points"
+      },
+      {
+        "postId": "api-versioning-stripe-2017",
+        "row": 0,
+        "label": "maintained compatibility with every version of our API since the company's inception in 2011"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "idempotency-and-retries": "A contract is only useful if callers can retry against it safely, so you need to know what makes a repeated call harmless before designing one."
+  },
+  "lesson": {
+    "why": {
+      "outcome": "After this you can say what choosing RPC, REST or GraphQL decides, and why keeping an API stable matters as much as the first design.",
+      "body": "A service that works only for its author is not yet an API. The moment other teams or customers write code against it, the shape of the requests and responses becomes a promise. Three questions follow from that. How do callers ask for data, how do you change the promise without breaking them, and how do you stop one caller from using more than its share?\n\nThe three common styles answer the first question in different ways. RPC, such as gRPC with Protobuf, presents the service as named procedures with a schema file, and the wire format is compact binary. REST presents resources at URLs and uses the standard HTTP verbs, with the server deciding what each resource looks like. GraphQL gives one endpoint where the caller writes a query that names the fields it wants.\n\nThe three posts here each take one of the other questions. LinkedIn changed the encoding under 50,000+ endpoints from JSON to Protobuf and saw lower latency. Shopify priced GraphQL queries by their structure instead of charging per request. Stripe, in a 2017 post, explained how it has kept compatibility with every version of its API since 2011. This topic follows Idempotency and Retries, because a contract is only useful if callers can retry against it safely."
+    },
+    "mentalModel": {
+      "outcome": "After this you can describe the three styles in one picture and say who decides the response shape in each.",
+      "body": "Think of the three styles as three answers to one question: who decides the shape of the data?\n\nIn RPC the service author does. A schema file lists the procedures, their inputs and outputs, and tools generate client and server code from it. The binary format keeps messages small and fast to encode, and each field is identified by a number, which is what lets the format stay compact. The cost is that the bytes are not readable by eye, and a browser cannot call it without help.\n\nIn REST the server also decides, but through resources: a URL names a thing and the HTTP verbs act on it. Because it uses plain HTTP, caches, proxies and logs already understand it. The cost shows up when a screen needs a bit of several resources, or only a few fields of one, and the client must make several calls or take more than it needs.\n\nIn GraphQL the caller decides. One query can reach across several related objects and return only the named fields. That moves the cost to the server, because two queries that look alike can do very different amounts of work, so the server has to price a query before it runs it.\n\nAcross all three, the schema or the documented shape is the contract. Adding to it is safe. Renaming or removing something breaks whoever depends on it.",
+      "diagram": "<svg viewBox=\"0 0 560 236\" role=\"img\" aria-labelledby=\"dg-api-model-t\" class=\"dg\"><title id=\"dg-api-model-t\">Three API styles side by side. RPC calls a named procedure defined in a schema file and sends compact binary. REST exposes a URL per resource with standard HTTP verbs and the server decides the response shape. GraphQL has one endpoint where the client names the exact fields it wants, so the server must price each query.</title><defs><marker id=\"dg-api-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"10\" y=\"20\" width=\"170\" height=\"150\" class=\"dg-box\"/><text x=\"95\" y=\"44\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">RPC (gRPC)</text><text x=\"95\" y=\"72\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">call GetProfile(id)</text><text x=\"95\" y=\"92\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">schema file defines it</text><text x=\"95\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">compact binary</text><rect x=\"195\" y=\"20\" width=\"170\" height=\"150\" class=\"dg-box\"/><text x=\"280\" y=\"44\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">REST</text><text x=\"280\" y=\"72\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">GET /profiles/42</text><text x=\"280\" y=\"92\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">server picks the fields</text><text x=\"280\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">URLs and HTTP caches</text><rect x=\"380\" y=\"20\" width=\"170\" height=\"150\" class=\"dg-box\"/><text x=\"465\" y=\"44\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">GraphQL</text><text x=\"465\" y=\"72\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">one endpoint, one query</text><text x=\"465\" y=\"92\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">client names the fields</text><text x=\"465\" y=\"112\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">cost follows the query</text><rect x=\"10\" y=\"188\" width=\"540\" height=\"36\" class=\"dg-box\"/><text x=\"280\" y=\"211\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Who decides the shape of the data?</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can follow a long-lived API through its contract, encoding, evolution and limits, and say what each layer is for.",
+      "steps": [
+        {
+          "step": "Write the contract as a schema",
+          "explanation": "The schema lists the types, fields and operations. In RPC it is a schema file, in GraphQL it is the type system, and in REST it is usually a description of the resources and their fields. Everything else follows from it."
+        },
+        {
+          "step": "Pick an encoding for the wire",
+          "explanation": "JSON is text, readable and understood in every language, but verbose and slow to turn into objects. A binary format such as Protobuf is smaller and quicker to encode, and it identifies fields by number instead of by name. Choosing it is a cost-and-readability trade, so it is worth measuring on real traffic."
+        },
+        {
+          "step": "Change the contract by adding",
+          "explanation": "A new field or a new endpoint does not break callers that never knew about it. A rename, a removal or a change of type does, because callers have written code that expects the old shape."
+        },
+        {
+          "step": "Put breaking changes behind a version",
+          "explanation": "When a breaking change is needed, the caller is pinned to the shape it first used, and the change goes live in a newer dated version that the caller opts into. The server keeps older shapes working by translating from the current one."
+        },
+        {
+          "step": "Limit by the work a call causes",
+          "explanation": "A limit that counts requests treats a small read and a heavy one the same. In GraphQL the server can analyse the query before it runs and give it a cost, then take that cost out of a bucket that refills over time."
+        },
+        {
+          "step": "Roll changes out gradually",
+          "explanation": "A change that touches every caller, such as a new encoding, is easier to trust if clients opt in through configuration first. The team can fix bugs and check gains while only a few calls use the new path."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-api-how-t\" class=\"dg\"><title id=\"dg-api-how-t\">Four layers of a long-lived API. A schema is the contract. The encoding turns the contract into bytes. Versioning or additive-only changes let the contract grow without breaking old clients. Limits stop one client from using too much of the server.</title><defs><marker id=\"dg-api-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"16\" width=\"250\" height=\"60\" class=\"dg-box dg-accent\"/><text x=\"145\" y=\"42\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">1. Schema is the contract</text><text x=\"145\" y=\"60\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">fields, types, names</text><rect x=\"290\" y=\"16\" width=\"250\" height=\"60\" class=\"dg-box\"/><text x=\"415\" y=\"42\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">2. Encoding</text><text x=\"415\" y=\"60\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">JSON text or Protobuf binary</text><rect x=\"20\" y=\"112\" width=\"250\" height=\"60\" class=\"dg-box\"/><text x=\"145\" y=\"138\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">3. Evolution</text><text x=\"145\" y=\"156\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">add fields, pin versions</text><rect x=\"290\" y=\"112\" width=\"250\" height=\"60\" class=\"dg-box dg-accent\"/><text x=\"415\" y=\"138\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">4. Limits</text><text x=\"415\" y=\"156\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">requests or query cost</text><path d=\"M270,46 L288,46\" class=\"dg-line\" marker-end=\"url(#dg-api-how-a)\"/><path d=\"M145,76 L145,110\" class=\"dg-line\" marker-end=\"url(#dg-api-how-a)\"/><path d=\"M270,142 L288,142\" class=\"dg-line\" marker-end=\"url(#dg-api-how-a)\"/><text x=\"280\" y=\"224\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Change the encoding and the clients still read the same contract</text><text x=\"280\" y=\"244\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Break the contract and every client that pinned the old shape breaks</text><text x=\"280\" y=\"276\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">A client sends a request; every layer above applies to that one call</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can price a GraphQL query and decide whether a change to a response is safe.",
+      "steps": [
+        {
+          "step": "A screen needs five products",
+          "explanation": "A client asks for the first five products and a few plain fields of each, such as a title and a price. Under Shopify's rules the connection costs 2 points plus the objects expected back, and each object costs 1 point. The scalar fields cost nothing. Five objects cost 7."
+        },
+        {
+          "step": "The bucket decides how often",
+          "explanation": "With a bucket that refills 50 points per second up to 1,000, a client could send a burst of queries that each cost 7 until the bucket runs low, then continue at a pace the refill allows. About 142 such queries fit in a burst from a full bucket, then about 7 a second; that arithmetic is ours, not a figure from the post."
+        },
+        {
+          "step": "Fewer results than asked for",
+          "explanation": "If the client asks for five but only one product matches, the real cost is lower than the 7 it was priced at. Shopify refunds the difference, so the client pays for what came back, not for the page size it asked for."
+        },
+        {
+          "step": "A change to the response",
+          "explanation": "Say the product response gains a new field called subtitle. Existing clients ignore it, so nothing breaks. Say instead that the team renames title to name. Any client reading title now fails. That change goes behind a new dated version, with a translation back to title for clients pinned to the earlier one."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-api-ex-t\" class=\"dg\"><title id=\"dg-api-ex-t\">A GraphQL query for five products. Under Shopify's rules the connection costs 2 points and each of the five objects costs 1 point, so the query is priced at 7 before it runs. The price comes out of a bucket that refills at 50 points per second up to 1,000.</title><defs><marker id=\"dg-api-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"20\" width=\"230\" height=\"100\" class=\"dg-box\"/><text x=\"135\" y=\"44\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">products(first: 5)</text><text x=\"135\" y=\"68\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">connection: 2 points</text><text x=\"135\" y=\"86\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">5 objects, 1 point each</text><text x=\"135\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">scalars and enums: 0</text><rect x=\"310\" y=\"20\" width=\"230\" height=\"100\" class=\"dg-box dg-accent\"/><text x=\"425\" y=\"44\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Priced at 7 points</text><text x=\"425\" y=\"68\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">taken from a bucket that refills</text><text x=\"425\" y=\"86\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">at 50 points per second</text><text x=\"425\" y=\"104\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">up to a cap of 1,000</text><path d=\"M252,70 L308,70\" class=\"dg-line\" marker-end=\"url(#dg-api-ex-a)\"/><rect x=\"20\" y=\"150\" width=\"520\" height=\"60\" class=\"dg-box\"/><text x=\"280\" y=\"176\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Static analysis prices the query before any database work starts</text><text x=\"280\" y=\"196\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">A request that asks for more data pays more, so the cost follows the load</text></svg>"
+    },
+    "mistakesOutcome": "After this you can name the usual ways an API choice or change goes wrong.",
+    "checkOutcome": "After this you can tell which API change is safe, what a symbol table is for and how a query cost is calculated.",
+    "quiz": [
+      {
+        "question": "A mobile screen needs three fields of a profile, but the REST endpoint returns thirty. What does GraphQL change about this?",
+        "options": [
+          "The server compresses the response so the thirty fields cost less to send",
+          "The client names the three fields it wants, so the server returns only those",
+          "The client stops needing a schema at all, because the server works out for itself what each screen wants"
+        ],
+        "correct": 1,
+        "why": "In GraphQL the query lists the fields, so the shape is decided by the client and the response carries only those fields.",
+        "wrong": [
+          "Compression does not change which fields are returned; GraphQL changes who chooses them.",
+          "",
+          "GraphQL needs a typed schema, and the client query is checked against it."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "Why did LinkedIn need symbol tables to move Rest.li from JSON to Protobuf?",
+        "options": [
+          "Rest.li schemas name fields but have no numbers, and Protobuf writes fields by number",
+          "Protobuf cannot carry strings at all, so every field name in every message had to be turned into a number first",
+          "JSON needs a table for every request, and Protobuf removes that step"
+        ],
+        "correct": 0,
+        "why": "Protobuf needs explicit field numbers and Rest.li's modeling language had none, so a two-way mapping from names to integers filled that gap while keeping the existing model.",
+        "wrong": [
+          "",
+          "Protobuf carries strings fine; the problem was field identity, not string content.",
+          "JSON writes field names in text and needs no table, which is part of why it is larger."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "LinkedIn rolled Protobuf out by asking clients to opt in through configuration. What did that buy?",
+        "options": [
+          "Every service switched on the same day, so no service ever had to run two formats side by side",
+          "No change to server code, since clients alone decide the format",
+          "Bugs could be fixed and gains checked while the ramp grew, with few people disrupted"
+        ],
+        "correct": 2,
+        "why": "A client config chose Protobuf or JSON, so the ramp could stay small until the results looked right and then grow to all of LinkedIn.",
+        "wrong": [
+          "A config ramp means both formats run side by side for a while; that is the cost of the safe route.",
+          "Servers also had to be upgraded to support Protobuf first; the config only chose when to use it.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Under Shopify's cost rules, what does a query for five objects in a connection cost?",
+        "options": [
+          "Seven points, two for the connection plus one for each of the five objects",
+          "Five points, because each of the five objects costs one point and nothing else is charged",
+          "Zero points, because scalar fields are free"
+        ],
+        "correct": 0,
+        "why": "The connection costs two plus the objects expected to come back, so five objects cost seven.",
+        "wrong": [
+          "",
+          "That leaves out the cost of the connection itself.",
+          "Scalars and enums are free inside an object, but the objects and the connection still cost points."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Which change to an existing API is safe for clients that already exist, going by Stripe's description?",
+        "options": [
+          "Replace a boolean field with a richer status field in the same response and tell users",
+          "Add a new field that was never present before",
+          "Rename a field to a clearer name and drop the old one"
+        ],
+        "correct": 1,
+        "why": "Stripe says it is safe to add a new endpoint or a new field that was never present. Removing or renaming a field breaks code that read it.",
+        "wrong": [
+          "Stripe describes its 2014 move from a verified boolean to a status field as a backwards-incompatible change.",
+          "",
+          "Fields that were present should stay present with the same name and type."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "A team ships an RPC service and wants a client call to be safe to retry. Where does the contract for this come from?",
+        "options": [
+          "The wire format itself, because a Protobuf message can always be sent a second time without effect",
+          "The transport, because gRPC deduplicates calls on its own",
+          "The operation itself, which has to be designed so repeating it has the same effect"
+        ],
+        "correct": 2,
+        "why": "Retrying is safe only when the operation is idempotent, which is a property of the API design that the previous topic covers, whatever the format.",
+        "wrong": [
+          "A binary format changes how bytes are laid out, not what repeating a charge does.",
+          "A transport can retry calls but cannot know whether doing the work twice is harmless.",
+          ""
+        ],
+        "teaches": "why"
+      }
+    ],
+    "postsOutcome": "After this you can read how LinkedIn changed its encoding, how Shopify priced GraphQL queries and how Stripe versions its API, with each source's figures.",
+    "differOutcome": "After this you can say what each post changes about an API and why the three answers do not compete.",
+    "exercisesOutcome": "After this you can pick a style, a way to change the contract and a way to limit use for a given API.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "Your public API returns a bank account with a boolean field called verified. The product team wants to show states such as pending, verified and failed. What do you do, and what do existing clients see?",
+        "answer": "Add a new status field with the new states and keep verified in responses for existing callers. For callers pinned to an older version, derive verified from status. Publish the change as a new dated version, so new callers get status and old callers see no difference.",
+        "tradeoffs": "Keeping both fields means more code and tests for as long as old versions live. Replacing the field outright is cleaner for you and breaks every caller that reads it, which is the change Stripe describes making in 2014.",
+        "wrongAnswers": [
+          "Replace verified with status and announce it, which breaks every client that reads the old field.",
+          "Change verified from a boolean to a string, which breaks callers that check it as true or false."
+        ],
+        "teaches": "example"
+      },
+      {
+        "level": "design",
+        "prompt": "A mobile app and a partner dashboard both read order data. The mobile app wants three fields and the dashboard wants everything and sometimes pulls a thousand orders. Which style and which limit would you use?",
+        "answer": "Offer a GraphQL endpoint so each client names its own fields, and price queries from their structure before running them, with a refilling bucket per client. A page-size cap keeps a connection from asking for an unbounded number of objects. The dashboard pays more per query than the mobile app, which matches the work it causes.",
+        "tradeoffs": "GraphQL gives up easy HTTP caching by URL and needs analysis to price queries. A plain REST API with two endpoints is simpler to cache and run, but clients get either too much or too little. If both clients are your own, a shared REST endpoint with a fields option may be enough.",
+        "wrongAnswers": [
+          "Limit by request count, which treats a three-field read and a thousand-order pull the same.",
+          "Let clients query with no cost check and rely on timeouts, which lets a single query take the capacity of many."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "scale",
+        "prompt": "Internal service-to-service traffic grows 10x and JSON encoding shows up in your profiles. How would you move to a binary format across hundreds of services without a freeze?",
+        "answer": "Upgrade the shared library first so every service can read both formats, then switch callers one at a time with a client setting that picks the format and tells the server which format to answer in. Watch latency and errors per service as the share of Protobuf calls grows, and roll back a client by flipping its setting. If your schema has no field numbers, generate a mapping from names to numbers and publish it with each build, keeping it append-only.",
+        "tradeoffs": "Binary payloads are harder to read in logs and need tooling to debug. You carry both formats until the ramp ends, and a new encoding only pays off where serialization is a real share of the time, so measure before and after.",
+        "wrongAnswers": [
+          "Switch every service in one release, which leaves no way back if one of them breaks.",
+          "Renumber fields when the schema changes, which makes old clients read the wrong fields."
+        ],
+        "teaches": "model"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "Go back to Idempotency and Retries to see why a safe-to-repeat operation is part of the contract. Rate Limiting covers the request-count models that Shopify compares with its cost model. The Blogs and Great reads pages hold more write-ups on API design."
+    }
+  },
+  "posts": [
+    {
+      "id": "protobuf-restli-linkedin-2023",
+      "title": "LinkedIn Integrates Protocol Buffers With Rest.li for Improved Microservices Performance",
+      "url": "https://www.linkedin.com/blog/engineering/infrastructure/linkedin-integrates-protocol-buffers-with-rest-li-for-improved-m",
+      "company": "LinkedIn",
+      "verifiedOn": "2026-10-17",
+      "published": "2023-04-11",
+      "digest": {
+        "problem": "LinkedIn's Rest.li framework used JSON as its default format across a very large number of internal endpoints. JSON was readable and well supported, but turning it into objects was slow and its text payloads were large, which showed up in performance profiles.",
+        "constraints": "The replacement had to be compact, fast to encode and decode, supported in all the languages Rest.li is used in, and easy to plug into the existing serialization mechanism and data modeling. It also had to roll out to every service without disrupting developers.",
+        "walkthrough": [
+          {
+            "step": "Set criteria and compare formats",
+            "explanation": "The team looked for compact payloads, efficient serialization, wide language support and an easy fit with Rest.li. It evaluated Protobuf, Flatbuffers, Cap'n'Proto, SMILE, MessagePack, CBOR and Kryo, and chose Protobuf."
+          },
+          {
+            "step": "Close the field number gap",
+            "explanation": "Protobuf identifies fields by number, and Rest.li's modeling language has no way to give fields numbers. The team invented symbol tables, a two-way mapping from field names and enum values to integers, and used it with runtime type information to behave like a Protobuf schema."
+          },
+          {
+            "step": "Generate the tables two ways",
+            "explanation": "Between services, the table is generated at startup in a fixed order, exposed on a symbolTable endpoint and cached by clients. For web and mobile apps, a build plugin writes the table in append-only mode and publishes it with the build, which avoids latency at app startup."
+          },
+          {
+            "step": "Ramp with client configuration",
+            "explanation": "After shipping support in the library and bumping all services to it, the team asked clients through configuration to send Protobuf or to prefer it in responses. That let it fix bugs, validate gains and grow to all of LinkedIn with little disruption."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-api-li-t\" class=\"dg\"><title id=\"dg-api-li-t\">LinkedIn's Rest.li payloads move from JSON to Protobuf. Field names in the schema are mapped to integer numbers through a symbol table, which is generated at service startup and fetched by clients from a symbolTable endpoint, while web and mobile apps get an append-only table baked into the build. Clients opt in through a configuration, so the rollout is gradual.</title><defs><marker id=\"dg-api-li-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"30\" width=\"150\" height=\"60\" class=\"dg-box\"/><text x=\"95\" y=\"56\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><text x=\"95\" y=\"74\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">encodes with Protobuf</text><rect x=\"210\" y=\"30\" width=\"150\" height=\"60\" class=\"dg-box dg-accent\"/><text x=\"285\" y=\"56\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Symbol table</text><text x=\"285\" y=\"74\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">field name and number</text><rect x=\"400\" y=\"30\" width=\"140\" height=\"60\" class=\"dg-box\"/><text x=\"470\" y=\"56\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Rest.li services</text><text x=\"470\" y=\"74\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">50,000+ endpoints</text><path d=\"M172,60 L208,60\" class=\"dg-line\" marker-end=\"url(#dg-api-li-a)\"/><path d=\"M362,60 L398,60\" class=\"dg-line\" marker-end=\"url(#dg-api-li-a)\"/><rect x=\"20\" y=\"130\" width=\"520\" height=\"90\" class=\"dg-box\"/><text x=\"280\" y=\"154\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Two ways to get the table</text><text x=\"280\" y=\"176\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Service to service: built at startup, fetched, cached</text><text x=\"280\" y=\"194\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Web and mobile apps: append-only table published with each build</text><text x=\"280\" y=\"212\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">Ramp: a client config chooses Protobuf or JSON per client</text></svg>",
+        "numbers": [
+          {
+            "value": "50,000+",
+            "meaning": "Rest.li API endpoints used in production at LinkedIn"
+          },
+          {
+            "value": "up to 60%",
+            "meaning": "Improvement in latency for services with large payloads"
+          },
+          {
+            "value": "8%",
+            "meaning": "Improvement in resource utilization"
+          },
+          {
+            "value": "6.25%",
+            "meaning": "Average per-host throughput increase for response payloads"
+          },
+          {
+            "value": "1.77%",
+            "meaning": "Average per-host throughput increase for request payloads"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Protobuf with generated symbol tables, kept behind Rest.li's existing serialization layer and ramped with client configuration.",
+          "rejected": "Flatbuffers, Cap'n'Proto, SMILE, MessagePack, CBOR and Kryo, which were evaluated, and further tuning of JSON, which kept being a bottleneck.",
+          "why": "Protobuf did best against the team's criteria, and symbol tables let services keep their existing data modeling."
+        },
+        "failures": "The post names no incident. It notes that JSON is easier to read and debug, and says the team saw no statistically significant degradation against JSON in any service.",
+        "takeaways": "Changing the wire format can be hidden behind the same schema and rolled out by configuration. The post says LinkedIn plans to move from Rest.li to gRPC later, so the figures describe the Protobuf step, not that move."
+      }
+    },
+    {
+      "id": "graphql-cost-shopify-2021",
+      "title": "Rate Limiting GraphQL APIs by Calculating Query Complexity",
+      "url": "https://shopify.engineering/rate-limiting-graphql-apis-calculating-query-complexity",
+      "company": "Shopify",
+      "verifiedOn": "2026-10-17",
+      "published": "2021-06-22",
+      "ageNote": "This post is from 2021. It is here for a fundamental that does not depend on one product: pricing a request by the work it causes instead of counting requests. The point values are the ones the post gives, and the post does not say whether Shopify still uses them.",
+      "digest": {
+        "problem": "Request-based rate limiting, as used in the Shopify REST API, charges the same credits for each request no matter how much data it needs. Reads and writes also cost the same although they put different load on the servers.",
+        "constraints": "The limit had to protect the platform from clients that loop or burst, reflect the load a request really causes, and be calculable from the query itself so that clients can predict it.",
+        "walkthrough": [
+          {
+            "step": "Analyse the query before running it",
+            "explanation": "The server does static analysis on the GraphQL query before executing it. By identifying each type used in the query, it can calculate a cost without touching the database."
+          },
+          {
+            "step": "Price each kind of field",
+            "explanation": "An object is the base unit at one point, since it usually stands for one server-side operation. Scalars and enums cost nothing because they live inside objects already counted. A connection costs two plus the number of objects it expects to return, so five objects cost seven."
+          },
+          {
+            "step": "Spend from a bucket",
+            "explanation": "Clients receive 50 points per second, up to a limit of 1,000 points, and each query takes its cost from that."
+          },
+          {
+            "step": "Refund the difference",
+            "explanation": "If fewer records come back than the query asked for, the difference between the requested and actual cost is refunded to the client."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-api-sh-t\" class=\"dg\"><title id=\"dg-api-sh-t\">Two rate limiting models. The request-based model used by the Shopify REST API charges the same credits per request whatever data the client needs. The calculated query cost model for GraphQL prices each query from its structure before running it, with objects at 1 point, scalars at 0 and connections at 2 plus the objects expected, in a bucket that refills 50 points per second up to 1,000.</title><defs><marker id=\"dg-api-sh-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"20\" width=\"250\" height=\"110\" class=\"dg-box\"/><text x=\"145\" y=\"44\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">REST: request credits</text><text x=\"145\" y=\"70\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">one request, one charge</text><text x=\"145\" y=\"88\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">same charge for a small read</text><text x=\"145\" y=\"106\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">or a large one</text><rect x=\"290\" y=\"20\" width=\"250\" height=\"110\" class=\"dg-box dg-accent\"/><text x=\"415\" y=\"44\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">GraphQL: query cost</text><text x=\"415\" y=\"70\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">object 1, scalar 0</text><text x=\"415\" y=\"88\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">connection 2 + objects expected</text><text x=\"415\" y=\"106\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">5 objects in a connection = 7</text><rect x=\"20\" y=\"156\" width=\"520\" height=\"56\" class=\"dg-box\"/><text x=\"280\" y=\"180\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Bucket of 1,000 points, refilled at 50 points per second</text><text x=\"280\" y=\"198\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Unused cost is refunded when fewer records come back</text></svg>",
+        "numbers": [
+          {
+            "value": "50 points per second",
+            "meaning": "Rate at which clients receive points for calculated query cost"
+          },
+          {
+            "value": "1,000 points",
+            "meaning": "Upper limit of the points a client can hold"
+          },
+          {
+            "value": "1 point",
+            "meaning": "Cost of an object, the base unit"
+          },
+          {
+            "value": "2 plus objects expected",
+            "meaning": "Cost of a connection, so five objects cost seven"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Cost calculated from the query's structure, with a refilling bucket and a refund for unused cost.",
+          "rejected": "Request-based credits, which charge the same regardless of how much data a client needs.",
+          "why": "A cost that follows the data requested gives a more predictable load for servers and encourages clients to ask only for what they need."
+        },
+        "failures": "The post names no incident. It says the cost is proportional to server load measured by execution time, and that outliers in that link are used to find places to optimize.",
+        "takeaways": "A limit works best when it counts the work a call causes. GraphQL makes that possible because the query states what it will touch before it runs."
+      }
+    },
+    {
+      "id": "api-versioning-stripe-2017",
+      "title": "APIs as infrastructure: future-proofing Stripe with versioning",
+      "url": "https://stripe.com/blog/api-versioning",
+      "company": "Stripe",
+      "verifiedOn": "2026-10-17",
+      "published": "2017-08-05",
+      "ageNote": "This post is from 2017. It is here for a fundamental that does not depend on the tools of the year: a published API is a contract, and breaking it breaks other people's code. The post itself says Stripe expected to keep supporting versioning schemes for a long time. The details of Stripe's current system may differ.",
+      "digest": {
+        "problem": "Code written against an API expects its fields to stay where they are. Many businesses rely on Stripe as infrastructure, so breaking changes would be costly for them, yet the API still has to improve over time.",
+        "constraints": "Stay compatible with every version of the API since the company's start in 2011, let users upgrade when convenient, and keep the cost of old versions from slowing work on new features.",
+        "walkthrough": [
+          {
+            "step": "Separate safe from unsafe changes",
+            "explanation": "Adding an endpoint or a new field is safe. Removing a field or changing its name or type breaks callers. Stripe's example is a 2014 move from a verified boolean to a status field."
+          },
+          {
+            "step": "Pin each account to a dated version",
+            "explanation": "Versions are rolling and named with their release date. The first time a user makes a request, their account is pinned to the newest version, and a request can override the version with a header."
+          },
+          {
+            "step": "Write breaking changes as modules",
+            "explanation": "The API formats a response in the current shape. It then walks back through version change modules, each holding one backwards-incompatible change, until it reaches the target version."
+          },
+          {
+            "step": "Keep old versions out of the main path",
+            "explanation": "Because each module is self-contained, developers can mostly avoid thinking about old versions. Modules also carry documentation that is reused to build a changelog and annotate the reference for each account."
+          },
+          {
+            "step": "Review changes early",
+            "explanation": "Outgoing changes go through a light API review and are sent to a mailing list, to get the design right the first time and use versions less."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 270\" role=\"img\" aria-labelledby=\"dg-api-st-t\" class=\"dg\"><title id=\"dg-api-st-t\">Stripe response versioning. The API formats a response at the current version, then walks back through dated version change modules until it reaches the version the account is pinned to. Each module holds one breaking change, so old behaviour stays out of the main code path.</title><defs><marker id=\"dg-api-st-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"20\" width=\"150\" height=\"56\" class=\"dg-box\"/><text x=\"95\" y=\"44\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Current shape</text><text x=\"95\" y=\"62\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">written once</text><rect x=\"205\" y=\"20\" width=\"150\" height=\"56\" class=\"dg-box\"/><text x=\"280\" y=\"44\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Change module</text><text x=\"280\" y=\"62\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">newer date</text><rect x=\"390\" y=\"20\" width=\"150\" height=\"56\" class=\"dg-box\"/><text x=\"465\" y=\"44\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Change module</text><text x=\"465\" y=\"62\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">older date</text><path d=\"M172,48 L203,48\" class=\"dg-line\" marker-end=\"url(#dg-api-st-a)\"/><path d=\"M357,48 L388,48\" class=\"dg-line\" marker-end=\"url(#dg-api-st-a)\"/><rect x=\"205\" y=\"116\" width=\"335\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"372\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Response in the pinned version</text><text x=\"372\" y=\"158\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">for example, a verified boolean again</text><path d=\"M465,78 L465,114\" class=\"dg-line\" marker-end=\"url(#dg-api-st-a)\"/><rect x=\"20\" y=\"116\" width=\"150\" height=\"56\" class=\"dg-box\"/><text x=\"95\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Account</text><text x=\"95\" y=\"158\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">pinned on first call</text><path d=\"M172,144 L203,144\" class=\"dg-line\" marker-end=\"url(#dg-api-st-a)\"/><text x=\"280\" y=\"206\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Adding a field is safe. Renaming or removing one goes behind a new dated version.</text><text x=\"280\" y=\"228\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">Stripe has kept compatibility with every version since 2011</text></svg>",
+        "numbers": [
+          {
+            "value": "2011",
+            "meaning": "Year of the company's start, with compatibility kept for every API version since"
+          },
+          {
+            "value": "2014",
+            "meaning": "Year Stripe replaced a verified boolean with a status field"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Rolling dated versions, accounts pinned on first use, and version change modules that translate a response back.",
+          "rejected": "Major versions with a prefixed path, which make upgrades so painful that they are close to re-integrating from scratch.",
+          "why": "Each rolling version holds a small set of changes, so incremental upgrades stay easy, and the old behaviour is contained."
+        },
+        "failures": "The post says compatibility is not free: every version is more code to maintain, and changes with side effects can leak out of their module. Stripe says it expects to retire old versions eventually.",
+        "takeaways": "Treat the API as a contract from day one, make versioning part of the design and keep old behaviour in contained modules."
+      }
+    }
+  ],
+  "comparison": "The three posts do not choose the same layer. LinkedIn changes the encoding under an API, from JSON to Protobuf, without changing what the schema says. Shopify changes how an API is limited, using the shape of a GraphQL query as the measure of work. Stripe changes how an API is allowed to change, with dated versions and translation modules. All three keep callers working while something underneath moves.\n\nThey diverge in who pays. LinkedIn's gains come at the cost of readability and a mapping from names to numbers that must be kept consistent. Shopify's cost model needs analysis of every query and gives clients a number to reason about. Stripe pays in code: every version is more to understand and maintain, which is why it tries to get designs right the first time.\n\nThe evidence is each post's own figures: LinkedIn reports up to 60% lower latency for services with large payloads and no significant degradation in any service, Shopify prices five objects at seven points against a 1,000-point bucket, and Stripe reports compatibility with every version since 2011. The Stripe post is from 2017 and says nothing about LinkedIn's or Shopify's scale, so the three show different levers, not a ranking of the styles.",
+  "glossary": [
+    {
+      "term": "RPC",
+      "definition": "A style where a client calls a named procedure on a service as if it were a local function, usually with a schema that defines the inputs and outputs."
+    },
+    {
+      "term": "gRPC",
+      "definition": "An RPC framework that uses Protobuf for its schemas and messages."
+    },
+    {
+      "term": "Protobuf",
+      "definition": "A binary encoding that identifies each field by a number defined in a schema, which keeps messages small."
+    },
+    {
+      "term": "REST",
+      "definition": "A style where each resource has a URL and clients use standard HTTP verbs on it, with the server deciding the response shape."
+    },
+    {
+      "term": "GraphQL",
+      "definition": "A query language and type system where the client writes a query naming the exact fields it wants from one endpoint."
+    },
+    {
+      "term": "Connection",
+      "definition": "A GraphQL field that returns a list of related objects, such as the products in a store."
+    },
+    {
+      "term": "Symbol table",
+      "definition": "A two-way mapping between field names and integer numbers, used so a schema without field numbers can be encoded with Protobuf."
+    },
+    {
+      "term": "Backwards-incompatible change",
+      "definition": "A change that breaks code written against the old shape, such as removing or renaming a field."
+    },
+    {
+      "term": "Pinned version",
+      "definition": "The API version an account is fixed to until it chooses to upgrade."
+    }
+  ],
+  "mistakes": [
+    "Renaming or removing a field in place. Callers that read it break, so add the new field, keep the old one for pinned callers and put the removal behind a new version.",
+    "Limiting a GraphQL API by request count. One query can ask for one object or a thousand, so a count says little about load; price the query from its structure.",
+    "Switching a wire format everywhere at once. Let clients opt in through configuration, watch the numbers and keep a way back until the ramp is done."
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "api-design-rpc-rest-graphql": {
+    "summary": {
+      "points": [
+        "An API is a contract, and the style you pick decides whether the service author, the server or the caller controls the shape of the data.",
+        "LinkedIn swapped JSON for Protobuf under its Rest.li endpoints and used symbol tables to give schema fields the numbers Protobuf needs.",
+        "Shopify prices a GraphQL query from its structure before running it, so a limit follows the work a request causes.",
+        "Stripe keeps old callers working by pinning each account to a dated version and translating responses back from the current shape."
+      ],
+      "figures": [
+        { "postId": "protobuf-restli-linkedin-2023", "row": 1, "label": "up to 60% reduction in latency and 8% improvement in resource utilization" },
+        { "postId": "graphql-cost-shopify-2021", "row": 0, "label": "clients receive 50 points per second up to a limit of 1,000 points" },
+        { "postId": "api-versioning-stripe-2017", "row": 0, "label": "maintained compatibility with every version of our API since the company's inception in 2011" }
+      ]
+    },
+    "prerequisiteReasons": {
+      "idempotency-and-retries": "A contract is only useful if callers can retry against it safely, so you need to know what makes a repeated call harmless before designing one."
+    }
+  }
+}

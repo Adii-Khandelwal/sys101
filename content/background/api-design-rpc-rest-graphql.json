@@ -1,0 +1,130 @@
+{
+  "topic": "api-design-rpc-rest-graphql",
+  "updatedOn": "2026-10-17",
+  "items": [
+    {
+      "id": "json-vs-binary-serialization",
+      "name": "Text formats such as JSON versus binary formats",
+      "explanation": "JSON writes data as readable text, so it is easy to debug but verbose to send and slower to encode and decode. A binary format such as protocol buffers writes compact bytes that people cannot read directly, and both sides need to agree on the schema.",
+      "assumedBy": [
+        {
+          "postId": "protobuf-restli-linkedin-2023",
+          "quote": "While JSON has served us well in terms of broad programming language support and human-readability (which eases debuggability), its runtime performance has been far from ideal."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Proto Best Practices (Protocol Buffers documentation)",
+          "publisher": "Protocol Buffers project (Google)",
+          "url": "https://protobuf.dev/best-practices/dos-donts/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-17"
+        }
+      ]
+    },
+    {
+      "id": "protobuf-field-numbers",
+      "name": "Field numbers in a protocol buffers schema",
+      "explanation": "A protocol buffers message gives each field a number, and that number, not the field name, identifies the field in the bytes on the wire. It cannot change once the message is in use.",
+      "assumedBy": [
+        {
+          "postId": "protobuf-restli-linkedin-2023",
+          "quote": "Protobuf serialization relies on both strongly-typed data as well as explicit field numbers"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Protocol Buffers Language Guide (proto 3): Assigning Field Numbers",
+          "publisher": "Protocol Buffers project (Google)",
+          "url": "https://protobuf.dev/programming-guides/proto3/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-17"
+        }
+      ]
+    },
+    {
+      "id": "http-content-negotiation-headers",
+      "name": "HTTP headers such as Content-Type and Accept",
+      "explanation": "A header is a named line sent with a request or response. Content-Type says what format the body is in, and Accept says which response formats the client prefers. A custom header, like a version, works the same way.",
+      "assumedBy": [
+        {
+          "postId": "protobuf-restli-linkedin-2023",
+          "quote": "These configurations enabled the client to encode the payload using Protobuf instead of JSON and set the content-type header to Protobuf, or set the accept header to instruct the server to prefer Protobuf over JSON for encoding responses."
+        },
+        {
+          "postId": "api-versioning-stripe-2017",
+          "quote": "Users can override the version of any single request by manually setting the Stripe-Version header, or upgrade their account’s pinned version from Stripe’s dashboard."
+        }
+      ],
+      "sources": [
+        {
+          "title": "RFC 9110: HTTP Semantics (6.3 Header Fields, 8.3 Content-Type, 12.5.1 Accept)",
+          "publisher": "IETF",
+          "url": "https://www.rfc-editor.org/rfc/rfc9110",
+          "year": "2022",
+          "verifiedOn": "2026-10-17"
+        }
+      ]
+    },
+    {
+      "id": "latency-percentiles",
+      "name": "Latency percentiles such as P99",
+      "explanation": "A percentile is the latency that a given share of requests finish within. P99 describes the slowest 1% of requests, which an average hides.",
+      "assumedBy": [
+        {
+          "postId": "protobuf-restli-linkedin-2023",
+          "quote": "Below is the P99 latency comparison chart from benchmarking Protobuf against JSON when servers are under heavy load."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Monitoring Distributed Systems (Site Reliability Engineering, chapter 6)",
+          "publisher": "Google",
+          "url": "https://sre.google/sre-book/monitoring-distributed-systems/",
+          "year": "2017",
+          "verifiedOn": "2026-10-17"
+        }
+      ]
+    },
+    {
+      "id": "graphql-query-fields-and-types",
+      "name": "A GraphQL query as a selection of fields on typed objects",
+      "explanation": "A GraphQL query starts at a root type and lists the fields wanted, down to leaf values. Because every field belongs to a type in the schema, a server can read a query and know what it asks for before running it.",
+      "assumedBy": [
+        {
+          "postId": "graphql-cost-shopify-2021",
+          "quote": "By identifying each type used in a query, we can calculate its cost."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Queries (GraphQL Learn)",
+          "publisher": "The GraphQL Foundation",
+          "url": "https://graphql.org/learn/queries/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-17"
+        }
+      ]
+    },
+    {
+      "id": "graphql-connections",
+      "name": "GraphQL connections, edges and cursors",
+      "explanation": "A connection is how GraphQL exposes a list that is read in pages. It holds edges, each with a node and a cursor, plus page information such as whether a next page exists. The cursor marks a position in the list.",
+      "assumedBy": [
+        {
+          "postId": "graphql-cost-shopify-2021",
+          "quote": "Connections express one-to-many relationships in GraphQL."
+        }
+      ],
+      "sources": [
+        {
+          "title": "Pagination (GraphQL Learn)",
+          "publisher": "The GraphQL Foundation",
+          "url": "https://graphql.org/learn/pagination/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-17"
+        }
+      ]
+    }
+  ]
+}

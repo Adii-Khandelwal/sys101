@@ -362,5 +362,9 @@
  "hll-presto-meta-2018|0 Default": {
   "verdict": "ok",
   "source": "join artifact: ends 'standard error of 0' then 'Default dense layout' rows; both in post"
+ },
+ "graphql-cost-shopify-2021|1 point": {
+  "verdict": "ok",
+  "source": "post: \"Objects: One Point\""
  }
 }

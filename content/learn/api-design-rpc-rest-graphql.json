@@ -1,0 +1,418 @@
+{
+  "slug": "api-design-rpc-rest-graphql",
+  "promise": "After this you can say how REST-style, RPC and GraphQL APIs differ in what a client names and receives, how a schema or contract keeps many clients working, and which changes to an API break them.",
+  "before": {
+    "prerequisites": [
+      "idempotency-and-retries"
+    ],
+    "terms": [
+      {
+        "term": "Client and server",
+        "definition": "The program that sends a request and the program that answers it."
+      },
+      {
+        "term": "Payload",
+        "definition": "The data carried in a request or a response, apart from the headers."
+      },
+      {
+        "term": "Serialization",
+        "definition": "Turning data in memory into bytes or text that can be sent, and back again."
+      }
+    ],
+    "note": "Read Idempotency and Retries first: which HTTP methods may be repeated safely is part of how an API is shaped. The terms below are enough to begin."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "An API is the contract between the code that asks and the code that answers. Over a network the contract says what a request may name, what shape it takes, and what comes back. The three styles in this topic make different choices about that contract.",
+        "A REST-style HTTP API names things and uses the HTTP methods on them. The HTTP specification defines the methods: GET asks for a current representation of a resource, POST asks the resource to process what was sent, PUT asks to create or replace the state of the target resource, and GET, HEAD, OPTIONS and TRACE are called safe because the client does not ask for any state change [[rfc9110]]. A successful creation can be answered with 201 (Created) [[rfc9110]]. Google describes the same shape as resource-oriented design: the building blocks are individually named resources (nouns) and a small number of standard methods (verbs) [[aip-121]].",
+        "An RPC API starts from the other end. You define a service and the methods that can be called on it, with their parameters and return types, and the client calls them like local functions [[grpc-concepts]]. A GraphQL API gives the client one query language: the client asks for specific fields on objects and the result has the same shape as the query [[graphql-queries]]."
+      ],
+      "terms": [
+        {
+          "term": "Resource",
+          "definition": "A named thing an API exposes, such as a book or an order, reached by its name."
+        },
+        {
+          "term": "Method",
+          "definition": "In HTTP, the verb of a request, such as GET or POST. In RPC, a function that can be called remotely."
+        },
+        {
+          "term": "Safe method",
+          "definition": "An HTTP method where the client does not ask for any state change, such as GET."
+        },
+        {
+          "term": "RPC",
+          "definition": "Remote procedure call: calling a function that runs on another machine."
+        },
+        {
+          "term": "Query",
+          "definition": "In GraphQL, a request that lists the fields the client wants back."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rfc9110",
+          "section": "9.2 Common Method Properties, 9.3.1 GET, 9.3.3 POST and 9.3.4 PUT",
+          "what": "What safe means, and what GET, POST and PUT ask a server to do."
+        },
+        {
+          "source": "grpc-concepts",
+          "section": "Overview and Service definition",
+          "what": "How an RPC service is defined and the four kinds of method."
+        },
+        {
+          "source": "graphql-learn",
+          "section": "The Learn GraphQL start page",
+          "what": "The list of lessons, in the order a beginner meets them."
+        }
+      ],
+      "canNow": [
+        "Say what an HTTP method is and what safe means.",
+        "Say what the client names in a REST-style, an RPC and a GraphQL request.",
+        "Say what a resource is."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "In gRPC the service is written in a .proto file. By default gRPC uses protocol buffers as the language for describing both the service and the messages. A compiler plugin generates client and server code from it, so the client calls a local object, called a stub, and the stub wraps the parameters in a message, sends it and returns the reply [[grpc-concepts]]. gRPC offers four kinds of method: unary (one request, one response), server streaming, client streaming and bidirectional streaming. It guarantees message order within one call [[grpc-concepts]].",
+        "A protocol buffers message gives every field a number. The number must be unique in the message, and it identifies the field in the wire format, so it cannot be changed once the message is in use. Numbers 1 through 15 take one byte to encode and 16 through 2047 take two, so the most frequently set fields should get the low numbers [[proto3-guide]].",
+        "In GraphQL the schema defines types, and a query starts at a root type and selects fields down to leaf values. The response has the same shape as the query, with the result under a top-level data key and any problems under a top-level errors key [[graphql-queries]]. Every field can take its own arguments, and a query can follow related objects in one request, where the page says a classic REST design would need several round trips [[graphql-queries]]. Dynamic values go in a separate variables dictionary instead of being pasted into the query string [[graphql-queries]].",
+        "Resource-oriented design adds a rule to the REST-style shape. Google's guide says a resource should support at least Get and List, the five standard methods are Get, List, Create, Update and Delete, and a custom method is available for work that does not fit them. A custom method still uses a traditional HTTP verb, usually POST, with the custom verb in the URI [[aip-121]]."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 190\" role=\"img\" aria-labelledby=\"dg-learn-api-how-t\" class=\"dg\"><title id=\"dg-learn-api-how-t\">One client can ask three ways. A REST-style call names a resource and picks a method. An RPC call names a method and sends a message. A GraphQL call sends a query shaped like the answer.</title><defs><marker id=\"dg-learn-api-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"68\" width=\"110\" height=\"52\" class=\"dg-box dg-accent\"/><text x=\"67\" y=\"98.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><rect x=\"200\" y=\"10\" width=\"348\" height=\"46\" class=\"dg-box\"/><text x=\"374\" y=\"29.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">REST-style</text><text x=\"374\" y=\"45.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Name a resource, pick a method</text><rect x=\"200\" y=\"72\" width=\"348\" height=\"46\" class=\"dg-box\"/><text x=\"374\" y=\"91.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">RPC</text><text x=\"374\" y=\"107.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Call a named method with a message</text><rect x=\"200\" y=\"134\" width=\"348\" height=\"46\" class=\"dg-box\"/><text x=\"374\" y=\"153.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">GraphQL</text><text x=\"374\" y=\"169.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Send a query shaped like the answer</text><path d=\"M122,86 L200,36\" class=\"dg-line\" marker-end=\"url(#dg-learn-api-how-a)\"/><path d=\"M122,94 L200,95\" class=\"dg-line\" marker-end=\"url(#dg-learn-api-how-a)\"/><path d=\"M122,102 L200,152\" class=\"dg-line\" marker-end=\"url(#dg-learn-api-how-a)\"/></svg>",
+      "terms": [
+        {
+          "term": "Interface definition language (IDL)",
+          "definition": "A language for describing a service and its messages, apart from any one programming language. gRPC uses protocol buffers by default."
+        },
+        {
+          "term": "Stub",
+          "definition": "The local object a gRPC client calls. It sends the call to the server and returns the reply."
+        },
+        {
+          "term": "Field number",
+          "definition": "The number that identifies a field in a protocol buffers message on the wire."
+        },
+        {
+          "term": "Schema",
+          "definition": "The description of the types an API offers, which a GraphQL server checks queries against."
+        },
+        {
+          "term": "Variable",
+          "definition": "In GraphQL, a value passed beside the query instead of written inside it."
+        },
+        {
+          "term": "Custom method",
+          "definition": "In resource-oriented design, a method for work the standard methods do not fit."
+        }
+      ],
+      "reading": [
+        {
+          "source": "grpc-concepts",
+          "section": "Using the API and RPC life cycle",
+          "what": "How generated code and stubs work, and what happens in a unary call."
+        },
+        {
+          "source": "graphql-queries",
+          "section": "Fields, Arguments, Operation type and name, and Variables",
+          "what": "How a query selects fields, takes arguments and keeps dynamic values apart."
+        },
+        {
+          "source": "proto3-guide",
+          "section": "Defining A Message Type and Assigning Field Numbers",
+          "what": "How a message is written and why its field numbers matter."
+        }
+      ],
+      "canNow": [
+        "Say what a .proto file defines and what is generated from it.",
+        "Say why a protocol buffers field number must not change.",
+        "Say what shape a GraphQL response has and where errors appear."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "Network calls need limits. By default gRPC sets no deadline, so a client can wait effectively forever, and the guide says to always set a realistic one. When the deadline passes, the client fails the call with DEADLINE_EXCEEDED and the server cancels the call, although the server code is responsible for stopping any work it started [[grpc-deadlines]]. If a server calls another server, the deadline can be passed along. gRPC converts it to a timeout with the elapsed time already deducted, which avoids trouble from clocks that disagree [[grpc-deadlines]]. This is the same idea as the timeouts in the retries topic.",
+        "Errors need a shape too. RFC 9457 defines a problem details object for HTTP APIs, so each API need not invent its own error format. Its media type for JSON is application/problem+json, and its members are type, title, status, detail and instance. The type is a URI that identifies the problem kind, and when it is missing it is assumed to be about:blank. Clients must ignore extension members they do not recognize, which lets a problem type grow [[rfc9457]]. The spec says consumers should not parse the detail text for information, so machine-readable facts belong in extensions [[rfc9457]].",
+        "A schema is also a promise about change. GraphQL's guide says that because a query returns only the fields it asks for, new capabilities can be added as new types or fields without a breaking change, which has led to a common practice of serving a versionless API. It also says nothing prevents versioning a GraphQL service [[graphql-schema-design]]. The GraphQL best-practices pages say the specification is silent on network handling, authorization and pagination, and that their articles are common practice, not gospel [[graphql-best-practices]].",
+        "Google's resource-oriented guide warns against an API that mirrors the database schema, because that tightly couples the surface to the storage underneath [[aip-121]]. The protocol buffers best-practices page gives a rule for changing messages: clients and servers are never updated at exactly the same time, so do not assume a breaking change is fine because both sides will move together [[protobuf-dos-donts]]."
+      ],
+      "terms": [
+        {
+          "term": "Deadline",
+          "definition": "A point in time after which a client will not wait for a response."
+        },
+        {
+          "term": "Deadline propagation",
+          "definition": "Passing the caller's remaining time on to the next server in a chain."
+        },
+        {
+          "term": "Problem details",
+          "definition": "The standard JSON object, with type, title, status, detail and instance, that describes an error from an HTTP API."
+        },
+        {
+          "term": "Extension member",
+          "definition": "An extra field a problem type adds. A client ignores the ones it does not know."
+        },
+        {
+          "term": "Versionless API",
+          "definition": "An API that evolves by adding to its schema and avoiding breaking changes, so there is no v2."
+        }
+      ],
+      "reading": [
+        {
+          "source": "grpc-deadlines",
+          "section": "Deadlines on the Client, Deadlines on the Server and Deadline Propagation",
+          "what": "Why a deadline is needed, what the server does when it passes, and how it travels."
+        },
+        {
+          "source": "rfc9457",
+          "section": "3 The Problem Details JSON Object, with 3.1 Members and 3.2 Extension Members",
+          "what": "The members of a problem object and what a client must do with unknown ones."
+        },
+        {
+          "source": "graphql-schema-design",
+          "section": "Versioning",
+          "what": "Why GraphQL prefers continuous evolution to numbered versions."
+        }
+      ],
+      "canNow": [
+        "Say why a gRPC client should always set a deadline.",
+        "Name the members of an RFC 9457 problem object.",
+        "Say why a GraphQL service can often avoid a new version."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "Once clients exist, every change is judged by whether it breaks them. Google's AIP-180 names three kinds of compatibility: source (old code still compiles against the new version), wire (old code can still talk to a newer server) and semantic (old code still gets what reasonable developers expect). Inside one major version, new components may be added, but a new required field must not be added to an existing request, and existing components must not be removed, renamed or moved between files. A rename counts as remove and add [[aip-180]]. The guide says its rules assume callers in several languages with no control over when they update, and that an API only used by its own team may choose differently [[aip-180]].",
+        "The protocol buffers rules agree. Never reuse a field number, because old serialized messages may exist in a log or in old code, and reserve the numbers of deleted fields. Almost never change a field's type or default value, and do not use JSON or text format for interchange when a rename could break old code [[protobuf-dos-donts]]. The proto3 guide lists safe changes for the binary format and says ProtoJSON has different ones [[proto3-guide]].",
+        "Some providers version the whole API and say how. GitHub names a REST version by its release date and asks you to send it in the X-GitHub-Api-Version header. It lists breaking changes (removing an operation, renaming a field, adding a required parameter, removing enum values, among others) and additive ones (adding an operation, an optional parameter, a response field or enum values). A previous version is supported for at least 24 months after a new one, and a request with no header gets 2022-11-28. A version past its support window returns 410 Gone, and Deprecation and Sunset headers warn before that [[github-api-versions]].",
+        "Stripe's reference page describes a different cadence. Starting with the 2024-09-30.acacia release it ships new versions monthly with no breaking changes, plus a major release twice a year that can need code changes. A request can override the account's default version with the Stripe-Version header. It also separates closed enums from open ones whose values can grow, and tells clients to handle an unknown value with a safe fallback [[stripe-api-versioning]]. These are the two providers' own policies, not a standard, and they trade a heavier support burden for fewer forced upgrades."
+      ],
+      "terms": [
+        {
+          "term": "Breaking change",
+          "definition": "A change that can make an existing client stop working."
+        },
+        {
+          "term": "Additive change",
+          "definition": "A change that adds something, such as an optional field, without changing what clients already use."
+        },
+        {
+          "term": "Wire compatibility",
+          "definition": "Old client code can still exchange messages correctly with a newer server."
+        },
+        {
+          "term": "Sunset",
+          "definition": "The date after which a version is removed. GitHub sends it as a response header."
+        },
+        {
+          "term": "Open enum",
+          "definition": "A list of allowed values that can grow, so the client must cope with ones it has not seen."
+        },
+        {
+          "term": "Reserved field number",
+          "definition": "A number marked so no new field can take it after the old field is deleted."
+        }
+      ],
+      "reading": [
+        {
+          "source": "aip-180",
+          "section": "Guidance, Adding components, and Removing or renaming components",
+          "what": "Three kinds of compatibility and which changes break them."
+        },
+        {
+          "source": "protobuf-dos-donts",
+          "section": "Don't Re-use a Tag Number, Do Reserve Tag Numbers for Deleted Fields, and Don't Change the Type of a Field",
+          "what": "Rules that keep old and new messages readable."
+        },
+        {
+          "source": "github-api-versions",
+          "section": "About API versioning and API version closing down",
+          "what": "A dated version scheme, with its breaking and additive lists and support window."
+        },
+        {
+          "source": "stripe-api-versioning",
+          "section": "Versioning and Enums",
+          "what": "Monthly and major releases, and how to handle open enums."
+        }
+      ],
+      "canNow": [
+        "Say which changes to an API break old clients and which do not.",
+        "Say how GitHub and Stripe tell a client which version to use.",
+        "Say why a client should handle an enum value it does not know."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "A GraphQL API never needs to think about versions.",
+      "truth": "GraphQL's guide says it takes a strong opinion on avoiding versioning, but that nothing prevents a GraphQL service from being versioned like any other API [[graphql-schema-design]]."
+    },
+    {
+      "myth": "A gRPC call stops waiting on its own.",
+      "truth": "By default gRPC does not set a deadline, so a client can wait effectively forever. The guide says to always set a realistic one [[grpc-deadlines]]."
+    },
+    {
+      "myth": "Adding a field to a response is always safe.",
+      "truth": "AIP-180 allows new components within a major version, but a new required field must not be added to an existing request message, and enum values added to responses call for caution because user code may not handle them [[aip-180]]. Stripe asks clients to keep a fallback for unknown open enum values [[stripe-api-versioning]]."
+    },
+    {
+      "myth": "Renaming a field is a small cleanup.",
+      "truth": "AIP-180 treats a rename as remove and add, and says existing components must not be removed within a major version [[aip-180]]. The protocol buffers guide says a field number cannot be changed once the message is in use [[proto3-guide]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "One read-only request is enough to see a version header in use. curl sends a GET by default, and GET is a safe method [[rfc9110]]. The command is printed on GitHub's versions page, with the version the page names [[github-api-versions]].",
+    "commands": [
+      {
+        "command": "curl --header \"X-GitHub-Api-Version:2026-03-10\" https://api.github.com/zen",
+        "shows": "Sends a request that names an API version in the X-GitHub-Api-Version header. The page gives it as its example of specifying a version, and says a request without the header gets 2022-11-28.",
+        "source": "github-api-versions",
+        "note": "The version in the example is the one on the page when it was checked. The page lists the versions currently supported."
+      }
+    ]
+  },
+  "next": "Go back to the API Design topic page for the worked example and the quiz, then read the posts: LinkedIn on moving Rest.li from JSON to Protocol Buffers, Shopify on rate limiting a GraphQL API by query cost, and Stripe on versioning an API that must stay compatible for years. All three are on [the topic page](/topic/api-design-rpc-rest-graphql).",
+  "sources": [
+    {
+      "id": "rfc9110",
+      "title": "RFC 9110: HTTP Semantics",
+      "url": "https://www.rfc-editor.org/rfc/rfc9110",
+      "publisher": "IETF",
+      "kind": "RFC",
+      "year": "2022",
+      "verifiedOn": "2026-10-17",
+      "note": "Sections 9.2 to 9.3 and 15.3.2."
+    },
+    {
+      "id": "grpc-concepts",
+      "title": "Core concepts, architecture and lifecycle (gRPC documentation)",
+      "url": "https://grpc.io/docs/what-is-grpc/core-concepts/",
+      "publisher": "gRPC Authors",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-05-11",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "graphql-learn",
+      "title": "Learn GraphQL (GraphQL Learn)",
+      "url": "https://graphql.org/learn/",
+      "publisher": "The GraphQL Foundation",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "graphql-queries",
+      "title": "Queries (GraphQL Learn)",
+      "url": "https://graphql.org/learn/queries/",
+      "publisher": "The GraphQL Foundation",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "proto3-guide",
+      "title": "Protocol Buffers Language Guide (proto 3)",
+      "url": "https://protobuf.dev/programming-guides/proto3/",
+      "publisher": "Protocol Buffers project (Google)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "rfc9457",
+      "title": "RFC 9457: Problem Details for HTTP APIs",
+      "url": "https://www.rfc-editor.org/rfc/rfc9457",
+      "publisher": "IETF",
+      "kind": "RFC",
+      "year": "2023",
+      "verifiedOn": "2026-10-17",
+      "note": "It obsoletes RFC 7807."
+    },
+    {
+      "id": "aip-121",
+      "title": "AIP-121: Resource-oriented design (API Improvement Proposals)",
+      "url": "https://google.aip.dev/121",
+      "publisher": "Google",
+      "kind": "Vendor design guidance (not a standard)",
+      "year": "2019",
+      "verifiedOn": "2026-10-17",
+      "note": "The page shows Created 2019-01-26 and Updated 2019-01-26, and its changelog runs to 2024-07-08. This is Google's guidance for its own APIs."
+    },
+    {
+      "id": "grpc-deadlines",
+      "title": "Deadlines (gRPC documentation)",
+      "url": "https://grpc.io/docs/guides/deadlines/",
+      "publisher": "gRPC Authors",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2025-07-07",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "graphql-best-practices",
+      "title": "GraphQL Best Practices (GraphQL Learn)",
+      "url": "https://graphql.org/learn/best-practices/",
+      "publisher": "The GraphQL Foundation",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "graphql-schema-design",
+      "title": "Schema Design (GraphQL Learn, Best Practices)",
+      "url": "https://graphql.org/learn/schema-design/",
+      "publisher": "The GraphQL Foundation",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "aip-180",
+      "title": "AIP-180: Backwards compatibility (API Improvement Proposals)",
+      "url": "https://google.aip.dev/180",
+      "publisher": "Google",
+      "kind": "Vendor design guidance (not a standard)",
+      "year": "2019",
+      "verifiedOn": "2026-10-17",
+      "note": "The page shows Created 2019-07-23 and Updated 2019-07-23, and its changelog runs to 2025-10-21. This is Google's guidance for its own APIs."
+    },
+    {
+      "id": "protobuf-dos-donts",
+      "title": "Proto Best Practices (Protocol Buffers documentation)",
+      "url": "https://protobuf.dev/best-practices/dos-donts/",
+      "publisher": "Protocol Buffers project (Google)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "github-api-versions",
+      "title": "API Versions (GitHub REST API documentation)",
+      "url": "https://docs.github.com/en/rest/about-the-rest-api/api-versions",
+      "publisher": "GitHub",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17",
+      "note": "The page lists 2026-03-10 as the latest version when checked; its supported-versions table changes over time."
+    },
+    {
+      "id": "stripe-api-versioning",
+      "title": "Versioning and Enums (Stripe API reference)",
+      "url": "https://docs.stripe.com/api/versioning",
+      "publisher": "Stripe",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17"
+    }
+  ]
+}
