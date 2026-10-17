@@ -37,7 +37,7 @@ export { organization } from "./organization";
 const isPaper = (p: { ageNote?: string }) => (p.ageNote ?? "").startsWith("This is a research paper");
 
 /** Counts of what the topic files list: posts, papers (marked in ageNote), versioned docs pages (an edition that is not "date unknown"), organizations. */
-export function sourceCounts(ordered: Topic[]): SourceCounts {
+function sourceCounts(ordered: Topic[]): SourceCounts {
   const byUrl = new Map<string, Topic["posts"][number]>();
   for (const p of ordered.flatMap((t) => t.posts)) byUrl.set(p.url, p);
   const all = [...byUrl.values()];

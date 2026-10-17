@@ -5,7 +5,7 @@ import { checkDiagram } from "./diagramCheck";
 import { httpsUrlProblem } from "./httpsUrl";
 
 /** A post rewritten in our own words, in reading order. */
-export type Digest = {
+type Digest = {
   problem: string;
   constraints: string;
   walkthrough: { step: string; explanation: string }[];
@@ -92,7 +92,7 @@ type LessonExercise = {
 };
 
 /** The teaching-journey format (docs/ideas.md, ideas 2 and 4). Piloted on DNS. */
-export type Lesson = {
+type Lesson = {
   why: LessonSection;
   mentalModel: LessonSection & { diagram: string };
   howItWorks: { outcome: string; steps: { step: string; explanation: string }[]; diagram: string };
@@ -113,7 +113,7 @@ const LESSON_SECTIONS = ["why", "model", "how", "example", "mistakes", "posts", 
 const CONCEPT_SECTION_IDS = ["why", "model", "how", "example", "mistakes"] as const;
 
 /** The "In short" block under the concept paragraph. Figures point at rows of a post's digest.numbers, so values never drift. */
-export type Summary = { points: string[]; figures: { postId: string; row: number; label: string }[] };
+type Summary = { points: string[]; figures: { postId: string; row: number; label: string }[] };
 
 
 /** A digest row the company itself calls a headline result, or a target rather than a measurement. */
