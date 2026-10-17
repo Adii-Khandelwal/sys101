@@ -1,0 +1,316 @@
+{
+  "slug": "autoscaling-and-capacity",
+  "promise": "After this you can explain what an autoscaler does, how a rule turns a metric into a new server count, why scaling down waits, and where a forecast helps.",
+  "before": {
+    "prerequisites": [
+      "load-balancing"
+    ],
+    "terms": [
+      {
+        "term": "Replica",
+        "definition": "One running copy of a service. More replicas share the load, and each replica handles a smaller part of it."
+      },
+      {
+        "term": "CPU utilization",
+        "definition": "How busy a server's processor is, as a share of what it can do. 50 percent means it is half busy."
+      },
+      {
+        "term": "Metric",
+        "definition": "A number measured over time, such as CPU use or requests per second."
+      }
+    ],
+    "note": "Load Balancing is the one topic this builds on, because new copies only help once traffic is spread across them. The stages below explain the rest."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "Scaling a workload means changing how much capacity it has. Kubernetes describes two ways: change the number of replicas, which is horizontal scaling, or change the resources each replica gets, which is vertical scaling [[k8s-autoscaling]].",
+        "You can do either by hand, or you can let a controller do it for you. Automatic scaling lets a cluster follow changes in demand more elastically and efficiently than a fixed number would [[k8s-autoscaling]].",
+        "AWS describes the same idea for virtual machines: a target tracking policy keeps a chosen metric near a chosen target value, much as a thermostat holds a temperature [[aws-target-tracking]]. If the metric climbs above the target, the group scales out. If it falls below, the group scales in [[aws-target-tracking]]."
+      ],
+      "terms": [
+        {
+          "term": "Horizontal scaling",
+          "definition": "Adding or removing replicas."
+        },
+        {
+          "term": "Vertical scaling",
+          "definition": "Giving each replica more or fewer resources."
+        },
+        {
+          "term": "Target",
+          "definition": "The value of a metric that the autoscaler tries to hold, such as 50 percent CPU."
+        },
+        {
+          "term": "Scale out and scale in",
+          "definition": "Adding capacity and removing capacity."
+        }
+      ],
+      "reading": [
+        {
+          "source": "k8s-autoscaling",
+          "section": "Autoscaling Workloads (the opening sections)",
+          "what": "The difference between horizontal and vertical scaling, and manual against automatic."
+        },
+        {
+          "source": "aws-target-tracking",
+          "section": "Target tracking scaling policies (the opening)",
+          "what": "How a metric and target value drive scaling, with the thermostat comparison."
+        }
+      ],
+      "canNow": [
+        "Say what horizontal and vertical scaling are.",
+        "Explain what a target does in an autoscaling rule.",
+        "Say why a fixed number of servers is rarely right all day."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "Kubernetes runs horizontal pod autoscaling as a control loop that runs at intervals, not continuously. The default interval is 15 seconds [[k8s-hpa]]. In each pass, the controller reads the metrics named in the autoscaler definition, finds the Pods of the target, and takes the mean across them [[k8s-hpa]].",
+        "For CPU, the utilization is a percentage of what each Pod requested, so a Pod with no CPU request gives no usable value and the autoscaler takes no action on that metric [[k8s-hpa]]. A metrics source is needed too: the resource metrics API is usually provided by an add-on called Metrics Server, which has to be installed separately [[k8s-hpa]].",
+        "The core rule is a ratio. The desired replica count is the current count multiplied by the current metric value over the desired value, rounded up [[k8s-hpa]]. If the current value is double the target, the count doubles, and if it is half, the count halves [[k8s-hpa]].",
+        "Two guards keep the loop calm. If the ratio is close to 1.0, within a tolerance that is 0.1 by default, no scaling happens [[k8s-hpa]]. And scale-downs use a stabilization window: the controller records its recommendations and takes the highest one from the window, which defaults to 5 minutes, so scale-downs are gradual [[k8s-hpa]].",
+        "The vertical autoscaler works differently. A recommender studies current and past usage and stores a target recommendation with a lower and an upper bound. An updater can evict Pods so they are recreated with new requests, or resize them in place where the cluster supports it, and an admission controller applies the recommended values to new Pods [[k8s-vpa]].",
+        "AWS adds forecasting. Predictive scaling analyzes historical load to find daily or weekly patterns, forecasts the capacity needed, and raises capacity ahead of the load. AWS says this helps when traffic is cyclical or when applications take a long time to initialize, whereas dynamic scaling is reactive [[aws-predictive]]."
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 190\" role=\"img\" aria-labelledby=\"dg-learn-ac-how-t\" class=\"dg\"><title id=\"dg-learn-ac-how-t\">The Kubernetes horizontal autoscaler loop: a metrics source reports usage, the autoscaler controller compares it with the target on a regular interval, and it sets a new replica count on the workload, which creates or removes Pods that report usage again.</title><defs><marker id=\"dg-learn-ac-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"50\" width=\"112\" height=\"50\" class=\"dg-box\"/><text x=\"70\" y=\"71.50\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Metrics</text><text x=\"70\" y=\"87.50\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">source</text><path d=\"M126,75 L154,75\" class=\"dg-line\" marker-end=\"url(#dg-learn-ac-how-a)\"/><rect x=\"154\" y=\"50\" width=\"112\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"210\" y=\"71.50\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Autoscaler</text><text x=\"210\" y=\"87.50\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">compares</text><path d=\"M266,75 L294,75\" class=\"dg-line\" marker-end=\"url(#dg-learn-ac-how-a)\"/><rect x=\"294\" y=\"50\" width=\"112\" height=\"50\" class=\"dg-box\"/><text x=\"350\" y=\"71.50\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Workload</text><text x=\"350\" y=\"87.50\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">replica count</text><path d=\"M406,75 L434,75\" class=\"dg-line\" marker-end=\"url(#dg-learn-ac-how-a)\"/><rect x=\"434\" y=\"50\" width=\"112\" height=\"50\" class=\"dg-box\"/><text x=\"490\" y=\"71.50\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Pods</text><text x=\"490\" y=\"87.50\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">run and report</text><path d=\"M490,100 L490,140 L70,140 L70,102\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-learn-ac-how-a)\"/><text x=\"280\" y=\"160\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">usage is read again on the next pass</text><text x=\"280\" y=\"24\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The loop repeats on a fixed interval; it is not continuous.</text></svg>",
+      "terms": [
+        {
+          "term": "Control loop",
+          "definition": "A process that repeatedly measures something, compares it with a goal and acts."
+        },
+        {
+          "term": "Tolerance",
+          "definition": "A band around the target inside which the autoscaler does nothing."
+        },
+        {
+          "term": "Stabilization window",
+          "definition": "A period in which the autoscaler remembers its recent recommendations, so that scale-downs follow the highest of them."
+        },
+        {
+          "term": "Predictive scaling",
+          "definition": "Adding capacity ahead of load, based on a forecast from past patterns."
+        }
+      ],
+      "reading": [
+        {
+          "source": "k8s-hpa",
+          "section": "How does a HorizontalPodAutoscaler work? and Algorithm details",
+          "what": "The loop interval, the ratio formula, the tolerance and the downscale stabilization default."
+        },
+        {
+          "source": "k8s-vpa",
+          "section": "How does a VerticalPodAutoscaler work?",
+          "what": "The recommender, updater and admission controller, and the Target, lower and upper bound recommendations."
+        },
+        {
+          "source": "aws-predictive",
+          "section": "Predictive scaling for Amazon EC2 Auto Scaling (the opening)",
+          "what": "What predictive scaling learns from and when it fits."
+        }
+      ],
+      "canNow": [
+        "Use the ratio rule to compute a new replica count.",
+        "Explain why a tolerance and a downscale window exist.",
+        "Say how vertical autoscaling differs from horizontal and what a recommender does."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "Starting Pods are a trap for a CPU rule. A Pod that has just started can show misleading high CPU, for instance a Java app warming up. So the Kubernetes controller sets aside Pods that are not yet ready, and it ignores CPU samples from the initialization period, which defaults to 5 minutes, unless the Pod is Ready and the sample was taken while it was Ready [[k8s-hpa]]. When it still would scale up, it assumes the not-yet-ready Pods use none of the desired amount, which softens a scale-up [[k8s-hpa]].",
+        "AWS handles the same trouble with an instance warmup. Until the warmup ends, a new instance is not counted toward the group's aggregated metrics, and instances still warming up count toward the desired capacity of the next scale-out so the group does not add more than needed [[aws-target-tracking]]. While a scale-out is in progress, scale-in actions are blocked until warmup ends [[aws-target-tracking]].",
+        "Several metrics can be combined. In Kubernetes, the controller computes a desired count for each metric and takes the largest [[k8s-hpa]]. AWS scales out if any target tracking policy is ready to scale out, and scales in only if all of them are ready to scale in [[aws-target-tracking]]. Both choices favour availability.",
+        "Vertical autoscaling has update modes. In Off mode the recommender still writes recommendations but nothing is applied. Initial sets requests only when Pods are created. Recreate evicts Pods whose requests differ much from the recommendation. InPlaceOrRecreate tries a resize without restarting and falls back to eviction [[k8s-vpa]].",
+        "Whole numbers cause small gaps. AWS notes that because it rounds up when adding and avoids a scale-in that could cause oscillation, a small group can sit visibly away from its target value [[aws-target-tracking]]."
+      ],
+      "terms": [
+        {
+          "term": "Warmup",
+          "definition": "The time a new instance needs before its readings should count."
+        },
+        {
+          "term": "Update mode",
+          "definition": "A setting that controls whether and how the vertical autoscaler applies its recommendations."
+        },
+        {
+          "term": "Oscillation",
+          "definition": "Repeatedly adding and removing capacity because each change pushes the metric across the target."
+        }
+      ],
+      "reading": [
+        {
+          "source": "k8s-hpa",
+          "section": "Algorithm details and Pod readiness and autoscaling metrics",
+          "what": "How not-yet-ready Pods and missing metrics are handled, and the multiple-metrics rule."
+        },
+        {
+          "source": "aws-target-tracking",
+          "section": "Multiple target tracking scaling policies; Define instance warmup time; Considerations",
+          "what": "When several policies disagree, how warmup works and why a small group may not sit exactly on the target."
+        },
+        {
+          "source": "k8s-vpa",
+          "section": "Update modes (the section on updateMode)",
+          "what": "What Off, Initial, Recreate and InPlaceOrRecreate each do."
+        }
+      ],
+      "canNow": [
+        "Explain why a new instance's readings are ignored for a time.",
+        "Say how several scaling policies or metrics are combined.",
+        "Name the vertical autoscaler's update modes and what Off does."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "Setting the target is a trade. AWS advises a target as high as possible while leaving a reasonable buffer for unexpected traffic, so resources are used efficiently [[aws-target-tracking]]. A higher target saves money and leaves less room while new capacity starts.",
+        "Reactive and predictive scaling cover different cases. AWS says predictive scaling suits cyclical traffic, recurring on-and-off workloads such as batch jobs, and applications that are slow to initialize, and that it can save money by avoiding over-provisioning [[aws-predictive]]. Reactive rules remain the safety net for what no pattern predicts.",
+        "Horizontal and vertical scaling are not the same cost. Vertical changes can mean restarting a Pod, and the Kubernetes VPA page notes that in-place resizing depends on cluster support [[k8s-vpa]]. Horizontal scaling needs a workload that can run several copies side by side.",
+        "Check the numbers on the topic page's two posts for real fleets: Google's Autopilot paper and MongoDB's predictive auto-scaling experiment show how these ideas behave at scale."
+      ],
+      "terms": [
+        {
+          "term": "Headroom",
+          "definition": "Spare capacity kept above current load to absorb a spike while new capacity starts."
+        },
+        {
+          "term": "Reactive scaling",
+          "definition": "Responding to a metric after it has moved."
+        }
+      ],
+      "reading": [
+        {
+          "source": "aws-target-tracking",
+          "section": "Define target value",
+          "what": "Why the target should be high but leave a buffer."
+        },
+        {
+          "source": "aws-predictive",
+          "section": "Predictive scaling for Amazon EC2 Auto Scaling (the opening)",
+          "what": "The situations where forecasting fits and where reactive scaling alone is enough."
+        }
+      ],
+      "canNow": [
+        "Say what makes a target too high or too low.",
+        "Explain when predictive scaling is worth using.",
+        "Say why vertical scaling can disrupt running replicas."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "An autoscaler reacts to every change in the metric straight away.",
+      "truth": "Kubernetes checks on an interval, 15 seconds by default, skips changes inside a tolerance of 0.1 by default, and applies scale-downs using the highest recommendation of a 5 minute window [[k8s-hpa]]."
+    },
+    {
+      "myth": "Scaling on CPU works for any Pod.",
+      "truth": "The HPA computes CPU utilization against the Pod's CPU request, so a container with no request leaves the value undefined and the autoscaler takes no action on that metric [[k8s-hpa]]."
+    },
+    {
+      "myth": "Predictive scaling replaces reactive scaling.",
+      "truth": "AWS describes predictive scaling as proactive and dynamic scaling as reactive, and says to use predictive scaling when there are regular patterns or slow start-up [[aws-predictive]]. Other situations, such as a one-off spike, still rely on the reactive rule."
+    }
+  ],
+  "tryIt": {
+    "intro": "These commands come from the Kubernetes tutorial on the HorizontalPodAutoscaler [[k8s-hpa-walkthrough]]. They need a running cluster with Metrics Server, so reading them is enough if you have none.",
+    "commands": [
+      {
+        "command": "kubectl apply -f https://k8s.io/examples/application/php-apache.yaml",
+        "shows": "Creates the tutorial's php-apache Deployment and Service.",
+        "source": "k8s-hpa-walkthrough",
+        "warning": "This creates a Deployment and a Service. Run it only on a local or test cluster."
+      },
+      {
+        "command": "kubectl autoscale deployment php-apache --cpu=50% --min=1 --max=10",
+        "shows": "Creates an autoscaler that keeps average CPU near 50 percent with between 1 and 10 replicas.",
+        "source": "k8s-hpa-walkthrough",
+        "warning": "This creates an autoscaler that changes the replica count. Run it only on a local or test cluster."
+      },
+      {
+        "command": "kubectl get hpa",
+        "shows": "Shows the autoscaler, its current and target CPU, and its replica count.",
+        "source": "k8s-hpa-walkthrough"
+      },
+      {
+        "command": "kubectl run -i --tty load-generator --rm --image=busybox:1.28 --restart=Never -- /bin/sh -c \"while sleep 0.01; do wget -q -O- http://php-apache; done\"",
+        "shows": "Starts a Pod that sends requests to the service in a loop, so CPU rises. The tutorial runs it in a separate terminal.",
+        "source": "k8s-hpa-walkthrough",
+        "warning": "This generates load on the cluster and starts a Pod. Run it only on a local or test cluster, and stop it with Ctrl+C."
+      },
+      {
+        "command": "kubectl get hpa php-apache --watch",
+        "shows": "Follows the autoscaler as CPU rises and replicas are added.",
+        "source": "k8s-hpa-walkthrough"
+      },
+      {
+        "command": "kubectl get deployment php-apache",
+        "shows": "Confirms the Deployment's replica count matches the autoscaler.",
+        "source": "k8s-hpa-walkthrough"
+      }
+    ]
+  },
+  "next": "Go back to the Capacity topic page for the worked example and the quiz, then read the two posts: [Google's Autopilot paper](/topic/autoscaling-and-capacity#google-autopilot-2020) for task counts and limits set from usage history, and [MongoDB's predictive auto-scaling experiment](/topic/autoscaling-and-capacity#mongodb-predictive-autoscaling-2026) for forecasting demand before it arrives.",
+  "sources": [
+    {
+      "id": "k8s-autoscaling",
+      "title": "Autoscaling Workloads",
+      "url": "https://kubernetes.io/docs/concepts/workloads/autoscaling/",
+      "publisher": "Kubernetes",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2025-11-23",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "k8s-hpa",
+      "title": "Horizontal Pod Autoscaling",
+      "url": "https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/",
+      "publisher": "Kubernetes",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-08-03",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "k8s-hpa-walkthrough",
+      "title": "HorizontalPodAutoscaler Walkthrough",
+      "url": "https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/",
+      "publisher": "Kubernetes",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-03-15",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "k8s-vpa",
+      "title": "Vertical Pod Autoscaling",
+      "url": "https://kubernetes.io/docs/concepts/workloads/autoscaling/vertical-pod-autoscale/",
+      "publisher": "Kubernetes",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-05-31",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "aws-predictive",
+      "title": "Predictive scaling for Amazon EC2 Auto Scaling",
+      "url": "https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-predictive-scaling.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "aws-target-tracking",
+      "title": "Target tracking scaling policies for Amazon EC2 Auto Scaling",
+      "url": "https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-scaling-target-tracking.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17"
+    }
+  ]
+}

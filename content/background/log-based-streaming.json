@@ -1,0 +1,46 @@
+{
+  "topic": "log-based-streaming",
+  "updatedOn": "2026-10-17",
+  "items": [
+    {
+      "id": "fsync",
+      "name": "fsync and flushing to disk",
+      "explanation": "Writes first land in the operating system's memory. fsync asks the system to flush a file's changes to the storage device and waits until the device says it is done, so a crash cannot lose them.",
+      "assumedBy": [
+        {
+          "postId": "linkedin-northguard-2025",
+          "quote": "fsyncs these files, and updates the index"
+        }
+      ],
+      "sources": [
+        {
+          "title": "fsync(2), Linux manual page",
+          "publisher": "Linux man-pages project",
+          "url": "https://man7.org/linux/man-pages/man2/fsync.2.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-17"
+        }
+      ]
+    },
+    {
+      "id": "zookeeper",
+      "name": "ZooKeeper as a coordination service",
+      "explanation": "ZooKeeper is a replicated coordination service that distributed programs use to build things like group membership, ownership and synchronisation, instead of writing that logic themselves.",
+      "assumedBy": [
+        {
+          "postId": "netflix-dblog-2020",
+          "quote": "We also use Zookeeper for leader election"
+        }
+      ],
+      "sources": [
+        {
+          "title": "ZooKeeper: A Distributed Coordination Service for Distributed Applications",
+          "publisher": "Apache ZooKeeper",
+          "url": "https://zookeeper.apache.org/doc/current/zookeeperOver.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-17"
+        }
+      ]
+    }
+  ]
+}

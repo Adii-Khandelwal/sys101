@@ -418,7 +418,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic that builds on this one.",
-      "body": "Once requests spread evenly across many servers, those servers still read from shared databases, often the same data again and again. Caching picks up from there: serving repeated reads from memory, and keeping those copies correct. Two later topics build on it as well: Safe Deployments, on moving traffic to new code in small steps, and Overload and Cascading Failures, on what happens when one server's failure shifts its load onto the rest."
+      "body": "Once requests spread evenly across many servers, those servers still read from shared databases, often the same data again and again. Caching picks up from there: serving repeated reads from memory, and keeping those copies correct. Three later topics build on it as well: Capacity, on how many servers should sit behind the balancer and how fast to add or remove them, Safe Deployments, on moving traffic to new code in small steps, and Overload and Cascading Failures, on what happens when one server's failure shifts its load onto the rest."
     }
   }
 }

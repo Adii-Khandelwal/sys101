@@ -1,0 +1,462 @@
+{
+  "slug": "autoscaling-and-capacity",
+  "title": "Capacity",
+  "group": "Scaling",
+  "concept": "Autoscaling and capacity planning decide how much compute a service has at each moment: more or fewer copies, or bigger or smaller ones. The hard part is timing, because new capacity takes minutes to arrive while demand keeps moving.",
+  "prerequisites": [
+    "load-balancing"
+  ],
+  "summary": {
+    "points": [
+      "Autoscaling matches the capacity a service has to the demand it faces, by adding or removing copies or by resizing them.",
+      "New capacity takes minutes to arrive, so a good rule grows quickly, shrinks slowly and keeps a minimum and a maximum.",
+      "Google's Autopilot cuts the gap between reserved and used resources by setting task counts and limits from usage history.",
+      "MongoDB forecasts demand that scaling cannot change, and trusts a forecast only where its recent accuracy has been good.",
+      "In production MongoDB scales up on predictions and leaves scaling down to the reactive rule. The post calls this first version conservative."
+    ],
+    "figures": [
+      {
+        "postId": "google-autopilot-2020",
+        "row": 0,
+        "label": "Average slack of 23% vs 46%, automatic against manual soft limits"
+      },
+      {
+        "postId": "google-autopilot-2020",
+        "row": 1,
+        "label": "Jobs severely hit by out-of-memory kills fell by 10 times"
+      },
+      {
+        "postId": "mongodb-predictive-autoscaling-2026",
+        "row": 1,
+        "label": "Short-term trend forecast beat the naive baseline 68% of the time"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "load-balancing": "Autoscaling changes how many servers sit behind a load balancer, so it relies on traffic being spread evenly across whatever servers exist at that moment."
+  },
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why a service needs a rule for how much capacity to run, and why people usually get it wrong by hand.",
+      "body": "A load balancer spreads requests over many servers, but somebody still has to decide how many servers there are. Too few and requests queue or fail. Too many and money is spent on machines that sit idle.\n\nDemand also moves. Traffic rises during business hours, falls overnight and may jump on a batch job or a launch. New capacity does not appear at once either: a server or a bigger machine takes minutes to be ready. So a fixed number is always wrong at some hour, and people who choose it tend to err on the safe side. Google's paper says exactly that: running over a limit is painful, so users ask for more than they need, and across a huge fleet that adds up to a lot of waste.\n\nAn autoscaler measures a signal, compares it with a target and changes the amount of capacity. Caching sits beside it: a cache lowers the load the database sees, so capacity can be smaller, but capacity still has to cover the moments when the cache is cold or fails."
+    },
+    "mentalModel": {
+      "outcome": "After this you can picture autoscaling as a thermostat whose heater is slow, and say what that delay changes.",
+      "body": "Think of a thermostat. It reads the temperature, compares it with the setting and turns the heater on or off. An autoscaler reads a metric such as average CPU, compares it with a target such as 50%, and adds or removes servers.\n\nNow make the heater slow. If it takes ten minutes to warm the room, a thermostat that reacts to the current reading will keep pushing and then overshoot, or it will keep changing its mind. A fleet has the same problem. A change in server count takes minutes to land, so the controller always acts on slightly old information.\n\nThree ideas follow. Act early when you can predict the change. Move up fast and down slowly, because being short is worse than being generous. And keep a minimum and a maximum, so one bad reading cannot empty or flood the fleet.",
+      "diagram": "<svg viewBox=\"0 0 560 210\" role=\"img\" aria-labelledby=\"dg-ac-model-t\" class=\"dg\"><title id=\"dg-ac-model-t\">A control loop for capacity: demand reaches the servers, a metric is read from them, a controller compares it with a target, and any change in server count arrives only after a delay, so the loop always acts on slightly old information.</title><defs><marker id=\"dg-ac-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"60\" width=\"100\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"64\" y=\"89.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Demand</text><path d=\"M114,85 L150,85\" class=\"dg-line\" marker-end=\"url(#dg-ac-model-a)\"/><rect x=\"150\" y=\"60\" width=\"100\" height=\"50\" class=\"dg-box\"/><text x=\"200\" y=\"89.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Servers</text><path d=\"M250,85 L286,85\" class=\"dg-line\" marker-end=\"url(#dg-ac-model-a)\"/><rect x=\"286\" y=\"60\" width=\"100\" height=\"50\" class=\"dg-box\"/><text x=\"336\" y=\"89.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Metric</text><path d=\"M386,85 L422,85\" class=\"dg-line\" marker-end=\"url(#dg-ac-model-a)\"/><rect x=\"422\" y=\"60\" width=\"124\" height=\"50\" class=\"dg-box\"/><text x=\"484\" y=\"81.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Controller</text><text x=\"484\" y=\"97.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">metric vs target</text><path d=\"M484,110 L484,150 L200,150 L200,112\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-ac-model-a)\"/><text x=\"342\" y=\"168\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">add or remove servers</text><text x=\"342\" y=\"184\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">the change takes minutes to arrive</text><text x=\"280\" y=\"28\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Demand keeps moving while the loop waits for its own changes to land.</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can follow one autoscaling decision from metric to new server count, and say where a forecast fits in.",
+      "steps": [
+        {
+          "step": "Choose a signal",
+          "explanation": "Pick a number that tracks load: average CPU, requests per server, or queue length. Choose one that your own scaling does not distort. MongoDB forecasts queries per second and connections rather than CPU, because adding capacity changes CPU."
+        },
+        {
+          "step": "Set a target",
+          "explanation": "The target is the level you want the signal to sit at, such as 50 to 75 percent CPU in MongoDB's case. It leaves headroom for a spike while capacity is being added."
+        },
+        {
+          "step": "Compute the new count",
+          "explanation": "A common rule scales the count by the ratio of the current value to the target: new count = old count x current value / target value. If CPU is 80 and the target is 50, the count grows by 1.6 times."
+        },
+        {
+          "step": "Grow fast, shrink slowly",
+          "explanation": "Google's loop raises limits quickly and lowers them slowly after load falls, and MongoDB's reactive rule scales up after minutes of overload but down after hours of underload. A short dip should not remove capacity that is needed again soon."
+        },
+        {
+          "step": "Choose horizontal or vertical",
+          "explanation": "Horizontal scaling changes the number of copies. Vertical scaling changes the size of each one, such as CPU and memory limits, or a database tier. Autopilot does both, and MongoDB scales between machine sizes. Vertical changes can be disruptive, because neighbouring lower-priority tasks may be evicted, or a Pod restarted."
+        },
+        {
+          "step": "Add a forecast where there is a pattern",
+          "explanation": "If demand follows daily or weekly cycles, a forecast can add capacity before the load arrives. MongoDB found that only some replica sets are predictable, and left the 13 percent with the least accurate estimates out of predictive scaling, so the forecast must know when to stay quiet."
+        },
+        {
+          "step": "Keep limits and a safety net",
+          "explanation": "Set a minimum and maximum count, and keep a reactive rule beside any forecast. Forecasts are wrong sometimes, and the reactive rule catches the miss."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 230\" role=\"img\" aria-labelledby=\"dg-ac-how-t\" class=\"dg\"><title id=\"dg-ac-how-t\">Four stages of an autoscaler: read a metric, compare it with a target, pick a new server count, then apply it with limits and a delay. A forecast of daily and weekly demand can feed the third stage so capacity is added before the load arrives.</title><defs><marker id=\"dg-ac-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"40\" width=\"112\" height=\"50\" class=\"dg-box\"/><text x=\"70\" y=\"61.70\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Read the</text><text x=\"70\" y=\"76.70\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">metric</text><path d=\"M126,65 L154,65\" class=\"dg-line\" marker-end=\"url(#dg-ac-how-a)\"/><rect x=\"154\" y=\"40\" width=\"112\" height=\"50\" class=\"dg-box\"/><text x=\"210\" y=\"61.70\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Compare with</text><text x=\"210\" y=\"76.70\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">the target</text><path d=\"M266,65 L294,65\" class=\"dg-line\" marker-end=\"url(#dg-ac-how-a)\"/><rect x=\"294\" y=\"40\" width=\"112\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"350\" y=\"61.70\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Pick a new</text><text x=\"350\" y=\"76.70\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">server count</text><path d=\"M406,65 L434,65\" class=\"dg-line\" marker-end=\"url(#dg-ac-how-a)\"/><rect x=\"434\" y=\"40\" width=\"112\" height=\"50\" class=\"dg-box\"/><text x=\"490\" y=\"61.70\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Apply: limits</text><text x=\"490\" y=\"76.70\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">and a delay</text><rect x=\"250\" y=\"150\" width=\"200\" height=\"44\" class=\"dg-box\"/><text x=\"350\" y=\"168.70\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Forecast from daily</text><text x=\"350\" y=\"183.70\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">and weekly patterns</text><path d=\"M350,150 L350,92\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-ac-how-a)\"/><text x=\"14\" y=\"130\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Reactive: acts on what</text><text x=\"14\" y=\"144\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">has already happened.</text><text x=\"546\" y=\"170\" class=\"dg-note\" text-anchor=\"end\" font-size=\"11\">Predictive: acts before</text><text x=\"546\" y=\"184\" class=\"dg-note\" text-anchor=\"end\" font-size=\"11\">the load shows up.</text><text x=\"280\" y=\"22\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Minimum and maximum counts stop a bad reading from emptying or flooding the fleet.</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can work through an autoscaling decision with numbers, including the wait before shrinking.",
+      "steps": [
+        {
+          "step": "A busy group",
+          "explanation": "A service runs on 10 servers at 80 percent average CPU. The target is 50 percent. These numbers are made up for the example."
+        },
+        {
+          "step": "Compute the new count",
+          "explanation": "10 x 80 / 50 is 16, so the controller asks for 6 more servers."
+        },
+        {
+          "step": "Wait for the servers",
+          "explanation": "The new servers take minutes to start. Meanwhile the old ones stay hot, and a second reading during the start-up should not ask for yet more servers. Autoscalers count servers still starting so they do not over-add."
+        },
+        {
+          "step": "Load settles at the target",
+          "explanation": "With 16 servers sharing the same load, each sits near 50 percent. Users stop seeing slowness."
+        },
+        {
+          "step": "Load halves",
+          "explanation": "The 16 servers drop to about 25 percent. The formula would give 16 x 25 / 50, or 8 servers, but the controller waits before acting in case the dip is brief."
+        },
+        {
+          "step": "Shrink after the wait",
+          "explanation": "If the low load lasts, the group steps down to 8 servers, near 50 percent again. A predictive rule would also have added the first 6 servers a little before the rise, if the daily pattern was known."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 200\" role=\"img\" aria-labelledby=\"dg-ac-worked-t\" class=\"dg\"><title id=\"dg-ac-worked-t\">A worked example with made-up numbers: 10 servers at 80 percent CPU against a 50 percent target become 16 servers at 50 percent. When load halves, the 16 servers sit at 25 percent until a wait passes, then the group shrinks to 8.</title><defs><marker id=\"dg-ac-worked-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"60\" width=\"112\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"70\" y=\"84.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">10 servers</text><text x=\"70\" y=\"100.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">80% CPU</text><path d=\"M126,88 L154,88\" class=\"dg-line\" marker-end=\"url(#dg-ac-worked-a)\"/><rect x=\"154\" y=\"60\" width=\"112\" height=\"56\" class=\"dg-box\"/><text x=\"210\" y=\"84.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">16 servers</text><text x=\"210\" y=\"100.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">50% CPU</text><path d=\"M266,88 L294,88\" class=\"dg-line\" marker-end=\"url(#dg-ac-worked-a)\"/><rect x=\"294\" y=\"60\" width=\"112\" height=\"56\" class=\"dg-box\"/><text x=\"350\" y=\"84.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">16 servers</text><text x=\"350\" y=\"100.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">25% CPU</text><path d=\"M406,88 L434,88\" class=\"dg-line\" marker-end=\"url(#dg-ac-worked-a)\"/><rect x=\"434\" y=\"60\" width=\"112\" height=\"56\" class=\"dg-box\"/><text x=\"490\" y=\"84.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">8 servers</text><text x=\"490\" y=\"100.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">50% CPU</text><text x=\"70\" y=\"140\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">demand is high</text><text x=\"210\" y=\"140\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">scale out</text><text x=\"350\" y=\"140\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">load halves, wait</text><text x=\"490\" y=\"140\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">scale in</text><text x=\"280\" y=\"30\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Scale out at once; scale in only after the wait has passed.</text><text x=\"280\" y=\"176\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The target is 50% CPU. New count = old count x current CPU / target CPU.</text></svg>"
+    },
+    "mistakesOutcome": "After this you can spot the usual ways autoscaling goes wrong.",
+    "checkOutcome": "After this you can check you understand the formula, the wait, and what forecasts can and cannot do.",
+    "quiz": [
+      {
+        "question": "A group of 10 servers averages 80% CPU, and the target is 50%. Using new count = old count x current CPU / target CPU, how many servers should the autoscaler ask for?",
+        "options": [
+          "8, because lower CPU needs fewer servers than the group has now",
+          "16, because 10 x 80 / 50 is 16",
+          "13, because the group is only 30 points above its target"
+        ],
+        "correct": 1,
+        "why": "The ratio of current to target is 80 / 50, or 1.6, so 10 servers become 16. At 16 servers the same total load averages 50% each.",
+        "wrong": [
+          "Going to 8 servers would raise each server's share and push CPU well above 80%, the opposite of what a CPU above target calls for.",
+          "",
+          "The 30-point gap is not the multiplier. The formula scales the count by the ratio of the two values, so a 13-server group would still run above the target."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why do most autoscalers shrink a group more slowly than they grow it?",
+        "options": [
+          "Removing a server is billed at a higher rate than adding one, so teams delay the removal to keep the bill down",
+          "Shrinking needs a person to approve it, since software cannot be trusted to decide that a server is idle for good",
+          "A short dip may be followed by a rise, so removing capacity early means adding it back while users wait"
+        ],
+        "correct": 2,
+        "why": "Google's loop lets limits rise swiftly but fall slowly after load drops, and MongoDB's reactive scaler waits minutes to scale up but hours to scale down. Being short costs more than being generous, so the dip has to last before capacity is removed.",
+        "wrong": [
+          "Billing is not what slows the shrinking. Neither source describes a higher charge for removal, and the reason is risk: a removal that proves wrong hurts users.",
+          "Autoscalers shrink without approval in both posts. Their delay is a wait built into the rule, not a human sign-off.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "MongoDB's forecasters predict queries per second and connections instead of CPU. Why?",
+        "options": [
+          "Scaling changes CPU, so a CPU forecast that triggered a scale-up would erase the spike it predicted",
+          "CPU cannot be measured on a replica set",
+          "Queries per second are cheaper to store than CPU samples"
+        ],
+        "correct": 0,
+        "why": "A demand metric that scaling does not change, such as queries per second, stays comparable before and after the action. A CPU forecast would invalidate itself the moment it caused a scale-up.",
+        "wrong": [
+          "",
+          "CPU is measured; the post's estimator even predicts it for each instance size. The issue is that scaling changes it, not that it is unavailable.",
+          "Storage cost is not the reason in the post. The reason is the circular dependency between the forecast and the action it triggers."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "A replica set shows no daily or weekly pattern, so the long-term forecaster is not trusted. What did MongoDB's prototype do for it?",
+        "options": [
+          "Fell back to purely reactive scaling and waited for the load to appear in the metrics",
+          "Scaled it to the largest tier available, so that no forecast error could overload it",
+          "Used a short-term forecaster that extends the last hour or two of trend"
+        ],
+        "correct": 2,
+        "why": "The team did not want to fall back to purely reactive scaling, so the short-term forecaster extended the recent trend, and it beat a naive baseline 68% of the time.",
+        "wrong": [
+          "Purely reactive scaling is what the team wanted to avoid, because a recent trend can still be forecast usefully.",
+          "Jumping to the largest tier would give up the cost savings that were the reason for building the system.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Before Autopilot, why did Google's operators ask for resource limits well above what a job used?",
+        "options": [
+          "Reserved resources were free, so asking for a large limit cost a team nothing at all",
+          "A job over its limit could be throttled or killed, so a big limit was the cautious choice",
+          "Borg does not allow a running job to change its limits once the job has started"
+        ],
+        "correct": 1,
+        "why": "The paper says going over a limit can mean throttling or an out-of-memory kill, so a rational user overestimates. The slack that results was 46% for manual soft-limit jobs and 60% for hard limits.",
+        "wrong": [
+          "Users were charged for what they reserved rather than what they used, and quotas also counted them, though the paper says this had only limited effect.",
+          "",
+          "Borg lets a job change its requirements while running, by adding or removing tasks or changing limits. That is what Autopilot automates."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "MongoDB's production predictive scaler only scales up, and the reactive scaler still scales down. The post calls this conservative but gives no reason. What is the most plausible reason?",
+        "options": [
+          "A wrong scale-up wastes some money for a few hours, but a wrong scale-down can overload a database",
+          "Scaling down cannot be done through the cloud providers' APIs, so only scale-ups can be automated at all",
+          "A forecast cannot say anything useful about a fall in demand, only about a rise"
+        ],
+        "correct": 0,
+        "why": "The post says only that this first version is conservative. A plausible reading is that a mistaken scale-up wastes money, while a mistaken scale-down leaves a loaded database on too small a machine, a risk left to the slower reactive rule.",
+        "wrong": [
+          "",
+          "The reactive scaler already scales down using the same tiers, so nothing prevents it technically.",
+          "Forecasters predict falls as well as rises; the prototype scaled both ways. The choice in production is about risk."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "A team adds a cache and the hit rate climbs, so the database's load drops. What should that change about the capacity plan?",
+        "options": [
+          "The database can be shrunk until it runs close to its limit, because a cache with a high hit rate will always hold",
+          "Nothing, because caches and capacity are separate concerns handled by different teams",
+          "Capacity must still cover a cold or failing cache, so plan for a miss storm and not only the usual hit rate"
+        ],
+        "correct": 2,
+        "why": "A cache lowers the normal load on the database but cannot be counted on in every moment. If the cache is cleared or fails, the full read load falls on the database, and scaling takes minutes to respond.",
+        "wrong": [
+          "Shrinking until near the limit leaves no room for a cache restart or eviction wave, when misses return to the database.",
+          "A cache changes the load that capacity has to serve, so the two are linked. The cache sits in front of the database whose capacity you plan.",
+          ""
+        ],
+        "teaches": "why"
+      }
+    ],
+    "postsOutcome": "After this you can read how Google and MongoDB automated capacity, and what each learned the hard way.",
+    "differOutcome": "After this you can say what the two posts share and where they differ.",
+    "exercisesOutcome": "After this you can apply a scaling rule, design for a daily peak and plan a rollout across a large fleet.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A web service runs on 6 servers at 90% CPU. The target is 60% CPU, and the rule is new count = old count x current CPU / target CPU, rounded up. After the change, load halves. Describe what the group does next, and why it should not shrink instantly.",
+        "answer": "6 x 90 / 60 is 9, so the group scales out to 9 servers and sits near 60% CPU. When load halves, the 9 servers drop to about 30% each. The same formula gives 9 x 30 / 60, which is 4.5, rounded up to 5. A sensible rule waits for the low reading to last before removing servers, so a short dip does not strip capacity.",
+        "tradeoffs": "A longer wait before shrinking costs some money, and a shorter wait risks flapping, where the group removes servers and then adds them back as the load returns. Scaling out quickly and in slowly is the usual compromise.",
+        "wrongAnswers": [
+          "Scale in at once to 3 servers, because the load is half and the target is half of 100%.",
+          "Keep 9 servers forever, since scaling in is never worth the risk."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "design",
+        "prompt": "A shop sees traffic jump every weekday at 9:00, and a new server needs 6 minutes before it can take traffic. Design the scaling so users do not feel the jump, and say what you would use to size it.",
+        "answer": "Use a metric such as requests per server with a target, so the group scales with load, and add a forecast or a schedule from the daily pattern so capacity is added shortly before 9:00 (more than 6 minutes before). Keep a minimum count that covers a normal morning. Keep the reactive rule as the safety net for spikes that the pattern does not predict, and scale in slowly after the peak.",
+        "tradeoffs": "A forecast removes the delay for regular peaks but can be wrong, and early capacity costs money while it sits idle. A schedule is simple but misses days that differ. Reactive scaling alone is cheapest and always late by about the server start time.",
+        "wrongAnswers": [
+          "Only scale reactively, since a 6 minute delay is short enough to ignore.",
+          "Run at peak size all day, so there is never a delay and no need for any rule."
+        ],
+        "teaches": "example"
+      },
+      {
+        "level": "scale",
+        "prompt": "A company runs 20,000 services, and each team set its own CPU and memory limits by hand years ago. You want to cut waste without causing outages. What would you build, how would you roll it out, and what would you measure?",
+        "answer": "Build a loop that reads usage history and recommends limits and task counts, raising limits fast and lowering them slowly with a safety margin. Start by showing recommendations to teams without applying them, move small or low-risk services first, and let teams set bounds or plug in their own rule. Measure two things together: slack, the gap between the limit and usage, and failures such as out-of-memory kills, so cutting waste cannot hide new outages.",
+        "tradeoffs": "Simple moving-window rules are easy to explain and to trust, while per-job learned models can do better but are harder to debug. A tighter margin saves more capacity and leaves less room for a surprise. Adoption is slow if teams cannot see what the tool would do.",
+        "wrongAnswers": [
+          "Set every service to the average of its last day, which is the cheapest limit and needs no margin.",
+          "Apply the tool to every service on one day, because a gradual rollout only delays the savings."
+        ],
+        "teaches": "mistakes"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "Autoscaling is slow compared with a surge, which is why capacity is only half the answer to overload. Overload and Cascading Failures covers what happens when demand outruns capacity and retries make it worse, and Safe Deployments covers how to release changes to a fleet whose size keeps changing."
+    }
+  },
+  "posts": [
+    {
+      "id": "google-autopilot-2020",
+      "title": "Autopilot: workload autoscaling at Google",
+      "url": "https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf",
+      "company": "Google",
+      "verifiedOn": "2026-10-17",
+      "published": "2020-04-27",
+      "ageNote": "This is a research paper, not a company blog post: the EuroSys 2020 paper by Google engineers (Rzadca and colleagues), from April 2020. It is here for the fundamental problem it measures: people set resource limits too high because going over is painful, and an automatic loop can cut that waste. No newer source opened here confirms Autopilot's algorithms are unchanged, so the half-lives and margins are as the paper reported them in 2020.",
+      "digest": {
+        "problem": "Google's jobs run with a declared limit on CPU and memory, and a task that goes over its limit is throttled or killed. Operators therefore ask for more than the job needs, and at Google's scale that adds up to a large amount of reserved but unused capacity. Autopilot sets the number of tasks and the limits for each task automatically, so people stop guessing.",
+        "constraints": "A limit set too low costs more than one set too high: a memory overrun kills the task with an out-of-memory error, while a CPU overrun only throttles it. Raising limits can be expensive too, because when tasks no longer fit on their machine, lower-priority neighbours on it are killed and rescheduled elsewhere. Many jobs follow daily or weekly cycles, so a single number goes stale, and the system had to win the trust of teams who were used to choosing their own numbers.",
+        "walkthrough": [
+          {
+            "step": "Measure usage cheaply",
+            "explanation": "Monitoring records usage about once a second per task, then squeezes it into histograms over 5 minute windows. For memory it keeps only the peak in each window, because a task is hurt more by too little memory than by too little CPU."
+          },
+          {
+            "step": "Moving-window recommenders",
+            "explanation": "A simple recommender weights recent samples more, using a half-life of 12 hours for CPU and 48 hours for memory. It lets limits rise quickly when usage rises and fall slowly afterwards, so a brief dip does not strip headroom. It then adds a safety margin of 10 to 15 percent and takes the highest value of the last hour."
+          },
+          {
+            "step": "Machine-learning recommenders",
+            "explanation": "Instead of one fixed set of settings, the ML recommender keeps many models and picks, for each job, the one that has done best on a cost function. That cost function penalises both going over the limit and leaving slack, and it also penalises changing the limit or the model too often."
+          },
+          {
+            "step": "Horizontal and vertical together",
+            "explanation": "One closed loop changes how many tasks a job has, and two change the CPU and memory limit of each task. Jobs can set bounds on the limits and choose how tolerant they are of running out of memory."
+          },
+          {
+            "step": "Make adoption easy",
+            "explanation": "Getting teams to use it took real effort: recommendations were shown to teams that had not opted in, some job categories were migrated automatically, and teams could plug in their own recommenders."
+          },
+          {
+            "step": "Check both waste and safety",
+            "explanation": "The authors measure slack, the gap between the limit and actual usage, and also out-of-memory kills. A trivial rule that sets every limit to zero would win on slack, so they show that jobs under Autopilot also hit fewer out-of-memory problems."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 230\" role=\"img\" aria-labelledby=\"dg-ac-autopilot-t\" class=\"dg\"><title id=\"dg-ac-autopilot-t\">Autopilot as a loop: a usage log feeds recommenders, the Autopilot service picks a recommendation, an actuator passes new limits or task counts to the scheduler, and the scheduler applies them on the machines, which keep producing usage data.</title><defs><marker id=\"dg-ac-autopilot-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"50\" width=\"92\" height=\"56\" class=\"dg-box\"/><text x=\"60\" y=\"74.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">Usage log</text><text x=\"60\" y=\"88.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">5 min slices</text><path d=\"M106,78 L124,78\" class=\"dg-line\" marker-end=\"url(#dg-ac-autopilot-a)\"/><rect x=\"124\" y=\"50\" width=\"92\" height=\"56\" class=\"dg-box\"/><text x=\"170\" y=\"74.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">Models</text><text x=\"170\" y=\"88.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">window, ML</text><path d=\"M216,78 L234,78\" class=\"dg-line\" marker-end=\"url(#dg-ac-autopilot-a)\"/><rect x=\"234\" y=\"50\" width=\"92\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"74.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">Autopilot</text><text x=\"280\" y=\"88.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">service</text><path d=\"M326,78 L344,78\" class=\"dg-line\" marker-end=\"url(#dg-ac-autopilot-a)\"/><rect x=\"344\" y=\"50\" width=\"92\" height=\"56\" class=\"dg-box\"/><text x=\"390\" y=\"81.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">Actuator</text><path d=\"M436,78 L454,78\" class=\"dg-line\" marker-end=\"url(#dg-ac-autopilot-a)\"/><rect x=\"454\" y=\"50\" width=\"92\" height=\"56\" class=\"dg-box\"/><text x=\"500\" y=\"74.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">Borgmaster</text><text x=\"500\" y=\"88.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">(scheduler)</text><path d=\"M500,106 L500,152 L60,152 L60,108\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-ac-autopilot-a)\"/><text x=\"280\" y=\"172\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">tasks run on machines, and their usage is logged again</text><text x=\"280\" y=\"28\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Closed loop: limits rise quickly with usage and fall slowly after it.</text><text x=\"280\" y=\"208\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Both task counts (horizontal) and CPU or memory limits (vertical) are changed.</text></svg>",
+        "numbers": [
+          {
+            "value": "23% vs 46%",
+            "meaning": "Average slack for Autopiloted jobs with the ML recommender against manually managed jobs with soft memory limits, from the abstract. The detailed comparison puts manual jobs with hard limits at 60 percent and the moving-window recommender at 31 percent"
+          },
+          {
+            "value": "10 times",
+            "meaning": "Reduction, in the abstract, in the number of jobs severely hit by out-of-memory kills"
+          },
+          {
+            "value": "over 48%",
+            "meaning": "Share of Google's fleet-wide resource usage that came from Autopiloted jobs at the time of writing"
+          },
+          {
+            "value": "1870 to 162 machines",
+            "meaning": "RAM wasted by a sample of jobs in the month before and the month after they moved to Autopilot, counted as machine capacity, so the move saved the capacity of 1708 machines"
+          },
+          {
+            "value": "12 hours and 48 hours",
+            "meaning": "Half-life of the moving-window recommender's weights for CPU and for memory"
+          },
+          {
+            "value": "10 to 15%",
+            "meaning": "Safety margin added to a moving-window recommendation, smaller for large limits"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "An automatic loop that sets both task counts and per-task limits, using cheap moving-window rules and per-job machine-learning models, tuned for long-running jobs.",
+          "rejected": "Leaving limits to people, even with charging for reserved resources and per-user quotas. The paper says these had only a limited effect, because the downsides of setting a limit too low typically outweigh the savings from setting it lower.",
+          "why": "The risk and effort of tuning limits by hand are high enough that people keep large safety margins. A loop that watches real usage can hold a smaller margin and adjust it as the job changes."
+        },
+        "failures": "The paper notes that the ML recommender produced slightly more relative out-of-memory kills than the moving-window one (0.013 against 0.002 per task-day), even though it had slightly more out-of-memory-free job-days. Raising limits can also trigger moves of lower-priority tasks, and the authors report having cut the number of priority levels earlier to limit that cascading.",
+        "takeaways": "Capacity is wasted mostly because being short is worse than being generous. A scaler earns trust by cutting waste and cutting failures at once, so measure both, raise limits fast, lower them slowly, and expect adoption to take work."
+      }
+    },
+    {
+      "id": "mongodb-predictive-autoscaling-2026",
+      "title": "MongoDB Predictive Auto-Scaling: An Experiment",
+      "url": "https://www.mongodb.com/company/blog/engineering/mongodb-predictive-auto-scaling-an-experiment",
+      "company": "MongoDB",
+      "verifiedOn": "2026-10-17",
+      "published": "2026-04-07",
+      "digest": {
+        "problem": "MongoDB Atlas already scaled replica sets with a reactive rule, which waits for a few minutes of overload before scaling up, and a few hours of underload before scaling down. The scaling step itself then takes a few minutes, and only moves one size tier at a time. The team asked whether a forecast could add capacity before a spike and skip the in-between tiers.",
+        "constraints": "The scaler cannot see customers' queries or data, and it must not forecast CPU directly, because scaling changes CPU and would erase the spike it predicted. Only some replica sets follow a pattern. Every forecast also has to be good enough to act on, since a wrong scale-up costs money. The post calls its production version conservative and gives no reason; a plausible reason is that a wrong scale-down could overload a database.",
+        "walkthrough": [
+          {
+            "step": "The reactive baseline",
+            "explanation": "The existing rule scales up after a few minutes of overload or down after a few hours of underload, and only between adjacent tiers such as M60 to M50. A big change in demand therefore takes several scaling operations, leaving servers over- or underloaded in the meantime."
+          },
+          {
+            "step": "Forecast demand, not CPU",
+            "explanation": "The forecasters predict metrics that scaling does not change, such as queries per second, client connections and scanned objects per second. This avoids the circular problem of predicting CPU, then scaling and invalidating the prediction."
+          },
+          {
+            "step": "A long-term forecaster for cycles",
+            "explanation": "It splits each metric into a trend, daily and weekly seasonal parts and a residual, using a method called MSTL, trained on several weeks of data. It only predicts a few hours ahead, and it scores its own recent accuracy and stays quiet when that is poor."
+          },
+          {
+            "step": "A short-term forecaster for trends",
+            "explanation": "When there is no usable cycle, a second model looks at only the last hour or two and extends the trend. The team did not want to fall back to purely reactive scaling when this was possible."
+          },
+          {
+            "step": "An estimator turns demand into CPU",
+            "explanation": "A boosted decision tree model, trained on 25 million sampled points, predicts the CPU that a given demand would cause on each instance size. The target CPU range is 50 to 75 percent."
+          },
+          {
+            "step": "A planner picks the cheapest tier",
+            "explanation": "The planner chooses the cheapest size that is expected to handle the next 15 minutes without exceeding 75 percent CPU, and can jump directly to it."
+          },
+          {
+            "step": "Production is more cautious",
+            "explanation": "The version that went live in Atlas from November 2025 is a new implementation. So far it only scales up on predictions, and the existing reactive scaler scales back down after a few hours."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 230\" role=\"img\" aria-labelledby=\"dg-ac-mongo-t\" class=\"dg\"><title id=\"dg-ac-mongo-t\">MongoDB's prototype: past metrics feed short-term and long-term forecasters, an estimator turns forecast demand into CPU for each instance size, and a planner picks the cheapest size that stays under the CPU ceiling for the next 15 minutes. In production, predictions only scale up, and the reactive scaler scales down.</title><defs><marker id=\"dg-ac-mongo-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"50\" width=\"92\" height=\"56\" class=\"dg-box\"/><text x=\"60\" y=\"74.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">History</text><text x=\"60\" y=\"88.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">of metrics</text><path d=\"M106,78 L132,78\" class=\"dg-line\" marker-end=\"url(#dg-ac-mongo-a)\"/><rect x=\"132\" y=\"50\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"182\" y=\"74.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">Forecasters</text><text x=\"182\" y=\"88.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">short, long</text><path d=\"M232,78 L258,78\" class=\"dg-line\" marker-end=\"url(#dg-ac-mongo-a)\"/><rect x=\"258\" y=\"50\" width=\"92\" height=\"56\" class=\"dg-box\"/><text x=\"304\" y=\"74.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">Estimator</text><text x=\"304\" y=\"88.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">load to CPU</text><path d=\"M350,78 L376,78\" class=\"dg-line\" marker-end=\"url(#dg-ac-mongo-a)\"/><rect x=\"376\" y=\"50\" width=\"80\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"416\" y=\"81.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">Planner</text><path d=\"M456,78 L482,78\" class=\"dg-line\" marker-end=\"url(#dg-ac-mongo-a)\"/><rect x=\"482\" y=\"50\" width=\"64\" height=\"56\" class=\"dg-box\"/><text x=\"514\" y=\"81.85\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"11\">Tier</text><rect x=\"300\" y=\"150\" width=\"246\" height=\"40\" class=\"dg-box\"/><text x=\"423\" y=\"174.20\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Reactive scaler scales down</text><path d=\"M520,150 L520,108\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-ac-mongo-a)\"/><text x=\"14\" y=\"160\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Planner: cheapest tier that stays</text><text x=\"14\" y=\"174\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">under 75% CPU for 15 minutes.</text><text x=\"280\" y=\"28\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Prediction raises capacity early; the older reactive rule still lowers it.</text></svg>",
+        "numbers": [
+          {
+            "value": "about 25%",
+            "meaning": "Share of Atlas replica sets that show weekly seasonality; most have daily seasonality"
+          },
+          {
+            "value": "68%",
+            "meaning": "How often the short-term trend forecaster beat a naive baseline that repeats the last observation, with 29 percent less error"
+          },
+          {
+            "value": "25 million",
+            "meaning": "Sampled points in time used to train the estimator, each with operations per second, instance size and CPU"
+          },
+          {
+            "value": "50-75%",
+            "meaning": "Target CPU range the estimator checks forecasts against"
+          },
+          {
+            "value": "15 minutes",
+            "meaning": "How far ahead the planner looks when choosing the cheapest tier that stays under 75 percent CPU"
+          },
+          {
+            "value": "about 45%",
+            "meaning": "Share of replica sets for which the estimator's error is under 7 percent; another 42 percent are less accurate and 13 percent are excluded"
+          },
+          {
+            "value": "9 cents an hour",
+            "meaning": "Estimated average saving for a replica set in the experiment, against the reactive scaler during the test period"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A forecaster, estimator and planner pipeline in the prototype, and in production a more conservative design that scales up on predictions and leaves scaling down to the reactive rule.",
+          "rejected": "Purely reactive scaling when the long-term forecast could not be trusted, and forecasting CPU directly.",
+          "why": "Only some replica sets are predictable, and short-term trends were often a better signal than daily and weekly cycles, so the system needs several fallbacks. The post calls the first release conservative and gives no reason for keeping scale-down reactive; a plausible reason, which is our reading, is that a wrong scale-down is the riskier mistake."
+        },
+        "failures": "The long-term forecast is unusable for non-seasonal replica sets, so the prototype lets it ignore itself. The estimator was not accurate enough for 13 percent of replica sets, which the team left out of predictive scaling. The prototype's savings are an estimate made on past data, not a measurement of the production feature.",
+        "takeaways": "Forecasts help when demand has a pattern and when the scaling action is slow, but they work for only part of the fleet. Predict what scaling cannot change, check how good each forecast has been recently, and keep a reactive rule beside it."
+      }
+    }
+  ],
+  "comparison": "Both posts treat capacity as a control loop that has to be careful in one direction. Google's Autopilot raises limits quickly and lowers them slowly, and MongoDB's reactive scaler waits minutes to scale up and hours to scale down. Both measure waste and the risk of being short, and both keep a simple rule next to anything clever.\n\nThey differ in what they set and how they decide. Autopilot sets task counts and per-task CPU and memory limits for a huge internal fleet, using history and per-job models. MongoDB sells machine tiers to customers, and its prototype forecasts demand, turns it into CPU for each tier and picks the cheapest one. Autopilot is a paper from 2020 on a mature system; MongoDB's post is from 2026 and covers a prototype and a cautious production launch.\n\nThe evidence differs too. Google measured slack of 23 percent against 46 percent and ten times fewer jobs severely hit by out-of-memory kills. MongoDB reports a prototype's estimated saving and how predictable replica sets are, and the live version only scales up on predictions.",
+  "glossary": [
+    {
+      "term": "Autoscaling",
+      "definition": "Changing the amount of compute a service has automatically, based on a measured signal."
+    },
+    {
+      "term": "Horizontal scaling",
+      "definition": "Changing the number of copies of a service."
+    },
+    {
+      "term": "Vertical scaling",
+      "definition": "Changing the size of each copy, such as its CPU and memory."
+    },
+    {
+      "term": "Slack",
+      "definition": "The gap between the capacity reserved for a job and what it actually uses."
+    },
+    {
+      "term": "Reactive scaling",
+      "definition": "Scaling after the metric shows a problem."
+    },
+    {
+      "term": "Predictive scaling",
+      "definition": "Scaling ahead of a forecast change in demand."
+    },
+    {
+      "term": "Seasonality",
+      "definition": "A pattern that repeats over time, such as a daily or weekly cycle in traffic."
+    }
+  ],
+  "mistakes": [
+    "Forecasting a signal that your own scaling changes. MongoDB predicts queries per second and connections instead of CPU, since scaling a replica set removes the CPU spike it predicted.",
+    "Shrinking as quickly as growing. Google lets limits fall slowly after load drops, so a brief dip does not strip the capacity needed a few minutes later.",
+    "Leaving a generous limit in place for good. Manual soft limits left 46 percent slack in Google's measurements while the automatic loop held 23 percent."
+  ]
+}

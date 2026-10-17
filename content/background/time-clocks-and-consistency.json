@@ -1,0 +1,26 @@
+{
+  "topic": "time-clocks-and-consistency",
+  "updatedOn": "2026-10-17",
+  "items": [
+    {
+      "id": "regions-and-zones",
+      "name": "Regions and Availability Zones",
+      "explanation": "A cloud region is a separate geographic area. Availability zones are several isolated locations inside one region, so a test can place replicas in the same zone, in different zones of one region, or in different regions.",
+      "assumedBy": [
+        {
+          "postId": "mongodb-tunable-2019",
+          "quote": "same Availability Zone as the primary"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Regions and Zones, Amazon EC2 User Guide",
+          "publisher": "Amazon Web Services",
+          "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-17"
+        }
+      ]
+    }
+  ]
+}

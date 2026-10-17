@@ -48,6 +48,9 @@
     "Instagram": {
       "svgl": "instagram-icon.svg"
     },
+    "LinkedIn": {
+      "svgl": "linkedin.svg"
+    },
     "Lyft": {
       "simpleIcons": "lyft"
     },
@@ -56,6 +59,10 @@
     },
     "Meta": {
       "svgl": "meta.svg"
+    },
+    "MongoDB": {
+      "svgl": "mongodb-icon-light.svg",
+      "svglDark": "mongodb-icon-dark.svg"
     },
     "Netflix": {
       "svgl": "netflix-icon.svg"

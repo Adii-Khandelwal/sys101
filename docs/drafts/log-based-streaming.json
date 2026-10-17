@@ -1,0 +1,21 @@
+{
+  "log-based-streaming": {
+    "summary": {
+      "points": [
+        "A log keeps records in order and lets each reader keep its own position, so reading removes nothing and many readers share one stream.",
+        "Replay is the main gain: a consumer with a bug rewinds its position and reads again, and a new consumer starts from the oldest retained record.",
+        "Order holds only inside a partition, so events that must stay in sequence share a key, and retention or compaction decides how much history stays.",
+        "Netflix's DBLog feeds a log from databases by blending chunked table selects with the short-lived transaction log, using watermark events instead of locks.",
+        "Uber keeps Kafka retention to a few days and federates clusters, while LinkedIn's Northguard replicates small segments so brokers balance themselves."
+      ],
+      "figures": [
+        { "postId": "linkedin-the-log-2013", "row": 0, "label": "Kafka took over 60 billion unique writes a day" },
+        { "postId": "uber-realtime-infra-2021", "row": 1, "label": "Uber found Kafka clusters work best under 150 nodes" },
+        { "postId": "linkedin-northguard-2025", "row": 0, "label": "Kafka ran at over 32T records/day across 150 clusters" }
+      ]
+    },
+    "prerequisiteReasons": {
+      "message-queues": "A log is what a queue becomes when messages stay after they are read, so the producer, consumer and delivery ideas from queues carry over."
+    }
+  }
+}
