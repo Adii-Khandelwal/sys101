@@ -156,7 +156,7 @@ export function isTopicRead(p: Progress, meta: LessonMeta) {
 }
 
 /** Units in page order, for "Continue" and the rail. */
-export const units = (meta: LessonMeta) => [...CONCEPT_SECTIONS, "check", ...meta.postIds];
+const units = (meta: LessonMeta) => [...CONCEPT_SECTIONS, "check", ...meta.postIds];
 
 type UnitStatus = "not started" | "visited" | "done";
 

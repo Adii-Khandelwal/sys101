@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type Graph from "graphology";
 import type Sigma from "sigma";
 import type { NodeLabelDrawingFunction } from "sigma/rendering";
-import { LABEL_START, MIN_LABEL_SCALE, chooseLayers, columns, edgeCurvatures, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
+import { LABEL_START, NODE_RADIUS, MIN_LABEL_SCALE, chooseLayers, columns, edgeCurvatures, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
 import { useInProgressTopics, useReadTopics } from "@/lib/progress";
 import {
   LIGHT_COLORS,
@@ -52,7 +52,6 @@ type Props = {
 };
 
 
-const NODE_RADIUS = 14;
 const LABEL_SIZE = 18;
 const EDGE_EMPHASIS = 2; // highlighted edges are drawn this many times their base width
 const NARROW = PHONE; // below this the map stacks top to bottom; matches the CSS and the mobile Path default

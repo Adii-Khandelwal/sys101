@@ -35,9 +35,9 @@ export type Source = WrittenSource | VideoSource;
 type Term = { term: string; definition: string };
 
 /** Where to read: a source id, the specific section, and what to look for in it. */
-export type Reading = { source: string; section: string; what: string };
+type Reading = { source: string; section: string; what: string };
 
-export type Stage = {
+type Stage = {
   id: string;
   name: string;
   /** Paragraphs in our own words. Cite a source inline as [[source-id]]. */

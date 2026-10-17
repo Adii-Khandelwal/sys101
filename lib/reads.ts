@@ -10,7 +10,7 @@ export const READ_THEMES = [
   "Platforms and building blocks",
   "Seeing and changing production",
 ] as const;
-export type ReadTheme = (typeof READ_THEMES)[number];
+type ReadTheme = (typeof READ_THEMES)[number];
 
 /** A phrase copied from an opened page. Only the checkers read it; it is never displayed. */
 type Phrase = { phrase: string; url?: string };
@@ -96,7 +96,7 @@ export function getAllReads(topicSlugs: string[]): Read[] {
   return reads;
 }
 
-export type ReadRow = Read & {
+type ReadRow = Read & {
   year: string;
   /** Topics where this very URL is already a source (computed from the topic files, never typed). */
   sourceOn: { slug: string; title: string; postId: string }[];

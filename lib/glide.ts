@@ -1,7 +1,7 @@
 import { DURATION, easeInOut, prefersReducedMotion } from "./motion";
 
 /** Where to scroll so `el` lands just under the sticky header. */
-export function anchorTop(el: HTMLElement) {
+function anchorTop(el: HTMLElement) {
   const header = document.querySelector<HTMLElement>(".site-header")?.offsetHeight ?? 0;
   return Math.max(0, el.getBoundingClientRect().top + window.scrollY - header - 16);
 }
@@ -12,7 +12,7 @@ let stop: (() => void) | null = null;
  * Scrolls the page to `top` the way a reader would, eased over 320ms (up to 700ms for a long way) with the same curve as the
  * other on-screen moves. The reader can stop it by touching, wheeling or pressing a key. Reduced motion jumps. Returns when done.
  */
-export function glideTo(top: number): Promise<void> {
+function glideTo(top: number): Promise<void> {
   stop?.();
   const from = window.scrollY;
   const to = Math.min(top, document.documentElement.scrollHeight - window.innerHeight);
