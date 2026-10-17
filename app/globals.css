@@ -3601,6 +3601,21 @@ html {
   overflow: hidden;
 }
 
+/* Bridges the 6px gap between the term and the popover, so the pointer never leaves .gloss on its way to "See in glossary". */
+.gloss-pop::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -8px;
+  height: 8px;
+}
+
+.gloss-pop[data-up="true"]::before {
+  top: auto;
+  bottom: -8px;
+}
+
 .gloss-pop[data-up="true"] {
   top: auto;
   bottom: 100%;
