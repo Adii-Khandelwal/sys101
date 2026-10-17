@@ -6,7 +6,7 @@ import type { Capstone } from "@/lib/capstones";
 export default function PutItTogether({ capstones, titles }: { capstones: Capstone[]; titles: Map<string, string> }) {
   if (capstones.length === 0) return null;
   return (
-    <section className="home-extra put-together" aria-labelledby="put-heading">
+    <section className="home-extra put-together" aria-labelledby="put-heading" data-tour="capstones">
       <h2 id="put-heading" className="label">
         Put it together
       </h2>
