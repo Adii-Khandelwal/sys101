@@ -22,7 +22,7 @@ Applies when editing the homepage and its parts.
 
 ## Standing rules
 
-- Topic numbers come from one function, topicOrder in lib/order.ts. Order: masthead (what it is, who it is for, why, one filled start button), map or Path view with the "All topics" index, Inside a topic (DNS), Try a question, Companies we learn from. Thin dividers, no cards or images; the only icons are company marks beside company names (components/CompanyLogo.tsx), plus the site's own `LogoMark` beside the big wordmark. A new company in any post needs a mark: node scripts/make-logos.mjs add (.claude/rules/logos.md); a test fails without one.
+- Topic numbers come from one function, topicOrder in lib/order.ts. Order: masthead (what it is, who it is for, why, one filled start button), map or Path view with the "All topics" index, Inside a topic (DNS), Try a question, Put it together (capstones, hidden when there are none), Companies we learn from. Thin dividers, no cards or images; the only icons are company marks beside company names (components/CompanyLogo.tsx), plus the site's own `LogoMark` beside the big wordmark. A new company in any post needs a mark: node scripts/make-logos.mjs add (.claude/rules/logos.md); a test fails without one.
 - Every homepage number, name, date, and excerpt is computed from data at build time. Never hardcode them (lib/homepage.test.ts scans the source).
 - "Try a question" uses component state only and never touches the progress store.
 
