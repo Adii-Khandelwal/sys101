@@ -1,4 +1,7 @@
+import type { ReactNode } from "react";
 import HeadingText from "./HeadingText";
+import GlossTerm from "./GlossTerm";
+import { glossaryId, markTerms } from "@/lib/glossaryMatch";
 import { diagramHtml } from "@/lib/diagramHtml";
 import Link from "next/link";
 import CompanyLogo from "./CompanyLogo";
@@ -46,11 +49,14 @@ const SECTION_NAMES: Record<string, string> = {
 
 const LEVELS = { apply: "Apply", design: "Design", scale: "Scale it 10x" };
 
-function Paragraphs({ text }: { text: string }) {
+type Gloss = (text: string) => ReactNode;
+const plain: Gloss = (t) => t;
+
+function Paragraphs({ text, g = plain }: { text: string; g?: Gloss }) {
   return (
     <>
       {text.split("\n\n").map((p) => (
-        <p key={p.slice(0, 40)}>{p}</p>
+        <p key={p.slice(0, 40)}>{g(p)}</p>
       ))}
     </>
   );
@@ -106,6 +112,21 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
     ...SECTION_NAMES,
     ...Object.fromEntries(topic.posts.map((p) => [p.id!, `${p.company} post`])),
   };
+  // One gloss per section: it marks the first use of each of this topic's glossary terms in that section's prose.
+  const glossFor = (): Gloss => {
+    const seen = new Set<string>();
+    return (text) =>
+      markTerms(text, topic.glossary, seen).map((seg, i) =>
+        typeof seg === "string" ? (
+          seg
+        ) : (
+          <GlossTerm key={i} href={`/glossary#${glossaryId(topic.slug, seg.entry.term)}`} definition={seg.entry.definition}>
+            {seg.text}
+          </GlossTerm>
+        ),
+      );
+  };
+  const [gHow, gExample, gMistakes, gDiffer] = [glossFor(), glossFor(), glossFor(), glossFor()];
   const entries = [
     ...["why", "model", "how", "example", "mistakes", "check"].map((id) => ({ id, name: SECTION_NAMES[id], tracked: true })),
     { id: "posts", name: "How companies use it", tracked: false },
@@ -173,14 +194,14 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
           <section id="why" aria-labelledby="why-h">
             <h2 id="why-h">Why it exists</h2>
             <Outcome text={l.why.outcome} />
-            <Paragraphs text={l.why.body} />
+            <Paragraphs text={l.why.body} g={glossFor()} />
             <MarkDone meta={meta} unit="why" />
           </section>
 
           <section id="model" aria-labelledby="model-h">
             <h2 id="model-h">Mental model</h2>
             <Outcome text={l.mentalModel.outcome} />
-            <Paragraphs text={l.mentalModel.body} />
+            <Paragraphs text={l.mentalModel.body} g={glossFor()} />
             <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.mentalModel.diagram) }} />
             <h3>Words to know</h3>
             <dl className="glossary">
@@ -199,7 +220,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             <ol className="walkthrough">
               {l.howItWorks.steps.map((s) => (
                 <li key={s.step}>
-                  <strong>{s.step}.</strong> {s.explanation}
+                  <strong>{s.step}.</strong> {gHow(s.explanation)}
                 </li>
               ))}
             </ol>
@@ -213,7 +234,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             <ol className="walkthrough">
               {l.workedExample.steps.map((s) => (
                 <li key={s.step}>
-                  <strong>{s.step}.</strong> {s.explanation}
+                  <strong>{s.step}.</strong> {gExample(s.explanation)}
                 </li>
               ))}
             </ol>
@@ -226,7 +247,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             <Outcome text={l.mistakesOutcome} />
             <ol className="mistakes">
               {topic.mistakes.map((m) => (
-                <li key={m}>{m}</li>
+                <li key={m}>{gMistakes(m)}</li>
               ))}
             </ol>
             <MarkDone meta={meta} unit="mistakes" />
@@ -275,7 +296,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
               <h2 id="differ-h">Where they differ</h2>
               <Outcome text={l.differOutcome} />
               {topic.comparison.split("\n\n").map((para) => (
-                <p key={para.slice(0, 40)}>{para}</p>
+                <p key={para.slice(0, 40)}>{gDiffer(para)}</p>
               ))}
             </section>
           )}
@@ -312,7 +333,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
           <section id="next" className="closing" aria-labelledby="next-h">
             <h2 id="next-h">What to learn next</h2>
             <Outcome text={l.next.outcome} />
-            <Paragraphs text={l.next.body} />
+            <Paragraphs text={l.next.body} g={glossFor()} />
             <div data-pagefind-ignore>
               <TopicList topics={dependents} />
             </div>

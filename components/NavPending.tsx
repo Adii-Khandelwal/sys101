@@ -29,7 +29,7 @@ export default function NavPending() {
     const onClick = (e: MouseEvent) => {
       if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const a = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
-      if (!a || (a.target && a.target !== "_self") || a.hasAttribute("download")) return;
+      if (!a || (a.target && a.target !== "_self") || a.hasAttribute("download") || a.hasAttribute("data-popover")) return; // a glossary term only opens its popover
       if (a.origin !== location.origin || a.pathname === location.pathname) return;
       if (document.documentElement.hasAttribute("data-splash")) return;
       stop();
