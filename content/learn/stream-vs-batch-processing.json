@@ -1,0 +1,282 @@
+{
+  "slug": "stream-vs-batch-processing",
+  "promise": "After this you can explain how a batch job differs from a stream job, why event time and watermarks matter, and why teams run the same job over history to fix mistakes.",
+  "before": {
+    "prerequisites": [
+      "log-based-streaming"
+    ],
+    "terms": [
+      {
+        "term": "Event",
+        "definition": "A record that something happened, such as \"order 42 was placed\", usually with a time on it."
+      },
+      {
+        "term": "Log",
+        "definition": "An ordered record of events that readers can read from any position."
+      },
+      {
+        "term": "Job",
+        "definition": "A program that reads data, transforms it and writes a result."
+      }
+    ],
+    "note": "Read Log-based Streaming first: it explains the log that streaming jobs read from, and why a log can be read again. The terms above are enough to begin."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "A batch job runs over data that is all there before it starts, and ends when it has processed it. A streaming job is meant to stay online indefinitely and process data as it arrives. Flink calls the first kind of input bounded, because all of it is known before the job runs, and the second unbounded [[flink-exec]].",
+        "Flink and Beam both treat these as two settings of one model, not two products. Flink runs the same DataStream program in either mode over bounded input, and says the final results are the same, though a streaming run may emit incremental updates on the way [[flink-exec]]. Beam describes itself as a unified model for batch and streaming pipelines [[beam-basics]]."
+      ],
+      "terms": [
+        {
+          "term": "Bounded",
+          "definition": "Input whose full content is known before the job runs [[flink-exec]]."
+        },
+        {
+          "term": "Unbounded",
+          "definition": "Input that keeps arriving, potentially indefinitely [[flink-exec]]."
+        },
+        {
+          "term": "Pipeline",
+          "definition": "In Beam, a graph of the reads, transforms and writes in a data processing task [[beam-basics]]."
+        }
+      ],
+      "reading": [
+        {
+          "source": "flink-exec",
+          "section": "The opening and When can/should I use BATCH execution mode?",
+          "what": "What bounded and unbounded mean and when each execution mode applies."
+        },
+        {
+          "source": "beam-basics",
+          "section": "The opening paragraph and PCollection",
+          "what": "How Beam describes bounded and unbounded data in one model."
+        }
+      ],
+      "canNow": [
+        "Say what bounded and unbounded input are.",
+        "Say why a stream job never reaches an end.",
+        "Say that one engine can run the same program in a batch or a streaming mode."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "Streaming jobs deal with three kinds of time: when an event happened (event time), when the system first saw it (ingestion time) and when an operator processes it (processing time). Event time gives reproducible results because they do not depend on when the job runs [[flink-analytics]].",
+        "Events arrive out of order, so a stream job cannot know when a stretch of time is complete. A watermark at time t is a claim that the stream is probably complete up to t, so results for earlier times can be released. Waiting less gives faster, riskier answers; waiting more gives fuller ones later [[flink-analytics]]. An event that turns up after a watermark covering its time counts as late [[flink-analytics]].",
+        "In batch mode the input is known in advance, so Flink can treat it as having perfect watermarks, sort by timestamp, and run in stages; it ignores the configured state backend and processes one key at a time [[flink-exec]]."
+      ],
+      "terms": [
+        {
+          "term": "Event time",
+          "definition": "The time an event occurred, recorded by the device producing it [[flink-analytics]]."
+        },
+        {
+          "term": "Watermark",
+          "definition": "An assertion that the stream is probably complete up to a time [[flink-analytics]]."
+        },
+        {
+          "term": "Late event",
+          "definition": "An event whose timestamp is at or before a watermark that came earlier [[flink-analytics]]."
+        }
+      ],
+      "reading": [
+        {
+          "source": "flink-analytics",
+          "section": "Event Time and Watermarks, through Lateness",
+          "what": "Why a stream needs a policy for when to stop waiting, and how watermarks give it."
+        },
+        {
+          "source": "flink-exec",
+          "section": "Event Time / Watermarks and Processing Time",
+          "what": "How batch mode needs no watermark heuristic and why processing time is not reproducible."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 196\" role=\"img\" aria-labelledby=\"dg-svb-learn-t\" class=\"dg\"><title id=\"dg-svb-learn-t\">Two ways to run the same job over events with times 4, 2, 9 and 7. Streaming mode keeps the window open until a watermark arrives. Batch mode knows the input has ended, sorts it, and gives the same final result once.</title><defs><marker id=\"dg-svb-learn-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"18\" class=\"dg-note\" text-anchor=\"start\">Streaming mode: wait for a watermark</text><rect x=\"14\" y=\"28\" width=\"44\" height=\"34\" class=\"dg-box\"/><text x=\"36\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">4</text><rect x=\"66\" y=\"28\" width=\"44\" height=\"34\" class=\"dg-box\"/><text x=\"88\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">2</text><rect x=\"118\" y=\"28\" width=\"44\" height=\"34\" class=\"dg-box\"/><text x=\"140\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">9</text><rect x=\"170\" y=\"28\" width=\"44\" height=\"34\" class=\"dg-box\"/><text x=\"192\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">7</text><path d=\"M222,45 L250,45\" class=\"dg-line\" marker-end=\"url(#dg-svb-learn-a)\"/><rect x=\"250\" y=\"28\" width=\"110\" height=\"34\" class=\"dg-box dg-accent\"/><text x=\"305\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">W=10</text><path d=\"M360,45 L388,45\" class=\"dg-line\" marker-end=\"url(#dg-svb-learn-a)\"/><rect x=\"388\" y=\"28\" width=\"158\" height=\"34\" class=\"dg-box\"/><text x=\"467\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">Result, 0 to 10</text><text x=\"14\" y=\"108\" class=\"dg-note\" text-anchor=\"start\">Batch mode: the input has ended</text><rect x=\"14\" y=\"118\" width=\"44\" height=\"34\" class=\"dg-box\"/><text x=\"36\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\">4</text><rect x=\"66\" y=\"118\" width=\"44\" height=\"34\" class=\"dg-box\"/><text x=\"88\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\">2</text><rect x=\"118\" y=\"118\" width=\"44\" height=\"34\" class=\"dg-box\"/><text x=\"140\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\">9</text><rect x=\"170\" y=\"118\" width=\"44\" height=\"34\" class=\"dg-box\"/><text x=\"192\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\">7</text><path d=\"M222,135 L250,135\" class=\"dg-line\" marker-end=\"url(#dg-svb-learn-a)\"/><rect x=\"250\" y=\"118\" width=\"110\" height=\"34\" class=\"dg-box\"/><text x=\"305\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\">End of input</text><path d=\"M360,135 L388,135\" class=\"dg-line\" marker-end=\"url(#dg-svb-learn-a)\"/><rect x=\"388\" y=\"118\" width=\"158\" height=\"34\" class=\"dg-box\"/><text x=\"467\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\">Result, 0 to 10</text><text x=\"14\" y=\"184\" class=\"dg-note\" text-anchor=\"start\">For bounded input the final result is the same either way.</text></svg>",
+      "canNow": [
+        "Tell event time from processing time.",
+        "Explain what a watermark promises.",
+        "Say what makes a late event, and why batch mode has none to worry about."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "To total an unbounded stream you cut it into windows. Flink offers tumbling, sliding and session windows, in event-time and processing-time versions. Processing-time windows are quicker, but they give different results on each run and mishandle old or out-of-order data [[flink-analytics]].",
+        "The Dataflow paper from Google frames the work as four questions: what results are computed, where in event time, when in processing time they are materialized, and how earlier results relate to later refinements. It argues that the choice of batch, micro-batch or streaming engine should come down to correctness, latency and cost [[dataflow-paper]]. It also says Lambda systems can meet many requirements but lose on simplicity, because two systems have to be built and maintained [[dataflow-paper]].",
+        "Batch mode changes behaviour in ways to know: rolling operations such as reduce() or sum() emit only the final result, and checkpointing does not work, so a transactional sink must use the Unified Sink API [[flink-exec]]."
+      ],
+      "terms": [
+        {
+          "term": "Window",
+          "definition": "A finite slice of a growing collection, used to group elements by their timestamps [[beam-basics]]."
+        },
+        {
+          "term": "Trigger",
+          "definition": "In Beam, what decides when to aggregate the results of each window [[beam-basics]]."
+        },
+        {
+          "term": "Lambda architecture",
+          "definition": "A design with separate batch and streaming systems; the paper says it fails on simplicity because two systems must be built and maintained [[dataflow-paper]]."
+        }
+      ],
+      "reading": [
+        {
+          "source": "dataflow-paper",
+          "section": "Section 1, the introduction with its list of contributions",
+          "what": "The four questions and why one model should cover batch, micro-batch and streaming."
+        },
+        {
+          "source": "flink-exec",
+          "section": "Failure Recovery and Important Considerations",
+          "what": "How batch mode recovers by backtracking and what changes or breaks compared with streaming mode."
+        }
+      ],
+      "canNow": [
+        "Name Flink's window types.",
+        "Say what the four Dataflow questions are.",
+        "Say two things that behave differently in Flink's batch mode."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "Flink's guidance is to use batch mode when the job is bounded because it is more efficient, and streaming mode when it is unbounded. It names bootstrapping state for an unbounded job from a bounded run as a special case, and recommends setting the mode on the command line rather than in the code so the same application runs in either [[flink-exec]].",
+        "This is the idea behind the posts on the topic page: keep the streaming job and change where it reads from. How much code changes depends on the application, and the posts show that order and lateness are the hard part, not the source swap.",
+        "Running Flink locally is a good way to see the Web UI and what a cluster consists of. The installation page asks for Java 11, 17 or 21 and shows one TaskManager with task slots in the dashboard [[flink-install]]."
+      ],
+      "terms": [
+        {
+          "term": "Execution mode",
+          "definition": "In Flink's DataStream API, STREAMING (the default), BATCH or AUTOMATIC, set with execution.runtime-mode [[flink-exec]]."
+        },
+        {
+          "term": "Backfill",
+          "definition": "Recomputing results over past data. The term is used by the posts; the docs here cover the modes that make it possible."
+        }
+      ],
+      "reading": [
+        {
+          "source": "flink-exec",
+          "section": "Configuring BATCH execution mode",
+          "what": "The three values of execution.runtime-mode and why to set it on the command line."
+        },
+        {
+          "source": "flink-install",
+          "section": "Option B: Local Installation",
+          "what": "How to start a local cluster and open the Web UI."
+        }
+      ],
+      "canNow": [
+        "Say when to prefer batch mode and when streaming mode.",
+        "Name the setting that picks the mode.",
+        "Start a local Flink cluster and find its Web UI."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "Batch and streaming need two different programming models.",
+      "truth": "Flink and Beam both present one model. Flink says a DataStream program over bounded input gives the same final results in either mode [[flink-exec]], and Beam calls itself a unified model for both [[beam-basics]]."
+    },
+    {
+      "myth": "A watermark is a guarantee that no more old events will arrive.",
+      "truth": "It is an assertion that the stream is probably complete up to a time, so an event after it can still be late [[flink-analytics]]. Beam calls it a guess [[beam-basics]]."
+    },
+    {
+      "myth": "Batch mode is streaming mode run faster.",
+      "truth": "Batch mode runs in stages, ignores the state backend, fires all timers at the end of the input and does not support checkpointing [[flink-exec]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These come from the Flink First Steps page, which shows Flink 2.3.0 documentation and asks for Java 11, 17 or 21. Run them in a new scratch directory after downloading a Flink binary release as the page describes. The Web UI is at http://localhost:8081.",
+    "exampleNames": [],
+    "commands": [
+      {
+        "command": "java -version",
+        "shows": "Checks your Java version; the page says Flink needs 11, 17 or 21.",
+        "source": "flink-install"
+      },
+      {
+        "command": "tar -xzf flink-*.tgz",
+        "shows": "Extracts the downloaded release into the current directory.",
+        "source": "flink-install",
+        "warning": "This unpacks files into the directory you are in. Run it in a new scratch directory."
+      },
+      {
+        "command": "cd flink-*",
+        "shows": "Moves into the extracted Flink directory.",
+        "source": "flink-install"
+      },
+      {
+        "command": "./bin/start-cluster.sh",
+        "shows": "Starts a local cluster. Then open http://localhost:8081, where the page says you should see one TaskManager with available task slots.",
+        "source": "flink-install",
+        "warning": "This starts Flink processes on your machine and opens port 8081. Run it only on a machine where that is fine, and stop it afterwards."
+      },
+      {
+        "command": "./bin/stop-cluster.sh",
+        "shows": "Stops the local cluster when you are done.",
+        "source": "flink-install"
+      }
+    ]
+  },
+  "next": "Go back to the [Stream vs Batch Processing topic page](/topic/stream-vs-batch-processing) for the worked example and the quiz, then read the three sources: [Uber's Kappa backfill](/topic/stream-vs-batch-processing#uber-kappa-2020), [Netflix Keystone](/topic/stream-vs-batch-processing#netflix-keystone-2018) and [Netflix's backfill talk](/topic/stream-vs-batch-processing#netflix-kappa-backfill-2022).",
+  "sources": [
+    {
+      "id": "flink-exec",
+      "title": "Apache Flink: Execution Mode (Batch/Streaming)",
+      "url": "https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/datastream/execution_mode/",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17",
+      "note": "Apache Flink documentation, stable version; the page header shows v2.3.0."
+    },
+    {
+      "id": "flink-analytics",
+      "title": "Apache Flink: Streaming Analytics (Learn Flink)",
+      "url": "https://nightlies.apache.org/flink/flink-docs-stable/docs/learn-flink/streaming_analytics/",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17",
+      "note": "Apache Flink documentation, stable version; the page header shows v2.3.0."
+    },
+    {
+      "id": "beam-basics",
+      "title": "Apache Beam: Basics of the Beam model",
+      "url": "https://beam.apache.org/documentation/basics/",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-10-16",
+      "verifiedOn": "2026-10-17",
+      "note": "Apache Beam documentation; the page shows the date it was last updated."
+    },
+    {
+      "id": "dataflow-paper",
+      "title": "The Dataflow Model: A Practical Approach to Balancing Correctness, Latency, and Cost in Massive-Scale, Unbounded, Out-of-Order Data Processing",
+      "url": "https://www.vldb.org/pvldb/vol8/p1792-Akidau.pdf",
+      "publisher": "VLDB Endowment",
+      "kind": "Academic paper",
+      "year": "2015",
+      "verifiedOn": "2026-10-17",
+      "note": "Proceedings of the VLDB Endowment, Vol. 8, No. 12, by Google engineers. A research paper, not product documentation."
+    },
+    {
+      "id": "flink-install",
+      "title": "Apache Flink: First Steps (local installation)",
+      "url": "https://nightlies.apache.org/flink/flink-docs-stable/docs/getting-started/local_installation/",
+      "publisher": "Apache Software Foundation",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17",
+      "note": "Apache Flink documentation, stable version; the page header shows v2.3.0. The address getting-started/local_installation/ opens a page titled First Steps."
+    }
+  ]
+}

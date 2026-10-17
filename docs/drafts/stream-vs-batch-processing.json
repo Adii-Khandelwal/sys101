@@ -1,0 +1,33 @@
+{
+  "stream-vs-batch-processing": {
+    "summary": {
+      "points": [
+        "A batch job processes a fixed pile of data and finishes, while a stream job runs continuously on data that never ends and answers as events arrive.",
+        "Because events arrive late and out of order, a stream job uses a watermark to decide when a window of event time is complete.",
+        "Lambda keeps a streaming job and a separate batch job that must agree, while Kappa reruns the one streaming job over stored history.",
+        "Uber reads a Hive table as a streaming source, two hours of data per trigger, so the window size limits the load on Kafka and the sinks.",
+        "Netflix keeps events in Iceberg as well as Kafka and swaps the source for backfills, which it found far cheaper than long Kafka retention."
+      ],
+      "figures": [
+        {
+          "postId": "netflix-kappa-backfill-2022",
+          "row": 0,
+          "label": "Retaining 30 days of events in Kafka was estimated at 93 million dollars a year"
+        },
+        {
+          "postId": "netflix-kappa-backfill-2022",
+          "row": 3,
+          "label": "Netflix's backfill output matched production output at 99.9%"
+        },
+        {
+          "postId": "uber-kappa-2020",
+          "row": 3,
+          "label": "Uber says a backfill can cover a few days of data in one day"
+        }
+      ]
+    },
+    "prerequisiteReasons": {
+      "log-based-streaming": "A stream job reads from a log and relies on being able to read it again from an earlier position, which is the idea that backfill builds on."
+    }
+  }
+}

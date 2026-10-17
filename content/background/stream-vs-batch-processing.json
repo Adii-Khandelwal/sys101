@@ -1,0 +1,46 @@
+{
+  "topic": "stream-vs-batch-processing",
+  "updatedOn": "2026-10-17",
+  "items": [
+    {
+      "id": "apache-iceberg",
+      "name": "Apache Iceberg tables",
+      "explanation": "Iceberg is a layer over data files that tracks which files make up a table, so Spark, Flink, Hive and other engines can read and write the same table safely at once.",
+      "assumedBy": [
+        {
+          "postId": "netflix-kappa-backfill-2022",
+          "quote": "Frameworks: Delta Lake, Apache Iceberg"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Apache Iceberg",
+          "publisher": "Apache Iceberg project",
+          "url": "https://iceberg.apache.org/",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-17"
+        }
+      ]
+    },
+    {
+      "id": "yarn",
+      "name": "YARN as a cluster resource manager",
+      "explanation": "YARN is Hadoop's resource manager. A central ResourceManager arbitrates resources among applications, and a NodeManager on each machine runs and monitors their containers.",
+      "assumedBy": [
+        {
+          "postId": "uber-kappa-2020",
+          "quote": "runs on 75 cores and 1.2 terabytes of memory on the YARN cluster"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Apache Hadoop YARN",
+          "publisher": "Apache Hadoop project",
+          "url": "https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/YARN.html",
+          "year": "page shows last updated 2023-03-15",
+          "verifiedOn": "2026-10-17"
+        }
+      ]
+    }
+  ]
+}

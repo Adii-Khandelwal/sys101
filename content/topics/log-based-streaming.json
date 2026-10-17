@@ -257,7 +257,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic to read.",
-      "body": "Stream processing and batch pipelines read logs like this one, and they will be covered in a later topic. Event-driven Architecture shows how services react to events, including the outbox pattern from Zapier, which solves the dual-write problem DBLog addresses from the other side. Idempotency and Retries explains how to make the repeats a log allows safe. Consensus explains the agreement protocol behind Northguard's metadata, and Replication covers how the copies stay in step."
+      "body": "Stream vs Batch Processing shows how jobs read logs like this one, how they handle late events, and how Uber and Netflix rebuild results from history. Event-driven Architecture shows how services react to events, including the outbox pattern from Zapier, which solves the dual-write problem DBLog addresses from the other side. Idempotency and Retries explains how to make the repeats a log allows safe. Consensus explains the agreement protocol behind Northguard's metadata, and Replication covers how the copies stay in step."
     }
   },
   "posts": [
