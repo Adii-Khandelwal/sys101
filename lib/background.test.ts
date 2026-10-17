@@ -156,7 +156,7 @@ describe("the link from a topic page", () => {
     for (const t of topics) expect(backgroundHref(t.slug), t.slug).toBe(files.some((f) => f.topic === t.slug) ? `/background#${t.slug}` : undefined);
     expect(backgroundHref("caching")).toBe("/background#caching");
     expect(backgroundHref("not-a-topic")).toBeUndefined(); // no file, no link
-  }, 30000); // shortcut: backgroundHref reloads and validates every file per topic, so this grows with the topic count; cache getAllBackground when it passes ~40 topics
+  });
 });
 
 describe("validation catches the mistakes it is for", () => {

@@ -277,7 +277,7 @@
  },
  "google-autopilot-2020|two change": {
   "verdict": "ok",
-  "source": "paper: horizontal scaling changes tasks in a job, and vertical scaling changes per-task CPU/memory limits; the two vertical loops (CPU, memory) are described as separate"
+  "source": "paper: one loop for horizontal scaling, \"the other two for vertical scaling of per-task resources\""
  },
  "mongodb-predictive-autoscaling-2026|7 percent": {
   "verdict": "ok",
@@ -333,6 +333,6 @@
  },
  "mongodb-tunable-2019|1 Share": {
   "verdict": "ok",
-  "source": "meaning text spans paper tables 1 to 6; w:1 is the write concern in tables 2, 3, 5 and 6"
+  "source": "paper: w:1 vs majority latency in tables 3 and 5; read concern shares in table 1; write concern shares in table 2; durability under failures in table 6"
  }
 }

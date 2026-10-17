@@ -128,7 +128,8 @@ export function getAllBackground(): Background[] {
 export const getBackground = (slug: string) => getAllBackground().find((b) => b.topic === slug) ?? null;
 
 /** Where a topic's background section is, or undefined when the topic has none. The topic page shows its link only then. */
-export const backgroundHref = (slug: string) => (getBackground(slug) ? `/background#${slug}` : undefined);
+// The file name must equal the topic slug (validateBackground), so existence is enough here and no file is loaded per topic page.
+export const backgroundHref = (slug: string) => (fs.existsSync(path.join(DIR, `${slug}.json`)) ? `/background#${slug}` : undefined);
 
 /** The latest edit across all background files: the sitemap lastmod for /background. */
 export const backgroundUpdated = () => getAllBackground().reduce((a, b) => (b.updatedOn > a ? b.updatedOn : a), "");
