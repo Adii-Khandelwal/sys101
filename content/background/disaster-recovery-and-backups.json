@@ -1,0 +1,46 @@
+{
+  "topic": "disaster-recovery-and-backups",
+  "updatedOn": "2026-10-17",
+  "items": [
+    {
+      "id": "lvm-snapshots",
+      "name": "LVM snapshots",
+      "explanation": "LVM is the Linux logical volume manager. A snapshot is a new logical volume that shows the contents of another volume as they were at the moment it was made, which makes it a quick way to freeze a disk for copying.",
+      "assumedBy": [
+        {
+          "postId": "gitlab-db-outage-2017",
+          "quote": "Every 24 hours we generate an LVM snapshot of the disk storing the production"
+        }
+      ],
+      "sources": [
+        {
+          "title": "lvcreate(8): Linux manual page",
+          "publisher": "lvm2 project (via man7.org)",
+          "url": "https://man7.org/linux/man-pages/man8/lvcreate.8.html",
+          "year": "2026",
+          "verifiedOn": "2026-10-17"
+        }
+      ]
+    },
+    {
+      "id": "dmarc",
+      "name": "DMARC",
+      "explanation": "A mail standard that lets a domain owner publish a policy for how receiving servers should treat messages that claim to come from the domain but fail authentication. A receiver may reject such mail.",
+      "assumedBy": [
+        {
+          "postId": "gitlab-db-outage-2017",
+          "quote": "Unfortunately DMARC was not enabled for the cronjob emails, resulting in them"
+        }
+      ],
+      "sources": [
+        {
+          "title": "RFC 7489: Domain-based Message Authentication, Reporting, and Conformance (DMARC)",
+          "publisher": "IETF",
+          "url": "https://www.rfc-editor.org/rfc/rfc7489.html",
+          "year": "2015",
+          "verifiedOn": "2026-10-17"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,453 @@
+{
+  "slug": "disaster-recovery-and-backups",
+  "title": "Disaster Recovery and Backups",
+  "group": "Reliability",
+  "interviewRelevance": "common",
+  "concept": "Disaster recovery is the plan and the copies that let a system come back from events redundancy cannot absorb: corrupted data, a deleted directory, or the loss of a whole site. Backups are the kept copies with history, and the recovery point and recovery time objectives say how much data you can lose and how long you can be down. A plan only counts once someone has restored from it and timed the result.",
+  "prerequisites": [
+    "replication",
+    "failover"
+  ],
+  "summary": {
+    "points": [
+      "Disaster recovery is the set of copies and plans that bring a system back from damage that redundancy passes on to every copy.",
+      "A replica follows the primary, mistakes included, so a backup with history is what takes you back to before the damage.",
+      "The recovery point objective bounds how much data you can lose, and the recovery time objective bounds how long you can be down.",
+      "GitLab found in 2017 that none of its backup procedures gave a recent copy, and its dump job had been failing unnoticed.",
+      "Meta drains whole datacenters in dependency order and runs drills often, so the recovery path is tested before a real disaster."
+    ],
+    "figures": [
+      {
+        "postId": "gitlab-db-outage-2017",
+        "row": 3,
+        "label": "around 18 hours to copy the staging data back to production"
+      },
+      {
+        "postId": "gitlab-db-outage-2017",
+        "row": 1,
+        "label": "lost roughly 5,000 projects, 5,000 comments and 700 new user accounts"
+      },
+      {
+        "postId": "meta-maelstrom-2018",
+        "row": 0,
+        "label": "less than 40 minutes to drain all user-facing traffic from a datacenter"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "replication": "Recovery takes from replication the live copies that cover a failed machine, and shows why they cannot undo a mistake that was copied to every replica.",
+    "failover": "Recovery takes from failover the switch to a standby, and extends it from one machine to a whole site that must be recovered or drained."
+  },
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why replication is not a backup and what RPO and RTO promise.",
+      "body": "Redundancy protects you from a machine failing. It does not protect you from the things that happen to every copy at once: a bad deploy that corrupts rows, an engineer deleting the wrong directory, an attacker, a power failure that takes out a building, or a region going dark. A replica is a live copy, so it receives the mistake along with everything else. Disaster recovery is the set of plans and copies that let you come back from those events, and a backup is the oldest and most reliable part of it.\n\nTwo numbers describe what you are promising. The recovery point objective, RPO, is how much recent data you can afford to lose, and it is set by how often you make a copy. The recovery time objective, RTO, is how long you can be down, and it is set by how fast you can restore or switch. Everything else in this topic is a way of buying a smaller RPO or RTO at a price, and a way of checking that the promise holds. The check matters most: a recovery path that has never been run is a guess, and the two posts here show what happens when it has never been run, and when it is practised."
+    },
+    "mentalModel": {
+      "outcome": "After this you can place RPO and RTO on a timeline and choose live or kept copies for each failure.",
+      "body": "Picture a line through time. At one point there is your last good copy. At a later point something goes wrong. At a third point the service is back. The gap before the disaster is the data you lose, the RPO. The gap after it is the time you spend down, the RTO. Taking copies more often shrinks the first gap. Having the second site ready, and the restore steps practised, shrinks the second.\n\nThink in two kinds of copy. A live copy, a replica or a standby region, is fast to switch to, but it follows the primary, mistakes included. A kept copy, a backup with history, is slower to bring back but can be older than the mistake. Most real plans use both: live copies for the machine and site failures, kept copies for corruption and human error, and a drill to find out whether either works.",
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-dr-model-t\" class=\"dg\"><title id=\"dg-c-dr-model-t\">Recovery time line: the last good copy, then the disaster, then service restored. The gap before the disaster is the recovery point objective, the recent writes you can lose. The gap after it is the recovery time objective, how long you are down.</title><defs><marker id=\"dg-c-dr-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><path d=\"M30,150 L535,150\" class=\"dg-line\" marker-end=\"url(#dg-c-dr-model-a)\"/><circle cx=\"90\" cy=\"150\" r=\"5\" class=\"dg-dot\"/><text x=\"90\" y=\"128\" class=\"dg-note\" text-anchor=\"middle\">last good copy</text><circle cx=\"300\" cy=\"150\" r=\"5\" class=\"dg-dot-accent\"/><text x=\"300\" y=\"128\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">disaster</text><circle cx=\"490\" cy=\"150\" r=\"5\" class=\"dg-dot\"/><text x=\"490\" y=\"128\" class=\"dg-note\" text-anchor=\"middle\">service restored</text><path d=\"M90,168 L90,178 L300,178 L300,168\" class=\"dg-line\"/><path d=\"M300,168 L300,178 L490,178 L490,168\" class=\"dg-line\"/><text x=\"195\" y=\"200\" class=\"dg-note\" text-anchor=\"middle\">RPO: recent writes lost</text><text x=\"395\" y=\"200\" class=\"dg-note\" text-anchor=\"middle\">RTO: time spent down</text><text x=\"280\" y=\"262\" class=\"dg-note\" text-anchor=\"middle\">copy frequency sets RPO; restore speed sets RTO</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can walk through the steps of a recovery plan, from targets to a tested restore.",
+      "steps": [
+        {
+          "step": "Set an RPO and RTO for each system",
+          "explanation": "Not every system needs the same promise. A payments ledger may need minutes of data loss at most, while an analytics store can tolerate a day. The targets decide how much to spend on everything below."
+        },
+        {
+          "step": "Take a base copy and keep the change log",
+          "explanation": "A full copy of the data, plus a continuous archive of the changes since, lets you restore to the copy and replay the log to a chosen moment. That gives a small RPO and lets you stop just before the mistake, which is point-in-time recovery."
+        },
+        {
+          "step": "Keep copies apart from the thing they protect",
+          "explanation": "A copy on the same disks, in the same account or in the same region as the original shares its fate. Put copies in another failure domain and use versioning or retention so a script or an attacker cannot delete them with one command."
+        },
+        {
+          "step": "Choose a standby strategy for site loss",
+          "explanation": "Backup and restore only keeps copies and redeploys everything. Pilot light keeps data live and servers switched off. Warm standby keeps a small working copy that can take traffic. Active/active serves from every site. Cost and complexity rise, and recovery time falls, along that ladder."
+        },
+        {
+          "step": "Practise the restore",
+          "explanation": "Restore into a clean environment on a schedule, check the data and time the result against the RTO. A restore that is never run fails for reasons nobody has seen, such as an empty bucket or a tool version mismatch."
+        },
+        {
+          "step": "Test the recovery path, as chaos engineering does",
+          "explanation": "Chaos engineering injects failures on purpose in a controlled way to find weaknesses before a real one does. Applied to recovery, it means regular drills that fail a site over or drain its traffic, so runbooks and dependencies stay true as the system changes."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-dr-how-t\" class=\"dg\"><title id=\"dg-c-dr-how-t\">Four disaster recovery strategies from cheapest to costliest: backup and restore, pilot light, warm standby and active active. Cost and complexity rise left to right and recovery time falls.</title><defs><marker id=\"dg-c-dr-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"280\" y=\"40\" class=\"dg-note\" text-anchor=\"middle\">pick one per system from its RPO and RTO</text><rect x=\"20\" y=\"70\" width=\"115\" height=\"56\" class=\"dg-box\"/><text x=\"77.5\" y=\"94\" class=\"dg-label\" text-anchor=\"middle\">Backup and</text><text x=\"77.5\" y=\"111\" class=\"dg-label\" text-anchor=\"middle\">restore</text><text x=\"77\" y=\"150\" class=\"dg-note\" text-anchor=\"middle\">copies only,</text><text x=\"77\" y=\"168\" class=\"dg-note\" text-anchor=\"middle\">redeploy all</text><rect x=\"155\" y=\"70\" width=\"115\" height=\"56\" class=\"dg-box\"/><text x=\"212.5\" y=\"94\" class=\"dg-label\" text-anchor=\"middle\">Pilot</text><text x=\"212.5\" y=\"111\" class=\"dg-label\" text-anchor=\"middle\">light</text><text x=\"212\" y=\"150\" class=\"dg-note\" text-anchor=\"middle\">data live,</text><text x=\"212\" y=\"168\" class=\"dg-note\" text-anchor=\"middle\">servers off</text><rect x=\"290\" y=\"70\" width=\"115\" height=\"56\" class=\"dg-box\"/><text x=\"347.5\" y=\"94\" class=\"dg-label\" text-anchor=\"middle\">Warm</text><text x=\"347.5\" y=\"111\" class=\"dg-label\" text-anchor=\"middle\">standby</text><text x=\"347\" y=\"150\" class=\"dg-note\" text-anchor=\"middle\">small copy</text><text x=\"347\" y=\"168\" class=\"dg-note\" text-anchor=\"middle\">takes traffic</text><rect x=\"425\" y=\"70\" width=\"115\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"482.5\" y=\"94\" class=\"dg-label\" text-anchor=\"middle\">Active /</text><text x=\"482.5\" y=\"111\" class=\"dg-label\" text-anchor=\"middle\">active</text><text x=\"482\" y=\"150\" class=\"dg-note\" text-anchor=\"middle\">every site</text><text x=\"482\" y=\"168\" class=\"dg-note\" text-anchor=\"middle\">serves traffic</text><text x=\"20\" y=\"212\" class=\"dg-note\" text-anchor=\"start\">cheaper, slower to recover</text><text x=\"540\" y=\"212\" class=\"dg-note\" text-anchor=\"end\">costlier, faster</text><path d=\"M20,226 L540,226\" class=\"dg-line\" marker-end=\"url(#dg-c-dr-how-a)\"/><text x=\"280\" y=\"262\" class=\"dg-note\" text-anchor=\"middle\">each still needs point-in-time backups for corrupted data</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can audit a set of backup procedures with three questions and spot which copy would actually save you.",
+      "steps": [
+        {
+          "step": "List the copies the team believed it had",
+          "explanation": "GitLab had a nightly pg_dump uploaded to S3, an LVM snapshot refreshed into staging, Azure disk snapshots on some servers, and replication to a standby. On paper that looks like several layers."
+        },
+        {
+          "step": "Ask three questions of each",
+          "explanation": "Is it apart from the primary? Is it recent? Has anyone restored from it? A replica fails the first: it follows the primary, and here it had also been wiped during the rebuild. The dump failed the second and third: the bucket was empty because the job used a PostgreSQL 9.2 tool on a 9.6 database."
+        },
+        {
+          "step": "See which copy survives",
+          "explanation": "The Azure snapshots had never been enabled on the database hosts. The only usable copy was a snapshot taken about six hours before, loaded into staging for an unrelated test."
+        },
+        {
+          "step": "Count the cost of the restore",
+          "explanation": "The copy sat on slow staging disks, so putting it back took around 18 hours. The data lost was the changes made after that snapshot: roughly 5,000 projects, 5,000 comments and 700 new user accounts."
+        },
+        {
+          "step": "Turn it into changes",
+          "explanation": "Alert when a good backup is missing, not when a job complains. Restore on a schedule and time it. Take snapshots more often (GitLab moved to hourly LVM snapshots afterwards). Give recovery one owner."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-dr-ex-t\" class=\"dg\"><title id=\"dg-c-dr-ex-t\">The four copies GitLab relied on in 2017: the pg_dump backup was empty, Azure snapshots were not enabled on the database hosts, the replica had been wiped, and only a six hour old snapshot loaded into staging worked, taking about 18 hours to copy back.</title><defs><marker id=\"dg-c-dr-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"30\" width=\"200\" height=\"40\" class=\"dg-box\" opacity=\"0.5\"/><text x=\"120\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\">pg_dump to S3</text><text x=\"236\" y=\"55\" class=\"dg-note\" text-anchor=\"start\">bucket empty: 9.2 tool, 9.6 database</text><rect x=\"20\" y=\"84\" width=\"200\" height=\"40\" class=\"dg-box\" opacity=\"0.5\"/><text x=\"120\" y=\"108.5\" class=\"dg-label\" text-anchor=\"middle\">Azure disk snapshots</text><text x=\"236\" y=\"109\" class=\"dg-note\" text-anchor=\"start\">never enabled on the database hosts</text><rect x=\"20\" y=\"138\" width=\"200\" height=\"40\" class=\"dg-box\" opacity=\"0.5\"/><text x=\"120\" y=\"162.5\" class=\"dg-label\" text-anchor=\"middle\">Replication</text><text x=\"236\" y=\"163\" class=\"dg-note\" text-anchor=\"start\">secondary wiped during its own rebuild</text><rect x=\"20\" y=\"192\" width=\"200\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"120\" y=\"216.5\" class=\"dg-label\" text-anchor=\"middle\">LVM snapshot in staging</text><text x=\"236\" y=\"217\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">6 hours old: the one copy that worked</text><text x=\"20\" y=\"262\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">restore took about 18 hours over slow staging disks</text><text x=\"20\" y=\"284\" class=\"dg-note\" text-anchor=\"start\">the working copy was a side effect of a staging refresh</text></svg>"
+    },
+    "mistakesOutcome": "After this you can name the habits that turn a backup plan into a false sense of safety.",
+    "checkOutcome": "After this you can check that you can tell a backup from a replica and read RPO and RTO.",
+    "quiz": [
+      {
+        "question": "A team says: we have replication, so we have backups. A script then deletes a table on the primary. What happens on the replica?",
+        "options": [
+          "The replica keeps its copy of the table, so the team restores from it",
+          "The replica refuses the delete because standbys only accept changes from a person",
+          "The replica applies the same delete, so only an older copy kept apart from replication can bring the table back",
+          "The replica pauses replication until someone approves the change"
+        ],
+        "correct": 2,
+        "why": "Replication copies every change, including mistakes. A separate, older copy is the only way back to the table.",
+        "wrong": [
+          "Replicas follow the primary, so the delete reaches them within moments. This is why a replica is not a backup.",
+          "Replicas apply the primary's changes automatically; they do not wait for approval from a person.",
+          "",
+          "Replication does not wait for a decision; it keeps replicas current, mistakes included."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "A service sets a recovery point objective of 15 minutes and a recovery time objective of 1 hour. What does that promise?",
+        "options": [
+          "At most about 15 minutes of recent writes may be lost, and service should return within an hour",
+          "Backups run every hour and each one takes 15 minutes to finish",
+          "Service can be down for 15 minutes at most, but up to an hour of recent data may be lost along the way",
+          "Failover must start within 15 minutes and every replica must be rebuilt within an hour"
+        ],
+        "correct": 0,
+        "why": "The recovery point objective bounds how much recent data you can lose; the recovery time objective bounds how long you are down.",
+        "wrong": [
+          "",
+          "Both targets describe the outcome of a disaster, not how often a job runs or how long it takes to finish.",
+          "This swaps the two targets: the 15 minutes is about lost data, and the hour is about downtime.",
+          "Neither target says anything about when failover starts or how long a rebuild takes."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "Which strategy keeps data replicating into a second region while the application servers there stay switched off until a disaster?",
+        "options": [
+          "Backup and restore",
+          "Warm standby",
+          "Multi-site active/active",
+          "Pilot light"
+        ],
+        "correct": 3,
+        "why": "In a pilot light the data stores run all the time and the servers are loaded with code but switched off, so recovery means switching them on and scaling out.",
+        "wrong": [
+          "Backup and restore keeps copies only, with no live data stores in the second region.",
+          "A warm standby already runs a small working copy that can take traffic at once, so nothing is switched off.",
+          "Active/active serves real traffic from every region all the time.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "In GitLab's 2017 outage, why could the team not simply fail over to the secondary database?",
+        "options": [
+          "PostgreSQL does not allow a secondary to take over from a primary, so a restore from backup was the only choice",
+          "The secondary had been wiped during the rebuild, and replication was meant for failover, not recovery",
+          "The secondary was holding the code repositories, which sit on separate storage",
+          "The secondary was too far behind to be useful, although all of its data was still intact on disk"
+        ],
+        "correct": 1,
+        "why": "The secondary's data directory had been removed as part of rebuilding replication, so no intact second copy existed.",
+        "wrong": [
+          "A secondary can be promoted in PostgreSQL; here it simply had no data left to promote.",
+          "",
+          "Repositories and wikis were stored separately and were not lost, so this is not why the secondary was unusable.",
+          "Lag was the reason replication broke, but the decisive fact was that the secondary's data had been deleted too."
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "A nightly backup job reports success every night and has never been restored. What is the best way to describe that backup?",
+        "options": [
+          "An unproven assumption: only a restore shows whether recovery really works",
+          "A safe backup, because the job reports success every night and no error has ever been raised",
+          "A safe backup as long as the files are stored in more than one folder",
+          "A tested backup, because a successful job counts as a test"
+        ],
+        "correct": 0,
+        "why": "A job finishing says the job ran. Only restoring into a clean environment and checking the data shows the backup can be used.",
+        "wrong": [
+          "",
+          "Success from the job does not prove the files contain usable data; GitLab's S3 bucket was empty while it assumed its backups were fine.",
+          "More copies of an unproven backup are still unproven, and they can share the same flaw.",
+          "A test restores the data and checks it. A job's exit status checks very little."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "A datacenter loses most of its backbone capacity. What did Meta's Maelstrom system do to limit user impact?",
+        "options": [
+          "Restored the databases from last night's backup in another region",
+          "Failed over every service at once, with no regard for what each one depends on or how loaded the targets are",
+          "Shifted user and service traffic to healthy datacenters in dependency order, paced by health checks",
+          "Switched off the damaged datacenter's caches so no user could reach them"
+        ],
+        "correct": 2,
+        "why": "Maelstrom encodes dependencies between services and watches health, so it drains traffic quickly without overloading the datacenters that stay up.",
+        "wrong": [
+          "Restoring from a backup is a data recovery step. Draining traffic is how a site keeps serving while it is damaged.",
+          "Moving everything at once ignores dependencies and can overload the healthy sites, which is what Maelstrom is built to avoid.",
+          "",
+          "Turning off caches would raise load and does not move any users to a healthy site."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "postsOutcome": "After this you can see one team fail to restore and another practise draining a whole site.",
+    "differOutcome": "After this you can compare learning from an outage with learning from routine drills.",
+    "exercisesOutcome": "After this you can fix a silent backup, design a recovery plan and rethink it as data grows.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A team's nightly pg_dump job has been failing for weeks. Its only alert is an email to a shared inbox, and nobody noticed. What would you change first?",
+        "answer": "Stop relying on a failure message and watch for the absence of success instead. Alert when the newest good backup is older than the recovery point objective, and record the size and the time of every backup so an empty file stands out. Then restore the newest backup into a scratch environment on a schedule and run a simple check on the data. Give one named person ownership of the whole path.",
+        "tradeoffs": "A scheduled restore test costs storage and compute and needs someone to look at failures. It is the only check that proves the backup can be used, so it is worth the cost.",
+        "wrongAnswers": [
+          "Send the failure email to more people.",
+          "Run the dump twice as often.",
+          "Keep the job and add a second backup that is also never restored."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "level": "design",
+        "prompt": "Design recovery for a payments database with a recovery point objective of 5 minutes and a recovery time objective of 1 hour. It must survive losing a whole region and a bad deploy that corrupts rows.",
+        "answer": "Take periodic base backups and archive the transaction log continuously, so you can restore to any moment and stop just before the bad change. Copy both to another region and another account, with versioning or retention so an attacker or a script cannot delete them. For the region loss, keep a warm standby or pilot light there with the data replicating, so recovery is switching traffic and scaling up, not rebuilding. Write the restore steps as a runbook, automate them, and run a restore drill on a schedule, timing it against the one hour target.",
+        "tradeoffs": "Continuous log archiving gives a small recovery point and point-in-time recovery, but needs archive storage and monitoring. A warm standby cuts recovery time at the price of running a second small environment all the time. Replication alone would meet the region loss but not the corruption.",
+        "wrongAnswers": [
+          "Replicate synchronously to another region and skip backups.",
+          "Take a full backup once a night and keep it on the same disks.",
+          "Rely on the primary's own snapshots in the same account."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "scale",
+        "prompt": "The database grows tenfold and a full restore now takes longer than the recovery time objective. What changes?",
+        "answer": "Measure the restore, not the backup, and treat its duration as the number to beat. Shorten it by keeping a standby that is already restored and rolling forward from the log, by restoring shards in parallel rather than one stream, and by using incremental backups so that a restore chain stays short and is itself tested. Move the full-restore drill to a schedule you can keep, and keep a smaller, faster path for the common case of one table or one tenant.",
+        "tradeoffs": "A warm restored copy and parallel restore cost standing capacity and engineering work. Long incremental chains are cheap to take but add steps that can each fail on restore, so each chain needs its own periodic test.",
+        "wrongAnswers": [
+          "Back up more often and leave the restore as it is.",
+          "Move the same backups to cheaper storage.",
+          "Raise the recovery time objective until the restore fits."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can see where recovery fits among the reliability topics.",
+      "body": "Disaster recovery sits at the end of the Reliability group for now. Replication provides the live copies and Failover is the switch within a site; this topic adds kept copies with history and the habit of rehearsing the restore. Object Storage is a common home for backups, with its own cost and durability trade-offs. Safe Deployments covers the most common cause of data damage: a change that goes out wrong."
+    }
+  },
+  "posts": [
+    {
+      "id": "gitlab-db-outage-2017",
+      "title": "Postmortem of database outage of January 31",
+      "url": "https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/",
+      "company": "GitLab",
+      "verifiedOn": "2026-10-17",
+      "published": "2017-02-10",
+      "ageNote": "From February 2017, included for a fundamental that has not changed: replication is not a backup, and a backup nobody restores is an assumption. GitLab's setup at the time (PostgreSQL 9.x, Azure classic storage, LVM snapshots) has since changed, so treat the specifics as of 2017 and the lesson about untested recovery as the lasting part.",
+      "related": [
+        "replication",
+        "failover"
+      ],
+      "digest": {
+        "problem": "GitLab.com lost most of its production PostgreSQL data directory when an engineer rebuilding a broken replica wiped the primary instead of the secondary. The team then went looking for a backup and found that none of its recovery procedures could give them a recent copy.",
+        "constraints": "A single primary with one standby handled all the load. The replica was meant for failover, not disaster recovery. Backups, snapshots and the staging refresh had each been set up for a narrow purpose, and nobody owned testing that a restore would work.",
+        "walkthrough": [
+          {
+            "step": "An unrelated staging test left a recent snapshot",
+            "explanation": "At 17:20 UTC an engineer took an LVM snapshot of the production database by hand and loaded it into staging, to test with up-to-date data. This was routine for staging, not a recovery measure."
+          },
+          {
+            "step": "Load made replication fall behind",
+            "explanation": "Spam and a background job removing an account pushed the database load up. The secondary lagged, and the primary removed log segments the secondary still needed. With no log archiving, the secondary had to be rebuilt by hand."
+          },
+          {
+            "step": "The rebuild went wrong",
+            "explanation": "The rebuild tool seemed to hang, settings were changed, and an engineer wiped a data directory to start again. It was the primary's. About 300 GB was gone before the command was stopped."
+          },
+          {
+            "step": "Every recovery path was checked and found wanting",
+            "explanation": "The nightly pg_dump bucket was empty because the job used a PostgreSQL 9.2 tool against a 9.6 database. Its failure emails were rejected, so nobody saw them. Azure disk snapshots were not enabled on database servers. The replica had been wiped as part of the rebuild."
+          },
+          {
+            "step": "Recovery from the staging copy",
+            "explanation": "The six hour old snapshot loaded into staging was the best copy. Copying it back over slow, throttled disks took around 18 hours. Webhooks, which the staging refresh strips, were restored from a second copy."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-p-dr-gitlab-t\" class=\"dg\"><title id=\"dg-p-dr-gitlab-t\">GitLab January 2017 outage: a manual snapshot at 17:20 UTC, replication lag at about 23:00, the wrong host wiped at about 23:30 with around 300 GB removed, then an 18 hour restore from the staging copy. Changes after 17:20 UTC were lost.</title><defs><marker id=\"dg-p-dr-gitlab-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"40\" width=\"118\" height=\"60\" class=\"dg-box\"/><text x=\"73\" y=\"66\" class=\"dg-label\" text-anchor=\"middle\">Manual</text><text x=\"73\" y=\"83\" class=\"dg-label\" text-anchor=\"middle\">snapshot</text><text x=\"73\" y=\"124\" class=\"dg-note\" text-anchor=\"middle\">17:20 UTC, for a</text><text x=\"73\" y=\"141\" class=\"dg-note\" text-anchor=\"middle\">staging test</text><path d=\"M132,70 L150,70\" class=\"dg-line\" marker-end=\"url(#dg-p-dr-gitlab-a)\"/><rect x=\"150\" y=\"40\" width=\"118\" height=\"60\" class=\"dg-box\"/><text x=\"209\" y=\"66\" class=\"dg-label\" text-anchor=\"middle\">Replication</text><text x=\"209\" y=\"83\" class=\"dg-label\" text-anchor=\"middle\">lags</text><text x=\"209\" y=\"124\" class=\"dg-note\" text-anchor=\"middle\">about 23:00:</text><text x=\"209\" y=\"141\" class=\"dg-note\" text-anchor=\"middle\">secondary must</text><text x=\"209\" y=\"158\" class=\"dg-note\" text-anchor=\"middle\">be rebuilt</text><path d=\"M268,70 L286,70\" class=\"dg-line\" marker-end=\"url(#dg-p-dr-gitlab-a)\"/><rect x=\"286\" y=\"40\" width=\"118\" height=\"60\" class=\"dg-box dg-accent\"/><text x=\"345\" y=\"66\" class=\"dg-label\" text-anchor=\"middle\">Wrong host</text><text x=\"345\" y=\"83\" class=\"dg-label\" text-anchor=\"middle\">wiped</text><text x=\"345\" y=\"124\" class=\"dg-note\" text-anchor=\"middle\">about 23:30:</text><text x=\"345\" y=\"141\" class=\"dg-note\" text-anchor=\"middle\">around 300 GB</text><text x=\"345\" y=\"158\" class=\"dg-note\" text-anchor=\"middle\">removed</text><path d=\"M404,70 L422,70\" class=\"dg-line\" marker-end=\"url(#dg-p-dr-gitlab-a)\"/><rect x=\"422\" y=\"40\" width=\"118\" height=\"60\" class=\"dg-box\"/><text x=\"481\" y=\"66\" class=\"dg-label\" text-anchor=\"middle\">Restore from</text><text x=\"481\" y=\"83\" class=\"dg-label\" text-anchor=\"middle\">staging</text><text x=\"481\" y=\"124\" class=\"dg-note\" text-anchor=\"middle\">about 18 hours,</text><text x=\"481\" y=\"141\" class=\"dg-note\" text-anchor=\"middle\">slow disks</text><text x=\"20\" y=\"208\" class=\"dg-note dg-note-accent\" text-anchor=\"start\">lost: database changes made after 17:20 UTC</text><text x=\"20\" y=\"230\" class=\"dg-note\" text-anchor=\"start\">roughly 5,000 projects, 5,000 comments, 700 new accounts</text></svg>",
+        "numbers": [
+          {
+            "value": "around 300 GB",
+            "meaning": "Data already removed from the primary before the wipe was stopped, a second or two after the engineer noticed"
+          },
+          {
+            "value": "roughly 5,000 projects, 5,000 comments and 700 new user accounts",
+            "meaning": "GitLab's best estimate of what was lost for good, from changes after the last usable copy"
+          },
+          {
+            "value": "roughly 6 hours",
+            "meaning": "Age of the manual LVM snapshot before the outage, the newest copy available; the automatic copy was almost 24 hours old"
+          },
+          {
+            "value": "around 18 hours",
+            "meaning": "Time to copy the data from the slow staging disks back to production, which dominated the outage"
+          },
+          {
+            "value": "pg_dump 9.2",
+            "meaning": "The tool version the backup job picked on an application server, while the database ran PostgreSQL 9.6; the mismatch made the dump job fail"
+          },
+          {
+            "value": "every 24 hours",
+            "meaning": "How often the pg_dump backup, the LVM snapshot and the Azure disk snapshots were scheduled to run"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Restore from the six hour old snapshot held in staging, accepting the loss of the changes made since.",
+          "rejected": "Restore from the snapshot taken almost 24 hours before the outage, which would have lost far more.",
+          "why": "The newer copy lost the least data, though it was the only way to keep the loss to about 6 hours. Because it sat on cheap, slow staging disks, the speed of the restore was the price paid, and the team copied the data directory rather than the snapshot because that was simpler."
+        },
+        "failures": "Each procedure failed for its own reason: a version mismatch made the dump jobs fail, the failure emails were rejected, the disk snapshots were assumed unnecessary, and replication was never meant to be a recovery path. The root cause analysis in the post names a missing owner for testing the backup procedure.",
+        "takeaways": "Replication keeps a second live copy, so it shares mistakes. A backup counts only if someone restores it and times the restore. Alert on the absence of a good backup, not on a failure message, and give recovery one named owner. Afterwards GitLab moved LVM snapshots of the production databases to hourly and started work on automated tests of restoring backups."
+      }
+    },
+    {
+      "id": "meta-maelstrom-2018",
+      "title": "Maelstrom: Mitigating Datacenter-level Disasters by Draining Interdependent Traffic Safely and Efficiently",
+      "url": "https://www.usenix.org/system/files/osdi18-veeraraghavan.pdf",
+      "company": "Meta",
+      "verifiedOn": "2026-10-17",
+      "published": "2018-10-08",
+      "ageNote": "This is a research paper, not a company blog post: the 2018 OSDI paper by Facebook engineers, who ran the system. It is here for a fundamental that has not changed: how to move traffic away from a failed site in dependency order, and why regular drain tests keep the procedures true. It describes Facebook's systems as of 2018 and makes no claim about how they run today.",
+      "related": [
+        "failover",
+        "replication"
+      ],
+      "digest": {
+        "problem": "When a whole datacenter fails, the redundancy inside it fails too, so the usual per-machine fault tolerance does not help. Facebook needed to move the traffic of hundreds of interdependent services to healthy datacenters quickly, without making things worse.",
+        "constraints": "Services differ: stateless web traffic, sticky sessions, replicated stores and primary-secondary databases each drain differently. Moving traffic in the wrong order can serve stale data or add latency, and moving it all at once can overload the network or the datacenters that remain.",
+        "walkthrough": [
+          {
+            "step": "Break the disaster into runbooks of tasks",
+            "explanation": "Each service keeps a runbook built from reusable tasks such as shifting traffic, moving data shards, restarting jobs and changing configuration. A datacenter evacuation runbook joins them with dependencies."
+          },
+          {
+            "step": "Order work by dependencies and pace it by health",
+            "explanation": "Tasks run in dependency order and in parallel where they are independent. Each task is paced in steps against health metrics and resource limits, so a drain never outruns what the healthy sites can absorb."
+          },
+          {
+            "step": "Run drain tests as a routine",
+            "explanation": "The same runbooks are exercised in drain tests on live traffic, several a week, on whichever datacenter was tested least recently. A test that causes user-visible impact is followed up and re-run."
+          },
+          {
+            "step": "Use it for real disasters",
+            "explanation": "In one incident, fibercuts cut over 85% of the backbone capacity to a datacenter. Operators drained it in about 1.5 hours, most user-facing traffic in about 17 minutes, and restored it after the repair."
+          },
+          {
+            "step": "Restore slowly",
+            "explanation": "Putting traffic back is paced more gently, since a datacenter coming back has cold caches and a single target takes more load than one that is being drained into many."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 310\" role=\"img\" aria-labelledby=\"dg-p-dr-maelstrom-t\" class=\"dg\"><title id=\"dg-p-dr-maelstrom-t\">Maelstrom drains a failing datacenter: user and service traffic shifts to healthy datacenters in dependency order, paced by health checks. Web traffic drained in about 10 minutes, all user-facing traffic in 40 and all service traffic in 110.</title><defs><marker id=\"dg-p-dr-maelstrom-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"280\" y=\"34\" class=\"dg-note\" text-anchor=\"middle\">drain in dependency order, paced by health checks</text><rect x=\"20\" y=\"105\" width=\"120\" height=\"56\" class=\"dg-box\" opacity=\"0.5\"/><text x=\"80\" y=\"129\" class=\"dg-label\" text-anchor=\"middle\">Datacenter A</text><text x=\"80\" y=\"146\" class=\"dg-label\" text-anchor=\"middle\">(failing)</text><rect x=\"420\" y=\"70\" width=\"120\" height=\"44\" class=\"dg-box\"/><text x=\"480\" y=\"96.5\" class=\"dg-label\" text-anchor=\"middle\">Datacenter B</text><rect x=\"420\" y=\"152\" width=\"120\" height=\"44\" class=\"dg-box\"/><text x=\"480\" y=\"178.5\" class=\"dg-label\" text-anchor=\"middle\">Datacenter C</text><path d=\"M140,125 L420,92\" class=\"dg-line\" marker-end=\"url(#dg-p-dr-maelstrom-a)\"/><path d=\"M140,141 L420,174\" class=\"dg-line\" marker-end=\"url(#dg-p-dr-maelstrom-a)\"/><rect x=\"200\" y=\"215\" width=\"160\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"241.5\" class=\"dg-label\" text-anchor=\"middle\">Maelstrom</text><path d=\"M280,215 L280,172\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-p-dr-maelstrom-a)\"/><text x=\"280\" y=\"288\" class=\"dg-note\" text-anchor=\"middle\">web 10 min, user-facing 40 min, all service traffic 110 min</text></svg>",
+        "numbers": [
+          {
+            "value": "less than 40 minutes",
+            "meaning": "Time to drain all user-facing traffic, across product families, from any one datacenter"
+          },
+          {
+            "value": "110 minutes",
+            "meaning": "Time to drain all service traffic, including internal systems, in a real disaster measured in the paper"
+          },
+          {
+            "value": "more than 10 hours",
+            "meaning": "How long the first drain tests took, on web servers alone, with many interruptions as dependencies surfaced"
+          },
+          {
+            "value": "100+",
+            "meaning": "Disasters Maelstrom had helped mitigate in its four years in production"
+          },
+          {
+            "value": "over 85%",
+            "meaning": "Share of a datacenter's backbone capacity lost to fibercuts in one incident; drained in about 1.5 hours"
+          },
+          {
+            "value": "50 minutes",
+            "meaning": "Time to restore web traffic after a drain, slower on purpose to avoid overloading backends with cold caches"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A composable framework of reusable traffic-shifting tasks with encoded dependencies, health-based pacing and frequent automated drain tests.",
+          "rejected": "A separate, hand-maintained mitigation script per system, run in sequence.",
+          "why": "Separate scripts cannot be composed or tuned for urgency, and draining systems one after another takes up to about six times longer than draining in parallel. Regular tests keep the encoded dependencies true as the systems change."
+        },
+        "failures": "The first drain tests were painful, more than 10 hours with many interruptions, because dependencies were unknown and some drains caused service-level problems. The paper also notes that users can see higher latency while a datacenter is drained, and that restoring traffic is slower than draining it.",
+        "takeaways": "A recovery procedure that is only run in a disaster is likely to be wrong. Writing dependencies down, pacing by health, and exercising the procedure on a schedule turns tests that first took more than 10 hours into a routine of under an hour for user-facing traffic. This is chaos engineering applied to the recovery path itself."
+      }
+    }
+  ],
+  "comparison": "Both posts are about recovery paths that did not work the way people assumed. GitLab found out during a real outage that none of its backup procedures gave it a recent copy; an ad hoc staging snapshot did. Meta found out in drills, on purpose, that its datacenter drains took more than 10 hours and ran into hidden dependencies, and kept fixing them until the work took under an hour for user-facing traffic.\n\nThey cover different layers. GitLab is about data: backups, snapshots and a replica for one database. Maelstrom is about traffic: moving the load of hundreds of services off a failing site in dependency order. A full plan needs both, since a site can be served from another region only if its data is there.\n\nThe evidence points the same way. GitLab's restore took around 18 hours from a copy about 6 hours old, and its backup job had silently failed. Meta's regular drains brought user-facing traffic off a datacenter in less than 40 minutes. What differs most is routine practice.",
+  "glossary": [
+    {
+      "term": "RPO",
+      "definition": "Recovery point objective: how much recent data you can afford to lose, set by how often you make a copy."
+    },
+    {
+      "term": "RTO",
+      "definition": "Recovery time objective: how long you can be down before service must be back."
+    },
+    {
+      "term": "Base backup",
+      "definition": "A full copy of a database's files, taken while it runs, used as the starting point for a restore."
+    },
+    {
+      "term": "Point-in-time recovery",
+      "definition": "Restoring a base backup and replaying the change log up to a chosen moment, such as just before a mistake."
+    },
+    {
+      "term": "Pilot light",
+      "definition": "A recovery site where data is live but servers are switched off until a disaster."
+    },
+    {
+      "term": "Warm standby",
+      "definition": "A scaled-down but working copy of production in another site that can take traffic at once."
+    },
+    {
+      "term": "Drain",
+      "definition": "Moving the traffic of a failing site to healthy ones, in dependency order and paced by health."
+    },
+    {
+      "term": "Chaos engineering",
+      "definition": "Failing parts of a system on purpose, under control, to find weaknesses before a real failure does."
+    }
+  ],
+  "mistakes": [
+    "Treating replication as a backup. A replica copies deletes and corruption within moments, so it cannot take you back to before the mistake.",
+    "Never restoring. A backup that has not been restored into a clean environment and checked is an assumption, however green the job looks. Alert when the newest good backup is older than the RPO, instead of waiting for a failure message.",
+    "Keeping copies in the same account, region or storage as the original, and rehearsing recovery rarely. One mistake or attacker reaches every copy, and procedures drift until a path that only runs in a disaster is wrong when it matters."
+  ]
+}

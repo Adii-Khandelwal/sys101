@@ -334,5 +334,9 @@
  "mongodb-tunable-2019|1 Share": {
   "verdict": "ok",
   "source": "paper: w:1 vs majority latency in tables 3 and 5; read concern shares in table 1; write concern shares in table 2; durability under failures in table 6"
+ },
+ "meta-maelstrom-2018|six times": {
+  "verdict": "ok",
+  "source": "paper Table 5: sequential drain is x6.6 for user-facing traffic and x6.3 for service traffic versus Maelstrom"
  }
 }

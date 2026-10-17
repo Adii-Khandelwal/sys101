@@ -311,6 +311,44 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | github-mysql-8-upgrade-2023 | failures | 5.7 | https://github.blog/engineering/infrastructure/upgrading-github-com-to-mysql-8-0/ | Motivation for upgrading | found |
 | github-mysql-8-upgrade-2023 | failures | 28, | https://github.blog/engineering/infrastructure/upgrading-github-com-to-mysql-8-0/ | Replication delay | found with different formatting |
 
+## Disaster Recovery and Backups
+
+| Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
+|---|---|---|---|---|---|
+| gitlab-db-outage-2017 | numbers | around 300 GB | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | Timeline | found |
+| gitlab-db-outage-2017 | numbers | roughly 5,000 projects, 5,000 comments and 700 new user accounts | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | Postmortem of database outage of January 31 | found |
+| gitlab-db-outage-2017 | numbers | roughly 6 hours | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | LVM snapshots | found |
+| gitlab-db-outage-2017 | numbers | around 18 hours | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | Recovering GitLab.com | found |
+| gitlab-db-outage-2017 | numbers | pg_dump 9.2 | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | Database backups using pg_dump | found |
+| gitlab-db-outage-2017 | numbers | every 24 hours | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | Timeline | found |
+| gitlab-db-outage-2017 | walkthrough | 17 | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | (before first heading) | found |
+| gitlab-db-outage-2017 | walkthrough | 20 | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | (before first heading) | found |
+| gitlab-db-outage-2017 | walkthrough | 300 GB | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | Timeline | found |
+| gitlab-db-outage-2017 | walkthrough | 9.2 | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | Database backups using pg_dump | found |
+| gitlab-db-outage-2017 | walkthrough | 9.6 | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | Database backups using pg_dump | found |
+| gitlab-db-outage-2017 | walkthrough | 18 hours | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | Recovering GitLab.com | found |
+| gitlab-db-outage-2017 | walkthrough | six hour | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | (before first heading) | found (other spelling) |
+| gitlab-db-outage-2017 | meaning | 24 hours | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | Timeline | found |
+| gitlab-db-outage-2017 | meaning | 9.6 | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | Database backups using pg_dump | found |
+| gitlab-db-outage-2017 | meaning | two after | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | (before first heading) | found (other spelling) |
+| gitlab-db-outage-2017 | tradeoffs | 24 hours | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | Timeline | found |
+| gitlab-db-outage-2017 | tradeoffs | 6 hours | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | LVM snapshots | found |
+| gitlab-db-outage-2017 | tradeoffs | six hour | https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/ | (before first heading) | found (other spelling) |
+| meta-maelstrom-2018 | numbers | less than 40 minutes | https://www.usenix.org/system/files/osdi18-veeraraghavan.pdf | 1.2 Drain Tests for V erifying Disaster Readiness | found |
+| meta-maelstrom-2018 | numbers | 110 minutes | https://www.usenix.org/system/files/osdi18-veeraraghavan.pdf | 5.1 Mitigating Disasters | found |
+| meta-maelstrom-2018 | numbers | more than 10 hours | https://www.usenix.org/system/files/osdi18-veeraraghavan.pdf | 1.2 Drain Tests for V erifying Disaster Readiness | found |
+| meta-maelstrom-2018 | numbers | 100+ | https://www.usenix.org/system/files/osdi18-veeraraghavan.pdf | (before first heading) | found |
+| meta-maelstrom-2018 | numbers | over 85% | https://www.usenix.org/system/files/osdi18-veeraraghavan.pdf | 5.1 Mitigating Disasters | found |
+| meta-maelstrom-2018 | numbers | 50 minutes | https://www.usenix.org/system/files/osdi18-veeraraghavan.pdf | 5.1 Mitigating Disasters | found |
+| meta-maelstrom-2018 | walkthrough | 85% | https://www.usenix.org/system/files/osdi18-veeraraghavan.pdf | 5.1 Mitigating Disasters | found |
+| meta-maelstrom-2018 | walkthrough | 1.5 hours | https://www.usenix.org/system/files/osdi18-veeraraghavan.pdf | 5.1 Mitigating Disasters | found |
+| meta-maelstrom-2018 | walkthrough | 17 minutes | https://www.usenix.org/system/files/osdi18-veeraraghavan.pdf | 5.1 Mitigating Disasters | found |
+| meta-maelstrom-2018 | meaning | 1.5 hours | https://www.usenix.org/system/files/osdi18-veeraraghavan.pdf | 5.1 Mitigating Disasters | found |
+| meta-maelstrom-2018 | meaning | four years | https://www.usenix.org/system/files/osdi18-veeraraghavan.pdf | (before first heading) | found (other spelling) |
+| meta-maelstrom-2018 | tradeoffs | six times | https://www.usenix.org/system/files/osdi18-veeraraghavan.pdf | (before first heading) | hand-checked |
+| meta-maelstrom-2018 | failures | 10 hours | https://www.usenix.org/system/files/osdi18-veeraraghavan.pdf | 1.2 Drain Tests for V erifying Disaster Readiness | found |
+| meta-maelstrom-2018 | takeaways | 10 hours | https://www.usenix.org/system/files/osdi18-veeraraghavan.pdf | 1.2 Drain Tests for V erifying Disaster Readiness | found |
+
 ## Distributed Transactions
 
 | Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
@@ -906,25 +944,25 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | slack-realtime-messaging-2023 | numbers | Tens of millions | https://slack.engineering/real-time-messaging/ | What’s next | found |
 | slack-realtime-messaging-2023 | numbers | Under 20 seconds of elevated latency | https://slack.engineering/real-time-messaging/ | Server overview | found with different formatting |
 | slack-realtime-messaging-2023 | constraints | 11 | https://slack.engineering/real-time-messaging/ | (before first heading) | found |
-| netflix-pushy-2024 | numbers | Hundreds of millions | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | Pushy to the Limit: Evolving Netflix’s WebSocket proxy | found |
-| netflix-pushy-2024 | numbers | 99.999% | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | Pushy to the Limit: Evolving Netflix’s WebSocket proxy | found |
-| netflix-pushy-2024 | numbers | 200,000 connections per node | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | Scaling Pushy horizontally and vertically | found |
-| netflix-pushy-2024 | numbers | 60,000 connections per instance | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | Scaling Pushy horizontally and vertically | found |
-| netflix-pushy-2024 | numbers | 300,000 messages per second | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | Growth | found with different formatting |
-| netflix-pushy-2024 | numbers | About 30 minutes | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | Scaling Pushy horizontally and vertically | found |
-| netflix-pushy-2024 | numbers | 160,000 and 50,000 messages per second | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | Shift towards direct push | found with different formatting |
-| netflix-pushy-2024 | numbers | Under 1 ms median, under 4 ms at the 99th percentile | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | Device to device messaging | found with different formatting |
-| netflix-pushy-2024 | problem | five years | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | (before first heading) | found (other spelling) |
-| netflix-pushy-2024 | walkthrough | 30 minutes | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | Scaling Pushy horizontally and vertically | found |
-| netflix-pushy-2024 | walkthrough | 60,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | Scaling Pushy horizontally and vertically | found |
-| netflix-pushy-2024 | walkthrough | 200,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | Scaling Pushy horizontally and vertically | found |
-| netflix-pushy-2024 | walkthrough | 400,000, | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | Scaling Pushy horizontally and vertically | found with different formatting |
-| netflix-pushy-2024 | meaning | 400,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | Scaling Pushy horizontally and vertically | found |
-| netflix-pushy-2024 | meaning | 24 hours | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | Shift towards direct push | found |
-| netflix-pushy-2024 | meaning | five years | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | (before first heading) | found (other spelling) |
-| netflix-pushy-2024 | meaning | hundred million | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | (before first heading) | found (other spelling) |
-| netflix-pushy-2024 | tradeoffs | 200,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | Scaling Pushy horizontally and vertically | found |
-| netflix-pushy-2024 | tradeoffs | 60,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (browser copy) | Scaling Pushy horizontally and vertically | found |
+| netflix-pushy-2024 | numbers | Hundreds of millions | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Pushy to the Limit: Evolving Netflix’s WebSocket proxy | found |
+| netflix-pushy-2024 | numbers | 99.999% | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Pushy to the Limit: Evolving Netflix’s WebSocket proxy | found |
+| netflix-pushy-2024 | numbers | 200,000 connections per node | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
+| netflix-pushy-2024 | numbers | 60,000 connections per instance | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
+| netflix-pushy-2024 | numbers | 300,000 messages per second | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Growth | found with different formatting |
+| netflix-pushy-2024 | numbers | About 30 minutes | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
+| netflix-pushy-2024 | numbers | 160,000 and 50,000 messages per second | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Shift towards direct push | found with different formatting |
+| netflix-pushy-2024 | numbers | Under 1 ms median, under 4 ms at the 99th percentile | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Device to device messaging | found with different formatting |
+| netflix-pushy-2024 | problem | five years | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | (before first heading) | found (other spelling) |
+| netflix-pushy-2024 | walkthrough | 30 minutes | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
+| netflix-pushy-2024 | walkthrough | 60,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
+| netflix-pushy-2024 | walkthrough | 200,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
+| netflix-pushy-2024 | walkthrough | 400,000, | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found with different formatting |
+| netflix-pushy-2024 | meaning | 400,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
+| netflix-pushy-2024 | meaning | 24 hours | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Shift towards direct push | found |
+| netflix-pushy-2024 | meaning | five years | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | (before first heading) | found (other spelling) |
+| netflix-pushy-2024 | meaning | hundred million | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | (before first heading) | found (other spelling) |
+| netflix-pushy-2024 | tradeoffs | 200,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
+| netflix-pushy-2024 | tradeoffs | 60,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
 
 ## Database Replication
 
@@ -1281,6 +1319,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | consensus | 5 | 10 | 0 | 3 | 4 | 0 |
 | consistent-hashing | 26 | 3 | 0 | 0 | 5 | 0 |
 | databases | 32 | 5 | 0 | 2 | 2 | 0 |
+| disaster-recovery-and-backups | 28 | 0 | 0 | 4 | 1 | 0 |
 | distributed-transactions | 11 | 3 | 0 | 2 | 6 | 0 |
 | dns | 18 | 7 | 0 | 4 | 4 | 0 |
 | event-driven-architecture | 14 | 3 | 0 | 13 | 3 | 0 |

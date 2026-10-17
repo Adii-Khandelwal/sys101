@@ -1,0 +1,22 @@
+{
+  "disaster-recovery-and-backups": {
+    "summary": {
+      "points": [
+        "Disaster recovery is the set of copies and plans that bring a system back from damage that redundancy passes on to every copy.",
+        "A replica follows the primary, mistakes included, so a backup with history is what takes you back to before the damage.",
+        "The recovery point objective bounds how much data you can lose, and the recovery time objective bounds how long you can be down.",
+        "GitLab found in 2017 that none of its copies gave a recent database, and its backup job had been failing unnoticed.",
+        "Meta drains whole datacenters in dependency order and runs drills often, so the recovery path is tested before a real disaster."
+      ],
+      "figures": [
+        { "postId": "gitlab-db-outage-2017", "row": 3, "label": "around 18 hours to copy the staging data back to production" },
+        { "postId": "gitlab-db-outage-2017", "row": 1, "label": "lost roughly 5,000 projects, 5,000 comments and 700 new user accounts" },
+        { "postId": "meta-maelstrom-2018", "row": 0, "label": "less than 40 minutes to drain all user-facing traffic from a datacenter" }
+      ]
+    },
+    "prerequisiteReasons": {
+      "replication": "Recovery takes from replication the live copies that cover a failed machine, and shows why they cannot undo a mistake that was copied to every replica.",
+      "failover": "Recovery takes from failover the switch to a standby, and extends it from one machine to a whole site that must be recovered or drained."
+    }
+  }
+}

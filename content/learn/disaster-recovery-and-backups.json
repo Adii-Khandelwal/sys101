@@ -1,0 +1,311 @@
+{
+  "slug": "disaster-recovery-and-backups",
+  "promise": "After this you can explain the difference between a replica and a backup, read RPO and RTO, and follow how a database is restored to a chosen moment.",
+  "before": {
+    "prerequisites": [
+      "replication",
+      "failover"
+    ],
+    "terms": [
+      {
+        "term": "Replica",
+        "definition": "A live copy of a database that follows the primary and can take over if it fails."
+      },
+      {
+        "term": "Failover",
+        "definition": "Switching to a standby when the main system fails, so service continues."
+      },
+      {
+        "term": "Write-ahead log",
+        "definition": "The ordered record of every change a database makes, written before the change reaches the data files."
+      }
+    ],
+    "note": "Read Replication and Failover first: recovery builds on the live copies replication provides and on the switch failover performs, and then covers what those cannot do, which is bring back data that was lost or damaged on every copy. The terms below are enough to begin."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "Disaster recovery is the planning and copying that lets a system come back from an event its normal redundancy cannot absorb. The clearest case is data loss. Google's SRE book makes the point that replication is not recoverability: datastores that sync replicas automatically push a corrupt row or an errant delete to every copy, likely before anyone can isolate the problem [[sre-data-integrity]].",
+        "So a backup has a specific meaning. In the SRE book's words, backups can be loaded back into an application, while archives cannot; archives keep data for audit and compliance, and a week to recover one may be acceptable, while a backup is meant to be restored within the service's needs [[sre-data-integrity]]. The same chapter's short summary is worth remembering: nobody wants backups, people want restores.",
+        "Two numbers describe the promise. The recovery point objective, RPO, is how much recent data you can afford to lose, and the AWS guidance ties it to how often you back up: the backup frequency decides the recovery point you can reach [[aws-dr-options]]. The recovery time objective, RTO, is how long you can take to be back. In our own words, RPO is about data and RTO is about time, and a plan has to state both."
+      ],
+      "terms": [
+        {
+          "term": "Backup",
+          "definition": "A copy of data that can be loaded back into the system to restore it."
+        },
+        {
+          "term": "Archive",
+          "definition": "A long-term copy kept for audit or compliance, not meant for fast restore."
+        },
+        {
+          "term": "RPO",
+          "definition": "Recovery point objective: how much recent data you can afford to lose."
+        },
+        {
+          "term": "RTO",
+          "definition": "Recovery time objective: how long you can take to be back in service."
+        }
+      ],
+      "reading": [
+        {
+          "source": "sre-data-integrity",
+          "section": "Backups Versus Archives, and the passage on replication under Challenges of Maintaining Data Integrity Deep and Wide",
+          "what": "Why replication is not a backup, and the difference between a backup and an archive."
+        },
+        {
+          "source": "aws-dr-options",
+          "section": "Backup and restore",
+          "what": "How backup frequency sets the recovery point, and why point-in-time backups matter."
+        }
+      ],
+      "canNow": [
+        "Explain why a replica does not replace a backup.",
+        "Tell a backup from an archive.",
+        "State what RPO and RTO each measure."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "AWS groups site-level disaster recovery into four strategies, from low cost and low complexity to multiple active regions [[aws-dr-options]]. Backup and restore keeps copies and redeploys the infrastructure when needed. Pilot light replicates data and keeps core infrastructure, with application servers loaded but switched off. Warm standby runs a scaled-down but fully working copy that can handle traffic immediately at reduced capacity. Multi-site active/active serves traffic from every region and is the most complex and costly, though it can bring recovery time to near zero for most disasters [[aws-dr-options]].",
+        "Data recovery has its own mechanism. For a database like PostgreSQL, the write-ahead log records every change. Combining a file-system-level backup with an archive of the log lets you restore the backup and replay the log, and you can stop the replay at any point to get the database as it was at that time. That is point-in-time recovery [[pg-continuous-archiving]]. The base backup comes from pg_basebackup, which copies a running cluster without affecting other clients and can start either a recovery or a standby [[pg-basebackup]].",
+        "Recovery itself has a few moving parts. To restore, you put the backup in place, set a restore command that fetches archived log segments, create a recovery.signal file and start the server, which replays the log and then ends recovery [[pg-continuous-archiving]]. A target can be a time, a named restore point or a transaction ID, and at most one target setting may be used [[pg-recovery-target]]."
+      ],
+      "terms": [
+        {
+          "term": "Pilot light",
+          "definition": "A recovery site with live data and core infrastructure, with application servers switched off until needed."
+        },
+        {
+          "term": "Warm standby",
+          "definition": "A scaled-down, fully working copy of production that can take traffic at once."
+        },
+        {
+          "term": "Base backup",
+          "definition": "A full copy of a database cluster taken while it runs."
+        },
+        {
+          "term": "Point-in-time recovery",
+          "definition": "Restoring a backup and replaying the log up to a chosen moment."
+        }
+      ],
+      "reading": [
+        {
+          "source": "aws-dr-options",
+          "section": "The four strategy sections: Backup and restore, Pilot light, Warm standby, Multi-site active/active",
+          "what": "What each strategy keeps running and how they differ in cost and recovery time."
+        },
+        {
+          "source": "pg-continuous-archiving",
+          "section": "25.3 Continuous Archiving and Point-in-Time Recovery, the opening text and 25.3.5 Recovering Using a Continuous Archive Backup",
+          "what": "How a base backup and archived log segments combine, and the steps of a recovery."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 270\" role=\"img\" aria-labelledby=\"dg-l-dr-pitr-t\" class=\"dg\"><title id=\"dg-l-dr-pitr-t\">Point-in-time recovery in PostgreSQL: a base backup plus archived write-ahead log segments are replayed up to a chosen time, which is set just before the mistake.</title><defs><marker id=\"dg-l-dr-pitr-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"20\" y=\"40\" width=\"130\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"85\" y=\"69.5\" class=\"dg-label\" text-anchor=\"middle\">Base backup</text><rect x=\"215\" y=\"40\" width=\"130\" height=\"50\" class=\"dg-box\"/><text x=\"280\" y=\"69.5\" class=\"dg-label\" text-anchor=\"middle\">Archived WAL</text><rect x=\"410\" y=\"40\" width=\"130\" height=\"50\" class=\"dg-box\"/><text x=\"475\" y=\"61\" class=\"dg-label\" text-anchor=\"middle\">Recovered</text><text x=\"475\" y=\"78\" class=\"dg-label\" text-anchor=\"middle\">database</text><path d=\"M150,65 L215,65\" class=\"dg-line\" marker-end=\"url(#dg-l-dr-pitr-a)\"/><path d=\"M345,65 L410,65\" class=\"dg-line\" marker-end=\"url(#dg-l-dr-pitr-a)\"/><text x=\"280\" y=\"128\" class=\"dg-note\" text-anchor=\"middle\">replay stops at the recovery target time</text><path d=\"M30,190 L535,190\" class=\"dg-line\" marker-end=\"url(#dg-l-dr-pitr-a)\"/><circle cx=\"60\" cy=\"190\" r=\"5\" class=\"dg-dot\"/><circle cx=\"330\" cy=\"190\" r=\"5\" class=\"dg-dot-accent\"/><circle cx=\"470\" cy=\"190\" r=\"5\" class=\"dg-dot\"/><text x=\"60\" y=\"214\" class=\"dg-note\" text-anchor=\"middle\">base backup ends</text><text x=\"330\" y=\"214\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">target time</text><text x=\"470\" y=\"214\" class=\"dg-note\" text-anchor=\"middle\">the mistake</text></svg>",
+      "canNow": [
+        "Name the four AWS strategies and what each keeps running.",
+        "Explain what a base backup and the write-ahead log do together.",
+        "Describe the steps of a point-in-time recovery."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "Copies need to differ from what they protect. The SRE book argues that diversity is key: protecting against a failure at one layer means storing data on diverse components at that layer, and a database export written to the same filesystem that backs the database is vulnerable to the same low-level failure [[sre-data-integrity]]. AWS says the same about accounts: copying backups across accounts helps protect from insider threats or account compromise, and turning on object versioning helps against human error [[aws-dr-options]].",
+        "Replication and backups protect against different things. AWS notes that continuous replication gives the shortest time to a copy, but may not protect against corruption or malicious deletion as well as point-in-time backups do [[aws-dr-options]]. Google's guidance is to use defense in depth: soft deletion as the first layer, backups and their recovery methods as the second, and regular data validation as the third, with replication occasionally useful but not something a recovery plan should rely on [[sre-data-integrity]].",
+        "Scale changes the maths. The SRE book works through a large example in which a single task validating all the data takes decades, and a restore from a chain of more than 1,000 interdependent incremental backups carries risk at each link. The remedies it describes are to verify data once it is stable and to shard the work so copying and validating run in parallel [[sre-data-integrity]]. In PostgreSQL, an incremental backup also needs the earlier backups it depends on at restore time, and the server keeps no record of which are still needed, so you must track that yourself [[pg-continuous-archiving]]."
+      ],
+      "terms": [
+        {
+          "term": "Defense in depth",
+          "definition": "Several layers of protection, each covering a less common kind of data loss."
+        },
+        {
+          "term": "Soft deletion",
+          "definition": "Marking data deleted but keeping it for a time so it can be undeleted."
+        },
+        {
+          "term": "Incremental backup",
+          "definition": "A backup holding only what changed since an earlier backup, which must be combined with it to restore."
+        }
+      ],
+      "reading": [
+        {
+          "source": "sre-data-integrity",
+          "section": "Second Layer: Backups and Their Related Recovery Methods, and Scaling issues: Fulls, incrementals, and the competing forces of backups and restores",
+          "what": "How to let recovery needs drive the backup schedule, and what happens to restore time at very large scale."
+        },
+        {
+          "source": "aws-dr-options",
+          "section": "Backup and restore: AWS services",
+          "what": "Versioning, cross-Region and cross-account copies, and why continuous replication does not replace point-in-time backups."
+        }
+      ],
+      "canNow": [
+        "Explain why a backup should live apart from the thing it protects.",
+        "Describe defense in depth for data.",
+        "Say why restore time, not backup time, becomes the problem at scale."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "Testing is the part people skip. The AWS Well-Architected guidance says to test failover to your recovery site regularly to verify it operates and that the RTO and RPO are met, and warns against recovery paths that are rarely exercised: a secondary that was big enough when last tested may no longer tolerate the load. Its summary is that a recovery path counts only if it is exercised often [[aws-wa-test-dr]]. This is the idea behind chaos engineering, which injects failures on purpose; a drill that restores a backup or fails a site over applies it to the recovery path.",
+        "The trade-offs are cost against time. More live infrastructure shortens the RTO and costs more to run, and AWS suggests using your RTO and RPO to choose among strategies [[aws-dr-options]]. It also warns that an automatically triggered failover should be used with caution, since a false alarm incurs a loss of availability and data, and that restoring from backup is a control plane operation, which is why it recommends scheduling a periodic restore so you have working data stores even when that operation is unavailable [[aws-dr-options]].",
+        "Backups need monitoring too. PostgreSQL's documentation advises monitoring the archive system so delays in archiving show up, and notes that a base backup is not usable for recovery to a time during which that backup was still running [[pg-continuous-archiving]]. In our own words, a green job is a weak signal; a restore into a clean environment, with a check of the data, is the strong one."
+      ],
+      "terms": [
+        {
+          "term": "Recovery drill",
+          "definition": "A scheduled exercise that restores or fails over for real to prove the plan works."
+        },
+        {
+          "term": "Control plane",
+          "definition": "The part of a cloud service used to configure and create resources, which AWS says usually has lower availability goals than the data plane."
+        },
+        {
+          "term": "Chaos engineering",
+          "definition": "Causing failures on purpose, under control, to find weaknesses before a real failure does."
+        }
+      ],
+      "reading": [
+        {
+          "source": "aws-wa-test-dr",
+          "section": "REL13-BP03 Test disaster recovery implementation to validate the implementation",
+          "what": "Why rarely exercised recovery paths fail, and what a recovery test should check."
+        },
+        {
+          "source": "aws-dr-options",
+          "section": "Pilot light, the passage on failover, and Backup and restore, the passage on scheduled restores",
+          "what": "The caution on automatic failover and why to schedule restores."
+        }
+      ],
+      "canNow": [
+        "Explain why recovery paths must be exercised.",
+        "Weigh cost against recovery time when choosing a strategy.",
+        "Say why a successful backup job does not prove a backup works."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "Replication already gives me a backup.",
+      "truth": "Datastores that sync replicas automatically push a corrupt row or an errant delete to every copy, so replication is not recoverability [[sre-data-integrity]]."
+    },
+    {
+      "myth": "A backup and an archive are the same thing.",
+      "truth": "A backup can be loaded back into an application, while an archive cannot, and an archive may be allowed a much longer recovery window [[sre-data-integrity]]."
+    },
+    {
+      "myth": "pg_dump output can be used for point-in-time recovery.",
+      "truth": "PostgreSQL's documentation says pg_dump and pg_dumpall produce logical dumps that do not hold enough information for log replay, so they cannot be part of a continuous-archiving setup [[pg-continuous-archiving]]."
+    },
+    {
+      "myth": "Failing over automatically at the first alarm is the safest option.",
+      "truth": "AWS says automatically initiated failover based on health checks or alarms should be used with caution, because a false alarm incurs the losses of a failover [[aws-dr-options]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These follow the PostgreSQL documentation (version 18 when read). Try them only on a throwaway test cluster, never on a real data directory. The backup goes into a new, empty directory, and the restore settings go in the postgresql.conf of a separate, stopped test cluster that you have copied the backup into.",
+    "commands": [
+      {
+        "command": "pg_basebackup -D backup -Ft -z -P",
+        "shows": "Takes a base backup of the running local cluster into a directory named backup, as one compressed tar file per tablespace, with a progress report. The pg_basebackup page shows this exact example and says the target directory must be empty if it exists.",
+        "source": "pg-basebackup",
+        "note": "The server needs a user with replication rights, a pg_hba.conf entry for it, and enough max_wal_senders, as the page explains.",
+        "exampleNames": [
+          "backup"
+        ]
+      },
+      {
+        "command": "archive_command = 'test ! -f /mnt/server/archivedir/%f && cp %p /mnt/server/archivedir/%f'",
+        "shows": "A setting in postgresql.conf that copies each finished log segment to an archive directory and refuses to overwrite one that exists. The page calls it an example, not a recommendation, and also needs wal_level at replica or higher and archive_mode on.",
+        "source": "pg-continuous-archiving",
+        "warning": "This changes how a server archives its log. Set it only on a test cluster you can throw away."
+      },
+      {
+        "command": "restore_command = 'cp /mnt/server/archivedir/%f %p'",
+        "shows": "A recovery setting that tells a restoring server how to fetch archived log segments. Recovery also needs an empty recovery.signal file in the data directory.",
+        "source": "pg-continuous-archiving",
+        "warning": "Use it only in a test cluster restored from your own backup, never in a real data directory."
+      },
+      {
+        "command": "recovery_target_time = '2026-10-17 09:30:00'",
+        "shows": "A recovery setting that stops replay at a time stamp. It must fall after the end of the base backup, and at most one recovery target setting can be used. The default action when the target is reached is to pause, so you can look at the data before ending recovery.",
+        "source": "pg-recovery-target",
+        "exampleNames": [
+          "2026-10-17 09:30:00"
+        ],
+        "note": "The time value is our own example; use a time between your backup and the mistake.",
+        "warning": "Use it only in a test cluster restored from your own backup, never in a real data directory."
+      }
+    ]
+  },
+  "next": "Go back to the Disaster Recovery and Backups topic page for the worked example and the quiz, then read GitLab's 2017 database outage postmortem and Meta's Maelstrom paper. They show a restore that failed, and a routine of drills that keeps site-level recovery honest. Recovery builds on Replication (the live copies) and Failover (the switch).",
+  "sources": [
+    {
+      "id": "aws-dr-options",
+      "title": "Disaster recovery options in the cloud (Disaster Recovery of Workloads on AWS: Recovery in the Cloud)",
+      "url": "https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "sre-data-integrity",
+      "title": "Data Integrity: What You Read Is What You Wrote (Site Reliability Engineering, chapter 26)",
+      "url": "https://sre.google/sre-book/data-integrity/",
+      "publisher": "Google",
+      "kind": "Google SRE book chapter (guidance, not a specification)",
+      "year": "2017",
+      "verifiedOn": "2026-10-17",
+      "note": "The page shows Copyright 2017 Google, Inc., published by O'Reilly Media. It is Google's view of its own practice."
+    },
+    {
+      "id": "pg-continuous-archiving",
+      "title": "PostgreSQL Documentation: Continuous Archiving and Point-in-Time Recovery (PITR)",
+      "url": "https://www.postgresql.org/docs/current/continuous-archiving.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17",
+      "note": "Read as the documentation for PostgreSQL 18, the current release when opened."
+    },
+    {
+      "id": "pg-basebackup",
+      "title": "PostgreSQL Documentation: pg_basebackup",
+      "url": "https://www.postgresql.org/docs/current/app-pgbasebackup.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17",
+      "note": "Read as the documentation for PostgreSQL 18, the current release when opened."
+    },
+    {
+      "id": "pg-recovery-target",
+      "title": "PostgreSQL Documentation: Write Ahead Log settings (Archive Recovery and Recovery Targets)",
+      "url": "https://www.postgresql.org/docs/current/runtime-config-wal.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17",
+      "note": "Linked from the continuous archiving page as the place for recovery settings. Read as the documentation for PostgreSQL 18."
+    },
+    {
+      "id": "aws-wa-test-dr",
+      "title": "REL13-BP03 Test disaster recovery implementation to validate the implementation (Reliability Pillar)",
+      "url": "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/rel_planning_for_recovery_dr_tested.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17"
+    }
+  ]
+}

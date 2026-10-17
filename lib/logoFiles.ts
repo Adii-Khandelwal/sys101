@@ -10,6 +10,7 @@ export const LOGO_FILES: Record<string, LogoFile> = {
   "etcd (CNCF)": {"src":"/logos/etcd-cncf.svg","w":24,"h":23.19,"source":"simple-icons"},
   "Figma": {"src":"/logos/figma.svg","w":54,"h":80,"source":"svgl"},
   "GitHub": {"src":"/logos/github.svg","w":1024,"h":1024,"dark":"/logos/github-dark.svg","source":"svgl"},
+  "GitLab": {"src":"/logos/gitlab.svg","w":32,"h":32,"source":"svgl"},
   "Google": {"src":"/logos/google.svg","w":268.152,"h":273.883,"source":"svgl"},
   "Grab": {"src":"/logos/grab.svg","w":24,"h":9.25,"source":"simple-icons"},
   "Instagram": {"src":"/logos/instagram.svg","w":264.583,"h":264.583,"source":"svgl"},
