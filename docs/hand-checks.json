@@ -350,5 +350,17 @@
  "notion-lexical-reindexer-2026|four steps": {
   "verdict": "ok",
   "source": "post: \"We broke the rebuild into four parts\""
+ },
+ "ribbon-meta-2021|half as": {
+  "verdict": "ok",
+  "source": "post: Bloom filters use roughly 50 percent more space than the lower bound"
+ },
+ "ribbon-meta-2021|8 or": {
+  "verdict": "ok",
+  "source": "post: fast 4, 8 or 16 bits per key sizes (checked in raw text)"
+ },
+ "hll-presto-meta-2018|0 Default": {
+  "verdict": "ok",
+  "source": "join artifact: ends 'standard error of 0' then 'Default dense layout' rows; both in post"
  }
 }

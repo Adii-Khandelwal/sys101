@@ -1,0 +1,315 @@
+{
+  "slug": "probabilistic-data-structures",
+  "promise": "After this you can explain what a Bloom filter, a HyperLogLog and a count-min sketch do, what error each one makes, and follow the two Meta posts on the topic page.",
+  "before": {
+    "prerequisites": [
+      "storage-engines"
+    ],
+    "terms": [
+      {
+        "term": "Hash function",
+        "definition": "A function that turns any input into a fixed-size number that looks random and is always the same for the same input."
+      },
+      {
+        "term": "Bit array",
+        "definition": "A row of positions that each hold 0 or 1."
+      },
+      {
+        "term": "Distinct count",
+        "definition": "How many different items there are, counting each one once however often it appears."
+      }
+    ],
+    "note": "Read Storage Engines first: it shows the LSM-tree read path where Bloom filters earn their place. Nothing else is assumed; the hashing and probability on this page are explained from the start."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "Some questions are too expensive to answer exactly, so these structures answer approximately from a small, fixed amount of memory. The Redis documentation puts the trade plainly for the Bloom filter: it stores hashed representations of the items instead of the items, so it gives up some precision and gains space and speed [[redis-bloom]].",
+        "A Bloom filter can guarantee that an item is absent from a set but can only estimate that it is present. A negative answer is certain, and one in N positive answers will be wrong [[redis-bloom]]. RocksDB uses the same wording: given a key, the filter says the key may exist or definitely does not exist [[rocks-bloom]].",
+        "That asymmetry is what makes the filter a guard. Redis lists checking whether a username is taken as a use: if the filter says no, the name is free, and if it says yes the app can check the main database [[redis-bloom]]. RocksDB puts a filter in every new sorted file when a filter policy is set, to decide whether the file may contain the key [[rocks-bloom]]."
+      ],
+      "terms": [
+        {
+          "term": "Probabilistic data structure",
+          "definition": "A compact structure that gives an answer with a bounded chance of error instead of an exact answer."
+        },
+        {
+          "term": "Bloom filter",
+          "definition": "A bit array that says a key is definitely absent or may be present."
+        },
+        {
+          "term": "False positive",
+          "definition": "A \"may be present\" answer for a key that was never added."
+        },
+        {
+          "term": "False negative",
+          "definition": "An \"absent\" answer for a key that was added. A Bloom filter never gives one."
+        }
+      ],
+      "reading": [
+        {
+          "source": "redis-bloom",
+          "section": "The introduction and the use cases",
+          "what": "What a Bloom filter guarantees and the username example."
+        },
+        {
+          "source": "rocks-bloom",
+          "section": "What is a Bloom Filter?",
+          "what": "How RocksDB describes the \"may exist\" and \"definitely does not exist\" answers."
+        }
+      ],
+      "canNow": [
+        "Say which answer a Bloom filter can guarantee and which it cannot.",
+        "Explain why a \"no\" saves work and a \"maybe\" must be checked.",
+        "Name one place a Bloom filter sits in front of an expensive lookup."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "RocksDB describes the mechanism: several hash functions are applied to a key, each picking a bit to set to 1. At read time the same hash functions are applied to the search key and the bits are probed. If at least one probe returns 0, the key definitely does not exist [[rocks-bloom]].",
+        "Redis gives the sizing arithmetic. The optimal number of hash functions is ceil(-ln(error_rate) / ln(2)), and the bits per item are -ln(error_rate) / ln(2)^2. A 1% error rate needs 7 hash functions and 9.585 bits per item; 0.1% needs 10 and 14.378; 0.01% needs 14 and 19.170 [[redis-bloom]]. The page contrasts this with a Redis set holding IP addresses, at around 40 bytes (320 bits) per item [[redis-bloom]].",
+        "Counting distinct items works differently. Redis describes a HyperLogLog as a probabilistic structure that estimates the cardinality of a set. PFADD adds elements, PFCOUNT returns the approximate count, and PFMERGE combines several into one, and a write or read takes constant time and space [[redis-hll]]. Google's paper on running HyperLogLog in practice describes improvements that cut its memory and raise its accuracy for an important range of cardinalities, and notes that the algorithm parallelizes perfectly and computes its estimate in one pass [[hll-practice]].",
+        "For frequencies, the count-min sketch paper introduces a data structure of sublinear space for summarizing data streams. It allows point, range and inner-product queries to be answered approximately and quickly, with accuracy set by two parameters the user chooses [[cm-paper]]."
+      ],
+      "terms": [
+        {
+          "term": "Bits per key",
+          "definition": "How many bits of filter memory each key gets."
+        },
+        {
+          "term": "Cardinality",
+          "definition": "The number of distinct items in a set."
+        },
+        {
+          "term": "Sketch",
+          "definition": "A small summary of a data stream that supports approximate answers."
+        },
+        {
+          "term": "Point query",
+          "definition": "In a count-min sketch, a question about how often one particular item appeared."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rocks-bloom",
+          "section": "What is a Bloom Filter?",
+          "what": "The hash-and-probe mechanism in a few lines."
+        },
+        {
+          "source": "redis-bloom",
+          "section": "Total size of a Bloom filter",
+          "what": "The formulas and the three error-rate examples."
+        },
+        {
+          "source": "redis-hll",
+          "section": "Performance and Limits",
+          "what": "What PFADD and PFCOUNT cost and how large a set a HyperLogLog handles."
+        },
+        {
+          "source": "hll-practice",
+          "section": "Abstract",
+          "what": "What the Google engineers changed to cut memory and improve accuracy."
+        },
+        {
+          "source": "cm-paper",
+          "section": "Abstract and Introduction",
+          "what": "What a stream sketch is and which queries the count-min sketch answers."
+        }
+      ],
+      "canNow": [
+        "Describe how a key is added to and checked in a Bloom filter.",
+        "Say what PFADD, PFCOUNT and PFMERGE do.",
+        "Say in one sentence what a count-min sketch is for."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "The main dial is bits per key. RocksDB says about 10 bits per key works well for many workloads and that the setting is continuously configurable from 1 to 20 or more. It warns about diminishing returns: 4.9 bits per key gives a 10% false positive rate and is 90% as effective as 100 bits, 9.9 bits gives 1%, and 15.5 bits gives 0.1% [[rocks-bloom]].",
+        "Sizing for growth is harder. Redis says to give a filter the number of items you expect: oversize it and you waste memory, undersize it and a new sub-filter is stacked on top. Adds stay equally fast but presence checks get slower, because each stacked filter is checked in turn. The default expansion is 2 [[redis-bloom]]. With NONSCALING, the error rate rises once the capacity is reached [[redis-bloom]].",
+        "RocksDB also documents the Ribbon filter, a Bloom alternative available as a drop-in since version 6.15.0. It saves about 30% of Bloom filter space but uses about 3-4x as much CPU on filters, mostly in the background jobs that build them, which the page calls usually a good trade because SST filters commonly use about 10% of system RAM and well under 1% of CPU [[rocks-bloom]]."
+      ],
+      "terms": [
+        {
+          "term": "Diminishing returns",
+          "definition": "Each extra bit per key lowers the false positive rate by less than the one before."
+        },
+        {
+          "term": "Sub-filter stacking",
+          "definition": "Adding a new Bloom filter on top of a full one so adds keep working, at the cost of slower checks."
+        },
+        {
+          "term": "Ribbon filter",
+          "definition": "A Bloom alternative that uses less space and more CPU, built from a fixed set of keys."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rocks-bloom",
+          "section": "Configuration basics and Ribbon filter",
+          "what": "The bits-per-key list and the Ribbon space and CPU trade."
+        },
+        {
+          "source": "redis-bloom",
+          "section": "Reserving Bloom filters",
+          "what": "Capacity, expansion and what happens when a filter fills up."
+        }
+      ],
+      "canNow": [
+        "Read a bits-per-key table and pick a setting for a false positive target.",
+        "Explain what happens when a Bloom filter is sized too small.",
+        "Say what a Ribbon filter saves and what it costs."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "In a real LSM-tree the filter belongs to the file. RocksDB builds a filter inside every sorted file, and when two files are merged it builds a new filter from scratch for the new file, so bits per key and the false positive rate stay predictable [[rocks-bloom]]. The page also lists statistics for the observed false positive rate, so you can measure whether a setting works [[rocks-bloom]].",
+        "Choosing is about cost on each side. A filter is worth it when the guarded step is much more expensive than the filter check, and when absent keys are common. For counts, a HyperLogLog suits a number that may be off by a few percent, such as unique visitors, because it stays small and merges. Redis lists unique visits to a page as the example, with one sketch per page per period [[redis-hll]].",
+        "Count-min sketches fit when you need how often, not how many. The paper frames accuracy as a pair of user-chosen parameters, so the sketch size follows the error you accept [[cm-paper]]."
+      ],
+      "terms": [
+        {
+          "term": "Observed false positive rate",
+          "definition": "What you measure in production: filter positives that turned out to be wrong, divided by queries for absent keys."
+        },
+        {
+          "term": "Guarded step",
+          "definition": "The expensive operation, such as a disk read, that a filter lets you skip."
+        }
+      ],
+      "reading": [
+        {
+          "source": "rocks-bloom",
+          "section": "Life Cycle and Statistic",
+          "what": "How filters are created per file and which counters report their usefulness."
+        },
+        {
+          "source": "redis-hll",
+          "section": "Use cases",
+          "what": "The unique-visit example."
+        }
+      ],
+      "canNow": [
+        "Say when a Bloom filter is worth its memory.",
+        "Choose between a membership filter, a distinct counter and a frequency sketch.",
+        "Name two ways to check a filter works in production."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "A Bloom filter can tell you a key is definitely present.",
+      "truth": "It can only guarantee absence. A positive answer is an estimate, and one in N positive answers will be wrong [[redis-bloom]]."
+    },
+    {
+      "myth": "A bigger Bloom filter always pays for itself.",
+      "truth": "RocksDB lists diminishing returns: 9.9 bits per key already gives a 1% false positive rate, and raising it to 15.5 bits only gets to 0.1% [[rocks-bloom]]."
+    },
+    {
+      "myth": "A probabilistic count is too unreliable to use.",
+      "truth": "Redis lists unique page visits as a standard use for a HyperLogLog, where a small error is fine and the sketch stays small [[redis-hll]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These need a Redis Open Source instance with the probabilistic data types and redis-cli. The key and item names are the ones the Redis pages use. Use a test instance, since each command writes a key.",
+    "commands": [
+      {
+        "command": "BF.RESERVE bikes:models 0.001 1000000",
+        "shows": "Creates a Bloom filter with a 0.1% error rate and room for a million items. The page's example prints OK.",
+        "source": "redis-bloom"
+      },
+      {
+        "command": "BF.ADD bikes:models \"Smoky Mountain Striker\"",
+        "shows": "Adds one item. The page's example prints (integer) 1.",
+        "source": "redis-bloom"
+      },
+      {
+        "command": "BF.EXISTS bikes:models \"Smoky Mountain Striker\"",
+        "shows": "Checks the item you added. The page's example prints (integer) 1.",
+        "source": "redis-bloom"
+      },
+      {
+        "command": "PFADD bikes Hyperion Deimos Phoebe Quaoar",
+        "shows": "Adds four items to a HyperLogLog. The page's example prints (integer) 1.",
+        "source": "redis-hll"
+      },
+      {
+        "command": "PFCOUNT bikes",
+        "shows": "Returns the approximate number of distinct items added. The page's example prints (integer) 4.",
+        "source": "redis-hll"
+      },
+      {
+        "command": "PFADD commuter_bikes Salacia Mimas Quaoar",
+        "shows": "Adds three items to a second HyperLogLog, one of which also went into the first.",
+        "source": "redis-hll"
+      },
+      {
+        "command": "PFMERGE all_bikes bikes commuter_bikes",
+        "shows": "Merges the two into a new key. The page's example prints OK.",
+        "source": "redis-hll"
+      },
+      {
+        "command": "PFCOUNT all_bikes",
+        "shows": "Counts the merged set. The page's example prints (integer) 6, so the shared item is counted once.",
+        "source": "redis-hll"
+      }
+    ]
+  },
+  "next": "Go back to the Probabilistic Structures topic page for the worked example and the quiz, then read the two Meta posts: a filter that holds the Bloom promise in roughly a third less memory, and distinct counts in Presto, where storing and merging sketches made some queries 7x to 1,000x faster.",
+  "sources": [
+    {
+      "id": "rocks-bloom",
+      "title": "RocksDB Wiki: RocksDB Bloom Filter",
+      "url": "https://github.com/facebook/rocksdb/wiki/RocksDB-Bloom-Filter",
+      "publisher": "RocksDB project (Meta)",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2021-09-01",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "redis-bloom",
+      "title": "Redis Docs: Bloom filter",
+      "url": "https://redis.io/docs/latest/develop/data-types/probabilistic/bloom-filter/",
+      "publisher": "Redis",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "redis-hll",
+      "title": "Redis Docs: HyperLogLog",
+      "url": "https://redis.io/docs/latest/develop/data-types/probabilistic/hyperloglogs/",
+      "publisher": "Redis",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-17"
+    },
+    {
+      "id": "hll-practice",
+      "title": "HyperLogLog in Practice: Algorithmic Engineering of a State of The Art Cardinality Estimation Algorithm",
+      "url": "https://research.google/pubs/hyperloglog-in-practice-algorithmic-engineering-of-a-state-of-the-art-cardinality-estimation-algorithm/",
+      "publisher": "Google Research (EDBT 2013)",
+      "kind": "Research paper",
+      "year": "2013",
+      "verifiedOn": "2026-10-17",
+      "note": "Only the abstract on the Google Research page was read."
+    },
+    {
+      "id": "cm-paper",
+      "title": "An Improved Data Stream Summary: The Count-Min Sketch and its Applications",
+      "url": "https://dsf.berkeley.edu/cs286/papers/countmin-latin2004.pdf",
+      "publisher": "Graham Cormode and S. Muthukrishnan (Rutgers DIMACS), copy hosted by UC Berkeley CS 286",
+      "kind": "Research paper",
+      "year": "2004",
+      "verifiedOn": "2026-10-17",
+      "note": "Only the abstract and the first two sections were read."
+    }
+  ]
+}
