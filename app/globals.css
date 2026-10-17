@@ -2092,6 +2092,49 @@ li {
   margin-bottom: 6px;
 }
 
+/* "Copy link" sits at the right of a section heading: shown on hover or focus, always on touch screens. */
+.lesson section {
+  position: relative;
+}
+
+.lesson section > h2:has(+ .copy-link) {
+  padding-right: 6rem;
+}
+
+.copy-link {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+  background: none;
+  border: 0;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.lesson section:hover .copy-link,
+.copy-link:focus-visible {
+  opacity: 1;
+}
+
+.copy-link:hover {
+  color: var(--accent);
+}
+
+@media (hover: none) {
+  .copy-link {
+    opacity: 1;
+  }
+}
+
 .outcome {
   margin: 0 0 16px;
   font-style: italic;
