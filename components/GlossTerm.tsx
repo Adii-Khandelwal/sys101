@@ -3,6 +3,9 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 
+// The popover that is open now, so opening another one closes it: only one is ever shown.
+let active: (() => void) | null = null;
+
 /**
  * A glossary term inside lesson prose. Without JavaScript it is a plain link to its entry on /glossary. With it, hover,
  * focus or a tap opens a small popover with the definition and a "See in glossary" link; Escape closes it and puts focus
@@ -44,6 +47,20 @@ export default function GlossTerm({ href, definition, children }: { href: string
     return () => {
       window.removeEventListener("scroll", place);
       window.removeEventListener("resize", place);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const mine = () => {
+      clearTimeout(leaving.current);
+      pinned.current = false;
+      setOpen(false);
+    };
+    if (active !== mine) active?.();
+    active = mine;
+    return () => {
+      if (active === mine) active = null;
     };
   }, [open]);
 
