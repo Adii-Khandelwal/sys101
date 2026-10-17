@@ -28,7 +28,7 @@ export default function Privacy() {
         own device. It is never sent to us. Clearing your browser data deletes it, and it won&apos;t
         follow you to another browser or device. The site also remembers your light or dark theme and your
         Map or Path choice, and which Great reads you have marked as read, and whether you have taken or skipped the guided tour so that its link is not
-        shown again, in the same place.
+        shown again, in the same place. Your answers on a capstone page are saved there too.
       </p>
 
       <h2>Offline copy</h2>

@@ -49,6 +49,7 @@ Path-scoped rule files load when you read, write or edit a matching file; open t
 | `background.md` | /background data, "Taught later", checks |
 | `figures.md` | Interactive post figures, their inputs and checks |
 | `reads.md` | Great reads (/reads): selection, `influence` rule, data, `verify:reads` |
+| `capstones.md` | Capstone pages (/capstones, /capstone/<slug>): schema, interactive parts, checks |
 | `news.md` | What's new, the allowlist, the routine, the guard workflow |
 | `logos.md` | Company marks, sources, the `add` command, brand rules, exceptions |
 | `offline.md` | Service worker, offline caching, warm-up |

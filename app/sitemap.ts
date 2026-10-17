@@ -5,6 +5,7 @@ import { getAllLearn } from "@/lib/learn";
 import { getNews } from "@/lib/news";
 // import { newsUpdated } from "@/lib/newsMonths"; // for the /new entry below, hidden for now
 import { backgroundUpdated, getAllBackground } from "@/lib/background";
+import { capstoneUpdated, getAllCapstones } from "@/lib/capstones";
 import { getAllReads, readsUpdated } from "@/lib/reads";
 import { PAGE_DATES, absoluteUrl, learnUpdated, postsUpdated, topicPageUpdated } from "@/lib/site";
 
@@ -16,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const topics = topicOrder(getAllTopics());
   const learn = getAllLearn(topics.map((t) => t.slug));
   // A topic's What's new "asOf" counts as a content change too.
+  const capstones = getAllCapstones(topics.map((t) => t.slug));
   const topicDates = topics.map((t) => topicPageUpdated(t, getNews(t.slug)));
   const entry = (path: string, date: string) => ({ url: absoluteUrl(path), lastModified: date });
   return [
@@ -26,6 +28,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry("/posts", postsUpdated(topics)),
     entry("/reads", readsUpdated(getAllReads(topics.map((t) => t.slug)))),
     // entry("/new", newsUpdated(topics.map((t) => ({ news: getNews(t.slug) }))) || PAGE_DATES.news),
+    ...(capstones.length ? [entry("/capstones", capstones.map(capstoneUpdated).reduce((a, b) => (b > a ? b : a))), ...capstones.map((c) => entry(`/capstone/${c.slug}`, capstoneUpdated(c)))] : []),
     entry("/about", PAGE_DATES.about),
     entry("/glossary", PAGE_DATES.glossary),
     entry("/terms", PAGE_DATES.terms),

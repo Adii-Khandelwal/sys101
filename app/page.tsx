@@ -7,6 +7,8 @@ import TourLink from "@/components/TourLink";
 import { LogoMark } from "@/components/Logo";
 import PostSources from "@/components/PostSources";
 import Search from "@/components/Search";
+import PutItTogether from "@/components/PutItTogether";
+import { getAllCapstones } from "@/lib/capstones";
 import TryQuestion from "@/components/TryQuestion";
 import SiteFooter from "@/components/SiteFooter";
 import { optionId } from "@/lib/quizIds";
@@ -122,6 +124,7 @@ export default function Home() {
 
       <InsideTopic topic={dns} figures={featuredFigures(topics)} />
       <TryQuestion slug={dns.slug} topicTitle={dns.title} questions={quiz} />
+      <PutItTogether capstones={getAllCapstones(topics.map((t) => t.slug))} titles={new Map(topics.map((t) => [t.slug, t.title]))} />
       <PostSources companies={companies} />
 
       <SiteFooter tour="home" />

@@ -111,7 +111,7 @@ Scripts worth knowing:
 
 ## Where things live
 
-- `content/` is the course: `topics/`, `learn/`, `background/`, `reads/`, `news/`, one JSON file each.
+- `content/` is the course: `topics/`, `learn/`, `background/`, `reads/`, `news/`, `capstones/`, one JSON file each. A capstone (`/capstone/<slug>`, `.claude/rules/capstones.md`) combines finished topics: decide first, size it, break it, compare.
 - `app/` and `components/` are the routes and the interface.
 - `lib/` loads and checks the content, lays out the graph, and holds the tests.
 - `scripts/` holds the build-time checks and the by-hand verifiers.

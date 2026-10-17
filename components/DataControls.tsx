@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { inProgressSlugs, replaceProgress, useAllProgress } from "@/lib/progress";
 import { clearReadReads } from "@/lib/readsRead";
+import { clearCapstoneChoices } from "@/components/capstone/useStoredChoices";
 import { forgetSeen, loadSeen } from "@/lib/tourSeen";
 import {
   deriveRead,
@@ -97,6 +98,7 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
       const r = resetAll();
       replaceProgress(r.progress, r.read, {});
       clearReadReads();
+      clearCapstoneChoices();
       forgetSeen(); // "everything" includes the tour: its links come back
       setToursSeen(false);
       setMessage("All progress in this browser was reset, and the tour links are back.");
