@@ -254,7 +254,7 @@
       }
     ]
   },
-  "next": "Go back to the Indexing and Search topic page for the worked example and the quiz, then read the two company posts on indexing and search at scale. From here the map moves on to Message Queues, which decouple the systems these data stores feed.",
+  "next": "Go back to the Indexing and Search topic page for the worked example and the quiz, then read the three company posts on indexing and search at scale. From here the map moves on to Message Queues, which decouple the systems these data stores feed.",
   "sources": [
     {
       "id": "pg-indexes-intro",

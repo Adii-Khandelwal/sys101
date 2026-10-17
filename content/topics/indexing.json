@@ -195,9 +195,81 @@
         "failures": "The Redis queue feeding the indexers dropped messages when it backed up, so Discord moved to PubSub, which guarantees delivery. One node failure could fail about 40% of bulk writes. Master nodes ran out of memory as clusters grew, which caused indexing failures and timeouts. Patching the Log4Shell vulnerability meant taking search fully offline to restart every node. When indexes hit Lucene's limit, the only fix was to work with the Safety team to delete spam guilds.",
         "takeaways": "Write batches should match how data is placed, or one failure spreads to many writes. Choose the shard key from the query you need: by guild for guild search, by user for searching all your DMs. Keep indexes well below hard limits, and split the rare giant ones rather than every index."
       }
+    },
+    {
+      "id": "notion-lexical-reindexer-2026",
+      "title": "Rebuilding Notion's lexical search reindexer",
+      "url": "https://www.notion.com/blog/rebuilding-notions-lexical-search-reindexer",
+      "company": "Notion",
+      "verifiedOn": "2026-10-17",
+      "published": "2026-08-10",
+      "digest": {
+        "problem": "Notion keeps an Elasticsearch index current with an online pipeline, but sometimes the whole index has to be rebuilt from a database snapshot: to backfill a new searchable field, change how text is tokenized, move to a new Elasticsearch version or open a new region. The old rebuild was a quarterly event that took weeks, needed constant watching and ended with gaps in the index.",
+        "constraints": "The code that turns a block into a search document holds years of edge cases about permissions, deletions and field formatting, so rewriting it in one step risked quiet search-quality regressions. Each change also had to be checkable alone, with a small blast radius, because if the index is wrong, search breaks for everyone.",
+        "walkthrough": [
+          {
+            "step": "Take Snowflake out of the loop",
+            "explanation": "The old workers asked the Snowflake warehouse for metadata during the run. A nightly Spark job now writes that data to flat files in S3, so indexing no longer waits on the warehouse or competes with other teams for it."
+          },
+          {
+            "step": "Write snapshots, not documents",
+            "explanation": "Writing through the Elasticsearch indexing API stopped scaling, so Spark builds the index files themselves. One job partitions documents by the same routing the live cluster uses; a second runs an embedded Elasticsearch node per task, indexes into it, and uploads the snapshot to S3 for the cluster to restore."
+          },
+          {
+            "step": "Move document generation to Spark",
+            "explanation": "The TypeScript code that builds documents was ported to Scala on Spark. Two validation jobs ran in CI: one compared document counts and type mix with the old output, the other compared every field of a stratified sample, so rare block types were covered."
+          },
+          {
+            "step": "Catch up with aliases and versions",
+            "explanation": "The new cluster is created early, and live writes go to temporary tmp-* indices while the snapshot is built. After the restore into snap-* indices, the write aliases move and _reindex copies tmp-* into snap-* with external versions and conflicts set to proceed, so a newer document is never overwritten by an older one."
+          },
+          {
+            "step": "Clean up moves between alive and deleted",
+            "explanation": "_reindex cannot see a block that moved between the alive and deleted index families during catchup, so a separate step compares versions across the pair and removes the stale copy."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 280\" role=\"img\" aria-labelledby=\"dg-nr-t\" class=\"dg\"><title id=\"dg-nr-t\">Notion's 2026 reindex: Spark builds Elasticsearch snapshot files from a data lake copy while live writes land in temporary indices on the new cluster; after the snapshot is restored, the write alias moves and a versioned reindex copies the temporary documents into the restored indices.</title><defs><marker id=\"dg-nr-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"30\" width=\"120\" height=\"44\" class=\"dg-box\"/><text x=\"74\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\">Data lake</text><path d=\"M134,52 L166,52\" class=\"dg-line\" marker-end=\"url(#dg-nr-a)\"/><rect x=\"160\" y=\"22\" width=\"150\" height=\"60\" class=\"dg-box dg-accent\"/><text x=\"235\" y=\"48\" class=\"dg-label\" text-anchor=\"middle\">Spark builds</text><text x=\"235\" y=\"66\" class=\"dg-label\" text-anchor=\"middle\">snapshot files</text><path d=\"M310,52 L346,52\" class=\"dg-line\" marker-end=\"url(#dg-nr-a)\"/><rect x=\"340\" y=\"30\" width=\"206\" height=\"44\" class=\"dg-box\"/><text x=\"443\" y=\"57\" class=\"dg-label\" text-anchor=\"middle\">snap-* indices (restored)</text><rect x=\"14\" y=\"150\" width=\"120\" height=\"44\" class=\"dg-box\"/><text x=\"74\" y=\"177\" class=\"dg-label\" text-anchor=\"middle\">Live writes</text><path d=\"M134,172 L336,172\" class=\"dg-line\" marker-end=\"url(#dg-nr-a)\"/><rect x=\"340\" y=\"150\" width=\"206\" height=\"44\" class=\"dg-box dg-dashed\"/><text x=\"443\" y=\"177\" class=\"dg-label\" text-anchor=\"middle\">tmp-* indices (live)</text><path d=\"M443,150 L443,78\" class=\"dg-line\" marker-end=\"url(#dg-nr-a)\"/><text x=\"431\" y=\"118\" class=\"dg-note\" text-anchor=\"end\">_reindex, external version</text><text x=\"235\" y=\"150\" class=\"dg-note\" text-anchor=\"middle\">write alias moves to snap-*</text><text x=\"235\" y=\"134\" class=\"dg-note\" text-anchor=\"middle\">after the restore</text><text x=\"280\" y=\"236\" class=\"dg-note\" text-anchor=\"middle\">the newer document version wins, so catchup can be retried</text></svg>",
+        "numbers": [
+          {
+            "value": "under 2 days",
+            "meaning": "Full reindex time with the new reindexer, down from 2+ weeks"
+          },
+          {
+            "value": "under 24 hours",
+            "meaning": "How long the post's introduction says the operation now takes"
+          },
+          {
+            "value": "under 1 hour",
+            "meaning": "Catchup time for edits made during the build, down from about 2 days"
+          },
+          {
+            "value": "100 percent",
+            "meaning": "Document consistency of the rebuilt index, up from about 90%"
+          },
+          {
+            "value": "~200K documents per second",
+            "meaning": "Where direct writes through the Elasticsearch indexing API plateaued"
+          },
+          {
+            "value": "5 to 10",
+            "meaning": "On-call pages per run of the old reindexer; the new one pages no one"
+          },
+          {
+            "value": "under 2 hours",
+            "meaning": "Manual intervention per run, down from 1 to 2 engineers over 2 weeks"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Spark-built Elasticsearch snapshots restored into the cluster, document generation ported to Scala on Spark, and catchup done inside Elasticsearch with write aliases and versioned _reindex, all in four steps shipped one at a time.",
+          "rejected": "Reusing the online TypeScript indexing code on ECS workers for the batch job, and a full rewrite in one go.",
+          "why": "Reuse gave the same documents online and offline for free, but it ran a batch job on a runtime built for online services: one core per Node worker, repeated per-process state, and every write competing with live traffic. Snapshots avoid the live write path and make rollback a restore of yesterday's snapshot. Porting the riskiest code only after the snapshot path was proven, behind validators, kept each step small."
+        },
+        "failures": "The old workers crashed with out-of-memory errors and partial writes, and each run began with an engineer hand-computing a memory budget. Two embedded Elasticsearch tasks on one executor shared a disk and ran it out of space, so each executor now runs one task. EBS volumes were too small for the biggest shards and too slow for sequential writes, so executors moved to instance-store NVMe. The old catchup pipeline was a second ECS system with the same problems. The old rebuild also silently dropped some legacy blocks.",
+        "takeaways": "A rebuild of an index is a backfill plus a catchup, and version numbers on documents make the catchup safe to retry. Do not run a batch job on an online runtime just to reuse code; check parity with validators instead. Build the artifact offline and swap it in, which gives rollback for free. Split a risky migration into steps that can be deployed and verified alone."
+      }
     }
   ],
-  "comparison": "Both companies built search on an inverted index and both had to choose how to shard it, but they chose opposite ways for opposite queries.\n\nGitHub shards code by content, using each file's blob ID, which spreads data evenly and stores each file once, so every query has to visit every shard and the query service merges the results. Discord shards by the thing people search inside, a guild or a user's DMs, so almost every query touches a single node and only the largest guilds get several shards.\n\nGitHub's searches span all of GitHub, so it accepts fan-out; Discord's are scoped to one place, so it avoids it. The GitHub figures are from its 2023 beta; Discord's are from 2025.",
+  "comparison": "GitHub, Discord and Notion each keep a search index current as data changes, and each had to decide where the index is cut and how it is built. GitHub runs its own engine; Discord and Notion run Elasticsearch, whose indexes are inverted indexes too.\n\nGitHub shards code by content, using each file's blob ID, which spreads data evenly and stores each file once, so every query has to visit every shard and the query service merges the results. Discord shards by the thing people search inside, a guild or a user's DMs, so almost every query touches a single node and only the largest guilds get several shards. GitHub's searches span all of GitHub, so it accepts fan-out; Discord's are scoped to one place, so it avoids it.\n\nNotion's post is about rebuilding rather than sharding. It builds Elasticsearch snapshot files offline in Spark instead of writing documents through the live indexing API, then catches up on edits made during the build with versioned _reindex, so an old document never overwrites a newer one. The GitHub figures are from its 2023 beta, Discord's from 2025 and Notion's from 2026.",
   "glossary": [
     {
       "term": "Index",
@@ -405,9 +477,25 @@
           "The index still answers the query; it just has to be asked everywhere."
         ],
         "teaches": "example"
+      },
+      {
+        "question": "While a new search index is being built offline, users keep editing. How can the catchup copy those edits without overwriting newer ones?",
+        "options": [
+          "Pause all writes until the whole build finishes, so nothing can change meanwhile",
+          "Copy each edit with its version and skip any document already newer",
+          "Copy everything over the top, because the later copy is always the newest one"
+        ],
+        "correct": 1,
+        "why": "Version numbers let the catchup be retried safely: a newer document in the target is left alone, and an older one is replaced.",
+        "wrong": [
+          "Pausing writes would leave search stale for the whole build.",
+          "",
+          "A blind copy can replace a live edit with an older one from the buffer."
+        ],
+        "teaches": "example"
       }
     ],
-    "postsOutcome": "After this you can describe how two companies built and sharded search indexes at very different scales.",
+    "postsOutcome": "After this you can describe how three companies built, sharded and rebuilt search indexes at very different scales.",
     "differOutcome": "After this you can explain how the shard key of an index decides whether queries fan out.",
     "exercisesOutcome": "After this you can apply indexes to a slow query, design a search index, and plan for ten times the scale.",
     "exercises": [
