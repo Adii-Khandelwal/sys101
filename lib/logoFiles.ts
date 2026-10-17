@@ -23,6 +23,7 @@ export const LOGO_FILES: Record<string, LogoFile> = {
   "Notion": {"src":"/logos/notion.svg","w":256,"h":268,"source":"svgl"},
   "Pinterest": {"src":"/logos/pinterest.svg","w":256,"h":256,"source":"svgl"},
   "Sentry": {"src":"/logos/sentry.svg","w":256,"h":227,"source":"svgl"},
+  "Shopify": {"src":"/logos/shopify.svg","w":256,"h":292,"source":"svgl"},
   "Slack": {"src":"/logos/slack.svg","w":2447.6,"h":2452.5,"source":"svgl"},
   "Spotify": {"src":"/logos/spotify.svg","w":256,"h":256,"source":"svgl"},
   "Stripe": {"src":"/logos/stripe.svg","w":312,"h":312,"source":"svgl"},

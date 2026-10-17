@@ -79,6 +79,9 @@
     "Sentry": {
       "svgl": "sentry.svg"
     },
+    "Shopify": {
+      "svgl": "shopify.svg"
+    },
     "Slack": {
       "svgl": "slack.svg"
     },

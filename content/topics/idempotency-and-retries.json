@@ -439,7 +439,7 @@
     ],
     "next": {
       "outcome": "After this you can look back at the earlier topics that depend on retries.",
-      "body": "This ends the map for now. Look back at Message Queues, where a redelivered message is a retry, and at Circuit Breakers, where a retry is one more call to a dependency that is failing."
+      "body": "Next is API Design, where a contract decides which calls are safe to repeat. Then look back at Message Queues, where a redelivered message is a retry, and at Circuit Breakers, where a retry is one more call to a dependency that is failing."
     }
   }
 }
