@@ -1,6 +1,6 @@
 # Cleanup audit, 17 Oct 2026
 
-Phase 1 only. Nothing deleted. Branch `cleanup-2026-10-17` (from origin/main fbff1ca). Tools: knip, depcheck, madge, `tsc --noUnusedLocals`, ts-prune, plus repo-wide `grep -rnw`. Every deletion/unexport below was re-checked independently by a reviewer agent. There is no database; the nearest equivalents are `content/*.json` read by the `lib/*` loaders at build time and localStorage on the client.
+Phase 1 audit; the applied changes are listed in section G. Branch `cleanup-2026-10-17` (from origin/main fbff1ca). Tools: knip, depcheck, madge, `tsc --noUnusedLocals`, ts-prune, plus repo-wide `grep -rnw`. Every deletion/unexport below was re-checked independently by a reviewer agent. There is no database; the nearest equivalents are `content/*.json` read by the `lib/*` loaders at build time and localStorage on the client.
 
 Evidence rule: HIGH = a tool and an independent repo-wide grep (name, path, string, dynamic forms, scripts, tests, `.claude`, `.github`, docs) agree. Everything else is for your decision.
 
@@ -31,7 +31,7 @@ Behaviour-neutral, type-checked by tsc. ~12 lines changed, 0 bundle change.
 | B2 | `verify:landmarks` npm script | Identical to `verify:reads`; named as an alias in .claude/rules/reads.md:28 and tooling.md:19 (protected) | HIGH duplicate | 1 line plus 2 rule edits |
 | B3 | `REPORT_EMAIL = CONTACT_EMAIL` (lib/site.ts) | Alias; used in ReportMistake.tsx and named in accessibility-and-chrome.md:17, homepage.md:38 | MEDIUM | Needs a rule edit |
 | B4 | public/logo.svg | No reference in app, lib, scripts, config (only docs/audit/ponytail.md). Still served at /logo.svg, so external links are unknown | MEDIUM | 1 small file; protected asset |
-| B5 | docs/graph.png (88 KB) | 0 references anywhere | MEDIUM | tracked; not protected but a doc asset |
+| B5 | docs/graph.png (88 KB) | 0 references anywhere | MEDIUM | DONE: deleted in commit "Delete docs/graph.png" |
 | B6 | Figure geometry exports not read by anything: LATCH, PADLOCK (commitLatch); CARRIAGE, STATIC_BACK, CARRIAGE_INVAL, CARRIAGE_FILL, PAWL_UP, PAWL_DOWN, STATIC_FRONT, CACHE_TOKEN (fillRace) | knip flags them; scripts/audit-figures.mjs does not read them (it reads PROJECTION, auditShapes, FILL_AT, INVAL_AT, STATIC, FRAME_*, GAUGE_WORLD, BEAD_WORLD, currentBeadX, CUR_LANES). Used inside geometry.ts? Not checked | MEDIUM | Unexport only; the external anatomy kit was not checked |
 | B7 | lib/legacyQuiz.ts (327 lines) plus the v1/v2 saved-progress migrations in lessonStore.ts and progress.ts | Live code (lessonStore.ts:4,59), not dead. Removing it drops old saved answers | HIGH it is used | ~370 lines. Product call |
 | B8 | `QUIZ_STYLE_PENDING = []` (lib/topics.ts:288) and its test branch | Empty allowlist; topic-pages.md names it | MEDIUM | Needs a rule edit |
@@ -61,3 +61,6 @@ public/sw.js (registered in OfflineSupport.tsx:13, tested by check-offline); esl
 
 ## F. Not checked
 Content JSON that nothing reads (protected, not scanned), line-level script duplication, whether lessonStore tests cover the legacy migration, build-time effect of memoising, Safari, a real phone.
+
+## G. Applied (17 Oct 2026)
+Batch 1 (unexport 12 symbols), batch 2 (NODE_RADIUS import, FADED_LABEL alias removed, NODE_STATES deleted, CapstoneSource unexported, unused test parameter), and B5 (docs/graph.png deleted). Everything else in sections B and C was left for the owner. After the batches: tsc, lint, 593 tests, build, check-seo (76 pages), check-news, check:ui and check:tour all match the baseline; check-diagram-overflow still shows the 6 labels it showed before.
