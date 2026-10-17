@@ -1,6 +1,6 @@
 # Cleanup audit, 17 Oct 2026
 
-Phase 1 audit; the applied changes are listed in section G. Branch `cleanup-2026-10-17` (from origin/main fbff1ca). Tools: knip, depcheck, madge, `tsc --noUnusedLocals`, ts-prune, plus repo-wide `grep -rnw`. Every deletion/unexport below was re-checked independently by a reviewer agent. There is no database; the nearest equivalents are `content/*.json` read by the `lib/*` loaders at build time and localStorage on the client.
+Phase 1 audit; the applied changes are listed in section G. Branch `cleanup-2026-10-17` (first cut from origin/main fbff1ca, rebased onto 6177326 after PR #55). Tools: knip, depcheck, madge, `tsc --noUnusedLocals`, ts-prune, plus repo-wide `grep -rnw`. Every deletion/unexport below was re-checked independently by a reviewer agent. There is no database; the nearest equivalents are `content/*.json` read by the `lib/*` loaders at build time and localStorage on the client.
 
 Evidence rule: HIGH = a tool and an independent repo-wide grep (name, path, string, dynamic forms, scripts, tests, `.claude`, `.github`, docs) agree. Everything else is for your decision.
 

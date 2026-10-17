@@ -1,5 +1,7 @@
 # Cleanup baseline (pre-change)
 
+Measured on `fbff1ca`. `main` has since moved to `6177326` (PR #55); after the rebase the tests (593) and check-seo (76 pages) matched these numbers.
+
 Recorded 2026-10-17 on branch `cleanup-2026-10-17`. No fixes were made.
 
 ## Commit
