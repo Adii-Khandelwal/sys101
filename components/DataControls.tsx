@@ -70,7 +70,12 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
       setPending(null);
       return setMessage("Nothing was imported. That file is too large to be a sys101 progress export.");
     }
-    const r = validateImport(await f.text(), known);
+    const text = await f.text().catch(() => null);
+    if (text === null) {
+      setPending(null);
+      return setMessage("Nothing was imported. That file could not be read.");
+    }
+    const r = validateImport(text, known);
     if (!r.ok) {
       setPending(null);
       return setMessage(`Nothing was imported. ${r.error}`);

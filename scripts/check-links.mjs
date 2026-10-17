@@ -155,12 +155,19 @@ async function syncIssue(results, date) {
 }
 
 const sources = loadSources();
-const results = [];
-for (const s of sources) {
-  const result = await check(s.url);
-  results.push({ ...s, ...result });
-  console.log(`${result.state.padEnd(7)} ${result.detail.padEnd(10)} ${s.url}`);
-}
+// Three at a time: dead hosts cost about a minute of retries each. Results keep the source order.
+const results = new Array(sources.length);
+let next = 0;
+await Promise.all(
+  Array.from({ length: 3 }, async () => {
+    while (next < sources.length) {
+      const i = next++;
+      const result = await check(sources[i].url);
+      results[i] = { ...sources[i], ...result };
+      console.log(`${result.state.padEnd(7)} ${result.detail.padEnd(10)} ${sources[i].url}`);
+    }
+  }),
+);
 
 const date = new Date().toISOString().slice(0, 10);
 if (process.env.GITHUB_TOKEN && process.env.GITHUB_REPOSITORY) {
