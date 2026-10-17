@@ -7,7 +7,7 @@ const problems = [];
 const expect = (ok, what) => ok || problems.push(what);
 
 const browser = await chromium.launch();
-for (const [label, url, steps] of [["home", "/", 6], ["topic", "/topic/caching", 5]]) {
+for (const [label, url, steps] of [["home", "/", 7], ["topic", "/topic/caching", 5]]) {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
   const errors = [];
@@ -103,7 +103,7 @@ for (const [how, removes] of [["Escape", false], ["Skip", true], ["Done", true]]
   expect(await open(), `${how}: no link on a first visit`);
   if (how === "Escape") await page.keyboard.press("Escape");
   else if (how === "Skip") await page.getByRole("button", { name: "Skip tour" }).click();
-  else for (let i = 0; i < 6; i++) await page.locator(".tour-actions button").nth(1).click();
+  else for (let i = 0; i < 7; i++) await page.locator(".tour-actions button").nth(1).click();
   await page.waitForSelector(".tour-tip", { state: "detached", timeout: 3000 }).catch(() => {});
   await page.reload({ waitUntil: "networkidle" });
   const there = (await page.getByRole("button", { name: "Take the 30-second tour" }).count()) === 1;
