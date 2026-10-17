@@ -240,7 +240,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic that builds on this one.",
-      "body": "Storage Engines is a good place to pause and look at the map again. Revisit Indexing to see how the sorted structures here underpin search, or Replication to see how the logs that engines write are copied between machines. Object Storage applies the same on-disk ideas at a larger scale: packing many small objects into big volume files on each drive."
+      "body": "Storage Engines is a good place to pause and look at the map again. Revisit Indexing to see how the sorted structures here underpin search, or Replication to see how the logs that engines write are copied between machines. Object Storage applies the same on-disk ideas at a larger scale: packing many small objects into big volume files on each drive. Probabilistic Structures goes deeper on the Bloom filters that let an LSM-tree skip files, and on sketches that count with a small fixed amount of memory."
     }
   },
   "posts": [

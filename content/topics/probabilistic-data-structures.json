@@ -1,0 +1,432 @@
+{
+  "slug": "probabilistic-data-structures",
+  "title": "Probabilistic Structures",
+  "group": "Data",
+  "interviewRelevance": "common",
+  "concept": "A probabilistic data structure answers a question about a huge amount of data from a small, fixed amount of memory, and in return it is sometimes wrong in a way you can bound. A Bloom filter says a key is definitely absent or maybe present. A HyperLogLog estimates how many different items it has seen. A count-min sketch estimates how often an item appeared.",
+  "prerequisites": [
+    "storage-engines"
+  ],
+  "summary": {
+    "points": [
+      "A probabilistic structure answers a question about huge data from a small fixed amount of memory, and its error is one you can bound.",
+      "A Bloom filter says a key is definitely absent or maybe present, so it guards an expensive read and never misses a key it holds.",
+      "Meta's Ribbon filter keeps the same promise in less memory, trading a tiny CPU increase for a smaller filter.",
+      "A HyperLogLog estimates how many different items it has seen from about 1 KB, and two sketches merge without losing accuracy.",
+      "Meta's Presto sketches cut a distinct count that needed days and terabytes down to hours and under 1 MB."
+    ],
+    "figures": [
+      {
+        "postId": "ribbon-meta-2021",
+        "row": 1,
+        "label": "Ribbon filter variants have a space overhead as low as 1 percent or less"
+      },
+      {
+        "postId": "ribbon-meta-2021",
+        "row": 2,
+        "label": "Ribbon filters save roughly 1/3 of memory compared with Bloom filters"
+      },
+      {
+        "postId": "hll-presto-meta-2018",
+        "row": 0,
+        "label": "Presto's HyperLogLog functions gave speed improvements of 7x to 1,000x"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "storage-engines": "The Bloom filter earns its place guarding reads on the sorted files of an LSM-tree, so you need to know why those reads are expensive first."
+  },
+  "lesson": {
+    "why": {
+      "outcome": "After this you can say why a system would accept a small, controlled error in exchange for a large saving in memory.",
+      "body": "Some questions are cheap to ask and expensive to answer exactly. Is this key in that file? How many different people visited this week? A system that answers exactly has to remember every key or every person, and at large scale that memory or that disk read is the cost that matters.\n\nProbabilistic structures give up exactness in a way you can control. A Bloom filter answers \"is this key in the set?\" with either \"definitely not\" or \"maybe\". A HyperLogLog answers \"how many different items?\" with an estimate that is off by a known few percent. A count-min sketch answers \"how often did this item appear?\" with a count that can be too high but never too low. Each one stays a small fixed size however much data passes through it.\n\nMeta shows both sides. Its storage systems use Bloom filters so a read can skip files that cannot hold the key, and its engineers designed the Ribbon filter to hold the same promise in about a third less memory. Its Presto query engine uses HyperLogLog to count distinct values over data sets where an exact count would take days and terabytes of memory on one machine, and storing and merging its sketches made some queries 7x to 1,000x faster. This topic follows Storage Engines, where Bloom filters first showed up as the way an LSM-tree skips files."
+    },
+    "mentalModel": {
+      "outcome": "After this you can describe a Bloom filter and a HyperLogLog in one picture each and say what error each one makes.",
+      "body": "A Bloom filter is a row of bits, all 0 at the start. To add a key you run it through a few hash functions, each of which picks a bit, and set those bits to 1. To ask about a key you check the same bits. If any of them is 0, the key was never added, and that answer is certain. If all are 1, the key may be present, but other keys could have set those bits. So the filter has false positives and never has false negatives.\n\nThe size of the row against the number of keys decides how often the filter is wrong. More bits per key means fewer shared bits and fewer false positives. Because the answer \"definitely not\" is certain, the filter is a guard in front of something expensive: a disk read, a network call, a database lookup. A wrong \"maybe\" costs one wasted trip, and a \"no\" saves a trip.\n\nA HyperLogLog is a row of small buckets. Each item is hashed. The first bits of the hash pick a bucket, and the rest of the bits are looked at for a long run of zeros, which is rare. A bucket keeps the longest run it has seen. Long runs only show up if many different items were hashed, so the row of buckets can be turned into an estimate of how many distinct items passed through. Repeating the same item changes nothing, which is why duplicates do not inflate the count.\n\nA count-min sketch has the same spirit for frequency: a grid of counters, with each item adding to one counter per row, and an estimate that takes the smallest of its counters. Collisions can only add, so it overcounts and never undercounts.",
+      "diagram": "<svg viewBox=\"0 0 560 236\" role=\"img\" aria-labelledby=\"dg-pds-model-t\" class=\"dg\"><title id=\"dg-pds-model-t\">Two probabilistic structures side by side. A Bloom filter is a row of bits: adding a key sets a few bits, a key with any zero bit is definitely absent, and a key whose bits are all one may be present. A HyperLogLog is a row of buckets that each keep the longest run of rare hash patterns seen, which estimates how many different items were counted. Both stay small and fixed in size.</title><defs><marker id=\"dg-pds-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"135\" y=\"20\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"12\">Bloom filter: a row of bits</text><rect x=\"15\" y=\"32\" width=\"24\" height=\"28\" class=\"dg-box\"/><text x=\"27\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">0</text><rect x=\"39\" y=\"32\" width=\"24\" height=\"28\" class=\"dg-box dg-accent\"/><text x=\"51\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">1</text><rect x=\"63\" y=\"32\" width=\"24\" height=\"28\" class=\"dg-box\"/><text x=\"75\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">0</text><rect x=\"87\" y=\"32\" width=\"24\" height=\"28\" class=\"dg-box dg-accent\"/><text x=\"99\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">1</text><rect x=\"111\" y=\"32\" width=\"24\" height=\"28\" class=\"dg-box\"/><text x=\"123\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">0</text><rect x=\"135\" y=\"32\" width=\"24\" height=\"28\" class=\"dg-box\"/><text x=\"147\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">0</text><rect x=\"159\" y=\"32\" width=\"24\" height=\"28\" class=\"dg-box dg-accent\"/><text x=\"171\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">1</text><rect x=\"183\" y=\"32\" width=\"24\" height=\"28\" class=\"dg-box\"/><text x=\"195\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">0</text><rect x=\"207\" y=\"32\" width=\"24\" height=\"28\" class=\"dg-box dg-accent\"/><text x=\"219\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">1</text><rect x=\"231\" y=\"32\" width=\"24\" height=\"28\" class=\"dg-box\"/><text x=\"243\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">0</text><text x=\"135\" y=\"82\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Adding key A set bits 1, 3 and 6</text><text x=\"135\" y=\"106\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Ask about B: bit 4 is 0, so B is absent</text><text x=\"135\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Ask about C: bits 1, 3, 6 are all 1,</text><text x=\"135\" y=\"142\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">so C may be present, or the bits came from others</text><text x=\"425\" y=\"20\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"12\">HyperLogLog: a row of buckets</text><rect x=\"305\" y=\"32\" width=\"30\" height=\"28\" class=\"dg-box\"/><text x=\"320\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">2</text><rect x=\"335\" y=\"32\" width=\"30\" height=\"28\" class=\"dg-box\"/><text x=\"350\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">0</text><rect x=\"365\" y=\"32\" width=\"30\" height=\"28\" class=\"dg-box dg-accent\"/><text x=\"380\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">5</text><rect x=\"395\" y=\"32\" width=\"30\" height=\"28\" class=\"dg-box\"/><text x=\"410\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">1</text><rect x=\"425\" y=\"32\" width=\"30\" height=\"28\" class=\"dg-box\"/><text x=\"440\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">3</text><rect x=\"455\" y=\"32\" width=\"30\" height=\"28\" class=\"dg-box\"/><text x=\"470\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">0</text><rect x=\"485\" y=\"32\" width=\"30\" height=\"28\" class=\"dg-box\"/><text x=\"500\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">4</text><rect x=\"515\" y=\"32\" width=\"30\" height=\"28\" class=\"dg-box\"/><text x=\"530\" y=\"51\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">2</text><text x=\"425\" y=\"82\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Each bucket keeps the longest run of</text><text x=\"425\" y=\"98\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">rare hash patterns it has seen</text><text x=\"425\" y=\"122\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Long runs only turn up when many different</text><text x=\"425\" y=\"138\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">items were hashed, so the row estimates a count</text><rect x=\"15\" y=\"168\" width=\"530\" height=\"52\" class=\"dg-box\"/><text x=\"280\" y=\"190\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Both keep a fixed, small array however much data flows in</text><text x=\"280\" y=\"208\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The price is a controlled error: a wrong maybe for Bloom, a few percent off for the count</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can trace a lookup through a Bloom filter and a count through a HyperLogLog, and say what Ribbon changes.",
+      "steps": [
+        {
+          "step": "Build a filter for each immutable file",
+          "explanation": "When an LSM-tree engine writes a sorted file, it hashes every key in the file into a Bloom filter stored with it. Because the file never changes, the filter never needs to remove a key. When files are merged, a new filter is built for the new file."
+        },
+        {
+          "step": "Ask the filter before reading the file",
+          "explanation": "A lookup hashes the key and checks the bits. A 0 bit means the file cannot hold the key, so the engine skips it without touching the disk. All 1s means the engine reads the file and may find the key or find nothing, which is the false positive case."
+        },
+        {
+          "step": "Trade memory for accuracy with bits per key",
+          "explanation": "The more bits the filter spends on each key, the fewer false positives. Returns shrink: the first few bits per key remove most of the errors, and each further bit helps less. So bits per key is a dial you set from how much memory you can spend and how costly a wasted read is."
+        },
+        {
+          "step": "Ribbon: the same promise in less space",
+          "explanation": "A well-engineered Bloom filter uses roughly 50 percent more space than the theoretical minimum. A Ribbon filter is built by solving a system of equations over the keys, and its space overhead is as low as 1 percent or less above the minimum, with queries that are still O(1). The post reports a tiny CPU increase as the cost, and the filter is meant for a fixed set of keys. RocksDB's wiki adds that most of the extra CPU is in the background jobs that build the filters."
+        },
+        {
+          "step": "HyperLogLog: hash, bucket, keep the maximum",
+          "explanation": "Each item is hashed once. A few leading bits choose the bucket and the longest run of zeros in the remaining bits is compared with what the bucket holds, and the larger value stays. The estimate averages all the buckets with a harmonic mean, which lessens the effect of a single unlucky bucket. More buckets mean a smaller error and a bigger sketch."
+        },
+        {
+          "step": "Sketches combine without a rescan",
+          "explanation": "Two sketches built with the same hash function and bucket count merge by taking the larger value in each bucket, which gives exactly the sketch of the combined data. That lets a system store a small sketch per day or per server and answer any range or roll-up by merging, instead of scanning the raw rows again."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 272\" role=\"img\" aria-labelledby=\"dg-pds-how-t\" class=\"dg\"><title id=\"dg-pds-how-t\">A read for one key checks the small Bloom filter of each sorted file, newest first. A filter that says no lets the engine skip the file with no disk read. A filter that says maybe sends the engine to read the file. A wrong maybe costs one wasted read, and an absent answer is always correct.</title><defs><marker id=\"dg-pds-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"10\" y=\"92\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"60\" y=\"116\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Get(key)</text><text x=\"60\" y=\"134\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">from a client</text><rect x=\"190\" y=\"20\" width=\"150\" height=\"48\" class=\"dg-box\"/><text x=\"265\" y=\"42\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">file 3 filter</text><text x=\"265\" y=\"58\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">says no</text><rect x=\"400\" y=\"20\" width=\"150\" height=\"48\" class=\"dg-box\"/><text x=\"475\" y=\"49\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">skip the file</text><path d=\"M340,44 L398,44\" class=\"dg-line\" marker-end=\"url(#dg-pds-how-a)\"/><path d=\"M112,120 L188,44\" class=\"dg-line\" marker-end=\"url(#dg-pds-how-a)\"/><rect x=\"190\" y=\"98\" width=\"150\" height=\"48\" class=\"dg-box\"/><text x=\"265\" y=\"120\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">file 2 filter</text><text x=\"265\" y=\"136\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">says no</text><rect x=\"400\" y=\"98\" width=\"150\" height=\"48\" class=\"dg-box\"/><text x=\"475\" y=\"127\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">skip the file</text><path d=\"M340,122 L398,122\" class=\"dg-line\" marker-end=\"url(#dg-pds-how-a)\"/><path d=\"M112,120 L188,122\" class=\"dg-line\" marker-end=\"url(#dg-pds-how-a)\"/><rect x=\"190\" y=\"176\" width=\"150\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"265\" y=\"198\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">file 1 filter</text><text x=\"265\" y=\"214\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">says maybe</text><rect x=\"400\" y=\"176\" width=\"150\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"475\" y=\"205\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">read the file</text><path d=\"M340,200 L398,200\" class=\"dg-line\" marker-end=\"url(#dg-pds-how-a)\"/><path d=\"M112,120 L188,200\" class=\"dg-line\" marker-end=\"url(#dg-pds-how-a)\"/><text x=\"280\" y=\"258\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Newest file first. A wrong maybe costs one wasted read; an absent answer is never wrong.</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can work through a Bloom filter lookup and a HyperLogLog merge with small numbers.",
+      "steps": [
+        {
+          "step": "A read goes through three files",
+          "explanation": "A store has three sorted files and a client asks for key K, which is only in file 1. The engine checks the newest file first. The filter of file 3 has a 0 bit for K, so the file is skipped. The filter of file 2 also says no. The filter of file 1 says \"may be present\", so the engine reads file 1 and finds K. Two disk reads were avoided."
+        },
+        {
+          "step": "A false positive costs one read",
+          "explanation": "Now ask for key Z, which is in no file. Suppose the filter of file 2 happens to have all of Z's bits set by other keys. It says \"may be present\", the engine reads file 2, finds nothing, and moves on. The answer is still correct, and the wrong \"maybe\" cost one wasted read instead of three."
+        },
+        {
+          "step": "What Ribbon would save",
+          "explanation": "Suppose the filters across a fleet take 30 GB of RAM. Saving roughly 1/3, as the Ribbon post reports, would free about 10 GB, in return for a tiny increase in CPU use and more work when each file is built. This is an illustration for the arithmetic, not a figure from the post."
+        },
+        {
+          "step": "Count visitors on two days",
+          "explanation": "Take a toy sketch with four buckets. Monday's buckets hold 3, 0, 5, 2 and Tuesday's hold 1, 4, 5, 0. Merging takes the larger value in each position: 3, 4, 5, 2. That is the sketch you would have if one HyperLogLog had seen both days. The estimate is read from the merged row, and a visitor who came on both days is not counted twice."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 254\" role=\"img\" aria-labelledby=\"dg-pds-ex-t\" class=\"dg\"><title id=\"dg-pds-ex-t\">Merging two HyperLogLog sketches. Monday has buckets 3, 0, 5, 2 and Tuesday has 1, 4, 5, 0. Taking the larger value in each bucket gives 3, 4, 5, 2, which equals the sketch you would get by feeding both days of data into one sketch, so a count over two days needs no rescan.</title><defs><marker id=\"dg-pds-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"20\" y=\"40\" class=\"dg-label\" text-anchor=\"start\" font-size=\"13\">Monday</text><text x=\"20\" y=\"58\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">sketch</text><text x=\"20\" y=\"110\" class=\"dg-label\" text-anchor=\"start\" font-size=\"13\">Tuesday</text><text x=\"20\" y=\"128\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">sketch</text><text x=\"20\" y=\"194\" class=\"dg-label\" text-anchor=\"start\" font-size=\"13\">Merged</text><text x=\"20\" y=\"212\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">two days</text><rect x=\"190\" y=\"22\" width=\"80\" height=\"40\" class=\"dg-box\"/><text x=\"230\" y=\"48\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">3</text><rect x=\"190\" y=\"92\" width=\"80\" height=\"40\" class=\"dg-box\"/><text x=\"230\" y=\"118\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">1</text><rect x=\"190\" y=\"176\" width=\"80\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"230\" y=\"202\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">3</text><rect x=\"270\" y=\"22\" width=\"80\" height=\"40\" class=\"dg-box\"/><text x=\"310\" y=\"48\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">0</text><rect x=\"270\" y=\"92\" width=\"80\" height=\"40\" class=\"dg-box\"/><text x=\"310\" y=\"118\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">4</text><rect x=\"270\" y=\"176\" width=\"80\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"310\" y=\"202\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">4</text><rect x=\"350\" y=\"22\" width=\"80\" height=\"40\" class=\"dg-box\"/><text x=\"390\" y=\"48\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">5</text><rect x=\"350\" y=\"92\" width=\"80\" height=\"40\" class=\"dg-box\"/><text x=\"390\" y=\"118\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">5</text><rect x=\"350\" y=\"176\" width=\"80\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"390\" y=\"202\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">5</text><rect x=\"430\" y=\"22\" width=\"80\" height=\"40\" class=\"dg-box\"/><text x=\"470\" y=\"48\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">2</text><rect x=\"430\" y=\"92\" width=\"80\" height=\"40\" class=\"dg-box\"/><text x=\"470\" y=\"118\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">0</text><rect x=\"430\" y=\"176\" width=\"80\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"470\" y=\"202\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">2</text><text x=\"350\" y=\"155\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"12\">take the larger value in each bucket</text><text x=\"350\" y=\"238\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Same result as feeding both days into one sketch, so counting 2 days costs no rescan</text></svg>"
+    },
+    "mistakesOutcome": "After this you can name the usual ways these structures are misused.",
+    "checkOutcome": "After this you can tell which answer a Bloom filter or a HyperLogLog can give with certainty and which only with a bound.",
+    "quiz": [
+      {
+        "question": "A storage engine asks a Bloom filter whether a file holds a key. Which of the filter's answers can never be wrong?",
+        "options": [
+          "\"The key is present\", because every bit for it is set to 1",
+          "\"The key is absent\", because at least one of its bits is 0",
+          "\"The key was added exactly once\", because each add sets bits"
+        ],
+        "correct": 1,
+        "why": "A key that was added has all its bits set, so a 0 bit proves the key was never added. A \"the key is present\" answer can come from bits set by other keys.",
+        "wrong": [
+          "Other keys can set the same bits, so all ones only means \"may be present\".",
+          "",
+          "Bits are only set to 1 and carry no count, so the filter cannot know how many times a key was added."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "A team cuts the bits per key of its Bloom filters to save memory. What changes?",
+        "options": [
+          "Some present keys are reported absent, so reads can miss real data stored in the files",
+          "Nothing at all, because the length of the bit array is fixed for good when the filter is created",
+          "The filter shrinks, but more absent keys get a \"may be present\" answer, so more reads are wasted"
+        ],
+        "correct": 2,
+        "why": "A smaller array means more keys share bits, so the false positive rate rises. The cost is extra reads that find nothing, and no data is ever missed.",
+        "wrong": [
+          "A Bloom filter has no false negatives, so present keys are never reported absent, whatever the size.",
+          "The size is a choice made when the filter is built, and bits per key sets it.",
+          ""
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "Meta's Ribbon filter saves roughly 1/3 of the memory of a Bloom filter. What does the post say it costs?",
+        "options": [
+          "A small rise in CPU, since the filter is built by solving a system of equations",
+          "A higher rate of present keys reported as absent, since the filter holds fewer bits per key",
+          "Query time that grows with the number of keys held in the filter, since it solves equations on each lookup"
+        ],
+        "correct": 0,
+        "why": "The post expects several percent of RAM saved with a tiny increase in CPU usage, and construction is a Gaussian elimination on a linear system.",
+        "wrong": [
+          "",
+          "The post says Ribbon queries are O(1) and the filter still answers \"absent\" correctly; the trade is CPU, not wrong answers.",
+          "The post says queries take O(1) time, so they do not grow with the number of keys."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Two HyperLogLog sketches count distinct visitors for Monday and Tuesday. How do you get the distinct count for both days together?",
+        "options": [
+          "Add the two bucket arrays together, bucket by bucket, then estimate from the summed row",
+          "Concatenate the two arrays into one longer row and count the buckets that are not zero",
+          "Take the larger value in each bucket, then estimate from the merged row"
+        ],
+        "correct": 2,
+        "why": "Taking the maximum per bucket gives the same row as one sketch fed with both days, so the union is lossless and nobody rescans the data.",
+        "wrong": [
+          "Adding would count a visitor seen on both days twice and breaks the meaning of a bucket as a maximum.",
+          "Counting non-zero buckets throws away the stored run lengths that the estimate depends on.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "In Presto, APPROX_DISTINCT runs on a column with 100 distinct values. What does the Meta post say about the result?",
+        "options": [
+          "It is an estimate with the usual error of about 2.3 percent",
+          "It is exact, because up to 256 distinct values Presto keeps an exact sparse layout",
+          "It fails, because the sketch needs thousands of distinct values to fill its buckets"
+        ],
+        "correct": 1,
+        "why": "Below 256 distinct values the standard error is 0 because Presto stores the buckets sparsely, which is an exact representation. The 2.3 percent error appears only above 256.",
+        "wrong": [
+          "The 2.3 percent figure applies to cardinalities above 256, not below.",
+          "",
+          "Presto starts sparse and switches to dense only when the memory limit is passed, so small inputs work and are exact."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "A signup page uses a Bloom filter of taken usernames. What is the correct way to use its answer?",
+        "options": [
+          "If it says \"may be present\", check the real database, and if it says \"absent\", accept the name",
+          "If it says \"absent\", check the real database, and if it says \"may be present\", reject the name",
+          "Trust both answers and never check the database, to keep the page fast"
+        ],
+        "correct": 0,
+        "why": "An \"absent\" answer is certain, so the name is free. A \"may be present\" answer can be a false positive, so only the real store can say.",
+        "wrong": [
+          "",
+          "That is backwards: the \"absent\" answer is the certain one, and the \"may be present\" answer is the one that needs checking.",
+          "A false positive would reject a free name, so the database must settle every \"may be present\" answer."
+        ],
+        "teaches": "mistakes"
+      }
+    ],
+    "postsOutcome": "After this you can read how Meta shrank its Bloom filters and counted distinct values in Presto, with the figures it reports.",
+    "differOutcome": "After this you can say how a membership filter and a cardinality sketch differ in the question they answer, the error they make and what they cost.",
+    "exercisesOutcome": "After this you can pick a probabilistic structure for a counting or lookup problem and name the error it adds.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A page-analytics service must show unique visitors per page for any 7-day window, and storing every visitor id costs too much. What do you store per page per day, and how do you answer a 7-day query?",
+        "answer": "Store one HyperLogLog sketch per page per day, filled as visits arrive. For a 7-day query, merge the seven sketches by taking the larger value in each bucket and read the estimate from the merged row. No raw visitor ids are kept and no data is rescanned.",
+        "tradeoffs": "The count is an estimate with an error of a few percent, you cannot list the visitors, and you cannot remove one visitor afterwards. If a number must be exact, such as an invoice, keep the raw data for that.",
+        "wrongAnswers": [
+          "Keeping a set of every visitor id per page, which grows with the number of visitors.",
+          "Adding the seven daily counts together, which counts a visitor seen on several days several times."
+        ],
+        "teaches": "example"
+      },
+      {
+        "level": "design",
+        "prompt": "An LSM-tree store reads many sorted files per lookup, and most lookups are for keys that are not in most files. Where would you put Bloom filters, and what would you tune?",
+        "answer": "Build one filter per sorted file when the file is written, so a lookup asks each file's filter first and reads only files that answer \"may be present\". The setting to tune is bits per key: more bits cut false positives and wasted reads but use more memory, and the memory is what the filters cost. Measure the false positive rate and the reads saved, and stop adding bits when the saving per extra bit gets small.",
+        "tradeoffs": "Every file needs memory for its filter and CPU to build it. If filter memory is the limit and there is CPU headroom, a Ribbon-style filter can cut roughly 1/3 of the space at a tiny CPU cost, as Meta describes.",
+        "wrongAnswers": [
+          "Using one global filter for all files, which has to be rebuilt as files are merged.",
+          "Setting the false positive rate to zero, which a Bloom filter cannot reach with finite memory."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "scale",
+        "prompt": "Traffic grows 10x and you now also want the most-viewed items in the last hour from an event stream. A HyperLogLog cannot answer that. What do you reach for, and what do you give up?",
+        "answer": "A count-min sketch: a small grid of counters where each item hashes to one counter per row and the estimate is the smallest of its counters. Pair it with a short list of the current top candidates so you can name items, not only count them. The grid stays a fixed size however many distinct items arrive. A count-min sketch cannot forget old events, so for the last hour keep one sketch per minute and merge the latest 60 by adding their counters, or rotate sketches and reset each hour.",
+        "tradeoffs": "Collisions can only push a count up, so a count-min estimate never undercounts but can overcount, and heavy collisions blur the tail of rare items. You size the grid for the error you accept.",
+        "wrongAnswers": [
+          "Using HyperLogLog, which counts how many different items there are but not how often each appears.",
+          "Keeping an exact counter for every item, which needs memory proportional to the number of distinct items."
+        ],
+        "teaches": "model"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "Go back to Storage Engines to see where per-file Bloom filters sit in an LSM-tree read path, and to Indexing to see what a filter replaces. Caching and Databases use the same idea of a cheap guard in front of an expensive lookup. The Great reads and Blogs pages hold more write-ups on sketches and filters."
+    }
+  },
+  "posts": [
+    {
+      "id": "ribbon-meta-2021",
+      "title": "Ribbon filter: Practically smaller than Bloom and Xor",
+      "url": "https://engineering.fb.com/2021/07/09/data-infrastructure/ribbon-filter/",
+      "company": "Meta",
+      "verifiedOn": "2026-10-17",
+      "published": "2021-07-09",
+      "ageNote": "This is a short summary, written in 2021 by Peter Dillinger, an author of the paper, summarising that research paper. It is here for a fundamental that does not depend on one product: how much space a membership filter needs and what it costs in CPU to get closer to the minimum. The post describes what Meta expected at the time, not later measurements.",
+      "digest": {
+        "problem": "Meta uses Bloom filters across its storage systems so a read can skip data that cannot hold the key. At Meta's scale the memory those filters take is large, and a well-built Bloom filter still uses about half as much space again as the theoretical minimum. The team wanted a filter that was meaningfully smaller and still easy to configure.",
+        "constraints": "Other Bloom alternatives had offered space savings, but they were awkward to configure and that stalled their adoption. The new filter had to give a smooth trade between keys, memory, CPU and accuracy, with no bit-alignment hazard, where sizes such as 4, 8 or 16 bits per key are faster to access than the rest. It is a replacement for static, immutable Bloom filters, so the keys are known when the filter is built.",
+        "walkthrough": [
+          {
+            "step": "Name what a Bloom filter wastes",
+            "explanation": "A Bloom filter is very fast, and it uses roughly 50 percent more space than the information-theoretic lower bound for filters on arbitrary keys. That gap is the target."
+          },
+          {
+            "step": "Build the filter by solving equations",
+            "explanation": "The filter is made by solving a linear system defined by hash functions applied to the keys, where querying a key is an XOR of values at some array positions that must give a set result. The solving uses Gaussian elimination."
+          },
+          {
+            "step": "Shape the equations like a ribbon",
+            "explanation": "The coefficient matrix is arranged so it looks like a ribbon, close to a band, which is already near a reduced form. That makes elimination much cheaper than for a general matrix."
+          },
+          {
+            "step": "Solve on the fly",
+            "explanation": "Their solver does the elimination while inserting keys, similar to inserting into a linear-probed hash table, so row reductions happen in registers rather than memory. This also let the design scale its space efficiency to very large numbers of keys."
+          },
+          {
+            "step": "Hide the complexity behind a simple API",
+            "explanation": "The configuration is smooth: you choose freely among three of the four dimensions, which are number of keys, memory, CPU and accuracy, and the accuracy is optimized for you."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 244\" role=\"img\" aria-labelledby=\"dg-pds-rib-t\" class=\"dg\"><title id=\"dg-pds-rib-t\">Three bars compare filter space. The information-theoretic lower bound is the shortest. A well-engineered Bloom filter uses roughly 50 percent more space than that bound. A Ribbon filter uses an overhead as low as 1 percent or less, which saves roughly 1/3 of the memory compared with Bloom.</title><defs><marker id=\"dg-pds-rib-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"20\" y=\"34\" class=\"dg-label\" text-anchor=\"start\" font-size=\"12\">Information-theoretic lower bound</text><rect x=\"20\" y=\"42\" width=\"300\" height=\"26\" class=\"dg-box\"/><text x=\"330\" y=\"60\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">1.0x</text><text x=\"20\" y=\"98\" class=\"dg-label\" text-anchor=\"start\" font-size=\"12\">Bloom filter: roughly 50 percent more space</text><rect x=\"20\" y=\"106\" width=\"450\" height=\"26\" class=\"dg-box\"/><text x=\"480\" y=\"124\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">about 1.5x</text><text x=\"20\" y=\"162\" class=\"dg-label\" text-anchor=\"start\" font-size=\"12\">Ribbon filter: overhead as low as 1 percent or less</text><rect x=\"20\" y=\"170\" width=\"303\" height=\"26\" class=\"dg-box dg-accent\"/><text x=\"333\" y=\"188\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">about 1.01x</text><text x=\"280\" y=\"228\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Bar lengths follow the percentages in the post. Ribbon saves roughly 1/3 of the memory of Bloom.</text></svg>",
+        "numbers": [
+          {
+            "value": "50 percent",
+            "meaning": "Extra space a well-engineered Bloom filter uses over the information-theoretic lower bound for filters on arbitrary keys"
+          },
+          {
+            "value": "as low as 1 percent or less",
+            "meaning": "Space overhead of Ribbon filter variants above that lower bound"
+          },
+          {
+            "value": "roughly 1/3",
+            "meaning": "Memory Ribbon filters save compared with Bloom filters"
+          },
+          {
+            "value": "O(1)",
+            "meaning": "Query time of a Ribbon filter"
+          },
+          {
+            "value": "several percent",
+            "meaning": "RAM the authors expect Ribbon filters to save across some major storage systems at Facebook's scale, with a tiny increase in CPU usage"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A Ribbon filter in place of a static Bloom filter, accepting a slightly higher CPU cost and a build step that solves a linear system.",
+          "rejected": "Earlier Bloom alternatives that saved some space but were hard to configure, which stalled their use.",
+          "why": "Ribbon matched the smooth, hazard-free accuracy-versus-space trade-off of Bloom while using roughly 1/3 less memory, and its extra cost shows up as a tiny CPU increase for some major storage systems."
+        },
+        "failures": "The post is a short research summary and reports no incident. It states that making the filter general and highly configurable took real complexity, which the API hides. It is aimed at static, immutable filters, so it does not apply to a filter you add keys to after building.",
+        "takeaways": "A membership filter is a dial between memory and accuracy, so the first question is how much you pay for each bit. A closer-to-optimal filter moves that cost from RAM to a little extra CPU, which is a good deal when filters live long and sit in memory."
+      }
+    },
+    {
+      "id": "hll-presto-meta-2018",
+      "title": "HyperLogLog in Presto: A significantly faster way to handle cardinality estimation",
+      "url": "https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/",
+      "company": "Meta",
+      "verifiedOn": "2026-10-17",
+      "published": "2018-12-13",
+      "ageNote": "This post is from 2018. It is here for HyperLogLog itself, a data structure whose idea has not changed. It describes Presto's implementation as of 2018, and the error figures come from the authors' own simulation of 1,000 samples, so check the current Presto documentation for today's defaults.",
+      "digest": {
+        "problem": "Meta needed the number of distinct values in huge data sets, such as the distinct people who visited Facebook in a week. Done exactly on a single machine, the post says that would take days and terabytes of memory. Sorting the elements or keeping a set of every one seen was too slow or too large.",
+        "constraints": "The answer could be approximate, but the error had to be small and predictable. The sketch had to be tiny, work in a distributed SQL engine, and be easy to combine across partitions, servers and days. It also had to give almost exact answers for small sets, such as the number of distinct countries.",
+        "walkthrough": [
+          {
+            "step": "Start from a simple estimator",
+            "explanation": "Hash each value so it is spread evenly between 0 and 1, then use the smallest hash to guess how many distinct values there were. It is easy but has high variance, because a single unlucky hash skews the answer."
+          },
+          {
+            "step": "Count the leading zeros instead",
+            "explanation": "A long run of zero bits at the start of a hash is rare, so the longest run seen indicates how many distinct values there were. It needs only a 5-bit number to store, but it can only give powers of two and one outlier ruins it."
+          },
+          {
+            "step": "Average many estimators with buckets",
+            "explanation": "Using the first bits of one hash to pick a bucket simulates many independent hash functions at no extra cost. With 2,048 buckets of 5 bits each, that is 2048 * 5 = 1.2 KB. The post says to expect an average error of about 2.8 percent."
+          },
+          {
+            "step": "Improve the average",
+            "explanation": "Dropping the largest bucket values reduces the effect of outliers, and a harmonic mean in place of a geometric mean lowers the error again without more storage. Together they form the HyperLogLog estimator."
+          },
+          {
+            "step": "Store sparse first, then dense",
+            "explanation": "Presto starts with a sparse layout of 32-bit entries, which gives an almost exact count for low-cardinality data, and switches to a dense layout with a fixed number of buckets once a memory limit is passed. Dense buckets are stored as 4-bit deltas from a baseline, with a list for the rare overflow."
+          },
+          {
+            "step": "Expose the sketch to users",
+            "explanation": "New functions such as APPROX_SET, MERGE and CARDINALITY let a query build a sketch, store it, and merge stored sketches later. Rolling up from a server-level table of 1,000 rows to 20 cluster rows needs no second pass over the raw data."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 234\" role=\"img\" aria-labelledby=\"dg-pds-hll-t\" class=\"dg\"><title id=\"dg-pds-hll-t\">How Presto estimates a distinct count. Each item is hashed, the first bits of the hash choose a bucket, and the bucket keeps the longest run of zero bits seen. The estimate averages the buckets. Up to 256 distinct values Presto keeps an exact sparse layout; above that it switches to a dense layout of about 8 Kb with about 2.3 percent error. APPROX_SET uses 4,096 buckets for 1.6 percent. Stored sketches merge by taking the maximum of each bucket.</title><defs><marker id=\"dg-pds-hll-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"10\" y=\"20\" width=\"126\" height=\"60\" class=\"dg-box\"/><text x=\"73\" y=\"46\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Hash the item</text><text x=\"73\" y=\"64\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">uniform bits</text><path d=\"M136,50 L146,50\" class=\"dg-line\" marker-end=\"url(#dg-pds-hll-a)\"/><rect x=\"148\" y=\"20\" width=\"126\" height=\"60\" class=\"dg-box\"/><text x=\"211\" y=\"46\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Split the hash</text><text x=\"211\" y=\"64\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">first k bits pick a bucket</text><path d=\"M274,50 L284,50\" class=\"dg-line\" marker-end=\"url(#dg-pds-hll-a)\"/><rect x=\"286\" y=\"20\" width=\"126\" height=\"60\" class=\"dg-box\"/><text x=\"349\" y=\"46\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Update the bucket</text><text x=\"349\" y=\"64\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">keep the longest zero run</text><path d=\"M412,50 L422,50\" class=\"dg-line\" marker-end=\"url(#dg-pds-hll-a)\"/><rect x=\"424\" y=\"20\" width=\"126\" height=\"60\" class=\"dg-box dg-accent\"/><text x=\"487\" y=\"46\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Estimate</text><text x=\"487\" y=\"64\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"10\">harmonic mean of buckets</text><rect x=\"10\" y=\"110\" width=\"255\" height=\"58\" class=\"dg-box\"/><text x=\"137\" y=\"134\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Up to 256 distinct values</text><text x=\"137\" y=\"152\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">sparse layout, exact count</text><rect x=\"295\" y=\"110\" width=\"255\" height=\"58\" class=\"dg-box dg-accent\"/><text x=\"422\" y=\"134\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Above 256 distinct values</text><text x=\"422\" y=\"152\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">dense layout, about 8 Kb, ~2.3 percent error</text><path d=\"M265,139 L293,139\" class=\"dg-line\" marker-end=\"url(#dg-pds-hll-a)\"/><text x=\"280\" y=\"200\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">APPROX_SET uses 4,096 buckets, twice as many, for 1.6 percent error</text><text x=\"280\" y=\"218\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Stored sketches merge by taking the maximum of each bucket</text></svg>",
+        "numbers": [
+          {
+            "value": "7x to 1,000x",
+            "meaning": "Range of speed improvements, depending on the problem, from the Presto HyperLogLog functions"
+          },
+          {
+            "value": "12 hours",
+            "meaning": "Time for the same distinct-people calculation with APPROX_DISTINCT, using less than 1 MB of memory, where a plain query on one machine would take days and terabytes"
+          },
+          {
+            "value": "2,048 buckets",
+            "meaning": "Example sketch with 5 bits per bucket, 2048 * 5 = 1.2 KB, giving an average error of about 2.8 percent"
+          },
+          {
+            "value": "~2.3 percent",
+            "meaning": "Observed standard error of APPROX_DISTINCT for all cardinalities above 256, from a simulation of 1,000 samples"
+          },
+          {
+            "value": "256",
+            "meaning": "Distinct values up to which APPROX_DISTINCT uses an exact sparse layout, with a standard error of 0"
+          },
+          {
+            "value": "~8 Kb",
+            "meaning": "Default dense layout that Presto switches to for larger inputs"
+          },
+          {
+            "value": "4,096 buckets",
+            "meaning": "Buckets in APPROX_SET, twice as many as APPROX_DISTINCT, which lowers the error to 1.6 percent"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A HyperLogLog sketch with a sparse layout for small sets and a dense layout for large ones, exposed as functions that build, store and merge sketches.",
+          "rejected": "Exact counts by sorting or keeping a set of every value seen, which the post calls too computationally intensive or too memory hungry.",
+          "why": "The sketch uses about 1 KB however big the input is, gives an error of a few percent, and merges by taking the maximum of each bucket, which makes roll-ups and date ranges cheap."
+        },
+        "failures": "The post reports no outage. It states the limits of the approach: the answer is an estimate, with a standard error of about 2.3 percent for APPROX_DISTINCT, and anyone who needs the sketch outside Presto can choose a strictly dense type, P4HYPERLOGLOG, because sparse and dense layouts differ in accuracy and speed.",
+        "takeaways": "When exact distinct counts are too costly, pick the error you can live with and let the sketch size follow it. Store the sketches instead of the raw rows, because merging them is lossless and turns roll-ups into cheap work."
+      }
+    }
+  ],
+  "comparison": "Both posts are from Meta and both trade a little accuracy for a lot of memory, but they answer different questions. The Ribbon post is about membership: is this key in this file, with a certain \"no\" and a bounded \"maybe\". The HyperLogLog post is about counting: how many different values are in this data, with an estimate that is off by a known percentage. Neither structure stores the items it was given.\n\nThey diverge in what they spend. Ribbon spends a tiny CPU increase to reach a space overhead as low as 1 percent or less above the minimum, and it needs the keys up front. HyperLogLog spends nothing extra to merge, because two sketches combine by taking the maximum of each bucket, and the post leans on that to roll up counts across servers and dates without a rescan.\n\nThe evidence is each post's own figures: roughly 1/3 less memory and a tiny CPU increase for Ribbon, and speedups of 7x to 1,000x with about 2.3 percent error above 256 distinct values for APPROX_DISTINCT. The Ribbon figures are Meta's expectation at the time of writing, and the Presto error figures come from a simulation of 1,000 samples.",
+  "glossary": [
+    {
+      "term": "Probabilistic data structure",
+      "definition": "A compact structure that answers a question about a large set or stream with a bounded error instead of an exact answer."
+    },
+    {
+      "term": "Bloom filter",
+      "definition": "A bit array that tells you a key is definitely absent or may be present, with no false negatives."
+    },
+    {
+      "term": "False positive",
+      "definition": "A \"may be present\" answer for a key that was never added, which costs a wasted lookup but no wrong data."
+    },
+    {
+      "term": "Bits per key",
+      "definition": "How much filter memory each key gets; more bits per key mean fewer false positives."
+    },
+    {
+      "term": "Ribbon filter",
+      "definition": "A Bloom alternative for fixed key sets, built by solving linear equations, that uses much less space than a Bloom filter for a bit more CPU."
+    },
+    {
+      "term": "Cardinality",
+      "definition": "The number of distinct items in a set, as opposed to the number of items counted with repeats."
+    },
+    {
+      "term": "HyperLogLog",
+      "definition": "A sketch of small buckets that estimates a distinct count, and merges with other sketches by taking the maximum of each bucket."
+    },
+    {
+      "term": "Sketch",
+      "definition": "A small summary of a data stream that supports approximate answers to a fixed set of questions."
+    },
+    {
+      "term": "Count-min sketch",
+      "definition": "A grid of counters that estimates how often each item appeared, and can overcount but never undercount."
+    }
+  ],
+  "mistakes": [
+    "Treating \"may be present\" as proof. A Bloom filter has false positives, so a positive answer must be checked against the real store before you rely on it.",
+    "Using an estimate where an exact number is required. A HyperLogLog count is off by a few percent, so it suits a dashboard and not an invoice.",
+    "Choosing the smaller filter without measuring the cost. Ribbon saves roughly 1/3 of the memory but takes a tiny increase in CPU use, so test both on real traffic."
+  ]
+}

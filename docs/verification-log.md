@@ -123,14 +123,14 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | cloudflare-pingora-2022 | meaning | 95 | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Pingora is faster in production | found |
 | cloudflare-pingora-2022 | failures | 599, | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Design decisions | found with different formatting |
 | cloudflare-pingora-2022 | failures | hundred trillion | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | (before first heading) | found (other spelling) |
-| netflix-open-connect-popularity-2017 | numbers | 50% | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | What granularity do we use to predict popularity? | found |
-| netflix-open-connect-popularity-2017 | numbers | around 1,200 | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | How is our content organized? | found |
-| netflix-open-connect-popularity-2017 | numbers | up to 100 Gbps | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | Organizing content into server tiers | found with different formatting |
-| netflix-open-connect-popularity-2017 | numbers | 200 TB+ | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | Organizing content into server tiers | found with different formatting |
-| netflix-open-connect-popularity-2017 | constraints | 1,200 | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | How is our content organized? | found |
-| netflix-open-connect-popularity-2017 | walkthrough | half the storage | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | (before first heading) | found (other spelling) |
-| netflix-open-connect-popularity-2017 | walkthrough | two things | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | (before first heading) | hand-checked |
-| netflix-open-connect-popularity-2017 | takeaways | half the storage | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) | (before first heading) | found (other spelling) |
+| netflix-open-connect-popularity-2017 | numbers | 50% | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-open-connect-popularity-2017 | numbers | around 1,200 | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-open-connect-popularity-2017 | numbers | up to 100 Gbps | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-open-connect-popularity-2017 | numbers | 200 TB+ | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-open-connect-popularity-2017 | constraints | 1,200 | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-open-connect-popularity-2017 | walkthrough | half the storage | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b | page not fetched (HTTP 403) | HAND CHECK |
+| netflix-open-connect-popularity-2017 | walkthrough | two things | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b | page not fetched (HTTP 403) | hand-checked |
+| netflix-open-connect-popularity-2017 | takeaways | half the storage | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b | page not fetched (HTTP 403) | HAND CHECK |
 
 ## Circuit Breakers and Load Shedding
 
@@ -680,10 +680,10 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 
 | Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
 |---|---|---|---|---|---|
-| linkedin-the-log-2013 | numbers | Over 60 billion | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying (archive copy) | Building a Scalable Log | found |
-| linkedin-the-log-2013 | numbers | Several hundred | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying (archive copy) | Log Files and Events | found |
-| linkedin-the-log-2013 | meaning | 2013, | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying (archive copy) | The Log: What every software engineer should know | found with different formatting |
-| linkedin-the-log-2013 | meaning | hundred billion | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying (archive copy) | (before first heading) | found (other spelling) |
+| linkedin-the-log-2013 | numbers | Over 60 billion | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying | page not fetched (HTTP 404) | NOT FOUND |
+| linkedin-the-log-2013 | numbers | Several hundred | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying | page not fetched (HTTP 404) | NOT FOUND |
+| linkedin-the-log-2013 | meaning | 2013, | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying | page not fetched (HTTP 404) | NOT FOUND |
+| linkedin-the-log-2013 | meaning | hundred billion | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying | page not fetched (HTTP 404) | HAND CHECK |
 | netflix-dblog-2020 | numbers | Tens of microservices | https://arxiv.org/pdf/2010.12597 | (before first heading) | found |
 | netflix-dblog-2020 | numbers | Trillions of operations per day | https://arxiv.org/pdf/2010.12597 | - | NOT FOUND |
 | netflix-dblog-2020 | constraints | six needs | https://arxiv.org/pdf/2010.12597 | (before first heading) | hand-checked |
@@ -862,6 +862,46 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | metastable-failures-osdi-2022 | tradeoffs | two amplification | https://www.usenix.org/system/files/osdi22-huang-lexiang.pdf | (before first heading) | found (other spelling) |
 | metastable-failures-osdi-2022 | tradeoffs | three example | https://www.usenix.org/system/files/osdi22-huang-lexiang.pdf | (before first heading) | found (other spelling) |
 
+## Probabilistic Structures
+
+| Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
+|---|---|---|---|---|---|
+| ribbon-meta-2021 | numbers | 50 percent | https://engineering.fb.com/2021/07/09/data-infrastructure/ribbon-filter/ | What the research is: | found |
+| ribbon-meta-2021 | numbers | as low as 1 percent or less | https://engineering.fb.com/2021/07/09/data-infrastructure/ribbon-filter/ | What the research is: | found |
+| ribbon-meta-2021 | numbers | roughly 1/3 | https://engineering.fb.com/2021/07/09/data-infrastructure/ribbon-filter/ | What the research is: | found |
+| ribbon-meta-2021 | numbers | O(1) | https://engineering.fb.com/2021/07/09/data-infrastructure/ribbon-filter/ | What the research is: | found |
+| ribbon-meta-2021 | numbers | several percent | https://engineering.fb.com/2021/07/09/data-infrastructure/ribbon-filter/ | Why it matters: | found |
+| ribbon-meta-2021 | problem | half as | https://engineering.fb.com/2021/07/09/data-infrastructure/ribbon-filter/ | (before first heading) | hand-checked |
+| ribbon-meta-2021 | constraints | 16 | https://engineering.fb.com/2021/07/09/data-infrastructure/ribbon-filter/ | What the research is: | found |
+| ribbon-meta-2021 | constraints | 8 or | https://engineering.fb.com/2021/07/09/data-infrastructure/ribbon-filter/ | (before first heading) | hand-checked |
+| ribbon-meta-2021 | walkthrough | 50 | https://engineering.fb.com/2021/07/09/data-infrastructure/ribbon-filter/ | What the research is: | found |
+| ribbon-meta-2021 | walkthrough | three of the | https://engineering.fb.com/2021/07/09/data-infrastructure/ribbon-filter/ | (before first heading) | found (other spelling) |
+| ribbon-meta-2021 | walkthrough | four dimensions | https://engineering.fb.com/2021/07/09/data-infrastructure/ribbon-filter/ | (before first heading) | found (other spelling) |
+| hll-presto-meta-2018 | numbers | 7x to 1,000x | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | HyperLogLog in Presto: A significantly faster way to | found |
+| hll-presto-meta-2018 | numbers | 12 hours | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | HyperLogLog in Presto: A significantly faster way to | found |
+| hll-presto-meta-2018 | numbers | 2,048 buckets | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | Improving accuracy: LogLog | found |
+| hll-presto-meta-2018 | numbers | ~2.3 percent | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | Approximation error | found |
+| hll-presto-meta-2018 | numbers | 256 | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | Approximation error | found |
+| hll-presto-meta-2018 | numbers | ~8 Kb | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | Approximation error | found |
+| hll-presto-meta-2018 | numbers | 4,096 buckets | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | Approximation error | found with different formatting |
+| hll-presto-meta-2018 | walkthrough | 2,048 | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | Improving accuracy: LogLog | found |
+| hll-presto-meta-2018 | walkthrough | 1.2 KB | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | Improving accuracy: LogLog | found |
+| hll-presto-meta-2018 | walkthrough | 2.8 | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | Improving accuracy: LogLog | found |
+| hll-presto-meta-2018 | walkthrough | 32 | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | Probabilistic counting | found |
+| hll-presto-meta-2018 | walkthrough | 1,000 | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | HyperLogLog in Presto: A significantly faster way to | found |
+| hll-presto-meta-2018 | walkthrough | 20 | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | (before first heading) | found |
+| hll-presto-meta-2018 | walkthrough | 0 and | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | (before first heading) | found (other spelling) |
+| hll-presto-meta-2018 | walkthrough | two and | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | (before first heading) | found (other spelling) |
+| hll-presto-meta-2018 | meaning | 1 MB | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | HyperLogLog in Presto: A significantly faster way to | found |
+| hll-presto-meta-2018 | meaning | 1.2 KB | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | Improving accuracy: LogLog | found |
+| hll-presto-meta-2018 | meaning | 2.8 | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | Improving accuracy: LogLog | found |
+| hll-presto-meta-2018 | meaning | 256, | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | Approximation error | found |
+| hll-presto-meta-2018 | meaning | 1,000 | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | HyperLogLog in Presto: A significantly faster way to | found |
+| hll-presto-meta-2018 | meaning | 1.6 | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | Approximation error | found |
+| hll-presto-meta-2018 | meaning | 0 Default | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | (before first heading) | hand-checked |
+| hll-presto-meta-2018 | tradeoffs | 1 KB | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | Improving accuracy: LogLog | found |
+| hll-presto-meta-2018 | failures | 2.3 | https://engineering.fb.com/2018/12/13/data-infrastructure/hyperloglog/ | Approximation error | found |
+
 ## Publish-Subscribe
 
 | Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
@@ -959,25 +999,25 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | slack-realtime-messaging-2023 | numbers | Tens of millions | https://slack.engineering/real-time-messaging/ | What’s next | found |
 | slack-realtime-messaging-2023 | numbers | Under 20 seconds of elevated latency | https://slack.engineering/real-time-messaging/ | Server overview | found with different formatting |
 | slack-realtime-messaging-2023 | constraints | 11 | https://slack.engineering/real-time-messaging/ | (before first heading) | found |
-| netflix-pushy-2024 | numbers | Hundreds of millions | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Pushy to the Limit: Evolving Netflix’s WebSocket proxy | found |
-| netflix-pushy-2024 | numbers | 99.999% | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Pushy to the Limit: Evolving Netflix’s WebSocket proxy | found |
-| netflix-pushy-2024 | numbers | 200,000 connections per node | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
-| netflix-pushy-2024 | numbers | 60,000 connections per instance | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
-| netflix-pushy-2024 | numbers | 300,000 messages per second | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Growth | found with different formatting |
-| netflix-pushy-2024 | numbers | About 30 minutes | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
-| netflix-pushy-2024 | numbers | 160,000 and 50,000 messages per second | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Shift towards direct push | found with different formatting |
-| netflix-pushy-2024 | numbers | Under 1 ms median, under 4 ms at the 99th percentile | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Device to device messaging | found with different formatting |
-| netflix-pushy-2024 | problem | five years | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | (before first heading) | found (other spelling) |
-| netflix-pushy-2024 | walkthrough | 30 minutes | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
-| netflix-pushy-2024 | walkthrough | 60,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
-| netflix-pushy-2024 | walkthrough | 200,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
-| netflix-pushy-2024 | walkthrough | 400,000, | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found with different formatting |
-| netflix-pushy-2024 | meaning | 400,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
-| netflix-pushy-2024 | meaning | 24 hours | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Shift towards direct push | found |
-| netflix-pushy-2024 | meaning | five years | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | (before first heading) | found (other spelling) |
-| netflix-pushy-2024 | meaning | hundred million | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | (before first heading) | found (other spelling) |
-| netflix-pushy-2024 | tradeoffs | 200,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
-| netflix-pushy-2024 | tradeoffs | 60,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 (archive copy) (browser copy) | Scaling Pushy horizontally and vertically | found |
+| netflix-pushy-2024 | numbers | Hundreds of millions | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-pushy-2024 | numbers | 99.999% | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-pushy-2024 | numbers | 200,000 connections per node | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-pushy-2024 | numbers | 60,000 connections per instance | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-pushy-2024 | numbers | 300,000 messages per second | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-pushy-2024 | numbers | About 30 minutes | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-pushy-2024 | numbers | 160,000 and 50,000 messages per second | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-pushy-2024 | numbers | Under 1 ms median, under 4 ms at the 99th percentile | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-pushy-2024 | problem | five years | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | HAND CHECK |
+| netflix-pushy-2024 | walkthrough | 30 minutes | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-pushy-2024 | walkthrough | 60,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-pushy-2024 | walkthrough | 200,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-pushy-2024 | walkthrough | 400,000, | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-pushy-2024 | meaning | 400,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-pushy-2024 | meaning | 24 hours | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-pushy-2024 | meaning | five years | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | HAND CHECK |
+| netflix-pushy-2024 | meaning | hundred million | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | HAND CHECK |
+| netflix-pushy-2024 | tradeoffs | 200,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | NOT FOUND |
+| netflix-pushy-2024 | tradeoffs | 60,000 | https://netflixtechblog.com/pushy-to-the-limit-evolving-netflixs-websocket-proxy-for-the-future-b468bc0ff658 | page not fetched (HTTP 403) | NOT FOUND |
 
 ## Database Replication
 
@@ -1163,12 +1203,12 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | uber-kappa-2020 | meaning | two hours | https://www.uber.com/blog/kappa-architecture-data-stream-processing/ | (before first heading) | found (other spelling) |
 | uber-kappa-2020 | meaning | nine days | https://www.uber.com/blog/kappa-architecture-data-stream-processing/ | (before first heading) | found (other spelling) |
 | uber-kappa-2020 | failures | two first | https://www.uber.com/blog/kappa-architecture-data-stream-processing/ | (before first heading) | hand-checked |
-| netflix-keystone-2018 | numbers | Trillions of events and petabytes worth of data per day | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (archive copy) | 1. Scale | found |
-| netflix-keystone-2018 | numbers | Thousands | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (archive copy) | 3. Multi-tenancy | found |
-| netflix-keystone-2018 | numbers | 10s of TB | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (archive copy) | 2. Diverse Use-cases | found |
-| netflix-keystone-2018 | numbers | 130 million subscribers | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (archive copy) | 1. Scale | found |
-| netflix-keystone-2018 | walkthrough | Two services | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (archive copy) | (before first heading) | found (other spelling) |
-| netflix-keystone-2018 | meaning | 190 | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (archive copy) | 1. Scale | found |
+| netflix-keystone-2018 | numbers | Trillions of events and petabytes worth of data per day | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (browser copy) | 1. Scale | found |
+| netflix-keystone-2018 | numbers | Thousands | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (browser copy) | 3. Multi-tenancy | found |
+| netflix-keystone-2018 | numbers | 10s of TB | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (browser copy) | 2. Diverse Use-cases | found |
+| netflix-keystone-2018 | numbers | 130 million subscribers | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (browser copy) | 1. Scale | found |
+| netflix-keystone-2018 | walkthrough | Two services | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (browser copy) | (before first heading) | found (other spelling) |
+| netflix-keystone-2018 | meaning | 190 | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (browser copy) | 1. Scale | found |
 | netflix-kappa-backfill-2022 | numbers | $93M/year | https://microsites.databricks.com/sites/default/files/2022-07/Backfill%20Streaming%20Data%20Pipelines%20in%20Kappa%20Architecture.pdf | 5 Event streaming operations | found |
 | netflix-kappa-backfill-2022 | numbers | $2M/year | https://microsites.databricks.com/sites/default/files/2022-07/Backfill%20Streaming%20Data%20Pipelines%20in%20Kappa%20Architecture.pdf | 60 Agenda | found |
 | netflix-kappa-backfill-2022 | numbers | About 5 hours for 24 hours of data | https://microsites.databricks.com/sites/default/files/2022-07/Backfill%20Streaming%20Data%20Pipelines%20in%20Kappa%20Architecture.pdf | 5 Event streaming operations | found with different formatting |
@@ -1359,7 +1399,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | autoscaling-and-capacity | 28 | 5 | 0 | 1 | 2 | 0 |
 | caching | 18 | 6 | 0 | 7 | 4 | 0 |
 | cap | 9 | 6 | 0 | 2 | 1 | 0 |
-| cdns | 9 | 6 | 0 | 3 | 1 | 0 |
+| cdns | 6 | 4 | 5 | 1 | 1 | 2 |
 | circuit-breakers | 33 | 10 | 0 | 15 | 4 | 0 |
 | consensus | 5 | 10 | 0 | 3 | 4 | 0 |
 | consistent-hashing | 26 | 3 | 0 | 0 | 5 | 0 |
@@ -1373,13 +1413,14 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | idempotency-and-retries | 20 | 1 | 0 | 7 | 2 | 0 |
 | indexing | 54 | 7 | 0 | 5 | 2 | 0 |
 | load-balancing | 17 | 4 | 0 | 1 | 0 | 0 |
-| log-based-streaming | 20 | 5 | 2 | 2 | 5 | 0 |
+| log-based-streaming | 18 | 4 | 5 | 1 | 5 | 1 |
 | message-queues | 16 | 3 | 0 | 2 | 0 | 0 |
 | object-storage | 23 | 14 | 0 | 7 | 1 | 0 |
 | overload-and-cascading-failures | 34 | 8 | 9 | 8 | 7 | 0 |
+| probabilistic-data-structures | 27 | 1 | 0 | 4 | 3 | 0 |
 | pub-sub | 17 | 14 | 0 | 5 | 3 | 0 |
 | rate-limiting | 27 | 4 | 0 | 4 | 3 | 0 |
-| real-time-delivery | 15 | 7 | 0 | 3 | 0 | 0 |
+| real-time-delivery | 3 | 3 | 16 | 0 | 0 | 3 |
 | replication | 9 | 8 | 0 | 8 | 1 | 0 |
 | safe-deployments | 34 | 4 | 0 | 6 | 2 | 0 |
 | sharding | 22 | 7 | 0 | 5 | 0 | 0 |

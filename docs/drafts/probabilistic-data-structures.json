@@ -1,0 +1,22 @@
+{
+  "probabilistic-data-structures": {
+    "summary": {
+      "points": [
+        "A probabilistic structure answers a question about huge data from a small fixed amount of memory, and its error is one you can bound.",
+        "A Bloom filter says a key is definitely absent or maybe present, so it guards an expensive read and never misses a key it holds.",
+        "Meta's Ribbon filter keeps the same promise in less memory, trading extra CPU at build time for a smaller filter.",
+        "A HyperLogLog estimates how many different items it has seen from a few hundred bytes, and two sketches merge without losing accuracy.",
+        "Meta's Presto sketches cut a distinct count that needed days and terabytes down to hours and under 1 MB."
+      ],
+      "figures": [
+        { "postId": "ribbon-meta-2021", "row": 1, "label": "Ribbon filter variants have a space overhead of 1 percent or less" },
+        { "postId": "ribbon-meta-2021", "row": 2, "label": "Ribbon filters save roughly 1/3 of memory compared with Bloom filters" },
+        { "postId": "hll-presto-meta-2018", "row": 0, "label": "Presto's HyperLogLog functions gave speed improvements of 7x to 1,000x" },
+        { "postId": "hll-presto-meta-2018", "row": 2, "label": "2,048 buckets of 5 bits is 1.2 KB, with an average error of about 2.8 percent" }
+      ]
+    },
+    "prerequisiteReasons": {
+      "storage-engines": "The Bloom filter earns its place guarding reads on the sorted files of an LSM-tree, so you need to know why those reads are expensive first."
+    }
+  }
+}
