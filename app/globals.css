@@ -4836,55 +4836,24 @@ html[data-posts-view] .posts-view-h {
   }
 }
 
-/* Capstone section tracker: the topic rail's place and rules from 1180px, one sticky line with a list below that. */
-.cap-rail ol,
-.cap-bar-list ol {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.cap-rail a,
-.cap-bar-list a {
-  display: grid;
-  grid-template-columns: 7px auto;
-  align-items: baseline;
-  column-gap: 8px;
-  text-decoration: none;
-}
-
-.cap-rail-mark {
-  width: 7px;
-  height: 7px;
-  border: 1px solid currentColor;
-  box-sizing: border-box;
-}
-
-.cap-rail .is-current .cap-rail-mark,
-.cap-bar-list .is-current .cap-rail-mark {
-  background: currentColor;
-}
-
+/* Capstone section tracker: it reuses the topic rail's classes; only the state word and the phone list are its own. */
 .cap-rail-state {
-  grid-column: 2;
+  display: block;
+  margin-top: 2px;
   font-size: 11px;
-  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ink-soft);
 }
 
-.cap-rail .is-current a,
-.cap-bar-list .is-current a {
-  font-weight: 500;
-}
-
 .cap-bar-button {
-  display: block;
-  width: 100%;
   min-height: 44px;
   padding: 0;
   border: 0;
   background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
   text-align: left;
   cursor: pointer;
 }
@@ -4911,13 +4880,29 @@ html[data-posts-view] .posts-view-h {
   display: none;
 }
 
+.cap-bar-list ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 .cap-bar-list a {
-  min-height: 44px;
-  align-content: center;
+  display: block;
+  padding: 10px 0;
   color: var(--ink-soft);
   font-family: var(--font-mono), monospace;
   font-size: 12px;
   letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+.cap-bar-list .status {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  background: currentColor;
+  vertical-align: 1px;
 }
 
 .cap-bar-list .is-current a {

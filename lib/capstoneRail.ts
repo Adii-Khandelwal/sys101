@@ -25,3 +25,17 @@ export function railStates(picks: Record<string, number>, decisionIds: string[],
     check: answered === quizLength && quizLength > 0 ? "done" : answered ? `answered ${answered} of ${quizLength}` : "",
   };
 }
+
+/** Sections the reader can complete: the ones the progress bar counts. */
+export const TRACKED = ["design", "size", "break", "check"] as const;
+
+/** Which tracked sections are finished: every decision answered, Size it and Break it touched, every question answered. */
+export function railDone(picks: Record<string, number>, decisionIds: string[], quizLength: number): string[] {
+  const has = (k: string) => Number.isInteger(picks[k]) && picks[k] >= 0;
+  const done = [];
+  if (decisionIds.length && decisionIds.every(has)) done.push("design");
+  if (has(TOUCHED.size)) done.push("size");
+  if (has(TOUCHED.break)) done.push("break");
+  if (quizLength && Array.from({ length: quizLength }, (_, i) => quizKey(i)).every(has)) done.push("check");
+  return done;
+}

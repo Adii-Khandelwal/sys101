@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RAIL_SECTIONS, quizKey, railStates } from "./capstoneRail";
+import { RAIL_SECTIONS, quizKey, railDone, railStates } from "./capstoneRail";
 
 describe("capstone rail states", () => {
   it("is empty before anything is touched", () => {
@@ -15,5 +15,10 @@ describe("capstone rail states", () => {
   });
   it("lists seven sections in page order", () => {
     expect(RAIL_SECTIONS.map((s) => s.id)).toEqual(["brief", "design", "size", "system", "break", "differ", "check"]);
+  });
+  it("counts a section done only when it is finished", () => {
+    expect(railDone({}, ["a"], 2)).toEqual([]);
+    expect(railDone({ a: 0, _size: 1, _q0: 0 }, ["a", "b"], 2)).toEqual(["size"]);
+    expect(railDone({ a: 0, b: 1, _size: 1, _break: 1, _q0: 0, _q1: 2 }, ["a", "b"], 2)).toEqual(["design", "size", "break", "check"]);
   });
 });
