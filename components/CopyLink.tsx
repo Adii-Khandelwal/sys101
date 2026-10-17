@@ -23,7 +23,7 @@ export default function CopyLink({ id }: { id: string }) {
       <button type="button" className="copy-link" data-pagefind-ignore aria-label="Copy link to this section" onClick={copy}>
         {done ? "Copied" : "Copy link"}
       </button>
-      <span className="visually-hidden" role="status">
+      <span className="visually-hidden" aria-live="polite">
         {done ? "Link copied" : ""}
       </span>
     </>
