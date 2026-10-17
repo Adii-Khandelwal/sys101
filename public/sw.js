@@ -110,7 +110,7 @@ async function warm() {
   }
   if (!complete) return false;
   // Next's data requests (?_rsc=...) are saved as they happen and never expire otherwise.
-  for (const req of await pages.keys()) if (new URL(req.url).search) await pages.delete(req);
+  for (const req of await pages.keys()) if (new URL(req.url).searchParams.has("_rsc")) await pages.delete(req);
   for (const req of await statics.keys()) {
     const p = new URL(req.url).pathname;
     if (!wanted.has(p) && !wanted.has(decodeURI(p))) await statics.delete(req);

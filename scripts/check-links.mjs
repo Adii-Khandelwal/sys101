@@ -155,11 +155,11 @@ async function syncIssue(results, date) {
 }
 
 const sources = loadSources();
-// A few at a time: dead hosts cost about a minute of retries each. Results keep the source order.
+// Three at a time: dead hosts cost about a minute of retries each. Results keep the source order.
 const results = new Array(sources.length);
 let next = 0;
 await Promise.all(
-  Array.from({ length: 5 }, async () => {
+  Array.from({ length: 3 }, async () => {
     while (next < sources.length) {
       const i = next++;
       const result = await check(sources[i].url);
