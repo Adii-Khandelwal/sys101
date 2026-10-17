@@ -123,14 +123,14 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | cloudflare-pingora-2022 | meaning | 95 | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Pingora is faster in production | found |
 | cloudflare-pingora-2022 | failures | 599, | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | Design decisions | found with different formatting |
 | cloudflare-pingora-2022 | failures | hundred trillion | https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet/ | (before first heading) | found (other spelling) |
-| netflix-open-connect-popularity-2017 | numbers | 50% | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) (browser copy) | What granularity do we use to predict popularity? | found |
-| netflix-open-connect-popularity-2017 | numbers | around 1,200 | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) (browser copy) | How is our content organized? | found |
-| netflix-open-connect-popularity-2017 | numbers | up to 100 Gbps | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) (browser copy) | Organizing content into server tiers | found with different formatting |
-| netflix-open-connect-popularity-2017 | numbers | 200 TB+ | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) (browser copy) | Organizing content into server tiers | found with different formatting |
-| netflix-open-connect-popularity-2017 | constraints | 1,200 | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) (browser copy) | How is our content organized? | found |
-| netflix-open-connect-popularity-2017 | walkthrough | half the storage | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) (browser copy) | (before first heading) | found (other spelling) |
-| netflix-open-connect-popularity-2017 | walkthrough | two things | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) (browser copy) | (before first heading) | hand-checked |
-| netflix-open-connect-popularity-2017 | takeaways | half the storage | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (archive copy) (browser copy) | (before first heading) | found (other spelling) |
+| netflix-open-connect-popularity-2017 | numbers | 50% | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (browser copy) | What granularity do we use to predict popularity? | found |
+| netflix-open-connect-popularity-2017 | numbers | around 1,200 | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (browser copy) | How is our content organized? | found |
+| netflix-open-connect-popularity-2017 | numbers | up to 100 Gbps | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (browser copy) | Organizing content into server tiers | found with different formatting |
+| netflix-open-connect-popularity-2017 | numbers | 200 TB+ | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (browser copy) | Organizing content into server tiers | found with different formatting |
+| netflix-open-connect-popularity-2017 | constraints | 1,200 | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (browser copy) | How is our content organized? | found |
+| netflix-open-connect-popularity-2017 | walkthrough | half the storage | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (browser copy) | (before first heading) | found (other spelling) |
+| netflix-open-connect-popularity-2017 | walkthrough | two things | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (browser copy) | (before first heading) | hand-checked |
+| netflix-open-connect-popularity-2017 | takeaways | half the storage | https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b (browser copy) | (before first heading) | found (other spelling) |
 
 ## Circuit Breakers and Load Shedding
 
@@ -665,10 +665,10 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 
 | Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
 |---|---|---|---|---|---|
-| linkedin-the-log-2013 | numbers | Over 60 billion | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying (archive copy) | Building a Scalable Log | found |
-| linkedin-the-log-2013 | numbers | Several hundred | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying (archive copy) | Log Files and Events | found |
-| linkedin-the-log-2013 | meaning | 2013, | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying (archive copy) | The Log: What every software engineer should know | found with different formatting |
-| linkedin-the-log-2013 | meaning | hundred billion | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying (archive copy) | (before first heading) | found (other spelling) |
+| linkedin-the-log-2013 | numbers | Over 60 billion | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying | page not fetched (HTTP 404) | NOT FOUND |
+| linkedin-the-log-2013 | numbers | Several hundred | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying | page not fetched (HTTP 404) | NOT FOUND |
+| linkedin-the-log-2013 | meaning | 2013, | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying | page not fetched (HTTP 404) | NOT FOUND |
+| linkedin-the-log-2013 | meaning | hundred billion | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying | page not fetched (HTTP 404) | HAND CHECK |
 | netflix-dblog-2020 | numbers | Tens of microservices | https://arxiv.org/pdf/2010.12597 | (before first heading) | found |
 | netflix-dblog-2020 | numbers | Trillions of operations per day | https://arxiv.org/pdf/2010.12597 | - | NOT FOUND |
 | netflix-dblog-2020 | constraints | six needs | https://arxiv.org/pdf/2010.12597 | (before first heading) | hand-checked |
@@ -1134,6 +1134,36 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | discord-messages-2023 | meaning | three months | https://discord.com/blog/how-discord-stores-trillions-of-messages | (before first heading) | found (other spelling) |
 | discord-messages-2023 | failures | 99.9999% | https://discord.com/blog/how-discord-stores-trillions-of-messages | A Very Big Migration | found |
 
+## Stream vs Batch Processing
+
+| Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
+|---|---|---|---|---|---|
+| uber-kappa-2020 | numbers | Ten seconds to two hours | https://www.uber.com/blog/kappa-architecture-data-stream-processing/ | Kappa architecture implementation | found |
+| uber-kappa-2020 | numbers | Nine days, roughly 10 terabytes | https://www.uber.com/blog/kappa-architecture-data-stream-processing/ | Kappa architecture implementation | found with different formatting |
+| uber-kappa-2020 | numbers | 75 cores and 1.2 terabytes of memory | https://www.uber.com/blog/kappa-architecture-data-stream-processing/ | Kappa architecture implementation | found |
+| uber-kappa-2020 | numbers | One day to backfill a few day’s worth of data | https://www.uber.com/blog/kappa-architecture-data-stream-processing/ | Kappa architecture implementation | found |
+| uber-kappa-2020 | walkthrough | ten seconds | https://www.uber.com/blog/kappa-architecture-data-stream-processing/ | (before first heading) | found (other spelling) |
+| uber-kappa-2020 | walkthrough | two hours | https://www.uber.com/blog/kappa-architecture-data-stream-processing/ | (before first heading) | found (other spelling) |
+| uber-kappa-2020 | meaning | 10 | https://www.uber.com/blog/kappa-architecture-data-stream-processing/ | Kappa architecture implementation | found |
+| uber-kappa-2020 | meaning | two hours | https://www.uber.com/blog/kappa-architecture-data-stream-processing/ | (before first heading) | found (other spelling) |
+| uber-kappa-2020 | meaning | nine days | https://www.uber.com/blog/kappa-architecture-data-stream-processing/ | (before first heading) | found (other spelling) |
+| uber-kappa-2020 | failures | two first | https://www.uber.com/blog/kappa-architecture-data-stream-processing/ | (before first heading) | hand-checked |
+| netflix-keystone-2018 | numbers | Trillions of events and petabytes worth of data per day | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (archive copy) (browser copy) | 1. Scale | found |
+| netflix-keystone-2018 | numbers | Thousands | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (archive copy) (browser copy) | 3. Multi-tenancy | found |
+| netflix-keystone-2018 | numbers | 10s of TB | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (archive copy) (browser copy) | 2. Diverse Use-cases | found |
+| netflix-keystone-2018 | numbers | 130 million subscribers | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (archive copy) (browser copy) | 1. Scale | found |
+| netflix-keystone-2018 | walkthrough | Two services | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (archive copy) (browser copy) | (before first heading) | found (other spelling) |
+| netflix-keystone-2018 | meaning | 190 | https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a (archive copy) (browser copy) | 1. Scale | found |
+| netflix-kappa-backfill-2022 | numbers | $93M/year | https://microsites.databricks.com/sites/default/files/2022-07/Backfill%20Streaming%20Data%20Pipelines%20in%20Kappa%20Architecture.pdf | 5 Event streaming operations | found |
+| netflix-kappa-backfill-2022 | numbers | $2M/year | https://microsites.databricks.com/sites/default/files/2022-07/Backfill%20Streaming%20Data%20Pipelines%20in%20Kappa%20Architecture.pdf | 60 Agenda | found |
+| netflix-kappa-backfill-2022 | numbers | About 5 hours for 24 hours of data | https://microsites.databricks.com/sites/default/files/2022-07/Backfill%20Streaming%20Data%20Pipelines%20in%20Kappa%20Architecture.pdf | 5 Event streaming operations | found with different formatting |
+| netflix-kappa-backfill-2022 | numbers | 99.9% | https://microsites.databricks.com/sites/default/files/2022-07/Backfill%20Streaming%20Data%20Pipelines%20in%20Kappa%20Architecture.pdf | 60 Agenda | found |
+| netflix-kappa-backfill-2022 | meaning | 30 days | https://microsites.databricks.com/sites/default/files/2022-07/Backfill%20Streaming%20Data%20Pipelines%20in%20Kappa%20Architecture.pdf | 5 Event streaming operations | found |
+| netflix-kappa-backfill-2022 | meaning | 93M | https://microsites.databricks.com/sites/default/files/2022-07/Backfill%20Streaming%20Data%20Pipelines%20in%20Kappa%20Architecture.pdf | 5 Event streaming operations | found |
+| netflix-kappa-backfill-2022 | meaning | 24 hours | https://microsites.databricks.com/sites/default/files/2022-07/Backfill%20Streaming%20Data%20Pipelines%20in%20Kappa%20Architecture.pdf | 60 Agenda | found |
+| netflix-kappa-backfill-2022 | meaning | 5 hours | https://microsites.databricks.com/sites/default/files/2022-07/Backfill%20Streaming%20Data%20Pipelines%20in%20Kappa%20Architecture.pdf | 60 Agenda | found |
+| netflix-kappa-backfill-2022 | tradeoffs | two applications | https://microsites.databricks.com/sites/default/files/2022-07/Backfill%20Streaming%20Data%20Pipelines%20in%20Kappa%20Architecture.pdf | (before first heading) | found (other spelling) |
+
 ## Time, Clocks and Consistency
 
 | Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
@@ -1328,7 +1358,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | idempotency-and-retries | 20 | 1 | 0 | 7 | 2 | 0 |
 | indexing | 45 | 7 | 0 | 1 | 0 | 0 |
 | load-balancing | 17 | 4 | 0 | 1 | 0 | 0 |
-| log-based-streaming | 20 | 5 | 2 | 2 | 5 | 0 |
+| log-based-streaming | 18 | 4 | 5 | 1 | 5 | 1 |
 | message-queues | 16 | 3 | 0 | 2 | 0 | 0 |
 | object-storage | 23 | 14 | 0 | 7 | 1 | 0 |
 | overload-and-cascading-failures | 34 | 8 | 9 | 8 | 7 | 0 |
@@ -1339,5 +1369,6 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | safe-deployments | 34 | 4 | 0 | 6 | 2 | 0 |
 | sharding | 22 | 7 | 0 | 5 | 0 | 0 |
 | storage-engines | 21 | 14 | 0 | 9 | 0 | 0 |
+| stream-vs-batch-processing | 16 | 2 | 0 | 6 | 1 | 0 |
 | time-clocks-and-consistency | 61 | 27 | 2 | 14 | 6 | 0 |
 | transactions-and-mvcc | 38 | 4 | 0 | 4 | 7 | 0 |

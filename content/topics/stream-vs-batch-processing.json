@@ -1,0 +1,468 @@
+{
+  "slug": "stream-vs-batch-processing",
+  "title": "Stream vs Batch Processing",
+  "group": "Data",
+  "prerequisites": [
+    "log-based-streaming"
+  ],
+  "summary": {
+    "points": [
+      "A batch job processes a fixed pile of data and finishes, while a stream job runs continuously on data that never ends and answers as events arrive.",
+      "Because events arrive late and out of order, a stream job uses a watermark to decide when a window of event time is complete.",
+      "Lambda keeps a streaming job and a separate batch job that must agree, while Kappa reruns the one streaming job over stored history.",
+      "Uber reads a Hive table as a streaming source, two hours of data per trigger, so the window size limits the load on Kafka and the sinks.",
+      "Netflix keeps events in Iceberg as well as Kafka and swaps the source for backfills, which it found far cheaper than long Kafka retention."
+    ],
+    "figures": [
+      {
+        "postId": "netflix-kappa-backfill-2022",
+        "row": 0,
+        "label": "Retaining 30 days of events in Kafka was estimated at 93 million dollars a year"
+      },
+      {
+        "postId": "netflix-kappa-backfill-2022",
+        "row": 3,
+        "label": "Netflix's backfill output matched production output at 99.9%"
+      },
+      {
+        "postId": "uber-kappa-2020",
+        "row": 3,
+        "label": "Uber says a backfill can cover a few days of data in one day"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "log-based-streaming": "A stream job reads from a log and relies on being able to read it again from an earlier position, which is the idea that backfill builds on."
+  },
+  "concept": "Batch processing runs a job over a fixed pile of data and gives one final answer. Stream processing runs all the time over data that never ends, answering as events arrive. The hard parts are time, because events arrive late and out of order so the job needs watermarks to decide when a window is complete, and repair, because a backfill must rebuild results from history. Lambda architecture keeps a streaming path and a batch path, two codebases that must agree. Kappa architecture reuses the streaming job on stored history, which gives one codebase but needs care about order and load.",
+  "lesson": {
+    "why": {
+      "outcome": "After this you can say why a pipeline that never stops needs different ideas from a job that runs once, and where each one fits.",
+      "body": "A batch job reads a fixed pile of data, such as yesterday's logs, and writes one answer. It knows where the input ends, so it can sort it, count it and be sure nothing else is coming. A stream job reads events as they happen and answers while data is still arriving, which is what fraud checks, live pricing and dashboards need. The price is that a stream never reaches an end. Events arrive late and out of order, so the job must decide when a count is complete, and it must be rebuildable, because a bug or an outage leaves days of results wrong. Most teams end up needing both a fast path and a way to recompute history. The posts below are about getting both without writing the job twice."
+    },
+    "mentalModel": {
+      "outcome": "After this you can picture a stream job as a running total with a promise about lateness, and a backfill as a recount.",
+      "body": "Think of a till in a shop. Batch is counting the takings after closing: the day is over, every receipt is in the drawer, and you add them up once. Stream is the running total on the till display. It updates with each sale, but a receipt could still be handed in late, so the job has to say when it is willing to stop waiting. That promise is a watermark. A backfill is the evening recount: you found the display was wrong, so you replay the day's receipts. Whether the recount uses the same machine as the display, or a separate one you wrote by hand, is the choice between Kappa and Lambda.",
+      "diagram": "<svg viewBox=\"0 0 560 222\" role=\"img\" aria-labelledby=\"dg-svb-model-t\" class=\"dg\"><title id=\"dg-svb-model-t\">Two rows. Batch: six events, then a job, then one final result, because the input has an end. Stream: events keep arriving with no end, a job reads them as they come, and a running result updates.</title><defs><marker id=\"dg-svb-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"18\" class=\"dg-note\" text-anchor=\"start\">Batch: the input has an end</text><rect x=\"14\" y=\"28\" width=\"40\" height=\"34\" class=\"dg-box\"/><text x=\"34\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">e1</text><rect x=\"60\" y=\"28\" width=\"40\" height=\"34\" class=\"dg-box\"/><text x=\"80\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">e2</text><rect x=\"106\" y=\"28\" width=\"40\" height=\"34\" class=\"dg-box\"/><text x=\"126\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">e3</text><rect x=\"152\" y=\"28\" width=\"40\" height=\"34\" class=\"dg-box\"/><text x=\"172\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">e4</text><rect x=\"198\" y=\"28\" width=\"40\" height=\"34\" class=\"dg-box\"/><text x=\"218\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">e5</text><rect x=\"244\" y=\"28\" width=\"40\" height=\"34\" class=\"dg-box\"/><text x=\"264\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">e6</text><path d=\"M284,45 L318,45\" class=\"dg-line\" marker-end=\"url(#dg-svb-model-a)\"/><rect x=\"318\" y=\"24\" width=\"90\" height=\"42\" class=\"dg-box\"/><text x=\"363\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">Job</text><path d=\"M408,45 L432,45\" class=\"dg-line\" marker-end=\"url(#dg-svb-model-a)\"/><rect x=\"432\" y=\"24\" width=\"114\" height=\"42\" class=\"dg-box\"/><text x=\"489\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">Final result</text><text x=\"14\" y=\"110\" class=\"dg-note\" text-anchor=\"start\">Stream: the input never ends</text><rect x=\"14\" y=\"120\" width=\"40\" height=\"34\" class=\"dg-box\"/><text x=\"34\" y=\"142\" class=\"dg-label\" text-anchor=\"middle\">e1</text><rect x=\"60\" y=\"120\" width=\"40\" height=\"34\" class=\"dg-box\"/><text x=\"80\" y=\"142\" class=\"dg-label\" text-anchor=\"middle\">e2</text><rect x=\"106\" y=\"120\" width=\"40\" height=\"34\" class=\"dg-box\"/><text x=\"126\" y=\"142\" class=\"dg-label\" text-anchor=\"middle\">e3</text><rect x=\"152\" y=\"120\" width=\"40\" height=\"34\" class=\"dg-box\"/><text x=\"172\" y=\"142\" class=\"dg-label\" text-anchor=\"middle\">e4</text><rect x=\"198\" y=\"120\" width=\"40\" height=\"34\" class=\"dg-box\"/><text x=\"218\" y=\"142\" class=\"dg-label\" text-anchor=\"middle\">e5</text><text x=\"250\" y=\"142\" class=\"dg-note\" text-anchor=\"start\">...</text><path d=\"M276,137 L318,137\" class=\"dg-line\" marker-end=\"url(#dg-svb-model-a)\"/><rect x=\"318\" y=\"116\" width=\"90\" height=\"42\" class=\"dg-box\"/><text x=\"363\" y=\"142\" class=\"dg-label\" text-anchor=\"middle\">Job</text><path d=\"M408,137 L432,137\" class=\"dg-line\" marker-end=\"url(#dg-svb-model-a)\"/><rect x=\"432\" y=\"116\" width=\"114\" height=\"42\" class=\"dg-box\"/><text x=\"489\" y=\"142\" class=\"dg-label\" text-anchor=\"middle\">Running result</text><text x=\"14\" y=\"190\" class=\"dg-note\" text-anchor=\"start\">Batch can wait for the end of its input.</text><text x=\"14\" y=\"208\" class=\"dg-note\" text-anchor=\"start\">A stream cannot, so it has to decide when an answer is complete.</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can follow an event through event time, a watermark and a window, and name the three ways to backfill.",
+      "steps": [
+        {
+          "step": "Bounded or unbounded input",
+          "explanation": "A bounded input has a known end, so a job can sort and group it, run in stages and save results between them. An unbounded input has none, so every stage runs all the time and passes records on as they arrive."
+        },
+        {
+          "step": "Use event time",
+          "explanation": "Each event carries the time it happened. Phones go offline and networks queue, so arrival order differs from event order. Results based on event time are the same whenever you run the job. Results based on the machine's clock are not."
+        },
+        {
+          "step": "A watermark decides when to stop waiting",
+          "explanation": "A watermark at time T says no event earlier than T is still expected. When it passes the end of a window, the window releases its result. A short wait gives fast answers that may miss stragglers. A long wait gives fuller answers later. An event after the watermark is late: drop it, or update the earlier result."
+        },
+        {
+          "step": "Windows and state",
+          "explanation": "To total a never-ending stream you cut it into windows, such as ten-minute blocks or sessions that end after a gap, and keep running totals as state. State is what makes a streaming job hard to restart: it has to be restored from a snapshot or rebuilt by reading input again."
+        },
+        {
+          "step": "Three ways to backfill",
+          "explanation": "Replay the log into the same job, if it was kept long enough. Write a second batch job over stored history, which is Lambda and means two codebases that must agree. Or run the same streaming job over history read from a data lake, which is Kappa. Kappa has one codebase, but history must be fed in carefully, in an order the job tolerates, or state grows and results differ."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 262\" role=\"img\" aria-labelledby=\"dg-svb-how-t\" class=\"dg\"><title id=\"dg-svb-how-t\">Events arrive in the order 4, 2, 9, 7, then a watermark of 10, and much later an event with time 5. The window for times 0 to 10 holds 4, 2, 9 and 7 and releases its result when the watermark arrives. The late event 5 comes after that and is either dropped or used to update the result.</title><defs><marker id=\"dg-svb-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"18\" class=\"dg-note\" text-anchor=\"start\">Arrival order, left to right. Numbers are event times.</text><rect x=\"14\" y=\"28\" width=\"44\" height=\"34\" class=\"dg-box\"/><text x=\"36\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">4</text><rect x=\"66\" y=\"28\" width=\"44\" height=\"34\" class=\"dg-box\"/><text x=\"88\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">2</text><rect x=\"118\" y=\"28\" width=\"44\" height=\"34\" class=\"dg-box\"/><text x=\"140\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">9</text><rect x=\"170\" y=\"28\" width=\"44\" height=\"34\" class=\"dg-box\"/><text x=\"192\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">7</text><rect x=\"216\" y=\"28\" width=\"56\" height=\"34\" class=\"dg-box dg-accent\"/><text x=\"244\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">W=10</text><text x=\"244\" y=\"80\" class=\"dg-note\" text-anchor=\"middle\">watermark</text><rect x=\"502\" y=\"28\" width=\"44\" height=\"34\" class=\"dg-box\"/><text x=\"524\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\">5</text><text x=\"524\" y=\"80\" class=\"dg-note\" text-anchor=\"middle\">arrives late</text><path d=\"M244,84 L244,108\" class=\"dg-line\" marker-end=\"url(#dg-svb-how-a)\"/><rect x=\"14\" y=\"108\" width=\"250\" height=\"56\" class=\"dg-box\"/><text x=\"139\" y=\"132\" class=\"dg-label\" text-anchor=\"middle\">Window: event time 0 to 10</text><text x=\"139\" y=\"150\" class=\"dg-label\" text-anchor=\"middle\">holds 4, 2, 9 and 7</text><path d=\"M264,136 L310,136\" class=\"dg-line\" marker-end=\"url(#dg-svb-how-a)\"/><rect x=\"310\" y=\"108\" width=\"170\" height=\"56\" class=\"dg-box\"/><text x=\"395\" y=\"141\" class=\"dg-label\" text-anchor=\"middle\">Result for 0 to 10</text><path d=\"M524,84 L524,188\" class=\"dg-line\" marker-end=\"url(#dg-svb-how-a)\"/><rect x=\"300\" y=\"188\" width=\"246\" height=\"48\" class=\"dg-box dg-dashed\"/><text x=\"423\" y=\"208\" class=\"dg-label\" text-anchor=\"middle\">Late event 5</text><text x=\"423\" y=\"226\" class=\"dg-label\" text-anchor=\"middle\">drop it, or update the result</text><text x=\"14\" y=\"254\" class=\"dg-note\" text-anchor=\"start\">W=10 says no event before time 10 is still expected.</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can walk through a bug found on a live job and choose between replay, a batch twin and a lake backfill.",
+      "steps": [
+        {
+          "step": "The live job",
+          "explanation": "A job counts rides per ten-minute window from a Kafka topic that keeps a few days of events. Its watermark waits five minutes for stragglers."
+        },
+        {
+          "step": "A bug appears",
+          "explanation": "On Monday the team finds the job has mishandled one event type since Friday, so three days of results are wrong and must be recomputed."
+        },
+        {
+          "step": "Option one: replay the log",
+          "explanation": "If Kafka still holds three days, rerun the job on it. If it holds less, the data is gone. Writing old events back in at once can also overwhelm the infrastructure that serves live traffic, as Uber found."
+        },
+        {
+          "step": "Option two: a batch twin",
+          "explanation": "The history sits in the lake, so write a batch job over it. Now there are two codebases, and the team must prove they give the same answers and keep them so."
+        },
+        {
+          "step": "Option three: the same job on the lake",
+          "explanation": "Swap the source to the lake by config. Release files in event-time slices that stay within the five-minute lateness the job already tolerates, so state stays small. Tune this run separately, write to a separate output and compare it with production. The posts below show this working at two companies."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 236\" role=\"img\" aria-labelledby=\"dg-svb-example-t\" class=\"dg\"><title id=\"dg-svb-example-t\">A Kappa backfill. Live traffic reads from Kafka, which keeps the last few days. A backfill reads the data lake, which keeps months of history. Both feed the same streaming job, which writes to the output sink.</title><defs><marker id=\"dg-svb-example-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"34\" width=\"170\" height=\"52\" class=\"dg-box\"/><text x=\"99\" y=\"56\" class=\"dg-label\" text-anchor=\"middle\">Kafka</text><text x=\"99\" y=\"74\" class=\"dg-label\" text-anchor=\"middle\">last few days</text><rect x=\"14\" y=\"118\" width=\"170\" height=\"52\" class=\"dg-box dg-dashed\"/><text x=\"99\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\">Data lake</text><text x=\"99\" y=\"158\" class=\"dg-label\" text-anchor=\"middle\">months of history</text><path d=\"M184,60 L240,90\" class=\"dg-line\" marker-end=\"url(#dg-svb-example-a)\"/><path d=\"M184,144 L240,116\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-svb-example-a)\"/><rect x=\"240\" y=\"72\" width=\"156\" height=\"62\" class=\"dg-box\"/><text x=\"318\" y=\"99\" class=\"dg-label\" text-anchor=\"middle\">Same streaming job</text><text x=\"318\" y=\"117\" class=\"dg-label\" text-anchor=\"middle\">one codebase</text><path d=\"M396,103 L440,103\" class=\"dg-line\" marker-end=\"url(#dg-svb-example-a)\"/><rect x=\"440\" y=\"80\" width=\"106\" height=\"46\" class=\"dg-box\"/><text x=\"493\" y=\"108\" class=\"dg-label\" text-anchor=\"middle\">Output sink</text><text x=\"14\" y=\"20\" class=\"dg-note\" text-anchor=\"start\">Live path</text><text x=\"14\" y=\"108\" class=\"dg-note\" text-anchor=\"start\">Backfill path</text><text x=\"14\" y=\"206\" class=\"dg-note\" text-anchor=\"start\">The backfill swaps only the source. It reads the lake in event-time</text><text x=\"14\" y=\"224\" class=\"dg-note\" text-anchor=\"start\">order, within the lateness the job already tolerates.</text></svg>"
+    },
+    "mistakesOutcome": "After this you can spot the three habits that make a stream job hard to fix after the fact.",
+    "checkOutcome": "After this you can check you understand event time, watermarks and the choice between Lambda and Kappa.",
+    "quiz": [
+      {
+        "question": "A team totals each day's orders once at midnight. Fraud analysts now want a stolen card flagged within seconds. What does that change?",
+        "options": [
+          "Nothing deep: run the same midnight job every few seconds and it will keep up with the incoming orders",
+          "The job has to work on events as they arrive, because it cannot wait for the day's data to be complete",
+          "The totals should move to a faster database so reads return sooner"
+        ],
+        "correct": 1,
+        "why": "A batch job needs its whole input before it starts, so it can only answer after the data has been collected. Flagging a card in seconds means reading each event as it arrives and answering while more data is still coming.",
+        "wrong": [
+          "Running a batch job every few seconds still pays its start-up cost each time and still sees only the data collected so far, so the delay stays and the work is repeated.",
+          "",
+          "A faster database speeds up reading stored results, but the delay here is waiting for data to be collected, not reading it."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "In a streaming job, what does a watermark of 10:05 promise?",
+        "options": [
+          "No event earlier than 10:05 is still expected",
+          "The job has already written results for every event it has received up to now",
+          "The clock on the machine running the job reads 10:05"
+        ],
+        "correct": 0,
+        "why": "A watermark is a statement about event time: events before that time should all have arrived, so windows that end before it can release their results. It is a heuristic, which is why late events exist.",
+        "wrong": [
+          "",
+          "Output progress and event-time progress are different things; a job can have received many events without any promise about which ones are still missing.",
+          "The watermark follows the times on the events, not the machine's clock. Using the clock would make results change every time the job is rerun."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "An event with time 4 arrives after the watermark has already passed 10. What can the job do?",
+        "options": [
+          "Rewind the watermark to 4 and recompute every window since then, which the model allows at no cost",
+          "Hold the event back until the next watermark and then count it in a window that has silently closed",
+          "Treat it as late: drop it, or update the earlier result if the job is set up to allow lateness"
+        ],
+        "correct": 2,
+        "why": "A late event is one that follows a watermark covering its time. The job either ignores it or, if allowed lateness is configured and the state is still kept, revises the result it already released.",
+        "wrong": [
+          "A watermark only moves forward. Rewinding it would undo results that have already been released.",
+          "There is no mechanism that counts an event in a window that has closed without telling anyone; either the result is updated or the event is dropped.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why does Kappa architecture appeal to a team that already runs a streaming job?",
+        "options": [
+          "It removes the need for any log, so there is nothing to retain",
+          "One codebase serves both live data and recomputing history",
+          "It lets the batch path run faster than the streaming path ever could"
+        ],
+        "correct": 1,
+        "why": "Lambda keeps a streaming job and a separate batch job that must give the same answers. Kappa reruns the streaming job over stored history, so there is only one set of logic to write, test and change.",
+        "wrong": [
+          "Kappa still needs a log or a lake to read history from; it changes which job reads it, not whether history is kept.",
+          "",
+          "Speed is not the point: Kappa reruns the streaming job over history, and a backfill is often tuned and throttled rather than made as fast as possible."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "A bug corrupted three days of streaming output, and Kafka kept only one day. Which recovery fits Kappa?",
+        "options": [
+          "Ask the producers to send the last three days of events again and rebuild the output from the live topic",
+          "Write a new batch job over the lake, tune it separately, and check its answers against the streaming job's",
+          "Run the same streaming job over the history in the data lake, reading it in an order the job tolerates"
+        ],
+        "correct": 2,
+        "why": "The history exists in the lake, and Kappa reuses the streaming job on it. The job's source changes; its windowing and watermark logic stays, which keeps one set of business logic.",
+        "wrong": [
+          "Producers usually cannot resend, and a flood of old events into the live path can overwhelm the infrastructure that serves current traffic.",
+          "That is the Lambda route: a second codebase that has to be built, validated against the first and kept in step as the first changes.",
+          ""
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "What is the main cost of a Lambda architecture?",
+        "options": [
+          "Two codebases that must always agree, so each change is made twice",
+          "It can only process data in batches, so results are always at least a day old",
+          "It needs every event to arrive in strict order, which no real system can supply"
+        ],
+        "correct": 0,
+        "why": "Lambda runs a streaming path for speed and a batch path for accuracy. The business logic then lives in both, and every change has to be made and checked in both.",
+        "wrong": [
+          "",
+          "Lambda includes a streaming path precisely to get fast results; the batch path is the slower, more accurate one.",
+          "Event-time windows and watermarks exist because order cannot be assumed, and Lambda does not need strict order either."
+        ],
+        "teaches": "why"
+      }
+    ],
+    "postsOutcome": "After this you can read how Uber and Netflix handled backfill and see what Keystone adds as a platform.",
+    "differOutcome": "After this you can say where the three accounts agree and how much weight their figures can carry.",
+    "exercisesOutcome": "After this you can choose a watermark delay, design a backfill and keep a multi-source backfill from running away.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A dashboard counts page views per minute from a stream. Phones often send their events a few minutes late. How do you choose the watermark delay, and what do you give up either way?",
+        "answer": "Set the watermark to wait roughly as long as most stragglers take, and use event time so a late event still lands in the minute it happened. A short delay shows each minute quickly but misses the late events; a long delay counts nearly everything but the dashboard lags by that delay. If both matter, release an early result and let allowed lateness update it when late events arrive.",
+        "tradeoffs": "You trade freshness against completeness. Updating an already-shown number needs the window's state to be kept longer and the dashboard to cope with a number that changes.",
+        "wrongAnswers": [
+          "Use the clock on the machine, which needs no watermark but gives different counts every time the job is rerun.",
+          "Wait for all events to arrive, which a never-ending stream can never promise."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "design",
+        "prompt": "A streaming job builds user sessions that end after 30 minutes of silence. Kafka keeps a few days of events. You find a bug that has been wrong for a couple of weeks. Design the backfill.",
+        "answer": "Keep the streaming job and add a second source that reads the same events from the data lake, chosen by config. Read the lake files in slices of event time, and release a slice only when it stays within the lateness the job already tolerates, so sessions see an order they can handle. Run it as a separate job with its own tuning, write to a separate output, compare it with production for a sample period, then swap it in and slow the writes if the sinks need protecting.",
+        "tradeoffs": "You avoid a second codebase and an expensive long Kafka retention. You pay for tuning the backfill separately, for storing history in the lake, and for checking that its output matches what live traffic would have produced.",
+        "wrongAnswers": [
+          "Replay two weeks of events into the live topic at once, which can overwhelm the infrastructure and the sinks.",
+          "Read all lake files in parallel in any order, which breaks a sessionizer that assumes events arrive roughly in order."
+        ],
+        "teaches": "example"
+      },
+      {
+        "level": "scale",
+        "prompt": "The job now joins two sources, and one has far more data than the other. During a backfill the state grows, checkpoints slow down and some time out. What goes wrong and what do you change?",
+        "answer": "The source with more data races ahead in event time while the other lags, so the join keeps a growing amount of state waiting for matches. Track a watermark per source, take the slowest as the global watermark, and only let a source read files that are within a set distance of it. This keeps state bounded and checkpoints small, at the cost of the faster source waiting.",
+        "tradeoffs": "A tighter limit bounds state and keeps checkpoints healthy but slows the whole backfill to the pace of the slowest source. A looser limit finishes sooner but needs more memory and risks the checkpoint timeouts again.",
+        "wrongAnswers": [
+          "Give the job more memory and leave the sources unaligned, which delays the problem until the next larger backfill.",
+          "Turn off checkpointing during the backfill, which makes any failure restart the whole backfill from the start."
+        ],
+        "teaches": "how"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic to read.",
+      "body": "Idempotency and Retries shows how to make a repeated run, such as a backfill, safe. Time, Clocks and Consistency goes deeper on why event time and arrival time differ. Object Storage covers the kind of store a data lake sits on. Event-driven Architecture shows how services react to the events these jobs process."
+    }
+  },
+  "posts": [
+    {
+      "id": "uber-kappa-2020",
+      "title": "Designing a Production-Ready Kappa Architecture for Timely Data Stream Processing",
+      "url": "https://www.uber.com/blog/kappa-architecture-data-stream-processing/",
+      "company": "Uber",
+      "verifiedOn": "2026-10-17",
+      "published": "2020-01-23",
+      "ageNote": "From January 2020. It is here for the backfill problem and the trade-offs between replaying, batch mode and a streaming read of history, which do not depend on one Spark or Hive version. The post does not say whether Uber still runs this design, so read it as a 2020 account. The copy opened was an archive copy of the page.",
+      "digest": {
+        "problem": "Uber's rider sessionizing pipeline is one of its largest stateful streaming jobs. Some teams use it for fast pricing features, others for month-over-month analysis that needs late events attached to the right session, which a live job misses. Uber needed a way to recompute results over history without a second codebase.",
+        "constraints": "Kafka and YARN clusters have limited resources. Backfills often span more than a handful of days. Downstream sinks and consumers must not be overwhelmed. Event-time windows and watermarks have to behave in the backfill as they do in production.",
+        "walkthrough": [
+          {
+            "step": "Replay Hive into Kafka",
+            "explanation": "Old events from a Hive table would be written back to a Kafka topic and the job rerun on it. That needs no change to the job, but Uber would have to write its own replayer, keep the replayed order close to the original, and avoid flooding Kafka: replaying days of client logs and trip data at once could overwhelm the infrastructure and cause lag."
+          },
+          {
+            "step": "Use Spark's unified batch mode",
+            "explanation": "Structured Streaming can reuse the code on a Hive table, but in batch mode it ignores event-time windows and watermarking. A multi-day backfill in one job also needs more resources than a shared production cluster has, and a rate limit would be needed to protect downstream sinks."
+          },
+          {
+            "step": "Model Hive as a streaming source",
+            "explanation": "Uber wrote a Hive connector for Spark's Source API, so the table acts as an unbounded stream. At each trigger the job reads from Hive instead of a Kafka topic, keeping its windowing, state and triggering. There is no temporary Kafka topic."
+          },
+          {
+            "step": "Tune for backfill",
+            "explanation": "Querying Hive every ten seconds for ten seconds of data would be inefficient, so the watermark is relaxed from ten seconds to two hours and each trigger reads two hours of data. Windows are computed in order, one at a time, which also acts as the rate limiter."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 240\" role=\"img\" aria-labelledby=\"dg-svb-uber-t\" class=\"dg\"><title id=\"dg-svb-uber-t\">Uber's backfill. A Hive table feeds a Hive source inside Spark Streaming that reads two hours of data per trigger, then the same stateful job, then Kafka sinks. A dashed route through a temporary Kafka topic was rejected.</title><defs><marker id=\"dg-svb-uber-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"56\" width=\"100\" height=\"64\" class=\"dg-box\"/><text x=\"64\" y=\"84\" class=\"dg-label\" text-anchor=\"middle\">Hive</text><text x=\"64\" y=\"102\" class=\"dg-label\" text-anchor=\"middle\">table</text><path d=\"M114,88 L140,88\" class=\"dg-line\" marker-end=\"url(#dg-svb-uber-a)\"/><rect x=\"140\" y=\"44\" width=\"130\" height=\"88\" class=\"dg-box\"/><text x=\"205\" y=\"75\" class=\"dg-label\" text-anchor=\"middle\">Hive source</text><text x=\"205\" y=\"93\" class=\"dg-label\" text-anchor=\"middle\">two hours</text><text x=\"205\" y=\"111\" class=\"dg-label\" text-anchor=\"middle\">per trigger</text><path d=\"M270,88 L300,88\" class=\"dg-line\" marker-end=\"url(#dg-svb-uber-a)\"/><rect x=\"300\" y=\"56\" width=\"120\" height=\"64\" class=\"dg-box\"/><text x=\"360\" y=\"84\" class=\"dg-label\" text-anchor=\"middle\">Same Spark</text><text x=\"360\" y=\"102\" class=\"dg-label\" text-anchor=\"middle\">Streaming job</text><path d=\"M420,88 L444,88\" class=\"dg-line\" marker-end=\"url(#dg-svb-uber-a)\"/><rect x=\"444\" y=\"56\" width=\"102\" height=\"64\" class=\"dg-box\"/><text x=\"495\" y=\"84\" class=\"dg-label\" text-anchor=\"middle\">Kafka</text><text x=\"495\" y=\"102\" class=\"dg-label\" text-anchor=\"middle\">sinks</text><rect x=\"140\" y=\"172\" width=\"130\" height=\"44\" class=\"dg-box dg-dashed\"/><text x=\"205\" y=\"199\" class=\"dg-label\" text-anchor=\"middle\">Temp Kafka topic</text><path d=\"M64,120 L140,192\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-svb-uber-a)\"/><path d=\"M270,192 L340,120\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-svb-uber-a)\"/><text x=\"14\" y=\"30\" class=\"dg-note\" text-anchor=\"start\">Chosen: Hive read as a stream</text><text x=\"284\" y=\"200\" class=\"dg-note\" text-anchor=\"start\">Rejected: replay days of data</text><text x=\"284\" y=\"218\" class=\"dg-note\" text-anchor=\"start\">into Kafka first</text></svg>",
+        "numbers": [
+          {
+            "value": "Ten seconds to two hours",
+            "meaning": "The watermark and window in the example job: relaxed in backfill mode so each trigger reads two hours of data from Hive"
+          },
+          {
+            "value": "Nine days, roughly 10 terabytes",
+            "meaning": "What the backfill job covers from Hive: around nine days of data, roughly 10 terabytes"
+          },
+          {
+            "value": "75 cores and 1.2 terabytes of memory",
+            "meaning": "What the production stateful job runs on in the YARN cluster; the backfill uses the same cluster configuration instead of extra resources"
+          },
+          {
+            "value": "One day to backfill a few day’s worth of data",
+            "meaning": "The post's example of backfill speed: one day to backfill a few day’s worth of data"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Read a Hive table as a streaming source in Spark, one window at a time, with the production job's windowing and watermark logic.",
+          "rejected": "Replaying Hive into a temporary Kafka topic, and running the streaming job in Spark's batch mode.",
+          "why": "Replay needed one-off infrastructure and risked flooding Kafka. Batch mode ignored event-time logic and needed excess resources. Reading incrementally keeps the code, gives a built-in rate limit, and runs on the production cluster's configuration."
+        },
+        "failures": "The post reports no outage. It names what the two first designs would do: replaying more than a handful of days could easily overwhelm Kafka and cause lag, and batch mode would force jobs to be given excess resources and could overwhelm downstream sinks.",
+        "takeaways": "Keep the job's windowing and watermark behaviour the same in a backfill and change only the source. Read history in windows rather than all at once, so the window size works as the rate limiter."
+      }
+    },
+    {
+      "id": "netflix-keystone-2018",
+      "title": "Keystone Real-time Stream Processing Platform",
+      "url": "https://netflixtechblog.com/keystone-real-time-stream-processing-platform-a3ee651812a",
+      "company": "Netflix",
+      "verifiedOn": "2026-10-17",
+      "published": "2018-09-10",
+      "ageNote": "From September 2018. It is on this page for platform design, not for a batch comparison: it shows how a company runs thousands of streaming jobs on one platform and lists backfill and rewind among what those jobs need. Netflix's setup may have changed since, and the 2022 talk below describes the same Keystone routing service. The copy opened was an archive copy of the page.",
+      "digest": {
+        "problem": "Netflix wanted one platform that lets many teams build streaming jobs, from delivering events to storage to custom processing with state, without each team running its own cluster and tooling.",
+        "constraints": "Trillions of events a day. Jobs from stateless to tens of terabytes of local state, windows from seconds to hours, and bursty or steady traffic. Thousands of jobs need isolation from one another, and the platform must react to spikes such as a popular show coming online.",
+        "walkthrough": [
+          {
+            "step": "Two services",
+            "explanation": "The Data Pipeline moves every microservice event through a routing service and a Kafka messaging service. Stream Processing as a Service lets teams run their own managed streaming applications."
+          },
+          {
+            "step": "One job per route",
+            "explanation": "Each delivery route is a parallel streaming job, which can filter or project events and deliver them to a sink such as Elasticsearch or Hive, with at-least-once delivery."
+          },
+          {
+            "step": "Declare goals, then reconcile",
+            "explanation": "Users declare the job they want. The goal state is kept in one durable store (AWS RDS), and the platform reconciles the running system towards it. Operations are meant to be idempotent so repeated or failed attempts do no lasting harm."
+          },
+          {
+            "step": "One Flink cluster per job",
+            "explanation": "Each job runs in its own independent Flink cluster. The only shared services are ZooKeeper for coordination and S3 for checkpoint storage."
+          },
+          {
+            "step": "Backfill and rewind",
+            "explanation": "For source data that is backed up in the data warehouse, the platform can switch a job's source while it runs, with no code change or rebuild. Netflix says this has limits and recommends it only for stateless jobs. The other option is to rewind the job to an earlier checkpoint that was taken automatically."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 220\" role=\"img\" aria-labelledby=\"dg-svb-keystone-t\" class=\"dg\"><title id=\"dg-svb-keystone-t\">Keystone runs each streaming job in its own Flink cluster: Job A, Job B and Job C each have a cluster of their own. Below them, one shared strip holds ZooKeeper for coordination and S3 for checkpoints.</title><defs><marker id=\"dg-svb-keystone-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"34\" width=\"166\" height=\"76\" class=\"dg-box\"/><text x=\"97\" y=\"68\" class=\"dg-label\" text-anchor=\"middle\">Job A</text><text x=\"97\" y=\"86\" class=\"dg-label\" text-anchor=\"middle\">own Flink cluster</text><path d=\"M97,110 L97,152\" class=\"dg-line\" marker-end=\"url(#dg-svb-keystone-a)\"/><rect x=\"204\" y=\"34\" width=\"166\" height=\"76\" class=\"dg-box\"/><text x=\"287\" y=\"68\" class=\"dg-label\" text-anchor=\"middle\">Job B</text><text x=\"287\" y=\"86\" class=\"dg-label\" text-anchor=\"middle\">own Flink cluster</text><path d=\"M287,110 L287,152\" class=\"dg-line\" marker-end=\"url(#dg-svb-keystone-a)\"/><rect x=\"394\" y=\"34\" width=\"166\" height=\"76\" class=\"dg-box\"/><text x=\"477\" y=\"68\" class=\"dg-label\" text-anchor=\"middle\">Job C</text><text x=\"477\" y=\"86\" class=\"dg-label\" text-anchor=\"middle\">own Flink cluster</text><path d=\"M477,110 L477,152\" class=\"dg-line\" marker-end=\"url(#dg-svb-keystone-a)\"/><rect x=\"14\" y=\"152\" width=\"532\" height=\"44\" class=\"dg-box\"/><text x=\"280\" y=\"179\" class=\"dg-label\" text-anchor=\"middle\">Shared: ZooKeeper for coordination, S3 for checkpoints</text><text x=\"14\" y=\"20\" class=\"dg-note\" text-anchor=\"start\">One cluster per job</text></svg>",
+        "numbers": [
+          {
+            "value": "Trillions of events and petabytes worth of data per day",
+            "meaning": "What the Keystone streaming platform processes per day, according to the post"
+          },
+          {
+            "value": "Thousands",
+            "meaning": "How many routing jobs and streaming applications the platform served in 2018"
+          },
+          {
+            "value": "10s of TB",
+            "meaning": "The size of local state some stateful jobs need, the top of the range the post lists"
+          },
+          {
+            "value": "130 million subscribers",
+            "meaning": "Netflix's subscriber count when the post was written, in 190+ countries"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A separate Flink cluster for every job, with only ZooKeeper and S3 checkpoint storage shared.",
+          "why": "Thousands of jobs with very different state, windows and traffic need runtime and operational isolation to offer each user a meaningful service level, while keeping shared platform overhead as small as possible."
+        },
+        "failures": "The post reports no outage. It names the failures the design must handle: network blips, instance, zone and cluster failures, back pressure, and regional disasters, and it notes that a Kafka cluster lost to corrupted ZooKeeper state can be recreated from the source-of-truth store.",
+        "takeaways": "This post is about platform isolation, not a batch comparison. It matters here because backfill is a built-in platform feature with a stated limit: switching to warehouse data suits stateless jobs, and stateful ones rewind to a checkpoint. The 2022 talk also says Keystone's routing service makes Kafka events available in a data lake."
+      }
+    },
+    {
+      "id": "netflix-kappa-backfill-2022",
+      "title": "Backfill Streaming Data Pipelines in Kappa Architecture",
+      "url": "https://microsites.databricks.com/sites/default/files/2022-07/Backfill%20Streaming%20Data%20Pipelines%20in%20Kappa%20Architecture.pdf",
+      "company": "Netflix",
+      "verifiedOn": "2026-10-17",
+      "published": "no date shown",
+      "edition": "Data + AI Summit 2022 talk, slides",
+      "ageNote": "This is a conference talk, not a company blog post: slides by two Netflix engineers whose PDF title is tagged DAIS22 (Data + AI Summit 2022). The slides show no date, so no more precise date is given. It is here for the backfill mechanism and its trade-offs. There is no speaker narration, so only what the slides say is used, and Netflix's setup may have changed since.",
+      "digest": {
+        "problem": "Netflix's Real-time Merched Impression (RMI) Flink app joins impression and playback events to attribute plays to impressions, and is one of the largest stateful Flink apps at Netflix. When a streaming app fails, results must be corrected, missing data filled, or state bootstrapped by a backfill.",
+        "constraints": "Source data in Kafka can expire before the cause is found. Troubleshooting can take hours or days. A solution had to work for all kinds of apps, need minimal code changes, and scale horizontally to finish quickly.",
+        "walkthrough": [
+          {
+            "step": "Replay the source",
+            "explanation": "Rerun the job on the Kafka events from the bad period. This needs much longer retention, which is expensive: row formats compress less than Parquet or ORC, and low-latency disks cost more than S3."
+          },
+          {
+            "step": "Lambda: a batch twin",
+            "explanation": "Maintain a Spark batch job that reads Iceberg tables. Building it and validating it against the streaming app can take days or weeks, and it needs continuous effort to stay in step."
+          },
+          {
+            "step": "Unified frameworks",
+            "explanation": "Flink's batch mode needs significant code changes for these apps, and Beam had only partial support for state, timers and watermarks, according to the talk."
+          },
+          {
+            "step": "Kappa with a data lake",
+            "explanation": "Kafka events are already routed into Iceberg tables. The same Flink app gets an Iceberg source in place of the Kafka one through configuration, with the same in-memory representation."
+          },
+          {
+            "step": "Read files within the lateness the app tolerates",
+            "explanation": "Reading in strict order does not scale, and reading in any order breaks apps such as sessionizers. Netflix dispatches files so ordering stays within the app's allowed lateness, using an ingestion watermark. With several sources, a global watermark follows the slowest one so state does not explode."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 244\" role=\"img\" aria-labelledby=\"dg-svb-talk-t\" class=\"dg\"><title id=\"dg-svb-talk-t\">Netflix's backfill. The production stack reads Kafka topics, runs the Flink app, and writes a Kafka output topic. The backfill stack runs the same Flink app with Iceberg tables as input and an Iceberg table as output.</title><defs><marker id=\"dg-svb-talk-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"30\" class=\"dg-note\" text-anchor=\"start\">Production stack</text><rect x=\"14\" y=\"42\" width=\"130\" height=\"44\" class=\"dg-box\"/><text x=\"79\" y=\"69\" class=\"dg-label\" text-anchor=\"middle\">Kafka topics</text><text x=\"14\" y=\"128\" class=\"dg-note\" text-anchor=\"start\">Backfill stack</text><rect x=\"14\" y=\"140\" width=\"130\" height=\"44\" class=\"dg-box dg-dashed\"/><text x=\"79\" y=\"167\" class=\"dg-label\" text-anchor=\"middle\">Iceberg tables</text><rect x=\"210\" y=\"82\" width=\"140\" height=\"70\" class=\"dg-box\"/><text x=\"280\" y=\"113\" class=\"dg-label\" text-anchor=\"middle\">Flink app</text><text x=\"280\" y=\"131\" class=\"dg-label\" text-anchor=\"middle\">same code</text><path d=\"M144,64 L210,100\" class=\"dg-line\" marker-end=\"url(#dg-svb-talk-a)\"/><path d=\"M144,162 L210,134\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-svb-talk-a)\"/><path d=\"M350,100 L416,64\" class=\"dg-line\" marker-end=\"url(#dg-svb-talk-a)\"/><path d=\"M350,134 L416,162\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-svb-talk-a)\"/><rect x=\"416\" y=\"42\" width=\"130\" height=\"44\" class=\"dg-box\"/><text x=\"481\" y=\"69\" class=\"dg-label\" text-anchor=\"middle\">Kafka output</text><rect x=\"416\" y=\"140\" width=\"130\" height=\"44\" class=\"dg-box dg-dashed\"/><text x=\"481\" y=\"167\" class=\"dg-label\" text-anchor=\"middle\">Iceberg output</text><text x=\"14\" y=\"222\" class=\"dg-note\" text-anchor=\"start\">Dashed: the backfill. The app is the same; its source config changes.</text></svg>",
+        "numbers": [
+          {
+            "value": "$93M/year",
+            "meaning": "The estimated cost for Netflix to retain 30 days of data generated by all apps in the message queue"
+          },
+          {
+            "value": "$2M/year",
+            "meaning": "The cost of holding the same data in Iceberg, against $93M/year in Kafka"
+          },
+          {
+            "value": "About 5 hours for 24 hours of data",
+            "meaning": "Backfill speed in production: processing 24 hours of data takes roughly 5 hours"
+          },
+          {
+            "value": "99.9%",
+            "meaning": "How closely backfill output matched production output"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Keep one streaming app and, for backfills, swap its Kafka source for an Iceberg source, reading files within the lateness the app tolerates.",
+          "rejected": "Longer Kafka retention, a separate batch app on the data lake, and unified batch and streaming modes in Flink or Beam.",
+          "why": "Long retention cost far more than the lake. A batch twin means two applications to maintain in parallel. The unified frameworks still needed significant code changes or lacked support for state, timers and watermarks."
+        },
+        "failures": "Reading files filtered by date scales, but gives different results for apps that assume ordering, such as a sessionizer. Reading everything in strict order matches live ordering but does not scale. With sources of very different size, watermark skew can cause state size explosion, slow checkpoints and checkpoint timeouts. The lessons: backfill window and configs depend on the app's logic, and the backfill job needs tuning separately from production.",
+        "takeaways": "Store events in a cheap lake as well as the log, and let the streaming app read the lake when it must go back. Order files by the lateness the app already tolerates, and keep sources aligned with a global watermark. These are the company's own figures from slides."
+      }
+    }
+  ],
+  "comparison": "Uber and Netflix reached the same shape of answer. Both keep the streaming job, point it at stored history (a Hive table at Uber, Iceberg tables at Netflix) and read that history in slices, instead of replaying it all into Kafka. Both also set aside the same older options: a second batch codebase, which is the Lambda route, and long Kafka retention or replay. The Keystone post is different in kind: it describes the platform thousands of such jobs run on, and offers backfill as a source switch that it recommends only for stateless jobs, or a rewind to a checkpoint.\n\nThey differ in how they keep the order safe. Uber keeps the job's windows and watermarks and relaxes the watermark so each trigger reads two hours of data, with the window working as the rate limiter. Netflix reads many files in parallel but releases them only within the lateness the app tolerates, and it coordinates a global watermark across sources to stop state growing. Keystone lists strict against random ordering as a per-job trade-off but gives no mechanism, and its answer to scale is isolation: one Flink cluster per job.\n\nThe evidence differs too. Uber gives sizes for one job (75 cores, 1.2 terabytes of memory, about nine days and 10 terabytes backfilled) but no accuracy or cost figure. Netflix gives a cost comparison ($2M/year in Iceberg against $93M/year in Kafka), a speed and a 99.9% match, all its own figures from slides. Keystone gives only scale. None of the three compares batch and streaming head to head, so Kappa against Lambda here is two companies' experience, not a benchmark.",
+  "glossary": [
+    {
+      "term": "Bounded and unbounded input",
+      "definition": "Bounded input has a known end, such as yesterday's logs. Unbounded input keeps growing, such as live events."
+    },
+    {
+      "term": "Event time",
+      "definition": "The time an event happened, as opposed to the time a job receives it."
+    },
+    {
+      "term": "Watermark",
+      "definition": "A claim that no event earlier than a given time is still expected, used to decide when a window can release its result."
+    },
+    {
+      "term": "Window",
+      "definition": "A slice of event time, such as ten minutes, that a streaming job totals up and then releases."
+    },
+    {
+      "term": "Late event",
+      "definition": "An event that arrives after a watermark has passed its time. The job drops it or updates an earlier result."
+    },
+    {
+      "term": "Backfill",
+      "definition": "Recomputing results over past data to correct a bug, fill a gap or build state."
+    },
+    {
+      "term": "Lambda architecture",
+      "definition": "A streaming path for fast results plus a separate batch path for accurate ones, which means two codebases."
+    },
+    {
+      "term": "Kappa architecture",
+      "definition": "One streaming codebase used for live data and for backfills, by changing where it reads from."
+    },
+    {
+      "term": "Data lake",
+      "definition": "Cheap storage of raw data, often as columnar files in object storage, used here as the long-term history for backfills."
+    }
+  ],
+  "mistakes": [
+    "Windowing by arrival time. The results change every time the job is rerun and a backfill cannot reproduce them. Use the time on the event and decide a watermark delay on purpose.",
+    "Writing a separate batch job and trusting that it matches. Two codebases drift, and Netflix says building and validating one can take days or weeks. Prefer one job with a different source, and compare outputs before switching.",
+    "Pushing a long history through the live path at once. Uber found that replaying days of data into Kafka could overwhelm it. Read history in slices, by window, and protect the sinks with a rate limit."
+  ]
+}

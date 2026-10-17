@@ -589,7 +589,6 @@ export function chooseLayers<T extends Node>(
   const perms = <U,>(a: U[]): U[][] =>
     a.length <= 1 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map((p) => [x, ...p]));
   const count = base.reduce((n, col) => n * [...Array(col.length)].reduce((f, _, i) => f * (i + 1), 1), 1);
-  if (count > limit) return base;
   const rows = rowCount(base, "horizontal");
   const labels = new Map([...box.labelWidth].map(([slug, width]) => [slug, { start: LABEL_START, width }]));
   const score = (cols: (T | Slot)[][]) => {
@@ -601,12 +600,27 @@ export function chooseLayers<T extends Node>(
   let best = base;
   let bestScore = score(base);
   if (bestScore === 0) return base;
-  const combos = base.reduce<(T | Slot)[][][]>((acc, col) => acc.flatMap((a) => perms(col).map((p) => [...a, p])), [[]]);
-  for (const cols of combos) {
-    if (rowCount(cols, "horizontal") !== rows) continue;
-    const s = score(cols);
-    if (s < bestScore) [best, bestScore] = [cols, s];
-    if (s === 0) break;
+  if (count <= limit) {
+    const combos = base.reduce<(T | Slot)[][][]>((acc, col) => acc.flatMap((a) => perms(col).map((p) => [...a, p])), [[]]);
+    for (const cols of combos) {
+      if (rowCount(cols, "horizontal") !== rows) continue;
+      const s = score(cols);
+      if (s < bestScore) [best, bestScore] = [cols, s];
+      if (s === 0) break;
+    }
+  }
+  // A short column is centred, which can park a topic on the row of a neighbour's label. Blank
+  // slots above or below shift it by whole rows (never past the tallest column), one column at a time.
+  const blank = (c: number, i: number): Slot => ({ slug: `blank#${c}#${i}`, title: "", slot: true, edge: "" });
+  for (let c = 0; c < best.length && bestScore > 0; c++) {
+    for (let room = rows - best[c].length; room > 0 && bestScore > 0; room--) {
+      for (let above = 0; above <= room && bestScore > 0; above++) {
+        const padded = [...Array.from({ length: above }, (_, i) => blank(c, i)), ...best[c], ...Array.from({ length: room - above }, (_, i) => blank(c, above + i))];
+        const cols = best.map((x, i) => (i === c ? padded : x));
+        const s = score(cols);
+        if (s < bestScore) [best, bestScore] = [cols, s];
+      }
+    }
   }
   return best;
 }

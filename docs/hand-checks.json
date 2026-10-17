@@ -338,5 +338,9 @@
  "meta-maelstrom-2018|six times": {
   "verdict": "ok",
   "source": "paper Table 5: sequential drain is x6.6 for user-facing traffic and x6.3 for service traffic versus Maelstrom"
+ },
+ "uber-kappa-2020|two first": {
+  "verdict": "ok",
+  "source": "post: 'we considered two approaches' (replay into Kafka; unified Dataset API in Spark) before the combined approach"
  }
 }
