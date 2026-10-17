@@ -71,7 +71,9 @@ async function warmIfDue() {
 async function warm() {
   const pages = await caches.open(PAGES);
   const statics = await caches.open(STATIC);
-  const sitemap = await (await fetch("/sitemap.xml")).text();
+  const sitemapRes = await fetch("/sitemap.xml");
+  if (!sitemapRes.ok) return false; // a bad answer would look like a one-page site and prune every other page's files
+  const sitemap = await sitemapRes.text();
   const paths = new Set(["/data", ...[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname)]);
   const wanted = new Set();
   let complete = true;
@@ -107,6 +109,8 @@ async function warm() {
     }
   }
   if (!complete) return false;
+  // Next's data requests (?_rsc=...) are saved as they happen and never expire otherwise.
+  for (const req of await pages.keys()) if (new URL(req.url).search) await pages.delete(req);
   for (const req of await statics.keys()) {
     const p = new URL(req.url).pathname;
     if (!wanted.has(p) && !wanted.has(decodeURI(p))) await statics.delete(req);
