@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 
 // Which Great reads you have marked as read. Its own key, apart from the topic progress store: a read here is never a topic unit.
 // Stored only in this browser's localStorage, tolerant of missing or corrupt data, synced across tabs.
@@ -9,7 +9,7 @@ const EMPTY: readonly string[] = [];
 let cachedRaw: string | null = null;
 let cached: readonly string[] = EMPTY;
 
-function snapshot(): readonly string[] {
+export function readReadsNow(): readonly string[] {
   let raw: string | null = null;
   try {
     raw = window.localStorage.getItem(KEY);
@@ -43,14 +43,15 @@ function write(ids: readonly string[]) {
   window.dispatchEvent(new Event(CHANGE));
 }
 
+export function toggleRead(id: string) {
+  const now = readReadsNow();
+  write(now.includes(id) ? now.filter((x) => x !== id) : [...now, id]);
+}
+
 /** Ids of the reads marked as read (empty on the server and on first render) and a toggle. */
 export function useReadReads() {
-  const ids = useSyncExternalStore(subscribe, snapshot, () => EMPTY);
-  const toggle = useCallback((id: string) => {
-    const now = snapshot();
-    write(now.includes(id) ? now.filter((x) => x !== id) : [...now, id]);
-  }, []);
-  return [ids, toggle] as const;
+  const ids = useSyncExternalStore(subscribe, readReadsNow, () => EMPTY);
+  return [ids, toggleRead] as const;
 }
 
 /** "Reset all progress" on /data also clears these. */
