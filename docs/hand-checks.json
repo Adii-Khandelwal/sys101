@@ -342,5 +342,13 @@
  "uber-kappa-2020|two first": {
   "verdict": "ok",
   "source": "post: 'we considered two approaches' (replay into Kafka; unified Dataset API in Spark) before the combined approach"
+ },
+ "notion-lexical-reindexer-2026|Two validation": {
+  "verdict": "ok",
+  "source": "post: \"Two Spark jobs ran in CI for every change\" (aggregate validator and field-level validator)"
+ },
+ "notion-lexical-reindexer-2026|four steps": {
+  "verdict": "ok",
+  "source": "post: \"We broke the rebuild into four parts\""
  }
 }
