@@ -168,10 +168,10 @@ let topicsCache: Topic[] | undefined;
 
 /** Read and validated once per process in production; dev and tests re-read so content edits show up. */
 export function getAllTopics(): Topic[] {
-  if (topicsCache) return [...topicsCache];
+  if (topicsCache) return structuredClone(topicsCache); // a copy, so a caller cannot change the cached topics
   const all = loadAllTopics();
-  if (process.env.NODE_ENV === "production") topicsCache = all;
-  return [...all];
+  if (process.env.NODE_ENV === "production") topicsCache = structuredClone(all);
+  return all;
 }
 
 function loadAllTopics(): Topic[] {
