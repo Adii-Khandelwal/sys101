@@ -35,7 +35,7 @@ export function pageReady(pathname: string, cap = 1000) {
 }
 
 /** After a page that was opened with a #section has loaded: show it from its top, then glide down to the section. */
-async function glideToHash(url: URL) {
+async function glideToHash(url: URL, token: number) {
   try {
     if (location.pathname !== url.pathname) return; // the reader already went elsewhere (Back, another link): leave that page where it is
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
@@ -43,7 +43,7 @@ async function glideToHash(url: URL) {
     const target = id ? await whenVisible(id) : null;
     if (target) await glideToSection(target);
   } finally {
-    settleGlide();
+    settleGlide(token);
   }
 }
 
@@ -56,10 +56,10 @@ export function navigateWithTransition(router: { push: (href: string, opts?: { s
   const url = new URL(href, location.href);
   const to = url.pathname + url.search + url.hash;
   const opts = url.hash ? { scroll: false } : undefined;
-  if (url.hash) expectGlide();
+  const token = url.hash ? expectGlide() : 0;
   if (!doc.startViewTransition || prefersReducedMotion()) {
     router.push(to, opts);
-    if (url.hash) void pageReady(url.pathname).then(() => glideToHash(url));
+    if (url.hash) void pageReady(url.pathname).then(() => glideToHash(url, token));
     return;
   }
   const t = doc.startViewTransition(() => {
@@ -72,7 +72,7 @@ export function navigateWithTransition(router: { push: (href: string, opts?: { s
   void t?.finished?.finally(() => {
     if (running === t) running = undefined;
   });
-  if (url.hash) void (t?.finished ?? Promise.resolve()).finally(() => glideToHash(url));
+  if (url.hash) void (t?.finished ?? Promise.resolve()).finally(() => glideToHash(url, token));
 }
 
 /**

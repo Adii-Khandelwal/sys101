@@ -39,7 +39,7 @@ export function takeFind(pathname: string): { words: string[]; hint: string[] } 
  */
 export function findLine(root: ParentNode, words: string[], hint: string[], anchor: Element | null): Element | null {
   const hits = [...root.querySelectorAll(LINE)].filter(
-    (el) => el.getClientRects().length > 0 && !el.closest(".site-header, .site-footer, [role=search], nav, aside") && containsAll(el.textContent ?? "", words) && ![...el.querySelectorAll(LINE)].some((c) => containsAll(c.textContent ?? "", words)),
+    (el) => el.getClientRects().length > 0 && !el.closest(".site-header, .site-footer, [role=search], nav") && containsAll(el.textContent ?? "", words) && ![...el.querySelectorAll(LINE)].some((c) => containsAll(c.textContent ?? "", words)),
   );
   const after = anchor ? hits.filter((el) => anchor.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING || el === anchor) : [];
   const score = (el: Element) => {

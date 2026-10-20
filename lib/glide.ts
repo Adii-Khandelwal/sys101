@@ -11,14 +11,18 @@ let stop: (() => void) | null = null;
 // A page opened with a #section is scrolled by exactly one owner, the glide; anything else that scrolls waits for it.
 let glidePending: Promise<void> | null = null;
 let endPending: (() => void) | null = null;
+let glideToken = 0;
 
-/** Called when a navigation to a #section starts; `glideSettled` then waits until `settleGlide`. */
+/** Called when a navigation to a #section starts; `glideSettled` then waits until `settleGlide` gets the returned token. */
 export function expectGlide() {
   endPending?.();
   glidePending = new Promise((r) => (endPending = r));
+  return ++glideToken;
 }
 
-export function settleGlide() {
+/** Only the newest navigation can settle: an older glide finishing late must not release a newer one. */
+export function settleGlide(token: number) {
+  if (token !== glideToken) return;
   endPending?.();
   glidePending = endPending = null;
 }

@@ -59,12 +59,27 @@ afterEach(() => vi.unstubAllGlobals());
 describe("hand-off to other scrollers", () => {
   it("waits for the glide to settle, and not at all when none is expected", async () => {
     await glideSettled();
-    expectGlide();
+    const token = expectGlide();
     let done = false;
     void glideSettled().then(() => (done = true));
     await Promise.resolve();
     expect(done).toBe(false);
-    settleGlide();
+    settleGlide(token);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(done).toBe(true);
+  });
+
+  it("ignores a late settle from an older navigation", async () => {
+    const first = expectGlide();
+    const second = expectGlide();
+    let done = false;
+    void glideSettled().then(() => (done = true));
+    settleGlide(first);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(done).toBe(false);
+    settleGlide(second);
     await Promise.resolve();
     await Promise.resolve();
     expect(done).toBe(true);
