@@ -2,12 +2,12 @@
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { GLOSS_OPEN_DELAY_MS, glossOpenMode } from "@/lib/glossOpen";
 
 // The popover that is open now, so opening another one closes it: only one is ever shown.
 let active: (() => void) | null = null;
 // When a popover last closed, so the next one within a moment opens without delay or animation.
 let lastClosed = 0;
-const OPEN_DELAY_MS = 300;
 
 /**
  * A glossary term inside lesson prose. Without JavaScript it is a plain link to its entry on /glossary. With it, hover,
@@ -96,12 +96,12 @@ export default function GlossTerm({ href, definition, children }: { href: string
       onPointerEnter={(e) => {
         if (e.pointerType !== "mouse") return;
         clearTimeout(leaving.current);
-        if (open) return; // back inside the grace period: it never closed, so nothing to open
         // The first popover waits a moment so a mouse sweeping across prose opens none; its neighbours open at once.
-        const neighbour = active !== null || Date.now() - lastClosed < OPEN_DELAY_MS;
-        setInstant(neighbour);
-        if (neighbour) setOpen(true);
-        else opening.current = window.setTimeout(() => setOpen(true), OPEN_DELAY_MS);
+        const mode = glossOpenMode({ alreadyOpen: open, otherOpen: active !== null, lastClosedAt: lastClosed, now: Date.now() });
+        if (mode === "stay") return;
+        setInstant(mode === "instant");
+        if (mode === "instant") setOpen(true);
+        else opening.current = window.setTimeout(() => setOpen(true), GLOSS_OPEN_DELAY_MS);
       }}
       // A short grace period, so a mouse path that drifts off the term and back does not close the popover.
       onPointerLeave={(e) => {

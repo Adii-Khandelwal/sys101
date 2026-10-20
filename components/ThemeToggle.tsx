@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 type Theme = "light" | "dark";
 const KEY = "sys101:theme";
@@ -23,6 +24,7 @@ function resolve(): Theme {
  * follows the OS until the reader picks one.
  */
 export default function ThemeToggle() {
+  const pathname = usePathname();
   const [theme, setTheme] = useState<Theme | null>(null); // null until mounted, to avoid a hydration mismatch
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export default function ThemeToggle() {
       m.removeAttribute("media");
       m.setAttribute("content", paper);
     });
-  }, [theme]);
+  }, [theme, pathname]); // Next may rebuild the metas on a client navigation, so set them again after one
 
   const choose = (next: Theme) => {
     setTheme(next);
