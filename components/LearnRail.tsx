@@ -110,7 +110,7 @@ export default function LearnRail({
     return (
       <p className="progress-line label" aria-live="polite" data-pagefind-ignore>
         <span className="learn-progress-track" aria-hidden="true">
-          <span ref={fill} className="learn-progress-fill" />
+          <span ref={fill} className="learn-progress-fill" style={{ transform: "scaleX(0)" }} />
         </span>
         <span className="visually-hidden">{label}</span>
         <a href={`#${current}`} onClick={(e) => current && go(e, current)}>
@@ -124,7 +124,7 @@ export default function LearnRail({
     <nav className="lesson-rail" aria-label="Contents of this page" data-pagefind-ignore>
       <div className="progress-head" aria-live="polite">
         <div className="learn-progress-track" tabIndex={0} aria-label={label}>
-          <span ref={fill} className="learn-progress-fill" />
+          <span ref={fill} className="learn-progress-fill" style={{ transform: "scaleX(0)" }} />
         </div>
       </div>
       <ol ref={list}>
