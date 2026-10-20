@@ -20,9 +20,11 @@ export default function PutItTogether({ capstones, titles }: { capstones: Capsto
           </li>
         ))}
       </ul>
-      <p>
-        <Link href="/capstones">All capstones</Link>
-      </p>
+      {capstones.length > 1 && (
+        <p>
+          <Link href="/capstones">All capstones</Link>
+        </p>
+      )}
     </section>
   );
 }
