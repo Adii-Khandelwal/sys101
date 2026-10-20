@@ -11,7 +11,7 @@ const Dot = () => <span aria-hidden="true">·</span>;
 /** Three short groups instead of one long row: what to read, the site's pages, and you. A page with a tour offers it here too. */
 export default function SiteFooter({ tour }: { tour?: TourId }) {
   return (
-    <footer className="site-footer">
+    <footer className="site-footer" data-pagefind-ignore>
       <span className="footer-mark" aria-hidden="true">
         <LogoMark size={14} />
       </span>

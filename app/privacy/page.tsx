@@ -10,9 +10,9 @@ export const metadata: Metadata = pageMeta({ path: "/privacy", title: "Privacy",
 
 export default function Privacy() {
   return (
-    <article className="dossier legal">
+    <article className="dossier legal" data-pagefind-body>
 
-      <h1>Privacy</h1>
+      <h1 data-pagefind-meta="title">Privacy</h1>
 
       <p>Short version: sys101 doesn&apos;t know who you are and doesn&apos;t try to find out.</p>
 

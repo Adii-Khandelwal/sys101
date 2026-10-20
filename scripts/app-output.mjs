@@ -8,16 +8,20 @@ import path from "node:path";
 const MARK = "about.html";
 const has = (dir) => fs.existsSync(path.join(dir, MARK));
 
+// Every folder under dir that holds about.html. A stray copy can sit beside the real output, so callers pick the fullest one.
 function find(dir, depth) {
-  if (depth < 0 || !fs.existsSync(dir)) return null;
-  if (has(dir)) return dir;
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (!e.isDirectory() || e.name === "node_modules" || e.name === "cache") continue;
-    const hit = find(path.join(dir, e.name), depth - 1);
-    if (hit) return hit;
-  }
-  return null;
+  if (depth < 0 || !fs.existsSync(dir)) return [];
+  const here = has(dir) ? [dir] : [];
+  return here.concat(
+    fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory() && e.name !== "node_modules" && e.name !== "cache" ? find(path.join(dir, e.name), depth - 1) : [],
+    ),
+  );
 }
+
+// The folder with the most pages wins: on Vercel the first folder holding about.html held only that one file.
+const pages = (dir) => fs.readdirSync(dir, { recursive: true }).filter((f) => String(f).endsWith(".html")).length;
+const fullest = (dirs) => dirs.sort((a, b) => pages(b) - pages(a))[0] ?? null;
 
 function listing(dir, depth) {
   if (depth < 0 || !fs.existsSync(dir)) return [];
@@ -32,7 +36,7 @@ export function appOutput(cwd = process.cwd()) {
   const dist = path.join(cwd, process.env.NEXT_DIST_DIR || ".next");
   const usual = path.join(dist, "server", "app");
   if (has(usual)) return usual;
-  const found = find(dist, 5) ?? find(path.join(cwd, ".vercel", "output"), 6);
+  const found = fullest([...find(dist, 5), ...find(path.join(cwd, ".vercel", "output"), 6)]);
   if (found) {
     console.log(`Note: the pages are in ${path.relative(cwd, found)}, not ${path.relative(cwd, usual)}.`);
     return found;
