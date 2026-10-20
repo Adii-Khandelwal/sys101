@@ -221,8 +221,8 @@ export default function LearnPage({ topic, learn, titles }: Props) {
             <Cited text={learn.next} number={number} />
           </p>
           <p>
-            <Link href={`/topic/${topic.slug}`}>The {topic.title} topic page</Link> ·{" "}
-            <Link href={`/topic/${topic.slug}#posts`}>Its posts</Link>
+            <Link href={`/topic/${topic.slug}`}>The {topic.title} topic page</Link> or{" "}
+            <Link href={`/topic/${topic.slug}#posts`}>its posts</Link>
           </p>
         </section>
       </div>

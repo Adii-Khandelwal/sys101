@@ -100,7 +100,7 @@ export function CompactProgress({ meta, variant = "rail" }: { meta: LessonMeta; 
           {s.done}
         </span>{" "}
         of {s.total} done<span className="visually-hidden"> ({detail})</span>
-        {link && <> · {link}</>}
+        {link && <>, {link}</>}
       </p>
     );
   }
@@ -120,7 +120,7 @@ export function CompactProgress({ meta, variant = "rail" }: { meta: LessonMeta; 
           />
         ))}
         <span className="progress-tip label" aria-hidden="true">
-          Concept {c.concept}/{c.conceptTotal} · Quiz {c.quiz.answered}/{c.quiz.total} · Posts {c.posts}/{c.postsTotal}
+          Concept {c.concept}/{c.conceptTotal}, Quiz {c.quiz.answered}/{c.quiz.total}, Posts {c.posts}/{c.postsTotal}
         </span>
       </div>
       {link && <p className="label">{link}</p>}

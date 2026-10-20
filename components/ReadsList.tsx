@@ -84,7 +84,7 @@ export default function ReadsList({ data }: { data: ReadsData }) {
       {groups.map((g) => (
         <section key={g.id} aria-labelledby={g.id} className="reads-theme">
           <h2 id={g.id} className="label posts-group-h">
-            {g.theme} · {g.reads.length}
+            {g.theme} ({g.reads.length})
           </h2>
           <ul className="posts-list">
             {g.reads.map((r) => (
@@ -100,7 +100,7 @@ export default function ReadsList({ data }: { data: ReadsData }) {
                   <p className="reads-co">
                     <CompanyLogo name={r.company} />
                     <span>
-                      {r.company} · {r.kind === "paper" ? "Paper" : "Post"}
+                      {r.company}, {r.kind === "paper" ? "Paper" : "Post"}
                     </span>
                   </p>
                   <p className="reads-why">{r.whyItMatters}</p>

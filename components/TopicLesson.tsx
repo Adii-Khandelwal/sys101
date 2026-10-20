@@ -158,14 +158,9 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
 
           <p className="lesson-jump" data-tour="jump">
             {learnHref && (
-              <>
-                <Link className="text-button" href={learnHref} prefetch={false}>
-                  New to this? Start from zero
-                </Link>
-                <span className="label" aria-hidden="true">
-                  ·
-                </span>
-              </>
+              <Link className="text-button" href={learnHref} prefetch={false}>
+                New to this? Start from zero
+              </Link>
             )}
             <a className="text-button" href="#posts">
               Skip to the posts
@@ -190,7 +185,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
         </div>
 
         <div id="concept" className="part">
-          <p className="label part-label">Part A · Concept</p>
+          <p className="label part-label">Part A: Concept</p>
 
           <section id="why" aria-labelledby="why-h">
             <h2 id="why-h">Why it exists</h2>
@@ -272,7 +267,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
 
         <div id="posts" className="part">
           <div className="part-head" data-pagefind-ignore>
-            <p className="label part-label">Part B · Real world</p>
+            <p className="label part-label">Part B: Real world</p>
             <a className="text-button label" href="#concept">
               Back to concept
             </a>
