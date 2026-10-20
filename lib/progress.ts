@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import {
   OLD_CONCEPT_KEY,
   OLD_POSTS_KEY,
@@ -220,14 +220,20 @@ function stampUpdated(slugs: string[], now = new Date()) {
 
 type StorageStatus = "ok" | "empty" | "blocked" | "corrupt";
 
+// Probed once: writing on every snapshot read made tabs trade storage events.
+let storageBlocked: boolean | null = null;
+
 function getStatus(): StorageStatus {
-  try {
-    const probe = "sys101:probe";
-    window.localStorage.setItem(probe, "1");
-    window.localStorage.removeItem(probe);
-  } catch {
-    return "blocked";
+  if (storageBlocked === null) {
+    try {
+      window.localStorage.setItem("sys101:probe", "1");
+      window.localStorage.removeItem("sys101:probe");
+      storageBlocked = false;
+    } catch {
+      storageBlocked = true;
+    }
   }
+  if (storageBlocked) return "blocked";
   const raw = safeGet(PROGRESS_KEY);
   if (raw !== null && parseProgress(raw) === null) return "corrupt";
   const p = getProgress();
@@ -270,5 +276,5 @@ export function inProgressSlugs(progress: Progress, read: readonly string[]): st
 /** Live set of in-progress topic slugs, for the map's "currently reading" marker. */
 export function useInProgressTopics(): string[] {
   const { progress, read } = useAllProgress();
-  return inProgressSlugs(progress, read);
+  return useMemo(() => inProgressSlugs(progress, read), [progress, read]);
 }
