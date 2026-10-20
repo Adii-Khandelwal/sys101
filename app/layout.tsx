@@ -10,6 +10,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import Splash from "@/components/Splash";
 import NavPending from "@/components/NavPending";
 import OfflineSupport from "@/components/OfflineSupport";
+import FindOnPage from "@/components/FindOnPage";
 import { Analytics } from "@vercel/analytics/next";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
@@ -91,6 +92,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <BackToTop />
         <Analytics />
         <OfflineSupport />
+        <FindOnPage />
       </body>
     </html>
   );

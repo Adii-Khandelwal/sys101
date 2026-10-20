@@ -535,6 +535,8 @@ li {
 .search-results li {
   padding: 12px 0;
   border-bottom: 1px solid var(--rule);
+  position: relative;
+  cursor: pointer;
 }
 
 .search-results p {
@@ -3374,7 +3376,6 @@ html {
 @media (max-width: 767px), (pointer: coarse) {
   .masthead p a,
   .index-groups a,
-  .search-results li > a,
   .legal a,
   .dossier li > a,
   .dossier nav a,
@@ -3401,7 +3402,6 @@ html {
     position: relative;
   }
   .masthead p a::after,
-  .search-results li > a::after,
   .legal a::after,
   .dossier li > a::after,
   .dossier nav a::after,
@@ -5426,4 +5426,22 @@ html[data-splash] .splash.is-leaving::before {
 }
 .nav-pending.is-on .nav-pending-mark {
   animation: bubble-breathe var(--dur-pulse) var(--ease-in-out) infinite alternate;
+}
+
+/* The whole result is the link: the title's box stretches over the row, so the excerpt and the section label click too. */
+.search-results li > a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.search-results li:hover > a {
+  color: var(--accent);
+}
+
+/* The line a search result jumped to, held for two seconds by components/FindOnPage.tsx, then gone (no motion to reduce). */
+.is-found {
+  background: var(--highlight);
+  outline: 6px solid var(--highlight);
+  border-radius: 2px;
 }
