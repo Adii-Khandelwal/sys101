@@ -762,6 +762,7 @@ export default function GraphView({ nodes, edges }: Props) {
         overNode.current = true;
         setCursor();
         router.prefetch(`/topic/${node}`); // ready before the click lands
+        tipByKey.current = false;
         activate(nextHighlight(activeRef.current, { type: "enter", node }));
       });
       renderer.on("leaveNode", () => {
@@ -931,9 +932,10 @@ export default function GraphView({ nodes, edges }: Props) {
   // The first tooltip waits TIP_DELAY_MS; moving to a neighbouring node shows the next at once, until TIP_COOL_MS passes with none.
   const [tipReady, setTipReady] = useState(false);
   const tipWarm = useRef(false);
+  const tipByKey = useRef(false); // the active node came from keyboard focus: no delay
   useEffect(() => {
     if (active) {
-      if (tipWarm.current) return setTipReady(true);
+      if (tipWarm.current || tipByKey.current) return setTipReady(true);
       const t = window.setTimeout(() => ((tipWarm.current = true), setTipReady(true)), TIP_DELAY_MS);
       return () => window.clearTimeout(t);
     }
@@ -1065,7 +1067,10 @@ export default function GraphView({ nodes, edges }: Props) {
               className="graph-node-link"
               style={{ left: p.x, top: p.y, width: p.r * 2 + 6, height: p.r * 2 + 6 }}
               aria-label={`${n.title}, ${n.posts} ${n.posts === 1 ? "post" : "posts"}, ${isRead ? "read" : isReady ? "ready to read" : "unread"}`}
-              onFocus={() => activate(nextHighlight(activeRef.current, { type: "focus", node: p.slug }))}
+              onFocus={(e) => {
+                tipByKey.current = e.currentTarget.matches(":focus-visible");
+                activate(nextHighlight(activeRef.current, { type: "focus", node: p.slug }));
+              }}
               onBlur={() => activate(nextHighlight(activeRef.current, { type: "blur" }))}
             />
           );
