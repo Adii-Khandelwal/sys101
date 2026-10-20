@@ -21,7 +21,7 @@
     "pipeline:fetch": "node pipeline/fetch-rss.mjs",
     "pipeline:summarize": "node pipeline/summarize.mjs",
     "postbuild": "node scripts/check-news.mjs && node scripts/check-seo.mjs && node scripts/check-diagram-overflow.mjs && node scripts/build-search-index.mjs",
-    "search:index": "NEXT_DIST_DIR=.next-search next build && pagefind --site .next-search/server/app --output-path public/pagefind",
+    "search:index": "NEXT_DIST_DIR=.next-search next build && NEXT_DIST_DIR=.next-search node scripts/build-search-index.mjs",
     "check:live-search": "node scripts/check-live-search.mjs",
     "check:topic": "node scripts/check-topic.mjs",
     "readme:stats": "node --no-warnings scripts/readme-stats.mjs",
@@ -42,7 +42,7 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.1",
     "rss-parser": "^3.13.0",
-    "sigma": "^4.0.3"
+    "sigma": "^3.0.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
@@ -50,7 +50,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "esbuild": "^0.28.2",
-    "eslint": "^10.13.0",
+    "eslint": "^9.39.5",
     "eslint-config-next": "^15.5.27",
     "pagefind": "^1.5.2",
     "playwright": "^1.64.1",
