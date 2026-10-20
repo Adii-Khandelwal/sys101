@@ -220,7 +220,7 @@ function stampUpdated(slugs: string[], now = new Date()) {
 
 type StorageStatus = "ok" | "empty" | "blocked" | "corrupt";
 
-// Probed once: writing on every snapshot read made tabs trade storage events.
+// Probed once and kept for the page life on purpose: writing on every snapshot read made tabs trade storage events.
 let storageBlocked: boolean | null = null;
 
 function getStatus(): StorageStatus {
