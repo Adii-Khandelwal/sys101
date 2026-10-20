@@ -19,6 +19,12 @@
     "Cockroach Labs": {
       "simpleIcons": "cockroachlabs"
     },
+    "CrowdStrike": {
+      "local": "crowdstrike-falcon-black.svg",
+      "localDark": "crowdstrike-falcon-white.svg",
+      "viewBox": "12.03 29.64 108 84.71",
+      "note": "The Falcon symbol from CrowdStrike's own brand page (crowdstrike.com/about-us/brand/, CS-Logos-SVG.zip), black for the light theme and white for the dark one, originals unaltered in content/logo-sources. The copy drops the XML prolog and editor comment and crops the viewBox to the drawn shape; the drawing is untouched."
+    },
     "Databricks": {
       "simpleIcons": "databricks"
     },
@@ -105,9 +111,7 @@
       "simpleIcons": "zapier"
     }
   },
-  "withoutLogo": {
-    "CrowdStrike": "No usable mark: svgl has none, Simple Icons removed it, and the only copy found (Hunter) is a white wordmark that vanishes on the light theme and repeats the name. Recolouring is not allowed, so it stays without a mark until a symbol with both themes is available."
-  },
+  "withoutLogo": {},
   "hunter": {
     "about": "Last resort for a company neither svgl nor Simple Icons has: https://logos.hunter.io/<domain>, no key, trademarks stay with their owners. Raster, so it is trimmed and saved as WebP; check it on both themes."
   }
