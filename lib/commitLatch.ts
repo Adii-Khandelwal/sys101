@@ -29,7 +29,7 @@ export function latchState(i: LatchInputs, step: number): LatchState {
   const bobLock = at === 1 || at === 2;
   const joeLock = at === 2 || at === 3;
   const cell = (name: string, before: number, after: number, lock: string, n: Cell) =>
-    `${name}.bal  lock: ${lock} · data: ${$(before)} @${i.oldTs}${n === "none" ? "" : `, ${$(after)} @${i.startTs}`} · write record: ${n === "committed" ? `@${i.commitTs}, points at data @${i.startTs}` : "none yet"}`;
+    `${name}.bal  lock: ${lock}; data: ${$(before)} @${i.oldTs}${n === "none" ? "" : `, ${$(after)} @${i.startTs}`}; write record: ${n === "committed" ? `@${i.commitTs}, points at data @${i.startTs}` : "none yet"}`;
   const headline = [
     `Start: Bob has ${$(i.bobBefore)} and Joe has ${$(i.joeBefore)}, both written at timestamp ${i.oldTs}. The transfer moves ${$(i.amount)} from Bob to Joe.`,
     `The transaction locks Bob's cell and writes ${$(bobAfter)} at its start timestamp, ${i.startTs}. This lock is the primary.`,

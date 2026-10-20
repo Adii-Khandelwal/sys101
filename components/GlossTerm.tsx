@@ -27,6 +27,15 @@ export default function GlossTerm({ href, definition, children }: { href: string
   const [up, setUp] = useState(false);
   const [instant, setInstant] = useState(false);
 
+  useEffect(() => () => clearTimeout(opening.current), []);
+
+  // The no-animation flag only covers the open itself; clear it shortly after, so the exit fades.
+  useEffect(() => {
+    if (!open || !instant) return;
+    const t = window.setTimeout(() => setInstant(false), 50);
+    return () => clearTimeout(t);
+  }, [open, instant]);
+
   const close = () => {
     clearTimeout(leaving.current);
     clearTimeout(opening.current);
@@ -87,6 +96,7 @@ export default function GlossTerm({ href, definition, children }: { href: string
       onPointerEnter={(e) => {
         if (e.pointerType !== "mouse") return;
         clearTimeout(leaving.current);
+        if (open) return; // back inside the grace period: it never closed, so nothing to open
         // The first popover waits a moment so a mouse sweeping across prose opens none; its neighbours open at once.
         const neighbour = active !== null || Date.now() - lastClosed < OPEN_DELAY_MS;
         setInstant(neighbour);
