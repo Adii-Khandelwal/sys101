@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { containsAll, finishedWords } from "@/lib/searchMatch";
 import { useSlashFocus } from "@/lib/useSlashFocus";
 import { safeExcerpt } from "@/lib/searchExcerpt";
+import { rememberFind } from "@/lib/findOnPage";
 
 type Result = { url: string; title: string; section?: string; excerpt: string };
 
@@ -91,6 +92,7 @@ export default function Search() {
       search("");
       e.currentTarget.blur();
     } else if (e.key === "Enter" && results?.length && !searching) {
+      rememberFind(results[0].url, query, results[0].excerpt);
       router.push(results[0].url);
     }
   };
@@ -152,7 +154,9 @@ export default function Search() {
               <ul className="search-results">
                 {results.map((r) => (
                   <li key={r.url}>
-                    <Link href={r.url}>{r.title}</Link>
+                    <Link href={r.url} onClick={() => rememberFind(r.url, query, r.excerpt)}>
+                      {r.title}
+                    </Link>
                     {r.section && <span className="search-section label">{r.section}</span>}
                     {/* Pagefind escapes page text and adds <mark> around matches; safeExcerpt keeps only that tag. */}
                     <p dangerouslySetInnerHTML={{ __html: safeExcerpt(r.excerpt) }} />
