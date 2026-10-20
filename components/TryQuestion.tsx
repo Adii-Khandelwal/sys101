@@ -34,7 +34,7 @@ export default function TryQuestion({ slug, topicTitle, questions }: Props) {
         setChosen(null);
         setLeaving(false);
       },
-      prefersReducedMotion() ? 0 : DURATION.base,
+      prefersReducedMotion() ? DURATION.reduced : DURATION.base,
     );
   };
 

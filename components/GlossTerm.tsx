@@ -2,14 +2,17 @@
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { GLOSS_OPEN_DELAY_MS, glossOpenMode } from "@/lib/glossOpen";
 
 // The popover that is open now, so opening another one closes it: only one is ever shown.
 let active: (() => void) | null = null;
+// When a popover last closed, so the next one within a moment opens without delay or animation.
+let lastClosed = 0;
 
 /**
  * A glossary term inside lesson prose. Without JavaScript it is a plain link to its entry on /glossary. With it, hover,
  * focus or a tap opens a small popover with the definition and a "See in glossary" link; Escape closes it and puts focus
- * back on the term. Fading is opacity and transform only, on the motion tokens (instant under reduced motion).
+ * back on the term. Fading is opacity and a 0.97 scale from the term, on the motion tokens (opacity only under reduced motion).
  */
 export default function GlossTerm({ href, definition, children }: { href: string; definition: string; children: string }) {
   const id = useId();
@@ -18,12 +21,24 @@ export default function GlossTerm({ href, definition, children }: { href: string
   const pop = useRef<HTMLSpanElement>(null);
   const pinned = useRef(false);
   const leaving = useRef<number>(undefined);
+  const opening = useRef<number>(undefined);
   const [open, setOpen] = useState(false);
   const [shift, setShift] = useState(0);
   const [up, setUp] = useState(false);
+  const [instant, setInstant] = useState(false);
+
+  useEffect(() => () => clearTimeout(opening.current), []);
+
+  // The no-animation flag only covers the open itself; clear it shortly after, so the exit fades.
+  useEffect(() => {
+    if (!open || !instant) return;
+    const t = window.setTimeout(() => setInstant(false), 50);
+    return () => clearTimeout(t);
+  }, [open, instant]);
 
   const close = () => {
     clearTimeout(leaving.current);
+    clearTimeout(opening.current);
     pinned.current = false;
     setOpen(false);
   };
@@ -61,6 +76,7 @@ export default function GlossTerm({ href, definition, children }: { href: string
     active = mine;
     return () => {
       if (active === mine) active = null;
+      lastClosed = Date.now();
     };
   }, [open]);
 
@@ -80,14 +96,25 @@ export default function GlossTerm({ href, definition, children }: { href: string
       onPointerEnter={(e) => {
         if (e.pointerType !== "mouse") return;
         clearTimeout(leaving.current);
-        setOpen(true);
+        // The first popover waits a moment so a mouse sweeping across prose opens none; its neighbours open at once.
+        const mode = glossOpenMode({ alreadyOpen: open, otherOpen: active !== null, lastClosedAt: lastClosed, now: Date.now() });
+        if (mode === "stay") return;
+        setInstant(mode === "instant");
+        if (mode === "instant") setOpen(true);
+        else opening.current = window.setTimeout(() => setOpen(true), GLOSS_OPEN_DELAY_MS);
       }}
       // A short grace period, so a mouse path that drifts off the term and back does not close the popover.
       onPointerLeave={(e) => {
-        if (e.pointerType !== "mouse" || pinned.current) return;
+        if (e.pointerType !== "mouse") return;
+        clearTimeout(opening.current);
+        if (pinned.current) return;
         leaving.current = window.setTimeout(() => setOpen(false), 150);
       }}
-      onFocus={(e) => e.target.matches(":focus-visible") && setOpen(true)}
+      onFocus={(e) => {
+        if (!e.target.matches(":focus-visible")) return;
+        setInstant(false);
+        setOpen(true);
+      }}
       onBlur={(e) => !root.current?.contains(e.relatedTarget as Node | null) && close()}
       onKeyDown={(e) => {
         if (e.key !== "Escape" || !open) return;
@@ -108,6 +135,8 @@ export default function GlossTerm({ href, definition, children }: { href: string
           // A plain click opens the popover; the popover's own link goes to the glossary.
           e.preventDefault();
           if (open && pinned.current) return close();
+          clearTimeout(opening.current);
+          setInstant(false);
           pinned.current = true;
           setOpen(true);
         }}
@@ -121,8 +150,10 @@ export default function GlossTerm({ href, definition, children }: { href: string
         aria-label={children}
         data-open={open}
         data-up={up}
+        data-instant={instant}
         data-pagefind-ignore
-        style={{ left: shift }}
+        // Grows from the term: the origin is the term's left edge, whatever the sideways shift.
+        style={{ left: shift, transformOrigin: `${-shift}px ${up ? "100%" : "0"}` }}
       >
         <span id={id}>{definition}</span>
         <Link href={href} className="gloss-more" tabIndex={open ? 0 : -1}>

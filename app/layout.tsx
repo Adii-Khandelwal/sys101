@@ -47,6 +47,7 @@ export const metadata: Metadata = {
 
 /** Browser bar colour: the --paper token in each theme. */
 export const viewport: Viewport = {
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f3ecdc" },
     { media: "(prefers-color-scheme: dark)", color: "#1a1713" },
@@ -65,10 +66,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `(function(){try{var t=localStorage.getItem('sys101:theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`,
           }}
         />
-        {/* Opening screen: every load or refresh of the homepage only, never for reduced motion or automation. */}
+        {/* Opening screen: the first homepage load of a browser session only (sessionStorage flag), never for reduced motion or automation. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{if(location.pathname!=='/'||navigator.webdriver||matchMedia('(prefers-reduced-motion: reduce)').matches)return;document.documentElement.setAttribute('data-splash','1')}catch(e){}})()`,
+            __html: `(function(){try{if(location.pathname!=='/'||navigator.webdriver||matchMedia('(prefers-reduced-motion: reduce)').matches||sessionStorage.getItem('sys101:splash'))return;sessionStorage.setItem('sys101:splash','1');document.documentElement.setAttribute('data-splash','1')}catch(e){}})()`,
           }}
         />
         {/* Without JavaScript, reveals cannot open, so show their content. */}

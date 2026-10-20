@@ -30,7 +30,7 @@ export default function DesignItFirst({ slug, decisions, sources }: Props) {
                     <span>{o.label}</span>
                     {picked !== null && (
                       <span className="label cap-tag">
-                        {[picked === i ? "Your pick" : "", d.answerIndex === i ? "Better fit" : ""].filter(Boolean).join(" · ")}
+                        {[picked === i ? "Your pick" : "", d.answerIndex === i ? "Better fit" : ""].filter(Boolean).join(", ")}
                       </span>
                     )}
                   </button>

@@ -32,7 +32,7 @@ export default function DailyFigure({ figures }: { figures: Figure[] }) {
               {f.company}, {f.year}
             </span>
           </span>
-          <span aria-hidden="true"> · </span>
+          <span aria-hidden="true">: </span>
           <a href={f.url} target="_blank" rel="noopener noreferrer">
             {f.postTitle}
           </a>

@@ -90,7 +90,7 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
           >
             <h3 className="label path-group-name">
               <span>
-                {g.name} · {slugs.length} of {entries.length} topics
+                {g.name}, {slugs.length} of {entries.length} topics
               </span>
               <span className="path-group-count">
                 {readInGroup} / {slugs.length} read
@@ -119,8 +119,8 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
                   <span className="path-body">
                     <IntentLink href={`/topic/${e.slug}`} className="path-title">
                       {e.title}
-                      {st === "ready" && <span className="path-ready-tag"> · ready</span>}
-                      {st === "progress" && <span className="path-progress-tag"> · in progress</span>}
+                      {st === "ready" && <span className="path-ready-tag">, ready</span>}
+                      {st === "progress" && <span className="path-progress-tag">, in progress</span>}
                     </IntentLink>
                     <span className="path-meta">
                       <span className="visually-hidden">

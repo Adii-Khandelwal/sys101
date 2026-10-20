@@ -167,7 +167,7 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
                   <span className="data-topic-title">{t.title}</span>
                   <span className="label">
                     {s.done} of {s.total} done
-                    {updated[t.slug] ? ` · changed ${shortDate(updated[t.slug])}` : ""}
+                    {updated[t.slug] ? `, changed ${shortDate(updated[t.slug])}` : ""}
                   </span>
                   {confirmReset === t.slug ? (
                     <span className="data-confirm" role="group" aria-label={`Reset ${t.title}?`}>

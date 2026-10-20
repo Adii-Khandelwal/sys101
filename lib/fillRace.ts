@@ -53,7 +53,7 @@ export function raceState(i: RaceInputs, o: RaceOptions, step: number): RaceStat
   }[event];
   const cacheText = cache === null ? "empty" : `x=${cache}`;
   const verdict = cache === null ? "nothing cached" : cache === db ? (refused ? "consistent, older write refused" : "consistent") : "stale";
-  return { event, db, cache, fill, inval, pawl, refused, headline, readout: `cache ${cacheText} · database x=${db} · ${verdict}` };
+  return { event, db, cache, fill, inval, pawl, refused, headline, readout: `cache ${cacheText}; database x=${db}; ${verdict}` };
 }
 
 export function raceText(i: RaceInputs, src: FigureSource) {

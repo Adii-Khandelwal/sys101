@@ -133,7 +133,7 @@ export default async function CapstonePage({ params }: Props) {
                   {s.title}
                 </a>
                 <span className="label">
-                  {s.company} · {s.published.length === 4 ? s.published : formatDate(s.published)}
+                  {s.company}, {s.published.length === 4 ? s.published : formatDate(s.published)}
                 </span>
               </li>
             ))}

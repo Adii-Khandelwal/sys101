@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 type Theme = "light" | "dark";
 const KEY = "sys101:theme";
@@ -23,6 +24,7 @@ function resolve(): Theme {
  * follows the OS until the reader picks one.
  */
 export default function ThemeToggle() {
+  const pathname = usePathname();
   const [theme, setTheme] = useState<Theme | null>(null); // null until mounted, to avoid a hydration mismatch
 
   useEffect(() => {
@@ -38,6 +40,16 @@ export default function ThemeToggle() {
     mq.addEventListener("change", follow);
     return () => mq.removeEventListener("change", follow);
   }, []);
+
+  // The browser bar follows the live theme, not only the OS query the metadata declares.
+  useEffect(() => {
+    if (!theme) return;
+    const paper = getComputedStyle(document.documentElement).getPropertyValue("--paper").trim();
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+      m.removeAttribute("media");
+      m.setAttribute("content", paper);
+    });
+  }, [theme, pathname]); // Next may rebuild the metas on a client navigation, so set them again after one
 
   const choose = (next: Theme) => {
     setTheme(next);
