@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { glideToSection, whenVisible } from "./glide";
+import { expectGlide, glideSettled, glideToSection, settleGlide, whenVisible } from "./glide";
 
 // No DOM in the test environment: a small fake of what glide.ts touches.
 type Listener = () => void;
@@ -55,6 +55,21 @@ beforeEach(() => {
   });
 });
 afterEach(() => vi.unstubAllGlobals());
+
+describe("hand-off to other scrollers", () => {
+  it("waits for the glide to settle, and not at all when none is expected", async () => {
+    await glideSettled();
+    expectGlide();
+    let done = false;
+    void glideSettled().then(() => (done = true));
+    await Promise.resolve();
+    expect(done).toBe(false);
+    settleGlide();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(done).toBe(true);
+  });
+});
 
 describe("glideToSection", () => {
   it("lands the section just under the header (header 64px + 16px gap)", async () => {

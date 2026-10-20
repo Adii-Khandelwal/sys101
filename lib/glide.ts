@@ -8,6 +8,26 @@ function anchorTop(el: HTMLElement) {
 
 let stop: (() => void) | null = null;
 
+// A page opened with a #section is scrolled by exactly one owner, the glide; anything else that scrolls waits for it.
+let glidePending: Promise<void> | null = null;
+let endPending: (() => void) | null = null;
+
+/** Called when a navigation to a #section starts; `glideSettled` then waits until `settleGlide`. */
+export function expectGlide() {
+  endPending?.();
+  glidePending = new Promise((r) => (endPending = r));
+}
+
+export function settleGlide() {
+  endPending?.();
+  glidePending = endPending = null;
+}
+
+/** Resolves at once when no glide is expected. Capped so a lost glide never blocks the caller. */
+export function glideSettled(cap = 3000): Promise<void> {
+  return glidePending ? Promise.race([glidePending, new Promise<void>((r) => setTimeout(r, cap))]) : Promise.resolve();
+}
+
 /**
  * Scrolls the page to `top` the way a reader would, eased over 320ms (up to 700ms for a long way) with the same curve as the
  * other on-screen moves. The reader can stop it by touching, wheeling or pressing a key. Reduced motion jumps. Returns when done.
