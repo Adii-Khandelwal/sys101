@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { rememberFind, takeFind } from "./findOnPage";
+import { SKIPPED, rememberFind, takeFind } from "./findOnPage";
 
 describe("find on page hand-off", () => {
   beforeEach(() => {
@@ -29,5 +29,12 @@ describe("find on page hand-off", () => {
     vi.advanceTimersByTime(20_000);
     expect(takeFind("/glossary")).toBeNull();
     vi.useRealTimers();
+  });
+});
+
+describe("find on page skipped areas", () => {
+  it("never searches navs or the header", () => {
+    expect(SKIPPED).toContain("nav");
+    expect(SKIPPED).toContain(".site-header");
   });
 });

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { FOUND_MS, findLine, takeFind } from "@/lib/findOnPage";
+import { glideSettled } from "@/lib/glide";
 import { prefersReducedMotion } from "@/lib/motion";
 
 /**
@@ -17,6 +18,7 @@ export default function FindOnPage() {
     if (!found) return;
     let frame = 0;
     let tries = 0;
+    let gone = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let line: Element | null = null;
     const look = () => {
@@ -34,8 +36,11 @@ export default function FindOnPage() {
       line.classList.add("is-found");
       timer = setTimeout(() => line?.classList.remove("is-found"), FOUND_MS);
     };
-    frame = requestAnimationFrame(look);
+    void glideSettled().then(() => {
+      if (!gone) frame = requestAnimationFrame(look);
+    });
     return () => {
+      gone = true;
       cancelAnimationFrame(frame);
       clearTimeout(timer);
       line?.classList.remove("is-found");

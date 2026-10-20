@@ -164,7 +164,17 @@ export type Topic = {
 
 const TOPICS_DIR = path.join(process.cwd(), "content", "topics");
 
+let topicsCache: Topic[] | undefined;
+
+/** Read and validated once per process in production; dev and tests re-read so content edits show up. */
 export function getAllTopics(): Topic[] {
+  if (topicsCache) return structuredClone(topicsCache); // a copy, so a caller cannot change the cached topics
+  const all = loadAllTopics();
+  if (process.env.NODE_ENV === "production") topicsCache = structuredClone(all);
+  return all;
+}
+
+function loadAllTopics(): Topic[] {
   const topics = fs
     .readdirSync(TOPICS_DIR)
     .filter((f) => f.endsWith(".json"))

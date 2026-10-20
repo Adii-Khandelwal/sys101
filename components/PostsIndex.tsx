@@ -138,12 +138,18 @@ export default function PostsIndex({ data }: { data: Data }) {
       for (const el of els) if (el.getBoundingClientRect().top <= line) id = el.id;
       setCurrent(id);
     };
+    // One layout read per frame, however many scroll events arrive.
+    let frame = 0;
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(() => ((frame = 0), pick()));
+    };
     pick();
-    window.addEventListener("scroll", pick, { passive: true });
-    window.addEventListener("resize", pick);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
     return () => {
-      window.removeEventListener("scroll", pick);
-      window.removeEventListener("resize", pick);
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
     };
   }, [ids]);
 

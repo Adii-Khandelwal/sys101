@@ -59,7 +59,7 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
     a.href = url;
     a.download = exportName();
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 10_000); // Safari and Firefox read the blob after click() returns
     setMessage(`Exported ${exportName()}.`);
   };
 

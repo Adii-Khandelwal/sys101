@@ -5,6 +5,8 @@ const KEY = "sys101:find";
 const FRESH_MS = 15_000;
 // A line of reading text. The innermost match wins, so a list item holding a paragraph picks the paragraph.
 export const LINE = "p, li, dd, dt, blockquote, figcaption, summary, td, h1, h2, h3, h4";
+// Navs (every rail) are never searchable, so a rail item cannot win a match over the article text.
+export const SKIPPED = ".site-header, .site-footer, [role=search], nav";
 export const FOUND_MS = 2000;
 
 const tokens = (text: string) => text.toLowerCase().match(/[\p{L}\p{N}]{4,}/gu) ?? [];
@@ -39,7 +41,7 @@ export function takeFind(pathname: string): { words: string[]; hint: string[] } 
  */
 export function findLine(root: ParentNode, words: string[], hint: string[], anchor: Element | null): Element | null {
   const hits = [...root.querySelectorAll(LINE)].filter(
-    (el) => el.getClientRects().length > 0 && !el.closest(".site-header, .site-footer, [role=search]") && containsAll(el.textContent ?? "", words) && ![...el.querySelectorAll(LINE)].some((c) => containsAll(c.textContent ?? "", words)),
+    (el) => el.getClientRects().length > 0 && !el.closest(SKIPPED) && containsAll(el.textContent ?? "", words) && ![...el.querySelectorAll(LINE)].some((c) => containsAll(c.textContent ?? "", words)),
   );
   const after = anchor ? hits.filter((el) => anchor.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING || el === anchor) : [];
   const score = (el: Element) => {

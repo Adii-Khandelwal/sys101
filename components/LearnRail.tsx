@@ -24,7 +24,9 @@ export default function LearnRail({
   scope?: "page" | "section";
 }) {
   const [index, setIndex] = useState(0);
-  const [ratio, setRatio] = useState(0);
+  // The bar moves by a ref write, not React state, so a scroll tick re-renders only when the section or the whole percent changes.
+  const [percent, setPercent] = useState(0);
+  const fill = useRef<HTMLSpanElement>(null);
   const ids = entries.map((e) => e.id).join();
   const total = entries.length;
 
@@ -57,20 +59,26 @@ export default function LearnRail({
       // snap the current section to the final one once scrolled to the end.
       const atBottom = max > 0 && window.scrollY / max >= 0.999;
       setIndex(atBottom ? els.length - 1 : i);
-      setRatio(atBottom ? 1 : r);
+      const shown = atBottom ? 1 : r;
+      if (fill.current) fill.current.style.transform = `scaleX(${shown})`;
+      setPercent(Math.round(shown * 100));
+    };
+    let frame = 0;
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(() => ((frame = 0), pick()));
     };
     pick();
-    window.addEventListener("scroll", pick, { passive: true });
-    window.addEventListener("resize", pick);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
     return () => {
-      window.removeEventListener("scroll", pick);
-      window.removeEventListener("resize", pick);
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
     };
   }, [ids, scope]);
 
   const current = entries[index]?.id;
   const done = index + 1;
-  const percent = Math.round(ratio * 100);
 
   // One marker slides (transform only) to the current row.
   const list = useRef<HTMLOListElement>(null);
@@ -102,7 +110,7 @@ export default function LearnRail({
     return (
       <p className="progress-line label" aria-live="polite" data-pagefind-ignore>
         <span className="learn-progress-track" aria-hidden="true">
-          <span className="learn-progress-fill" style={{ transform: `scaleX(${ratio})` }} />
+          <span ref={fill} className="learn-progress-fill" style={{ transform: "scaleX(0)" }} />
         </span>
         <span className="visually-hidden">{label}</span>
         <a href={`#${current}`} onClick={(e) => current && go(e, current)}>
@@ -116,7 +124,7 @@ export default function LearnRail({
     <nav className="lesson-rail" aria-label="Contents of this page" data-pagefind-ignore>
       <div className="progress-head" aria-live="polite">
         <div className="learn-progress-track" tabIndex={0} aria-label={label}>
-          <span className="learn-progress-fill" style={{ transform: `scaleX(${ratio})` }} />
+          <span ref={fill} className="learn-progress-fill" style={{ transform: "scaleX(0)" }} />
         </div>
       </div>
       <ol ref={list}>
