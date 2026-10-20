@@ -39,6 +39,16 @@ export default function ThemeToggle() {
     return () => mq.removeEventListener("change", follow);
   }, []);
 
+  // The browser bar follows the live theme, not only the OS query the metadata declares.
+  useEffect(() => {
+    if (!theme) return;
+    const paper = getComputedStyle(document.documentElement).getPropertyValue("--paper").trim();
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+      m.removeAttribute("media");
+      m.setAttribute("content", paper);
+    });
+  }, [theme]);
+
   const choose = (next: Theme) => {
     setTheme(next);
     document.documentElement.setAttribute("data-theme", next);

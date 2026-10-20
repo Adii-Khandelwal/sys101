@@ -7,7 +7,7 @@ const HOLD_MS = 1950; // one node comes on, two come out of it, the name flicker
 const FLY_MS = 320; // keep equal to --dur-slow
 
 /**
- * Opening screen, on every load or refresh of the homepage and nowhere else: one node comes on, two come out of it, and the
+ * Opening screen, on the first homepage load of a browser session and nowhere else: one node comes on, two come out of it, and the
  * name comes on like a bulb (on, dim, off, on), then the mark and name fly into the masthead's own and the page is there. The page is already in the HTML underneath; this only covers it.
  * An inline script in the layout sets `data-splash` on <html> before paint (only on the homepage, never for reduced motion or
  * automation); without it the overlay never shows. A click or key skips it.

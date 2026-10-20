@@ -65,7 +65,9 @@ describe("reduced motion", () => {
 
   it("CSS makes movement instant and keeps fades at 80ms or less", () => {
     const block = css.slice(css.lastIndexOf("@media (prefers-reduced-motion: reduce)"));
-    for (const name of ["dur-fast", "dur-base", "dur-slow", "dur-page"]) expect(block).toMatch(new RegExp(`--${name}:\\s*0ms`));
+    for (const name of ["dur-base", "dur-slow", "dur-page"]) expect(block).toMatch(new RegExp(`--${name}:\\s*0ms`));
+    // Fast fades (tooltips, popovers, swaps) stay as a short opacity fade instead of a hard cut.
+    expect(block).toMatch(/--dur-fast:\s*var\(--dur-reduced\)/);
     expect(block).toMatch(/animation-duration:\s*var\(--dur-reduced\)/);
     expect(DURATION.reduced).toBeLessThanOrEqual(80);
     // Only Back to top scrolls smoothly, and that is in JS (scrollBehavior); CSS never sets smooth scrolling.

@@ -48,7 +48,8 @@ export default function NextUp({
     router.prefetch(href);
     const node = document.querySelector<HTMLElement>(`.graph-node-link[href="${href}"]`);
     node?.focus({ preventScroll: true });
-    const wait = node && !prefersReducedMotion() ? DURATION.slow * 2 : 0;
+    // Keyboard clicks (detail 0) go at once; a pointer click keeps one short beat on the focused node.
+    const wait = node && e.detail > 0 && !prefersReducedMotion() ? DURATION.base : 0;
     window.setTimeout(() => navigateWithTransition(router, href + hash), wait);
   };
   const link = (slug: string, title: string, hash = "") => (
@@ -90,7 +91,7 @@ export default function NextUp({
             {verb}: {topic.title}
           </Link>
           <span key={`${topic.slug}-${topic.done}`} className="label fade-swap">
-            {sectionName(topic.target)} · {topic.done} of {topic.total} done
+            {sectionName(topic.target)}, {topic.done} of {topic.total} done
           </span>
         </p>
         {shown.length > 0 ? (
