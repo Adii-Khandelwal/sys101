@@ -18,8 +18,8 @@ export default function YourData() {
     .filter((t) => t.lesson)
     .map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites, postIds: t.posts.map((p) => p.id!), correct: t.lesson!.quiz.map((q) => optionId(q.options[q.correct])) }));
   return (
-    <article className="dossier legal">
-      <h1>Your data</h1>
+    <article className="dossier legal" data-pagefind-body>
+      <h1 data-pagefind-meta="title">Your data</h1>
       <p>Your reading progress is stored in this browser only. Nothing is sent anywhere, and there are no accounts.</p>
       <DataControls topics={topics} />
       <SiteFooter />

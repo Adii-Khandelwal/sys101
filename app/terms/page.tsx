@@ -10,9 +10,9 @@ export const metadata: Metadata = pageMeta({ path: "/terms", title: "Terms", des
 
 export default function Terms() {
   return (
-    <article className="dossier legal">
+    <article className="dossier legal" data-pagefind-body>
 
-      <h1>Terms</h1>
+      <h1 data-pagefind-meta="title">Terms</h1>
 
       <p>
         sys101 is a personal, non-commercial project: a map of system design topics with links to

@@ -22,6 +22,7 @@
     "pipeline:summarize": "node pipeline/summarize.mjs",
     "postbuild": "node scripts/check-news.mjs && node scripts/check-seo.mjs && node scripts/check-diagram-overflow.mjs && node scripts/build-search-index.mjs",
     "search:index": "NEXT_DIST_DIR=.next-search next build && pagefind --site .next-search/server/app --output-path public/pagefind",
+    "check:live-search": "node scripts/check-live-search.mjs",
     "check:topic": "node scripts/check-topic.mjs",
     "readme:stats": "node --no-warnings scripts/readme-stats.mjs",
     "readme:check": "node --no-warnings scripts/readme-stats.mjs --check",

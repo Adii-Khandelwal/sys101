@@ -11,8 +11,8 @@ export const metadata: Metadata = pageMeta({ path: "/about", title: "About", des
 
 export default function About() {
   return (
-    <article className="dossier legal">
-      <h1>About sys101</h1>
+    <article className="dossier legal" data-pagefind-body>
+      <h1 data-pagefind-meta="title">About sys101</h1>
 
       <h2>Why I made it</h2>
       <p>

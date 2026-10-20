@@ -102,7 +102,7 @@ export default function Search() {
   return (
     <div className="search" role="search" data-tour="search">
       <label htmlFor="site-search" className="visually-hidden">
-        Search topics
+        Search the site
       </label>
       <div className="search-field">
       <input
@@ -145,7 +145,7 @@ export default function Search() {
         )}
         {showResults &&
           (results.length === 0 ? (
-            <p className="search-note">No topics mention “{query.trim()}”.</p>
+            <p className="search-note">Nothing on the site mentions “{query.trim()}”.</p>
           ) : (
             <>
               <p className="visually-hidden">

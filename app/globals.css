@@ -525,6 +525,11 @@ li {
   list-style: none;
   margin: 8px 0 0;
   padding: 0;
+  /* Many hits scroll inside the list instead of pushing the map down the page. */
+  max-height: min(60vh, 480px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
 }
 
 /* Each result fades in; keyed by url, so only new or changed hits animate. */
