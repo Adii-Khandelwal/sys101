@@ -73,6 +73,9 @@ function setCamera(camera: ReturnType<Sigma["getCamera"]>, state: Camera) {
 
 const CLICK_SLOP = 5; // px a pointer may move before a press becomes a drag
 
+const TIP_DELAY_MS = 300;
+const TIP_COOL_MS = 150;
+
 /** The first sentence of a concept, trimmed, for a one-line tooltip description. */
 function firstSentence(text: string) {
   const end = text.search(/\.\s/);
@@ -419,10 +422,10 @@ export default function GraphView({ nodes, edges }: Props) {
   );
 
   /** Fit all: the fitted camera, which also clears the hovered or focused topic. */
-  const fitAll = useCallback(() => {
+  const fitAll = useCallback((animate = true) => {
     activate(null);
     if (stage.current?.contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
-    applyCamera(fitState(fitRef.current), true);
+    applyCamera(fitState(fitRef.current), animate);
   }, [activate, applyCamera]);
 
   const zoomCenter = useCallback(
@@ -430,7 +433,7 @@ export default function GraphView({ nodes, edges }: Props) {
       const r = rendererRef.current;
       if (!r) return;
       const cam = r.getCamera().getState();
-      applyCamera(zoomBy(cam, factor, { x: cam.x, y: cam.y }, fitRef.current), true);
+      applyCamera(zoomBy(cam, factor, { x: cam.x, y: cam.y }, fitRef.current), false); // only keys call this, and keys never animate
     },
     [applyCamera],
   );
@@ -510,7 +513,7 @@ export default function GraphView({ nodes, edges }: Props) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "+" || e.key === "=") zoomCenter(STEP);
       else if (e.key === "-" || e.key === "_") zoomCenter(1 / STEP);
-      else if (e.key === "0") fitAll();
+      else if (e.key === "0") fitAll(false);
       else return;
       e.preventDefault();
     };
@@ -925,7 +928,21 @@ export default function GraphView({ nodes, edges }: Props) {
   const tipRef = useRef<HTMLDivElement>(null);
   const [tipPos, setTipPos] = useState<{ left: number; top: number } | null>(null);
 
-  const activePoint = active ? points.find((p) => p.slug === active) : undefined;
+  // The first tooltip waits TIP_DELAY_MS; moving to a neighbouring node shows the next at once, until TIP_COOL_MS passes with none.
+  const [tipReady, setTipReady] = useState(false);
+  const tipWarm = useRef(false);
+  useEffect(() => {
+    if (active) {
+      if (tipWarm.current) return setTipReady(true);
+      const t = window.setTimeout(() => ((tipWarm.current = true), setTipReady(true)), TIP_DELAY_MS);
+      return () => window.clearTimeout(t);
+    }
+    setTipReady(false);
+    const t = window.setTimeout(() => (tipWarm.current = false), TIP_COOL_MS);
+    return () => window.clearTimeout(t);
+  }, [active]);
+
+  const activePoint = active && tipReady ? points.find((p) => p.slug === active) : undefined;
 
   // The group names shown in the row above the map, with how many topics each holds.
   const groupNames = useMemo(() => {
@@ -989,7 +1006,7 @@ export default function GraphView({ nodes, edges }: Props) {
           </span>
           {/* One button, for the zoom or pan a stray click can cause. Only on a map that can zoom and pan. */}
           {interactive && (
-            <button type="button" className="text-button label graph-fit" onClick={fitAll} disabled={fitted}>
+            <button type="button" className="text-button label graph-fit" onClick={() => fitAll()} disabled={fitted}>
               Fit to size
             </button>
           )}

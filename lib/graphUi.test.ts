@@ -129,7 +129,7 @@ describe("the Fit to size button", () => {
     const at = src.indexOf("Fit to size");
     const button = src.slice(src.lastIndexOf("{interactive && (", at), src.indexOf("</button>", at));
     expect(button).toContain('className="text-button label graph-fit"');
-    expect(button).toContain("onClick={fitAll}");
+    expect(button).toContain("onClick={() => fitAll()}");
     expect(button).toContain("disabled={fitted}");
     expect(src.match(/Fit to size/g)).toHaveLength(1);
     // the camera feeds its state, and there are still no zoom or show-all buttons on screen
