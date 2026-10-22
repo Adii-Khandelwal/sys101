@@ -83,6 +83,8 @@ export type LessonQuestion = {
 
 type LessonExercise = {
   level: "apply" | "design" | "scale";
+  /** Optional sketch of the model answer, shown inside the revealed answer. */
+  diagram?: string;
   prompt: string;
   answer: string;
   tradeoffs: string;
@@ -98,6 +100,8 @@ type Lesson = {
   howItWorks: { outcome: string; steps: { step: string; explanation: string }[]; diagram: string };
   workedExample: { outcome: string; steps: { step: string; explanation: string }[]; diagram: string };
   mistakesOutcome: string;
+  /** Optional picture of the three mistakes, shown under the list. */
+  mistakesDiagram?: string;
   checkOutcome: string;
   quiz: LessonQuestion[];
   postsOutcome: string;
@@ -335,6 +339,7 @@ function checkLesson(topic: Topic): string[] {
     outcome(name, s?.outcome);
     if (!nonEmpty(s?.body)) problems.push(`lesson.${name}.body is empty`);
   };
+  if (l.mistakesDiagram !== undefined) problems.push(...checkDiagram(l.mistakesDiagram).map((p) => `lesson.mistakesDiagram ${p}`));
   section("why", l.why);
   section("mentalModel", l.mentalModel);
   section("next", l.next);
@@ -373,6 +378,7 @@ function checkLesson(topic: Topic): string[] {
   (l.exercises ?? []).forEach((x, i) => {
     const where = `lesson.exercises ${i + 1}`;
     if (!["apply", "design", "scale"].includes(x.level)) problems.push(`${where}: level must be apply, design or scale`);
+    if (x.diagram !== undefined) problems.push(...checkDiagram(x.diagram).map((p) => `${where}: diagram ${p}`));
     for (const f of ["prompt", "answer", "tradeoffs"] as const) if (!nonEmpty(x[f])) problems.push(`${where}: ${f} is empty`);
     if (!Array.isArray(x.wrongAnswers) || !x.wrongAnswers.length || !x.wrongAnswers.every(nonEmpty)) problems.push(`${where}: needs common wrong answers`);
     if (!(LESSON_SECTIONS as readonly string[]).includes(x.teaches)) problems.push(`${where}: teaches "${x.teaches}" is not a section id`);
