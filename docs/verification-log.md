@@ -703,10 +703,10 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 
 | Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
 |---|---|---|---|---|---|
-| linkedin-the-log-2013 | numbers | Over 60 billion | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying (archive copy) | Building a Scalable Log | found |
-| linkedin-the-log-2013 | numbers | Several hundred | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying (archive copy) | Log Files and Events | found |
-| linkedin-the-log-2013 | meaning | 2013, | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying (archive copy) | The Log: What every software engineer should know | found with different formatting |
-| linkedin-the-log-2013 | meaning | hundred billion | https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying (archive copy) | (before first heading) | found (other spelling) |
+| linkedin-the-log-2013 | numbers | Over 60 billion | https://www.linkedin.com/blog/engineering/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying | Building a Scalable Log | found |
+| linkedin-the-log-2013 | numbers | Several hundred | https://www.linkedin.com/blog/engineering/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying | Log Files and Events | found |
+| linkedin-the-log-2013 | meaning | 2013, | https://www.linkedin.com/blog/engineering/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying | The Log: What every software engineer should know | found with different formatting |
+| linkedin-the-log-2013 | meaning | hundred billion | https://www.linkedin.com/blog/engineering/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying | (before first heading) | found (other spelling) |
 | netflix-dblog-2020 | numbers | Tens of microservices | https://arxiv.org/pdf/2010.12597 | (before first heading) | found |
 | netflix-dblog-2020 | numbers | Trillions of operations per day | https://arxiv.org/pdf/2010.12597 | - | NOT FOUND |
 | netflix-dblog-2020 | constraints | six needs | https://arxiv.org/pdf/2010.12597 | (before first heading) | hand-checked |
