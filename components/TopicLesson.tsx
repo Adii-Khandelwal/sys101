@@ -192,6 +192,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             <CopyLink id="why" />
             <Outcome text={l.why.outcome} />
             <Paragraphs text={l.why.body} g={glossFor()} />
+            {l.why.diagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.why.diagram) }} />}
             <MarkDone meta={meta} unit="why" />
           </section>
 

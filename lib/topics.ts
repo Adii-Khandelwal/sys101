@@ -93,7 +93,7 @@ type LessonExercise = {
 
 /** The teaching-journey format (docs/ideas.md, ideas 2 and 4). Piloted on DNS. */
 type Lesson = {
-  why: LessonSection;
+  why: LessonSection & { diagram?: string };
   mentalModel: LessonSection & { diagram: string };
   howItWorks: { outcome: string; steps: { step: string; explanation: string }[]; diagram: string };
   workedExample: { outcome: string; steps: { step: string; explanation: string }[]; diagram: string };
@@ -338,6 +338,7 @@ function checkLesson(topic: Topic): string[] {
   section("why", l.why);
   section("mentalModel", l.mentalModel);
   section("next", l.next);
+  if (l.why?.diagram !== undefined) problems.push(...checkDiagram(l.why.diagram).map((p) => `lesson.why diagram ${p}`));
   problems.push(...checkDiagram(l.mentalModel?.diagram).map((p) => `lesson.mentalModel diagram ${p}`));
   for (const name of ["howItWorks", "workedExample"] as const) {
     outcome(name, l[name]?.outcome);
