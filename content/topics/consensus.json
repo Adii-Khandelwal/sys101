@@ -378,7 +378,8 @@
     },
     {
       "term": "Quorum / majority",
-      "definition": "More than half the nodes; a decision counts once a majority records it, and any two majorities overlap."
+      "definition": "More than half the nodes; a decision counts once a majority records it, and any two majorities overlap.",
+      "diagram": "<svg viewBox=\"0 0 560 110\" role=\"img\" aria-labelledby=\"dg-cons-gl-qm-t\" class=\"dg\"><title id=\"dg-cons-gl-qm-t\">Quorum or majority: more than half the nodes; any two majorities share at least one node.</title><defs><marker id=\"dg-cons-gl-qm-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14.0\" y=\"44\" width=\"90\" height=\"34\" class=\"dg-box\"/><text x=\"59\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Node 1</text><rect x=\"124.5\" y=\"44\" width=\"90\" height=\"34\" class=\"dg-box\"/><text x=\"169.5\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Node 2</text><rect x=\"235.0\" y=\"44\" width=\"90\" height=\"34\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Node 3</text><rect x=\"345.5\" y=\"44\" width=\"90\" height=\"34\" class=\"dg-box\"/><text x=\"390.5\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Node 4</text><rect x=\"456.0\" y=\"44\" width=\"90\" height=\"34\" class=\"dg-box\"/><text x=\"501\" y=\"65.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Node 5</text><path d=\"M14,38 L14,32 L325,32 L325,38\" class=\"dg-line\"/><text x=\"150\" y=\"24\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">a majority</text><path d=\"M235,84 L235,90 L546,90 L546,84\" class=\"dg-line\"/><text x=\"390.5\" y=\"106\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">another majority, sharing Node 3</text></svg>"
     },
     {
       "term": "2f+1",
@@ -398,7 +399,8 @@
     },
     {
       "term": "Leader election",
-      "definition": "The process where a node times out, becomes a candidate, and wins a majority of votes to lead."
+      "definition": "The process where a node times out, becomes a candidate, and wins a majority of votes to lead.",
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-cons-gl-le-t\" class=\"dg\"><title id=\"dg-cons-gl-le-t\">Leader election: a node times out, becomes a candidate, and wins a majority of votes to lead.</title><defs><marker id=\"dg-cons-gl-le-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"14\" width=\"130\" height=\"50\" class=\"dg-box\"/><text x=\"79\" y=\"35.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Follower</text><text x=\"79\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">times out</text><rect x=\"215.0\" y=\"14\" width=\"130\" height=\"50\" class=\"dg-box\"/><text x=\"280\" y=\"35.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Candidate</text><text x=\"280\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">asks for votes</text><rect x=\"416.0\" y=\"14\" width=\"130\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"481\" y=\"35.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Leader</text><text x=\"481\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">wins a majority</text><path d=\"M144,39 L215,39\" class=\"dg-line\" marker-end=\"url(#dg-cons-gl-le-a)\"/><path d=\"M345,39 L416,39\" class=\"dg-line\" marker-end=\"url(#dg-cons-gl-le-a)\"/><text x=\"280\" y=\"92\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">the winner leads until a new election</text></svg>"
     },
     {
       "term": "Commit",

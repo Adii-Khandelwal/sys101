@@ -1,6 +1,6 @@
 // Finds a topic's own glossary terms in its prose. Pure text in, segments out; the text itself is never altered.
 
-export type GlossaryEntry = { term: string; definition: string };
+export type GlossaryEntry = { term: string; definition: string; diagram?: string };
 export type Segment = string | { text: string; entry: GlossaryEntry };
 
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");

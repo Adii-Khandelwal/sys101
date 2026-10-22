@@ -436,11 +436,13 @@
     },
     {
       "term": "Snapshot isolation",
-      "definition": "Each transaction reads a consistent version of the data as of one timestamp."
+      "definition": "Each transaction reads a consistent version of the data as of one timestamp.",
+      "diagram": "<svg viewBox=\"0 0 560 110\" role=\"img\" aria-labelledby=\"dg-dtx-gl-si-t\" class=\"dg\"><title id=\"dg-dtx-gl-si-t\">Snapshot isolation: a transaction reads the version of the data as of one timestamp, even after later versions are written.</title><defs><marker id=\"dg-dtx-gl-si-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"10\" width=\"120\" height=\"36\" class=\"dg-box\"/><text x=\"74\" y=\"32.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Version 1</text><rect x=\"150\" y=\"10\" width=\"120\" height=\"36\" class=\"dg-box dg-accent\"/><text x=\"210\" y=\"32.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Version 2</text><rect x=\"286\" y=\"10\" width=\"120\" height=\"36\" class=\"dg-box\"/><text x=\"346\" y=\"32.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Version 3</text><rect x=\"145\" y=\"64\" width=\"130\" height=\"36\" class=\"dg-box\"/><text x=\"210\" y=\"86.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Reader at time T</text><path d=\"M210,64 L210,46\" class=\"dg-line\" marker-end=\"url(#dg-dtx-gl-si-a)\"/><text x=\"300\" y=\"86\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">later writes are not seen</text></svg>"
     },
     {
       "term": "Timestamp oracle",
-      "definition": "A service handing out increasing timestamps so transactions can be ordered."
+      "definition": "A service handing out increasing timestamps so transactions can be ordered.",
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-dtx-gl-to-t\" class=\"dg\"><title id=\"dg-dtx-gl-to-t\">Timestamp oracle: a service that hands out increasing timestamps so transactions can be ordered.</title><defs><marker id=\"dg-dtx-gl-to-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"12\" width=\"130\" height=\"48\" class=\"dg-box\"/><text x=\"79\" y=\"40.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Transaction</text><rect x=\"300\" y=\"12\" width=\"200\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"400\" y=\"40.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Timestamp oracle</text><path d=\"M144,26 L300,26\" class=\"dg-line\" marker-end=\"url(#dg-dtx-gl-to-a)\"/><text x=\"222\" y=\"20\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">asks</text><path d=\"M300,46 L144,46\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-dtx-gl-to-a)\"/><text x=\"222\" y=\"78\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">ever-larger timestamps</text></svg>"
     },
     {
       "term": "Saga",

@@ -463,7 +463,8 @@
     },
     {
       "term": "Canary",
-      "definition": "A small part of the service that gets a change first and is compared with the rest."
+      "definition": "A small part of the service that gets a change first and is compared with the rest.",
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-sd-gl-ca-t\" class=\"dg\"><title id=\"dg-sd-gl-ca-t\">A canary is a small part of the service that gets a change first and is compared with the rest.</title><defs><marker id=\"dg-sd-gl-ca-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"16\" width=\"62\" height=\"46\" class=\"dg-box\"/><text x=\"45\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Change</text><path d=\"M76,39 L217.5,39\" class=\"dg-line\" marker-end=\"url(#dg-sd-gl-ca-a)\"/><text x=\"146.75\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">first</text><rect x=\"217.5\" y=\"16\" width=\"90\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"262.5\" y=\"35.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Canary</text><text x=\"262.5\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">small part</text><path d=\"M307.5,39 L449,39\" class=\"dg-line\" marker-end=\"url(#dg-sd-gl-ca-a)\"/><text x=\"378.25\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">compared</text><rect x=\"449\" y=\"16\" width=\"97\" height=\"46\" class=\"dg-box\"/><text x=\"497.5\" y=\"35.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Rest of</text><text x=\"497.5\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">the service</text><text x=\"280\" y=\"90\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">the rest does not have the change yet</text></svg>"
     },
     {
       "term": "One-box stage",
@@ -475,7 +476,8 @@
     },
     {
       "term": "Bake time",
-      "definition": "The wait after a stage finishes, with alarms still watched, to catch problems that show up slowly."
+      "definition": "The wait after a stage finishes, with alarms still watched, to catch problems that show up slowly.",
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-sd-gl-bt-t\" class=\"dg\"><title id=\"dg-sd-gl-bt-t\">After a stage finishes, the rollout waits with alarms still watched to catch problems that show up slowly, then moves to the next stage.</title><defs><marker id=\"dg-sd-gl-bt-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"16\" width=\"90\" height=\"46\" class=\"dg-box\"/><text x=\"59\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Stage done</text><path d=\"M104,39 L221,39\" class=\"dg-line\" marker-end=\"url(#dg-sd-gl-bt-a)\"/><text x=\"162.5\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">then wait</text><rect x=\"221\" y=\"16\" width=\"118\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"35.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Bake time</text><text x=\"280\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">alarms watched</text><path d=\"M339,39 L456,39\" class=\"dg-line\" marker-end=\"url(#dg-sd-gl-bt-a)\"/><text x=\"397.5\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">then</text><rect x=\"456\" y=\"16\" width=\"90\" height=\"46\" class=\"dg-box\"/><text x=\"501\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Next stage</text><text x=\"280\" y=\"90\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">catches problems that show up slowly</text></svg>"
     },
     {
       "term": "Rollback",

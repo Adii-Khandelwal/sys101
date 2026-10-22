@@ -426,7 +426,8 @@
     },
     {
       "term": "Point-in-time recovery",
-      "definition": "Restoring a base backup and replaying the change log up to a chosen moment, such as just before a mistake."
+      "definition": "Restoring a base backup and replaying the change log up to a chosen moment, such as just before a mistake.",
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-dr-gl-pitr-t\" class=\"dg\"><title id=\"dg-dr-gl-pitr-t\">Point-in-time recovery: restore a base backup, then replay the change log forward to a chosen moment such as just before a mistake.</title><defs><marker id=\"dg-dr-gl-pitr-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><path d=\"M60,56 L280,56\" class=\"dg-line\" marker-end=\"url(#dg-dr-gl-pitr-a)\"/><path d=\"M280,56 L400,56\" class=\"dg-line dg-dashed\"/><circle cx=\"60\" cy=\"56\" r=\"4\" class=\"dg-dot\"/><circle cx=\"280\" cy=\"56\" r=\"4\" class=\"dg-dot-accent\"/><circle cx=\"400\" cy=\"56\" r=\"4\" class=\"dg-dot\"/><text x=\"60\" y=\"40\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">base backup</text><text x=\"280\" y=\"40\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">chosen moment</text><text x=\"400\" y=\"40\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">the mistake</text><text x=\"170\" y=\"78\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">replay the change log</text></svg>"
     },
     {
       "term": "Pilot light",

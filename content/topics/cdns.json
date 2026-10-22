@@ -206,7 +206,8 @@
     },
     {
       "term": "Connection reuse",
-      "definition": "Sending a new request over an already open connection, skipping the setup handshakes."
+      "definition": "Sending a new request over an already open connection, skipping the setup handshakes.",
+      "diagram": "<svg viewBox=\"0 0 560 110\" role=\"img\" aria-labelledby=\"dg-cdn-gl-cr-t\" class=\"dg\"><title id=\"dg-cdn-gl-cr-t\">Connection reuse: a new connection pays handshakes before the request, while a request on an open connection skips them.</title><defs><marker id=\"dg-cdn-gl-cr-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"31\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">NEW</text><rect x=\"160\" y=\"8\" width=\"130\" height=\"38\" class=\"dg-box\"/><text x=\"225\" y=\"31.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Handshakes</text><rect x=\"330\" y=\"8\" width=\"130\" height=\"38\" class=\"dg-box\"/><text x=\"395\" y=\"31.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Request</text><path d=\"M290,27 L330,27\" class=\"dg-line\" marker-end=\"url(#dg-cdn-gl-cr-a)\"/><text x=\"14\" y=\"85\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">REUSED</text><rect x=\"160\" y=\"62\" width=\"130\" height=\"38\" class=\"dg-box dg-accent\"/><text x=\"225\" y=\"85.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Request</text><text x=\"310\" y=\"85\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">handshakes skipped</text></svg>"
     },
     {
       "term": "TLS handshake",
@@ -214,7 +215,8 @@
     },
     {
       "term": "Time to first byte",
-      "definition": "How long a client waits between sending a request and receiving the first byte of the answer."
+      "definition": "How long a client waits between sending a request and receiving the first byte of the answer.",
+      "diagram": "<svg viewBox=\"0 0 560 110\" role=\"img\" aria-labelledby=\"dg-cdn-gl-ttfb-t\" class=\"dg\"><title id=\"dg-cdn-gl-ttfb-t\">Time to first byte: the wait between sending a request and receiving the first byte of the answer.</title><defs><marker id=\"dg-cdn-gl-ttfb-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><path d=\"M30,56 L430,56\" class=\"dg-line\"/><path d=\"M430,56 L540,56\" class=\"dg-line dg-dashed\"/><circle cx=\"30\" cy=\"56\" r=\"4\" class=\"dg-dot\"/><circle cx=\"430\" cy=\"56\" r=\"4\" class=\"dg-dot-accent\"/><text x=\"14\" y=\"40\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">request sent</text><text x=\"430\" y=\"40\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">first byte arrives</text><path d=\"M30,70 L30,78 L430,78 L430,70\" class=\"dg-line\"/><text x=\"230\" y=\"98\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">time to first byte</text></svg>"
     },
     {
       "term": "Prepositioning",

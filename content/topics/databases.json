@@ -215,7 +215,8 @@
     },
     {
       "term": "MVCC",
-      "definition": "Multi-version concurrency control: keeping old row versions so readers see a consistent snapshot while writers continue."
+      "definition": "Multi-version concurrency control: keeping old row versions so readers see a consistent snapshot while writers continue.",
+      "diagram": "<svg viewBox=\"0 0 560 110\" role=\"img\" aria-labelledby=\"dg-db-gl-mv-t\" class=\"dg\"><title id=\"dg-db-gl-mv-t\">MVCC: a writer adds a new row version while a reader keeps seeing an older, consistent version.</title><defs><marker id=\"dg-db-gl-mv-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"12\" width=\"110\" height=\"36\" class=\"dg-box\"/><text x=\"69\" y=\"34.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Reader</text><path d=\"M124,30 L200,30\" class=\"dg-line\" marker-end=\"url(#dg-db-gl-mv-a)\"/><rect x=\"200\" y=\"12\" width=\"150\" height=\"36\" class=\"dg-box\"/><text x=\"275\" y=\"34.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Old version</text><rect x=\"14\" y=\"62\" width=\"110\" height=\"36\" class=\"dg-box\"/><text x=\"69\" y=\"84.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Writer</text><path d=\"M124,80 L200,80\" class=\"dg-line\" marker-end=\"url(#dg-db-gl-mv-a)\"/><rect x=\"200\" y=\"62\" width=\"150\" height=\"36\" class=\"dg-box dg-accent\"/><text x=\"275\" y=\"84.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">New version</text><text x=\"372\" y=\"34\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">consistent snapshot</text><text x=\"372\" y=\"84\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">writers keep going</text></svg>"
     }
   ],
   "mistakes": [

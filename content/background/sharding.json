@@ -1,6 +1,6 @@
 {
   "topic": "sharding",
-  "updatedOn": "2026-10-13",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "acid-transactions",
@@ -100,7 +100,8 @@
           "year": "no date shown",
           "verifiedOn": "2026-10-13"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-sh-bg-qp-t\" class=\"dg\"><title id=\"dg-sh-bg-qp-t\">A database parses SQL into a tree, then plans how to run it; the proxy repeats those steps to decide which shards a query touches.</title><defs><marker id=\"dg-sh-bg-qp-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"16\" width=\"41\" height=\"46\" class=\"dg-box\"/><text x=\"34.5\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">SQL</text><path d=\"M55,39 L145,39\" class=\"dg-line\" marker-end=\"url(#dg-sh-bg-qp-a)\"/><text x=\"100\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">parse</text><rect x=\"145\" y=\"16\" width=\"90\" height=\"46\" class=\"dg-box\"/><text x=\"190\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Parse tree</text><path d=\"M235,39 L325,39\" class=\"dg-line\" marker-end=\"url(#dg-sh-bg-qp-a)\"/><text x=\"280\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">plan</text><rect x=\"325\" y=\"16\" width=\"48\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"349\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Plan</text><path d=\"M373,39 L463,39\" class=\"dg-line\" marker-end=\"url(#dg-sh-bg-qp-a)\"/><text x=\"418\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">decide</text><rect x=\"463\" y=\"16\" width=\"83\" height=\"46\" class=\"dg-box\"/><text x=\"504.5\" y=\"35.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Shards it</text><text x=\"504.5\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">touches</text></svg>"
     }
   ]
 }

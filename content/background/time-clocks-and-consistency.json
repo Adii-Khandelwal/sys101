@@ -1,6 +1,6 @@
 {
   "topic": "time-clocks-and-consistency",
-  "updatedOn": "2026-10-17",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "regions-and-zones",
@@ -20,7 +20,8 @@
           "year": "no date shown",
           "verifiedOn": "2026-10-17"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 110\" role=\"img\" aria-labelledby=\"dg-tcc-bg-rz-t\" class=\"dg\"><title id=\"dg-tcc-bg-rz-t\">A cloud region is a separate geographic area and availability zones are isolated locations inside it, so replicas can sit in the same zone, different zones of one region, or different regions.</title><defs><marker id=\"dg-tcc-bg-rz-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"8\" width=\"350\" height=\"84\" class=\"dg-box\"/><text x=\"24\" y=\"24\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Region</text><rect x=\"394\" y=\"8\" width=\"152\" height=\"84\" class=\"dg-box\"/><text x=\"404\" y=\"24\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Region</text><rect x=\"24\" y=\"34\" width=\"160\" height=\"52\" class=\"dg-box\"/><text x=\"32\" y=\"50\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Zone</text><rect x=\"194\" y=\"34\" width=\"160\" height=\"52\" class=\"dg-box\"/><text x=\"202\" y=\"50\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Zone</text><rect x=\"404\" y=\"34\" width=\"132\" height=\"52\" class=\"dg-box\"/><text x=\"412\" y=\"50\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Zone</text><circle cx=\"50\" cy=\"70\" r=\"5\" class=\"dg-dot\"/><circle cx=\"80\" cy=\"70\" r=\"5\" class=\"dg-dot\"/><circle cx=\"224\" cy=\"70\" r=\"5\" class=\"dg-dot\"/><circle cx=\"440\" cy=\"70\" r=\"5\" class=\"dg-dot\"/><text x=\"280\" y=\"106\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">each dot is a replica</text></svg>"
     }
   ]
 }

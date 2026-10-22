@@ -8,6 +8,7 @@ import { backgroundUpdated, displayQuote, getAllBackground, isTaughtLater } from
 import CompanyLogo from "@/components/CompanyLogo";
 import { companyWhen, getAllTopics } from "@/lib/topics";
 import { topicNumbers, topicOrder } from "@/lib/order";
+import { diagramHtml } from "@/lib/diagramHtml";
 import { pageMeta } from "@/lib/site";
 import { StripBackToTop } from "@/components/BackToTop";
 
@@ -55,6 +56,7 @@ export default function Background() {
                         {later && <span className="label bg-later">Taught later</span>}
                       </h3>
                       <p>{item.explanation}</p>
+                      {item.diagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(item.diagram) }} />}
                       <div className="bg-assumed">
                         <span className="label">Assumed by</span>
                         <ul>

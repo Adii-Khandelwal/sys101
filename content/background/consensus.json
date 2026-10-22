@@ -1,6 +1,6 @@
 {
   "topic": "consensus",
-  "updatedOn": "2026-10-13",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "mvcc",
@@ -40,7 +40,8 @@
           "year": "page shows last updated 2025-09-26",
           "verifiedOn": "2026-10-13"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 110\" role=\"img\" aria-labelledby=\"dg-cons-bg-lr-t\" class=\"dg\"><title id=\"dg-cons-bg-lr-t\">A linearizable read costs a round of agreement with the cluster and returns the latest write; a serializable read is answered by one member and can be slightly stale.</title><defs><marker id=\"dg-cons-bg-lr-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"10\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">LINEARIZABLE READ</text><rect x=\"14\" y=\"16\" width=\"100\" height=\"34\" class=\"dg-box\"/><text x=\"64\" y=\"37.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><rect x=\"170\" y=\"16\" width=\"200\" height=\"34\" class=\"dg-box dg-accent\"/><text x=\"270\" y=\"37.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Cluster agrees first</text><rect x=\"426\" y=\"16\" width=\"120\" height=\"34\" class=\"dg-box\"/><text x=\"486\" y=\"37.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Latest write</text><path d=\"M114,33 L170,33\" class=\"dg-line\" marker-end=\"url(#dg-cons-bg-lr-a)\"/><path d=\"M370,33 L426,33\" class=\"dg-line\" marker-end=\"url(#dg-cons-bg-lr-a)\"/><text x=\"14\" y=\"68\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">SERIALIZABLE READ</text><rect x=\"14\" y=\"74\" width=\"100\" height=\"34\" class=\"dg-box\"/><text x=\"64\" y=\"95.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><rect x=\"170\" y=\"74\" width=\"200\" height=\"34\" class=\"dg-box\"/><text x=\"270\" y=\"95.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">One member answers</text><rect x=\"410\" y=\"74\" width=\"136\" height=\"34\" class=\"dg-box\"/><text x=\"478\" y=\"95.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Slightly stale</text><path d=\"M114,91 L170,91\" class=\"dg-line\" marker-end=\"url(#dg-cons-bg-lr-a)\"/><path d=\"M370,91 L410,91\" class=\"dg-line\" marker-end=\"url(#dg-cons-bg-lr-a)\"/></svg>"
     },
     {
       "id": "tla-plus",

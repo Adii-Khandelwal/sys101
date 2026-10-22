@@ -1,6 +1,6 @@
 {
   "topic": "overload-and-cascading-failures",
-  "updatedOn": "2026-10-16",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "autoscaling-group",
@@ -20,7 +20,8 @@
           "year": "no date shown",
           "verifiedOn": "2026-10-16"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 96\" role=\"img\" aria-labelledby=\"dg-oacf-bg-asg-t\" class=\"dg\"><title id=\"dg-oacf-bg-asg-t\">An Auto Scaling group: it keeps a chosen number of instances running, adds or removes instances between a minimum and a maximum size, and replaces unhealthy ones.</title><defs><marker id=\"dg-oacf-bg-asg-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"14\" width=\"130\" height=\"50\" class=\"dg-box\"/><text x=\"79\" y=\"43.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Minimum size</text><rect x=\"215\" y=\"14\" width=\"130\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"35.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Running</text><text x=\"280\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">instances</text><rect x=\"416\" y=\"14\" width=\"130\" height=\"50\" class=\"dg-box\"/><text x=\"481\" y=\"43.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Maximum size</text><path d=\"M215,39 L144,39\" class=\"dg-line\" marker-end=\"url(#dg-oacf-bg-asg-a)\"/><path d=\"M345,39 L416,39\" class=\"dg-line\" marker-end=\"url(#dg-oacf-bg-asg-a)\"/><text x=\"180\" y=\"32\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">removes</text><text x=\"380\" y=\"32\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">adds</text><text x=\"280\" y=\"86\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">replaces unhealthy ones and keeps the chosen number running</text></svg>"
     },
     {
       "id": "transit-gateway",
@@ -40,7 +41,8 @@
           "year": "no date shown",
           "verifiedOn": "2026-10-16"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 110\" role=\"img\" aria-labelledby=\"dg-oacf-bg-tg-t\" class=\"dg\"><title id=\"dg-oacf-bg-tg-t\">A transit gateway: traffic between VPCs flows through one managed hub, so the VPCs share its capacity.</title><defs><marker id=\"dg-oacf-bg-tg-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"8\" width=\"120\" height=\"28\" class=\"dg-box\"/><text x=\"74\" y=\"26.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">VPC 1</text><rect x=\"14\" y=\"41\" width=\"120\" height=\"28\" class=\"dg-box\"/><text x=\"74\" y=\"59.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">VPC 2</text><rect x=\"14\" y=\"74\" width=\"120\" height=\"28\" class=\"dg-box\"/><text x=\"74\" y=\"92.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">VPC 3</text><rect x=\"330\" y=\"30\" width=\"150\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"405\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Transit gateway</text><text x=\"405\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">shared capacity</text><path d=\"M134,22 L232,22 L232,45 L330,45\" class=\"dg-line\" marker-end=\"url(#dg-oacf-bg-tg-a)\"/><path d=\"M134,55 L330,55\" class=\"dg-line\" marker-end=\"url(#dg-oacf-bg-tg-a)\"/><path d=\"M134,88 L232,88 L232,65 L330,65\" class=\"dg-line\" marker-end=\"url(#dg-oacf-bg-tg-a)\"/></svg>"
     },
     {
       "id": "open-files-limit",

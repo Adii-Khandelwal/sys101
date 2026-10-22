@@ -600,7 +600,8 @@
     },
     {
       "term": "NTP",
-      "definition": "Network Time Protocol: a client estimates its offset from a server using four timestamps, assuming the network delay is the same in both directions."
+      "definition": "Network Time Protocol: a client estimates its offset from a server using four timestamps, assuming the network delay is the same in both directions.",
+      "diagram": "<svg viewBox=\"0 0 560 110\" role=\"img\" aria-labelledby=\"dg-tcc-gl-ntp-t\" class=\"dg\"><title id=\"dg-tcc-gl-ntp-t\">A client estimates its offset from a server using four timestamps: the request is sent and received, and the reply is sent and received.</title><defs><marker id=\"dg-tcc-gl-ntp-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"6\" width=\"100\" height=\"28\" class=\"dg-box\"/><text x=\"64\" y=\"24.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><rect x=\"446\" y=\"6\" width=\"100\" height=\"28\" class=\"dg-box\"/><text x=\"496\" y=\"24.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Server</text><path d=\"M64,34 L64,100\" class=\"dg-line dg-dashed\"/><path d=\"M496,34 L496,100\" class=\"dg-line dg-dashed\"/><path d=\"M64,56 L496,56\" class=\"dg-line\" marker-end=\"url(#dg-tcc-gl-ntp-a)\"/><text x=\"280\" y=\"48\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">request: sent t1, received t2</text><path d=\"M496,82 L64,82\" class=\"dg-line\" marker-end=\"url(#dg-tcc-gl-ntp-a)\"/><text x=\"280\" y=\"74\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">reply: sent t3, received t4</text><text x=\"280\" y=\"106\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">assumes the delay is the same in both directions</text></svg>"
     },
     {
       "term": "PTP",
@@ -628,7 +629,8 @@
     },
     {
       "term": "CRDT",
-      "definition": "A conflict-free replicated data type: its merge rule gives the same state whatever order updates arrive in."
+      "definition": "A conflict-free replicated data type: its merge rule gives the same state whatever order updates arrive in.",
+      "diagram": "<svg viewBox=\"0 0 560 108\" role=\"img\" aria-labelledby=\"dg-tcc-gl-crdt-t\" class=\"dg\"><title id=\"dg-tcc-gl-crdt-t\">Two replicas receive the same updates in different orders and, because of the merge rule, end in the same state.</title><defs><marker id=\"dg-tcc-gl-crdt-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"8\" width=\"180\" height=\"40\" class=\"dg-box\"/><text x=\"104\" y=\"24.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Replica A</text><text x=\"104\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">updates in one order</text><rect x=\"14\" y=\"60\" width=\"180\" height=\"40\" class=\"dg-box\"/><text x=\"104\" y=\"76.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Replica B</text><text x=\"104\" y=\"92.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">updates in other order</text><rect x=\"396\" y=\"30\" width=\"150\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"471\" y=\"46.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Same state</text><text x=\"471\" y=\"62.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">whatever the order</text><path d=\"M194,28 L295,28\" class=\"dg-line\"/><path d=\"M194,80 L295,80\" class=\"dg-line\"/><path d=\"M295,50 L396,50\" class=\"dg-line\" marker-end=\"url(#dg-tcc-gl-crdt-a)\"/><path d=\"M295,28 L295,80\" class=\"dg-line\"/><text x=\"346\" y=\"42\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">merge rule</text></svg>"
     },
     {
       "term": "Write concern and read concern",

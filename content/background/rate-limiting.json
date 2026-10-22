@@ -1,6 +1,6 @@
 {
   "topic": "rate-limiting",
-  "updatedOn": "2026-10-13",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "leaky-bucket",
@@ -20,7 +20,8 @@
           "year": "no date shown",
           "verifiedOn": "2026-10-13"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-rl-bg-lb-t\" class=\"dg\"><title id=\"dg-rl-bg-lb-t\">Each request adds to a counter that drains at a steady rate; a request is refused when the counter would overflow, so traffic leaves at the steady rate.</title><defs><marker id=\"dg-rl-bg-lb-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"16\" width=\"76\" height=\"46\" class=\"dg-box\"/><text x=\"52\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Requests</text><path d=\"M90,39 L252.5,39\" class=\"dg-line\" marker-end=\"url(#dg-rl-bg-lb-a)\"/><text x=\"171.25\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">each adds</text><rect x=\"252.5\" y=\"16\" width=\"69\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"287\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Counter</text><path d=\"M321.5,39 L484,39\" class=\"dg-line\" marker-end=\"url(#dg-rl-bg-lb-a)\"/><text x=\"402.75\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">drains</text><rect x=\"484\" y=\"16\" width=\"62\" height=\"46\" class=\"dg-box\"/><text x=\"515\" y=\"35.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Steady</text><text x=\"515\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">output</text><text x=\"280\" y=\"90\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">refused when the counter would overflow</text></svg>"
     },
     {
       "id": "memcached",
