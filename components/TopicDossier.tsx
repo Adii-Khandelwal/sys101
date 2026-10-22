@@ -100,6 +100,7 @@ export function PostDigest({ post, index, titles }: { post: Post; index: number;
           ))}
         </tbody>
       </table>
+      {d.chart && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(d.chart) }} />}
 
       <h3>Trade-offs</h3>
       <dl className="tradeoffs">

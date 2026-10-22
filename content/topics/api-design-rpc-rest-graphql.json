@@ -297,7 +297,8 @@
           "why": "Protobuf did best against the team's criteria, and symbol tables let services keep their existing data modeling."
         },
         "failures": "The post names no incident. It notes that JSON is easier to read and debug, and says the team saw no statistically significant degradation against JSON in any service.",
-        "takeaways": "Changing the wire format can be hidden behind the same schema and rolled out by configuration. The post says LinkedIn plans to move from Rest.li to gRPC later, so the figures describe the Protobuf step, not that move."
+        "takeaways": "Changing the wire format can be hidden behind the same schema and rolled out by configuration. The post says LinkedIn plans to move from Rest.li to gRPC later, so the figures describe the Protobuf step, not that move.",
+        "chart": "<svg viewBox=\"0 0 560 106\" role=\"img\" aria-labelledby=\"dg-ad-pr-chart-t\" class=\"dg\"><title id=\"dg-ad-pr-chart-t\">Average per-host throughput increase after the move to Protocol Buffers: 6.25% for response payloads and 1.77% for request payloads.</title><text x=\"14\" y=\"24\" class=\"dg-label\" text-anchor=\"start\" font-size=\"13\">Response payloads</text><rect x=\"190\" y=\"12\" width=\"187.5\" height=\"16\" rx=\"2\" class=\"dg-box dg-accent\"/><text x=\"385.5\" y=\"24\" class=\"dg-label\" text-anchor=\"start\" font-size=\"13\">6.25%</text><text x=\"14\" y=\"54\" class=\"dg-label\" text-anchor=\"start\" font-size=\"13\">Request payloads</text><rect x=\"190\" y=\"42\" width=\"53.1\" height=\"16\" rx=\"2\" class=\"dg-box\"/><text x=\"251.1\" y=\"54\" class=\"dg-label\" text-anchor=\"start\" font-size=\"13\">1.77%</text><text x=\"14\" y=\"98\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Average per-host throughput increase, in percent</text></svg>"
       }
     },
     {
