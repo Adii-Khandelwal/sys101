@@ -12,6 +12,8 @@ type Digest = {
   /** Inline SVG markup drawn for this post, styled by the dg-* classes in globals.css. */
   diagram: string;
   numbers: { value: string; meaning: string }[];
+  /** Optional bar chart of two or more `numbers` that share a unit, shown under the numbers table. Every figure in its text must appear in `numbers`. */
+  chart?: string;
   /** `rejected` is left out when the source names no alternative. */
   tradeoffs: { chosen: string; rejected?: string; why: string };
   failures: string;
@@ -563,6 +565,15 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
         problems.push(`${where}: digest.tradeoffs needs chosen and why, and rejected only if the source names an alternative`);
       }
       problems.push(...checkDiagram(d.diagram).map((p) => `${where}: diagram ${p}`));
+      if (d.chart !== undefined) {
+        problems.push(...checkDiagram(d.chart).map((p) => `${where}: chart ${p}`));
+        // A chart may only print figures the digest's numbers already state, so it cannot invent one.
+        const known = d.numbers.map((n) => `${n.value} ${n.meaning}`).join(" ").replace(/(\d),(?=\d)/g, "$1");
+        const shown = d.chart.replace(/<title[^>]*>[^<]*<\/title>/, "").replace(/(\d),(?=\d)/g, "$1").match(/>[^<>]*\d[^<>]*</g) ?? [];
+        for (const t of shown.flatMap((s) => s.match(/\d+(?:\.\d+)?/g) ?? [])) {
+          if (!new RegExp(`(?<![\\d.])${t.replace(".", "\\.")}(?![\\d])`).test(known)) problems.push(`${where}: chart shows ${t}, which is not in numbers`);
+        }
+      }
       problems.push(...checkFigure(d.figure, d.numbers, post.id).map((p) => `${where}: ${p}`));
     });
   }
