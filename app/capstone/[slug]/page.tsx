@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import CompanyLogo from "@/components/CompanyLogo";
+import { diagramHtml } from "@/lib/diagramHtml";
 import JsonLd from "@/components/JsonLd";
 import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
@@ -114,6 +115,7 @@ export default async function CapstonePage({ params }: Props) {
           {c.compare.split("\n\n").map((para) => (
             <p key={para}>{para}</p>
           ))}
+          {c.compareDiagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(c.compareDiagram) }} />}
         </section>
 
         <section className="cap-section" id="check">
