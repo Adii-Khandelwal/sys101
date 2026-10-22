@@ -251,6 +251,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 <li key={m}>{gMistakes(m)}</li>
               ))}
             </ol>
+            {l.mistakesDiagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.mistakesDiagram) }} />}
             <MarkDone meta={meta} unit="mistakes" />
           </section>
 
@@ -317,6 +318,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                   <p>{x.prompt}</p>
                   <Reveal show="Show a model answer" hide="Hide the model answer">
                     <p>{x.answer}</p>
+                    {x.diagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(x.diagram) }} />}
                     <h3>Trade-offs</h3>
                     <p>{x.tradeoffs}</p>
                     <h3>Common wrong answers</h3>
