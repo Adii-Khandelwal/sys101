@@ -8,6 +8,9 @@ Playwright at 1440px wide, reduced palette, with a one-pixel frame in the page's
   map's wrapper with one injected style to show all of it. Nothing else on the page is altered.
 - `topic-*.png`: the top of `/topic/caching`, 1440x1000.
 - `learn-*.png`: the top of `/topic/dns/learn`, 1440x1000.
+- `step-*.png`: the step-through under How it works on `/topic/consensus`, advanced to frame 3 (element screenshot, 1100px wide).
+- `compare-*.png`: the Where they differ diagram on `/topic/safe-deployments`.
+- `chart-*.png`: the bar chart under the numbers table of the Google Autopilot post on `/topic/autoscaling-and-capacity`.
 
 Retake them when the header, map or those page tops change look.
 
