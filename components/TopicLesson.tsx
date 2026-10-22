@@ -303,6 +303,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
               {topic.comparison.split("\n\n").map((para) => (
                 <p key={para.slice(0, 40)}>{gDiffer(para)}</p>
               ))}
+              {topic.comparisonDiagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(topic.comparisonDiagram) }} />}
             </section>
           )}
 
