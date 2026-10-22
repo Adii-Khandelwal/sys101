@@ -4,6 +4,7 @@ import GlossTerm from "./GlossTerm";
 import CopyLink from "./CopyLink";
 import { glossaryId, markTerms } from "@/lib/glossaryMatch";
 import { diagramHtml } from "@/lib/diagramHtml";
+import { StepThroughLazy } from "./StepThroughLazy";
 import Link from "next/link";
 import CompanyLogo from "./CompanyLogo";
 import { optionId } from "@/lib/quizIds";
@@ -225,6 +226,9 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
               ))}
             </ol>
             <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.howItWorks.diagram) }} />
+            {l.howItWorks.stepper && (
+              <StepThroughLazy frames={l.howItWorks.stepper.frames.map((f) => ({ caption: f.caption, html: diagramHtml(f.diagram) }))} />
+            )}
             <MarkDone meta={meta} unit="how" />
           </section>
 
