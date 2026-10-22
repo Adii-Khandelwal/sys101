@@ -162,7 +162,8 @@ export type Topic = {
   comparison?: string;
   /** Optional side-by-side picture of the posts' approaches, shown under the comparison text. */
   comparisonDiagram?: string;
-  glossary: { term: string; definition: string }[];
+  /** `diagram`: optional picture of a term that is really a shape or a process; shown on /glossary only. */
+  glossary: { term: string; definition: string; diagram?: string }[];
   /** Exactly three. */
   mistakes: string[];
   /** Three to five. Not used by lesson topics. */
@@ -518,6 +519,7 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
       if (paras < 2 || paras > 3) problems.push(`${file}: comparison has ${paras} paragraphs; break it into 2 to 3 short ones (shared ground, where they diverge, the evidence)`);
     }
     if (!pairs(topic.glossary, "term", "definition")) problems.push(`${file}: glossary needs entries with term and definition`);
+    for (const g of topic.glossary ?? []) if (g.diagram !== undefined) problems.push(...checkDiagram(g.diagram).map((p) => `${file}: glossary "${g.term}" diagram ${p}`));
     if (!Array.isArray(topic.mistakes) || topic.mistakes.length !== 3 || !topic.mistakes.every(nonEmpty)) {
       problems.push(`${file}: mistakes needs exactly 3 items`);
     }

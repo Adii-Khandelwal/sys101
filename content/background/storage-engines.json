@@ -1,6 +1,6 @@
 {
   "topic": "storage-engines",
-  "updatedOn": "2026-10-15",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "isolation-levels",
@@ -60,7 +60,8 @@
           "year": "no date shown",
           "verifiedOn": "2026-10-15"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-se-bg-sf-t\" class=\"dg\"><title id=\"dg-se-bg-sf-t\">A snowflake ID is a 64-bit number whose top bits are a timestamp, so IDs sort by creation time.</title><defs><marker id=\"dg-se-bg-sf-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"14\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">ONE 64-BIT NUMBER</text><rect x=\"14\" y=\"22\" width=\"300\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"164\" y=\"46.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Timestamp (top bits)</text><rect x=\"314\" y=\"22\" width=\"232\" height=\"40\" class=\"dg-box\"/><text x=\"430\" y=\"46.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Remaining bits</text><text x=\"280\" y=\"86\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">IDs sort by creation time and need no central counter</text></svg>"
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "topic": "http-tcp-tls",
-  "updatedOn": "2026-10-16",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "congestion-control",
@@ -44,7 +44,8 @@
           "year": "2002",
           "verifiedOn": "2026-10-16"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-htt-bg-mb-t\" class=\"dg\"><title id=\"dg-htt-bg-mb-t\">Middleboxes: firewalls, NATs and proxies sit between client and server and read or rewrite packets on the way.</title><defs><marker id=\"dg-htt-bg-mb-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"14\" width=\"120\" height=\"50\" class=\"dg-box\"/><text x=\"74\" y=\"43.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><rect x=\"186\" y=\"14\" width=\"188\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"35.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Firewall, NAT, proxy</text><text x=\"280\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">read or rewrite</text><rect x=\"426\" y=\"14\" width=\"120\" height=\"50\" class=\"dg-box\"/><text x=\"486\" y=\"43.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Server</text><path d=\"M134,39 L186,39\" class=\"dg-line\" marker-end=\"url(#dg-htt-bg-mb-a)\"/><path d=\"M374,39 L426,39\" class=\"dg-line\" marker-end=\"url(#dg-htt-bg-mb-a)\"/><text x=\"280\" y=\"90\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">packets pass through them on the way</text></svg>"
     },
     {
       "id": "udp",

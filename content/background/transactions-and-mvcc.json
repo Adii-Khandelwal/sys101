@@ -1,6 +1,6 @@
 {
   "topic": "transactions-and-mvcc",
-  "updatedOn": "2026-10-15",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "autovacuum-settings",
@@ -68,7 +68,8 @@
           "year": "no date shown",
           "verifiedOn": "2026-10-15"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 110\" role=\"img\" aria-labelledby=\"dg-tm-bg-tr-t\" class=\"dg\"><title id=\"dg-tm-bg-tr-t\">DELETE leaves dead rows for a later VACUUM; TRUNCATE empties a table without scanning its rows and gives the disk space back at once.</title><defs><marker id=\"dg-tm-bg-tr-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"14\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">DELETE</text><rect x=\"14\" y=\"20\" width=\"118\" height=\"28\" class=\"dg-box\"/><text x=\"73\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Dead rows left</text><path d=\"M132,34 L442,34\" class=\"dg-line\" marker-end=\"url(#dg-tm-bg-tr-a)\"/><text x=\"287\" y=\"26\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">cleaned by</text><rect x=\"442\" y=\"20\" width=\"104\" height=\"28\" class=\"dg-box\"/><text x=\"494\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">VACUUM later</text><text x=\"14\" y=\"70\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">TRUNCATE</text><rect x=\"14\" y=\"76\" width=\"202\" height=\"28\" class=\"dg-box dg-accent\"/><text x=\"115\" y=\"94.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Table emptied, no row scan</text><path d=\"M216,90 L400,90\" class=\"dg-line\" marker-end=\"url(#dg-tm-bg-tr-a)\"/><text x=\"308\" y=\"82\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">then</text><rect x=\"400\" y=\"76\" width=\"146\" height=\"28\" class=\"dg-box\"/><text x=\"473\" y=\"94.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Space back at once</text></svg>"
     }
   ]
 }

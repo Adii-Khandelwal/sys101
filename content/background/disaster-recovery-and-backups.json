@@ -1,6 +1,6 @@
 {
   "topic": "disaster-recovery-and-backups",
-  "updatedOn": "2026-10-17",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "lvm-snapshots",
@@ -20,7 +20,8 @@
           "year": "2026",
           "verifiedOn": "2026-10-17"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-dr-bg-lv-t\" class=\"dg\"><title id=\"dg-dr-bg-lv-t\">An LVM snapshot is a logical volume showing another volume as it was at the moment it was made, a quick way to freeze a disk for copying.</title><defs><marker id=\"dg-dr-bg-lv-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"14\" width=\"120\" height=\"50\" class=\"dg-box\"/><text x=\"74\" y=\"35.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Volume</text><text x=\"74\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">keeps changing</text><rect x=\"170.0\" y=\"14\" width=\"160\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"250\" y=\"35.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Snapshot</text><text x=\"250\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">the volume as it was</text><rect x=\"366.0\" y=\"14\" width=\"180\" height=\"50\" class=\"dg-box\"/><text x=\"456\" y=\"35.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Copy</text><text x=\"456\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">taken from the snapshot</text><path d=\"M134,39 L170,39\" class=\"dg-line\" marker-end=\"url(#dg-dr-bg-lv-a)\"/><path d=\"M330,39 L366,39\" class=\"dg-line\" marker-end=\"url(#dg-dr-bg-lv-a)\"/><text x=\"280\" y=\"92\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">the snapshot freezes the disk for copying</text></svg>"
     },
     {
       "id": "dmarc",

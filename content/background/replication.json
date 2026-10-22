@@ -1,6 +1,6 @@
 {
   "topic": "replication",
-  "updatedOn": "2026-10-13",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "service-discovery",
@@ -24,7 +24,8 @@
           "year": "no date shown",
           "verifiedOn": "2026-10-13"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-rep-bg-sd-t\" class=\"dg\"><title id=\"dg-rep-bg-sd-t\">When a new primary takes over, the record of where the service runs changes and clients follow.</title><defs><marker id=\"dg-rep-bg-sd-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"16\" width=\"120\" height=\"46\" class=\"dg-box\"/><text x=\"74\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">New primary</text><rect x=\"220\" y=\"16\" width=\"120\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Record</text><rect x=\"426\" y=\"16\" width=\"120\" height=\"46\" class=\"dg-box\"/><text x=\"486\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><path d=\"M134,39 L220,39\" class=\"dg-line\" marker-end=\"url(#dg-rep-bg-sd-a)\"/><path d=\"M426,39 L340,39\" class=\"dg-line\" marker-end=\"url(#dg-rep-bg-sd-a)\"/><text x=\"177\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">changes</text><text x=\"383\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">asks</text></svg>"
     },
     {
       "id": "distributed-key-value-store",

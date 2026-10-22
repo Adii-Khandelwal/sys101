@@ -437,7 +437,8 @@
     },
     {
       "term": "Compaction",
-      "definition": "Merging sorted files into new ones, dropping overwritten and deleted entries and keeping reads short."
+      "definition": "Merging sorted files into new ones, dropping overwritten and deleted entries and keeping reads short.",
+      "diagram": "<svg viewBox=\"0 0 560 108\" role=\"img\" aria-labelledby=\"dg-se-gl-co-t\" class=\"dg\"><title id=\"dg-se-gl-co-t\">Compaction merges sorted files into a new one, dropping overwritten and deleted entries.</title><defs><marker id=\"dg-se-gl-co-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"8\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"74\" y=\"32.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Sorted file</text><rect x=\"14\" y=\"60\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"74\" y=\"84.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Sorted file</text><rect x=\"380\" y=\"30\" width=\"166\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"463\" y=\"46.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">New sorted file</text><text x=\"463\" y=\"62.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">entries dropped</text><path d=\"M134,28 L257,28\" class=\"dg-line\"/><path d=\"M134,80 L257,80\" class=\"dg-line\"/><path d=\"M257,50 L380,50\" class=\"dg-line\" marker-end=\"url(#dg-se-gl-co-a)\"/><path d=\"M257,28 L257,80\" class=\"dg-line\"/><text x=\"318\" y=\"42\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">merge</text></svg>"
     },
     {
       "term": "Bloom filter",
@@ -445,7 +446,8 @@
     },
     {
       "term": "Tombstone",
-      "definition": "A marker written for a delete that hides older versions of a key until compaction removes both."
+      "definition": "A marker written for a delete that hides older versions of a key until compaction removes both.",
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-se-gl-ts-t\" class=\"dg\"><title id=\"dg-se-gl-ts-t\">A delete writes a tombstone that hides older versions of a key until compaction removes both.</title><defs><marker id=\"dg-se-gl-ts-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"16\" width=\"69\" height=\"46\" class=\"dg-box\"/><text x=\"48.5\" y=\"35.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Older</text><text x=\"48.5\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">version</text><path d=\"M83,39 L238.5,39\" class=\"dg-line\" marker-end=\"url(#dg-se-gl-ts-a)\"/><text x=\"160.75\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">delete</text><rect x=\"238.5\" y=\"16\" width=\"83\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"35.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Tombstone</text><text x=\"280\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">hides it</text><path d=\"M321.5,39 L477,39\" class=\"dg-line\" marker-end=\"url(#dg-se-gl-ts-a)\"/><text x=\"399.25\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">compaction</text><rect x=\"477\" y=\"16\" width=\"69\" height=\"46\" class=\"dg-box\"/><text x=\"511.5\" y=\"35.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Both</text><text x=\"511.5\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">removed</text><text x=\"280\" y=\"90\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">a delete writes a marker; older versions stay until compaction</text></svg>"
     },
     {
       "term": "Write amplification",

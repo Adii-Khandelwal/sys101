@@ -5,11 +5,12 @@ import Link from "next/link";
 import LearnRail from "./LearnRail";
 import { StripBackToTop } from "./BackToTop";
 import HighlightTarget from "./HighlightTarget";
+import { diagramHtml } from "@/lib/diagramHtml";
 import { glossaryId } from "@/lib/glossaryMatch";
 import { matchesAll } from "@/lib/searchMatch";
 import { focusFirstResult, useSlashFocus } from "@/lib/useSlashFocus";
 
-export type GlossaryGroup = { slug: string; title: string; terms: { term: string; definition: string }[] };
+export type GlossaryGroup = { slug: string; title: string; terms: { term: string; definition: string; diagram?: string }[] };
 
 /**
  * The glossary term list with a filter box. Typing narrows to terms (or
@@ -90,6 +91,7 @@ export default function GlossaryFilter({ groups, heading }: { groups: GlossaryGr
                 <div key={t.term} id={glossaryId(g.slug, t.term)}>
                   <dt>{t.term}</dt>
                   <dd>{t.definition}</dd>
+                  {t.diagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(t.diagram) }} />}
                 </div>
               ))}
             </dl>

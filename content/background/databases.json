@@ -1,6 +1,6 @@
 {
   "topic": "databases",
-  "updatedOn": "2026-10-13",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "vacuum",
@@ -20,7 +20,8 @@
           "year": "no date shown",
           "verifiedOn": "2026-10-12"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-db-bg-vc-t\" class=\"dg\"><title id=\"dg-db-bg-vc-t\">Vacuuming clears old row versions that were kept so readers were not blocked, freeing the space for reuse.</title><defs><marker id=\"dg-db-bg-vc-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"20\" width=\"60\" height=\"36\" class=\"dg-box\"/><text x=\"44\" y=\"42.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">old</text><rect x=\"80\" y=\"20\" width=\"60\" height=\"36\" class=\"dg-box\"/><text x=\"110\" y=\"42.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">old</text><rect x=\"146\" y=\"20\" width=\"60\" height=\"36\" class=\"dg-box dg-accent\"/><text x=\"176\" y=\"42.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">live</text><path d=\"M220,38 L330,38\" class=\"dg-line\" marker-end=\"url(#dg-db-bg-vc-a)\"/><text x=\"275\" y=\"30\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">vacuum</text><rect x=\"346\" y=\"20\" width=\"60\" height=\"36\" class=\"dg-box\"/><text x=\"376\" y=\"42.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">free</text><rect x=\"412\" y=\"20\" width=\"60\" height=\"36\" class=\"dg-box\"/><text x=\"442\" y=\"42.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">free</text><rect x=\"478\" y=\"20\" width=\"60\" height=\"36\" class=\"dg-box dg-accent\"/><text x=\"508\" y=\"42.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">live</text><text x=\"14\" y=\"78\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">OLD VERSIONS KEPT FOR READERS</text><text x=\"346\" y=\"78\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">SPACE FREED FOR REUSE</text></svg>"
     },
     {
       "id": "page-cache",
@@ -40,7 +41,8 @@
           "year": "no date shown",
           "verifiedOn": "2026-10-12"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 110\" role=\"img\" aria-labelledby=\"dg-db-bg-pc-t\" class=\"dg\"><title id=\"dg-db-bg-pc-t\">A read checks the operating system page cache in memory first; only when the data is not there does it go to disk.</title><defs><marker id=\"dg-db-bg-pc-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"10\" width=\"100\" height=\"44\" class=\"dg-box\"/><text x=\"64\" y=\"36.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Read</text><rect x=\"180\" y=\"10\" width=\"140\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"250\" y=\"28.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Page cache</text><text x=\"250\" y=\"44.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">in memory</text><rect x=\"440\" y=\"10\" width=\"106\" height=\"44\" class=\"dg-box\"/><text x=\"493\" y=\"36.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Data back</text><path d=\"M114,32 L180,32\" class=\"dg-line\" marker-end=\"url(#dg-db-bg-pc-a)\"/><path d=\"M320,32 L440,32\" class=\"dg-line\" marker-end=\"url(#dg-db-bg-pc-a)\"/><text x=\"380\" y=\"24\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">repeat read</text><path d=\"M250,54 L250,70\" class=\"dg-line\" marker-end=\"url(#dg-db-bg-pc-a)\"/><text x=\"260\" y=\"66\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">not there</text><rect x=\"180\" y=\"70\" width=\"140\" height=\"34\" class=\"dg-box\"/><text x=\"250\" y=\"91.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Disk</text></svg>"
     },
     {
       "id": "connection-pooling",
@@ -60,7 +62,8 @@
           "year": "no date shown",
           "verifiedOn": "2026-10-13"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-db-bg-cp-t\" class=\"dg\"><title id=\"dg-db-bg-cp-t\">A pooler sits between applications and the database and reuses a limited set of real connections.</title><defs><marker id=\"dg-db-bg-cp-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"16\" width=\"140\" height=\"50\" class=\"dg-box\"/><text x=\"84\" y=\"37.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Applications</text><text x=\"84\" y=\"53.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">many clients</text><rect x=\"195.0\" y=\"16\" width=\"170\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"37.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Pooler</text><text x=\"280\" y=\"53.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">reuses connections</text><rect x=\"406.0\" y=\"16\" width=\"140\" height=\"50\" class=\"dg-box\"/><text x=\"476\" y=\"37.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Database</text><text x=\"476\" y=\"53.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">real connections</text><path d=\"M154,41 L195,41\" class=\"dg-line\" marker-end=\"url(#dg-db-bg-cp-a)\"/><path d=\"M365,41 L406,41\" class=\"dg-line\" marker-end=\"url(#dg-db-bg-cp-a)\"/><text x=\"280\" y=\"92\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">a server connection is lent out, then reused</text></svg>"
     },
     {
       "id": "service-level-objectives",

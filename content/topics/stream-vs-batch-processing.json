@@ -436,7 +436,8 @@
     },
     {
       "term": "Event time",
-      "definition": "The time an event happened, as opposed to the time a job receives it."
+      "definition": "The time an event happened, as opposed to the time a job receives it.",
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-svb-gl-et-t\" class=\"dg\"><title id=\"dg-svb-gl-et-t\">Event time is when an event happened, as opposed to when a job receives it.</title><defs><marker id=\"dg-svb-gl-et-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"16\" width=\"150\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"89\" y=\"35.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Event happens</text><text x=\"89\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">event time</text><rect x=\"396\" y=\"16\" width=\"150\" height=\"46\" class=\"dg-box\"/><text x=\"471\" y=\"35.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Job receives it</text><text x=\"471\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">arrival time</text><path d=\"M164,39 L396,39\" class=\"dg-line\" marker-end=\"url(#dg-svb-gl-et-a)\"/><text x=\"280\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">travels to the job</text><text x=\"280\" y=\"90\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">two different times for the same event</text></svg>"
     },
     {
       "term": "Watermark",
@@ -456,7 +457,8 @@
     },
     {
       "term": "Lambda architecture",
-      "definition": "A streaming path for fast results plus a separate batch path for accurate ones, which means two codebases."
+      "definition": "A streaming path for fast results plus a separate batch path for accurate ones, which means two codebases.",
+      "diagram": "<svg viewBox=\"0 0 560 108\" role=\"img\" aria-labelledby=\"dg-svb-gl-la-t\" class=\"dg\"><title id=\"dg-svb-gl-la-t\">Lambda architecture runs a streaming path for fast results and a separate batch path for accurate ones, which means two codebases.</title><defs><marker id=\"dg-svb-gl-la-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"34\" width=\"90\" height=\"40\" class=\"dg-box\"/><text x=\"59\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Events</text><rect x=\"210\" y=\"8\" width=\"150\" height=\"40\" class=\"dg-box\"/><text x=\"285\" y=\"24.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Streaming path</text><text x=\"285\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">fast results</text><rect x=\"210\" y=\"60\" width=\"150\" height=\"40\" class=\"dg-box\"/><text x=\"285\" y=\"76.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Batch path</text><text x=\"285\" y=\"92.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">accurate results</text><rect x=\"456\" y=\"34\" width=\"90\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"501\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Results</text><path d=\"M104,54 L157,54\" class=\"dg-line\"/><path d=\"M157,28 L210,28\" class=\"dg-line\" marker-end=\"url(#dg-svb-gl-la-a)\"/><path d=\"M157,80 L210,80\" class=\"dg-line\" marker-end=\"url(#dg-svb-gl-la-a)\"/><path d=\"M157,28 L157,80\" class=\"dg-line\"/><path d=\"M360,28 L408,28\" class=\"dg-line\"/><path d=\"M360,80 L408,80\" class=\"dg-line\"/><path d=\"M408,54 L456,54\" class=\"dg-line\" marker-end=\"url(#dg-svb-gl-la-a)\"/><path d=\"M408,28 L408,80\" class=\"dg-line\"/></svg>"
     },
     {
       "term": "Kappa architecture",

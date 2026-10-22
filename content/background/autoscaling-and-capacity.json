@@ -1,6 +1,6 @@
 {
   "topic": "autoscaling-and-capacity",
-  "updatedOn": "2026-10-17",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "replica-set",
@@ -41,7 +41,8 @@
           "year": "no date shown",
           "verifiedOn": "2026-10-17"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 110\" role=\"img\" aria-labelledby=\"dg-ac-bg-ms-t\" class=\"dg\"><title id=\"dg-ac-bg-ms-t\">MSTL splits a series of measurements into a trend, repeating seasonal cycles and what is left over.</title><defs><marker id=\"dg-ac-bg-ms-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"35\" width=\"130\" height=\"40\" class=\"dg-box\"/><text x=\"79\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Measurements</text><text x=\"79\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">over weeks</text><path d=\"M144,55 L257,55\" class=\"dg-line\"/><text x=\"200\" y=\"47\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">MSTL</text><path d=\"M257,20 L257,90\" class=\"dg-line\"/><rect x=\"380\" y=\"6\" width=\"166\" height=\"28\" class=\"dg-box\"/><text x=\"463\" y=\"24.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Trend</text><path d=\"M257,20 L380,20\" class=\"dg-line\" marker-end=\"url(#dg-ac-bg-ms-a)\"/><rect x=\"380\" y=\"41\" width=\"166\" height=\"28\" class=\"dg-box\"/><text x=\"463\" y=\"59.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Seasonal cycles</text><path d=\"M257,55 L380,55\" class=\"dg-line\" marker-end=\"url(#dg-ac-bg-ms-a)\"/><rect x=\"380\" y=\"76\" width=\"166\" height=\"28\" class=\"dg-box\"/><text x=\"463\" y=\"94.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">What is left over</text><path d=\"M257,90 L380,90\" class=\"dg-line\" marker-end=\"url(#dg-ac-bg-ms-a)\"/></svg>"
     }
   ]
 }

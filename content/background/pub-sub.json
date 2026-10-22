@@ -1,6 +1,6 @@
 {
   "topic": "pub-sub",
-  "updatedOn": "2026-10-13",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "kafka-offsets",
@@ -20,7 +20,8 @@
           "year": "no date shown",
           "verifiedOn": "2026-10-13"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 110\" role=\"img\" aria-labelledby=\"dg-ps-bg-ko-t\" class=\"dg\"><title id=\"dg-ps-bg-ko-t\">A partition keeps its order; a consumer records its committed offset, how far it has read, and resumes from there after a restart.</title><defs><marker id=\"dg-ps-bg-ko-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"16\" width=\"90\" height=\"46\" class=\"dg-box\"/><text x=\"59\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Read</text><rect x=\"161.333\" y=\"16\" width=\"90\" height=\"46\" class=\"dg-box\"/><text x=\"206.333\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Read</text><rect x=\"308.667\" y=\"16\" width=\"90\" height=\"46\" class=\"dg-box\"/><text x=\"353.667\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Unread</text><rect x=\"456\" y=\"16\" width=\"90\" height=\"46\" class=\"dg-box\"/><text x=\"501\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Unread</text><path d=\"M280,86 L280,64\" class=\"dg-line\" marker-end=\"url(#dg-ps-bg-ko-a)\"/><text x=\"280\" y=\"102\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">committed offset: how far it has read</text></svg>"
     },
     {
       "id": "grpc",

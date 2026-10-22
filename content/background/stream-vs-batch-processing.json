@@ -1,6 +1,6 @@
 {
   "topic": "stream-vs-batch-processing",
-  "updatedOn": "2026-10-17",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "apache-iceberg",
@@ -20,7 +20,8 @@
           "year": "no date shown",
           "verifiedOn": "2026-10-17"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 108\" role=\"img\" aria-labelledby=\"dg-svb-bg-ice-t\" class=\"dg\"><title id=\"dg-svb-bg-ice-t\">Iceberg tracks which files make up a table, so Spark, Flink, Hive and other engines can read and write the same table.</title><defs><marker id=\"dg-svb-bg-ice-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"6\" width=\"80\" height=\"24\" class=\"dg-box\"/><text x=\"54\" y=\"22.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Spark</text><rect x=\"14\" y=\"38\" width=\"80\" height=\"24\" class=\"dg-box\"/><text x=\"54\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Flink</text><rect x=\"14\" y=\"70\" width=\"80\" height=\"24\" class=\"dg-box\"/><text x=\"54\" y=\"86.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Hive</text><rect x=\"230\" y=\"30\" width=\"150\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"305\" y=\"46.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Iceberg</text><text x=\"305\" y=\"62.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">table layer</text><rect x=\"456\" y=\"30\" width=\"90\" height=\"40\" class=\"dg-box\"/><text x=\"501\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Data files</text><path d=\"M94,18 L160,18\" class=\"dg-line\"/><path d=\"M94,50 L160,50\" class=\"dg-line\"/><path d=\"M94,82 L160,82\" class=\"dg-line\"/><path d=\"M160,50 L230,50\" class=\"dg-line\" marker-end=\"url(#dg-svb-bg-ice-a)\"/><path d=\"M160,18 L160,82\" class=\"dg-line\"/><path d=\"M380,50 L456,50\" class=\"dg-line\" marker-end=\"url(#dg-svb-bg-ice-a)\"/></svg>"
     },
     {
       "id": "yarn",
@@ -40,7 +41,8 @@
           "year": "page shows last updated 2023-03-15",
           "verifiedOn": "2026-10-17"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-svb-bg-yarn-t\" class=\"dg\"><title id=\"dg-svb-bg-yarn-t\">A central ResourceManager arbitrates resources among applications, and a NodeManager on each machine runs and monitors their containers.</title><defs><marker id=\"dg-svb-bg-yarn-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"16\" width=\"125\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"76.5\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">ResourceManager</text><path d=\"M139,39 L235,39\" class=\"dg-line\" marker-end=\"url(#dg-svb-bg-yarn-a)\"/><text x=\"187\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">central</text><rect x=\"235\" y=\"16\" width=\"125\" height=\"46\" class=\"dg-box\"/><text x=\"297.5\" y=\"35.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">NodeManager</text><text x=\"297.5\" y=\"51.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">on each machine</text><path d=\"M360,39 L456,39\" class=\"dg-line\" marker-end=\"url(#dg-svb-bg-yarn-a)\"/><text x=\"408\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">runs</text><rect x=\"456\" y=\"16\" width=\"90\" height=\"46\" class=\"dg-box\"/><text x=\"501\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Containers</text><text x=\"280\" y=\"90\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">the ResourceManager arbitrates resources among applications</text></svg>"
     }
   ]
 }

@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { topicNumbers, topicOrder } from "./order";
+import { checkDiagram } from "./diagramCheck";
 import { BANNED_PHRASING, NO_DATE, getAllTopics, type Topic } from "./topics";
 
 /** One page a post cites as assuming the concept. `quote` is the sentence from that post, copied from its page. */
@@ -14,6 +15,8 @@ type BackgroundItem = {
   name: string;
   /** Two plain lines in our voice. For a concept taught later in the course, one line that says the gist is enough. */
   explanation: string;
+  /** Optional picture of the concept, shown on /background under the explanation. */
+  diagram?: string;
   assumedBy: AssumedBy[];
   /** Our own topic page for the concept, when there is one. Linked, never re-explained. */
   topicPage?: string;
@@ -75,6 +78,7 @@ export function validateBackground(file: string, b: Background, topics: Topic[])
       if (BANNED_PHRASING.test(it.explanation)) problems.push(`${where}: explanation has banned phrasing`);
       if (n > EXPLANATION_MAX_WORDS) problems.push(`${where}: explanation is ${n} words, at most ${EXPLANATION_MAX_WORDS}`);
     }
+    if (it.diagram !== undefined) problems.push(...checkDiagram(it.diagram).map((p) => `${where}: diagram ${p}`));
     if (!Array.isArray(it.assumedBy) || it.assumedBy.length === 0) problems.push(`${where}: needs at least one assumedBy`);
     const seenPosts = new Set<string>();
     (it.assumedBy ?? []).forEach((a, j) => {

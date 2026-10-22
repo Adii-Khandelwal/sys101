@@ -1,6 +1,6 @@
 {
   "topic": "distributed-transactions",
-  "updatedOn": "2026-10-13",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "mapreduce",
@@ -20,7 +20,8 @@
           "year": "no date shown",
           "verifiedOn": "2026-10-13"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 110\" role=\"img\" aria-labelledby=\"dg-dtx-bg-mr-t\" class=\"dg\"><title id=\"dg-dtx-bg-mr-t\">MapReduce: a huge dataset is split into slices, many machines each handle a slice, and the results are combined.</title><defs><marker id=\"dg-dtx-bg-mr-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"35\" width=\"120\" height=\"40\" class=\"dg-box\"/><text x=\"74\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Huge dataset</text><text x=\"74\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">in slices</text><path d=\"M134,55 L167,55\" class=\"dg-line\"/><path d=\"M167,20 L167,90\" class=\"dg-line\"/><rect x=\"200\" y=\"6\" width=\"150\" height=\"28\" class=\"dg-box\"/><text x=\"275\" y=\"24.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">One slice each</text><path d=\"M167,20 L200,20\" class=\"dg-line\" marker-end=\"url(#dg-dtx-bg-mr-a)\"/><path d=\"M350,20 L388,20\" class=\"dg-line\"/><rect x=\"200\" y=\"41\" width=\"150\" height=\"28\" class=\"dg-box\"/><text x=\"275\" y=\"59.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">One slice each</text><path d=\"M167,55 L200,55\" class=\"dg-line\" marker-end=\"url(#dg-dtx-bg-mr-a)\"/><path d=\"M350,55 L388,55\" class=\"dg-line\"/><rect x=\"200\" y=\"76\" width=\"150\" height=\"28\" class=\"dg-box\"/><text x=\"275\" y=\"94.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">One slice each</text><path d=\"M167,90 L200,90\" class=\"dg-line\" marker-end=\"url(#dg-dtx-bg-mr-a)\"/><path d=\"M350,90 L388,90\" class=\"dg-line\"/><path d=\"M388,20 L388,90\" class=\"dg-line\"/><path d=\"M388,55 L426,55\" class=\"dg-line\" marker-end=\"url(#dg-dtx-bg-mr-a)\"/><rect x=\"426\" y=\"35\" width=\"120\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"486\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Combined</text><text x=\"486\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">results</text></svg>"
     },
     {
       "id": "bigtable",
