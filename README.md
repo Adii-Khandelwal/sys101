@@ -1,8 +1,17 @@
-# sys101
+<h1 align="center">sys101</h1>
 
-Learn system design from what real companies built, broke and fixed.
+<p align="center"><strong>Learn system design from what real companies built, broke and fixed.</strong></p>
 
-**[sys101.vercel.app](https://sys101.vercel.app)**
+<p align="center">
+  <a href="https://sys101.vercel.app">Open the site</a> &nbsp;|&nbsp;
+  <a href="https://sys101.vercel.app/capstones">Capstones</a> &nbsp;|&nbsp;
+  <a href="https://sys101.vercel.app/glossary">Glossary</a> &nbsp;|&nbsp;
+  <a href="https://sys101.vercel.app/reads">Great reads</a>
+</p>
+
+| Topics | Sources | Organizations | Great reads |
+| :-: | :-: | :-: | :-: |
+| <!--stat:topics-->33<!--/stat--> | <!--stat:sources-->78<!--/stat--> | <!--stat:organizations-->28<!--/stat--> | <!--stat:reads-->30<!--/stat--> |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/readme/map-dark.png">
@@ -46,6 +55,35 @@ It is one person's learning project, built in the open.
 **Terms in place.** The first use of a topic's own terms in each section opens a short definition, with a link to the Glossary.
 
 **Progress stays in your browser.** There are no accounts and nothing is sent to a server. You can export, import or reset what you have marked on the Your data page.
+
+---
+
+## Learn by seeing it
+
+Every idea comes with a picture, and the pictures are original, drawn for this site, never copied from a blog. A topic page opens with the problem as a drawing, then a mental model, how it works, a worked example, the three common mistakes and each design exercise's model answer. The pages that compare companies put their designs side by side, and where a post's numbers share a unit they become a bar chart.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/step-dark.png">
+  <img src="docs/readme/step-light.png" alt="A step-through of a leader election in a five-node cluster: node N1 is down, N3 is the candidate and sends vote requests to the others, with the step caption below and Back, Next step and Reset buttons." width="100%">
+</picture>
+
+**Step through it.** Some of the harder flows, such as a cache read, a leader election or two-phase commit, play one frame at a time with Back, Next step and Reset, or the arrow keys. Nothing moves on its own.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/compare-dark.png">
+  <img src="docs/readme/compare-light.png" alt="Three lanes comparing safe deployment practice: Amazon Web Services 2020, Cloudflare 2025 and CrowdStrike 2024, each as three boxes from the change to the outcome, with the point where the designs split in rust." width="100%">
+</picture>
+
+**Side by side.** Where two or more companies solved the same problem, a lane for each shows where their designs split.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/chart-dark.png">
+  <img src="docs/readme/chart-light.png" alt="A bar chart of average resource slack at Google: Autopilot with a machine-learning recommender 23 percent, Autopilot with a moving window 31 percent, manual with soft limits 46 percent and manual with hard limits 60 percent." width="100%">
+</picture>
+
+**Numbers you can compare.** A chart appears only where a post's figures share one unit, bars are drawn exactly in proportion, and the build rejects any figure in a chart that is not in the post's numbers. Most posts have no chart, on purpose.
+
+Diagrams also sit in the Glossary, on the Background page, and in the capstone, where the company's real choice appears only after you pick your own.
 
 ---
 
