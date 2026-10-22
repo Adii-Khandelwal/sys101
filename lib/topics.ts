@@ -331,12 +331,36 @@ export function checkQuizStyle(quiz: Pick<LessonQuestion, "options" | "correct">
   return problems;
 }
 
+/** A chart is a valid diagram, prints only figures the digest's `numbers` state, and draws each bar in proportion to its label. */
+export function checkChart(chart: string, numbers: { value: string; meaning: string }[]): string[] {
+  const problems = checkDiagram(chart).map((p) => `chart ${p}`);
+  const noCommas = (t: string) => t.replace(/(\d),(?=\d)/g, "$1");
+  const known = noCommas(numbers.map((n) => `${n.value} ${n.meaning}`).join(" "));
+  const shown = noCommas(chart.replace(/<title[^>]*>[^<]*<\/title>/, "")).match(/>[^<>]*\d[^<>]*</g) ?? [];
+  for (const t of shown.flatMap((x) => x.match(/\d+(?:\.\d+)?/g) ?? [])) {
+    if (!new RegExp(`(?<![\\d.])${t.replace(".", "\\.")}(?![\\d])`).test(known)) problems.push(`chart shows ${t}, which is not in numbers`);
+  }
+  // Each bar's end label gives its value (a number or a fraction like 4/9); width over value must agree across bars.
+  const bars = [...noCommas(chart).matchAll(/<rect[^>]*\swidth="([\d.]+)"[^>]*class="dg-box[^"]*"[^>]*\/><text[^>]*>([^<]*)<\/text>/g)]
+    .map(([, w, label]) => {
+      const m = /(\d+(?:\.\d+)?)(?:\/(\d+))?/.exec(label);
+      return m ? { w: Number(w), v: m[2] ? Number(m[1]) / Number(m[2]) : Number(m[1]) } : null;
+    })
+    .filter((b): b is { w: number; v: number } => b !== null && b.v > 0);
+  if (bars.length > 1) {
+    const scale = Math.max(...bars.map((b) => b.w / b.v));
+    if (bars.some((b) => Math.abs(b.w - b.v * scale) > Math.max(1, b.w * 0.03))) problems.push("chart bars are not in proportion to their labels");
+  }
+  return problems;
+}
+
 /** A step-through needs 3 to 6 captioned frames, each a valid diagram, all drawn at one size so nothing jumps between steps. */
 export function checkStepper(s: { frames?: { caption?: string; diagram?: string }[] } | undefined): string[] {
   if (s === undefined) return [];
   const frames = s.frames ?? [];
   const problems: string[] = [];
   if (frames.length < 3 || frames.length > 6) problems.push("needs 3 to 6 frames");
+  if (new Set(frames.map((f) => f.caption)).size !== frames.length) problems.push("frame captions must differ");
   frames.forEach((f, i) => {
     if (!nonEmpty(f.caption)) problems.push(`frame ${i + 1}: caption is empty`);
     problems.push(...checkDiagram(f.diagram).map((p) => `frame ${i + 1}: ${p}`));
@@ -585,15 +609,7 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
         problems.push(`${where}: digest.tradeoffs needs chosen and why, and rejected only if the source names an alternative`);
       }
       problems.push(...checkDiagram(d.diagram).map((p) => `${where}: diagram ${p}`));
-      if (d.chart !== undefined) {
-        problems.push(...checkDiagram(d.chart).map((p) => `${where}: chart ${p}`));
-        // A chart may only print figures the digest's numbers already state, so it cannot invent one.
-        const known = d.numbers.map((n) => `${n.value} ${n.meaning}`).join(" ").replace(/(\d),(?=\d)/g, "$1");
-        const shown = d.chart.replace(/<title[^>]*>[^<]*<\/title>/, "").replace(/(\d),(?=\d)/g, "$1").match(/>[^<>]*\d[^<>]*</g) ?? [];
-        for (const t of shown.flatMap((s) => s.match(/\d+(?:\.\d+)?/g) ?? [])) {
-          if (!new RegExp(`(?<![\\d.])${t.replace(".", "\\.")}(?![\\d])`).test(known)) problems.push(`${where}: chart shows ${t}, which is not in numbers`);
-        }
-      }
+      if (d.chart !== undefined) problems.push(...checkChart(d.chart, d.numbers).map((p) => `${where}: ${p}`));
       problems.push(...checkFigure(d.figure, d.numbers, post.id).map((p) => `${where}: ${p}`));
     });
   }
