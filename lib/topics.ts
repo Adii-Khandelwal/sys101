@@ -154,6 +154,8 @@ export type Topic = {
   posts: Post[];
   /** How the posts' approaches differ and why; required when a topic has two or more posts. */
   comparison?: string;
+  /** Optional side-by-side picture of the posts' approaches, shown under the comparison text. */
+  comparisonDiagram?: string;
   glossary: { term: string; definition: string }[];
   /** Exactly three. */
   mistakes: string[];
@@ -501,6 +503,7 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
     if ((topic.posts?.length ?? 0) >= 2 && !nonEmpty(topic.comparison)) {
       problems.push(`${file}: has ${topic.posts.length} posts but no comparison`);
     }
+    if (topic.comparisonDiagram !== undefined) problems.push(...checkDiagram(topic.comparisonDiagram).map((p) => `${file}: comparisonDiagram ${p}`));
     if (nonEmpty(topic.comparison)) {
       const paras = topic.comparison!.split("\n\n").filter(nonEmpty).length;
       if (paras < 2 || paras > 3) problems.push(`${file}: comparison has ${paras} paragraphs; break it into 2 to 3 short ones (shared ground, where they diverge, the evidence)`);
