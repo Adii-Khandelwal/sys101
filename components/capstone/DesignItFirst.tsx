@@ -2,6 +2,7 @@
 
 import CompanyLogo from "@/components/CompanyLogo";
 import type { Capstone } from "@/lib/capstones";
+import { diagramHtml } from "@/lib/diagramHtml";
 import { useStoredChoices } from "./useStoredChoices";
 
 type Props = { slug: string; decisions: Capstone["decisions"]; sources: Capstone["sources"] };
@@ -56,6 +57,7 @@ export default function DesignItFirst({ slug, decisions, sources }: Props) {
                       )}
                     </span>
                   </p>
+                  {d.diagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(d.diagram) }} />}
                   <button type="button" className="cap-link label" onClick={() => setPick(d.id, null)}>
                     Change my answer
                   </button>
