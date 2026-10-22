@@ -55,8 +55,10 @@ function proseStrings(topic: Topic): string[] {
 
 /** Count of diagrams the page renders (lesson figures and one per post). */
 function diagramCount(topic: Topic): number {
-  let n = topic.posts.length + topic.posts.filter((p) => p.digest.figure).length; // each post digest has a diagram, some a figure
-  if (topic.lesson) n += 3; // mental model, how it works, worked example
+  let n = topic.posts.length + topic.posts.filter((p) => p.digest.figure).length + topic.posts.filter((p) => p.digest.chart).length; // each post digest has a diagram, some a figure
+  if (topic.comparisonDiagram) n += 1;
+  if (topic.lesson?.howItWorks.stepper) n += 1;
+  if (topic.lesson) n += 3 + (topic.lesson.why.diagram ? 1 : 0) + (topic.lesson.mistakesDiagram ? 1 : 0) + topic.lesson.exercises.filter((x) => x.diagram).length; // mental model, how it works, worked example, then the optional why, mistakes and exercise sketches
   return n;
 }
 

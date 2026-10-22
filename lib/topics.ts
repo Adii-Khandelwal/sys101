@@ -12,6 +12,8 @@ type Digest = {
   /** Inline SVG markup drawn for this post, styled by the dg-* classes in globals.css. */
   diagram: string;
   numbers: { value: string; meaning: string }[];
+  /** Optional bar chart of two or more `numbers` that share a unit, shown under the numbers table. Every figure in its text must appear in `numbers`. */
+  chart?: string;
   /** `rejected` is left out when the source names no alternative. */
   tradeoffs: { chosen: string; rejected?: string; why: string };
   failures: string;
@@ -83,6 +85,8 @@ export type LessonQuestion = {
 
 type LessonExercise = {
   level: "apply" | "design" | "scale";
+  /** Optional sketch of the model answer, shown inside the revealed answer. */
+  diagram?: string;
   prompt: string;
   answer: string;
   tradeoffs: string;
@@ -93,11 +97,13 @@ type LessonExercise = {
 
 /** The teaching-journey format (docs/ideas.md, ideas 2 and 4). Piloted on DNS. */
 type Lesson = {
-  why: LessonSection;
+  why: LessonSection & { diagram?: string };
   mentalModel: LessonSection & { diagram: string };
-  howItWorks: { outcome: string; steps: { step: string; explanation: string }[]; diagram: string };
+  howItWorks: { outcome: string; steps: { step: string; explanation: string }[]; diagram: string; /** Optional step-through: 3 to 6 frames of one diagram, one shown at a time. */ stepper?: { frames: { caption: string; diagram: string }[] } };
   workedExample: { outcome: string; steps: { step: string; explanation: string }[]; diagram: string };
   mistakesOutcome: string;
+  /** Optional picture of the three mistakes, shown under the list. */
+  mistakesDiagram?: string;
   checkOutcome: string;
   quiz: LessonQuestion[];
   postsOutcome: string;
@@ -154,7 +160,10 @@ export type Topic = {
   posts: Post[];
   /** How the posts' approaches differ and why; required when a topic has two or more posts. */
   comparison?: string;
-  glossary: { term: string; definition: string }[];
+  /** Optional side-by-side picture of the posts' approaches, shown under the comparison text. */
+  comparisonDiagram?: string;
+  /** `diagram`: optional picture of a term that is really a shape or a process; shown on /glossary only. */
+  glossary: { term: string; definition: string; diagram?: string }[];
   /** Exactly three. */
   mistakes: string[];
   /** Three to five. Not used by lesson topics. */
@@ -322,6 +331,47 @@ export function checkQuizStyle(quiz: Pick<LessonQuestion, "options" | "correct">
   return problems;
 }
 
+/** A chart is a valid diagram, prints only figures the digest's `numbers` state, and draws each bar in proportion to its label. */
+export function checkChart(chart: string, numbers: { value: string; meaning: string }[]): string[] {
+  const problems = checkDiagram(chart).map((p) => `chart ${p}`);
+  const noCommas = (t: string) => t.replace(/(\d),(?=\d)/g, "$1");
+  const known = noCommas(numbers.map((n) => `${n.value} ${n.meaning}`).join(" "));
+  const shown = noCommas(chart.replace(/<title[^>]*>[^<]*<\/title>/, "")).match(/>[^<>]*\d[^<>]*</g) ?? [];
+  for (const t of shown.flatMap((x) => x.match(/\d+(?:\.\d+)?/g) ?? [])) {
+    if (!new RegExp(`(?<![\\d.])${t.replace(".", "\\.")}(?![\\d])`).test(known)) problems.push(`chart shows ${t}, which is not in numbers`);
+  }
+  // Each bar's end label gives its value (a number or a fraction like 4/9); width over value must agree across bars.
+  const bars = [...noCommas(chart).matchAll(/<rect[^>]*\swidth="([\d.]+)"[^>]*class="dg-box[^"]*"[^>]*\/><text[^>]*>([^<]*)<\/text>/g)]
+    .map(([, w, label]) => {
+      const m = /(\d+(?:\.\d+)?)(?:\/(\d+))?/.exec(label);
+      return m ? { w: Number(w), v: m[2] ? Number(m[1]) / Number(m[2]) : Number(m[1]) } : null;
+    })
+    .filter((b): b is { w: number; v: number } => b !== null && b.v > 0);
+  if (bars.length > 1) {
+    const scale = Math.max(...bars.map((b) => b.w / b.v));
+    if (bars.some((b) => Math.abs(b.w - b.v * scale) > Math.max(1, b.w * 0.03))) problems.push("chart bars are not in proportion to their labels");
+  }
+  return problems;
+}
+
+/** A step-through needs 3 to 6 captioned frames, each a valid diagram, all drawn at one size so nothing jumps between steps. */
+export function checkStepper(s: { frames?: { caption?: string; diagram?: string }[] } | undefined): string[] {
+  if (s === undefined) return [];
+  const frames = s.frames ?? [];
+  const problems: string[] = [];
+  if (frames.length < 3 || frames.length > 6) problems.push("needs 3 to 6 frames");
+  if (new Set(frames.map((f) => f.caption)).size !== frames.length) problems.push("frame captions must differ");
+  frames.forEach((f, i) => {
+    if (!nonEmpty(f.caption)) problems.push(`frame ${i + 1}: caption is empty`);
+    problems.push(...checkDiagram(f.diagram).map((p) => `frame ${i + 1}: ${p}`));
+  });
+  const boxes = new Set(frames.map((f) => /viewBox="([^"]*)"/.exec(f.diagram ?? "")?.[1]));
+  if (boxes.size > 1) problems.push("frames must share one viewBox");
+  const ids = frames.flatMap((f) => [...(f.diagram ?? "").matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+  if (new Set(ids).size !== ids.length) problems.push("frames must not repeat an id");
+  return problems;
+}
+
 /** Every lesson section filled, 5 to 8 explained questions, 2 to 3 exercises, ids on posts. */
 function checkLesson(topic: Topic): string[] {
   const l = topic.lesson!;
@@ -335,14 +385,17 @@ function checkLesson(topic: Topic): string[] {
     outcome(name, s?.outcome);
     if (!nonEmpty(s?.body)) problems.push(`lesson.${name}.body is empty`);
   };
+  if (l.mistakesDiagram !== undefined) problems.push(...checkDiagram(l.mistakesDiagram).map((p) => `lesson.mistakesDiagram ${p}`));
   section("why", l.why);
   section("mentalModel", l.mentalModel);
   section("next", l.next);
+  if (l.why?.diagram !== undefined) problems.push(...checkDiagram(l.why.diagram).map((p) => `lesson.why diagram ${p}`));
   problems.push(...checkDiagram(l.mentalModel?.diagram).map((p) => `lesson.mentalModel diagram ${p}`));
   for (const name of ["howItWorks", "workedExample"] as const) {
     outcome(name, l[name]?.outcome);
     if (!pairs(l[name]?.steps, "step", "explanation")) problems.push(`lesson.${name} needs steps`);
     // A flow or worked walk-through needs a diagram beside its steps (docs/ideas.md idea 3).
+    if (name === "howItWorks") problems.push(...checkStepper(l.howItWorks?.stepper).map((p) => `lesson.howItWorks stepper ${p}`));
     problems.push(...checkDiagram(l[name]?.diagram).map((p) => `lesson.${name} diagram ${p}`));
   }
   for (const name of ["mistakesOutcome", "checkOutcome", "postsOutcome", "differOutcome", "exercisesOutcome"] as const) {
@@ -372,6 +425,7 @@ function checkLesson(topic: Topic): string[] {
   (l.exercises ?? []).forEach((x, i) => {
     const where = `lesson.exercises ${i + 1}`;
     if (!["apply", "design", "scale"].includes(x.level)) problems.push(`${where}: level must be apply, design or scale`);
+    if (x.diagram !== undefined) problems.push(...checkDiagram(x.diagram).map((p) => `${where}: diagram ${p}`));
     for (const f of ["prompt", "answer", "tradeoffs"] as const) if (!nonEmpty(x[f])) problems.push(`${where}: ${f} is empty`);
     if (!Array.isArray(x.wrongAnswers) || !x.wrongAnswers.length || !x.wrongAnswers.every(nonEmpty)) problems.push(`${where}: needs common wrong answers`);
     if (!(LESSON_SECTIONS as readonly string[]).includes(x.teaches)) problems.push(`${where}: teaches "${x.teaches}" is not a section id`);
@@ -501,11 +555,13 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
     if ((topic.posts?.length ?? 0) >= 2 && !nonEmpty(topic.comparison)) {
       problems.push(`${file}: has ${topic.posts.length} posts but no comparison`);
     }
+    if (topic.comparisonDiagram !== undefined) problems.push(...checkDiagram(topic.comparisonDiagram).map((p) => `${file}: comparisonDiagram ${p}`));
     if (nonEmpty(topic.comparison)) {
       const paras = topic.comparison!.split("\n\n").filter(nonEmpty).length;
       if (paras < 2 || paras > 3) problems.push(`${file}: comparison has ${paras} paragraphs; break it into 2 to 3 short ones (shared ground, where they diverge, the evidence)`);
     }
     if (!pairs(topic.glossary, "term", "definition")) problems.push(`${file}: glossary needs entries with term and definition`);
+    for (const g of topic.glossary ?? []) if (g.diagram !== undefined) problems.push(...checkDiagram(g.diagram).map((p) => `${file}: glossary "${g.term}" diagram ${p}`));
     if (!Array.isArray(topic.mistakes) || topic.mistakes.length !== 3 || !topic.mistakes.every(nonEmpty)) {
       problems.push(`${file}: mistakes needs exactly 3 items`);
     }
@@ -553,6 +609,7 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
         problems.push(`${where}: digest.tradeoffs needs chosen and why, and rejected only if the source names an alternative`);
       }
       problems.push(...checkDiagram(d.diagram).map((p) => `${where}: diagram ${p}`));
+      if (d.chart !== undefined) problems.push(...checkChart(d.chart, d.numbers).map((p) => `${where}: ${p}`));
       problems.push(...checkFigure(d.figure, d.numbers, post.id).map((p) => `${where}: ${p}`));
     });
   }

@@ -1,6 +1,6 @@
 {
   "topic": "circuit-breakers",
-  "updatedOn": "2026-10-13",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "horizontal-pod-autoscaler",
@@ -40,7 +40,8 @@
           "year": "page shows last updated 2026-01-14",
           "verifiedOn": "2026-10-13"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 110\" role=\"img\" aria-labelledby=\"dg-cb-bg-dt-t\" class=\"dg\"><title id=\"dg-cb-bg-dt-t\">A trace follows one request through the services it touches; each step is a span with a start time and a duration.</title><defs><marker id=\"dg-cb-bg-dt-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"14\" y=\"14\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">ONE TRACE: EACH BAR IS A SPAN, TIME RUNS LEFT TO RIGHT</text><rect x=\"14\" y=\"24\" width=\"532\" height=\"24\" class=\"dg-box\"/><text x=\"280\" y=\"40.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Whole request</text><rect x=\"110\" y=\"54\" width=\"320\" height=\"24\" class=\"dg-box\"/><text x=\"270\" y=\"70.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Span in a second service</text><rect x=\"190\" y=\"84\" width=\"170\" height=\"24\" class=\"dg-box\"/><text x=\"275\" y=\"100.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Span deeper</text></svg>"
     }
   ]
 }

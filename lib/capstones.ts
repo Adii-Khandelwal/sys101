@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { BANNED_PHRASING, checkQuizPositions, checkQuizStyle, type LessonQuestion, type Post } from "./topics";
+import { checkDiagram } from "./diagramCheck";
 import { evaluate } from "./formula";
 import { httpsUrlProblem } from "./httpsUrl";
 import { SITE_NAME, SITE_URL, absoluteUrl, metaDescription } from "./site";
@@ -23,6 +24,8 @@ export type Capstone = {
     options: { label: string; why: string }[];
     answerIndex: number;
     realChoice: { company: string; text: string; sourceId: string };
+    /** Optional sketch of the real choice, shown only after the reader has picked. */
+    diagram?: string;
   }[];
   sizing: {
     inputs: { id: string; label: string; min: number; max: number; step: number; default: number; unit?: string }[];
@@ -36,6 +39,8 @@ export type Capstone = {
   };
   /** "Where they differ": 2 to 3 paragraphs separated by a blank line, like a topic's comparison. */
   compare: string;
+  /** Optional side-by-side of the sources' designs, shown under the comparison text. */
+  compareDiagram?: string;
   quiz: LessonQuestion[];
   sources: CapstoneSource[];
 };
@@ -95,6 +100,7 @@ export function capstoneProblems(c: Capstone, file: string, topicSlugs: readonly
       else if (!Number.isInteger(d.answerIndex) || d.answerIndex < 0 || d.answerIndex >= d.options.length) add(`${w}: answerIndex is out of range`);
       if (!nonEmpty(d.realChoice?.company) || !nonEmpty(d.realChoice?.text)) add(`${w}: realChoice needs a company and text`);
       source(d.realChoice?.sourceId, w);
+      if (d.diagram !== undefined) checkDiagram(d.diagram).forEach((p) => add(`${w}: diagram ${p}`));
     });
   }
 
@@ -151,6 +157,7 @@ export function capstoneProblems(c: Capstone, file: string, topicSlugs: readonly
     });
   }
 
+  if (c.compareDiagram !== undefined) checkDiagram(c.compareDiagram).forEach((p) => add(`compareDiagram ${p}`));
   if (!nonEmpty(c.compare)) add("compare is empty");
   else {
     const paras = c.compare.split("\n\n").filter(nonEmpty).length;

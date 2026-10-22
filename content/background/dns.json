@@ -1,6 +1,6 @@
 {
   "topic": "dns",
-  "updatedOn": "2026-10-13",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "wildcard-records",
@@ -20,7 +20,8 @@
           "year": "2006",
           "verifiedOn": "2026-10-13"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 108\" role=\"img\" aria-labelledby=\"dg-d-bg-wr-t\" class=\"dg\"><title id=\"dg-d-bg-wr-t\">A wildcard record: a name under example.com that has no record of its own is answered by the wildcard record; a name with its own record uses that.</title><defs><marker id=\"dg-d-bg-wr-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"30\" width=\"140\" height=\"50\" class=\"dg-box\"/><text x=\"84\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">A name under</text><text x=\"84\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">example.com</text><rect x=\"214\" y=\"30\" width=\"130\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"279\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Has a record</text><text x=\"279\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">of its own?</text><rect x=\"404\" y=\"8\" width=\"142\" height=\"40\" class=\"dg-box\"/><text x=\"475\" y=\"24.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Its own record</text><text x=\"475\" y=\"40.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">answers</text><rect x=\"404\" y=\"62\" width=\"142\" height=\"40\" class=\"dg-box\"/><text x=\"475\" y=\"78.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">*.example.com</text><text x=\"475\" y=\"94.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">answers</text><path d=\"M154,55 L214,55\" class=\"dg-line\" marker-end=\"url(#dg-d-bg-wr-a)\"/><path d=\"M344,45 L374,45 L374,28 L404,28\" class=\"dg-line\" marker-end=\"url(#dg-d-bg-wr-a)\"/><path d=\"M344,65 L374,65 L374,82 L404,82\" class=\"dg-line\" marker-end=\"url(#dg-d-bg-wr-a)\"/><text x=\"378\" y=\"22\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">yes</text><text x=\"378\" y=\"96\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">no</text></svg>"
     },
     {
       "id": "nsec-negative-answers",

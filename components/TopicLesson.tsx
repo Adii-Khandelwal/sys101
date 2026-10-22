@@ -4,6 +4,7 @@ import GlossTerm from "./GlossTerm";
 import CopyLink from "./CopyLink";
 import { glossaryId, markTerms } from "@/lib/glossaryMatch";
 import { diagramHtml } from "@/lib/diagramHtml";
+import { StepThroughLazy } from "./StepThroughLazy";
 import Link from "next/link";
 import CompanyLogo from "./CompanyLogo";
 import { optionId } from "@/lib/quizIds";
@@ -192,6 +193,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             <CopyLink id="why" />
             <Outcome text={l.why.outcome} />
             <Paragraphs text={l.why.body} g={glossFor()} />
+            {l.why.diagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.why.diagram) }} />}
             <MarkDone meta={meta} unit="why" />
           </section>
 
@@ -224,6 +226,9 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
               ))}
             </ol>
             <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.howItWorks.diagram) }} />
+            {l.howItWorks.stepper && (
+              <StepThroughLazy frames={l.howItWorks.stepper.frames.map((f) => ({ caption: f.caption, html: diagramHtml(f.diagram) }))} />
+            )}
             <MarkDone meta={meta} unit="how" />
           </section>
 
@@ -251,6 +256,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 <li key={m}>{gMistakes(m)}</li>
               ))}
             </ol>
+            {l.mistakesDiagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.mistakesDiagram) }} />}
             <MarkDone meta={meta} unit="mistakes" />
           </section>
 
@@ -301,6 +307,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
               {topic.comparison.split("\n\n").map((para) => (
                 <p key={para.slice(0, 40)}>{gDiffer(para)}</p>
               ))}
+              {topic.comparisonDiagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(topic.comparisonDiagram) }} />}
             </section>
           )}
 
@@ -317,6 +324,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                   <p>{x.prompt}</p>
                   <Reveal show="Show a model answer" hide="Hide the model answer">
                     <p>{x.answer}</p>
+                    {x.diagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(x.diagram) }} />}
                     <h3>Trade-offs</h3>
                     <p>{x.tradeoffs}</p>
                     <h3>Common wrong answers</h3>

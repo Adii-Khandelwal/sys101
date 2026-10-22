@@ -4631,6 +4631,15 @@ html[data-posts-view] .posts-view-h {
   color: var(--ink-soft);
 }
 
+/* Stepper captions share one grid cell: the tallest sets the height, the current one shows. */
+.step-captions {
+  display: grid;
+}
+
+.step-captions > p {
+  grid-area: 1 / 1;
+}
+
 .fig-controls {
   display: flex;
   flex-wrap: wrap;

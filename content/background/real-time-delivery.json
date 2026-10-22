@@ -1,6 +1,6 @@
 {
   "topic": "real-time-delivery",
-  "updatedOn": "2026-10-16",
+  "updatedOn": "2026-10-22",
   "items": [
     {
       "id": "envoy",
@@ -40,7 +40,8 @@
           "year": "no date shown",
           "verifiedOn": "2026-10-16"
         }
-      ]
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 100\" role=\"img\" aria-labelledby=\"dg-rtd-bg-sd-t\" class=\"dg\"><title id=\"dg-rtd-bg-sd-t\">A service registers where it is in a catalog, and other services look it up by name instead of by a fixed address.</title><defs><marker id=\"dg-rtd-bg-sd-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"16\" width=\"120\" height=\"46\" class=\"dg-box\"/><text x=\"74\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Service</text><rect x=\"220\" y=\"16\" width=\"120\" height=\"46\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Catalog</text><rect x=\"426\" y=\"16\" width=\"120\" height=\"46\" class=\"dg-box\"/><text x=\"486\" y=\"43.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Other service</text><path d=\"M134,39 L220,39\" class=\"dg-line\" marker-end=\"url(#dg-rtd-bg-sd-a)\"/><path d=\"M426,39 L340,39\" class=\"dg-line\" marker-end=\"url(#dg-rtd-bg-sd-a)\"/><text x=\"177\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">registers</text><text x=\"383\" y=\"31\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">looks up</text></svg>"
     },
     {
       "id": "network-load-balancer",
