@@ -269,11 +269,11 @@
     {
       "id": "linkedin-the-log-2013",
       "title": "The Log: What every software engineer should know about real-time data's unifying abstraction",
-      "url": "https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying",
+      "url": "https://www.linkedin.com/blog/engineering/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying",
       "company": "LinkedIn",
-      "verifiedOn": "2026-10-17",
+      "verifiedOn": "2026-10-23",
       "published": "2013-12-16",
-      "ageNote": "From December 2013. It is here for the idea, which the other posts on this page build on: a log as the shared record that many systems read at their own pace. The mechanisms it describes (partitioning, replication, log compaction) are also in the current Kafka documentation, which was opened for this topic. The 2013 figures are old, and LinkedIn's 2025 post below gives a far larger scale. The copy opened was an archive copy of the page.",
+      "ageNote": "From December 2013. It is here for the idea, which the other posts on this page build on: a log as the shared record that many systems read at their own pace. The mechanisms it describes (partitioning, replication, log compaction) are also in the current Kafka documentation, which was opened for this topic. The 2013 figures are old, and LinkedIn's 2025 post below gives a far larger scale. The page was opened on LinkedIn's current blog address; the older engineering.linkedin.com address now returns 404.",
       "related": [
         "pub-sub",
         "replication"
