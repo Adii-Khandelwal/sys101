@@ -95,7 +95,7 @@ type LessonExercise = {
 type Lesson = {
   why: LessonSection;
   mentalModel: LessonSection & { diagram: string };
-  howItWorks: { outcome: string; steps: { step: string; explanation: string }[]; diagram: string };
+  howItWorks: { outcome: string; steps: { step: string; explanation: string }[]; diagram: string; /** Optional step-through: 3 to 6 frames of one diagram, one shown at a time. */ stepper?: { frames: { caption: string; diagram: string }[] } };
   workedExample: { outcome: string; steps: { step: string; explanation: string }[]; diagram: string };
   mistakesOutcome: string;
   checkOutcome: string;
@@ -322,6 +322,23 @@ export function checkQuizStyle(quiz: Pick<LessonQuestion, "options" | "correct">
   return problems;
 }
 
+/** A step-through needs 3 to 6 captioned frames, each a valid diagram, all drawn at one size so nothing jumps between steps. */
+export function checkStepper(s: { frames?: { caption?: string; diagram?: string }[] } | undefined): string[] {
+  if (s === undefined) return [];
+  const frames = s.frames ?? [];
+  const problems: string[] = [];
+  if (frames.length < 3 || frames.length > 6) problems.push("needs 3 to 6 frames");
+  frames.forEach((f, i) => {
+    if (!nonEmpty(f.caption)) problems.push(`frame ${i + 1}: caption is empty`);
+    problems.push(...checkDiagram(f.diagram).map((p) => `frame ${i + 1}: ${p}`));
+  });
+  const boxes = new Set(frames.map((f) => /viewBox="([^"]*)"/.exec(f.diagram ?? "")?.[1]));
+  if (boxes.size > 1) problems.push("frames must share one viewBox");
+  const ids = frames.flatMap((f) => [...(f.diagram ?? "").matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+  if (new Set(ids).size !== ids.length) problems.push("frames must not repeat an id");
+  return problems;
+}
+
 /** Every lesson section filled, 5 to 8 explained questions, 2 to 3 exercises, ids on posts. */
 function checkLesson(topic: Topic): string[] {
   const l = topic.lesson!;
@@ -343,6 +360,7 @@ function checkLesson(topic: Topic): string[] {
     outcome(name, l[name]?.outcome);
     if (!pairs(l[name]?.steps, "step", "explanation")) problems.push(`lesson.${name} needs steps`);
     // A flow or worked walk-through needs a diagram beside its steps (docs/ideas.md idea 3).
+    if (name === "howItWorks") problems.push(...checkStepper(l.howItWorks?.stepper).map((p) => `lesson.howItWorks stepper ${p}`));
     problems.push(...checkDiagram(l[name]?.diagram).map((p) => `lesson.${name} diagram ${p}`));
   }
   for (const name of ["mistakesOutcome", "checkOutcome", "postsOutcome", "differOutcome", "exercisesOutcome"] as const) {
