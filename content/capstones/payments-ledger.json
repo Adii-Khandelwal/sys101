@@ -1,0 +1,541 @@
+{
+  "slug": "payments-ledger",
+  "title": "Payments ledger",
+  "summary": "Design the append-only store that records every payment event, with indexes that are strict where a double charge is possible and relaxed where a few seconds of lag is fine. Read Uber's LedgerStore and the migration of a trillion ledger entries onto it, both described in 2024.",
+  "topics": [
+    {
+      "slug": "distributed-transactions",
+      "role": "Explains the two-phase pattern that keeps an index and its record in step without one big transaction."
+    },
+    {
+      "slug": "indexing",
+      "role": "Covers the many lookup paths a ledger needs, and how indexes are built, backfilled and checked."
+    },
+    {
+      "slug": "sharding",
+      "role": "Explains why time-ordered keys pile writes onto one partition, and how buckets spread them."
+    },
+    {
+      "slug": "object-storage",
+      "role": "Describes the cold tier where older entries sit once they leave the hot store."
+    },
+    {
+      "slug": "idempotency-and-retries",
+      "role": "Makes a backfill safe to stop and restart in batches without writing a record twice."
+    }
+  ],
+  "brief": {
+    "text": "A payments company records every money movement as an entry that is never changed afterwards. Other systems then need to find those entries by trip, by account, by time and by status. Design the ledger store and its indexes. Some lookups must see a write at once, because a missed card hold can lead to a duplicate charge. Others can lag by seconds. The store must also be moved from one database to another with no gap in the record. This page covers storage, indexing and migration, not how a payment is authorised or settled.",
+    "requirements": [
+      {
+        "label": "1. Volume of money events",
+        "value": "Billions of trips and deliveries, and tens of billions of financial transactions, every quarter",
+        "sourceId": "indexes"
+      },
+      {
+        "label": "2. Index count",
+        "value": "Over 2 trillion unique indexes over hundreds of billions of ledgers",
+        "sourceId": "indexes"
+      },
+      {
+        "label": "3. Data size",
+        "value": "All ledger data since 2017: 1.2 PB of immutable records (compressed) and 0.5 PB of secondary indexes (uncompressed)",
+        "sourceId": "migration"
+      },
+      {
+        "label": "4. Immutable and verifiable",
+        "value": "Records cannot be altered, and this can be checked with cryptographic signatures",
+        "sourceId": "migration"
+      },
+      {
+        "label": "5. Mixed index freshness",
+        "value": "Card holds must be visible to the next read. Payment history may lag a few seconds",
+        "sourceId": "indexes"
+      },
+      {
+        "label": "6. Writes must not throttle",
+        "value": "A time index must take writes at a peak of about 1,000 trips a second without being throttled",
+        "sourceId": "indexes"
+      },
+      {
+        "label": "7. Migration",
+        "value": "More than a trillion entries moved, over two years, with no downtime and no outage",
+        "sourceId": "migration"
+      }
+    ]
+  },
+  "decisions": [
+    {
+      "id": "strong-index",
+      "question": "A card hold is placed at the start of a trip and later turned into a charge or voided. The next read must see the hold. How should its index be built?",
+      "options": [
+        {
+          "label": "Write the record, then build the index later in the background",
+          "why": "Fast and available, but the hold may not show for a while, and a duplicate charge becomes possible."
+        },
+        {
+          "label": "Write an index intent first, then the record, then commit the intent afterwards",
+          "why": "The index is never behind its record. Stale or orphaned intents can be settled by the next read."
+        },
+        {
+          "label": "Put the record and index in one cross-database transaction",
+          "why": "Strict, but it couples two stores to one lock and one commit for every write."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Uber",
+        "text": "LedgerStore uses a two-phase commit. An index intent is written before the record and committed after it, and the commit runs asynchronously so insert latency is not affected. If the intent write fails, the whole insert fails. A read that meets an intent checks whether the record exists, then commits or rolls back the intent. The post says only a very small percentage of indexes end up in the intent state.",
+        "sourceId": "indexes"
+      }
+    },
+    {
+      "id": "weak-index",
+      "question": "The payment history page can show a payment a few seconds late. Should its index use the same strict path as the card hold?",
+      "options": [
+        {
+          "label": "Yes, use one strict path for every index so there is only one design",
+          "why": "Simple to reason about, but every write pays the extra latency and one failed index write fails the insert."
+        },
+        {
+          "label": "No, build it in the background by a separate process outside the write path",
+          "why": "Write latency and availability stay unaffected, and the cost is a lag of seconds."
+        },
+        {
+          "label": "No, skip the index and scan the ledger on each page view",
+          "why": "No index to maintain, but each view reads far more than it needs."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Uber",
+        "text": "Eventually consistent indexes are generated in the background from Docstore's Materialized Views, away from the online write path. The post lists what strong indexes give up: a higher write latency, because the intent and record writes are serial, and a lower availability, because any one intent write that fails fails the whole write. It says strong indexes should be used only when the use case strongly demands it.",
+        "sourceId": "indexes"
+      }
+    },
+    {
+      "id": "time-index",
+      "question": "Ledger times cluster around the current clock. If the time index is partitioned by time, every new write lands on one partition. What do you do on a database that throttles hot partitions?",
+      "options": [
+        {
+          "label": "Partition by a finer time unit, such as one second",
+          "why": "Helps a little, but at 1,000 trips a second one second of writes already equals the peak before throttling."
+        },
+        {
+          "label": "Send writes to a temporary buffer table spread over M buckets by hash, and copy them in batches to a permanent table sorted by time",
+          "why": "Online writes spread evenly. Throttling on the batch copy affects no one, and reads stay efficient."
+        },
+        {
+          "label": "Raise the provisioned write capacity until throttling stops",
+          "why": "Works until traffic grows, and costs more with every step up."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Uber",
+        "text": "On DynamoDB, Uber used a write-optimised buffer index with M hash buckets and a read-optimised permanent table partitioned on the timestamp aligned to a window such as 10 minutes. Buffer tables are deleted after offload. The post says the two-table design brought state management, and that buffer tables not created in time caused write failures and availability issues in the past.",
+        "sourceId": "indexes"
+      }
+    },
+    {
+      "id": "one-table",
+      "question": "The two-table design works but has an operational cost. What database property would let you use one table instead?",
+      "options": [
+        {
+          "label": "A store with a fixed number of shards, sorted by primary key, so you can partition on the full timestamp and scan windows",
+          "why": "Fine timestamps spread writes. A fixed shard count bounds how many reads a window needs."
+        },
+        {
+          "label": "A store that adds partitions without limit as data grows",
+          "why": "Easy to grow, but the number of reads for a window keeps rising with table size."
+        },
+        {
+          "label": "A store with no ordering at all, scanned in full for each window",
+          "why": "Writes spread evenly, but a time window has to read everything."
+        }
+      ],
+      "answerIndex": 0,
+      "realChoice": {
+        "company": "Uber",
+        "text": "Docstore is built on MySQL with a fixed number of shards and data sorted by primary key. Uber keeps a single time-range table, partitioned on the full timestamp, and reads a window as prefix scans over each shard, with a scatter-gather and sort merge. The post says the fixed shard count lets them bound the number of read requests, which does not work on DynamoDB, where partitions keep growing.",
+        "sourceId": "indexes"
+      }
+    },
+    {
+      "id": "validate",
+      "question": "You have copied a trillion ledger entries to a new store. How do you decide it is safe to switch over?",
+      "options": [
+        {
+          "label": "Compare a sample of live traffic and stop at the first mismatch",
+          "why": "Catches bugs in code paths that real users hit, but says little about old data nobody reads."
+        },
+        {
+          "label": "Run live shadow comparison with a target that is below 100%, plus a full offline comparison of cold data",
+          "why": "Live checks cover current traffic and load. The offline job covers the rarely read history."
+        },
+        {
+          "label": "Trust the backfill job's own record counts",
+          "why": "Cheap, but a bug in the job would also be in its counts."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Uber",
+        "text": "Uber used shadow validation with a target of at least 99.99% complete and correct and an upper bound of 99.9999%, and offline validation with Apache Spark. The biggest single job compared 760 billion records (70 TB compressed). The post notes that live shadow validation cannot give strong guarantees for rarely accessed history. The rollout ran over a few weeks with a fallback to DynamoDB, which was kept for a month before the table was dropped.",
+        "sourceId": "migration"
+      }
+    },
+    {
+      "id": "backfill",
+      "question": "Backfilling years of history at a high rate can overload the live system. How should the backfill job run?",
+      "options": [
+        {
+          "label": "One long run at the highest rate the target can survive",
+          "why": "Finishes sooner, but any trouble in the middle means a restart from scratch."
+        },
+        {
+          "label": "Small idempotent batches with a rate limit, a dynamic speed-up when traffic is low, and an emergency stop",
+          "why": "It can be stopped at any moment and resumed without double writes, and it never competes with live traffic for long."
+        },
+        {
+          "label": "Run it only during maintenance windows with all live traffic paused",
+          "why": "Safe for the target, but a money system has no quiet hours to give."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Uber",
+        "text": "Uber broke the backfill into batches that each finish within a few minutes, made them idempotent, wrote statistics after each batch, and rate-limited with additive increase and multiplicative decrease under an upper bound. Its worked example: 100 billion records at 10,000 a second take 120 days when production normally handles 1,000 a second. The post says to scale the job up in small steps and to stop it on any suspicion of overload.",
+        "sourceId": "migration"
+      }
+    }
+  ],
+  "sizing": {
+    "inputs": [
+      {
+        "id": "trips_per_sec",
+        "label": "Peak trips per second (about 1,000 in the post)",
+        "min": 100,
+        "max": 20000,
+        "step": 100,
+        "default": 1000,
+        "unit": "trips/s"
+      },
+      {
+        "id": "buckets",
+        "label": "Buffer buckets (M), your choice",
+        "min": 1,
+        "max": 1000,
+        "step": 1,
+        "default": 100,
+        "unit": "buckets"
+      },
+      {
+        "id": "records",
+        "label": "Records to backfill (100 billion in the post's example)",
+        "min": 1000000000,
+        "max": 1000000000000,
+        "step": 1000000000,
+        "default": 100000000000,
+        "unit": "records"
+      },
+      {
+        "id": "backfill_rate",
+        "label": "Backfill rate (10,000 a second in the example)",
+        "min": 1000,
+        "max": 1000000,
+        "step": 1000,
+        "default": 10000,
+        "unit": "records/s"
+      },
+      {
+        "id": "normal_rate",
+        "label": "Production rate on the same path (1,000 a second in the example)",
+        "min": 100,
+        "max": 100000,
+        "step": 100,
+        "default": 1000,
+        "unit": "records/s"
+      },
+      {
+        "id": "compare_rate",
+        "label": "Shadow comparisons per second (1,000 in the post)",
+        "min": 100,
+        "max": 100000,
+        "step": 100,
+        "default": 1000,
+        "unit": "records/s"
+      }
+    ],
+    "outputs": [
+      {
+        "label": "Write units a one-second time partition would take (derived, one unit per trip)",
+        "formula": "trips_per_sec",
+        "unit": "WCU"
+      },
+      {
+        "label": "Writes per buffer bucket if hashing is even (derived)",
+        "formula": "trips_per_sec / buckets",
+        "unit": "writes/s"
+      },
+      {
+        "label": "Days to finish the backfill at that rate (derived; the post rounds 115.7 up to 120)",
+        "formula": "records / backfill_rate / 86400",
+        "unit": "days"
+      },
+      {
+        "label": "Backfill traffic as a multiple of normal traffic (derived)",
+        "formula": "backfill_rate / normal_rate",
+        "unit": "times"
+      },
+      {
+        "label": "Days of shadow data to reach 100 million comparisons (the post's six-nines case) (derived)",
+        "formula": "100000000 / compare_rate / 86400",
+        "unit": "days"
+      }
+    ]
+  },
+  "diagram": {
+    "title": "Payments ledger: the service, the hot ledger store, strong and eventual indexes, the time-range index and the cold blob store",
+    "nodes": [
+      {
+        "id": "service",
+        "label": "Payment service (Gulfstream)",
+        "topic": "idempotency-and-retries",
+        "company": "Uber",
+        "tradeoff": "Gulfstream is Uber's payment platform, launched in 2017. It writes entries and reads them by several keys. A failed intent write fails the insert, so callers must be ready to retry.",
+        "to": [
+          "intent",
+          "ledger"
+        ]
+      },
+      {
+        "id": "intent",
+        "label": "Strong index (intent, then commit)",
+        "topic": "distributed-transactions",
+        "company": "Uber",
+        "tradeoff": "The intent is written before the record and committed after it. Readers always see the hold, at the price of serial writes, more latency and lower availability.",
+        "to": [
+          "ledger"
+        ]
+      },
+      {
+        "id": "ledger",
+        "label": "Ledger store (LedgerStore)",
+        "topic": "sharding",
+        "company": "Uber",
+        "tradeoff": "Append-only and verifiably immutable, with hot and cold tiers. Nothing in the post describes updating a record in place.",
+        "to": [
+          "weak",
+          "timeidx",
+          "cold"
+        ]
+      },
+      {
+        "id": "weak",
+        "label": "Eventual index (materialised view)",
+        "topic": "indexing",
+        "company": "Uber",
+        "tradeoff": "Built in the background, away from the write path, so writes stay fast and available. A payment can show on the history page a few seconds late.",
+        "to": []
+      },
+      {
+        "id": "timeidx",
+        "label": "Time-range index",
+        "topic": "indexing",
+        "company": "Uber",
+        "tradeoff": "One table sorted by full timestamp, read as prefix scans over a fixed number of shards. It replaced the two-table buffer design that needed careful table creation.",
+        "to": []
+      },
+      {
+        "id": "cold",
+        "label": "Cold storage",
+        "topic": "object-storage",
+        "company": "Uber",
+        "tradeoff": "Older data sits in a cold tier built for storage cost, while hot data stays where it serves requests best. Indexes can be rebuilt from this cold data, which is how historical backfill works. Reads from it are slower than from the hot tier.",
+        "to": []
+      }
+    ],
+    "failures": [
+      {
+        "id": "intent-write-fails",
+        "label": "An index intent write fails",
+        "effects": [
+          {
+            "nodeId": "intent",
+            "state": "down"
+          },
+          {
+            "nodeId": "service",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "commit-lost",
+        "label": "An intent is never committed after the record write",
+        "effects": [
+          {
+            "nodeId": "intent",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "index-lag",
+        "label": "The eventual index falls behind",
+        "effects": [
+          {
+            "nodeId": "weak",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "ledger-throttled",
+        "label": "The hot ledger store throttles or is overloaded by a backfill",
+        "effects": [
+          {
+            "nodeId": "ledger",
+            "state": "degraded"
+          },
+          {
+            "nodeId": "service",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "cold-down",
+        "label": "The cold storage tier is unreachable",
+        "effects": [
+          {
+            "nodeId": "cold",
+            "state": "down"
+          },
+          {
+            "nodeId": "ledger",
+            "state": "degraded"
+          }
+        ]
+      }
+    ]
+  },
+  "compare": "The two posts cover two jobs on one system. The indexing post is about how to read a ledger: a strict path for the few lookups where a stale answer can cost a customer money, a relaxed path for the rest, and a time index shaped around what the database tolerates. The migration post is about how to move that ledger without losing a record: shadow traffic for the present, an offline comparison for the past, and a backfill that can always be stopped.\n\nBoth lean on the same habit. They decide up front how wrong a result may be and measure against it. The indexing post keeps the strict path for where the use case demands it and pays for it in latency and availability. The migration post set a target of at least 99.99% with an upper bound of 99.9999%, and explains the bound: at six nines, proving it already needs 100 million comparisons, and at seven nines the wait is about 12 days at 1,000 comparisons a second. The post also accepts that six nines could leave slightly more than a million corrupt records among the migrated ones, and judged the savings worth it. You may disagree with that call for your own system.\n\nRead the dates with care. The posts are from April 2024 and describe Uber's system then. The indexing post reports over 2 trillion indexes, with the design in production for over six months, and estimated savings of over $6 million a year. Those are the company's own figures, and this page makes no claim that the design is unchanged since.",
+  "quiz": [
+    {
+      "question": "Why does a card hold need a strongly consistent index?",
+      "options": [
+        "Payment history pages must always load in under a second, so they use the strict path",
+        "A hold that is not yet visible on read could lead to a second charge",
+        "Strong indexes are cheaper to run than background indexes, so they are used wherever possible"
+      ],
+      "correct": 1,
+      "why": "The post says that if the index serving the hold is not strongly consistent, a duplicate charge could be made while the original hold remains.",
+      "wrong": [
+        "Payment history is the example that can lag a few seconds.",
+        "",
+        "The post lists higher write latency and lower availability as the costs of strong indexes."
+      ],
+      "teaches": "distributed-transactions"
+    },
+    {
+      "question": "In the two-phase index write, an intent exists but its record write failed. What settles it?",
+      "options": [
+        "A read that meets the intent checks for the record, then commits or rolls back",
+        "The intent stays in place for good and every later reader simply ignores it",
+        "The client must resend the whole insert before the intent can ever be cleared"
+      ],
+      "correct": 0,
+      "why": "Leftover intents are resolved on the read path, asynchronously, so read latency is not affected.",
+      "wrong": [
+        "",
+        "Unused intents would pile up, so the read path clears them.",
+        "Cleanup is done by the read path, not by the client."
+      ],
+      "teaches": "distributed-transactions"
+    },
+    {
+      "question": "Why does partitioning a time index by second still cause throttling on DynamoDB at 1,000 trips a second?",
+      "options": [
+        "Timestamps cannot be used as a partition key in any distributed database",
+        "One second of writes is already about 1,000 write units, the throttle point",
+        "Reads of the index would take longer than a second for every window"
+      ],
+      "correct": 1,
+      "why": "Ledger times cluster near the wall clock, so each window sends all its writes to one partition. The post puts that load at the throttle point.",
+      "wrong": [
+        "A full timestamp is exactly what Docstore partitions on.",
+        "",
+        "The issue is write throttling, not read time."
+      ],
+      "teaches": "sharding"
+    },
+    {
+      "question": "Why does a fixed shard count help a time-range index read?",
+      "options": [
+        "It lets writes skip the primary key and go straight to the shard",
+        "It removes the need for any sort order on the table",
+        "The number of read requests for a window can be bounded"
+      ],
+      "correct": 2,
+      "why": "With a fixed shard count and data sorted by key, a window is read by a known number of prefix scans. The post says this does not hold on DynamoDB, where partitions keep growing.",
+      "wrong": [
+        "Writes still use the primary key.",
+        "Sorted order is what the prefix scan relies on.",
+        ""
+      ],
+      "teaches": "indexing"
+    },
+    {
+      "question": "Why must each batch of a long backfill be idempotent?",
+      "options": [
+        "A batch may be stopped halfway and must be safe to run again",
+        "Idempotent batches run much faster than any other kind of batch",
+        "The target database refuses any record that it has already seen once"
+      ],
+      "correct": 0,
+      "why": "The post says the job may shut down mid-batch, because of overload or an outage, so rerunning must not corrupt the data.",
+      "wrong": [
+        "",
+        "The reason given is safe restart, not speed.",
+        "The point is that the job, not the database, must handle repeats."
+      ],
+      "teaches": "idempotency-and-retries"
+    },
+    {
+      "question": "What does offline validation catch that live shadow validation does not?",
+      "options": [
+        "Latency problems that only appear under full production load",
+        "Bugs in the code that reads from the new store on live requests",
+        "Problems in rarely read history"
+      ],
+      "correct": 2,
+      "why": "Live traffic mostly reads recent data. The post uses a full offline comparison to cover the cold data nobody is reading.",
+      "wrong": [
+        "Shadow validation measures load and latency.",
+        "Shadow validation exercises that code with real requests.",
+        ""
+      ],
+      "teaches": "object-storage"
+    }
+  ],
+  "sources": [
+    {
+      "id": "indexes",
+      "title": "How LedgerStore Supports Trillions of Indexes at Uber",
+      "url": "https://www.uber.com/us/en/blog/how-ledgerstore-supports-trillions-of-indexes/",
+      "company": "Uber",
+      "published": "2024-04-04",
+      "verifiedOn": "2026-10-23"
+    },
+    {
+      "id": "migration",
+      "title": "Migrating a Trillion Entries of Uber's Ledger Data from DynamoDB to LedgerStore",
+      "url": "https://www.uber.com/us/en/blog/migrating-from-dynamodb-to-ledgerstore/",
+      "company": "Uber",
+      "published": "2024-04-11",
+      "verifiedOn": "2026-10-23"
+    }
+  ]
+}
