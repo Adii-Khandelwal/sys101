@@ -1,0 +1,575 @@
+{
+  "slug": "file-sync",
+  "title": "File sync",
+  "summary": "Design the sync engine on a user's computer, the way it moves file blocks, and the metadata store that tracks every file. Read three Dropbox posts: the 2020 rewrite of the sync engine, the 2020 Broccoli compression work and the 2022 Panda metadata store. All three come from Dropbox alone.",
+  "topics": [
+    {
+      "slug": "sharding",
+      "role": "Explains why splitting a metadata store into fixed shards forced whole-fleet splits, and how ranges of keys give finer control."
+    },
+    {
+      "slug": "transactions-and-mvcc",
+      "role": "Covers keeping several versions of a key so that reads, the bulk of the load, take no locks."
+    },
+    {
+      "slug": "distributed-transactions",
+      "role": "Describes the two-phase commit that lets one write change keys on several storage nodes at once."
+    },
+    {
+      "slug": "replication",
+      "role": "Covers asynchronous replication between two regions, and what is lost if a region fails before a write has copied."
+    },
+    {
+      "slug": "object-storage",
+      "role": "Describes the block store behind the upload and download calls, where file contents live as hashed blocks."
+    }
+  ],
+  "brief": {
+    "text": "A file sync service keeps a folder on each user's devices the same as a copy on the servers. Devices go offline for long periods and come back with edits that conflict. File contents move as blocks, and the facts about each file (name, parent folder, version) live in a metadata store. Design the engine on the device, the block path and the metadata store. This page covers the sync engine, the block protocol and the metadata store. It does not cover sharing permissions, search or previews. All three sources are Dropbox posts, so every design here is one company's answer, not a comparison across companies.",
+    "requirements": [
+      {
+        "label": "1. Scale of the service",
+        "value": "Hundreds of billions of files, trillions of file revisions, exabytes of customer data and hundreds of millions of devices (2020)",
+        "sourceId": "nucleus"
+      },
+      {
+        "label": "2. Offline is normal",
+        "value": "Clients may be offline for long periods and reconcile when they return, so a network partition is standard operation",
+        "sourceId": "nucleus"
+      },
+      {
+        "label": "3. Durability before speed",
+        "value": "Never delete or corrupt user data. Durability is table stakes, so where it conflicts with performance, durability wins",
+        "sourceId": "broccoli"
+      },
+      {
+        "label": "4. Data on the wire",
+        "value": "Petabytes of data synced every day across millions of desktop clients, in blocks of up to 4 MiB",
+        "sourceId": "broccoli"
+      },
+      {
+        "label": "5. Metadata scale",
+        "value": "Thousands of servers, petabytes on SSDs, tens of millions of queries a second at single-digit millisecond latency",
+        "sourceId": "panda"
+      },
+      {
+        "label": "6. Read-heavy metadata",
+        "value": "Reads are more than 95% of the Edgestore and Filesystem workloads, and most expect to see every write that finished before them",
+        "sourceId": "panda"
+      },
+      {
+        "label": "7. Growth without doubling",
+        "value": "Add storage in small steps tied to growth, and rebalance data if some shards grow faster than others",
+        "sourceId": "panda"
+      }
+    ]
+  },
+  "decisions": [
+    {
+      "id": "rewrite",
+      "question": "Your sync engine has years of production hardening, but a data model made for a world without sharing. Files have no identifier that survives a move. You have tried refactoring and hotspot tuning. What now?",
+      "options": [
+        {
+          "label": "Keep improving it in small steps: more telemetry, more refactoring, more tuning",
+          "why": "Lowest risk and features keep shipping, but small steps cannot change the nouns the system is built on."
+        },
+        {
+          "label": "Rewrite it from scratch around a strict data model, with testing built in from day one",
+          "why": "Costly and slow, but the data model fixes what small steps could not, and tight invariants make it checkable."
+        },
+        {
+          "label": "Add a server-side repair job that finds and fixes inconsistent files",
+          "why": "Cleans up damage after it happens, and leaves the cause on every device."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Dropbox",
+        "text": "Dropbox spent about four years rebuilding the desktop sync engine as Nucleus and shipped it to all users by March 2020. The post says it would have been a terrible idea in many environments. It lists the reasons: incremental fixes had run out, the old data model gave no stable file identifier and few consistency guarantees, and the system was hard to test. It ran a checklist first (refactoring tried, hotspot tuning tried, understanding of the old system, engineering hours, a slower feature rate accepted).",
+        "sourceId": "nucleus"
+      }
+    },
+    {
+      "id": "moves",
+      "question": "The old engine stores a move as a delete at the old path plus an add at the new one. A network error lets the delete through but not the add. What should the new client-server protocol do?",
+      "options": [
+        {
+          "label": "Keep the pair, but retry the add until it succeeds",
+          "why": "Simple, but other devices can see the file missing in between, and a client that gives up leaves it lost."
+        },
+        {
+          "label": "Give files and folders stable global ids and make a move one atomic operation, whatever the folder's size",
+          "why": "No device sees the item missing or doubled, and the server and client can compare views to catch bugs."
+        },
+        {
+          "label": "Let each device decide, and merge by duplicating folders when views disagree",
+          "why": "Nothing is lost, but users end up with copies they did not make."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Dropbox",
+        "text": "Nucleus uses a redesigned protocol with strong consistency. Server and client must hold the same view of the remote filesystem before the client considers a change. Shared folders and files have globally unique ids, clients never see them duplicated or missing for a moment, and moves are atomic whatever the size of the subtree. Any difference between the client's and server's view is treated as a bug. For two users who each move a folder into the other's while offline, Nucleus keeps the original folders and the order depends on whose upload arrives first, where the old engine duplicated the folders.",
+        "sourceId": "nucleus"
+      }
+    },
+    {
+      "id": "threads",
+      "question": "Sync is highly concurrent: uploads, downloads, hashing and disk work all overlap. The old engine used threads and the OS scheduler, so tests could not be repeated. How do you structure the new one?",
+      "options": [
+        {
+          "label": "Keep threads, but hold coarse locks for long stretches to make it easier to reason about",
+          "why": "Fewer races, but you give up the parallelism and the runs are still not repeatable."
+        },
+        {
+          "label": "Run nearly everything on one control thread with futures, and send only IO and heavy work to other threads",
+          "why": "Fewer states to consider, and with fixed inputs the run is the same every time, so a failing test can be replayed."
+        },
+        {
+          "label": "Add more locks and finer grained scheduling hints to the existing threads",
+          "why": "Gets some parallelism back, but each new lock is another place for a bug nobody can replay."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Dropbox",
+        "text": "Nucleus runs almost all code on a single control thread, with Rust futures scheduling many actions on it. Network IO goes to an event loop, hashing to a thread pool, and filesystem IO to a dedicated thread. With inputs and scheduling fixed, the control thread is fully deterministic, so tests can generate random filesystem states and schedules from a seed, replay any failure from that seed, and run millions of scenarios a day. The post states the old engine used very coarse locks held for long periods, which gave up the benefit of parallelism.",
+        "sourceId": "nucleus"
+      }
+    },
+    {
+      "id": "compress",
+      "question": "You want to compress file blocks on the client before upload. Client machines rarely have ECC memory, so the compressor itself can corrupt a block. What do you do?",
+      "options": [
+        {
+          "label": "Trust the compressor, since the network already checks packets",
+          "why": "Fastest. A bad bit written during compression passes every network check and is stored."
+        },
+        {
+          "label": "Send the hash of the uncompressed block and decompress the result to check it matches before it is accepted",
+          "why": "Costs an extra decompression on the request path, and catches corruption from compression or the wire."
+        },
+        {
+          "label": "Skip compression for the sake of simplicity and send raw blocks",
+          "why": "Safe, but every user pays for the bandwidth and slower uploads."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Dropbox",
+        "text": "The upload request carries the hash of the uncompressed block and a format value. The post says the extra decompression call can be expensive but is needed to be sure the compressed file encodes the original, and that choosing durability over performance is easy because durability is table stakes at Dropbox. Benchmarks showed the check runs at upwards of 300 MiB a second per core, a cost they were willing to pay. Median latency fell by more than 30% and data on the wire by the same amount.",
+        "sourceId": "broccoli"
+      }
+    },
+    {
+      "id": "quality",
+      "question": "Compression at the same quality level used for long-term storage turns out to slow uploads on fast links (100 Mbps and above). Do you keep the best ratio, or change the setting?",
+      "options": [
+        {
+          "label": "Keep the storage-grade setting, since a smaller block saves more bandwidth and storage",
+          "why": "Best ratio, but the compressor becomes the bottleneck and a fast link sits partly idle."
+        },
+        {
+          "label": "Lower the quality level, accept slightly larger blocks, and put the user's upload time first",
+          "why": "Total savings drop a little, and the link fills better on fast connections."
+        },
+        {
+          "label": "Compress only on slow links and send raw bytes on fast ones",
+          "why": "Removes the bottleneck, but throws away savings that a faster setting would keep."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Dropbox",
+        "text": "The first setting was the one used for durable long-term storage (quality 5, window size 4 MiB). After benchmarks Dropbox chose a lower quality level, which cost some compression. Average upload bandwidth savings went from about 33% to about 30%, while peak large-file upload bandwidth rose from about 35 Mbps to about 50 Mbps. The post says the decision put the user first, even though it means somewhat more network use on the server side. It also says the bottleneck was not obvious at the start.",
+        "sourceId": "broccoli"
+      }
+    },
+    {
+      "id": "metadata-layer",
+      "question": "Your metadata runs on sharded MySQL, and the next capacity step is to split every machine in two. One outlier shard may outgrow a whole machine. Off-the-shelf options exist. What do you do?",
+      "options": [
+        {
+          "label": "Move to FoundationDB, Vitess or CockroachDB, which already scale and support transactions",
+          "why": "Less to build, but each one failed a hard need: scale, strong reads, or the replication model."
+        },
+        {
+          "label": "Keep splitting machines in two as the data grows",
+          "why": "No new system, but you pay for double the fleet each time and cannot split the one oversized shard."
+        },
+        {
+          "label": "Build a transactional key-value layer between the application and MySQL, with data in movable ranges",
+          "why": "Expensive to build, and it gives incremental capacity, rebalancing and transactions that do not depend on the engine."
+        }
+      ],
+      "answerIndex": 2,
+      "realChoice": {
+        "company": "Dropbox",
+        "text": "Dropbox built Panda, an ordered key-value store between Edgestore and sharded MySQL. It looked at open source first and rejected three. FoundationDB is tuned for up to 500 storage processes against more than 10,000 cores per Dropbox cluster, with a central timestamp oracle and a full outage on any transactional node failure. Vitess lacks production-ready cross-shard ACID and relaxes consistency. CockroachDB did not fit the replication model of two regions about 80 ms apart, nor the scale: a 64 MB default range over 2 PB is more than 30 million ranges, roughly 60 GB of memory just to track them.",
+        "sourceId": "panda"
+      }
+    },
+    {
+      "id": "mvcc",
+      "question": "Reads are more than 95% of the metadata workload, and most must see the latest writes. How do you provide transactions without making readers wait for writers?",
+      "options": [
+        {
+          "label": "Take read locks so each transaction sees a stable view",
+          "why": "Easy to explain. Readers and writers block each other, which is costly when nearly everything is a read."
+        },
+        {
+          "label": "Keep timestamped versions of each key, so a read at one timestamp sees a fixed snapshot with no locks",
+          "why": "Reads never block and can use followers, but every write and delete adds a row, and old versions need cleanup."
+        },
+        {
+          "label": "Give up isolation and let reads see whatever is committed at that moment",
+          "why": "Fast and simple, but a file system cannot show a half-finished transaction."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Dropbox",
+        "text": "Panda uses MVCC over the storage engine and two-phase commit with hybrid logical clocks. Because reads are over 95% of the load, non-blocking reads help scale, and snapshot reads at an older timestamp can be served by followers as well as the leader. The post names two costs: write amplification, since every operation including delete becomes a row insert, and garbage collection. Old versions can turn hot keys into dense ranges that scans must churn through, which Dropbox hit and fixed with a queue of keys and timestamps vacuumed in strict order.",
+        "sourceId": "panda"
+      }
+    }
+  ],
+  "sizing": {
+    "inputs": [
+      {
+        "id": "file_mb",
+        "label": "File size you upload",
+        "min": 1,
+        "max": 10000,
+        "step": 1,
+        "default": 100,
+        "unit": "MB"
+      },
+      {
+        "id": "savings_pct",
+        "label": "Compression saving on that file (the post gives 13%, 40% or 70% for different groups of users; about 30% on average)",
+        "min": 0,
+        "max": 90,
+        "step": 1,
+        "default": 30,
+        "unit": "%"
+      },
+      {
+        "id": "link_mbps",
+        "label": "Upload link speed (the post reports about 35 and 50 Mbps at peak)",
+        "min": 1,
+        "max": 1000,
+        "step": 1,
+        "default": 50,
+        "unit": "Mbps"
+      },
+      {
+        "id": "data_pb",
+        "label": "Metadata set size (2 PB in the post's example)",
+        "min": 1,
+        "max": 20,
+        "step": 1,
+        "default": 2,
+        "unit": "PB"
+      },
+      {
+        "id": "range_mb",
+        "label": "Range size (64 MB was the CockroachDB default; Panda's are about 100 GB)",
+        "min": 64,
+        "max": 200000,
+        "step": 64,
+        "default": 64,
+        "unit": "MB"
+      }
+    ],
+    "outputs": [
+      {
+        "label": "Bytes left to send after compression (derived)",
+        "formula": "file_mb * (1 - savings_pct / 100)",
+        "unit": "MB"
+      },
+      {
+        "label": "Time to send the file raw at that link speed (derived, ignores protocol overhead)",
+        "formula": "file_mb * 8 / link_mbps",
+        "unit": "seconds"
+      },
+      {
+        "label": "Time to send it compressed (derived, ignores the time spent compressing, which the post found can itself limit fast links)",
+        "formula": "file_mb * (1 - savings_pct / 100) * 8 / link_mbps",
+        "unit": "seconds"
+      },
+      {
+        "label": "Ranges the registry would track (derived; the post says more than 30 million for 2 PB at 64 MB)",
+        "formula": "data_pb * 1000000000 / range_mb",
+        "unit": "ranges"
+      },
+      {
+        "label": "Memory to keep all ranges in RAM (derived, assuming about 2 KB per range, which is the post's 60 GB for 30 million ranges)",
+        "formula": "data_pb * 1000000000 / range_mb * 2000 / 1000000000",
+        "unit": "GB"
+      }
+    ]
+  },
+  "diagram": {
+    "title": "File sync: the desktop engine, the two sync protocols, the block store, and the Panda metadata stack, each part taken from the post named in its note",
+    "nodes": [
+      {
+        "id": "client",
+        "label": "Desktop sync engine (Nucleus)",
+        "topic": "distributed-transactions",
+        "company": "Dropbox",
+        "tradeoff": "From the rewrite post (2020). Written in Rust, almost all code on one deterministic control thread, tested by seeded simulation. It must reconcile edits made offline, and it trades some parallelism for being able to replay a failure.",
+        "to": [
+          "metaproto",
+          "blockproto"
+        ]
+      },
+      {
+        "id": "metaproto",
+        "label": "Metadata sync protocol",
+        "topic": "distributed-transactions",
+        "company": "Dropbox",
+        "tradeoff": "From the rewrite and Broccoli posts. It syncs file metadata such as name and size, and tells the block engine which blocks to upload or download. Strongly consistent: server and client agree on the view of the remote filesystem before a change. The posts do not say which store sits behind it.",
+        "to": []
+      },
+      {
+        "id": "blockproto",
+        "label": "Block sync protocol (PutBlock, GetBlock, Broccoli)",
+        "topic": "object-storage",
+        "company": "Dropbox",
+        "tradeoff": "From the Broccoli post (2020). Blocks of up to 4 MiB, sent with the hash of the uncompressed block. Compression cuts data on the wire, costs CPU and adds a decompress check on upload. On download the client leads and the server may steer it back to a simpler format.",
+        "to": [
+          "pocket"
+        ]
+      },
+      {
+        "id": "pocket",
+        "label": "Magic Pocket (block store)",
+        "topic": "object-storage",
+        "company": "Dropbox",
+        "tradeoff": "From the Broccoli post. The persistent store behind the block calls. Most of its data is already Brotli compressed with Broccoli at a higher quality level, so downloads can send it as is. The post says nothing more about how it stores data.",
+        "to": []
+      },
+      {
+        "id": "edgestore",
+        "label": "Edgestore and Filesystem (application layer)",
+        "topic": "sharding",
+        "company": "Dropbox",
+        "tradeoff": "From the Panda post (2022). Two metadata systems: the Filesystem holds metadata about files and folders, and Edgestore powers other services. They provide indexes, schema and strongly consistent caching on top of Panda.",
+        "to": [
+          "frontend"
+        ]
+      },
+      {
+        "id": "frontend",
+        "label": "Panda front end nodes",
+        "topic": "distributed-transactions",
+        "company": "Dropbox",
+        "tradeoff": "From the Panda post. They route requests to the right storage node and coordinate two-phase commit. The API has no joins or key locks, only preconditions, which keeps cost predictable and pushes some work to developers.",
+        "to": [
+          "storage",
+          "registry"
+        ]
+      },
+      {
+        "id": "registry",
+        "label": "Registry and keeper (control plane)",
+        "topic": "sharding",
+        "company": "Dropbox",
+        "tradeoff": "From the Panda post. The registry is the source of truth for which ranges sit on which node and keeps each range moving safely, with writes to one owner at a time. The keeper runs range transfers. Ranges are about 100 GB, and transfers of hundreds of gigabytes needed only seconds of unavailability.",
+        "to": [
+          "storage"
+        ]
+      },
+      {
+        "id": "storage",
+        "label": "Panda storage nodes (MVCC over MySQL)",
+        "topic": "transactions-and-mvcc",
+        "company": "Dropbox",
+        "tradeoff": "From the Panda post. Keep timestamped versions for non-blocking reads, at the price of write amplification and garbage collection. Storage nodes do not talk to each other on the data path.",
+        "to": [
+          "mysql"
+        ]
+      },
+      {
+        "id": "mysql",
+        "label": "MySQL semi-sync replication across two regions",
+        "topic": "replication",
+        "company": "Dropbox",
+        "tradeoff": "From the Panda post. Regions about 80 ms apart, with single-digit millisecond reads and writes. If a region fails abruptly, writes that had not yet replicated are lost. The quorum model would avoid that loss but adds the 80 ms to every write.",
+        "to": []
+      }
+    ],
+    "failures": [
+      {
+        "id": "decompress-fails",
+        "label": "A client crashes on a decompression failure (found in internal alpha, then made to fall back to a plain download)",
+        "effects": [
+          {
+            "nodeId": "client",
+            "state": "down"
+          },
+          {
+            "nodeId": "blockproto",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "compress-bottleneck",
+        "label": "Compression cannot keep up with a very fast upload link",
+        "effects": [
+          {
+            "nodeId": "blockproto",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "hot-versions",
+        "label": "Old versions pile up on a hot key range and slow scans",
+        "effects": [
+          {
+            "nodeId": "storage",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "region-loss",
+        "label": "A whole region is lost, and writes that had not yet replicated are lost with it",
+        "effects": [
+          {
+            "nodeId": "mysql",
+            "state": "degraded"
+          }
+        ]
+      }
+    ]
+  },
+  "compare": "These are three posts from one company, so this page shows how one team solved three linked problems, not how companies differ. Read the dates: the rewrite post is from March 2020, Broccoli from August 2020 and Panda from November 2022, and each describes Dropbox then. Nothing here says the designs are unchanged today. The posts do not say how the sync protocol reaches Panda, so the diagram does not draw that link.\n\nAll three make the same move: put the strictness in the model and relax the parts that can afford it. The rewrite fixed identifiers and atomic moves in the data model, so that any gap between client and server is a bug that tests can catch. Panda gives strongly consistent reads and ACID writes, then limits the API (no joins, no locks, partial results allowed) so cost stays predictable. Broccoli keeps durability first with the hash check, then lowers the compression level where speed matters.\n\nEach also names what it gave up. The rewrite slowed feature work and took about four years. Panda pays write amplification and garbage collection for lock-free reads, and accepts that an abrupt region loss can lose writes not yet copied. Broccoli's lower quality setting cut average savings from about 33% to about 30% to lift peak large-file upload speed from about 35 to about 50 Mbps. The Panda post adds a lesson it learned late: it set stricter guarantees than any user needed for its change feed, and says to start with the weaker guarantee.",
+  "quiz": [
+    {
+      "question": "Why did the old engine's way of storing a move cause files to vanish?",
+      "options": [
+        "A move was a delete plus an add, so the delete could land without the add",
+        "Moves were stored only on the device and were never sent to any server",
+        "Folders were copied on every move and the old copy was removed at once"
+      ],
+      "correct": 0,
+      "why": "The post says a transient network error could let the delete through but not the add, so other devices saw the file missing.",
+      "wrong": [
+        "",
+        "Moves were sent to the server, as a pair of operations.",
+        "The failure came from the pair of operations, not from copying folders."
+      ],
+      "teaches": "distributed-transactions"
+    },
+    {
+      "question": "Why does Panda keep timestamped versions of each key?",
+      "options": [
+        "It stores every change so that users can restore old file versions later",
+        "Reads are over 95% of the load, so versions let them run with no locks at all",
+        "Versions make writes cheaper because they never need to touch old rows"
+      ],
+      "correct": 1,
+      "why": "MVCC gives ACID transactions without read locks and lets followers serve snapshot reads, which matters when reads dominate.",
+      "wrong": [
+        "The versions serve transactions, and old ones are cleaned up.",
+        "",
+        "Writes cost more, because every operation becomes a row insert."
+      ],
+      "teaches": "transactions-and-mvcc"
+    },
+    {
+      "question": "Why did Dropbox build Panda instead of keep splitting each MySQL machine in two?",
+      "options": [
+        "Splitting stopped working once any MySQL server had more than one shard",
+        "MySQL cannot store petabytes of data on SSDs at the speeds that they need",
+        "Each split doubles the fleet, and one huge shard could not be split"
+      ],
+      "correct": 2,
+      "why": "The post wanted incremental growth, where 5% more data needs about 5% more hardware, and a way to rebalance uneven shards.",
+      "wrong": [
+        "Each machine already held several shards.",
+        "The existing stack already stored petabytes on SSDs.",
+        ""
+      ],
+      "teaches": "sharding"
+    },
+    {
+      "question": "What is lost in Dropbox's two-region MySQL setup if a region fails abruptly?",
+      "options": [
+        "Writes that had not yet replicated to the other region",
+        "Every write made in the last day, because the copy is taken once daily",
+        "Nothing, because every write waits for both regions to confirm it"
+      ],
+      "correct": 0,
+      "why": "Semi-sync replication keeps reads and writes fast, at the price that unreplicated writes can be lost in an abrupt outage.",
+      "wrong": [
+        "",
+        "Replication runs continuously, not once a day.",
+        "Waiting for both regions is the quorum model, which adds about 80 ms to each write."
+      ],
+      "teaches": "replication"
+    },
+    {
+      "question": "Why does the upload request carry the hash of the uncompressed block?",
+      "options": [
+        "It lets the server skip storing any block that it already holds",
+        "It sets which compression quality level the server must use",
+        "It lets the server check that compression left the data intact"
+      ],
+      "correct": 2,
+      "why": "Client memory is rarely ECC, so the server decompresses and compares with the original hash. Durability is chosen over speed.",
+      "wrong": [
+        "The post gives the hash as an integrity check.",
+        "The quality level is a separate setting.",
+        ""
+      ],
+      "teaches": "object-storage"
+    },
+    {
+      "question": "In the Broccoli upload results, why did a lower quality level help large files?",
+      "options": [
+        "Lower quality blocks pass the integrity check without being decompressed",
+        "Compression had become the bottleneck on fast links, so the link sat idle",
+        "Smaller blocks arrived at Magic Pocket in a format it could store directly"
+      ],
+      "correct": 1,
+      "why": "On 100 Mbps and faster links the compressor limited the upload. A lower level raised peak large-file bandwidth from about 35 to about 50 Mbps.",
+      "wrong": [
+        "The check still decompresses every block.",
+        "",
+        "The change was about speed on the client, not the stored format."
+      ],
+      "teaches": "object-storage"
+    }
+  ],
+  "sources": [
+    {
+      "id": "nucleus",
+      "title": "Rewriting the heart of our sync engine",
+      "url": "https://dropbox.tech/infrastructure/rewriting-the-heart-of-our-sync-engine",
+      "company": "Dropbox",
+      "published": "2020-03-09",
+      "verifiedOn": "2026-10-23"
+    },
+    {
+      "id": "broccoli",
+      "title": "Broccoli: Syncing faster by syncing less",
+      "url": "https://dropbox.tech/infrastructure/-broccoli--syncing-faster-by-syncing-less",
+      "company": "Dropbox",
+      "published": "2020-08-04",
+      "verifiedOn": "2026-10-23"
+    },
+    {
+      "id": "panda",
+      "title": "Future-proofing our metadata stack with Panda, a scalable key-value store",
+      "url": "https://dropbox.tech/infrastructure/panda-metadata-stack-petabyte-scale-transactional-key-value-store",
+      "company": "Dropbox",
+      "published": "2022-11-03",
+      "verifiedOn": "2026-10-23"
+    }
+  ]
+}
