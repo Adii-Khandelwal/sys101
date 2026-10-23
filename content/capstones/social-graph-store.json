@@ -1,0 +1,522 @@
+{
+  "slug": "social-graph-store",
+  "title": "Social graph store",
+  "summary": "Design the store that answers 'who is connected to what' for a billion users, almost entirely reads, and keeps answering when cache machines fail. Read Facebook's TAO and its memcache tier, both described in 2013.",
+  "topics": [
+    {
+      "slug": "caching",
+      "role": "Keeps the hot part of the graph in memory so most reads never reach the database."
+    },
+    {
+      "slug": "replication",
+      "role": "Keeps a copy of the whole graph in each region, fed by a replication stream that lags a little."
+    },
+    {
+      "slug": "sharding",
+      "role": "Splits objects and edges into many shards so no single database or cache machine holds them all."
+    },
+    {
+      "slug": "cap",
+      "role": "Frames the choice to serve a local, possibly stale answer sooner than wait for the single master."
+    },
+    {
+      "slug": "overload-and-cascading-failures",
+      "role": "Covers how a failed cache machine can push its whole load onto the database, and how to stop that."
+    }
+  ],
+  "brief": {
+    "text": "A social network stores people, posts, places and the links between them as a graph. Almost every page view reads dozens or hundreds of these links, filtered for the viewer, and writes are rare. Design the store behind this. It has to serve a flood of reads from memory, keep working across several regions and when cache machines die, and protect the database underneath. This is the graph and cache tier only. How a feed is assembled from it is a separate system.",
+    "requirements": [
+      {
+        "label": "1. Read volume",
+        "value": "A billion reads per second and millions of writes per second, on a data set of many petabytes",
+        "sourceId": "tao"
+      },
+      {
+        "label": "2. Read-heavy mix",
+        "value": "99.8% of client requests are reads and 0.2% are writes",
+        "sourceId": "tao"
+      },
+      {
+        "label": "3. Cache hit rate",
+        "value": "A 96.4% hit rate on reads, so about one read in 28 misses and goes on to a leader (derived)",
+        "sourceId": "tao"
+      },
+      {
+        "label": "4. Regions",
+        "value": "One complete copy of the graph per region, and every read answered inside its own region",
+        "sourceId": "tao"
+      },
+      {
+        "label": "5. Staleness",
+        "value": "Replicas lag the master by under 3 seconds 99% of the time, and answers may be stale in that window",
+        "sourceId": "tao"
+      },
+      {
+        "label": "6. Survive cache failure",
+        "value": "A failed cache machine must not send its whole load to the database",
+        "sourceId": "memcache"
+      }
+    ]
+  },
+  "decisions": [
+    {
+      "id": "cache-shape",
+      "question": "The graph is stored in MySQL with a key-value cache beside it that the web code manages. What should the cache become?",
+      "options": [
+        {
+          "label": "Keep the lookaside key-value cache and add more machines",
+          "why": "Easy to run, but each edge list must be fetched whole, and every client carries its own cache logic."
+        },
+        {
+          "label": "A cache that understands the graph: objects, edge lists and counts, behind one service with a fixed API",
+          "why": "Edge changes can be applied in place, and the cache can answer queries it has not seen before."
+        },
+        {
+          "label": "Skip the cache and shard MySQL further",
+          "why": "Simple to reason about, but the read volume is far beyond what databases can serve."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Facebook",
+        "text": "TAO replaced the lookaside cache for data that fits an objects-and-associations model. The team listed three problems with the old design: a key-value cache is a poor fit for edge lists, control logic ran on clients that do not talk to each other, and read-after-write consistency was expensive. TAO still uses MySQL for storage, but mediates all access and holds its own graph-aware cache.",
+        "sourceId": "tao"
+      }
+    },
+    {
+      "id": "tiers",
+      "question": "Many cache machines can miss on the same hot item at once. How should misses and writes reach the database?",
+      "options": [
+        {
+          "label": "Every cache machine queries the database itself",
+          "why": "Simple, but concurrent misses for one item all hit the database together."
+        },
+        {
+          "label": "Two levels: followers serve clients, and one leader per shard handles every miss and write for it",
+          "why": "One leader sees all requests for a shard, so it can serialize writes and avoid overlapping database queries."
+        },
+        {
+          "label": "Clients choose any cache machine and the machines gossip with each other",
+          "why": "No central hop, but the consistency messages multiply and nothing limits queries to the database."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Facebook",
+        "text": "TAO splits the cache into a leader tier and follower tiers. Clients talk to the nearest follower, which forwards read misses and writes to the shard's leader. The leader serializes writes, avoids overlapping queries to the database, and caps the number of pending queries per shard.",
+        "sourceId": "tao"
+      }
+    },
+    {
+      "id": "regions",
+      "question": "Followers can be thousands of miles from the master database. How should reads and writes cross regions?",
+      "options": [
+        {
+          "label": "Send every read to the master region so answers are always fresh",
+          "why": "Always current, but every read pays the round trip between regions."
+        },
+        {
+          "label": "A full database copy in each region, reads served locally, writes forwarded to the master region",
+          "why": "Read latency stops depending on distance, at the cost of stale reads while replication catches up."
+        },
+        {
+          "label": "Accept writes in every region and merge them later",
+          "why": "Fast writes everywhere, but concurrent edits to the same edge now need conflict handling."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Facebook",
+        "text": "Because follower misses are about 25 times as frequent as writes, TAO uses a master and slave setup per shard. Reads are satisfied within the region, writes go to the master region, and a read can be stale. The team chose a few regions close enough that latency inside one is typically under 1 millisecond, so one complete copy per region is enough.",
+        "sourceId": "tao"
+      }
+    },
+    {
+      "id": "failed-server",
+      "question": "A cache machine stops answering. What should its clients do?",
+      "options": [
+        {
+          "label": "Rehash its keys across the remaining cache machines",
+          "why": "Uses the machines already running, but whichever one inherits a hot key may be overloaded in turn."
+        },
+        {
+          "label": "Send the request to a small pool of idle spare machines, and fill them from the database",
+          "why": "The load lands on machines with nothing else to do, and repeat requests become hits."
+        },
+        {
+          "label": "Go straight to the database until the machine is replaced",
+          "why": "Simple, but every request for those keys now hits the backing store."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Facebook",
+        "text": "The memcache team set aside a small pool called Gutter, about 1% of the servers in a cluster. A client that gets no reply retries there and, on a miss, fills the entry after reading the database. Entries expire quickly instead of being invalidated, so Gutter serves slightly stale data. Rehashing was rejected because a single key can account for 20% of a server's requests.",
+        "sourceId": "memcache"
+      }
+    },
+    {
+      "id": "stampede",
+      "question": "A hot key is written often, and each write deletes the cached value. Many readers miss together. How do you stop the pile-up?",
+      "options": [
+        {
+          "label": "Let every reader query the database and set the value",
+          "why": "Simple, but the database sees one query per waiting reader, and slower readers can overwrite newer data."
+        },
+        {
+          "label": "Hand one reader a token to refill the value, and make the others wait briefly and retry",
+          "why": "One database query refills the cache, and a stale refill is rejected when the token is no longer valid."
+        },
+        {
+          "label": "Never delete on write, and let values expire on a timer",
+          "why": "No stampede, but readers see old data for the whole timer."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Facebook",
+        "text": "Memcache hands out a 64-bit lease token on a miss, by default once every 10 seconds per key. Others are told to wait a moment, and a delete invalidates the token so a stale set is refused. For keys prone to stampedes, the peak database rate over a week fell from 17K per second to 1.3K.",
+        "sourceId": "memcache"
+      }
+    }
+  ],
+  "sizing": {
+    "inputs": [
+      {
+        "id": "reads_per_sec",
+        "label": "Reads per second",
+        "min": 1000000,
+        "max": 5000000000,
+        "step": 1000000,
+        "default": 1000000000,
+        "unit": "reads/s"
+      },
+      {
+        "id": "read_pct",
+        "label": "Reads as a share of all requests (99.8 in TAO)",
+        "min": 90,
+        "max": 99.9,
+        "step": 0.1,
+        "default": 99.8,
+        "unit": "%"
+      },
+      {
+        "id": "hit_pct",
+        "label": "Cache hit rate on reads (96.4 in TAO)",
+        "min": 50,
+        "max": 99.9,
+        "step": 0.1,
+        "default": 96.4,
+        "unit": "%"
+      },
+      {
+        "id": "follower_rps",
+        "label": "Reads one follower machine can serve (your assumption)",
+        "min": 10000,
+        "max": 2000000,
+        "step": 10000,
+        "default": 200000,
+        "unit": "reads/s"
+      },
+      {
+        "id": "lag_seconds",
+        "label": "Replication lag (under 3 seconds 99% of the time in TAO)",
+        "min": 0.1,
+        "max": 10,
+        "step": 0.1,
+        "default": 3,
+        "unit": "seconds"
+      },
+      {
+        "id": "cluster_servers",
+        "label": "Cache servers in one cluster",
+        "min": 10,
+        "max": 10000,
+        "step": 10,
+        "default": 1000,
+        "unit": "servers"
+      }
+    ],
+    "outputs": [
+      {
+        "label": "Writes per second",
+        "formula": "reads_per_sec * (100 - read_pct) / read_pct",
+        "unit": "writes/s"
+      },
+      {
+        "label": "Reads that miss the cache and go on to a leader",
+        "formula": "reads_per_sec * (100 - hit_pct) / 100",
+        "unit": "reads/s"
+      },
+      {
+        "label": "Follower machines, with your throughput figure",
+        "formula": "ceil(reads_per_sec / follower_rps)",
+        "unit": "machines"
+      },
+      {
+        "label": "Writes not yet replicated at that lag",
+        "formula": "reads_per_sec * (100 - read_pct) / read_pct * lag_seconds",
+        "unit": "writes"
+      },
+      {
+        "label": "Gutter machines at about 1% of the cluster",
+        "formula": "ceil(cluster_servers / 100)",
+        "unit": "machines"
+      }
+    ]
+  },
+  "diagram": {
+    "title": "Social graph store: web servers, followers, a leader, the master database, a replica region and the Gutter pool",
+    "nodes": [
+      {
+        "id": "web",
+        "label": "Web servers",
+        "topic": "caching",
+        "company": "Facebook",
+        "tradeoff": "Pages pull the graph at view time and check privacy for each viewer, so reads are huge and writes are rare. The cost is that every page depends on this tier being fast.",
+        "to": [
+          "follower",
+          "gutter"
+        ]
+      },
+      {
+        "id": "follower",
+        "label": "Follower cache tier",
+        "topic": "sharding",
+        "company": "Facebook",
+        "tradeoff": "Shards map to cache machines by consistent hashing, and a hot shard can be cloned across several followers. Followers learn of other tiers' writes later, so a read can be briefly stale. If a follower fails, clients move to a backup follower tier, which can break read-after-write for a moment.",
+        "to": [
+          "leader",
+          "backup"
+        ]
+      },
+      {
+        "id": "backup",
+        "label": "Backup follower tier (TAO)",
+        "topic": "caching",
+        "company": "Facebook",
+        "tradeoff": "Each TAO client has a primary and a backup follower tier. Requests move to the backup when a server is marked down, and still reach a server that hosts the same shard, so they stay cacheable.",
+        "to": [
+          "leader"
+        ]
+      },
+      {
+        "id": "leader",
+        "label": "Leader cache tier",
+        "topic": "caching",
+        "company": "Facebook",
+        "tradeoff": "One leader per shard serializes writes and shields the database from stampedes. It is also a hop that adds latency on a miss.",
+        "to": [
+          "master",
+          "replica"
+        ]
+      },
+      {
+        "id": "master",
+        "label": "Master database region",
+        "topic": "replication",
+        "company": "Facebook",
+        "tradeoff": "Writes are sent here and are not retried if they fail during a master switch. A write from a far region pays the round trip, measured at 74.4 ms against 12.1 ms in the master's own region.",
+        "to": [
+          "replica"
+        ]
+      },
+      {
+        "id": "replica",
+        "label": "Replica database region",
+        "topic": "cap",
+        "company": "Facebook",
+        "tradeoff": "Answers reads locally, so read latency does not depend on distance. Replicas lag the master and can return stale data. Invalidations ride the replication stream so they never arrive before the data does.",
+        "to": []
+      },
+      {
+        "id": "gutter",
+        "label": "Gutter pool (memcache paper)",
+        "topic": "overload-and-cascading-failures",
+        "company": "Facebook",
+        "tradeoff": "From the memcache paper, a separate path from TAO: about 1% of a cluster's servers stand by for failed ones and fill from the database. Entries expire fast instead of being invalidated, so answers can be a little stale.",
+        "to": [
+          "master"
+        ]
+      }
+    ],
+    "failures": [
+      {
+        "id": "follower-lost",
+        "label": "A TAO follower cache machine fails",
+        "effects": [
+          {
+            "nodeId": "follower",
+            "state": "degraded"
+          },
+          {
+            "nodeId": "backup",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "memcache-lost",
+        "label": "A memcache server fails (memcache paper)",
+        "effects": [
+          {
+            "nodeId": "gutter",
+            "state": "degraded"
+          },
+          {
+            "nodeId": "master",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "leader-lost",
+        "label": "A leader is unavailable",
+        "effects": [
+          {
+            "nodeId": "leader",
+            "state": "down"
+          },
+          {
+            "nodeId": "follower",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "master-switch",
+        "label": "The master database fails and another region is promoted",
+        "effects": [
+          {
+            "nodeId": "master",
+            "state": "down"
+          },
+          {
+            "nodeId": "replica",
+            "state": "degraded"
+          },
+          {
+            "nodeId": "leader",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "lag-spike",
+        "label": "Replication to a region falls behind",
+        "effects": [
+          {
+            "nodeId": "replica",
+            "state": "degraded"
+          },
+          {
+            "nodeId": "follower",
+            "state": "degraded"
+          }
+        ]
+      }
+    ]
+  },
+  "compare": "The two papers describe two layers of one stack. Memcache is a plain key-value cache that the web code manages, and it adds leases, a Gutter pool and an invalidation stream to cope with scale. TAO moves the graph semantics into the cache itself, so edge lists, counts and inverse edges are handled by the service instead of by each client. TAO's own paper says it shares most of its client stack and its invalidation pipeline with memcache.\n\nBoth accept stale reads in return for availability and speed. TAO measured it: replicas lagged the master by under 1 second in 85% of the tracing window, under 3 seconds 99% of the time and under 10 seconds 99.8% of the time. The graph store gives up atomicity too: a write to an edge and its inverse can touch two shards, and if one fails, a repair job finds the dangling edge later. Gutter and leases protect the database in different ways. Gutter absorbs the load of a dead machine, and a lease collapses many misses for one key into a single query.\n\nRead the dates with care. Both papers are from 2013 and describe Facebook's systems at that time. They say nothing about how the systems run now, and this page makes no claim that they do.",
+  "quiz": [
+    {
+      "question": "Why did the TAO team find a lookaside key-value cache a poor fit for the social graph?",
+      "options": [
+        "Key-value caches cannot be spread over many machines, so the graph could never fit in them",
+        "Edge lists are fetched whole, and clients do their own cache logic",
+        "MySQL cannot be used behind a cache at all"
+      ],
+      "correct": 1,
+      "why": "The paper names inefficient edge lists, distributed control logic and expensive read-after-write consistency as the problems TAO set out to fix.",
+      "wrong": [
+        "Memcache was already spread over many machines.",
+        "",
+        "TAO itself keeps MySQL as its persistent store."
+      ],
+      "teaches": "caching"
+    },
+    {
+      "question": "A client is in a region far from the master database and reads an edge that was just written. What can it see?",
+      "options": [
+        "Possibly the old value, as the replica lags",
+        "Always the new value, because every read is forwarded to the master region",
+        "An error, because reads are refused whenever replication is behind the master"
+      ],
+      "correct": 0,
+      "why": "TAO answers reads inside the region and replicates asynchronously, so a read can be stale. The measured lag was under 3 seconds 99% of the time.",
+      "wrong": [
+        "",
+        "Only writes go to the master region. Reads stay local.",
+        "Reads are served from the local replica, not refused."
+      ],
+      "teaches": "replication"
+    },
+    {
+      "question": "Why does Gutter hold entries for a short time instead of invalidating them?",
+      "options": [
+        "It skips invalidation work, so data is a bit stale",
+        "Gutter machines have too little memory to keep any entry for long",
+        "The database has no way of telling Gutter when an entry has changed"
+      ],
+      "correct": 0,
+      "why": "Quick expiry avoids Gutter invalidations. The paper says Gutter limits load on the backend at the cost of slightly stale data.",
+      "wrong": [
+        "",
+        "Memory is not the stated reason.",
+        "The invalidation pipeline exists, but Gutter skips it by design."
+      ],
+      "teaches": "overload-and-cascading-failures"
+    },
+    {
+      "question": "Why did the memcache team avoid simply rehashing a failed server's keys onto the others?",
+      "options": [
+        "Rehashing would leave the failed server's data permanently lost from the system",
+        "Clients cannot compute a new hash without a full restart of every web server",
+        "One hot key can be 20% of a server's load"
+      ],
+      "correct": 2,
+      "why": "Key popularity is uneven, so moving a hot key onto a busy machine risks a cascade. Spare idle machines take the load instead.",
+      "wrong": [
+        "Data lives in the database. The cache is rebuilt on demand.",
+        "The objection is load, not client behaviour.",
+        ""
+      ],
+      "teaches": "sharding"
+    },
+    {
+      "question": "A write to an edge with an inverse touches two shards in TAO. What if one of the two writes fails?",
+      "options": [
+        "Both writes are rolled back before the client is told of any failure",
+        "The forward edge can exist without its inverse until a job repairs it",
+        "The client must retry both writes over and over until they both succeed"
+      ],
+      "correct": 1,
+      "why": "TAO does not make the two updates atomic. A hanging association is scheduled for repair by an asynchronous job.",
+      "wrong": [
+        "TAO gives no atomicity between the two updates.",
+        "",
+        "The repair job is on the server side, not the client."
+      ],
+      "teaches": "cap"
+    }
+  ],
+  "sources": [
+    {
+      "id": "tao",
+      "title": "TAO: Facebook's Distributed Data Store for the Social Graph",
+      "url": "https://www.usenix.org/system/files/conference/atc13/atc13-bronson.pdf",
+      "company": "Facebook",
+      "published": "2013",
+      "verifiedOn": "2026-10-23"
+    },
+    {
+      "id": "memcache",
+      "title": "Scaling Memcache at Facebook",
+      "url": "https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final170_update.pdf",
+      "company": "Facebook",
+      "published": "2013",
+      "verifiedOn": "2026-10-23"
+    }
+  ]
+}
