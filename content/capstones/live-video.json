@@ -1,0 +1,613 @@
+{
+  "slug": "live-video",
+  "title": "Live video streaming",
+  "summary": "Design the delivery path of a live stream that millions open at the same moment: edge caches that merge identical requests, a choice between push and short segments, an origin that must never miss a write, and ways to shed load without dropping the show. Read three posts from two companies: Facebook's 2015 live video post, and Netflix's July 2025 overview and December 2025 Live Origin post.",
+  "topics": [
+    {
+      "slug": "cdns",
+      "role": "Covers the edge and origin cache layers that keep a crowd of viewers off the one server that holds the stream."
+    },
+    {
+      "slug": "caching",
+      "role": "Describes request coalescing at a cache, short cache lifetimes for not-yet-published segments, and a write-through cache in front of the origin's store."
+    },
+    {
+      "slug": "real-time-delivery",
+      "role": "Explains pushing data over a held connection (RTMP) against clients asking for each short segment over HTTP."
+    },
+    {
+      "slug": "overload-and-cascading-failures",
+      "role": "Covers retry storms after a stream interruption and shedding low-priority work so the live edge keeps working."
+    },
+    {
+      "slug": "rate-limiting",
+      "role": "Describes priority-based rate limiting that lets live-edge requests through before replay requests when storage is under stress."
+    },
+    {
+      "slug": "failover",
+      "role": "Describes server-side failover between two independent pipelines, so the player never has to know one failed."
+    },
+    {
+      "slug": "autoscaling-and-capacity",
+      "role": "Covers pre-provisioning from viewership predictions, reactive scaling for the services around playback, and the resources that cannot autoscale."
+    }
+  ],
+  "brief": {
+    "text": "A live stream has no time to prepare. Every viewer wants the same few seconds of video at the same moment, the data does not exist before the event, and a mistake cannot be fixed by retrying later. Design how video reaches a huge audience, how a stream is kept clean when one pipeline produces a bad segment, how the origin survives a surge, and what you switch off when demand beats your forecast. This page does not cover cameras and production, encoding settings, DRM, ads, chat beside the video, or how viewers find an event. Be careful with the sources: Facebook's post is from December 2015, so it is more than ten years old, it describes two launches of that year (public figures on Mentions, then a test of sharing live video from iPhones for a small share of people in the U.S.), and says nothing about how Facebook Live works now. The two Netflix posts are from July and December 2025 and come from the same engineering blog, so they count as one company seen twice, not as two independent confirmations. Each describes its system as of its date. The Facebook post gives no figure for the number of viewers beyond 'more than a million' on one stream, and neither company gives a dollar cost for running live. The only money figure is Netflix's $1B+ of investment in Open Connect over the last 12 years, which is not a cost of running live.",
+    "requirements": [
+      {
+        "label": "1. A crowd at one instant",
+        "value": "A public figure's broadcast could have more than a million people watching at the same time, as happened with a Vin Diesel stream (2015)",
+        "sourceId": "facebook"
+      },
+      {
+        "label": "2. Very high concurrency",
+        "value": "During the 2024 Tyson vs. Paul fight Netflix saw a peak of 65 million concurrent streams (2025)",
+        "sourceId": "origin"
+      },
+      {
+        "label": "3. Latency of a few seconds",
+        "value": "Facebook wanted a two- to three-second transmission delay for people broadcasting to a small, interactive group (2015)",
+        "sourceId": "facebook"
+      },
+      {
+        "label": "4. Latency balanced against load",
+        "value": "Netflix chose 2-second segments to balance compression efficiency, infrastructure load and latency, and says A/B tests cut latency by about 10 seconds (2025)",
+        "sourceId": "netflix-live"
+      },
+      {
+        "label": "5. Writes that cannot fail",
+        "value": "The origin needed a read delay under 1 second for published segments, and any write that failed within 500 ms counted as a bug to triage (2025)",
+        "sourceId": "origin"
+      },
+      {
+        "label": "6. Surges from retries",
+        "value": "Netflix saw a 10x increase in traffic load from stream restarts after viewing interruptions of as little as 30 seconds (2025)",
+        "sourceId": "netflix-live"
+      },
+      {
+        "label": "7. Few edge leaks",
+        "value": "More than 98 percent of Facebook's segment requests were served from an edge cache, and about 1.8 percent still got past it (2015)",
+        "sourceId": "facebook"
+      },
+      {
+        "label": "8. Short build time",
+        "value": "Netflix had nine months from the start of the Live project to its first launch (2025)",
+        "sourceId": "netflix-live"
+      }
+    ]
+  },
+  "decisions": [
+    {
+      "id": "herd",
+      "question": "A public figure goes live and more than a million followers open the stream within moments. If every player connects to the one server that receives the stream, that server stampedes. How do you keep the crowd away from it?",
+      "options": [
+        {
+          "label": "Put the stream server behind a load balancer and add more servers as viewers arrive",
+          "why": "Spreads the load, but each viewer still reaches the machines that must also ingest the video."
+        },
+        {
+          "label": "Cut the stream into short segments and serve them through layers of caches, so viewers hit the edge first",
+          "why": "Most requests never reach the stream server, but you now run cache layers and the stream becomes a series of HTTP requests."
+        },
+        {
+          "label": "Limit how many followers can join and tell the rest to wait",
+          "why": "Protects the server, but the audience is the point of the event."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Meta",
+        "text": "Facebook put a network of edge caches around the world between viewers and the live stream server (2015). A live video was split into three-second HLS segments that the player requests one after another. An HTTP proxy in an edge data center checks its cache; on a miss it asks the origin cache, which has the same structure, and only then the server handling that stream. The response is cached at each layer on the way back. The post says more than 98 percent of segments were already in an edge cache close to the user.",
+        "sourceId": "facebook"
+      }
+    },
+    {
+      "id": "coalesce",
+      "question": "Even with edge caches, a new segment is not cached the first time anyone asks for it, and a million viewers ask at the same moment. A small leak is still a large number. What do you do on a cache miss?",
+      "options": [
+        {
+          "label": "Let every miss pass through and add capacity at the origin to absorb it",
+          "why": "Simple, but the cost lands on the one server holding the stream."
+        },
+        {
+          "label": "Answer the first request with a miss, hold the others in a queue and serve them from the cache once the segment arrives",
+          "why": "Many identical requests become one upstream request, but queued viewers wait for the first fetch."
+        },
+        {
+          "label": "Return an error to repeat requests and make the player ask again after a pause",
+          "why": "Keeps load down, but viewers see errors and the retries come back together."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Meta",
+        "text": "Facebook used request coalescing (2015). About 1.8 percent of requests were getting past the edge cache, which is a lot when a million people are watching. The edge cache returns a miss for the first request and holds the following ones in a queue. When the response comes back, the segment is stored and the queued requests are answered from the edge as hits. The origin cache runs the same mechanism for requests from several edge caches, since an edge cache in Chicago and one in Miami can ask for the same object.",
+        "sourceId": "facebook"
+      }
+    },
+    {
+      "id": "protocol",
+      "question": "For people broadcasting to a small group of friends, a conversation needs a delay of a few seconds, and three-second segments plus buffering are too slow. How do you get lower latency?",
+      "options": [
+        {
+          "label": "Keep segments but make them shorter and ask for them more often",
+          "why": "Fits existing CDNs, but request volume grows as segments shrink."
+        },
+        {
+          "label": "Use a push protocol over a held connection that sends small chunks of video as soon as they are encoded",
+          "why": "Lower delay and smoother flow, but you leave the HTTP caching path and must build proxies yourself."
+        },
+        {
+          "label": "Skip transcoding so each frame reaches viewers sooner",
+          "why": "Removes a step, but viewers on slow networks cannot get a lower bit rate."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Meta",
+        "text": "Facebook chose RTMP, aiming for a two- to three-second transmission delay (2015). RTMP holds a persistent TCP connection for the whole broadcast and the server pushes data, so the player does not request each segment. Video and audio are separate streams cut into 4 KB chunks and interleaved on the connection. At a video bit rate of 500 Kbps each chunk is 64 ms long, against three seconds for an HLS segment. The post says the push model and small chunks reduce the lag between broadcaster and viewer by 5x. It admits that most live products use HLS because it is HTTP-based and works with existing CDNs, and says Facebook modified the nginx-rtmp module and built an RTMP proxy.",
+        "sourceId": "facebook"
+      }
+    },
+    {
+      "id": "playback",
+      "question": "You must reach as many existing devices as possible, including resource-limited devices such as smart TVs, without asking people to upgrade. A UDP-based protocol offers very low latency. What do you stream over?",
+      "options": [
+        {
+          "label": "A UDP-based protocol, accepting that some devices cannot play it",
+          "why": "Lowest delay, but fewer devices and less fit with existing delivery and encoding systems."
+        },
+        {
+          "label": "HTTPS with short fixed-length segments, and a manifest that tells the player how to find them by time",
+          "why": "Plays almost everywhere and reuses the CDN, but latency is bounded by the segment length."
+        },
+        {
+          "label": "A custom player protocol per device family",
+          "why": "Could suit each device best, but the engineering cost multiplies across families."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Netflix",
+        "text": "Netflix settled on HTTPS-based live streaming (2025). The post says UDP-based protocols can offer extras such as ultra-low latency, but HTTPS has ubiquitous device support and fits delivery and encoding systems. It uses AVC and HEVC, quality levels from SD to 4K, and a 2-second segment duration to balance compression efficiency, infrastructure load and latency. The manifest holds a segment template, so the device maps wall-clock time to CDN URLs and does not poll for manifest updates, which cuts network dependencies, CDN server load and work on resource-limited devices. The post says it reached industry standard latency from camera to device and keeps improving it, and gives no figure for it.",
+        "sourceId": "netflix-live"
+      }
+    },
+    {
+      "id": "redundancy",
+      "question": "Live feeds are never clean. A segment can be short, missing or have a timing break, and you cannot tell every device about it through a manifest. How do you keep a defective segment from reaching players?",
+      "options": [
+        {
+          "label": "Run two independent pipelines and let the origin choose the first valid segment for each request",
+          "why": "Defects rarely hit both at once, but you pay for two pipelines and need defect metadata to choose."
+        },
+        {
+          "label": "Make each device detect a bad segment and skip to the next one",
+          "why": "No server cost, but every device must conceal the gap and playback can break."
+        },
+        {
+          "label": "Add a delay of a minute so a person can inspect the stream before release",
+          "why": "Catches problems, but it is no longer live."
+        }
+      ],
+      "answerIndex": 0,
+      "realChoice": {
+        "company": "Netflix",
+        "text": "Netflix runs redundant cloud streaming pipelines that are independent, with distinct cloud regions, contribution feeds, encoders and packagers (2025). The live origin sits in the middle: when a segment is requested it checks the candidates from each pipeline in a deterministic order and picks the first valid one. The packager finds defects with lightweight media inspection and sends them as metadata when it publishes a segment. In the rare case that both pipelines have a defect at once, the defect is passed downstream so the client can conceal the error. Failover is done on the server side to keep the client simple, and epoch locking at the cloud encoder lets the origin pick a segment from either pipeline.",
+        "sourceId": "origin"
+      }
+    },
+    {
+      "id": "origin-store",
+      "question": "Your origin stores each published segment, and the same store feeds the CDN. Plain object storage worked for small events. Now every write is critical, there is a 2-second retry budget and a surge could mean hundreds of gigabits of reads. What do you store segments in?",
+      "options": [
+        {
+          "label": "Stay on object storage and add more retries and a bigger timeout",
+          "why": "No new system, but the retry budget is only 2 seconds, so retries have no room."
+        },
+        {
+          "label": "A highly available key-value store for writes, with a write-through cache so reads rarely touch it",
+          "why": "Fast and available writes with read-write separation, but it costs more and you run two systems."
+        },
+        {
+          "label": "Keep segments only in memory on the origin machines",
+          "why": "Fastest, but a machine failure loses recent segments and DVR viewers need them."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Netflix",
+        "text": "Netflix first used AWS S3 for the Live Origin, as it did for on-demand video, and the post says it served well for low-traffic events (2025). S3 met its uptime guarantees, but the 2-second retry budget of live events led the team to start again from requirements, which looked more like those of a global, low-latency, highly available database. It built on its KeyValue abstraction over Apache Cassandra, which splits large values into chunks that can be retried and hedged, uses local-quorum writes and an LSM storage engine, and it added write-through caching of chunks in EVCache (Memcached based). The post says writes got a P99 latency similar to the earlier P50, and reads reached 200Gbps and beyond without affecting writes. It says this was significantly more expensive, and that cost was not a key objective.",
+        "sourceId": "origin"
+      }
+    },
+    {
+      "id": "surge",
+      "question": "The CDN may send a flood of requests to the origin: viewers behind the live edge catching up on replay, or asks for segments that do not exist yet. Storage and backbone bandwidth do not autoscale. What do you protect first?",
+      "options": [
+        {
+          "label": "Treat every request the same and rate limit them equally when load is high",
+          "why": "Simple, but live viewers and replay viewers fail together."
+        },
+        {
+          "label": "Rank requests by user impact, serve the live edge first, and tell the CDN to cache the rejection briefly",
+          "why": "Protects the live edge, but replay requests fail while the system is under stress and must retry later."
+        },
+        {
+          "label": "Scale out origin servers faster when load rises",
+          "why": "Helps the stateless service, but the storage platform and backbone bandwidth do not scale with it."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Netflix",
+        "text": "The Live Origin uses priority-based rate limiting (2025). Requests with more user impact succeed, and lower-impact requests may fail under stress and retry later. It puts live edge traffic ahead of DVR traffic when the storage platform is under heavy load, working out which is which from the predictable segment template, which is cached in memory so the check does not read the datastore. When low-priority traffic is hit, the origin returns an HTTP 503 with max-age of 5 seconds so Open Connect caches the answer and does not come back for 5 seconds. Publishing is isolated on separate stacks and clusters, and the post also says the origin rejects requests for unknown events or wrong timing with 404 and for segments that will never exist with 410, using cached metadata, which easily exceeded a 90% hit ratio during such storms.",
+        "sourceId": "origin"
+      }
+    },
+    {
+      "id": "demand",
+      "question": "Viewership may beat your forecast and provisioned capacity, and viewers who hit a hiccup will restart the stream and add a retry wave. What do you plan for beyond adding servers?",
+      "options": [
+        {
+          "label": "Forecast generously and provision for the worst case so degradation never happens",
+          "why": "Avoids a degraded show on paper, but forecasts miss and the cost of idle capacity is high."
+        },
+        {
+          "label": "Pre-provision from predictions, scale the supporting services reactively, and prepare levers that remove nice-to-have features and slow retries",
+          "why": "Keeps the stream playing when you are wrong, but the product gets plainer under load and you must test the under-scaled case."
+        },
+        {
+          "label": "Let devices retry as fast as they like so every viewer reconnects quickly",
+          "why": "Quick recovery for one viewer, and a larger spike for everyone."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Netflix",
+        "text": "Netflix uses prediction to pre-provision cloud and CDN capacity, shares forecasts with its ISP and cloud partners, and adds reactive scaling for sign-up, log-in, title discovery and playback services, with forward-looking predictions during an event (2025). It admits viewership has exceeded both predictions and provisioned capacity. It then has levers: service-level prioritized load shedding that puts live traffic ahead of non-critical traffic such as pre-fetch, dialing down personalization, disabling bookmarks or lowering the maximum streaming quality. Its load tests include under-scaled systems. For retries it saw a 10x traffic increase from stream restarts after interruptions of as little as 30 seconds, and used server-guided backoff for device retries, prioritized shedding at the Cloud Edge Gateway and rebalancing between cloud regions.",
+        "sourceId": "netflix-live"
+      }
+    }
+  ],
+  "sizing": {
+    "inputs": [
+      {
+        "id": "viewers_m",
+        "label": "Concurrent viewers of one event (Netflix reported a 65 million peak, 2025)",
+        "min": 1,
+        "max": 100,
+        "step": 1,
+        "default": 65,
+        "unit": "million"
+      },
+      {
+        "id": "seg_s",
+        "label": "Segment length (Facebook used 3 seconds in 2015, Netflix 2 seconds in 2025)",
+        "min": 1,
+        "max": 10,
+        "step": 1,
+        "default": 2,
+        "unit": "seconds"
+      },
+      {
+        "id": "hit_pct",
+        "label": "Share of segment requests served by the nearest cache (Facebook reported more than 98 percent, 2015)",
+        "min": 50,
+        "max": 100,
+        "step": 1,
+        "default": 98,
+        "unit": "%"
+      },
+      {
+        "id": "kbps",
+        "label": "Video bit rate each viewer receives (your own number; the Facebook post used 500 Kbps as its example)",
+        "min": 100,
+        "max": 20000,
+        "step": 100,
+        "default": 500,
+        "unit": "Kbps"
+      }
+    ],
+    "outputs": [
+      {
+        "label": "Segment requests per second from all viewers, assuming one rendition each (derived)",
+        "formula": "viewers_m * 1000000 / seg_s",
+        "unit": "requests/s"
+      },
+      {
+        "label": "Of those, requests that pass the nearest cache (derived)",
+        "formula": "viewers_m * 1000000 / seg_s * (1 - hit_pct / 100)",
+        "unit": "requests/s"
+      },
+      {
+        "label": "Total delivery bandwidth at that bit rate (derived)",
+        "formula": "viewers_m * kbps / 1000",
+        "unit": "Tbps"
+      },
+      {
+        "label": "Length of one 4 KB RTMP chunk at that bit rate (derived from the Facebook post's 4 KB chunks; 500 Kbps gives 64 ms)",
+        "formula": "4 * 8 / kbps * 1000",
+        "unit": "ms"
+      }
+    ]
+  },
+  "diagram": {
+    "title": "Live video: Facebook's 2015 cache path and RTMP path, and Netflix's 2025 pipeline, origin and CDN, each part taken from the post named in its note",
+    "nodes": [
+      {
+        "id": "fbplayer",
+        "label": "Facebook HLS player (3-second segments)",
+        "topic": "cdns",
+        "company": "Meta",
+        "tradeoff": "From the Facebook post (2015). The player asks for each three-second segment in turn. Simple HTTP and cache friendly, but each segment is a request and the delay is several seconds.",
+        "to": [
+          "fbedge"
+        ]
+      },
+      {
+        "id": "fbedge",
+        "label": "Edge cache proxies (request coalescing)",
+        "topic": "caching",
+        "company": "Meta",
+        "tradeoff": "From the Facebook post. More than 98 percent of segments were in an edge cache. On a miss the first request goes up and later ones wait in a queue, then are answered as hits. About 1.8 percent of requests still got past the edge.",
+        "to": [
+          "fborigin"
+        ]
+      },
+      {
+        "id": "fborigin",
+        "label": "Origin cache",
+        "topic": "cdns",
+        "company": "Meta",
+        "tradeoff": "From the Facebook post. The second of two cache layers (edge, then origin cache), with the same structure and coalescing, shared by edge caches such as Chicago and Miami. The post does not say how many sites there were.",
+        "to": [
+          "fbserver"
+        ]
+      },
+      {
+        "id": "fbserver",
+        "label": "Live stream server",
+        "topic": "real-time-delivery",
+        "company": "Meta",
+        "tradeoff": "From the Facebook post. The server handling that stream, which should see only a fraction of requests. The HLS section gives no ingest detail.",
+        "to": []
+      },
+      {
+        "id": "fbrtmp",
+        "label": "RTMP path (push, 4 KB chunks)",
+        "topic": "real-time-delivery",
+        "company": "Meta",
+        "tradeoff": "From the Facebook post. A held TCP connection pushes 64 ms chunks at 500 Kbps through an RTMP proxy, cutting lag by 5x. It gives up easy use of HTTP CDNs. The post does not show how many viewers it served.",
+        "to": []
+      },
+      {
+        "id": "nfpipelines",
+        "label": "Two redundant cloud pipelines (encode and package)",
+        "topic": "failover",
+        "company": "Netflix",
+        "tradeoff": "From the Netflix posts (2025). Independent pipelines in distinct regions with their own feeds, encoders and packagers. The packager flags defects as metadata. The post gives no cost for running two (our inference: it is more than one).",
+        "to": [
+          "nforigin"
+        ]
+      },
+      {
+        "id": "nforigin",
+        "label": "Live Origin (picks first valid segment)",
+        "topic": "overload-and-cascading-failures",
+        "company": "Netflix",
+        "tradeoff": "From the Live Origin post (2025). Chooses between pipelines, ranks live edge above DVR traffic, answers 404 and 410 from cached metadata and returns 503 with a 5-second max-age under stress. Publishing runs on separate stacks from CDN-facing reads.",
+        "to": [
+          "nfstore"
+        ]
+      },
+      {
+        "id": "nfstore",
+        "label": "KeyValue on Cassandra with EVCache write-through",
+        "topic": "caching",
+        "company": "Netflix",
+        "tradeoff": "From the Live Origin post. Chunked large writes with local-quorum consistency; almost all reads come from the cache, which reached 200Gbps and beyond. The post says it was significantly more expensive than the S3 setup it replaced.",
+        "to": []
+      },
+      {
+        "id": "nfoc",
+        "label": "Open Connect CDN (6K+ locations)",
+        "topic": "cdns",
+        "company": "Netflix",
+        "tradeoff": "From the Netflix posts. 18K+ servers in 6K+ locations reached over a backbone to 5 AWS regions, shared with on-demand video. Only designated nodes per stream rendition at each site may fill from the origin. Pulls from the origin, so a storm lands there.",
+        "to": [
+          "nforigin"
+        ]
+      },
+      {
+        "id": "nfcontrol",
+        "label": "Cloud playback and discovery services",
+        "topic": "autoscaling-and-capacity",
+        "company": "Netflix",
+        "tradeoff": "From the Netflix Part 1 post (2025). Dozens of services (playback configuration, personalization, metrics) see far higher load around event start, so they scale dynamically and balance across regions. They do not carry the video.",
+        "to": []
+      },
+      {
+        "id": "nfdevice",
+        "label": "Netflix device player (HTTPS, segment template)",
+        "topic": "rate-limiting",
+        "company": "Netflix",
+        "tradeoff": "From the Netflix Part 1 post. Maps wall-clock time to segment URLs, switches bitrate and CDN server, retries with server-guided backoff. Restarts after a 30-second gap caused a 10x traffic increase.",
+        "to": [
+          "nfoc",
+          "nfcontrol"
+        ]
+      }
+    ],
+    "failures": [
+      {
+        "id": "herd",
+        "label": "A million viewers ask for the same new segment before it is cached and request coalescing is off",
+        "effects": [
+          {
+            "nodeId": "fbserver",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "bad-segment",
+        "label": "One pipeline publishes a short or missing segment",
+        "effects": [
+          {
+            "nodeId": "nfpipelines",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "region-loss",
+        "label": "A cloud region carrying one pipeline is lost",
+        "effects": [
+          {
+            "nodeId": "nfpipelines",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "origin-storm",
+        "label": "Many Open Connect caches request large segments from the origin at once",
+        "effects": [
+          {
+            "nodeId": "nforigin",
+            "state": "degraded"
+          },
+          {
+            "nodeId": "nfstore",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "retry-wave",
+        "label": "A 30-second interruption makes viewers restart their streams",
+        "effects": [
+          {
+            "nodeId": "nfcontrol",
+            "state": "degraded"
+          },
+          {
+            "nodeId": "nfdevice",
+            "state": "degraded"
+          }
+        ]
+      }
+    ]
+  },
+  "compare": "These posts come from two companies and two eras, so read them as snapshots, not one design. Facebook's is from December 2015, more than ten years old, and describes the launch of Live for Facebook Mentions and a first test of live sharing for a small share of people in the U.S. on iPhones. The two Netflix posts are from July and December 2025 and are by the same company and blog, so they are one source of evidence, not two. Each describes its system at its date. Nothing here says Facebook's design still holds, and the Facebook post does not cover origin storage, redundancy between pipelines, load shedding or capacity planning, which Netflix covers. The diagram draws no link between the two companies.\n\nBoth start from the same fear, a crowd asking for the same fresh object, and answer it with caches. Facebook merges identical misses at the edge: one request goes upstream while the rest wait. Netflix goes further because its origin must never miss a write: it chooses between two pipelines, moves storage from S3 to a Cassandra-based store fronted by a write-through cache, and separates publishing from reads so a flood of reads cannot slow a write. The price is a more expensive store, which Netflix says was acceptable. The two diverge on delivery. Facebook added RTMP, a push protocol, to get a few seconds of delay for small interactive broadcasts, and admitted that most products use HLS because it works with existing CDNs. Netflix chose HTTPS with 2-second segments to reach as many devices as possible, and picked 2-second segments to balance compression efficiency, infrastructure load and latency. The post says UDP-based protocols can offer extras such as ultra-low latency.\n\nThe common thread is deciding what to protect. Facebook keeps load off the stream server, and Netflix puts the live edge ahead of replay, shed prefetch and personalization, and slows retries. Neither post gives a number for how much video quality or latency was traded, Facebook gives no figure for RTMP viewers, and Netflix gives no latency figure beyond saying A/B tests removed about 10 seconds.",
+  "quiz": [
+    {
+      "question": "What does request coalescing do at Facebook's edge cache?",
+      "options": [
+        "It sends the first miss upstream and holds identical requests until the segment arrives",
+        "It copies every segment to all edge caches in the world before any viewer asks for it",
+        "It returns an error to repeat requests so that players back off and ask again later"
+      ],
+      "correct": 0,
+      "why": "The edge returns a miss for the first request and queues the rest. When the response arrives, the segment is cached and the queued requests are answered as hits, so the origin sees one request.",
+      "wrong": [
+        "",
+        "Segments are cached when a response passes through, not copied ahead of requests.",
+        "The queued requests are answered normally, not rejected."
+      ],
+      "teaches": "caching"
+    },
+    {
+      "question": "Why did Facebook use RTMP for people broadcasting to small groups?",
+      "options": [
+        "RTMP works with every existing CDN, so Facebook needed no new proxies at all",
+        "The server pushes small chunks over a held connection, cutting lag 5x",
+        "RTMP skips transcoding, so each frame of video travels to viewers faster"
+      ],
+      "correct": 1,
+      "why": "RTMP keeps a TCP connection open and pushes 64 ms chunks at 500 Kbps, instead of the player asking for three-second HLS segments.",
+      "wrong": [
+        "The post says HLS is the one that fits existing CDNs, and that Facebook modified nginx-rtmp and built an RTMP proxy.",
+        "",
+        "The post says the chunk is transcoded into multiple output bit rates."
+      ],
+      "teaches": "real-time-delivery"
+    },
+    {
+      "question": "What happens to low-priority requests at the Netflix Live Origin when storage is under stress?",
+      "options": [
+        "They are queued until the storage platform is idle again and then served in order",
+        "They are served from a copy of the live edge kept for this purpose",
+        "They get a 503 that Open Connect caches for 5 seconds"
+      ],
+      "correct": 2,
+      "why": "The origin favours live edge requests over DVR ones and returns an HTTP 503 with max-age of 5 seconds for the low-priority traffic, which damps the surge and lets those requests retry later.",
+      "wrong": [
+        "The post lets them fail and retry later, not wait in a queue.",
+        "Nothing like that is described.",
+        ""
+      ],
+      "teaches": "rate-limiting"
+    },
+    {
+      "question": "Why did Netflix move its Live Origin storage away from plain S3?",
+      "options": [
+        "S3 missed its stated uptime guarantee during low-traffic events",
+        "The 2-second retry budget needed a store like a low-latency, available database",
+        "S3 could not hold objects as large as one video segment in a single write"
+      ],
+      "correct": 1,
+      "why": "The post says S3 met its stated uptime but the retry budget of live events led to starting from requirements, ending with Cassandra-based chunked storage and an EVCache write-through cache.",
+      "wrong": [
+        "The post says S3 met its stated uptime guarantees.",
+        "",
+        "Size was not the stated problem."
+      ],
+      "teaches": "caching"
+    },
+    {
+      "question": "What did Netflix report about viewers restarting streams after an interruption?",
+      "options": [
+        "A 10x traffic increase from restarts after gaps as short as 30 seconds",
+        "A 2x traffic increase, but only after any gap longer than a full minute",
+        "No measurable change, because the player hides short gaps from every viewer"
+      ],
+      "correct": 0,
+      "why": "The post names the 10x increase and says Netflix responded with server-guided backoff, prioritized shedding at the Cloud Edge Gateway and rebalancing between regions.",
+      "wrong": [
+        "",
+        "The figure is 10x for gaps of as little as 30 seconds.",
+        "The post reports a large spike, not none."
+      ],
+      "teaches": "overload-and-cascading-failures"
+    }
+  ],
+  "sources": [
+    {
+      "id": "facebook",
+      "title": "Under the hood: Broadcasting live video to millions",
+      "url": "https://engineering.fb.com/2015/12/03/ios/under-the-hood-broadcasting-live-video-to-millions/",
+      "company": "Meta",
+      "published": "2015-12-03",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "netflix-live",
+      "title": "Behind the Streams: Three Years Of Live at Netflix. Part 1.",
+      "url": "https://netflixtechblog.com/behind-the-streams-live-at-netflix-part-1-d23f917c2f40",
+      "company": "Netflix",
+      "published": "2025-07-15",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "origin",
+      "title": "Netflix Live Origin",
+      "url": "https://netflixtechblog.com/netflix-live-origin-41f1b0ad5371",
+      "company": "Netflix",
+      "published": "2025-12-15",
+      "verifiedOn": "2026-10-24"
+    }
+  ]
+}
