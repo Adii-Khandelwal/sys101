@@ -382,5 +382,21 @@
   "schema-github-skeefree-2020|1 ALTER at a time": {
     "verdict": "ok",
     "source": "post: \"we also only run one ALTER (or, gh-ost) at a time on a cluster\""
+  },
+  "google-sre-alerting-2018|six attempts": {
+    "verdict": "ok",
+    "source": "chapter: \"six ways to configure alerting on significant events\", the first three nonviable and the last three viable"
+  },
+  "google-sre-alerting-2018|four things": {
+    "verdict": "ok",
+    "source": "chapter lists four attributes of an alert: precision, recall, detection time and reset time"
+  },
+  "google-dapper-2010|1 request": {
+    "verdict": "ok",
+    "source": "paper Table 2: sampling frequency 1/16 and 1/1024 of requests"
+  },
+  "meta-canopy-2017|5 per second": {
+    "verdict": "ok",
+    "source": "paper section 4.1: \"Canopy allocates tenants 5 traces per second\" by default (the PDF text extraction runs the words together)"
   }
 }

@@ -3450,6 +3450,13 @@ html {
   font-size: 0.9em;
 }
 
+.learn-file {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 14px;
+}
+
 .learn-code code {
   font: inherit;
 }

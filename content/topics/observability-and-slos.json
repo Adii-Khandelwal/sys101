@@ -1,0 +1,617 @@
+{
+  "slug": "observability-and-slos",
+  "title": "Observability and SLOs",
+  "group": "Reliability",
+  "interviewRelevance": "common",
+  "concept": "Observability is knowing, from the data a system emits, whether users are being served well and where they are not. In practice it is a few service level indicators (SLIs) that measure what users feel, a service level objective (SLO) that says how good is good enough and leaves an error budget for failure, alerts that fire when that budget burns fast, and sampled traces that show which service made a request slow.",
+  "prerequisites": [
+    "overload-and-cascading-failures"
+  ],
+  "summary": {
+    "points": [
+      "An SLO says how good a service must be, and the gap it leaves is an error budget for failure and release risk.",
+      "Averages hide slow tails, so latency is judged by percentiles: a typical 50 ms request with 5% of requests 20 times slower looks fine on a mean.",
+      "Alerts work best on burn rate: a fast burn pages, a slow one opens a ticket, and a short window lets the alert reset.",
+      "Tracing every request costs too much, so Dapper and Canopy sample, using a target rate of traces and a token bucket to cap volume.",
+      "These alerts and traces feed the earlier reliability topics, such as load shedding, rate limits, circuit breakers and safe rollouts."
+    ],
+    "figures": [
+      {
+        "postId": "google-dapper-2010",
+        "row": 0,
+        "label": "Tracing every request added 16.3% to average latency in a web search cluster"
+      },
+      {
+        "postId": "google-sre-alerting-2018",
+        "row": 1,
+        "label": "A total outage empties a 99.9% budget over 30 days in 43 minutes"
+      },
+      {
+        "postId": "meta-canopy-2017",
+        "row": 0,
+        "label": "Facebook recorded and processed 1.3 billion traces per day"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "overload-and-cascading-failures": "Overload and cascading failures are what these signals have to catch early, so seeing how a system fails comes before measuring whether it is failing."
+  },
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why a system needs a defined level of good service before it can detect that it is failing.",
+      "body": "The reliability topics so far are defences: rate limits, circuit breakers, load shedding, careful rollouts. Each needs a signal that says when to act. If the only signal is a dashboard someone happens to look at, the system learns about an overload from its users.\n\nTwo things make the signal hard to get. First, a service produces thousands of numbers and nothing says which ones matter, so teams page on everything or on nothing. Second, one user request crosses many services, and a slow answer can come from any of them. An engineer who sees only the overall latency may know there is a problem without knowing whose service to look at.\n\nAn SLO answers the first problem. It names a handful of measures users would notice and the level that counts as good enough, and every alert and every release decision then follows from the gap between the two. Tracing answers the second by following one request across services. Both cost something: a careless SLO wastes engineering time, and tracing every request slows the system being watched.",
+      "diagram": "<svg viewBox=\"0 0 560 130\" role=\"img\" aria-labelledby=\"dg-obs-why-t\" class=\"dg\"><title id=\"dg-obs-why-t\">The control loop behind an objective: measure an indicator, compare it with the objective, decide whether action is needed, then act.</title><defs><marker id=\"dg-obs-why-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"2\" y=\"14\" width=\"118\" height=\"64\" class=\"dg-box\"/><text x=\"61\" y=\"42.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Measure</text><text x=\"61\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">the SLI</text><path d=\"M120,46 L148,46\" class=\"dg-line\" marker-end=\"url(#dg-obs-why-a)\"/><rect x=\"148\" y=\"14\" width=\"118\" height=\"64\" class=\"dg-box dg-accent\"/><text x=\"207\" y=\"42.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Compare</text><text x=\"207\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">with the SLO</text><path d=\"M266,46 L294,46\" class=\"dg-line\" marker-end=\"url(#dg-obs-why-a)\"/><rect x=\"294\" y=\"14\" width=\"118\" height=\"64\" class=\"dg-box\"/><text x=\"353\" y=\"34.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Decide if</text><text x=\"353\" y=\"50.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">action is</text><text x=\"353\" y=\"66.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">needed</text><path d=\"M412,46 L440,46\" class=\"dg-line\" marker-end=\"url(#dg-obs-why-a)\"/><rect x=\"440\" y=\"14\" width=\"118\" height=\"64\" class=\"dg-box\"/><text x=\"499\" y=\"34.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Act: page,</text><text x=\"499\" y=\"50.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">ticket, shed</text><text x=\"499\" y=\"66.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">load, roll back</text><text x=\"280\" y=\"106\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">With no objective there is nothing to compare against, so nobody knows when to act.</text></svg>"
+    },
+    "mentalModel": {
+      "outcome": "After this you can describe an error budget and a burn rate, and say how fast a given error rate spends the budget.",
+      "body": "Think of a monthly spending budget. The SLO is the promise, for example that 99.9% of requests succeed over 30 days. The error budget is what you are allowed to spend on failures, here 0.1% of requests. The burn rate is how fast you are spending it. At a burn rate of 1 the budget lasts exactly the 30 days. At 10 it is gone in 3 days. A total outage burns at 1,000 times the pace and empties the budget in 43 minutes.\n\nSo a good alert is a statement about the speed of spending, not about one bad minute. Page someone when the spending is fast enough to empty the budget soon, and open a ticket when it is slow but would still drain it by month end. Traces are the receipts: they show where one request spent its time, which tells you where to cut the loss.",
+      "diagram": "<svg viewBox=\"0 0 560 150\" role=\"img\" aria-labelledby=\"dg-obs-model-t\" class=\"dg\"><title id=\"dg-obs-model-t\">For a 99.9% objective over 30 days, a burn rate of 1 empties the error budget in 30 days, 2 in 15 days, 10 in 3 days, and a total outage in 43 minutes.</title><defs><marker id=\"dg-obs-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"280\" y=\"16\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">SLO 99.9% over 30 days: the error budget is 0.1% of requests</text><rect x=\"2\" y=\"28\" width=\"128\" height=\"80\" class=\"dg-box\"/><text x=\"66\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Burn rate 1</text><text x=\"66\" y=\"64.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">0.1% errors</text><text x=\"66\" y=\"80.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">budget gone in</text><text x=\"66\" y=\"96.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">30 days</text><rect x=\"146\" y=\"28\" width=\"128\" height=\"80\" class=\"dg-box\"/><text x=\"210\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Burn rate 2</text><text x=\"210\" y=\"64.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">0.2% errors</text><text x=\"210\" y=\"80.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">budget gone in</text><text x=\"210\" y=\"96.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">15 days</text><rect x=\"290\" y=\"28\" width=\"128\" height=\"80\" class=\"dg-box\"/><text x=\"354\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Burn rate 10</text><text x=\"354\" y=\"64.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">1% errors</text><text x=\"354\" y=\"80.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">budget gone in</text><text x=\"354\" y=\"96.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">3 days</text><rect x=\"434\" y=\"28\" width=\"128\" height=\"80\" class=\"dg-box dg-accent\"/><text x=\"498\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Burn rate 1,000</text><text x=\"498\" y=\"64.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">100% errors</text><text x=\"498\" y=\"80.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">budget gone in</text><text x=\"498\" y=\"96.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">43 minutes</text><text x=\"280\" y=\"134\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The faster the burn, the sooner someone has to act.</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can choose indicators, set an objective, design page and ticket alerts from burn rates, and explain why tracing samples requests.",
+      "steps": [
+        {
+          "step": "Pick a few indicators users would feel",
+          "explanation": "Start from what users care about, not from what is easy to measure. A serving system usually needs availability, latency and throughput, a storage system adds durability, and a data pipeline cares about throughput and how long data takes to get through. The SRE book advises a handful of indicators, not every metric a monitoring system holds, and measuring at the client when the server view would miss a problem such as a slow page script."
+        },
+        {
+          "step": "Measure latency as a distribution",
+          "explanation": "An average hides the tail. The book's example is a typical request near 50 ms with 5% of requests 20 times slower. With 95 requests at 50 ms and 5 at 1,000 ms, the mean is about 98 ms, which looks healthy, while one user in twenty waits a second. Use percentiles instead: the median for the typical case and a high one such as the 99th for the worst plausible case."
+        },
+        {
+          "step": "Set an objective with a window and an error budget",
+          "explanation": "An SLO is a target for an SLI over a window, such as 99% of Get calls finishing in under 100 ms. Do not aim for 100%, because that slows releases and pushes toward expensive, over-cautious designs. The allowed gap is the error budget, and the book compares the violation rate with it to help decide when to roll out new releases. Do not copy today's performance as the target, keep the number of SLOs small, and start loose, since tightening later is easier than relaxing."
+        },
+        {
+          "step": "Alert on how fast the budget burns",
+          "explanation": "An alert on every error rate above the SLO line fires on events that spend almost nothing: a 0.1% error rate for 10 minutes uses only 0.02% of a month's budget. The workbook instead picks the share of budget worth a notification and works out the burn rate that spends it in a given window. Five percent of a 30-day budget in one hour is a burn rate of 36. Fast burns page, and slow ones that would still empty the budget open a ticket."
+        },
+        {
+          "step": "Add a short window and several levels",
+          "explanation": "One long window keeps firing for as long as it holds old errors. Requiring a second, shorter window, about one twelfth of the long one, to be over the same rate makes the alert stop soon after the errors do. The workbook recommends several levels: 2% of the budget in one hour and 5% in six hours page, and 10% in three days opens a ticket. Low-traffic and very high-availability services need adjusted numbers."
+        },
+        {
+          "step": "Trace a sample of requests and feed the signals back",
+          "explanation": "Give each request a trace id and pass it along every call, so timed pieces of work called spans from many services join into one tree. Recording every request costs time and storage, so only a fraction is kept. Dapper measured this: tracing every request added 16.3% to average latency in a web search cluster, while 1 in 1024 was lost in the noise. A fast-burn page is what starts the overload playbook of shedding load, tripping breakers and rate limiting, a spent budget slows risky rollouts, and a trace points at the dependency a breaker should wrap."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 200\" role=\"img\" aria-labelledby=\"dg-obs-how-t\" class=\"dg\"><title id=\"dg-obs-how-t\">Two paths from a request: every request is counted into an indicator that feeds a burn-rate alert, while only a sample is traced to find the slow service.</title><defs><marker id=\"dg-obs-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"2\" y=\"14\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">METRICS: every request is counted</text><rect x=\"2\" y=\"22\" width=\"162.66666666666666\" height=\"54\" class=\"dg-box\"/><text x=\"83.33333333333333\" y=\"45.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Count every request,</text><text x=\"83.33333333333333\" y=\"61.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">good and total</text><path d=\"M164.66666666666666,49 L198.66666666666666,49\" class=\"dg-line\" marker-end=\"url(#dg-obs-how-a)\"/><rect x=\"198.66666666666666\" y=\"22\" width=\"162.66666666666666\" height=\"54\" class=\"dg-box\"/><text x=\"280\" y=\"45.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">SLI: share of good</text><text x=\"280\" y=\"61.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">requests or fast ones</text><path d=\"M361.3333333333333,49 L395.3333333333333,49\" class=\"dg-line\" marker-end=\"url(#dg-obs-how-a)\"/><rect x=\"395.3333333333333\" y=\"22\" width=\"162.66666666666666\" height=\"54\" class=\"dg-box dg-accent\"/><text x=\"476.66666666666663\" y=\"45.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Burn-rate alert:</text><text x=\"476.66666666666663\" y=\"61.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">page or ticket</text><text x=\"2\" y=\"112\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">TRACES: only a sample is recorded</text><rect x=\"2\" y=\"120\" width=\"162.66666666666666\" height=\"54\" class=\"dg-box\"/><text x=\"83.33333333333333\" y=\"143.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Trace a sample,</text><text x=\"83.33333333333333\" y=\"159.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">1 request in N</text><path d=\"M164.66666666666666,147 L198.66666666666666,147\" class=\"dg-line\" marker-end=\"url(#dg-obs-how-a)\"/><rect x=\"198.66666666666666\" y=\"120\" width=\"162.66666666666666\" height=\"54\" class=\"dg-box\"/><text x=\"280\" y=\"143.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Spans share one</text><text x=\"280\" y=\"159.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">trace id</text><path d=\"M361.3333333333333,147 L395.3333333333333,147\" class=\"dg-line\" marker-end=\"url(#dg-obs-how-a)\"/><rect x=\"395.3333333333333\" y=\"120\" width=\"162.66666666666666\" height=\"54\" class=\"dg-box dg-accent\"/><text x=\"476.66666666666663\" y=\"143.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Find which service</text><text x=\"476.66666666666663\" y=\"159.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">made it slow</text><text x=\"280\" y=\"192\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Counting is cheap enough for all traffic. Tracing is not.</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can work out burn rates and page and ticket thresholds for a 99.9% objective over 30 days.",
+      "steps": [
+        {
+          "step": "Find the budget",
+          "explanation": "A 99.9% objective over 30 days leaves 0.1% of requests as the budget. A constant 0.1% error rate is a burn rate of 1 and uses all of it in exactly 30 days."
+        },
+        {
+          "step": "See why the simple alert fails",
+          "explanation": "An alert on a 10-minute error rate at or above 0.1% fires on a blip that spends 0.02% of the month. The workbook notes you could get up to 144 such alerts a day, act on none, and still meet the SLO."
+        },
+        {
+          "step": "Price a total outage and a leak",
+          "explanation": "100% errors is a burn rate of 1,000 and empties the budget in 43 minutes. A 1% error rate is a burn rate of 10 and lasts 3 days. These two need different responses, one immediate and one not."
+        },
+        {
+          "step": "Derive the page thresholds",
+          "explanation": "Decide what share of budget is worth a page. There are 720 hours in 30 days, so 2% in one hour is 0.02 x 720 / 1 = 14.4, and 5% in six hours is 0.05 x 720 / 6 = 6. The workbook gives both as reasonable starting points. For comparison, 5% in one hour gives 36."
+        },
+        {
+          "step": "Derive the ticket threshold",
+          "explanation": "10% of the budget in three days is 0.10 x 720 / 72 = 1. It would drain the budget by month end if ignored, but it leaves days to act, so it opens a ticket and wakes nobody."
+        },
+        {
+          "step": "Add the short window",
+          "explanation": "Page only when the 14.4 rate holds over the last hour and also over the last 5 minutes. After an outage ends the alert then stops about 5 minutes later instead of an hour later."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 150\" role=\"img\" aria-labelledby=\"dg-obs-ex-t\" class=\"dg\"><title id=\"dg-obs-ex-t\">Alert levels for a 99.9% objective over 30 days: page at burn rate 14.4 over one hour or 6 over six hours, and open a ticket at burn rate 1 over three days.</title><defs><marker id=\"dg-obs-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"2\" y=\"14\" width=\"176\" height=\"80\" class=\"dg-box dg-accent\"/><text x=\"90\" y=\"34.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">PAGE</text><text x=\"90\" y=\"50.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">burn rate 14.4</text><text x=\"90\" y=\"66.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">held for 1 hour</text><text x=\"90\" y=\"82.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">= 2% of budget</text><rect x=\"194\" y=\"14\" width=\"176\" height=\"80\" class=\"dg-box dg-accent\"/><text x=\"282\" y=\"34.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">PAGE</text><text x=\"282\" y=\"50.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">burn rate 6</text><text x=\"282\" y=\"66.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">held for 6 hours</text><text x=\"282\" y=\"82.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">= 5% of budget</text><rect x=\"386\" y=\"14\" width=\"176\" height=\"80\" class=\"dg-box\"/><text x=\"474\" y=\"34.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">TICKET</text><text x=\"474\" y=\"50.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">burn rate 1</text><text x=\"474\" y=\"66.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">held for 3 days</text><text x=\"474\" y=\"82.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">= 10% of budget</text><text x=\"280\" y=\"118\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Each page rule also needs a short window (one twelfth as long) to be over its rate,</text><text x=\"280\" y=\"136\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">so the alert stops soon after the errors do.</text></svg>"
+    },
+    "mistakesOutcome": "After this you can spot three common ways teams get alerting and tracing wrong.",
+    "checkOutcome": "After this you can check you can use SLIs, error budgets, burn rates and sampling.",
+    "quiz": [
+      {
+        "question": "A service answers 95% of requests in about 50 ms and the other 5% take 20 times longer. What does its average latency show?",
+        "options": [
+          "It sits near 1,000 ms, so the average exposes the slow tail clearly to anyone reading the dashboard",
+          "It lands near 100 ms, which looks healthy while one request in twenty takes about a second",
+          "It always equals the median, so either number would do for an SLI and neither hides anything",
+          "It cannot be computed for skewed data, so percentiles are the only statistic available at all"
+        ],
+        "correct": 1,
+        "why": "The mean is about 98 ms, so a dashboard on the average looks fine while one user in twenty waits about a second. A high percentile such as the 99th shows the tail.",
+        "wrong": [
+          "Only 5% of requests are slow, so the mean is pulled far less than that.",
+          "",
+          "Skewed data pulls the mean away from the median, so the two are not the same.",
+          "The average can be computed, it just hides the tail, which is why the book prefers percentiles."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "An SLO of 99.9% over 30 days sees a constant 1% error rate. What is the burn rate and what happens to the budget?",
+        "options": [
+          "Burn rate 1, so the budget lasts the full 30 days and nothing needs to be done",
+          "Burn rate 2, so the budget is gone in 15 days and a ticket is enough",
+          "Burn rate 100, so the budget is gone in under 8 hours and a page is needed",
+          "Burn rate 10, so the budget is gone in 3 days"
+        ],
+        "correct": 3,
+        "why": "The budget is 0.1% of requests, and 1% errors spend it ten times as fast, so 30 days shrinks to 3 days.",
+        "wrong": [
+          "A burn rate of 1 would need an error rate of 0.1%, not 1%.",
+          "A burn rate of 2 would need an error rate of 0.2%.",
+          "A burn rate of 100 would need a 10% error rate, ten times the one given.",
+          ""
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "Why does the workbook prefer burn-rate alerts to paging whenever a 10-minute error rate reaches the SLO threshold?",
+        "options": [
+          "It fires on blips that spend a sliver of the budget, such as 0.02% of a month",
+          "Burn-rate alerts are cheaper to run because they need no time window at all",
+          "The simple alert is slow and needs hours to notice that a total outage has begun",
+          "The simple alert cannot be used with latency indicators, only with error counts"
+        ],
+        "correct": 0,
+        "why": "A 0.1% error rate for 10 minutes would page while spending only 0.02% of the monthly budget, so the alert is noisy. A burn-rate alert chooses a meaningful share of budget to react to.",
+        "wrong": [
+          "",
+          "Burn-rate alerts use windows too. The point is the share of budget they react to.",
+          "The simple alert is fast, about 0.6 seconds for a total outage. Its weakness is precision.",
+          "The workbook says error budgets and rates apply to all indicators, including latency ones."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "A slow leak would use 10% of the monthly budget over three days. What does the workbook recommend?",
+        "options": [
+          "Page the on-call engineer at once, because any loss of budget is urgent",
+          "Ignore it, because the SLO has not been broken yet and the month is young",
+          "Open a ticket, since there is time to fix it without waking anyone",
+          "Shut the service down until the cause is found and the budget is safe again"
+        ],
+        "correct": 2,
+        "why": "A burn that leaves days to react suits a ticket for the next working day. A page is kept for burns fast enough to empty the budget within hours.",
+        "wrong": [
+          "Paging on slow burns trains people to ignore pages. Fast burns are the ones that justify it.",
+          "Left alone, a burn rate of 1 uses the whole budget by month end, so it should be handled.",
+          "",
+          "Shutting down turns a small loss into a full outage and spends the budget faster."
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "In Dapper's web search measurements, what did tracing every request cost compared with tracing 1 in 1024?",
+        "options": [
+          "Nothing measurable, because span logging runs asynchronously on a separate disk thread",
+          "About 16.3% less throughput, with latency left unchanged by the extra logging work",
+          "A separate network just for trace data, because spans would crowd out other traffic",
+          "About 16.3% more average latency, while 1 in 1024 stayed within measurement error"
+        ],
+        "correct": 3,
+        "why": "Tracing every request raised average latency by 16.3%, and at 1 in 1024 the change of -0.20% was inside the 2.5% experimental error.",
+        "wrong": [
+          "Disk writes are batched and asynchronous, yet tracing every request still showed a visible latency cost.",
+          "Throughput moved by only about 1.5%. The visible cost was latency.",
+          "Trace collection took under 0.01% of Google's network traffic, so no separate network was needed.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Why did Dapper move from one sampling probability for every process to a target rate of sampled traces per unit time?",
+        "options": [
+          "Storing one probability for all processes had grown too expensive for the repositories",
+          "Busy services sample less to stay cheap, quiet ones sample more to catch events",
+          "A fixed probability cannot be combined with a second sampling pass at the collector",
+          "So that every service, busy or quiet, can afford to trace every single request"
+        ],
+        "correct": 1,
+        "why": "At about 1 in 1024, low-traffic services missed important events. A target rate raises their sampling and lowers it for very busy ones, so overhead stays under control.",
+        "wrong": [
+          "Storage was not the reason. Missed events in low-traffic services were.",
+          "",
+          "The collector's second pass works with any runtime sampling, by hashing the trace id.",
+          "Only services with dozens of requests per second could afford that, not busy ones."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "Canopy puts a distributed token bucket behind its sampling policies. What is it for?",
+        "options": [
+          "It caps trace starts globally and per tenant, even if a policy is set too wide",
+          "It decides which features to extract from each trace once the tailer has all events",
+          "It spreads events evenly across the tailer servers so that none becomes a hot spot",
+          "It stores finished traces for later queries by the engineers who wrote the policies"
+        ],
+        "correct": 0,
+        "why": "The bucket rate-limits trace starts, so a misconfigured policy or over-eager instrumentation cannot flood the pipeline. Each tenant gets 5 traces per second by default.",
+        "wrong": [
+          "",
+          "Feature extraction runs later, in the tailer, using functions that engineers write.",
+          "Events are sharded by trace id, so they reach the same tailer. The bucket is not involved.",
+          "Storage and queries come after the trace has been sampled."
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "What does the SRE book use the gap between the SLO violation rate and the error budget for?",
+        "options": [
+          "To work out the refund owed to customers when an objective has been missed",
+          "To decide which engineer carries the pager during the following month",
+          "As an input to deciding when to roll out new releases",
+          "To replace percentiles with a simple average that is easier to explain"
+        ],
+        "correct": 2,
+        "why": "The book compares the violation rate with the budget and uses the gap to help decide when to ship new releases. Plenty of budget left allows risk, and a spent one argues for caution.",
+        "wrong": [
+          "Refunds belong to an agreement (SLA), which carries consequences. The budget is an internal control.",
+          "Pager rotas are a separate matter. The budget guides how much release risk to accept.",
+          "",
+          "Percentiles are kept, since averages hide the tail."
+        ],
+        "teaches": "model"
+      }
+    ],
+    "postsOutcome": "After this you can describe how Google defines objectives and alerts, and how Google and Facebook sample traces.",
+    "differOutcome": "After this you can compare how the sources control volume and what each leaves out.",
+    "exercisesOutcome": "After this you can work out an alert, choose indicators and size tracing for growth.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A service has a 99.9% objective over 30 days and starts failing 1% of its requests. Work out the burn rate and how long the budget lasts. Does the 1-hour page rule (burn rate 14.4) fire? The 6-hour page rule (burn rate 6)?",
+        "answer": "The budget is 0.1%, so 1% errors is a burn rate of 10 and the budget lasts 3 days. The 1-hour rule stays quiet because 10 is below 14.4. The 6-hour rule fires, because 10 is above 6: the 6-hour average passes 6 after 3.6 hours (10 x 3.6 / 6 = 6), by which point 5% of the budget is spent (10 x 3.6 / 720). That is a page, not a ticket. The 3-day ticket rule would fire as well, so alert suppression should keep it to one notification.",
+        "tradeoffs": "Waiting 3.6 hours to page costs 5% of the budget. A lower threshold would page sooner but would also page on blips. The share of budget worth a page is a product choice.",
+        "wrongAnswers": [
+          "The burn rate is 1 because the error rate is 1%.",
+          "Nothing fires until day 3, because the objective is only judged at the end of the window.",
+          "The 1-hour rule fires, because any rate above 0.1% crosses its threshold."
+        ],
+        "teaches": "example"
+      },
+      {
+        "level": "design",
+        "prompt": "Choose indicators and an objective for two systems: a user-facing search API and a nightly data pipeline. Say where you would measure each and how many objectives you would start with.",
+        "answer": "For the search API: availability as the share of well-formed requests that succeed, and latency as a percentile (for example 99% of searches under a limit chosen from what users tolerate), over a stated window. Measure at the server and, where a script or app can add delay, also at the client. For the pipeline: throughput and end-to-end latency, meaning how long data takes from ingestion to completion, and correctness, since a fast wrong answer still fails users. Start with one or two objectives each, set loose and from user needs rather than current numbers, and give each an error budget.",
+        "tradeoffs": "Client-side measurement is closer to what users feel but noisier and harder to collect. More objectives cover more behaviour but dilute attention, since the book says an objective you can never win a priority argument with is not worth keeping.",
+        "wrongAnswers": [
+          "Track every metric the monitoring system has, so nothing is missed.",
+          "Set the objective at 100% so there is never an excuse to fail.",
+          "Use the average latency as the indicator because it is one simple number."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "scale",
+        "prompt": "A traced service grows from dozens of requests per second to tens of thousands. It samples at a fixed probability that was fine before. What happens to tracing cost, and what would you change?",
+        "answer": "Overhead is proportional to the number of traces sampled per unit time, so a fixed probability makes trace volume and cost grow with traffic, about a thousandfold here, and the extra latency and storage show up. Switch to a target rate of sampled traces per second so busy services lower their probability automatically, and store the probability used with each trace so counts can be scaled back up. Put a rate limit such as a token bucket behind any policy, and add a second sampling pass at the collector that keeps or drops whole traces by trace id to control storage. A rare pattern in a busy service still appears thousands of times, so aggressive sampling rarely hides what matters.",
+        "tradeoffs": "A lower rate means a single odd request, such as one user's error report, is unlikely to have a trace. Keeping some policies that target specific endpoints or errors recovers part of that at extra cost.",
+        "wrongAnswers": [
+          "Keep the fixed probability; tracing cost does not depend on traffic.",
+          "Turn tracing off for the busiest services, since they are the hardest to trace.",
+          "Trace every request so no event is ever missed."
+        ],
+        "teaches": "how"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick a related topic to read next.",
+      "body": "Related topics: Safe Deployments is where a spent error budget slows rollouts and where staged releases keep a bad change from burning the whole budget. Rate Limiting and Circuit Breakers and Load Shedding are the actions a fast-burn page leads to. Capacity covers what to do when the signal shows demand outgrowing what the system can serve."
+    }
+  },
+  "mistakes": [
+    "Alerting on the average, on every error rate above the SLO line, or on one long window. The average hides a slow tail, and the line pages for events that spend almost none of the budget. In the workbook's example a 35x burn rate never trips a 36x one-hour alert yet uses the whole month's budget in 20.5 hours.",
+    "Setting the target at today's performance or at 100%. The first locks in heroic effort and the second blocks releases. Start from what users need, with a loose target, and tighten later.",
+    "Tracing every request, or sampling at a fixed rate whatever the traffic. Full tracing slows the service. A low fixed rate leaves quiet services with too few traces, so use a rate target and record the probability with each trace."
+  ],
+  "glossary": [
+    {
+      "term": "SLI (service level indicator)",
+      "definition": "A carefully defined measure of how well a service is doing, such as the share of requests that succeed or the 99th percentile latency."
+    },
+    {
+      "term": "SLO (service level objective)",
+      "definition": "A target for an SLI over a window, such as 99.9% of requests succeeding over 30 days. It has no contract attached."
+    },
+    {
+      "term": "SLA (service level agreement)",
+      "definition": "A contract with users that states what happens, often a refund, when the objectives it contains are missed."
+    },
+    {
+      "term": "Error budget",
+      "definition": "The amount of failure an SLO allows over its window. A 99.9% objective leaves 0.1% of requests as budget."
+    },
+    {
+      "term": "Burn rate",
+      "definition": "How fast the error budget is being spent compared with the pace that would use it up exactly at the end of the window. A burn rate of 1 does that, and 10 empties it in a tenth of the time."
+    },
+    {
+      "term": "Percentile",
+      "definition": "The value below which a given share of measurements fall. The 99th percentile latency is the time that 99% of requests beat."
+    },
+    {
+      "term": "Trace",
+      "definition": "The record of everything done for one request across many services, linked by a shared trace id."
+    },
+    {
+      "term": "Span",
+      "definition": "One timed piece of work inside a trace, such as a single RPC, with a link to the span that caused it."
+    },
+    {
+      "term": "Sampling",
+      "definition": "Recording only a fraction of requests, chosen by a probability or by a target rate, to keep the cost of tracing low."
+    }
+  ],
+  "posts": [
+    {
+      "id": "google-sre-slos-2017",
+      "title": "Service Level Objectives (Site Reliability Engineering, chapter 4)",
+      "url": "https://sre.google/sre-book/service-level-objectives/",
+      "company": "Google",
+      "verifiedOn": "2026-10-24",
+      "published": "no date shown",
+      "edition": "page shows copyright 2017 Google, Inc., published by O'Reilly Media, SRE book chapter",
+      "ageNote": "This is a book chapter, not a dated blog post: the page shows only a 2017 copyright for the book. It is here for the definitions of indicators, objectives and error budgets and for the case against averages, which do not depend on a product version. The chapter describes Google's practice as it was written about in 2017, and the page does not say whether Google works this way now.",
+      "digest": {
+        "problem": "A service cannot be run well without knowing which behaviours matter to its users and how to measure them. Google's SRE chapter sets out the vocabulary it uses for that, indicators, objectives and agreements, and how to choose and tune them.",
+        "constraints": "Metrics are cheap to collect and users want many things at once, so a team can drown in numbers. Targets also carry business effects, since an objective that is too strict wastes effort and one that is too loose delivers a poor product. The chapter is guidance with examples, not an incident report.",
+        "walkthrough": [
+          {
+            "step": "Separate indicator, objective and agreement",
+            "explanation": "An SLI is a measured quantity, such as latency, error rate, throughput or availability. An SLO is a target value or range for it. An SLA is a contract with consequences if objectives are missed, and the quick test is to ask what happens when the objective is not met."
+          },
+          {
+            "step": "Choose a handful of indicators from user needs",
+            "explanation": "Serving systems care about availability, latency and throughput, storage systems add durability, and big data pipelines care about throughput and end-to-end latency. Every system should track correctness. The chapter warns that too many indicators hide the ones that matter, and that client-side measurement catches problems the server cannot see."
+          },
+          {
+            "step": "Look at distributions, not averages",
+            "explanation": "In the chapter's example a typical request takes about 50 ms while 5% are 20 times slower, and alerting on the average would show no change in the tail. A high percentile shows a plausible worst case and the median shows the typical case. Computing systems are skewed, since no response takes under zero and a timeout caps the top, so mean and median can differ a lot."
+          },
+          {
+            "step": "Write objectives with their window and keep them short",
+            "explanation": "An objective states how it is measured, for example 99% of Get calls completing in under 100 ms. Several targets can describe the shape of a curve. The chapter says to allow an error budget instead of demanding that objectives are met 100% of the time, and to compare the violation rate with the budget when deciding on releases."
+          },
+          {
+            "step": "Choose targets carefully",
+            "explanation": "Do not pick a target from current performance, keep aggregations simple, avoid absolutes, have as few objectives as possible, and refine over time, starting loose and tightening. A tighter internal objective than the one published leaves room to respond to chronic problems before users notice."
+          },
+          {
+            "step": "Do not overachieve",
+            "explanation": "Users build on what a service really does, not what it promises. Chubby, Google's lock service, was so reliable that teams added dependencies on it assuming it would never go down. SRE now makes sure global Chubby meets but does not far exceed its objective, and in a quarter without a real failure it causes a controlled outage."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 190\" role=\"img\" aria-labelledby=\"dg-obs-sre-t\" class=\"dg\"><title id=\"dg-obs-sre-t\">In the book's latency example a typical request takes about 50 ms and 5% take 20 times longer. The mean lands near 98 ms and hides the 1,000 ms tail.</title><defs><marker id=\"dg-obs-sre-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"12\" y=\"29\" class=\"dg-label\" text-anchor=\"start\" font-size=\"12\">Median</text><text x=\"12\" y=\"45\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">50 ms</text><rect x=\"150\" y=\"14\" width=\"20\" height=\"36\" class=\"dg-box\"/><text x=\"12\" y=\"77\" class=\"dg-label\" text-anchor=\"start\" font-size=\"12\">Mean</text><text x=\"12\" y=\"93\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">about 98 ms</text><rect x=\"150\" y=\"62\" width=\"39\" height=\"36\" class=\"dg-box\"/><text x=\"12\" y=\"125\" class=\"dg-label\" text-anchor=\"start\" font-size=\"12\">99th percentile</text><text x=\"12\" y=\"141\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">1,000 ms</text><rect x=\"150\" y=\"110\" width=\"400\" height=\"36\" class=\"dg-box dg-accent\"/><text x=\"12\" y=\"170\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Worked out from the book's example: 95 requests at 50 ms, 5 at 1,000 ms.</text></svg>",
+        "numbers": [
+          {
+            "value": "About 50 ms",
+            "meaning": "Time a typical request takes in the chapter's latency example"
+          },
+          {
+            "value": "5% of requests, 20 times slower",
+            "meaning": "The slow tail in that example, which an average hides"
+          },
+          {
+            "value": "99% under 100 ms",
+            "meaning": "Form of the chapter's example objective: 99% of Get calls complete in under 100 ms"
+          },
+          {
+            "value": "99.95%",
+            "meaning": "Published availability target for Google Compute Engine at the time, described as three and a half nines"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "An objective below 100%, with an error budget tracked daily or weekly and compared with the violation rate.",
+          "rejected": "Insisting that objectives are met 100% of the time.",
+          "why": "The chapter says that can reduce the rate of innovation and deployment and require expensive, over-conservative solutions, so a measured allowance for failure works better."
+        },
+        "failures": "The chapter's own cautionary tale is Chubby. Its rare outages gave service owners a false sense of security, and services could not work when it was down. A badly chosen objective can also waste effort, through heroic work on an aggressive target or a poor product from a lax one. The chapter gives no incident with numbers.",
+        "takeaways": "Define a few indicators from what users feel, describe latency with percentiles, set objectives below 100%, and use the budget as a control loop for action and for releases."
+      }
+    },
+    {
+      "id": "google-sre-alerting-2018",
+      "title": "Alerting on SLOs (The Site Reliability Workbook, chapter 5)",
+      "url": "https://sre.google/workbook/alerting-on-slos/",
+      "company": "Google",
+      "verifiedOn": "2026-10-24",
+      "published": "no date shown",
+      "edition": "page shows copyright 2018 Google, Inc., published by O'Reilly Media, SRE workbook chapter",
+      "ageNote": "This is a book chapter, not a dated blog post: the page shows only a 2018 copyright for the workbook. It is here for the arithmetic of burn rates and alert windows, which does not depend on a product version. Its examples use Prometheus syntax and a made-up service, and the page does not say whether Google alerts this way today.",
+      "digest": {
+        "problem": "Once a service has an objective and an error budget, someone has to turn them into alerts. The workbook chapter looks for a rule that pages for significant events without paging for noise, and shows six attempts in rising quality.",
+        "constraints": "A good alert is judged on four things: precision (the share of alerts that were significant), recall (the share of significant events that alerted), detection time, and reset time, meaning how long it keeps firing after the problem is fixed. Improving one tends to hurt another. The examples use a request-driven service with a 99.9% objective over 30 days.",
+        "walkthrough": [
+          {
+            "step": "Alert when the short-term error rate passes the objective",
+            "explanation": "This detects a total outage almost instantly and catches everything that threatens the objective. But it fires on many events that do not, and in the extreme could produce up to 144 alerts a day, each ignored, while the objective is still met."
+          },
+          {
+            "step": "Lengthen the window or add a duration",
+            "explanation": "A longer window, such as 36 hours for 5% of the budget, improves precision but keeps firing for 36 hours after a total outage ends. A duration parameter is not recommended: a 100% outage alerts after an hour, the same as a 0.2% one, and a brief dip below the threshold resets the timer."
+          },
+          {
+            "step": "Alert on burn rate",
+            "explanation": "Burn rate is how fast the budget is consumed relative to the objective. Keeping a one-hour window and deciding 5% of the budget is worth an alert gives a burn rate of 36. Precision and detection are good and reset time falls to 58 minutes, but a 35x burn never alerts and still empties the budget in 20.5 hours."
+          },
+          {
+            "step": "Use several burn rates, then add a short window",
+            "explanation": "Recommended starting points are 2% of the budget in one hour (burn rate 14.4) and 5% in six hours (burn rate 6) as pages, and 10% in three days (burn rate 1) as a ticket. Adding a window one twelfth as long to each page rule makes the alert reset about five minutes after the errors stop. This needs alert suppression, because one event can trip several rules at once."
+          },
+          {
+            "step": "Adapt for low traffic and extreme goals",
+            "explanation": "At 10 requests an hour, one failure is a 1,000x burn rate and 13.9% of the 30-day budget, so it would page at once. Remedies are synthetic traffic, combining related services, clients that retry with backoff, or a lower objective. At 99.999% a total outage empties the budget in 26 seconds, so the workbook says to design for a very low chance of one, for example by rolling out to 1% of users first, which gives 43 minutes."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 150\" role=\"img\" aria-labelledby=\"dg-obs-alert-t\" class=\"dg\"><title id=\"dg-obs-alert-t\">Four alert designs from the workbook: error rate over the objective, a long window, one burn rate, and several burn rates with a short window.</title><defs><marker id=\"dg-obs-alert-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"2\" y=\"14\" width=\"118\" height=\"80\" class=\"dg-box\"/><text x=\"61\" y=\"42.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Error rate over</text><text x=\"61\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">the SLO, 10 min:</text><text x=\"61\" y=\"74.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">fires on blips</text><path d=\"M120,54 L148,54\" class=\"dg-line\" marker-end=\"url(#dg-obs-alert-a)\"/><rect x=\"148\" y=\"14\" width=\"118\" height=\"80\" class=\"dg-box\"/><text x=\"207\" y=\"34.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">A 36-hour</text><text x=\"207\" y=\"50.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">window stays</text><text x=\"207\" y=\"66.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">firing for</text><text x=\"207\" y=\"82.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">36 hours</text><path d=\"M266,54 L294,54\" class=\"dg-line\" marker-end=\"url(#dg-obs-alert-a)\"/><rect x=\"294\" y=\"14\" width=\"118\" height=\"80\" class=\"dg-box\"/><text x=\"353\" y=\"42.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">One burn rate,</text><text x=\"353\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">1-hour window:</text><text x=\"353\" y=\"74.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">58 min to reset</text><path d=\"M412,54 L440,54\" class=\"dg-line\" marker-end=\"url(#dg-obs-alert-a)\"/><rect x=\"440\" y=\"14\" width=\"118\" height=\"80\" class=\"dg-box dg-accent\"/><text x=\"499\" y=\"34.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Several rates</text><text x=\"499\" y=\"50.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">plus a short</text><text x=\"499\" y=\"66.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">window: page or</text><text x=\"499\" y=\"82.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">ticket</text><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Each step fixes a weakness of the one before it.</text></svg>",
+        "numbers": [
+          {
+            "value": "36",
+            "meaning": "Burn rate that spends 5% of a 30-day error budget in one hour"
+          },
+          {
+            "value": "43 minutes",
+            "meaning": "Time for a total outage to use up a 99.9% budget over 30 days"
+          },
+          {
+            "value": "0.02%",
+            "meaning": "Share of the monthly budget used by a 0.1% error rate lasting 10 minutes, which the simple alert would page on"
+          },
+          {
+            "value": "14.4",
+            "meaning": "Burn rate for the page rule of 2% of the budget in one hour"
+          },
+          {
+            "value": "20.5 hours",
+            "meaning": "Time a 35x burn rate takes to use the whole budget, though it never trips the 36x one-hour alert"
+          },
+          {
+            "value": "26 seconds",
+            "meaning": "Time for a total outage to empty the budget of a service with a 99.999% monthly objective"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Several burn rates, each checked over a long and a short window, with fast burns paging and slow burns opening a ticket.",
+          "rejected": "A single threshold on the short-term error rate, and the duration parameter on alerts.",
+          "why": "The single threshold is noisy, longer windows reset slowly, and a duration lets a severe outage wait as long as a mild one. Several rates trade simplicity for good precision, recall, detection and reset together."
+        },
+        "failures": "The chapter lists the cost of its own answer: more numbers, windows and thresholds to manage, and the need for alert suppression so one event does not raise three notifications. The approach also breaks down for low-traffic services, where single failures look like large burns, and for extreme goals, where the budget is gone before any alert can reach a person.",
+        "takeaways": "Alert on the speed of budget spend, not on the error rate alone. Use a fast, high threshold to page, a slow, low one to open a ticket, and a short window so the alert resets promptly."
+      }
+    },
+    {
+      "id": "google-dapper-2010",
+      "title": "Dapper, a Large-Scale Distributed Systems Tracing Infrastructure",
+      "url": "https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf",
+      "company": "Google",
+      "verifiedOn": "2026-10-24",
+      "published": "no date shown",
+      "edition": "Google technical report dapper-2010-1, April 2010",
+      "ageNote": "This is a research paper, not a company blog post: a Google technical report dated April 2010. It is here for fundamentals that do not depend on a product version: following a request with a trace id, and sampling to keep overhead low. The measurements come from Google's web search cluster at that time, and the paper does not say how the system looks today. The Canopy paper below says it extends Dapper, which shows the ideas carried on at a second company.",
+      "digest": {
+        "problem": "Google services are built from modules owned by different teams and spread over thousands of machines. One web search can touch thousands of them, so an engineer who sees only the overall latency cannot tell which service is slow or why. Dapper is the tracing system Google built to follow a request across all of them.",
+        "constraints": "The authors set three goals. Overhead had to be negligible, because owners of latency-sensitive services would turn tracing off if they noticed it. Application developers should have to do nothing, since a system that relies on their cooperation breaks. And it had to scale to Google's services for years. Ideally data should be available for analysis within about a minute.",
+        "walkthrough": [
+          {
+            "step": "Name a request and follow it",
+            "explanation": "Each request gets a trace id, and each piece of work is a span with its own id and its parent's id, forming a tree. The ids travel through Google's common RPC, threading and control-flow libraries, so almost no application code needed to change."
+          },
+          {
+            "step": "Collect spans outside the request path",
+            "explanation": "Spans are written to local log files, pulled off each host by a daemon, and stored in regional Bigtable repositories, one trace per row. Trace data is not sent back inside RPC responses, since it could dwarf the responses and bias later analysis. Median time to reach the repository was under 15 seconds."
+          },
+          {
+            "step": "Sample at the source",
+            "explanation": "The first production version used a single probability, about 1 trace in 1024 candidates, for every process. Low-traffic services missed events at that rate, so the team began moving to a target number of sampled traces per unit time, and the probability used is stored with each trace so counts stay accurate."
+          },
+          {
+            "step": "Sample again at collection",
+            "explanation": "To limit what reaches the repositories, the collector hashes each trace id and keeps or drops whole traces against one configurable coefficient. The authors chose a runtime rate slightly above what the repositories can take and throttle it there, because a change to the runtime rate cannot reach every running binary quickly."
+          },
+          {
+            "step": "Use traces to answer real questions",
+            "explanation": "Teams used the data to find slow serial requests, queries that needlessly hit a master instead of a replica, and network degradation along the critical path of the slowest search requests. The Ads Review team estimated its latency improved by two orders of magnitude using it."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 150\" role=\"img\" aria-labelledby=\"dg-obs-dapper-t\" class=\"dg\"><title id=\"dg-obs-dapper-t\">Dapper samples twice: the application samples about 1 request in 1024, and the collector keeps or drops whole traces by hashing the trace id.</title><defs><marker id=\"dg-obs-dapper-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"2\" y=\"14\" width=\"118\" height=\"80\" class=\"dg-box\"/><text x=\"61\" y=\"34.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Each request:</text><text x=\"61\" y=\"50.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">sampled at the</text><text x=\"61\" y=\"66.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">app, about</text><text x=\"61\" y=\"82.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">1 in 1024</text><path d=\"M120,54 L148,54\" class=\"dg-line\" marker-end=\"url(#dg-obs-dapper-a)\"/><rect x=\"148\" y=\"14\" width=\"118\" height=\"80\" class=\"dg-box\"/><text x=\"207\" y=\"34.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Spans written</text><text x=\"207\" y=\"50.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">to local files,</text><text x=\"207\" y=\"66.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">pulled by a</text><text x=\"207\" y=\"82.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">daemon</text><path d=\"M266,54 L294,54\" class=\"dg-line\" marker-end=\"url(#dg-obs-dapper-a)\"/><rect x=\"294\" y=\"14\" width=\"118\" height=\"80\" class=\"dg-box dg-accent\"/><text x=\"353\" y=\"34.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Collector hashes</text><text x=\"353\" y=\"50.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">the trace id and</text><text x=\"353\" y=\"66.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">keeps or drops</text><text x=\"353\" y=\"82.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">the whole trace</text><path d=\"M412,54 L440,54\" class=\"dg-line\" marker-end=\"url(#dg-obs-dapper-a)\"/><rect x=\"440\" y=\"14\" width=\"118\" height=\"80\" class=\"dg-box\"/><text x=\"499\" y=\"34.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Regional</text><text x=\"499\" y=\"50.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Bigtable,</text><text x=\"499\" y=\"66.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">one trace</text><text x=\"499\" y=\"82.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">per row</text><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The collector's single setting can be changed at once. Running programs cannot.</text></svg>",
+        "numbers": [
+          {
+            "value": "16.3%",
+            "meaning": "Average latency added in a web search cluster when every request is traced"
+          },
+          {
+            "value": "2.12%",
+            "meaning": "Average latency added when 1 request in 16 is traced"
+          },
+          {
+            "value": "-0.20%",
+            "meaning": "Average latency change at 1 request in 1024, inside the measurement error of 2.5%"
+          },
+          {
+            "value": "Under 15 seconds",
+            "meaning": "Median time for trace data to reach the central repository"
+          },
+          {
+            "value": "More than 1 terabyte",
+            "meaning": "Sampled trace data Google's production clusters generated per day"
+          },
+          {
+            "value": "Under 0.01%",
+            "meaning": "Share of Google's production network traffic used by trace collection"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Sample a small fraction of requests at the source, and sample again at the collector by trace id.",
+          "rejected": "Tracing every request, which added 16.3% to average latency in the search test.",
+          "why": "A notable pattern in a high-traffic service shows up thousands of times, so aggressive sampling still serves most analyses while keeping overhead inside measurement error."
+        },
+        "failures": "Tracing shows which part of a system is slow but not always why: a request can be slow because others were queued ahead of it. Batching can make one request look responsible for work done for many. Low-traffic services lose events at a low fixed rate. Bulk analysis could not yet finish within 10 minutes of an incident, which limited use when firefighting shared storage services, and the 98th percentile collection delay could grow to many hours about a quarter of the time.",
+        "takeaways": "Tracing is affordable because it samples. Set the sample by a rate rather than one probability for everyone, record the probability with the trace, and keep a second control at the collector to bound storage."
+      }
+    },
+    {
+      "id": "meta-canopy-2017",
+      "title": "Canopy: An End-to-End Performance Tracing And Analysis System",
+      "url": "https://cs.brown.edu/~jcmace/papers/kaldor2017canopy.pdf",
+      "company": "Meta",
+      "verifiedOn": "2026-10-24",
+      "published": "2017-10-28",
+      "ageNote": "This is a research paper, not a company blog post: the SOSP 2017 paper by Facebook engineers (Facebook is now Meta) and one Brown University author. It is here for how a company with many different systems controls and analyses trace volume, which does not depend on a product version. The paper describes Facebook as of 2017, and does not say whether Canopy runs the same way today.",
+      "digest": {
+        "problem": "Facebook had built several separate tracing tools, one for backend RPC trees, one for browser page loads and one for mobile, each good at one kind of question. Engineers needed cross-system answers, such as why a page got slower, but raw traces hold thousands of events each and over a billion arrive a day, which cannot be queried interactively.",
+        "constraints": "Tracing every request is infeasible. Instrumentation is hard to change and spans many software versions in one trace. Many engineers share one system and each cares about a small slice of each trace. Missing data is common because remote clients deliver on a best-effort basis.",
+        "walkthrough": [
+          {
+            "step": "Instrument with narrow APIs that emit generic events",
+            "explanation": "Engineers use libraries that fit their component, all of which emit one common kind of event tagged with a trace id passed along the request. No single trace model is forced on instrumentation, so the model can change later without re-instrumenting."
+          },
+          {
+            "step": "Decide at the start whether to trace",
+            "explanation": "A request first checks sampling policies written by users, each with an owner, a probability or rate, conditions, a lifetime and a level of detail. If one matches, the request must take a token from a distributed token bucket that limits trace starts globally and per tenant. Each tenant gets 5 traces per second by default, and no token means no trace."
+          },
+          {
+            "step": "Group events by trace",
+            "explanation": "Events flow through Scribe to a sharded backend called the tailer. Sharding by trace id sends every event of a trace to the same tailer, so tailers never need to talk to each other and the backend scales by adding machines."
+          },
+          {
+            "step": "Turn traces into features and datasets",
+            "explanation": "The tailer builds a common trace model and then runs feature functions that engineers supply, turning each trace into rows of numbers and labels. Rows go to datasets, usually in Scuba, an in-memory database for performance data."
+          },
+          {
+            "step": "Slice the aggregates, then drill into traces",
+            "explanation": "In a March 2017 case a page-load regression of about 300 ms was narrowed by breakdowns to one page piece that had started adding about 10 kB of CSS to the critical path, which confused an early-flush mechanism. Engineers fixed it by reconfiguring early flush."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 150\" role=\"img\" aria-labelledby=\"dg-obs-canopy-t\" class=\"dg\"><title id=\"dg-obs-canopy-t\">Canopy starts a trace only if a sampling policy matches and a token is available, then groups events by trace id and turns each trace into dataset rows.</title><defs><marker id=\"dg-obs-canopy-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"2\" y=\"14\" width=\"103.2\" height=\"80\" class=\"dg-box\"/><text x=\"53.6\" y=\"50.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Request</text><text x=\"53.6\" y=\"66.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">arrives</text><path d=\"M105.2,54 L115.2,54\" class=\"dg-line\" marker-end=\"url(#dg-obs-canopy-a)\"/><rect x=\"115.2\" y=\"14\" width=\"103.2\" height=\"80\" class=\"dg-box\"/><text x=\"166.8\" y=\"50.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">A policy says</text><text x=\"166.8\" y=\"66.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">sample it?</text><path d=\"M218.4,54 L228.4,54\" class=\"dg-line\" marker-end=\"url(#dg-obs-canopy-a)\"/><rect x=\"228.4\" y=\"14\" width=\"103.2\" height=\"80\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"42.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Token from</text><text x=\"280\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">a distributed</text><text x=\"280\" y=\"74.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">bucket?</text><path d=\"M331.6,54 L341.6,54\" class=\"dg-line\" marker-end=\"url(#dg-obs-canopy-a)\"/><rect x=\"341.6\" y=\"14\" width=\"103.2\" height=\"80\" class=\"dg-box\"/><text x=\"393.20000000000005\" y=\"42.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Events go to</text><text x=\"393.20000000000005\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">one tailer</text><text x=\"393.20000000000005\" y=\"74.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">per trace id</text><path d=\"M444.8,54 L454.8,54\" class=\"dg-line\" marker-end=\"url(#dg-obs-canopy-a)\"/><rect x=\"454.8\" y=\"14\" width=\"103.2\" height=\"80\" class=\"dg-box\"/><text x=\"506.40000000000003\" y=\"42.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Features in</text><text x=\"506.40000000000003\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">datasets to</text><text x=\"506.40000000000003\" y=\"74.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">query</text><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">No token, no trace: the bucket caps volume even if a policy is set too wide.</text></svg>",
+        "numbers": [
+          {
+            "value": "1.3 billion",
+            "meaning": "Traces recorded and processed per day, from end-user devices to backend services"
+          },
+          {
+            "value": "129",
+            "meaning": "Performance datasets the system backed in April 2017, up from 35 in November 2015"
+          },
+          {
+            "value": "5 per second",
+            "meaning": "Default rate of trace starts allowed per tenant by the token bucket"
+          },
+          {
+            "value": "300 ms",
+            "meaning": "Page load regression of about 13% in March 2017 that engineers traced to one page piece"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A generic event model for instrumentation, sampling policies behind a global token bucket, and features computed from each trace as it arrives.",
+          "rejected": "A single fixed trace model such as span trees, and tracing all requests.",
+          "why": "The authors report that open-source tools with a first-class trace model struggled with queues, async work and multi-parent causality, and that tracing everything at their volume is infeasible."
+        },
+        "failures": "Computing features in advance leaves most of each trace unused until a question arrives, so source events and modeled traces are kept to reprocess later. A single user's error report cannot be investigated if that request was not sampled. The token bucket assumes a fixed cost per trace, but new instrumentation can raise the number of events in a trace, and the paper says a canary sometimes misses such effects for hours. Deciding part way through a request works only when few, known components are involved.",
+        "takeaways": "At scale, who gets to trace what must be controlled twice: by policies that say which requests matter, and by a shared rate limit that protects the pipeline when a policy is set wrongly."
+      }
+    }
+  ],
+  "comparison": "The four sources cover one loop at different layers. The SRE book and workbook define what to measure and when to wake someone, while Dapper and Canopy follow a single request through many services. All four refuse to look at everything: the SRE chapters choose a few indicators and alert on budget spend instead of every error, and both tracing papers keep only a fraction of requests.\n\nThey differ in who controls the volume. Dapper began with one probability of about 1 in 1024 and moved toward a target rate, with a second pass at collection that keeps or drops whole traces by trace id. Canopy lets teams write sampling policies and puts a distributed token bucket behind them, with 5 traces per second per tenant by default. The workbook applies the same idea to alerts: a fast, high threshold pages and a slow, low one opens a ticket.\n\nThe evidence is thin in places. Three of the four sources are Google, the oldest from 2010, and the Facebook paper is from 2017. None says whether the setup is the same today. The Dapper timings come from one web search cluster, and the SRE examples are illustrations with a made-up service, not measurements of a named outage."
+}

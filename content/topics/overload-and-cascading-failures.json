@@ -269,7 +269,7 @@
     ],
     "next": {
       "outcome": "After this you can pick a related topic to read next.",
-      "body": "Related topics: Circuit Breakers and Rate Limiting are the defences this topic leans on. Failover covers moving traffic to another site or replica when a part fails, which is also how an overload can spread to the site that receives the traffic. Idempotency and Retries goes deeper on making retried requests safe to repeat."
+      "body": "Related topics: Circuit Breakers and Rate Limiting are the defences this topic leans on. Failover covers moving traffic to another site or replica when a part fails, which is also how an overload can spread to the site that receives the traffic. Idempotency and Retries goes deeper on making retried requests safe to repeat. Observability and SLOs picks up how a system detects that it is failing in the first place, with objectives, error budgets, burn-rate alerts and sampled traces."
     }
   },
   "posts": [

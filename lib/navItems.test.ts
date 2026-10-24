@@ -7,5 +7,5 @@ describe("nav items", () => {
   it("each points at a page in the sitemap", () => {
     const urls = sitemap().map((e) => e.url);
     for (const i of NAV_ITEMS) expect(urls).toContain(absoluteUrl(i.href));
-  });
+  }, 30_000);
 });

@@ -1,0 +1,391 @@
+{
+  "slug": "observability-and-slos",
+  "promise": "After this you can follow the topic page and the posts: say what observability and an SLO are, pick a few indicators that reflect what users feel, work out an error budget, and explain why teams page on how fast the budget is burning instead of on every spike.",
+  "before": {
+    "prerequisites": [
+      "overload-and-cascading-failures"
+    ],
+    "terms": [
+      {
+        "term": "Metric",
+        "definition": "A number measured over time, such as requests per second or the share of requests that failed."
+      },
+      {
+        "term": "Percentile",
+        "definition": "The value below which a given share of observations fall. The 99th percentile latency is the time that 99% of requests beat."
+      },
+      {
+        "term": "Alert",
+        "definition": "A rule that watches a measurement and notifies a person or opens a ticket when a condition holds."
+      },
+      {
+        "term": "Request",
+        "definition": "One call from a user or another service that the system must answer."
+      }
+    ],
+    "note": "Overload and cascading failures is the one topic this builds on: it is where you meet the failures that good monitoring has to catch early. The stages below explain the rest."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "When a distributed system misbehaves, someone has to find out which part is at fault. Observability is the ability to answer that from the data the system emits. OpenTelemetry names three kinds of that data, called telemetry: traces, metrics and logs [[otel-primer]].",
+        "A metric is a numeric measurement aggregated over a period, such as the error rate, CPU use or request rate [[otel-primer]]. A log is a timestamped message from a service or component, not necessarily tied to any one request [[otel-primer]]. A trace records the path of a single request through the services it touches, and is made of spans, one for each step [[otel-primer]]; the first span is the root and stands for the request from start to finish [[otel-traces]]. OpenTelemetry says metrics give statistical information in aggregate, where tracing captures the life of individual requests [[otel-metrics]]. Each kind answers different questions: metrics say that something is wrong, traces say where in a request, and logs add detail.",
+        "Telemetry is only useful if you know what good looks like. The Google SRE book names three terms for that. A service level indicator (SLI) is a carefully defined measure of some aspect of the service, such as request latency or the fraction of requests that fail. A service level objective (SLO) is a target for that indicator. A service level agreement (SLA) is a contract that attaches consequences to missing it [[sre-slo]]. The book gives a quick test: ask what happens if the target is missed. If there is no explicit consequence, you are almost certainly looking at an SLO [[sre-slo]]."
+      ],
+      "terms": [
+        {
+          "term": "Observability",
+          "definition": "How well you can work out what a system is doing inside from the telemetry it produces."
+        },
+        {
+          "term": "Telemetry",
+          "definition": "Data a system emits about itself: traces, metrics and logs."
+        },
+        {
+          "term": "SLI",
+          "definition": "Service level indicator: a measured quantity that describes how well the service is doing, such as the share of requests that succeed."
+        },
+        {
+          "term": "SLO",
+          "definition": "Service level objective: a target for an SLI, such as 99.9% of requests succeed over 30 days."
+        },
+        {
+          "term": "SLA",
+          "definition": "Service level agreement: a contract with users that includes consequences, often financial, for missing the target."
+        }
+      ],
+      "reading": [
+        {
+          "source": "otel-primer",
+          "section": "Understanding distributed tracing, and Reliability and metrics",
+          "what": "The three kinds of telemetry and how SLIs and SLOs are introduced next to metrics."
+        },
+        {
+          "source": "sre-slo",
+          "section": "Service Level Terminology",
+          "what": "The definitions of SLI, SLO and SLA, and the test for telling an SLO from an SLA."
+        }
+      ],
+      "canNow": [
+        "Name the three kinds of telemetry and what each is good for.",
+        "Say what an SLI, an SLO and an SLA each are.",
+        "Tell an SLO from an SLA with one question."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "A good SLI starts from what users care about, not from what is easy to measure. The SRE book says to work backward from the objective you want to the indicator, and to keep to a handful of indicators, because too many hide the ones that matter [[sre-slo]]. For a service that answers users, the usual candidates are availability, latency and throughput. Storage systems add durability [[sre-slo]].",
+        "For monitoring more broadly, the same book names four golden signals: latency, traffic, errors and saturation. It warns that errors include wrong answers returned with a success code, and that a slow error is worse than a fast one, so error latency should be tracked, not filtered out [[sre-monitoring]].",
+        "Averages hide the worst requests. The book's example is a service with a 100 ms average where 1% of requests take 5 seconds, and it points out that when a page depends on several backends, one backend's 99th percentile can become the frontend's median [[sre-monitoring]]. The remedy is to count requests in latency buckets rather than store single values [[sre-monitoring]]. Prometheus does this with a histogram: observations are counted in buckets, and quantiles are computed on the server afterwards. A summary computes its quantiles inside the program, and those cannot be recalculated for another window or combined across replicas [[prom-histograms]].",
+        "An SLO leaves some room for failure. If the target is 99.9% of requests succeeding over 30 days, the other 0.1% is the error budget. The SRE book calls it a rate at which the SLOs can be missed, and uses the gap between the miss rate and the budget as an input to deciding when to release [[sre-slo]]. How fast the budget is being used is the burn rate. At burn rate 1, a 99.9% SLO over 30 days uses up exactly the whole budget at the end of the window; the workbook's table shows that a burn rate of 10 empties it in 3 days [[sre-alerting]]."
+      ],
+      "terms": [
+        {
+          "term": "Golden signals",
+          "definition": "Latency, traffic, errors and saturation: four measurements the SRE book says to watch for any user-facing system."
+        },
+        {
+          "term": "Histogram",
+          "definition": "A metric that counts observations in buckets, so percentiles can be worked out later and combined across servers."
+        },
+        {
+          "term": "Error budget",
+          "definition": "The amount of failure an SLO allows, such as 0.1% of requests for a 99.9% target."
+        },
+        {
+          "term": "Burn rate",
+          "definition": "How fast the error budget is being used, relative to a rate that would use exactly all of it by the end of the window."
+        }
+      ],
+      "reading": [
+        {
+          "source": "sre-monitoring",
+          "section": "The Four Golden Signals, and Worrying About Your Tail",
+          "what": "What to measure first, and why averages and means mislead."
+        },
+        {
+          "source": "prom-histograms",
+          "section": "The opening comparison of summaries and histograms, and Quantiles",
+          "what": "Why histograms can be aggregated and summaries cannot."
+        },
+        {
+          "source": "sre-alerting",
+          "section": "Burn rates and the table of burn rates versus time to exhaustion",
+          "what": "How error budget and burn rate relate."
+        }
+      ],
+      "canNow": [
+        "Pick a few SLIs from what users care about.",
+        "Explain why a mean latency can hide a bad tail and what to measure instead.",
+        "Work out an error budget and say what burn rate means."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "Alerting is where SLOs pay off. The SRE book says paging a human is an expensive use of time, and that too many pages make people skim or ignore the real one [[sre-monitoring]]. Prometheus's own guidance agrees: alert on symptoms tied to user pain, not on every possible cause, and keep the number of pages low [[prom-alerting-practice]].",
+        "A fixed threshold is a poor fit. The workbook walks through alert designs and shows the trade-offs. Alerting on a single burn rate over a short window is precise but misses slow burns, for example, a 35 times burn rate never alerts yet empties a 30-day budget in about 20.5 hours [[sre-alerting]]. So it recommends several burn rates at once: for a 99.9% SLO, page when 2% of the budget is gone in one hour (burn rate 14.4) or 5% in six hours (burn rate 6), and open a ticket for 10% in three days [[sre-alerting]].",
+        "A second window stops the alert from lingering. Each long window is paired with a short one, about one twelfth as long, and the alert fires only while both are above the threshold. That way the alert stops soon after the errors stop, instead of staying up for the full long window [[sre-alerting]].",
+        "In Prometheus this maps to two features. A recording rule saves the result of an expression as a new time series, so a repeated or costly query such as an error ratio is computed once [[prom-recording-rules]]. An alerting rule fires from an expression, and its for clause makes Prometheus wait until the condition has held that long, with the alert pending until then [[prom-alerting-rules]].",
+        "Traces have their own cost problem. Storing every trace is expensive, so OpenTelemetry describes sampling. Head sampling decides at the start, for example by trace ID at a fixed percentage, which is simple and efficient but cannot guarantee that every trace containing an error is kept. Tail sampling decides after looking at most of a trace's spans, so it can keep every error or every slow trace [[otel-sampling]]."
+      ],
+      "terms": [
+        {
+          "term": "Multiwindow alert",
+          "definition": "An alert that needs both a long and a short time window to be over the threshold, so it fires on real, current burning and stops soon after recovery."
+        },
+        {
+          "term": "Recording rule",
+          "definition": "A Prometheus rule that precomputes an expression and stores the result as a new time series."
+        },
+        {
+          "term": "Head sampling",
+          "definition": "Choosing which traces to keep at the start of a trace, before knowing how it turns out."
+        },
+        {
+          "term": "Tail sampling",
+          "definition": "Choosing which traces to keep after seeing most of their spans, so errors and slow requests can be kept on purpose."
+        }
+      ],
+      "reading": [
+        {
+          "source": "sre-alerting",
+          "section": "Multiple Burn Rate Alerts, and Multiwindow, Multi-Burn-Rate Alerts",
+          "what": "Why one threshold fails and the recommended page and ticket settings."
+        },
+        {
+          "source": "prom-alerting-rules",
+          "section": "Defining alerting rules",
+          "what": "The for clause and the pending and firing states."
+        },
+        {
+          "source": "otel-sampling",
+          "section": "Head Sampling and Tail Sampling",
+          "what": "What each can and cannot keep."
+        }
+      ],
+      "canNow": [
+        "Explain why teams alert on burn rate and not on a raw error spike.",
+        "Say what the second, shorter window adds.",
+        "Say what a recording rule and the for clause do.",
+        "Choose between head and tail sampling for a given need."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "Every choice here is a trade. A tight SLO costs engineering effort and slows releases; a loose one lets users suffer before anyone acts. The SRE book advises against picking a target from current performance, because that can lock you into a system that needs heroic effort to hold its numbers. It also advises keeping a tighter internal SLO than the one you publish, to leave room to react [[sre-slo]].",
+        "Alert numbers are starting points. The workbook says the right values depend on the service and its baseline traffic. On a busy service you may want a ticket, not a page, for the six-hour window [[sre-alerting]]. A low-traffic service has the opposite problem: a few failures swing the ratio, and the workbook gives it separate treatment.",
+        "Sampling also costs. OpenTelemetry lists the direct compute cost of a tail-sampling proxy, the engineering cost of maintaining the rules, and the risk of dropping the one trace you needed. It says sampling may not be appropriate if you produce very little data, or must keep all of it for regulation [[otel-sampling]].",
+        "Finally, alerts themselves must be tested. Prometheus lets you check a rule file for validity and unit-test alerts against made-up series, so you can see an alert fire, or stay quiet, before a real outage tries it [[promtool]] [[prom-unit-test]]."
+      ],
+      "terms": [
+        {
+          "term": "Safety margin",
+          "definition": "An internal SLO set tighter than the one users are told about, to leave time to react."
+        },
+        {
+          "term": "Unit test (alerts)",
+          "definition": "Feeding made-up time series to a rule file and checking which alerts fire at which times."
+        }
+      ],
+      "reading": [
+        {
+          "source": "sre-slo",
+          "section": "Choosing Targets, and Control Measures",
+          "what": "Why not to choose a target from current performance, and the safety margin tactic."
+        },
+        {
+          "source": "otel-sampling",
+          "section": "When not to sample",
+          "what": "The costs and cases where sampling is a poor fit."
+        },
+        {
+          "source": "prom-unit-test",
+          "section": "Test file format",
+          "what": "How input series and alert tests are written."
+        }
+      ],
+      "canNow": [
+        "Argue for or against a tighter SLO using its cost.",
+        "Explain why alert thresholds are tuned per service.",
+        "Test an alert rule before relying on it."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "Aim for 100% availability.",
+      "truth": "The SRE book says 100% is impossible, and a target should be set from what users need, with the remainder left as an error budget [[sre-slo]]."
+    },
+    {
+      "myth": "An average latency tells you how users are doing.",
+      "truth": "A 100 ms average can sit beside 1% of requests taking 5 seconds, and for pages that call several backends the tail of one becomes the typical case of the whole [[sre-monitoring]]."
+    },
+    {
+      "myth": "More alerts mean a safer system.",
+      "truth": "The SRE book says too frequent pages make people ignore real ones, and Prometheus advises alerting on symptoms with as few alerts as possible [[sre-monitoring]] [[prom-alerting-practice]]."
+    },
+    {
+      "myth": "You can average or add up percentiles from many servers.",
+      "truth": "Prometheus says pre-computed summary quantiles cannot be aggregated across replicas, which is why it recommends histograms when you need that [[prom-histograms]]."
+    },
+    {
+      "myth": "Keep a trace from every request for full visibility.",
+      "truth": "OpenTelemetry presents sampling as one of the most effective ways to cut cost, and tail sampling can still keep every error or slow trace [[otel-sampling]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These run on your own computer and touch nothing else. The two commands are from the promtool and unit-testing pages. They need the two small files below in the current directory, which are our adaptation of the Workbook's page alert (burn rate 14.4 over 1 hour and 5 minutes for a 99.9% SLO). The recording rule names and the job myjob come from the Workbook; the metric http_requests_total, the alert name and the series numbers are ours. In the test, 3% errors should fire the page and 0.1% should not. I ran both commands inside the prom/prometheus Docker image (promtool as the entrypoint, current directory mounted); the check reported 3 rules found and the test reported SUCCESS. Docker is not needed if promtool is installed. I did not run them any other way.",
+    "files": [
+      {
+        "name": "rules.yml",
+        "content": "groups:\n  - name: slo-example\n    rules:\n      - record: job:slo_errors_per_request:ratio_rate1h\n        expr: sum by (job) (rate(http_requests_total{code=~\"5..\"}[1h])) / sum by (job) (rate(http_requests_total[1h]))\n      - record: job:slo_errors_per_request:ratio_rate5m\n        expr: sum by (job) (rate(http_requests_total{code=~\"5..\"}[5m])) / sum by (job) (rate(http_requests_total[5m]))\n      - alert: ErrorBudgetFastBurn\n        expr: job:slo_errors_per_request:ratio_rate1h{job=\"myjob\"} > (14.4 * 0.001) and job:slo_errors_per_request:ratio_rate5m{job=\"myjob\"} > (14.4 * 0.001)\n        labels:\n          severity: page\n"
+      },
+      {
+        "name": "test.yml",
+        "content": "rule_files:\n  - rules.yml\nevaluation_interval: 1m\ntests:\n  - interval: 1m\n    input_series:\n      - series: 'http_requests_total{job=\"myjob\", code=\"200\"}'\n        values: '0+97x120'\n      - series: 'http_requests_total{job=\"myjob\", code=\"500\"}'\n        values: '0+3x120'\n    alert_rule_test:\n      - eval_time: 90m\n        alertname: ErrorBudgetFastBurn\n        exp_alerts:\n          - exp_labels:\n              severity: page\n              job: myjob\n  - interval: 1m\n    input_series:\n      - series: 'http_requests_total{job=\"myjob\", code=\"200\"}'\n        values: '0+999x120'\n      - series: 'http_requests_total{job=\"myjob\", code=\"500\"}'\n        values: '0+1x120'\n    alert_rule_test:\n      - eval_time: 90m\n        alertname: ErrorBudgetFastBurn\n        exp_alerts: []\n"
+      }
+    ],
+    "commands": [
+      {
+        "command": "promtool check rules rules.yml",
+        "shows": "Checks that the rule file is valid. Expect SUCCESS: 3 rules found.",
+        "source": "promtool"
+      },
+      {
+        "command": "promtool test rules test.yml",
+        "shows": "Runs the tests against the rule file. Expect SUCCESS. Change 0+3x120 to 0+0x120 in test.yml and run again to see the first test fail.",
+        "source": "prom-unit-test"
+      }
+    ]
+  },
+  "next": "Go back to the Observability and SLOs topic page for the worked example and the quiz, then read the posts there. These sources give the vocabulary and the mechanisms; they do not say how any one company sets its targets, which is what the posts add.",
+  "sources": [
+    {
+      "id": "sre-slo",
+      "title": "Site Reliability Engineering: Service Level Objectives (chapter 4)",
+      "url": "https://sre.google/sre-book/service-level-objectives/",
+      "publisher": "Google (Site Reliability Engineering)",
+      "kind": "Book chapter, free online",
+      "year": "2017",
+      "verifiedOn": "2026-10-24",
+      "note": "Describes how Google did this when the book was written; the SLI, SLO and SLA definitions are the terms the rest of the industry uses."
+    },
+    {
+      "id": "sre-monitoring",
+      "title": "Site Reliability Engineering: Monitoring Distributed Systems (chapter 6)",
+      "url": "https://sre.google/sre-book/monitoring-distributed-systems/",
+      "publisher": "Google (Site Reliability Engineering)",
+      "kind": "Book chapter, free online",
+      "year": "2017",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "sre-alerting",
+      "title": "The Site Reliability Workbook: Alerting on SLOs (chapter 5)",
+      "url": "https://sre.google/workbook/alerting-on-slos/",
+      "publisher": "Google (Site Reliability Engineering)",
+      "kind": "Book chapter, free online",
+      "year": "2018",
+      "verifiedOn": "2026-10-24",
+      "note": "The numbers in this page are the workbook's recommended starting points for a 99.9% SLO, not rules for every service."
+    },
+    {
+      "id": "otel-primer",
+      "title": "OpenTelemetry Documentation: Observability primer",
+      "url": "https://opentelemetry.io/docs/concepts/observability-primer/",
+      "publisher": "OpenTelemetry (CNCF project)",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-04-23",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "otel-traces",
+      "title": "OpenTelemetry Documentation: Traces",
+      "url": "https://opentelemetry.io/docs/concepts/signals/traces/",
+      "publisher": "OpenTelemetry (CNCF project)",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-01-14",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "otel-metrics",
+      "title": "OpenTelemetry Documentation: Metrics",
+      "url": "https://opentelemetry.io/docs/concepts/signals/metrics/",
+      "publisher": "OpenTelemetry (CNCF project)",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2026-07-02",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "otel-sampling",
+      "title": "OpenTelemetry Documentation: Sampling",
+      "url": "https://opentelemetry.io/docs/concepts/sampling/",
+      "publisher": "OpenTelemetry (CNCF project)",
+      "kind": "Project documentation",
+      "year": "page shows last updated 2025-10-16",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "prom-histograms",
+      "title": "Prometheus Documentation: Histograms and summaries",
+      "url": "https://prometheus.io/docs/practices/histograms/",
+      "publisher": "Prometheus (CNCF project)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "prom-alerting-practice",
+      "title": "Prometheus Documentation: Alerting (best practices)",
+      "url": "https://prometheus.io/docs/practices/alerting/",
+      "publisher": "Prometheus (CNCF project)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "prom-alerting-rules",
+      "title": "Prometheus Documentation: Alerting rules",
+      "url": "https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/",
+      "publisher": "Prometheus (CNCF project)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "prom-recording-rules",
+      "title": "Prometheus Documentation: Defining recording rules",
+      "url": "https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/",
+      "publisher": "Prometheus (CNCF project)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "prom-unit-test",
+      "title": "Prometheus Documentation: Unit testing for rules",
+      "url": "https://prometheus.io/docs/prometheus/latest/configuration/unit_testing_rules/",
+      "publisher": "Prometheus (CNCF project)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "promtool",
+      "title": "Prometheus Documentation: promtool",
+      "url": "https://prometheus.io/docs/prometheus/latest/command-line/promtool/",
+      "publisher": "Prometheus (CNCF project)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24"
+    }
+  ]
+}

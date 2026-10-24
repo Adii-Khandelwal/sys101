@@ -40,5 +40,5 @@ Applies when editing /topic/<slug>/learn or content/learn.
 
 ## Checks added in the October 2026 review
 
-- Every Try it command must appear in the cited page or a page it links to. Commands never start with a prompt character. A command that changes or interrupts something real (matched by RISKY_COMMAND in lib/learn.ts) needs a `warning` saying what it does and to run it only on a test system. Names we made up are listed in `exampleNames` and shown as "example names, not from the docs".
+- Every Try it command must appear in the cited page or a page it links to. Commands never start with a prompt character. A command that changes or interrupts something real (matched by RISKY_COMMAND in lib/learn.ts) needs a `warning` saying what it does and to run it only on a test system. Names we made up are listed in `exampleNames` and shown as "example names, not from the docs". Example files a command reads (our own adaptation of a cited page) go in the optional `tryIt.files` (`name`, `content`), shown before the commands as scrollable code labelled "our adaptation, not from the docs"; never paste file contents into the intro text.
 - A source `year` is a four-digit year, "no date shown", or "page shows last updated YYYY-MM-DD" (VALID_SOURCE_YEAR), recorded only when the page shows it. Microsoft Learn pages render their date with script, so read them in a browser.
