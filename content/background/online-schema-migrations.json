@@ -1,0 +1,18 @@
+{
+  "topic": "online-schema-migrations",
+  "updatedOn": "2026-10-24",
+  "items": [
+    {
+      "id": "sharding",
+      "name": "Sharding",
+      "explanation": "Sharding splits one table's rows across several databases, called shards, by a key. Each shard holds fewer rows, so a change on each one is smaller.",
+      "topicPage": "sharding",
+      "assumedBy": [
+        {
+          "postId": "schema-shopify-vitess-2024",
+          "quote": "It allows you to shard and re-shard MySQL"
+        }
+      ]
+    }
+  ]
+}

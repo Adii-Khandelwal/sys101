@@ -1,0 +1,399 @@
+{
+  "slug": "online-schema-migrations",
+  "promise": "After this you can follow the topic page and the posts: say what a schema migration is, why a plain ALTER TABLE can block a live table, and how databases and tools change a big table while it keeps serving traffic.",
+  "before": {
+    "prerequisites": [
+      "databases"
+    ],
+    "terms": [
+      {
+        "term": "Schema",
+        "definition": "The shape of the data in a database: which tables exist, which columns each has, their types, and the indexes and constraints on them."
+      },
+      {
+        "term": "Migration",
+        "definition": "A change to the schema, such as adding a column or an index, applied to a database that already holds data."
+      },
+      {
+        "term": "Lock",
+        "definition": "A claim a transaction makes on a table or row so that others wait or are refused while it changes the data."
+      },
+      {
+        "term": "Online",
+        "definition": "Done while the database keeps answering reads and writes from the application."
+      }
+    ],
+    "note": "Databases is the one topic this builds on. The stages below explain the rest. If the four terms are familiar, you are ready."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "A table's schema is not fixed. Products grow, so you add a column, build an index, or tighten a constraint. The change is easy on an empty table. On a table with a billion rows that is serving users, the question is how long the change blocks them.",
+        "PostgreSQL shows the risk plainly. Unless its page says otherwise, an ALTER TABLE form takes an ACCESS EXCLUSIVE lock, and when several changes are in one statement it takes the strictest lock any of them needs [[pg-altertable]]. That lock conflicts with every other lock mode and guarantees the holder is the only transaction touching the table in any way, reads included [[pg-locks]]. So a long ALTER TABLE on a busy table can freeze the part of your application that uses it.",
+        "MySQL's InnoDB engine has a feature called online DDL (DDL means data definition language: the statements that change the schema). It supports instant and in-place changes, with reads and writes still allowed during many of them [[mysql-online-ddl]]. The page gives the reason: making a table unavailable for minutes or hours is not practical in a busy production environment [[mysql-online-ddl]].",
+        "The rest of this page is about the gap between those two facts: which changes are cheap, which are dangerous, and what teams do about the dangerous ones."
+      ],
+      "terms": [
+        {
+          "term": "DDL",
+          "definition": "Data definition language: the statements that change the schema, such as ALTER TABLE and CREATE INDEX."
+        },
+        {
+          "term": "ACCESS EXCLUSIVE lock",
+          "definition": "PostgreSQL's strongest table lock. While one transaction holds it, no other transaction can use the table at all."
+        },
+        {
+          "term": "Online DDL",
+          "definition": "A schema change that lets reads and writes continue on the table while it runs, fully or for most of its duration."
+        }
+      ],
+      "reading": [
+        {
+          "source": "pg-locks",
+          "section": "Table-Level Locks, the ACCESS EXCLUSIVE entry",
+          "what": "Which locks conflict, and what holding the strongest one means for every other session."
+        },
+        {
+          "source": "mysql-online-ddl",
+          "section": "The opening of the Online DDL page",
+          "what": "What online DDL promises and why it exists."
+        }
+      ],
+      "canNow": [
+        "Say what a schema migration is.",
+        "Explain why a plain ALTER TABLE can block reads and writes on a busy table.",
+        "Say what online DDL means."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "Whether a change is cheap depends on what the database has to do. The biggest cost is rewriting the table. PostgreSQL says that adding a column with a non-volatile default stores the default in the table's metadata, so no rewrite is needed and the statement is very fast even on large tables [[pg-altertable]]. A volatile default such as clock_timestamp(), a stored generated column, or an identity column rewrites the entire table and its indexes, and changing a column's type normally does too [[pg-altertable]].",
+        "Indexes have their own trade-off. A standard CREATE INDEX locks out writes but not reads until it finishes. With CONCURRENTLY, PostgreSQL builds the index without taking locks that block inserts, updates or deletes [[pg-createindex]]. To do that it enters the index as invalid, scans the table twice in two more transactions, and waits for older transactions at each step [[pg-createindex]].",
+        "MySQL lets you choose how a change runs. The ALGORITHM clause picks INSTANT, INPLACE or COPY, and the LOCK clause sets how much concurrent access you require. If you ask for something the operation cannot give, the statement halts immediately instead of quietly blocking [[mysql-online-ddl]].",
+        "The MySQL page has a table per kind of change. In 8.4, adding a column is INSTANT by default, with limits. A secondary index builds in place while the table stays readable and writable. Changing a column data type is only supported with ALGORITHM=COPY, which rebuilds the table and does not permit concurrent writes [[mysql-ddl-operations]]."
+      ],
+      "terms": [
+        {
+          "term": "Table rewrite",
+          "definition": "The database writes all rows into a new copy of the table. It costs time and I/O in proportion to the table size."
+        },
+        {
+          "term": "CREATE INDEX CONCURRENTLY",
+          "definition": "A PostgreSQL option that builds an index without blocking writes, at the price of more scans and more waiting."
+        },
+        {
+          "term": "ALGORITHM (MySQL)",
+          "definition": "INSTANT changes only metadata, INPLACE works inside the existing table, COPY builds a new table."
+        }
+      ],
+      "reading": [
+        {
+          "source": "pg-createindex",
+          "section": "Building Indexes Concurrently",
+          "what": "How a concurrent build works, what it costs, and what an invalid index is."
+        },
+        {
+          "source": "mysql-ddl-operations",
+          "section": "Index operations and Column operations tables",
+          "what": "Which changes are instant, in place, or need a table rebuild, and which allow concurrent writes."
+        },
+        {
+          "source": "pg-altertable",
+          "section": "Notes",
+          "what": "Which ADD COLUMN and type changes rewrite the table."
+        }
+      ],
+      "canNow": [
+        "Say why some changes are fast and others rewrite the whole table.",
+        "Explain what CREATE INDEX CONCURRENTLY trades for not blocking writes.",
+        "Explain what ALGORITHM and LOCK do in MySQL."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "Constraints are the next trap, because checking them means reading every row. The PostgreSQL page says scanning a large table to verify a new foreign key, check or not-null constraint can take a long time, and other updates are locked out until the ADD CONSTRAINT commits [[pg-altertable]].",
+        "The fix is to split the work. With NOT VALID, ADD CONSTRAINT does not scan the table and can commit immediately. A later VALIDATE CONSTRAINT checks the existing rows, and it does not need to lock out concurrent updates, because other transactions already enforce the constraint on rows they insert or update [[pg-altertable]]. The validation step takes a SHARE UPDATE EXCLUSIVE lock [[pg-altertable]].",
+        "Even a fast change has to get a lock first, and that can be the real problem. MySQL's page says an online DDL operation may have to wait for transactions that hold metadata locks on the table, and that a long or idle transaction can make it time out. Worse, while the DDL waits for its exclusive metadata lock, later transactions on the table queue behind it [[mysql-ddl-performance]].",
+        "So the safe habit is to bound the wait. PostgreSQL's lock_timeout aborts a statement that waits longer than a set time to get a lock; zero, the default, turns it off [[pg-config]]. A migration that fails quickly and retries is much safer than one that sits in the queue and holds everyone up."
+      ],
+      "terms": [
+        {
+          "term": "NOT VALID",
+          "definition": "A PostgreSQL option that adds a constraint for new writes without checking existing rows yet."
+        },
+        {
+          "term": "Metadata lock",
+          "definition": "In MySQL, a lock that protects a table's definition. A schema change needs it exclusively, if only briefly."
+        },
+        {
+          "term": "lock_timeout",
+          "definition": "A PostgreSQL setting that aborts any statement that waits too long to get a lock."
+        }
+      ],
+      "reading": [
+        {
+          "source": "pg-altertable",
+          "section": "Notes, on the NOT VALID option",
+          "what": "Why a constraint can be added without a long scan and checked afterwards."
+        },
+        {
+          "source": "mysql-ddl-performance",
+          "section": "Online DDL and Metadata Locks",
+          "what": "The three phases of an online DDL and how waiting for a metadata lock blocks later transactions."
+        },
+        {
+          "source": "pg-config",
+          "section": "lock_timeout",
+          "what": "What the setting aborts, its default, and how it differs from statement_timeout."
+        }
+      ],
+      "canNow": [
+        "Describe the NOT VALID then VALIDATE pattern and why it avoids a long block.",
+        "Explain why waiting for a lock can hurt traffic even when the change itself is quick.",
+        "Say what lock_timeout is for."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "When the built-in change would block too long, teams copy the table instead. The pattern, as the gh-ost README describes it, is the same across tools: create a ghost table that looks like the original, change it while it is empty, copy the rows over slowly, apply the live changes to it as they happen, and finally swap it in for the original [[ghost-readme]].",
+        "Tools differ in how they follow live changes. Earlier tools used triggers. gh-ost's own documents say triggers add the cost of interpreting the trigger body on every write, can compete for locks with the original queries, and cannot be paused without losing information [[ghost-triggerless]]. gh-ost reads the binary log instead and applies the changes to the ghost table asynchronously, which lets it really pause when throttled and postpone the final swap until you choose [[ghost-readme]].",
+        "The swap is the delicate moment. MySQL cannot swap tables from a connection that holds them under lock, so gh-ost uses a two-step blocking swap with a sentry table. It either succeeds atomically or fails and leaves the original table in place, and it can try again [[ghost-cutover]].",
+        "This has costs. gh-ost needs row-based binary logs, a shared primary or unique key between the old and new tables, and does not support foreign keys or triggers [[ghost-limits]]. Vitess takes the same idea inside the database layer. Its default vitess strategy runs ALTER TABLE as a VReplication workflow, makes migrations revertible, and can handle changes gh-ost cannot, such as ones that alter the primary key; gh-ost and pt-osc strategies are not supported as of v22 [[vitess-strategies]]. Its cut-over retries back off up to 30-minute intervals so a busy table is not overwhelmed [[vitess-strategies]].",
+        "Choosing between the options is a trade of speed against safety. A built-in change is simplest when the docs list it as instant or non-blocking. A copy-based tool takes longer and writes more, but runs while the table serves traffic, can be throttled, and can be abandoned."
+      ],
+      "terms": [
+        {
+          "term": "Ghost table",
+          "definition": "The copy of a table that is altered and filled in the background, then swapped in for the original."
+        },
+        {
+          "term": "Cut-over",
+          "definition": "The final step that replaces the original table with the altered copy."
+        },
+        {
+          "term": "Throttling",
+          "definition": "Slowing or pausing the migration when the database is busy or replicas are behind."
+        },
+        {
+          "term": "VReplication",
+          "definition": "The Vitess mechanism that copies and streams table data. Its Online DDL uses it to run ALTER TABLE."
+        }
+      ],
+      "reading": [
+        {
+          "source": "ghost-readme",
+          "section": "How? and the feature list",
+          "what": "The ghost table pattern and what gh-ost does differently from trigger-based tools."
+        },
+        {
+          "source": "ghost-cutover",
+          "section": "Cut-over step",
+          "what": "Why the table swap is hard in MySQL and how gh-ost makes it safe."
+        },
+        {
+          "source": "vitess-strategies",
+          "section": "Online DDL strategies and Notes on vitess strategy",
+          "what": "The available strategies and what the vitess strategy adds over gh-ost."
+        },
+        {
+          "source": "vitess-online-ddl",
+          "section": "The opening overview",
+          "what": "How Vitess schedules, tracks, cancels and retries migrations."
+        }
+      ],
+      "canNow": [
+        "Describe the ghost table pattern and why the cut-over is the delicate step.",
+        "Say what gh-ost and Vitess Online DDL trade against the built-in ALTER TABLE.",
+        "Choose between a built-in change and a copy-based tool for a given table."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "An online schema change never blocks anything.",
+      "truth": "MySQL's page says an online DDL operation still takes an exclusive metadata lock briefly, may wait for long transactions to finish, and blocks later transactions while it waits [[mysql-ddl-performance]]. PostgreSQL's CREATE INDEX CONCURRENTLY also has to wait for older transactions [[pg-createindex]]."
+    },
+    {
+      "myth": "Adding a column always rewrites the table.",
+      "truth": "In PostgreSQL a non-volatile default is kept in metadata and no rewrite is needed, though a volatile default rewrites the table [[pg-altertable]]. In MySQL 8.4 INSTANT is the default for adding a column, with listed limits [[mysql-ddl-operations]]."
+    },
+    {
+      "myth": "A copy-based tool such as gh-ost is always safer than a built-in ALTER TABLE.",
+      "truth": "It avoids long locks but adds its own requirements and limits, such as a shared unique key and no foreign keys or triggers [[ghost-limits]]. A change the database can do instantly needs no copy."
+    },
+    {
+      "myth": "A failed concurrent index build leaves nothing behind.",
+      "truth": "PostgreSQL says a failed CREATE INDEX CONCURRENTLY leaves an invalid index that is ignored by queries but still costs update overhead. The recommended recovery is to drop it and try again [[pg-createindex]]."
+    }
+  ],
+  "tryIt": {
+    "intro": "These statements run on a PostgreSQL or MySQL server you can throw away; use a local one, never a live database. The statements come from the cited pages, and the table names are the pages' own examples, so create tables with those names and matching columns first (for example, sales_table with an integer quantity column, or distributors and addresses each with an address column). The first group is PostgreSQL, the last two are MySQL with a table t1. Output depends on your setup, so it is not shown here.",
+    "commands": [
+      {
+        "command": "CREATE INDEX CONCURRENTLY sales_quantity_index ON sales_table (quantity);",
+        "shows": "Builds an index without locking out writes, the example on the CREATE INDEX page. Run it outside a transaction block, since it cannot run inside one.",
+        "source": "pg-createindex",
+        "warning": "This creates an index on a table. Run it only on a test database."
+      },
+      {
+        "command": "ALTER TABLE distributors ADD CONSTRAINT distfk FOREIGN KEY (address) REFERENCES addresses (address) NOT VALID;",
+        "shows": "Adds a foreign key for new writes without scanning the existing rows, the example on the ALTER TABLE page.",
+        "source": "pg-altertable",
+        "warning": "This changes a table. Run it only on a test database."
+      },
+      {
+        "command": "ALTER TABLE distributors VALIDATE CONSTRAINT distfk;",
+        "shows": "Checks the existing rows against the constraint without locking out concurrent updates.",
+        "source": "pg-altertable",
+        "warning": "This changes a table. Run it only on a test database."
+      },
+      {
+        "command": "ALTER TABLE t1 ADD COLUMN c2 INT, ADD COLUMN c3 INT, ALGORITHM=INSTANT;",
+        "shows": "Adds two columns by changing only metadata, the INSTANT example on the Online DDL Operations page. It fails at once if INSTANT is not possible.",
+        "source": "mysql-ddl-operations",
+        "warning": "This changes a table. Run it only on a test database."
+      },
+      {
+        "command": "ALTER TABLE t1 ADD COLUMN x INT, ALGORITHM=INPLACE, LOCK=NONE;",
+        "shows": "Asks for an in-place change that permits reads and writes, the statement used in the metadata lock example. If the table is in use by an open transaction it waits for the metadata lock.",
+        "source": "mysql-ddl-performance",
+        "warning": "This changes a table. Run it only on a test database."
+      }
+    ]
+  },
+  "next": "Go back to the Schema Migrations topic page for the worked example and the quiz, then read the posts there. This page's sources describe the PostgreSQL, MySQL, gh-ost and Vitess mechanisms; they do not say how any particular company runs its migrations, which is what the posts add.",
+  "sources": [
+    {
+      "id": "pg-altertable",
+      "title": "PostgreSQL Documentation: ALTER TABLE",
+      "url": "https://www.postgresql.org/docs/current/sql-altertable.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24",
+      "note": "The page shown was the PostgreSQL 18 documentation, the \"current\" version when opened."
+    },
+    {
+      "id": "pg-createindex",
+      "title": "PostgreSQL Documentation: CREATE INDEX",
+      "url": "https://www.postgresql.org/docs/current/sql-createindex.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24",
+      "note": "PostgreSQL 18 documentation when opened."
+    },
+    {
+      "id": "pg-locks",
+      "title": "PostgreSQL Documentation: Explicit Locking",
+      "url": "https://www.postgresql.org/docs/current/explicit-locking.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24",
+      "note": "PostgreSQL 18 documentation when opened."
+    },
+    {
+      "id": "pg-config",
+      "title": "PostgreSQL Documentation: Client Connection Defaults (lock_timeout)",
+      "url": "https://www.postgresql.org/docs/current/runtime-config-client.html",
+      "publisher": "PostgreSQL Global Development Group",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24",
+      "note": "PostgreSQL 18 documentation when opened."
+    },
+    {
+      "id": "mysql-online-ddl",
+      "title": "MySQL 8.4 Reference Manual: Online DDL",
+      "url": "https://dev.mysql.com/doc/refman/8.4/en/innodb-online-ddl.html",
+      "publisher": "Oracle (MySQL)",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24",
+      "note": "dev.mysql.com refused an automated fetch, so the text was read from an Internet Archive copy of this page."
+    },
+    {
+      "id": "mysql-ddl-operations",
+      "title": "MySQL 8.4 Reference Manual: Online DDL Operations",
+      "url": "https://dev.mysql.com/doc/refman/8.4/en/innodb-online-ddl-operations.html",
+      "publisher": "Oracle (MySQL)",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24",
+      "note": "Read from an Internet Archive copy of the page, because dev.mysql.com refused an automated fetch."
+    },
+    {
+      "id": "mysql-ddl-performance",
+      "title": "MySQL 8.4 Reference Manual: Online DDL Performance and Concurrency",
+      "url": "https://dev.mysql.com/doc/refman/8.4/en/innodb-online-ddl-performance.html",
+      "publisher": "Oracle (MySQL)",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24",
+      "note": "Read from an Internet Archive copy of the page, because dev.mysql.com refused an automated fetch."
+    },
+    {
+      "id": "ghost-readme",
+      "title": "gh-ost: GitHub's online schema migration for MySQL (README)",
+      "url": "https://github.com/github/gh-ost/blob/master/README.md",
+      "publisher": "GitHub (gh-ost project)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "ghost-triggerless",
+      "title": "gh-ost: Why triggerless?",
+      "url": "https://github.com/github/gh-ost/blob/master/doc/why-triggerless.md",
+      "publisher": "GitHub (gh-ost project)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "ghost-cutover",
+      "title": "gh-ost: Cut-over step",
+      "url": "https://github.com/github/gh-ost/blob/master/doc/cut-over.md",
+      "publisher": "GitHub (gh-ost project)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "ghost-limits",
+      "title": "gh-ost: Requirements and limitations",
+      "url": "https://github.com/github/gh-ost/blob/master/doc/requirements-and-limitations.md",
+      "publisher": "GitHub (gh-ost project)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "vitess-online-ddl",
+      "title": "Vitess Documentation: Managed, Online Schema Changes",
+      "url": "https://vitess.io/docs/user-guides/schema-changes/managed-online-schema-changes/",
+      "publisher": "Vitess (CNCF project)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "vitess-strategies",
+      "title": "Vitess Documentation: Online DDL strategies",
+      "url": "https://vitess.io/docs/user-guides/schema-changes/ddl-strategies/",
+      "publisher": "Vitess (CNCF project)",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-24"
+    }
+  ]
+}

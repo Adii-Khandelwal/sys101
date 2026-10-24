@@ -13,6 +13,9 @@
       "svglDark": "aws_dark.svg",
       "note": "svgl has no Amazon.com mark and Simple Icons removed Amazon and AWS (no confirmed permission). This is the AWS mark: both credits under Amazon are Amazon-owned, and the Builders' Library credit is AWS."
     },
+    "Buildkite": {
+      "simpleIcons": "buildkite"
+    },
     "Cloudflare": {
       "svgl": "cloudflare.svg"
     },
