@@ -1,0 +1,524 @@
+{
+  "slug": "notifications",
+  "title": "Notifications at scale",
+  "summary": "Design the path from one event, such as a creator publishing a post, to millions of notifications across push, email and an in-app feed: splitting the work, keeping one channel's failure away from the others, deciding how many each person should get, and tracing what happened to one of them. Read three posts from three companies: Patreon's 2026 fanout post, Pinterest's 2020 notification volume post and Slack's 2023 tracing post. They do not cover how a notification reaches a phone, grouping or de-duplication, or delivery guarantees.",
+  "topics": [
+    {
+      "slug": "message-queues",
+      "role": "Covers the asynchronous task queues and worker pools that Patreon's generation and delivery tasks run on."
+    },
+    {
+      "slug": "pub-sub",
+      "role": "Covers fanout, one event turned into many recipient-specific deliveries."
+    },
+    {
+      "slug": "overload-and-cascading-failures",
+      "role": "Describes keeping a failure in one delivery channel from taking down the others."
+    },
+    {
+      "slug": "rate-limiting",
+      "role": "Describes a per-person cap on volume; Pinterest chooses the cap with a model for each person rather than one fixed number."
+    },
+    {
+      "slug": "observability-and-slos",
+      "role": "Covers traces and per-recipient events that show where in the flow one notification was dropped."
+    }
+  ],
+  "brief": {
+    "text": "One action by a creator or a person should become a notification for a very large audience, on several channels, without a single job timing out, without one broken channel blocking the rest, without drowning people who then switch notifications off, and in a way that lets an engineer say what happened to one of them. This page does not cover how a notification reaches a phone through the platform push services, grouping or merging several notifications into one, de-duplication, ordering, retries, or delivery guarantees. The three posts do not describe any of these in detail, and this page does not fill the gap with general knowledge. Slack's post only names its push service and 'several third-party services' on the path. Be careful with the dates. Patreon's post is from July 2026 and describes a rebuild done in 2025 and early 2026. Pinterest's is from April 2020, more than six years old, so it describes the system as of 2020 and says nothing about how Pinterest works now. Slack's is from April 2023 and describes tracing it built and used over the preceding quarters. They are three companies with three different problems, so they are not three confirmations of one design, and none of them reports the cost of its system.",
+    "requirements": [
+      {
+        "label": "1. Billions per year",
+        "value": "Patreon sends billions of notifications per year to fans when creators publish posts, start livestreams or do other fan-facing actions (2026)",
+        "sourceId": "patreon"
+      },
+      {
+        "label": "2. One event, millions of recipients",
+        "value": "For the largest creators one task could be responsible for generating millions of notifications, and by the beginning of 2025 it consistently timed out (2026)",
+        "sourceId": "patreon"
+      },
+      {
+        "label": "3. Several channels that must not block each other",
+        "value": "In-app feed, push and email were coupled so that a failure in one channel could block the others; the new design runs them independently (2026)",
+        "sourceId": "patreon"
+      },
+      {
+        "label": "4. Latency that grows slowly with audience",
+        "value": "When a creator's audience grows 4x, end-to-end latency increases by 33% for push and in-app feed and 60% for email, against 186% on the legacy platform (2026)",
+        "sourceId": "patreon"
+      },
+      {
+        "label": "5. A very large user base",
+        "value": "Pinterest had more than 335 million monthly active users and wanted to send each the right number of notifications (2020)",
+        "sourceId": "pinterest"
+      },
+      {
+        "label": "6. Too many and too few both cost",
+        "value": "Pinterest says too few notifications lose people ideas to discover and too many cause fatigue and unsubscribes (2020)",
+        "sourceId": "pinterest"
+      },
+      {
+        "label": "7. Every notification traceable",
+        "value": "Slack wanted to answer whether a notification was sent, where, whether it was viewed and whether it was opened, and traced 100 percent of notification flows against 1 percent of backend requests (2023)",
+        "sourceId": "slack"
+      },
+      {
+        "label": "8. Faster support triage",
+        "value": "Slack says tracing cut the time its customer experience team needed to triage notification tickets by 30 percent (2023)",
+        "sourceId": "slack"
+      }
+    ]
+  },
+  "decisions": [
+    {
+      "id": "split",
+      "question": "A creator with a very large audience publishes a post. One asynchronous task fetches all recipients, filters them by their notification settings, builds each person's notification and hands them to delivery. For the biggest creators it runs out of time. How do you restructure it?",
+      "options": [
+        {
+          "label": "Give the one task a longer time limit and more memory",
+          "why": "The smallest change, but the work still sits in one task, so it has a ceiling that grows with the audience."
+        },
+        {
+          "label": "Split the recipient list into batches and handle each batch in its own task, then fan out again for delivery",
+          "why": "Work spreads over many workers, but you add a layer to run, and a way to say which batch failed."
+        },
+        {
+          "label": "Let each product team solve it for its own notification type",
+          "why": "Each team can tune for its case, but every team repeats the same scaling work."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Patreon",
+        "text": "Patreon built a fanout layer in front of its existing delivery systems (2025 to 2026). In the first stage the platform splits the recipient list into smaller batches and each batch runs as a FanoutNotifications task that filters recipients, applies the notification's own eligibility logic and generates channel-specific payloads. In the second stage it fans out again into delivery tasks for in-app feed, push and email. The post says the old single task did not scale horizontally and that teams had started building one-off scaling patterns, which made notifications harder to build, operate and debug. The post gives no batch size.",
+        "sourceId": "patreon"
+      }
+    },
+    {
+      "id": "isolate",
+      "question": "Feed, push and email notifications for the same event are generated and handed off together. If one channel breaks, what should happen to the others?",
+      "options": [
+        {
+          "label": "They wait until the broken channel recovers so all three stay in step",
+          "why": "Consistent, but one broken channel stops everything, which is the Christmas lights problem."
+        },
+        {
+          "label": "Each channel gets its own task path, so a failure or delay in one does not block the others",
+          "why": "Failures stay local, but you run and watch several paths instead of one."
+        },
+        {
+          "label": "Drop the slow channel from the event for good",
+          "why": "Protects the others, but people lose a channel they chose."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Patreon",
+        "text": "Patreon found that its legacy flow coupled in-app feed, push and email so tightly that one broken channel could take down the whole notification flow, which the post compares to an old string of lights where one bulb out darkens the strand (2026). The new send_fanout_notifications API looks up the notification's factory, picks a batch size and a priority, and fans out work separately for each channel, so failures or delays in one channel do not block the others. One of the six design requirements was priority: time-sensitive notifications are to run on dedicated queues and worker pools. The post lists this as a requirement and gives no measured result for it.",
+        "sourceId": "patreon"
+      }
+    },
+    {
+      "id": "budget",
+      "question": "People can be notified too often, which wears them out, or too rarely, which loses them. A single weekly cap for everyone is easy to run. What do you do instead, if you can predict how each person responds?",
+      "options": [
+        {
+          "label": "One fixed weekly cap for all users",
+          "why": "Simple to explain and run, but it treats a person who comes back daily like one who has gone quiet."
+        },
+        {
+          "label": "Predict, for each person, how likely they are to be active at each volume, and give each a weekly budget by dropping the notifications with the lowest added value",
+          "why": "Volume follows value, but you must train and maintain models and read their results."
+        },
+        {
+          "label": "Send everything and let people mute what they dislike",
+          "why": "No modelling, but the cost shows up as fatigue and unsubscribes."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Pinterest",
+        "text": "Pinterest's system in 2020 had two steps from a 2018 KDD paper: predict a utility value for each user at volumes between a minimum and a maximum, then choose the week's budget by keeping the notifications with the highest added utility until the average added value falls below a threshold. The 2020 change was to stop using one model for all users. Users get one of six states and are clustered into two groups, with a model for each trained to a different goal (weekly active use for low-engagement users, daily for high-engagement users). In A/B tests on users who only subscribed to push, weekly active users rose 1 percent in the enabled group, with notifications to dormant users cut by 3 percent and notifications to resurrected users raised by 17 percent and to marginal users by 7 percent. The post says push open rates and other key metrics were not affected overall. It gives no cost for the models and no figure for how many users were in the test beyond 'a significant fraction'.",
+        "sourceId": "pinterest"
+      }
+    },
+    {
+      "id": "trace",
+      "question": "A notification passes through the application, a job queue, a push service and third-party services before it reaches a device, and each system logs in its own format. Customers ask where theirs went. How do you make the path visible?",
+      "options": [
+        {
+          "label": "Keep each system's logs and write a runbook for searching all of them",
+          "why": "No new instrumentation, but it needs deep knowledge of every system and takes days."
+        },
+        {
+          "label": "Give every notification its own trace with a shared event model, and link it to the sender's trace",
+          "why": "One join key and the same format everywhere, but every notification becomes trace data and you must not sample it away."
+        },
+        {
+          "label": "Put every notification inside the trace of the message that caused it, sampled like other requests",
+          "why": "Fits existing tracing, but sampling drops notifications and one message can fan out to a huge trace."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Slack",
+        "text": "Slack modelled each notification sent as its own trace, with the notification_id used as the trace id, and tied it to the sender's trace with span links (2023). The reasons it gives: customer experience staff wanted 100 percent fidelity, while backend requests were sampled at 1 percent; an @here or @channel could send a push to potentially hundreds of thousands of users across devices and make billions of spans in one trace; and standard tracing ties a trace to one request context, which a notification flow does not fit. It agreed a spec of six spans (trigger, notify, sent, received, opened, read in app). Tracing took several quarters across teams. The post says debugging a notification issue had taken several days and deep expertise, and that after tracing support staff could see where a notification was dropped. It gives no storage cost.",
+        "sourceId": "slack"
+      }
+    },
+    {
+      "id": "cutover",
+      "question": "You are replacing the notification path while live notifications keep flowing through it. Each of 200 or more notification types has its own rules. How do you move them over?",
+      "options": [
+        {
+          "label": "Let each product team migrate its own notifications when its roadmap allows",
+          "why": "Low coordination, but migrations compete with product work and the old system stays up."
+        },
+        {
+          "label": "Set a company-wide deadline, split the work across teams, and keep both paths running until the end",
+          "why": "Finishes, but every platform change must work on both paths for the whole period."
+        },
+        {
+          "label": "Stop sending the old notifications until the new platform is ready",
+          "why": "A clean cut, but notifications stop for people."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Patreon",
+        "text": "Patreon first tried a bottom-up approach where product teams prioritised their own migrations, and it got about 20 percent of the way in six months (2026). It then took engineering leadership alignment on a Q1 2026 deadline and finished the rest in six weeks. The job covered more than 200 notifications, 10 teams and more than 30 engineers. For nine months it ran two notification systems in parallel, so every platform change had to work with both; it saw a couple of minor incidents from compatibility problems. The post says it built AI skills to produce first-pass migrations, which still needed engineers because AI can hallucinate or miss business logic. A final sweep found 4 net-new migrations and several incomplete ones.",
+        "sourceId": "patreon"
+      }
+    }
+  ],
+  "sizing": {
+    "inputs": [
+      {
+        "id": "rec_m",
+        "label": "Recipients of one event (Patreon says millions for its largest creators, 2026)",
+        "min": 1,
+        "max": 50,
+        "step": 1,
+        "default": 5,
+        "unit": "million"
+      },
+      {
+        "id": "batch",
+        "label": "Recipients per fanout task (your own number; the Patreon post gives none)",
+        "min": 100,
+        "max": 100000,
+        "step": 100,
+        "default": 1000,
+        "unit": "recipients"
+      },
+      {
+        "id": "chan",
+        "label": "Channels used per recipient (Patreon names three: in-app feed, push and email)",
+        "min": 1,
+        "max": 3,
+        "step": 1,
+        "default": 3,
+        "unit": "channels"
+      },
+      {
+        "id": "users_m",
+        "label": "Active users (Pinterest reported 335 million+ monthly active users, 2020)",
+        "min": 1,
+        "max": 400,
+        "step": 1,
+        "default": 335,
+        "unit": "million"
+      },
+      {
+        "id": "budget",
+        "label": "Weekly notifications per user (your own number; Pinterest gives no average)",
+        "min": 1,
+        "max": 30,
+        "step": 1,
+        "default": 7,
+        "unit": "per week"
+      },
+      {
+        "id": "base_s",
+        "label": "Starting end-to-end latency (your own number, used for both platforms)",
+        "min": 1,
+        "max": 600,
+        "step": 1,
+        "default": 60,
+        "unit": "seconds"
+      }
+    ],
+    "outputs": [
+      {
+        "label": "First-stage fanout tasks for one event (derived)",
+        "formula": "ceil(rec_m * 1000000 / batch)",
+        "unit": "tasks"
+      },
+      {
+        "label": "Notifications to generate for one event if nobody is filtered out (derived; the post says some recipients are filtered)",
+        "formula": "rec_m * 1000000 * chan",
+        "unit": "notifications"
+      },
+      {
+        "label": "Notifications per week for the user base at that budget (derived)",
+        "formula": "users_m * 1000000 * budget",
+        "unit": "notifications"
+      },
+      {
+        "label": "Average rate over a week (derived; real traffic is not flat)",
+        "formula": "users_m * 1000000 * budget / 604800",
+        "unit": "per second"
+      },
+      {
+        "label": "Push or feed latency after the audience grows 4x, on the fanout platform (derived from the +33% in the Patreon post, assuming the starting latency above)",
+        "formula": "base_s * 1.33",
+        "unit": "seconds"
+      },
+      {
+        "label": "Same growth on the legacy platform (derived from the +186% in the Patreon post, assuming the same starting latency, which the post does not say)",
+        "formula": "base_s * 2.86",
+        "unit": "seconds"
+      }
+    ]
+  },
+  "diagram": {
+    "title": "Notifications: Patreon's 2026 fanout and legacy path, Pinterest's 2020 volume budget and Slack's 2023 notification traces, each part taken from the post named in its note",
+    "nodes": [
+      {
+        "id": "pfanapi",
+        "label": "send_fanout_notifications API",
+        "topic": "message-queues",
+        "company": "Patreon",
+        "tradeoff": "From the Patreon post (2026). One entry point replaced separate APIs for each channel. It looks up the notification's factory and picks batch size and priority. The post gives no queue technology or batch size.",
+        "to": [
+          "pfanout"
+        ]
+      },
+      {
+        "id": "pfanout",
+        "label": "FanoutNotifications tasks (batches of recipients)",
+        "topic": "pub-sub",
+        "company": "Patreon",
+        "tradeoff": "From the Patreon post. Each task filters its batch, runs eligibility checks and builds channel-specific payloads. This turns one large unit of work into many small ones. The post names recipient list generation as the next bottleneck.",
+        "to": [
+          "pdeliver"
+        ]
+      },
+      {
+        "id": "pdeliver",
+        "label": "Delivery tasks per channel (feed, push, email)",
+        "topic": "overload-and-cascading-failures",
+        "company": "Patreon",
+        "tradeoff": "From the Patreon post. A second fanout into separate delivery tasks gives channel isolation, so a failure or delay in one channel does not block the others. These tasks hand off to the existing delivery systems, whose internals the post does not describe.",
+        "to": []
+      },
+      {
+        "id": "plegacy",
+        "label": "Legacy single task (fetch, filter, build, hand off)",
+        "topic": "message-queues",
+        "company": "Patreon",
+        "tradeoff": "From the Patreon post. One asynchronous task could be responsible for millions of notifications and by early 2025 it consistently timed out. Kept alongside the new path for nine months of migration.",
+        "to": [
+          "pdeliver"
+        ]
+      },
+      {
+        "id": "pinmodel",
+        "label": "Per-group utility model (weekly and daily active groups)",
+        "topic": "rate-limiting",
+        "company": "Pinterest",
+        "tradeoff": "From the Pinterest post (2020). A gradient boosting model predicts activity at each volume, trained separately for low-engagement and high-engagement users. The post names no training cost.",
+        "to": [
+          "pinbudget"
+        ]
+      },
+      {
+        "id": "pinbudget",
+        "label": "Weekly notification budget per user",
+        "topic": "rate-limiting",
+        "company": "Pinterest",
+        "tradeoff": "From the Pinterest post. Keeps notifications with the highest added value until the average added value of the rest falls below a threshold. Too many causes fatigue and unsubscribes, too few loses discovery. The post does not say how the budget is enforced at send time.",
+        "to": []
+      },
+      {
+        "id": "strigger",
+        "label": "Notification trace (own trace id)",
+        "topic": "observability-and-slos",
+        "company": "Slack",
+        "tradeoff": "From the Slack post (2023). The trigger span stays in the sender's request trace and links to the notification ids; the other five spans (notify, sent, received, opened, read in app) form the notification's own trace, with the notification_id as trace id. Sampled at 100 percent.",
+        "to": [
+          "sstore"
+        ]
+      },
+      {
+        "id": "ssender",
+        "label": "Sender's message trace (sampled at 1 percent)",
+        "topic": "observability-and-slos",
+        "company": "Slack",
+        "tradeoff": "From the Slack post. Backend requests were sampled at 1 percent. Notification traces are linked to it so causality is kept without making one huge trace.",
+        "to": [
+          "strigger"
+        ]
+      },
+      {
+        "id": "sstore",
+        "label": "Real-time store and data warehouse",
+        "topic": "observability-and-slos",
+        "company": "Slack",
+        "tradeoff": "From the Slack post. Traces go to a real-time store (ElasticSearch and Grafana) and a warehouse, used for triage, dashboards and funnel analytics. The post gives no volume or storage figure.",
+        "to": []
+      }
+    ],
+    "failures": [
+      {
+        "id": "legacy-large",
+        "label": "A creator with millions of recipients publishes on the legacy single-task path",
+        "effects": [
+          {
+            "nodeId": "plegacy",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "one-channel",
+        "label": "One delivery channel breaks (our inference: only that channel's delivery is hit on the new path; the post says the legacy path let it block the others)",
+        "effects": [
+          {
+            "nodeId": "pdeliver",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "over-budget",
+        "label": "A user gets more notifications than their budget, or fewer (the post names fatigue and lost discovery as the costs)",
+        "effects": [
+          {
+            "nodeId": "pinbudget",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "trace-flood",
+        "label": "A notification flow is traced inside the sender's trace at full fidelity (the post says a trace with billions of spans would wreak havoc on ingestion and storage)",
+        "effects": [
+          {
+            "nodeId": "sstore",
+            "state": "degraded"
+          }
+        ]
+      }
+    ]
+  },
+  "compare": "These posts come from three companies, three years and three problems, so read them as snapshots, not one design. Patreon's is from July 2026 and covers generation and handoff of notifications for a large audience. Pinterest's is from April 2020, more than six years old, and covers how many notifications each person should get in a week. Slack's is from April 2023 and covers how to see what happened to one notification. Nothing here says Pinterest's 2020 design still holds, and none of the posts gives a cost.\n\nThe three meet at the same point, which is that one event becomes a very large number of separate things to account for. Patreon answers with batches and a second fanout so no task holds the whole audience. Slack answers with one trace per notification so no trace holds the whole fanout, and it names @here and @channel as the case that would make a single trace huge. Pinterest answers from the other side: it asks whether a notification should exist at all, and drops the ones with the least added value for that person. Patreon and Slack both put observability next to scale. Patreon records timestamps at each stage and per-recipient outcomes after hours-long investigations; Slack standardised events after multi-day ones.\n\nWhat the sources do not cover is as large as what they do. None describes batching or merging several notifications into one, de-duplication, how the push services are called, retries, ordering, or what a delivery guarantee means (whether a notification can arrive twice or not at all). Patreon says the delivery systems already existed and does not describe them; Slack's figure lists third-party services on the path without saying what they do; Pinterest sets a volume budget but does not say how sends are counted against it. So this page teaches generation, volume and visibility, and leaves delivery itself to sources it has not opened.",
+  "quiz": [
+    {
+      "question": "Why did Patreon's old notification flow stop working for its largest creators?",
+      "options": [
+        "One task made millions of notifications and kept timing out",
+        "The push provider capped how many notifications it would accept in each minute",
+        "Email delivery had no queue at all, so every message was sent one at a time"
+      ],
+      "correct": 0,
+      "why": "The legacy flow fetched all recipients, filtered them, built every payload and handed them off in a single task, so it had a hard ceiling that large audiences passed.",
+      "wrong": [
+        "",
+        "The post does not mention any limit from a push provider.",
+        "The post does not describe the email delivery systems that way."
+      ],
+      "teaches": "message-queues"
+    },
+    {
+      "question": "What does the second stage of Patreon's two-stage fanout do?",
+      "options": [
+        "It splits the whole recipient list into smaller batches before anything is built",
+        "It fans the results out into delivery tasks for each channel",
+        "It retries every failed notification again and again until it succeeds"
+      ],
+      "correct": 1,
+      "why": "The first stage splits recipients into batches that are filtered and turned into payloads. The second fans the results out again into delivery tasks for each channel, which also gives channel isolation.",
+      "wrong": [
+        "That is the first stage.",
+        "",
+        "The post does not describe retries."
+      ],
+      "teaches": "pub-sub"
+    },
+    {
+      "question": "What was wrong with the way Patreon's legacy path treated delivery channels?",
+      "options": [
+        "Push always ran before email, which delayed email by a fixed amount each time",
+        "Feed, push and email were coupled, so one failure could block the rest",
+        "Each channel kept a separate copy of the recipient list, and the copies drifted apart"
+      ],
+      "correct": 1,
+      "why": "The post says one broken channel could take down the whole flow. The new design runs each channel as separate work.",
+      "wrong": [
+        "The post does not describe any fixed ordering.",
+        "",
+        "The post does not say the lists drifted apart."
+      ],
+      "teaches": "overload-and-cascading-failures"
+    },
+    {
+      "question": "How does Pinterest's 2020 system decide how many notifications a person gets in a week?",
+      "options": [
+        "It sets one cap for everyone and lowers it when open rates fall",
+        "It lets people pick a number during sign-up and enforces it",
+        "It predicts activity at each volume, using a model per user group, and keeps the notifications with the highest added value"
+      ],
+      "correct": 2,
+      "why": "Users are grouped by engagement, a model per group predicts activity at each volume, and the budget stops where the added value of more notifications falls below a threshold.",
+      "wrong": [
+        "The post describes per-user budgets, not one cap.",
+        "The post does not describe a choice made by the user.",
+        ""
+      ],
+      "teaches": "rate-limiting"
+    },
+    {
+      "question": "Why did Slack model each notification as its own trace and not as part of the message's trace?",
+      "options": [
+        "It needed every notification traced, and one message could make billions of spans",
+        "It wanted to keep all traces out of the data warehouse for good",
+        "The tracing library could not store more than one span in each trace"
+      ],
+      "correct": 0,
+      "why": "Notification traces needed full fidelity while backend requests were sampled at 1 percent, and an @here or @channel could fan out to hundreds of thousands of users. Span links keep the causal link to the sender's trace.",
+      "wrong": [
+        "",
+        "Traces were also sent to the warehouse and used for analytics.",
+        "Traces had many spans; the problem was a single trace becoming too large."
+      ],
+      "teaches": "observability-and-slos"
+    }
+  ],
+  "sources": [
+    {
+      "id": "patreon",
+      "title": "How We Scaled Notifications with Fanout",
+      "url": "https://www.patreon.com/engineering/posts/how-we-scaled-162544709",
+      "company": "Patreon",
+      "published": "2026-07-14",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "pinterest",
+      "title": "User state-based notification volume optimization",
+      "url": "https://medium.com/pinterest-engineering/user-state-based-notification-volume-optimization-7764118f73ff",
+      "company": "Pinterest",
+      "published": "2020-04-24",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "slack",
+      "title": "Tracing Notifications",
+      "url": "https://slack.engineering/tracing-notifications/",
+      "company": "Slack",
+      "published": "2023-04-04",
+      "verifiedOn": "2026-10-24"
+    }
+  ]
+}
