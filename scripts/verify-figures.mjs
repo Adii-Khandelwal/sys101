@@ -82,14 +82,16 @@ function parseFigure(fig) {
   return m ? { numStr: m[1], unit: m[2] ?? "" } : null;
 }
 
-async function fetchRaw(url) {
+async function fetchRaw(url, attempt = 1) {
   const tmp = path.join(os.tmpdir(), `verify-figures-${process.pid}-${Math.random().toString(36).slice(2)}`);
-  const args = ["-sL", "--max-time", "60", "-A", UA, "-H", "Accept: text/html,application/xhtml+xml,application/pdf", "-H", "Accept-Language: en-US,en;q=0.9", "-o", tmp, "-w", "%{http_code}", url];
+  const args = ["-sL", "--max-time", "90", "-A", UA, "-H", "Accept: text/html,application/xhtml+xml,application/pdf", "-H", "Accept-Language: en-US,en;q=0.9", "-o", tmp, "-w", "%{http_code}", url];
   try {
     const { stdout } = await run("curl", args, { maxBuffer: 1024 * 1024 });
     const body = fs.readFileSync(tmp);
     return { status: Number(stdout), body };
   } catch (e) {
+    // A slow host timed out: try once more before reporting HTTP 0.
+    if (attempt < 2) return fetchRaw(url, attempt + 1);
     return { status: 0, body: Buffer.alloc(0), error: e.message };
   } finally {
     fs.rmSync(tmp, { force: true });
@@ -348,6 +350,8 @@ for (const t of topics) {
         // A number a script cannot judge: the other spelling next to the same noun, else a person's recorded verdict, else a task.
         hit = fetched && hit.noun && handAuto(hit, page) ? { status: "found (other spelling)" } : handChecked[key] ? { status: "hand-checked" } : { status: "HAND CHECK" };
       }
+      // A figure the script cannot match (other formatting, a linked second source) but a person has read in the source.
+      if (hit.status === "NOT FOUND" && handChecked[key]) hit = { status: "hand-checked" };
       counts[hit.status]++;
       if (hit.status === "HAND CHECK") toCheck.push(`${t.slug} / ${post.id} / ${it.where}: "${it.text}" in: ${it.ctx}`);
       const where = !fetched ? `page not fetched (HTTP ${page.status})` : hit.status === "NOT FOUND" ? "-" : headingAt(page.headings, hit.at);

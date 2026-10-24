@@ -277,7 +277,7 @@
     {
       "id": "google-autopilot-2020",
       "title": "Autopilot: workload autoscaling at Google",
-      "url": "https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf",
+      "url": "https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/",
       "company": "Google",
       "verifiedOn": "2026-10-17",
       "published": "2020-04-27",

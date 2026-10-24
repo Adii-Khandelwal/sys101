@@ -1,0 +1,21 @@
+{
+  "online-schema-migrations": {
+    "summary": {
+      "points": [
+        "Changing a big table in place can lock it or rewrite every row, so online migrations build the new shape beside the old one and switch over with a brief lock.",
+        "Expand and contract adds first and removes last, so old and new code both keep working at every step and any step can be paused or undone.",
+        "Buildkite widened an integer key by adding a bigint column, writing both, backfilling in batches and swapping, where an in-place change needed days to weeks of downtime.",
+        "GitHub queues its migrations and runs one ALTER at a time per cluster through gh-ost, because concurrent migrations compete for resources and run longer.",
+        "Shopify says sharding with Vitess turned migrations from weeks into hours, at the cost of added complexity for developers."
+      ],
+      "figures": [
+        { "postId": "schema-buildkite-bigint-2021", "row": 0, "label": "Over 2 billion rows in one table moved to bigint without downtime" },
+        { "postId": "schema-github-skeefree-2020", "row": 3, "label": "1 ALTER at a time per cluster, since concurrent migrations take longer overall" },
+        { "postId": "schema-shopify-vitess-2024", "row": 0, "label": "Many weeks for the largest tables to migrate before moving to Vitess" }
+      ]
+    },
+    "prerequisiteReasons": {
+      "databases": "Databases explain tables, columns, indexes and locks, which is what a migration changes and what a careless one blocks while the application is still reading and writing."
+    }
+  }
+}

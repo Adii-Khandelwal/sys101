@@ -31,23 +31,23 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 
 | Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
 |---|---|---|---|---|---|
-| google-autopilot-2020 | numbers | 23% vs 46% | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | NOT FOUND |
-| google-autopilot-2020 | numbers | 10 times | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | NOT FOUND |
-| google-autopilot-2020 | numbers | over 48% | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | NOT FOUND |
-| google-autopilot-2020 | numbers | 1870 to 162 machines | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | NOT FOUND |
-| google-autopilot-2020 | numbers | 12 hours and 48 hours | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | NOT FOUND |
-| google-autopilot-2020 | numbers | 10 to 15% | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | NOT FOUND |
-| google-autopilot-2020 | walkthrough | 5 minute | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | NOT FOUND |
-| google-autopilot-2020 | walkthrough | 12 hours | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | NOT FOUND |
-| google-autopilot-2020 | walkthrough | 48 hours | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | NOT FOUND |
-| google-autopilot-2020 | walkthrough | 10 | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | NOT FOUND |
-| google-autopilot-2020 | walkthrough | 15 | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | NOT FOUND |
-| google-autopilot-2020 | walkthrough | two change | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | hand-checked |
-| google-autopilot-2020 | meaning | 60 | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | NOT FOUND |
-| google-autopilot-2020 | meaning | 31 | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | NOT FOUND |
-| google-autopilot-2020 | meaning | 1708 | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | NOT FOUND |
-| google-autopilot-2020 | failures | 0.013 | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | NOT FOUND |
-| google-autopilot-2020 | failures | 0.002 | https://homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf | page not fetched (HTTP 0) | NOT FOUND |
+| google-autopilot-2020 | numbers | 23% vs 46% | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | Abstract | found with different formatting |
+| google-autopilot-2020 | numbers | 10 times | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | Abstract | found with different formatting |
+| google-autopilot-2020 | numbers | over 48% | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | Abstract | found |
+| google-autopilot-2020 | numbers | 1870 to 162 machines | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | (before first heading) | hand-checked |
+| google-autopilot-2020 | numbers | 12 hours and 48 hours | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | (before first heading) | hand-checked |
+| google-autopilot-2020 | numbers | 10 to 15% | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | Abstract | found with different formatting |
+| google-autopilot-2020 | walkthrough | 5 minute | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | (before first heading) | hand-checked |
+| google-autopilot-2020 | walkthrough | 12 hours | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | (before first heading) | hand-checked |
+| google-autopilot-2020 | walkthrough | 48 hours | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | Abstract | found with different formatting |
+| google-autopilot-2020 | walkthrough | 10 | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | Abstract | found |
+| google-autopilot-2020 | walkthrough | 15 | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | (before first heading) | hand-checked |
+| google-autopilot-2020 | walkthrough | two change | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | (before first heading) | hand-checked |
+| google-autopilot-2020 | meaning | 60 | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | (before first heading) | hand-checked |
+| google-autopilot-2020 | meaning | 31 | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | (before first heading) | hand-checked |
+| google-autopilot-2020 | meaning | 1708 | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | (before first heading) | hand-checked |
+| google-autopilot-2020 | failures | 0.013 | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | (before first heading) | hand-checked |
+| google-autopilot-2020 | failures | 0.002 | https://research.google/pubs/autopilot-workload-autoscaling-at-google-scale/ | (before first heading) | hand-checked |
 | mongodb-predictive-autoscaling-2026 | numbers | about 25% | https://www.mongodb.com/company/blog/engineering/mongodb-predictive-auto-scaling-an-experiment | Predictive scaling: Long-term forecaster | found |
 | mongodb-predictive-autoscaling-2026 | numbers | 68% | https://www.mongodb.com/company/blog/engineering/mongodb-predictive-auto-scaling-an-experiment | Predictive scaling: Short-term forecaster | found |
 | mongodb-predictive-autoscaling-2026 | numbers | 25 million | https://www.mongodb.com/company/blog/engineering/mongodb-predictive-auto-scaling-an-experiment | Predictive scaling experiment | found |
@@ -708,19 +708,19 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | linkedin-the-log-2013 | meaning | 2013, | https://www.linkedin.com/blog/engineering/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying | The Log: What every software engineer should know | found with different formatting |
 | linkedin-the-log-2013 | meaning | hundred billion | https://www.linkedin.com/blog/engineering/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying | (before first heading) | found (other spelling) |
 | netflix-dblog-2020 | numbers | Tens of microservices | https://arxiv.org/pdf/2010.12597 | (before first heading) | found |
-| netflix-dblog-2020 | numbers | Trillions of operations per day | https://arxiv.org/pdf/2010.12597 | - | NOT FOUND |
+| netflix-dblog-2020 | numbers | Trillions of operations per day | https://arxiv.org/pdf/2010.12597 | (before first heading) | hand-checked |
 | netflix-dblog-2020 | constraints | six needs | https://arxiv.org/pdf/2010.12597 | (before first heading) | hand-checked |
 | netflix-dblog-2020 | walkthrough | two watermarks | https://arxiv.org/pdf/2010.12597 | (before first heading) | found (other spelling) |
 | netflix-dblog-2020 | takeaways | two without | https://arxiv.org/pdf/2010.12597 | (before first heading) | hand-checked |
-| uber-realtime-infra-2021 | numbers | Trillions of messages, petabytes of data per day | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | NOT FOUND |
-| uber-realtime-infra-2021 | numbers | Under 150 nodes | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | NOT FOUND |
-| uber-realtime-infra-2021 | numbers | A few days | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | NOT FOUND |
-| uber-realtime-infra-2021 | walkthrough | 150 | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | NOT FOUND |
-| uber-realtime-infra-2021 | walkthrough | two choices | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | hand-checked |
-| uber-realtime-infra-2021 | walkthrough | two styles | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | hand-checked |
-| uber-realtime-infra-2021 | meaning | 2020, | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | NOT FOUND |
-| uber-realtime-infra-2021 | tradeoffs | two storage | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | hand-checked |
-| uber-realtime-infra-2021 | failures | 150 | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | NOT FOUND |
+| uber-realtime-infra-2021 | numbers | Trillions of messages, petabytes of data per day | https://arxiv.org/pdf/2104.00087 | (before first heading) | hand-checked |
+| uber-realtime-infra-2021 | numbers | Under 150 nodes | https://arxiv.org/pdf/2104.00087 | 4.1 Apache Kafka for streaming storage | found with different formatting |
+| uber-realtime-infra-2021 | numbers | A few days | https://arxiv.org/pdf/2104.00087 | 7 BACKFILL | found |
+| uber-realtime-infra-2021 | walkthrough | 150 | https://arxiv.org/pdf/2104.00087 | 4.1 Apache Kafka for streaming storage | found |
+| uber-realtime-infra-2021 | walkthrough | two choices | https://arxiv.org/pdf/2104.00087 | (before first heading) | hand-checked |
+| uber-realtime-infra-2021 | walkthrough | two styles | https://arxiv.org/pdf/2104.00087 | (before first heading) | hand-checked |
+| uber-realtime-infra-2021 | meaning | 2020, | https://arxiv.org/pdf/2104.00087 | 1 INTRODUCTION | found |
+| uber-realtime-infra-2021 | tradeoffs | two storage | https://arxiv.org/pdf/2104.00087 | (before first heading) | hand-checked |
+| uber-realtime-infra-2021 | failures | 150 | https://arxiv.org/pdf/2104.00087 | 4.1 Apache Kafka for streaming storage | found |
 | linkedin-northguard-2025 | numbers | 32T records/day | https://www.linkedin.com/blog/engineering/infrastructure/introducing-northguard-and-xinfra | Why we needed a new solution | found |
 | linkedin-northguard-2025 | numbers | 1 GB or 1 hour | https://www.linkedin.com/blog/engineering/infrastructure/introducing-northguard-and-xinfra | Data model | found with different formatting |
 | linkedin-northguard-2025 | numbers | N (128+) | https://www.linkedin.com/blog/engineering/infrastructure/introducing-northguard-and-xinfra | Evaluation | found |
@@ -954,7 +954,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | slack-jan-4-outage-2021 | meaning | 15 | https://slack.engineering/slacks-outage-on-january-4th-2021/ | Slack’s Outage on January 4th 2021 | found |
 | slack-jan-4-outage-2021 | meaning | 6.57 | https://slack.engineering/slacks-outage-on-january-4th-2021/ | Managing context in long-run agentic applications | found |
 | github-aug-17-outage-2026 | numbers | 7 hours and 47 minutes | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | The August 17 outage, and the work ahead | found |
-| github-aug-17-outage-2026 | numbers | 70–100K RPS | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | - | NOT FOUND |
+| github-aug-17-outage-2026 | numbers | 70–100K RPS | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | (before first heading) | hand-checked |
 | github-aug-17-outage-2026 | numbers | approximately 10x | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | 10 technical talks I’m excited about at GitHub | found with different formatting |
 | github-aug-17-outage-2026 | numbers | approximately 20% | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | The August 17 outage, and the work ahead | found with different formatting |
 | github-aug-17-outage-2026 | numbers | 1.4 billion to 2.9 billion | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | What happened | found |
@@ -965,17 +965,17 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | github-aug-17-outage-2026 | constraints | 1.4 billion | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | What happened | found |
 | github-aug-17-outage-2026 | constraints | 2.9 billion | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | What happened | found |
 | github-aug-17-outage-2026 | constraints | 6 came | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | (before first heading) | hand-checked |
-| github-aug-17-outage-2026 | walkthrough | 70K | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | - | NOT FOUND |
-| github-aug-17-outage-2026 | walkthrough | 100K | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | - | NOT FOUND |
-| github-aug-17-outage-2026 | walkthrough | 7K | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | - | NOT FOUND |
-| github-aug-17-outage-2026 | walkthrough | 9K | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | - | NOT FOUND |
-| github-aug-17-outage-2026 | walkthrough | 403, | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | - | NOT FOUND |
+| github-aug-17-outage-2026 | walkthrough | 70K | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | (before first heading) | hand-checked |
+| github-aug-17-outage-2026 | walkthrough | 100K | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | (before first heading) | hand-checked |
+| github-aug-17-outage-2026 | walkthrough | 7K | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | (before first heading) | hand-checked |
+| github-aug-17-outage-2026 | walkthrough | 9K | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | (before first heading) | hand-checked |
+| github-aug-17-outage-2026 | walkthrough | 403, | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | (before first heading) | hand-checked |
 | github-aug-17-outage-2026 | walkthrough | four HAProxy | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | (before first heading) | hand-checked |
 | github-aug-17-outage-2026 | walkthrough | ten times | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | (before first heading) | hand-checked |
 | github-aug-17-outage-2026 | meaning | 17 | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | (before first heading) | found |
-| github-aug-17-outage-2026 | meaning | 9K | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | - | NOT FOUND |
-| github-aug-17-outage-2026 | meaning | 205164 | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | - | NOT FOUND |
-| github-aug-17-outage-2026 | meaning | 50% | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | - | NOT FOUND |
+| github-aug-17-outage-2026 | meaning | 9K | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | (before first heading) | hand-checked |
+| github-aug-17-outage-2026 | meaning | 205164 | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | (before first heading) | hand-checked |
+| github-aug-17-outage-2026 | meaning | 50% | https://github.blog/news-insights/company-news/the-august-17-outage-and-the-work-ahead/ | (before first heading) | hand-checked |
 | metastable-failures-osdi-2022 | numbers | 22 failures from 11 organizations | https://www.usenix.org/system/files/osdi22-huang-lexiang.pdf | (before first heading) | found with different formatting |
 | metastable-failures-osdi-2022 | numbers | at least 4 of 15 | https://www.usenix.org/system/files/osdi22-huang-lexiang.pdf | (before first heading) | found (other spelling) |
 | metastable-failures-osdi-2022 | numbers | 4.17 hours | https://www.usenix.org/system/files/osdi22-huang-lexiang.pdf | 2.2 Summary of Metastable Failures in the Wild | found with different formatting |
@@ -1436,7 +1436,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | existential-facebook-2015 | meaning | 99.9 | https://sigops.org/s/conferences/sosp/2015/current/2015-Monterey/240-lu-online.pdf | 3.1 The Trace | found |
 | mongodb-tunable-2019 | numbers | 14,820 instances | https://www.vldb.org/pvldb/vol12/p2071-schultz.pdf | 3.3 Usage in MongoDB Atlas | found |
 | mongodb-tunable-2019 | numbers | 99.60% | https://www.vldb.org/pvldb/vol12/p2071-schultz.pdf | 3.3 Usage in MongoDB Atlas | found with different formatting |
-| mongodb-tunable-2019 | numbers | 0.13% | https://www.vldb.org/pvldb/vol12/p2071-schultz.pdf | - | NOT FOUND |
+| mongodb-tunable-2019 | numbers | 0.13% | https://www.vldb.org/pvldb/vol12/p2071-schultz.pdf | (before first heading) | hand-checked |
 | mongodb-tunable-2019 | numbers | 79.17% | https://www.vldb.org/pvldb/vol12/p2071-schultz.pdf | 3.3 Usage in MongoDB Atlas | found with different formatting |
 | mongodb-tunable-2019 | numbers | 15.86% | https://www.vldb.org/pvldb/vol12/p2071-schultz.pdf | 3.3 Usage in MongoDB Atlas | found with different formatting |
 | mongodb-tunable-2019 | numbers | 1.25 ms vs 3.18 ms | https://www.vldb.org/pvldb/vol12/p2071-schultz.pdf | 8.1.2 Cross-AZ Latency Comparison | found with different formatting |
@@ -1446,7 +1446,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | mongodb-tunable-2019 | walkthrough | 14,820 | https://www.vldb.org/pvldb/vol12/p2071-schultz.pdf | 3.3 Usage in MongoDB Atlas | found |
 | mongodb-tunable-2019 | walkthrough | 4.0 | https://www.vldb.org/pvldb/vol12/p2071-schultz.pdf | 1. INTRODUCTION | found |
 | mongodb-tunable-2019 | walkthrough | 99.60% | https://www.vldb.org/pvldb/vol12/p2071-schultz.pdf | 3.3 Usage in MongoDB Atlas | found with different formatting |
-| mongodb-tunable-2019 | walkthrough | 0.13% | https://www.vldb.org/pvldb/vol12/p2071-schultz.pdf | - | NOT FOUND |
+| mongodb-tunable-2019 | walkthrough | 0.13% | https://www.vldb.org/pvldb/vol12/p2071-schultz.pdf | (before first heading) | hand-checked |
 | mongodb-tunable-2019 | walkthrough | 79.17% | https://www.vldb.org/pvldb/vol12/p2071-schultz.pdf | 3.3 Usage in MongoDB Atlas | found with different formatting |
 | mongodb-tunable-2019 | walkthrough | 15.86% | https://www.vldb.org/pvldb/vol12/p2071-schultz.pdf | 3.3 Usage in MongoDB Atlas | found with different formatting |
 | mongodb-tunable-2019 | walkthrough | 1.25 ms | https://www.vldb.org/pvldb/vol12/p2071-schultz.pdf | 8.1.2 Cross-AZ Latency Comparison | found with different formatting |
@@ -1541,7 +1541,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | Topic | Found | Found with different formatting | NOT FOUND | Small number found as "3" or "three" | Hand-checked | HAND CHECK still needed |
 |---|---|---|---|---|---|---|
 | api-design-rpc-rest-graphql | 11 | 1 | 0 | 5 | 1 | 0 |
-| autoscaling-and-capacity | 17 | 0 | 16 | 1 | 2 | 0 |
+| autoscaling-and-capacity | 19 | 4 | 0 | 1 | 12 | 0 |
 | caching | 18 | 6 | 0 | 7 | 4 | 0 |
 | cap | 9 | 6 | 0 | 2 | 1 | 0 |
 | cdns | 9 | 6 | 0 | 3 | 1 | 0 |
@@ -1558,12 +1558,12 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | idempotency-and-retries | 20 | 1 | 0 | 7 | 2 | 0 |
 | indexing | 54 | 7 | 0 | 5 | 2 | 0 |
 | load-balancing | 17 | 4 | 0 | 1 | 0 | 0 |
-| log-based-streaming | 16 | 4 | 7 | 2 | 5 | 0 |
+| log-based-streaming | 20 | 5 | 0 | 2 | 7 | 0 |
 | message-queues | 16 | 3 | 0 | 2 | 0 | 0 |
 | object-storage | 23 | 14 | 0 | 7 | 1 | 0 |
 | observability-and-slos | 64 | 10 | 0 | 10 | 4 | 0 |
 | online-schema-migrations | 17 | 0 | 0 | 2 | 4 | 0 |
-| overload-and-cascading-failures | 34 | 8 | 9 | 8 | 7 | 0 |
+| overload-and-cascading-failures | 34 | 8 | 0 | 8 | 16 | 0 |
 | probabilistic-data-structures | 27 | 1 | 0 | 4 | 3 | 0 |
 | pub-sub | 17 | 14 | 0 | 5 | 3 | 0 |
 | rate-limiting | 27 | 4 | 0 | 4 | 3 | 0 |
@@ -1573,5 +1573,5 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | sharding | 22 | 7 | 0 | 5 | 0 | 0 |
 | storage-engines | 21 | 14 | 0 | 9 | 0 | 0 |
 | stream-vs-batch-processing | 16 | 2 | 0 | 6 | 1 | 0 |
-| time-clocks-and-consistency | 61 | 27 | 2 | 14 | 6 | 0 |
+| time-clocks-and-consistency | 61 | 27 | 0 | 14 | 8 | 0 |
 | transactions-and-mvcc | 38 | 4 | 0 | 4 | 7 | 0 |

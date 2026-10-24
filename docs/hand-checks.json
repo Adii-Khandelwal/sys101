@@ -293,7 +293,7 @@
   },
   "netflix-dblog-2020|Trillions of operations per day": {
     "verdict": "ok",
-    "source": "paper: hundreds of microservices performing trillions of operations per day (line break splits the word in the PDF text)"
+    "source": "paper introduction: \"hundreds of microservices performing trillions of operations per day in the data layer\" (line break at oper-ations)"
   },
   "uber-realtime-infra-2021|two choices": {
     "verdict": "ok",
@@ -321,7 +321,7 @@
   },
   "mongodb-tunable-2019|0.13%": {
     "verdict": "ok",
-    "source": "paper table 1: majority reads .13 percent (printed without the leading zero)"
+    "source": "paper Table 1: readConcern majority, 50,990,496 reads, 0.13 % (printed \".13\")"
   },
   "mongodb-tunable-2019|1 took": {
     "verdict": "ok",
@@ -398,5 +398,101 @@
   "meta-canopy-2017|5 per second": {
     "verdict": "ok",
     "source": "paper section 4.1: \"Canopy allocates tenants 5 traces per second\" by default (the PDF text extraction runs the words together)"
+  },
+  "github-aug-17-outage-2026|70–100K RPS": {
+    "verdict": "ok",
+    "source": "GitHub's incident thread (community discussion 205164, linked from the blog post's root cause analysis): \"Copilot Token Service traffic increased from a normal 7–9K RPS to 70–100K RPS\" (not in the blog post itself)"
+  },
+  "github-aug-17-outage-2026|70K": {
+    "verdict": "ok",
+    "source": "GitHub's incident thread (community discussion 205164, linked from the blog post's root cause analysis): same sentence: 70–100K RPS (not in the blog post itself)"
+  },
+  "github-aug-17-outage-2026|100K": {
+    "verdict": "ok",
+    "source": "GitHub's incident thread (community discussion 205164, linked from the blog post's root cause analysis): same sentence: 70–100K RPS (not in the blog post itself)"
+  },
+  "github-aug-17-outage-2026|7K": {
+    "verdict": "ok",
+    "source": "GitHub's incident thread (community discussion 205164, linked from the blog post's root cause analysis): same sentence: normal 7–9K RPS (not in the blog post itself)"
+  },
+  "github-aug-17-outage-2026|9K": {
+    "verdict": "ok",
+    "source": "GitHub's incident thread (community discussion 205164, linked from the blog post's root cause analysis): same sentence: normal 7–9K RPS (not in the blog post itself)"
+  },
+  "github-aug-17-outage-2026|403,": {
+    "verdict": "ok",
+    "source": "GitHub's incident thread (community discussion 205164, linked from the blog post's root cause analysis): \"blocking inbound Copilot Token Service token requests at the load balancers with a 403\" (not in the blog post itself)"
+  },
+  "github-aug-17-outage-2026|205164": {
+    "verdict": "ok",
+    "source": "GitHub's incident thread (community discussion 205164, linked from the blog post's root cause analysis): the thread's own number, in its URL github.com/orgs/community/discussions/205164 (not in the blog post itself)"
+  },
+  "github-aug-17-outage-2026|50%": {
+    "verdict": "ok",
+    "source": "GitHub's incident thread (community discussion 205164, linked from the blog post's root cause analysis): \"Archive downloads and raw repository content downloads are experiencing an approximate 50% error rate\"; the root cause analysis repeats it (not in the blog post itself)"
+  },
+  "google-autopilot-2020|1870 to 162 machines": {
+    "verdict": "ok",
+    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): section 4: before migration the sampled jobs wasted RAM equal to 1870 machines, after only 162, saving the capacity of 1708 machines"
+  },
+  "google-autopilot-2020|12 hours and 48 hours": {
+    "verdict": "ok",
+    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): section 3: half-life of 12 hours for the CPU signal and 48 hours for memory"
+  },
+  "google-autopilot-2020|10 to 15%": {
+    "verdict": "ok",
+    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): section 3: a 10-15% safety margin, smaller for larger limits, and the largest recommendation of the last hour"
+  },
+  "google-autopilot-2020|5 minute": {
+    "verdict": "ok",
+    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): section 3: usage is aggregated into histograms over 5 minute windows (1 s raw samples)"
+  },
+  "google-autopilot-2020|12 hours": {
+    "verdict": "ok",
+    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): half-life for CPU, same passage as 12 and 48 hours"
+  },
+  "google-autopilot-2020|48 hours": {
+    "verdict": "ok",
+    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): half-life for memory, same passage"
+  },
+  "google-autopilot-2020|10": {
+    "verdict": "ok",
+    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): the 10 of the 10-15% safety margin"
+  },
+  "google-autopilot-2020|15": {
+    "verdict": "ok",
+    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): the 15 of the 10-15% safety margin"
+  },
+  "google-autopilot-2020|60": {
+    "verdict": "ok",
+    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): section 4: average relative slack of manual jobs is 60% with hard limits and 46% with soft limits"
+  },
+  "google-autopilot-2020|31": {
+    "verdict": "ok",
+    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): section 4: Autopilot average relative slack is 31% for the moving-window recommender and 23% for ML"
+  },
+  "google-autopilot-2020|1708": {
+    "verdict": "ok",
+    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): section 4: saved the capacity of 1708 machines (1870 minus 162)"
+  },
+  "google-autopilot-2020|0.013": {
+    "verdict": "ok",
+    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): section 4: ML recommender relative OOMs 0.013 against 0.002 per task-day for moving window"
+  },
+  "google-autopilot-2020|0.002": {
+    "verdict": "ok",
+    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): same sentence as 0.013"
+  },
+  "google-autopilot-2020|23% vs 46%": {
+    "verdict": "ok",
+    "source": "official Google Research abstract page: abstract: slack of just 23% against 46% for manually-managed jobs"
+  },
+  "google-autopilot-2020|10 times": {
+    "verdict": "ok",
+    "source": "official Google Research abstract page: abstract: jobs severely impacted by OOMs reduced by a factor of 10"
+  },
+  "google-autopilot-2020|over 48%": {
+    "verdict": "ok",
+    "source": "official Google Research abstract page: abstract: Autopiloted jobs account for over 48% of fleet-wide resource usage"
   }
 }
