@@ -82,6 +82,10 @@
     "Notion": {
       "svgl": "notion.svg"
     },
+    "Patreon": {
+      "svgl": "patreon.svg",
+      "svglDark": "patreon_dark.svg"
+    },
     "Pinterest": {
       "svgl": "pinterest.svg"
     },

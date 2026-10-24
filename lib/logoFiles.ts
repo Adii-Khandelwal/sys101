@@ -23,6 +23,7 @@ export const LOGO_FILES: Record<string, LogoFile> = {
   "MongoDB": {"src":"/logos/mongodb.svg","w":120,"h":258,"dark":"/logos/mongodb-dark.svg","source":"svgl"},
   "Netflix": {"src":"/logos/netflix.svg","w":551.111,"h":1000,"source":"svgl"},
   "Notion": {"src":"/logos/notion.svg","w":256,"h":268,"source":"svgl"},
+  "Patreon": {"src":"/logos/patreon.svg","w":36,"h":40,"dark":"/logos/patreon-dark.svg","source":"svgl"},
   "Pinterest": {"src":"/logos/pinterest.svg","w":256,"h":256,"source":"svgl"},
   "Sentry": {"src":"/logos/sentry.svg","w":256,"h":227,"source":"svgl"},
   "Shopify": {"src":"/logos/shopify.svg","w":256,"h":292,"source":"svgl"},
