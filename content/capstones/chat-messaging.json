@@ -1,0 +1,624 @@
+{
+  "slug": "chat-messaging",
+  "title": "Chat and real-time messaging",
+  "summary": "Design the delivery path of a chat system: long-lived connections, an ordered store of recent messages, push to phones and an edge cache for big workspaces. Read three old posts from three companies: WhatsApp's 2012 connection count, Messenger's 2014 sync rewrite and Slack's 2017 Flannel cache. None of them is recent.",
+  "topics": [
+    {
+      "slug": "real-time-delivery",
+      "role": "Covers pushing updates to a client over a held connection (MQTT, WebSocket) instead of making it ask again."
+    },
+    {
+      "slug": "message-queues",
+      "role": "Describes the ordered queue with one pointer per consumer, so a slow or offline consumer does not stop the others."
+    },
+    {
+      "slug": "consistent-hashing",
+      "role": "Explains choosing a server by hashing, here so that a whole team lands on the same edge cache."
+    },
+    {
+      "slug": "pub-sub",
+      "role": "Covers letting a client subscribe only to the events its current view needs, which cut the presence events it receives."
+    },
+    {
+      "slug": "caching",
+      "role": "Describes an application-level cache at the edge that answers client queries and shields the backend from reconnecting clients."
+    }
+  ],
+  "brief": {
+    "text": "A chat system keeps many phones and browsers connected at once, delivers each message to every device in order, and has to cope with devices that drop off the network and come back. Design the connection layer, the store of recent messages, the push path to the device and the cache that serves big workspaces. This page does not cover end-to-end encryption, media upload, search, group-call video or typing and read-receipt design. Be careful with the sources: they are from 2012 (WhatsApp), 2014 (Messenger, then run by Facebook) and 2017 (Slack, the page shows an update date of June 2020), from three different companies, and each describes its system as of that year. None of the three gives figures for presence (who is online) or for message acknowledgements. The Slack post only says that presence updates moved to pub/sub and that clients then received about 5 times fewer presence events. Nothing here says any of these designs still holds.",
+    "requirements": [
+      {
+        "label": "1. Fewer bytes and fewer failed sends",
+        "value": "A new sync protocol cut Messenger's non-media data use by about 40% and cut the number of people who hit errors when sending a message by roughly 20% (2014)",
+        "sourceId": "messenger"
+      },
+      {
+        "label": "2. Phones go offline",
+        "value": "A phone that is offline, or a storage outage, must not stop new messages being accepted. A week of messages is kept for catch-up (2014)",
+        "sourceId": "messenger"
+      },
+      {
+        "label": "3. Many connections per machine",
+        "value": "One server held over 2 million TCP connections, 2,277,845 open sockets at the time of the post, with plenty of CPU and memory left over (2012)",
+        "sourceId": "whatsapp"
+      },
+      {
+        "label": "4. Connections at the edge",
+        "value": "Flannel served 4 million simultaneous connections at peak and 600K client queries per second at the edge (2017)",
+        "sourceId": "flannel"
+      },
+      {
+        "label": "5. Very large workspaces",
+        "value": "Loading everything at startup became slow once teams reached tens of thousands of users, and an office that reconnects all at once strains the backend (2017)",
+        "sourceId": "flannel"
+      },
+      {
+        "label": "6. Small payloads",
+        "value": "Messages and deltas should be small on the wire: switching from JSON to Thrift cut the payload by roughly 50% (2014)",
+        "sourceId": "messenger"
+      },
+      {
+        "label": "7. Database failures are routine",
+        "value": "Hardware failures in the queue's database should be handled in under 30 seconds (2014)",
+        "sourceId": "messenger"
+      }
+    ]
+  },
+  "decisions": [
+    {
+      "id": "sync",
+      "question": "Your app learns of new data by a light push notification, then sends a complicated HTTPS query and gets a very large JSON reply. Mobile data plans are costly and networks are weak. How should the device stay up to date?",
+      "options": [
+        {
+          "label": "Keep the pull model but compress the JSON reply and cache the query result on the device",
+          "why": "Smallest change, but every new message still costs a full round trip on a weak network."
+        },
+        {
+          "label": "Fetch one snapshot, then subscribe to small delta updates pushed over a light connection and apply them locally",
+          "why": "After the first snapshot the app needs no further queries, but the server must now stream ordered updates."
+        },
+        {
+          "label": "Poll the server on a short timer and fetch only the changes since the last poll",
+          "why": "Easy to build, but idle phones still send requests and waste battery and data."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Meta",
+        "text": "Messenger moved to a push-based snapshot plus delta model (2014). The client gets an initial snapshot, typically the only HTTPS pull it makes, then subscribes to delta updates that are pushed over MQTT, a low-power, low-bandwidth protocol, as messages arrive. The client applies each delta to its local copy, so it can show an up-to-date view without an HTTPS request. The post says this sync protocol cut non-media data use by about 40%, and that reducing network congestion led to roughly 20% fewer people seeing errors when sending a message.",
+        "sourceId": "messenger"
+      }
+    },
+    {
+      "id": "format",
+      "question": "The deltas travel as JSON. It is flexible and readable, and compression helps, but the wire format is still wasteful. Bytes on a mobile network matter. What do you do about the encoding?",
+      "options": [
+        {
+          "label": "Stay on JSON and rely on compression, since developers can read it and change it quickly",
+          "why": "Lowest developer overhead, but compression does not fully offset the format's waste."
+        },
+        {
+          "label": "Drop messages that are older than a few minutes so fewer bytes are sent in total",
+          "why": "Saves bytes, but users lose messages they were waiting for."
+        },
+        {
+          "label": "Move to a compact binary encoding with a schema, accepting less readable traffic",
+          "why": "Smaller on the wire, at the price of tooling and a schema to keep in step on every client."
+        }
+      ],
+      "answerIndex": 2,
+      "realChoice": {
+        "company": "Meta",
+        "text": "Messenger evaluated several replacements for JSON and chose Thrift for messages and delta updates (2014). The post says JSON is good when you need a flexible, human-readable format with little developer overhead, but is not efficient on the wire, and that compression does not entirely make up for it. Switching to Thrift reduced the payload size on the wire by roughly 50%.",
+        "sourceId": "messenger"
+      }
+    },
+    {
+      "id": "storage",
+      "question": "One big disk storage tier handles both real-time message delivery and full conversation history. A disk outage or a slow write now delays what the phone sees. How do you split the work?",
+      "options": [
+        {
+          "label": "Buy faster disks and add more servers to the one storage tier",
+          "why": "Keeps one system, but it still serves two jobs and one slow write still holds up delivery."
+        },
+        {
+          "label": "Put an ordered queue in front, with separate pointers for the phone and for the storage tier",
+          "why": "Each side advances at its own pace and can fall behind, but you now run a queue with a bounded backlog."
+        },
+        {
+          "label": "Send messages to the phone first and write to disk later from the phone's copy",
+          "why": "Fast delivery, but a lost phone loses a message that never reached storage."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Meta",
+        "text": "Messenger built Iris, a totally ordered queue of messaging updates (new messages, read-state changes), with separate pointers for the last update sent to the app and the last one sent to the traditional storage tier (2014). A pointer moves only after a successful send. If the phone is offline or the disk tier is down, its pointer stays still while new messages are still queued and the other pointers advance, so slow disk writes do not hold back real-time delivery. The post describes three tiers by recency: the newest messages go from Iris's memory, a week of messages sits in the queue's backing store, and older history comes from the disk tier.",
+        "sourceId": "messenger"
+      }
+    },
+    {
+      "id": "queue-store",
+      "question": "The queue needs a durable backing store that holds a week of messages, is fast to write and survives a machine failure within seconds. Nothing off the shelf meets all of scale, reliability, speed and flexibility. What do you build it on?",
+      "options": [
+        {
+          "label": "A new custom storage engine written for this queue alone",
+          "why": "Fits the need exactly, but it is a long project and every bug is yours."
+        },
+        {
+          "label": "The existing MySQL on flash, with semi-sync replication so each write is on more than one server",
+          "why": "Reuses known tooling and gains durability across servers, but the database's availability had to be improved first."
+        },
+        {
+          "label": "Keep the queue only in memory and rebuild it from the disk tier after a crash",
+          "why": "Fastest writes, but a crash loses the recent messages that are not yet on disk."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Meta",
+        "text": "Messenger looked at several existing technologies for the queue's backing store and found none that fit on scale, reliability, speed and flexibility, so it built the queue storage on MySQL and flash (2014). It used semi-sync replication, which gives durability across multiple servers. The post says this lets it handle database hardware failures in under 30 seconds, and that enqueueing a new message is an order of magnitude faster than writing to the traditional disk storage. A message is enqueued once to MySQL and then pushed to apps and to disk in parallel. The post points to a separate talk for the MySQL availability work.",
+        "sourceId": "messenger"
+      }
+    },
+    {
+      "id": "connections",
+      "question": "Every user holds a connection open. Do you spread them over many small servers, or tune each server to hold as many connections as it can?",
+      "options": [
+        {
+          "label": "Many small servers with a few thousand connections each, so one failure affects few users",
+          "why": "Simple to reason about, but the fleet is large and each connection costs more hardware."
+        },
+        {
+          "label": "Cap each server at a round number such as 10,000 connections to leave headroom",
+          "why": "Safe margin, but you pay for machines that sit mostly idle."
+        },
+        {
+          "label": "Tune the operating system and runtime so one machine holds millions of connections",
+          "why": "Far fewer machines, but it takes OS limits, memory sizing and testing that the defaults do not give you."
+        }
+      ],
+      "answerIndex": 2,
+      "realChoice": {
+        "company": "WhatsApp",
+        "text": "In January 2012 WhatsApp reported pushing its servers to over 2 million TCP connections on one box, after an earlier post about 1 million. The box showed 2,277,845 open sockets, CPU at 37.9% user, 13.6% system and 41.9% idle, and 27G of memory free. It ran FreeBSD 8.2-STABLE on 24 cores of Intel Xeon X5675 with about 103 GB of RAM, with Erlang R14B03 as the runtime. The post lists the tuned limits (for example kern.ipc.maxsockets=2400000 and kern.maxfiles=3000000) and says the load was sustainable. It does not say how many such servers the service ran or how connections were spread across them.",
+        "sourceId": "whatsapp"
+      }
+    },
+    {
+      "id": "startup",
+      "question": "Your client downloads a full snapshot of the workspace at startup: every user, channel, member and recent message. That works for hundreds of people. For tens of thousands it gets slow, and a reconnect after closing a laptop costs almost as much as the first load. What changes?",
+      "options": [
+        {
+          "label": "Send less at startup and put a cache near the user that answers queries for the rest as they are needed",
+          "why": "Fast to start and cheap to reconnect, but you run a new service and must predict what the client will ask for next."
+        },
+        {
+          "label": "Make the backend faster so the full snapshot is built more quickly for every client",
+          "why": "No client change, but each reconnect still costs the backend a full snapshot."
+        },
+        {
+          "label": "Cap the workspace size so that no team grows beyond what the full snapshot can handle",
+          "why": "Removes the problem, but turns away the largest customers."
+        }
+      ],
+      "answerIndex": 0,
+      "realChoice": {
+        "company": "Slack",
+        "text": "Slack built Flannel, an application-level cache deployed to its edge points of presence (2017). On connect, Flannel gathers the full startup data, opens a WebSocket to Slack servers in the main AWS region to stay current from real-time events, and gives the client a slimmed-down version. The client then asks Flannel for users and channels on demand, and Flannel pushes data it expects the client to need next. The post says startup data shrank by 7 times on a team of 1.5K users and by 44 times on a team of 32K users. Flannel had been running at the edge since January, serving 4 million simultaneous connections at peak and 600K client queries per second.",
+        "sourceId": "flannel"
+      }
+    },
+    {
+      "id": "affinity",
+      "question": "You run many cache hosts at the edge. A cache only helps if the data a user needs is already on the host they reach. How should a user be sent to a host?",
+      "options": [
+        {
+          "label": "Send each connection to the least busy host, so load stays level",
+          "why": "Level load, but teammates land on different hosts and each host caches the same team's data."
+        },
+        {
+          "label": "Hash the team and region so that people from the same team in one region reach the same host",
+          "why": "Teammates share one cache, but one big team can make one host busy and adding hosts moves some teams."
+        },
+        {
+          "label": "Pin every user to one fixed host for good, chosen when they sign up",
+          "why": "Warm caches, but users cannot move when a host is lost or the network region changes."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Slack",
+        "text": "Flannel uses consistent hashing to choose the host a user connects to, so that users on the same team and in the same networking region reach the same Flannel instance, for the best cache efficiency (2017). New or recently disconnected users are then served straight from the Flannel cache, which lowers the impact of reconnect storms on the Slack backend. The post does not say how it handles one very large team landing on a single host.",
+        "sourceId": "flannel"
+      }
+    },
+    {
+      "id": "events",
+      "question": "Every client listens to every event for its team: messages in all its channels, profile updates, presence changes. Most of those events are not relevant to what the user is looking at. How do you cut the traffic?",
+      "options": [
+        {
+          "label": "Let clients subscribe to only the events the current view needs and change subscriptions when the view changes",
+          "why": "Far fewer events per client, but the server now tracks each client's subscriptions."
+        },
+        {
+          "label": "Batch all events into one packet every few seconds and send it to every client",
+          "why": "Fewer packets, but every client still gets every event and live updates become delayed."
+        },
+        {
+          "label": "Ask each client to filter on the device and ignore what it does not need",
+          "why": "No server change, but the bytes have already been sent and received."
+        }
+      ],
+      "answerIndex": 0,
+      "realChoice": {
+        "company": "Slack",
+        "text": "Slack said it was moving clients to a pub/sub model, so that a client subscribes to the events that matter in its current view and changes subscriptions when the user switches view (2017). It had already moved user presence updates to pub/sub, and the number of presence events clients received fell by a factor of 5. The post gives no further presence detail, such as how online status is detected or how often it is refreshed. It also lists moving event fanout into Flannel as planned work, not as something finished.",
+        "sourceId": "flannel"
+      }
+    }
+  ],
+  "sizing": {
+    "inputs": [
+      {
+        "id": "conns",
+        "label": "Simultaneous connections to hold (Slack reported 4 million at peak, 2017)",
+        "min": 100000,
+        "max": 10000000,
+        "step": 100000,
+        "default": 4000000,
+        "unit": "connections"
+      },
+      {
+        "id": "per_server",
+        "label": "Connections per server (WhatsApp reported over 2 million on one box, 2012; your hardware will differ)",
+        "min": 10000,
+        "max": 3000000,
+        "step": 10000,
+        "default": 2000000,
+        "unit": "connections"
+      },
+      {
+        "id": "startup_kb",
+        "label": "Startup data a client downloads before lazy loading (your own number)",
+        "min": 10,
+        "max": 100000,
+        "step": 10,
+        "default": 5000,
+        "unit": "KB"
+      },
+      {
+        "id": "reduce_x",
+        "label": "Reduction from lazy loading (the post gives 7 times for 1.5K users and 44 times for 32K users)",
+        "min": 1,
+        "max": 44,
+        "step": 1,
+        "default": 7,
+        "unit": "times"
+      },
+      {
+        "id": "month_mb",
+        "label": "Non-media data one user's app uses in a month before the change (your own number)",
+        "min": 1,
+        "max": 10000,
+        "step": 1,
+        "default": 100,
+        "unit": "MB"
+      },
+      {
+        "id": "cut_pct",
+        "label": "Saving from the new sync protocol (the post says about 40%)",
+        "min": 0,
+        "max": 90,
+        "step": 1,
+        "default": 40,
+        "unit": "%"
+      },
+      {
+        "id": "users_m",
+        "label": "Users with messages in the queue (your own number)",
+        "min": 1,
+        "max": 1000,
+        "step": 1,
+        "default": 10,
+        "unit": "million"
+      },
+      {
+        "id": "msgs_day",
+        "label": "Queued updates per user per day (your own number)",
+        "min": 1,
+        "max": 1000,
+        "step": 1,
+        "default": 40,
+        "unit": "updates"
+      },
+      {
+        "id": "msg_bytes",
+        "label": "Size of one queued update (your own number)",
+        "min": 50,
+        "max": 5000,
+        "step": 50,
+        "default": 500,
+        "unit": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "label": "Servers needed to hold those connections (derived, no spare capacity)",
+        "formula": "ceil(conns / per_server)",
+        "unit": "servers"
+      },
+      {
+        "label": "Startup data after lazy loading (derived)",
+        "formula": "startup_kb / reduce_x",
+        "unit": "KB"
+      },
+      {
+        "label": "Monthly non-media data after the new sync protocol (derived)",
+        "formula": "month_mb * (1 - cut_pct / 100)",
+        "unit": "MB"
+      },
+      {
+        "label": "Size of a week of queued updates (derived; the post says a week is kept but gives no size)",
+        "formula": "users_m * 1000000 * msgs_day * msg_bytes * 7 / 1000000000",
+        "unit": "GB"
+      }
+    ]
+  },
+  "diagram": {
+    "title": "Chat: Messenger's sync path (Iris), Slack's edge cache (Flannel) and WhatsApp's connection server, each part taken from the post named in its note",
+    "nodes": [
+      {
+        "id": "mclient",
+        "label": "Messenger app (snapshot plus deltas)",
+        "topic": "real-time-delivery",
+        "company": "Meta",
+        "tradeoff": "From the Messenger post (2014). It pulls one snapshot over HTTPS, then applies deltas pushed over MQTT to its local copy. Less data and fewer requests, but the server must keep an ordered stream for every client.",
+        "to": []
+      },
+      {
+        "id": "iris",
+        "label": "Iris (ordered queue with pointers)",
+        "topic": "message-queues",
+        "company": "Meta",
+        "tradeoff": "From the Messenger post. A totally ordered queue of updates with one pointer for the app and one for the storage tier, so each moves at its own pace. A message is enqueued once and pushed to the app and to disk in parallel. The post does not say how pointers are stored or how a client catches up beyond the week kept.",
+        "to": [
+          "mclient",
+          "iristore",
+          "diskstore"
+        ]
+      },
+      {
+        "id": "iristore",
+        "label": "Queue backing store (MySQL on flash, semi-sync)",
+        "topic": "message-queues",
+        "company": "Meta",
+        "tradeoff": "From the Messenger post. Holds a week of messages. Semi-sync replication gives durability across servers and database hardware failures are handled in under 30 seconds. The post does not describe the replica layout.",
+        "to": []
+      },
+      {
+        "id": "diskstore",
+        "label": "Traditional disk storage tier",
+        "topic": "message-queues",
+        "company": "Meta",
+        "tradeoff": "From the Messenger post. Serves older conversation history and full inbox snapshot fetches. Disk writes are slow, which is why they are kept off the real-time path.",
+        "to": []
+      },
+      {
+        "id": "sclient",
+        "label": "Slack client (WebSocket, lazy loading)",
+        "topic": "real-time-delivery",
+        "company": "Slack",
+        "tradeoff": "From the Flannel post (2017). It loads minimal data at startup, keeps a WebSocket for real-time events and asks the edge for users and channels as needed. The page's own reading: the first lookup of anything not yet loaded needs a query.",
+        "to": [
+          "affinity",
+          "presence"
+        ]
+      },
+      {
+        "id": "affinity",
+        "label": "Team-affinity routing (consistent hashing)",
+        "topic": "consistent-hashing",
+        "company": "Slack",
+        "tradeoff": "From the Flannel post. Users on the same team and in the same networking region are sent to the same Flannel instance for cache efficiency. The post does not say how an oversized team is balanced.",
+        "to": [
+          "flannel"
+        ]
+      },
+      {
+        "id": "flannel",
+        "label": "Flannel (edge application cache)",
+        "topic": "caching",
+        "company": "Slack",
+        "tradeoff": "From the Flannel post. Caches users, channels and bots at the edge and answers client queries, and pushes data it expects the client to need. Reconnecting clients are served from it, not from the backend. The post lists event fanout in Flannel as planned, not done.",
+        "to": [
+          "backend"
+        ]
+      },
+      {
+        "id": "backend",
+        "label": "Slack servers in the main AWS region",
+        "topic": "real-time-delivery",
+        "company": "Slack",
+        "tradeoff": "From the Flannel post. Flannel opens a WebSocket here to consume real-time events and loads the full startup data. The post says the message server currently forwards a copy to Flannel for each connected user.",
+        "to": []
+      },
+      {
+        "id": "presence",
+        "label": "Presence updates (pub/sub)",
+        "topic": "pub-sub",
+        "company": "Slack",
+        "tradeoff": "From the Flannel post. Presence moved to a subscription model and clients received about 5 times fewer presence events. The post says nothing about where the broker runs or how online status is detected.",
+        "to": []
+      },
+      {
+        "id": "waserver",
+        "label": "Connection server (FreeBSD, Erlang)",
+        "topic": "real-time-delivery",
+        "company": "WhatsApp",
+        "tradeoff": "From the WhatsApp post (2012). One tuned machine held over 2 million TCP connections with CPU 41.9% idle. The post gives no detail of what the server does with a message, how many servers there were or how they connect to the other parts drawn here, so no link is drawn.",
+        "to": []
+      }
+    ],
+    "failures": [
+      {
+        "id": "phone-offline",
+        "label": "A phone goes offline for a while",
+        "effects": [
+          {
+            "nodeId": "mclient",
+            "state": "down"
+          },
+          {
+            "nodeId": "iristore",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "disk-outage",
+        "label": "The disk storage tier has an outage or very slow writes",
+        "effects": [
+          {
+            "nodeId": "diskstore",
+            "state": "down"
+          },
+          {
+            "nodeId": "iristore",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "mysql-hardware",
+        "label": "Hardware under the queue's MySQL fails",
+        "effects": [
+          {
+            "nodeId": "iristore",
+            "state": "degraded"
+          }
+        ]
+      },
+      {
+        "id": "reconnect-storm",
+        "label": "A whole office loses its network and its clients reconnect at once",
+        "effects": [
+          {
+            "nodeId": "sclient",
+            "state": "degraded"
+          }
+        ]
+      }
+    ]
+  },
+  "compare": "These are three old posts from three companies, so read them as three separate snapshots, not one system. WhatsApp is from January 2012, Messenger from October 2014 (when it was part of Facebook) and Slack from May 2017 (the page shows an update date of June 2020). Each describes its system as of that year. Nothing here says any of these designs still holds today. The posts do not say how WhatsApp's connection servers hand messages on, so the diagram draws no link from them, and it draws no link between the Messenger and Slack parts, which are separate products. None of the three gives numbers for presence or for message acknowledgements, so this page does not size them.\n\nThe posts attack different ends of the same path. WhatsApp shows what one machine can hold: over 2 million connections with CPU to spare, but it says nothing about the messages on them. Messenger works on the middle: an ordered queue with a pointer per consumer lets a phone or a disk tier fall behind without blocking the other, and the price is a queue with a one-week backlog, backed by MySQL on flash. Slack works on the edge: it sends less at startup and keeps a cache near the user, and the price is a new service that has to guess what the client will ask for next.\n\nThe common move is to stop sending everything to everyone. Messenger sends a snapshot once and then deltas. Slack sends a slim startup payload (7 times smaller for 1.5K users, 44 times for 32K) and then fills in on demand, and has moved presence to subscriptions. Each post also names its limit. Messenger's gains are measured in data use (about 40%) and send errors (roughly 20%), not in delivery latency. Slack's fanout and further pub/sub work were still plans in the post. WhatsApp's figure is for a single box, not a fleet."
+  ,
+  "quiz": [
+    {
+      "question": "Why does Iris keep a separate pointer for the app and for the storage tier?",
+      "options": [
+        "Each side moves at its own pace, so a slow disk cannot stall delivery",
+        "It lets the phone write straight to the disk tier after it confirms a message",
+        "It keeps two copies of every message so one copy is always available"
+      ],
+      "correct": 0,
+      "why": "A pointer advances only after a successful send. If the phone is offline or the disk is down, its pointer stays while new messages are still queued and the other pointers advance.",
+      "wrong": [
+        "",
+        "The queue writes to disk, not the app.",
+        "The pointers mark positions in one queue, not two copies."
+      ],
+      "teaches": "message-queues"
+    },
+    {
+      "question": "Why did Messenger move from pull to a snapshot plus pushed deltas?",
+      "options": [
+        "Pushed deltas mean the server no longer has to keep any message history at all",
+        "After one snapshot the app stays current with no more HTTPS queries",
+        "MQTT guarantees that no delta is ever lost between server and phone"
+      ],
+      "correct": 1,
+      "why": "The old way needed a complex HTTPS query and a large JSON reply for each push notification. The new way applies small deltas to a local copy, and non-media data use fell by about 40%.",
+      "wrong": [
+        "The queue still keeps a week of messages.",
+        "",
+        "The post calls MQTT low-power and low-bandwidth, and does not make a delivery guarantee."
+      ],
+      "teaches": "real-time-delivery"
+    },
+    {
+      "question": "What does Slack's use of consistent hashing in Flannel aim for?",
+      "options": [
+        "Spreading each team's users evenly across every host in their whole region",
+        "Sending one team's users in a region to one host for a warm cache",
+        "Choosing the host that is geographically nearest to each single user"
+      ],
+      "correct": 1,
+      "why": "Users of one team in the same networking region reach the same Flannel instance, which gives the best cache efficiency and serves reconnecting users from cache.",
+      "wrong": [
+        "Spreading teams out would split the cache.",
+        "",
+        "The post names team and region, not distance to each user."
+      ],
+      "teaches": "consistent-hashing"
+    },
+    {
+      "question": "What did Slack report after moving presence updates to pub/sub?",
+      "options": [
+        "Presence events fell by about 40% and send errors fell with them",
+        "The post gives no figure, only that presence now uses subscriptions",
+        "Clients got about 5 times fewer presence events"
+      ],
+      "correct": 2,
+      "why": "The post says the number of presence events received by clients was reduced by a factor of 5. It gives no detail on how presence is detected.",
+      "wrong": [
+        "The 40% figure belongs to Messenger's data use.",
+        "It does give a figure, a factor of 5.",
+        ""
+      ],
+      "teaches": "pub-sub"
+    },
+    {
+      "question": "What does Flannel's edge cache do for the Slack backend when many clients reconnect?",
+      "options": [
+        "It serves them from its cache",
+        "It queues the reconnecting clients until the backend has capacity",
+        "It sends every reconnecting client a full snapshot of the team"
+      ],
+      "correct": 0,
+      "why": "New or recently disconnected users are served directly from Flannel's cache, which reduces the impact of reconnect storms on backend servers.",
+      "wrong": [
+        "",
+        "The post describes serving from cache, not queueing.",
+        "A full snapshot is what the old model did, and Flannel slims it down."
+      ],
+      "teaches": "caching"
+    }
+  ],
+  "sources": [
+    {
+      "id": "messenger",
+      "title": "Building mobile-first infrastructure for Messenger",
+      "url": "https://engineering.fb.com/2014/10/09/ios/building-mobile-first-infrastructure-for-messenger/",
+      "company": "Meta",
+      "published": "2014-10-09",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "flannel",
+      "title": "Flannel: An Application-Level Edge Cache to Make Slack Scale",
+      "url": "https://slack.engineering/flannel-an-application-level-edge-cache-to-make-slack-scale/",
+      "company": "Slack",
+      "published": "2017-05-31",
+      "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "whatsapp",
+      "title": "1 million is so 2011 (Internet Archive copy of the WhatsApp blog)",
+      "url": "https://web.archive.org/web/20210120005153/https://blog.whatsapp.com/1-million-is-so-2011/?lang=en",
+      "company": "WhatsApp",
+      "published": "2012-01-06",
+      "verifiedOn": "2026-10-24"
+    }
+  ]
+}

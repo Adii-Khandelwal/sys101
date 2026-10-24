@@ -50,7 +50,7 @@ It is one person's learning project, built in the open.
   <img src="docs/readme/learn-light.png" alt="The Start from zero page for DNS: a list of stages down the left, then the title, a note that it is built only from official sources, and three terms to know before starting." width="100%">
 </picture>
 
-**Put it together.** Capstones at `/capstones` combine finished topics into one system, a metrics pipeline, a social graph store, a payments ledger and a file sync engine: decide first, size it with a calculator, click through the diagram, break it, compare with the real design, then a quiz. Each shows which of its topics you have read.
+**Put it together.** Capstones at `/capstones` combine finished topics into one system, a metrics pipeline, a social graph store, a payments ledger, a file sync engine and a chat and messaging system: decide first, size it with a calculator, click through the diagram, break it, compare with the real design, then a quiz. Each shows which of its topics you have read.
 
 **Terms in place.** The first use of a topic's own terms in each section opens a short definition, with a link to the Glossary.
 
