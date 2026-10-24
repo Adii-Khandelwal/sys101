@@ -20,15 +20,15 @@ A system design course for one learner, built as a prerequisite graph. Each topi
 
 ## Future plan (topics to add next)
 
-Researched in Oct 2026 and revised after the owner review. Status on 17 Oct 2026: the site has 34 topics and four capstones. Batches 1 to 3 are merged. Batch 4 has shipped `probabilistic-data-structures`, `api-design-rpc-rest-graphql` and `online-schema-migrations` ('Schema Migrations', Buildkite, GitHub and Shopify posts); the Notion 2026 reindexing post is on `indexing`. The capstone page type (`/capstones`, `/capstone/<slug>`, `.claude/rules/capstones.md`) is built with the metrics pipeline, social graph store (TAO), payments ledger and file sync capstones (PRs #51 to #53, #84 to #86, all merged). Glossary terms now appear inline in lesson text with popovers (`topic-pages.md`). Full sources, figures and risks are in `docs/roadmap.md` (read it only when planning a topic; every figure there still goes through `add-post`). Each topic has at most 3 prerequisites so the map layout test stays clean (test the placement on a stub first, `add-topic` step 1; the `chooseLayers` fix lets short columns shift). Each source appears in one place only.
+Researched in Oct 2026 and revised after the owner review. Status on 17 Oct 2026: the site has 34 topics and five capstones. Batches 1 to 3 are merged. Batch 4 has shipped `probabilistic-data-structures`, `api-design-rpc-rest-graphql` and `online-schema-migrations` ('Schema Migrations', Buildkite, GitHub and Shopify posts); the Notion 2026 reindexing post is on `indexing`. The capstone page type (`/capstones`, `/capstone/<slug>`, `.claude/rules/capstones.md`) is built with the metrics pipeline, social graph store (TAO), payments ledger and file sync capstones (PRs #51 to #53, #84 to #86, all merged) and the chat and messaging capstone (three dated sources: WhatsApp 2012, Messenger 2014, Slack Flannel 2017; no presence or acknowledgement figures). Glossary terms now appear inline in lesson text with popovers (`topic-pages.md`). Full sources, figures and risks are in `docs/roadmap.md` (read it only when planning a topic; every figure there still goes through `add-post`). Each topic has at most 3 prerequisites so the map layout test stays clean (test the placement on a stub first, `add-topic` step 1; the `chooseLayers` fix lets short columns shift). Each source appears in one place only.
 
 Still to do:
 
 1. Batch 4 remainder: `service-mesh-and-api-gateways` (nothing after 2018).
 2. Parked until a source passes: `observability-and-slos`, `multi-region-traffic-routing`, `exactly-once-processing` (needs a second company source).
-3. Capstones: chat has three dated sources found (Meta Messenger 2014, Slack Flannel 2017, WhatsApp 2012; no presence source) and is not built yet (Slack 2023 belongs to `real-time-delivery`); later notifications and live video; ride dispatch not ready. Each new capstone is a content JSON plus research.
+3. Capstones: chat is built on three old sources (Slack 2023 belongs to `real-time-delivery`); a recent chat source would improve it; later notifications and live video; ride dispatch not ready. Each new capstone is a content JSON plus research.
 
-Go-live bar for an announcement is met for topics (batches 1 and 2); add the chat capstone once it has sources. Post rule 4 as decided by the owner: papers by teams that ran the system, MongoDB Atlas and the CrowdStrike RCA count; Confluent and Debezium are explanation only.
+Go-live bar for an announcement is met for topics (batches 1 and 2) and the chat capstone now exists. Post rule 4 as decided by the owner: papers by teams that ran the system, MongoDB Atlas and the CrowdStrike RCA count; Confluent and Debezium are explanation only.
 
 ## Where the detail lives (`.claude/rules/`)
 
