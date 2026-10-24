@@ -712,15 +712,15 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | netflix-dblog-2020 | constraints | six needs | https://arxiv.org/pdf/2010.12597 | (before first heading) | hand-checked |
 | netflix-dblog-2020 | walkthrough | two watermarks | https://arxiv.org/pdf/2010.12597 | (before first heading) | found (other spelling) |
 | netflix-dblog-2020 | takeaways | two without | https://arxiv.org/pdf/2010.12597 | (before first heading) | hand-checked |
-| uber-realtime-infra-2021 | numbers | Trillions of messages, petabytes of data per day | https://arxiv.org/pdf/2104.00087 | - | NOT FOUND |
-| uber-realtime-infra-2021 | numbers | Under 150 nodes | https://arxiv.org/pdf/2104.00087 | 4.1 Apache Kafka for streaming storage | found with different formatting |
-| uber-realtime-infra-2021 | numbers | A few days | https://arxiv.org/pdf/2104.00087 | 7 BACKFILL | found |
-| uber-realtime-infra-2021 | walkthrough | 150 | https://arxiv.org/pdf/2104.00087 | 4.1 Apache Kafka for streaming storage | found |
-| uber-realtime-infra-2021 | walkthrough | two choices | https://arxiv.org/pdf/2104.00087 | (before first heading) | hand-checked |
-| uber-realtime-infra-2021 | walkthrough | two styles | https://arxiv.org/pdf/2104.00087 | (before first heading) | hand-checked |
-| uber-realtime-infra-2021 | meaning | 2020, | https://arxiv.org/pdf/2104.00087 | 1 INTRODUCTION | found |
-| uber-realtime-infra-2021 | tradeoffs | two storage | https://arxiv.org/pdf/2104.00087 | (before first heading) | hand-checked |
-| uber-realtime-infra-2021 | failures | 150 | https://arxiv.org/pdf/2104.00087 | 4.1 Apache Kafka for streaming storage | found |
+| uber-realtime-infra-2021 | numbers | Trillions of messages, petabytes of data per day | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | NOT FOUND |
+| uber-realtime-infra-2021 | numbers | Under 150 nodes | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | NOT FOUND |
+| uber-realtime-infra-2021 | numbers | A few days | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | NOT FOUND |
+| uber-realtime-infra-2021 | walkthrough | 150 | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | NOT FOUND |
+| uber-realtime-infra-2021 | walkthrough | two choices | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | hand-checked |
+| uber-realtime-infra-2021 | walkthrough | two styles | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | hand-checked |
+| uber-realtime-infra-2021 | meaning | 2020, | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | NOT FOUND |
+| uber-realtime-infra-2021 | tradeoffs | two storage | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | hand-checked |
+| uber-realtime-infra-2021 | failures | 150 | https://arxiv.org/pdf/2104.00087 | page not fetched (HTTP 0) | NOT FOUND |
 | linkedin-northguard-2025 | numbers | 32T records/day | https://www.linkedin.com/blog/engineering/infrastructure/introducing-northguard-and-xinfra | Why we needed a new solution | found |
 | linkedin-northguard-2025 | numbers | 1 GB or 1 hour | https://www.linkedin.com/blog/engineering/infrastructure/introducing-northguard-and-xinfra | Data model | found with different formatting |
 | linkedin-northguard-2025 | numbers | N (128+) | https://www.linkedin.com/blog/engineering/infrastructure/introducing-northguard-and-xinfra | Evaluation | found |
@@ -813,6 +813,99 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | dropbox-magic-pocket-2016 | walkthrough | 50 PB | https://dropbox.tech/infrastructure/inside-the-magic-pocket | Cells | found with different formatting |
 | dropbox-magic-pocket-2016 | walkthrough | hundred petabytes | https://dropbox.tech/infrastructure/inside-the-magic-pocket | (before first heading) | found (other spelling) |
 | dropbox-magic-pocket-2016 | meaning | hundred petabytes | https://dropbox.tech/infrastructure/inside-the-magic-pocket | (before first heading) | found (other spelling) |
+
+## Observability and SLOs
+
+| Post | Section | Figure as written | Source URL | Nearest heading in page | Result |
+|---|---|---|---|---|---|
+| google-sre-slos-2017 | numbers | About 50 ms | https://sre.google/sre-book/service-level-objectives/ | Aggregation | found |
+| google-sre-slos-2017 | numbers | 5% of requests, 20 times slower | https://sre.google/sre-book/service-level-objectives/ | Chapter 4 - Service Level Objectives | found with different formatting |
+| google-sre-slos-2017 | numbers | 99% under 100 ms | https://sre.google/sre-book/service-level-objectives/ | Indicators | found with different formatting |
+| google-sre-slos-2017 | numbers | 99.95% | https://sre.google/sre-book/service-level-objectives/ | Indicators | found |
+| google-sre-slos-2017 | walkthrough | 50 ms | https://sre.google/sre-book/service-level-objectives/ | Aggregation | found |
+| google-sre-slos-2017 | walkthrough | 5% | https://sre.google/sre-book/service-level-objectives/ | Indicators | found |
+| google-sre-slos-2017 | walkthrough | 20 | https://sre.google/sre-book/service-level-objectives/ | Chapter 4 - Service Level Objectives | found |
+| google-sre-slos-2017 | walkthrough | 99% | https://sre.google/sre-book/service-level-objectives/ | Indicators | found |
+| google-sre-slos-2017 | walkthrough | 100 ms | https://sre.google/sre-book/service-level-objectives/ | Defining Objectives | found |
+| google-sre-slos-2017 | walkthrough | 100% | https://sre.google/sre-book/service-level-objectives/ | Indicators | found |
+| google-sre-slos-2017 | meaning | 99% | https://sre.google/sre-book/service-level-objectives/ | Indicators | found |
+| google-sre-slos-2017 | meaning | 100 ms | https://sre.google/sre-book/service-level-objectives/ | Defining Objectives | found |
+| google-sre-slos-2017 | meaning | three and | https://sre.google/sre-book/service-level-objectives/ | (before first heading) | found (other spelling) |
+| google-sre-slos-2017 | meaning | half nines | https://sre.google/sre-book/service-level-objectives/ | (before first heading) | found (other spelling) |
+| google-sre-slos-2017 | tradeoffs | 100% | https://sre.google/sre-book/service-level-objectives/ | Indicators | found |
+| google-sre-slos-2017 | takeaways | 100% | https://sre.google/sre-book/service-level-objectives/ | Indicators | found |
+| google-sre-alerting-2018 | numbers | 36 | https://sre.google/workbook/alerting-on-slos/ | 2: Increased Alert Window | found |
+| google-sre-alerting-2018 | numbers | 43 minutes | https://sre.google/workbook/alerting-on-slos/ | 4: Alert on Burn Rate | found |
+| google-sre-alerting-2018 | numbers | 0.02% | https://sre.google/workbook/alerting-on-slos/ | Note | found |
+| google-sre-alerting-2018 | numbers | 14.4 | https://sre.google/workbook/alerting-on-slos/ | 5: Multiple Burn Rate Alerts | found |
+| google-sre-alerting-2018 | numbers | 20.5 hours | https://sre.google/workbook/alerting-on-slos/ | 4: Alert on Burn Rate | found |
+| google-sre-alerting-2018 | numbers | 26 seconds | https://sre.google/workbook/alerting-on-slos/ | Extreme Availability Goals | found |
+| google-sre-alerting-2018 | problem | six attempts | https://sre.google/workbook/alerting-on-slos/ | (before first heading) | hand-checked |
+| google-sre-alerting-2018 | constraints | 99.9% | https://sre.google/workbook/alerting-on-slos/ | 1: Target Error Rate ≥ SLO Threshold | found |
+| google-sre-alerting-2018 | constraints | 30 days | https://sre.google/workbook/alerting-on-slos/ | 1: Target Error Rate ≥ SLO Threshold | found |
+| google-sre-alerting-2018 | constraints | four things | https://sre.google/workbook/alerting-on-slos/ | (before first heading) | hand-checked |
+| google-sre-alerting-2018 | walkthrough | 144 | https://sre.google/workbook/alerting-on-slos/ | Note | found |
+| google-sre-alerting-2018 | walkthrough | 36 hours | https://sre.google/workbook/alerting-on-slos/ | 2: Increased Alert Window | found |
+| google-sre-alerting-2018 | walkthrough | 5% | https://sre.google/workbook/alerting-on-slos/ | 2: Increased Alert Window | found |
+| google-sre-alerting-2018 | walkthrough | 100% | https://sre.google/workbook/alerting-on-slos/ | Alerting Considerations | found |
+| google-sre-alerting-2018 | walkthrough | 0.2% | https://sre.google/workbook/alerting-on-slos/ | 3: Incrementing Alert Duration | found |
+| google-sre-alerting-2018 | walkthrough | 36 | https://sre.google/workbook/alerting-on-slos/ | 2: Increased Alert Window | found |
+| google-sre-alerting-2018 | walkthrough | 58 minutes | https://sre.google/workbook/alerting-on-slos/ | 4: Alert on Burn Rate | found |
+| google-sre-alerting-2018 | walkthrough | 35x | https://sre.google/workbook/alerting-on-slos/ | 4: Alert on Burn Rate | found |
+| google-sre-alerting-2018 | walkthrough | 20.5 hours | https://sre.google/workbook/alerting-on-slos/ | 4: Alert on Burn Rate | found |
+| google-sre-alerting-2018 | walkthrough | 2% | https://sre.google/workbook/alerting-on-slos/ | Note | found |
+| google-sre-alerting-2018 | walkthrough | 14.4 | https://sre.google/workbook/alerting-on-slos/ | 5: Multiple Burn Rate Alerts | found |
+| google-sre-alerting-2018 | walkthrough | 10% | https://sre.google/workbook/alerting-on-slos/ | 5: Multiple Burn Rate Alerts | found |
+| google-sre-alerting-2018 | walkthrough | 10 | https://sre.google/workbook/alerting-on-slos/ | Chapter 5 - Alerting on SLOs | found |
+| google-sre-alerting-2018 | walkthrough | 1,000x | https://sre.google/workbook/alerting-on-slos/ | Low-Traffic Services and Error Budget Alerting | found |
+| google-sre-alerting-2018 | walkthrough | 13.9% | https://sre.google/workbook/alerting-on-slos/ | Low-Traffic Services and Error Budget Alerting | found |
+| google-sre-alerting-2018 | walkthrough | 30 | https://sre.google/workbook/alerting-on-slos/ | 1: Target Error Rate ≥ SLO Threshold | found |
+| google-sre-alerting-2018 | walkthrough | 99.999% | https://sre.google/workbook/alerting-on-slos/ | Extreme Availability Goals | found |
+| google-sre-alerting-2018 | walkthrough | 26 seconds | https://sre.google/workbook/alerting-on-slos/ | Extreme Availability Goals | found |
+| google-sre-alerting-2018 | walkthrough | 1% | https://sre.google/workbook/alerting-on-slos/ | 1: Target Error Rate ≥ SLO Threshold | found |
+| google-sre-alerting-2018 | walkthrough | 43 minutes | https://sre.google/workbook/alerting-on-slos/ | 4: Alert on Burn Rate | found |
+| google-sre-alerting-2018 | walkthrough | six hours | https://sre.google/workbook/alerting-on-slos/ | (before first heading) | found (other spelling) |
+| google-sre-alerting-2018 | walkthrough | three days | https://sre.google/workbook/alerting-on-slos/ | (before first heading) | found (other spelling) |
+| google-sre-alerting-2018 | walkthrough | five minutes | https://sre.google/workbook/alerting-on-slos/ | (before first heading) | found (other spelling) |
+| google-sre-alerting-2018 | meaning | 5% | https://sre.google/workbook/alerting-on-slos/ | 2: Increased Alert Window | found |
+| google-sre-alerting-2018 | meaning | 30 | https://sre.google/workbook/alerting-on-slos/ | 1: Target Error Rate ≥ SLO Threshold | found |
+| google-sre-alerting-2018 | meaning | 99.9% | https://sre.google/workbook/alerting-on-slos/ | 1: Target Error Rate ≥ SLO Threshold | found |
+| google-sre-alerting-2018 | meaning | 30 days | https://sre.google/workbook/alerting-on-slos/ | 1: Target Error Rate ≥ SLO Threshold | found |
+| google-sre-alerting-2018 | meaning | 0.1% | https://sre.google/workbook/alerting-on-slos/ | 1: Target Error Rate ≥ SLO Threshold | found |
+| google-sre-alerting-2018 | meaning | 10 minutes | https://sre.google/workbook/alerting-on-slos/ | 1: Target Error Rate ≥ SLO Threshold | found |
+| google-sre-alerting-2018 | meaning | 2% | https://sre.google/workbook/alerting-on-slos/ | Note | found |
+| google-sre-alerting-2018 | meaning | 35x | https://sre.google/workbook/alerting-on-slos/ | 4: Alert on Burn Rate | found |
+| google-sre-alerting-2018 | meaning | 36x | https://sre.google/workbook/alerting-on-slos/ | 2: Increased Alert Window | found with different formatting |
+| google-sre-alerting-2018 | meaning | 99.999% | https://sre.google/workbook/alerting-on-slos/ | Extreme Availability Goals | found |
+| google-sre-alerting-2018 | failures | three notifications | https://sre.google/workbook/alerting-on-slos/ | (before first heading) | found (other spelling) |
+| google-dapper-2010 | numbers | 16.3% | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | 6 Process Count Data Rate Daemon CPU Usage | found |
+| google-dapper-2010 | numbers | 2.12% | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | 6 Process Count Data Rate Daemon CPU Usage | found |
+| google-dapper-2010 | numbers | -0.20% | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | 6 Process Count Data Rate Daemon CPU Usage | found with different formatting |
+| google-dapper-2010 | numbers | Under 15 seconds | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | 2 Distributed Tracing in Dapper | found with different formatting |
+| google-dapper-2010 | numbers | More than 1 terabyte | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | 4.6 Additional sampling during collection | found |
+| google-dapper-2010 | numbers | Under 0.01% | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | 4.2 Trace collection overhead | found with different formatting |
+| google-dapper-2010 | constraints | three goals | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | (before first heading) | found (other spelling) |
+| google-dapper-2010 | walkthrough | 15 seconds | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | 4 Figure 5: An overview of the Dapper | found |
+| google-dapper-2010 | walkthrough | 1024 | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | 6 Process Count Data Rate Daemon CPU Usage | found |
+| google-dapper-2010 | walkthrough | 1 trace | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | (before first heading) | found (other spelling) |
+| google-dapper-2010 | walkthrough | two orders | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | (before first heading) | found (other spelling) |
+| google-dapper-2010 | meaning | 16 | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | 2 Distributed Tracing in Dapper | found |
+| google-dapper-2010 | meaning | 1024, | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | 6 Process Count Data Rate Daemon CPU Usage | found with different formatting |
+| google-dapper-2010 | meaning | 2.5% | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | 6 Process Count Data Rate Daemon CPU Usage | found |
+| google-dapper-2010 | meaning | 1 request | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | (before first heading) | hand-checked |
+| google-dapper-2010 | tradeoffs | 16.3% | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | 6 Process Count Data Rate Daemon CPU Usage | found |
+| google-dapper-2010 | failures | 10 minutes | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | 6.5 Layered and Shared Storage Systems | found |
+| google-dapper-2010 | failures | 98 | https://static.googleusercontent.com/media/research.google.com/en//archive/papers/dapper-2010-1.pdf | 4 Figure 5: An overview of the Dapper | found |
+| meta-canopy-2017 | numbers | 1.3 billion | https://cs.brown.edu/~jcmace/papers/kaldor2017canopy.pdf | 1 In troduction | found with different formatting |
+| meta-canopy-2017 | numbers | 129 | https://cs.brown.edu/~jcmace/papers/kaldor2017canopy.pdf | 1 In troduction | found |
+| meta-canopy-2017 | numbers | 5 per second | https://cs.brown.edu/~jcmace/papers/kaldor2017canopy.pdf | (before first heading) | hand-checked |
+| meta-canopy-2017 | numbers | 300 ms | https://cs.brown.edu/~jcmace/papers/kaldor2017canopy.pdf | 2.1 Canopy inAction | found with different formatting |
+| meta-canopy-2017 | walkthrough | 300 ms | https://cs.brown.edu/~jcmace/papers/kaldor2017canopy.pdf | 2.1 Canopy inAction | found with different formatting |
+| meta-canopy-2017 | walkthrough | 10 | https://cs.brown.edu/~jcmace/papers/kaldor2017canopy.pdf | 1 In troduction | found |
+| meta-canopy-2017 | walkthrough | 5 traces | https://cs.brown.edu/~jcmace/papers/kaldor2017canopy.pdf | (before first heading) | found (other spelling) |
+| meta-canopy-2017 | meaning | 2017, | https://cs.brown.edu/~jcmace/papers/kaldor2017canopy.pdf | 1 In troduction | found |
+| meta-canopy-2017 | meaning | 35 | https://cs.brown.edu/~jcmace/papers/kaldor2017canopy.pdf | 2.2 Challenges | found |
+| meta-canopy-2017 | meaning | 13% | https://cs.brown.edu/~jcmace/papers/kaldor2017canopy.pdf | 2.1 Canopy inAction | found |
 
 ## Schema Migrations
 
@@ -1465,9 +1558,10 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | idempotency-and-retries | 20 | 1 | 0 | 7 | 2 | 0 |
 | indexing | 54 | 7 | 0 | 5 | 2 | 0 |
 | load-balancing | 17 | 4 | 0 | 1 | 0 | 0 |
-| log-based-streaming | 20 | 5 | 2 | 2 | 5 | 0 |
+| log-based-streaming | 16 | 4 | 7 | 2 | 5 | 0 |
 | message-queues | 16 | 3 | 0 | 2 | 0 | 0 |
 | object-storage | 23 | 14 | 0 | 7 | 1 | 0 |
+| observability-and-slos | 64 | 10 | 0 | 10 | 4 | 0 |
 | online-schema-migrations | 17 | 0 | 0 | 2 | 4 | 0 |
 | overload-and-cascading-failures | 34 | 8 | 9 | 8 | 7 | 0 |
 | probabilistic-data-structures | 27 | 1 | 0 | 4 | 3 | 0 |

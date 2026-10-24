@@ -187,6 +187,16 @@ export default function LearnPage({ topic, learn, titles }: Props) {
           <p>
             <Cited text={learn.tryIt.intro} number={number} />
           </p>
+          {learn.tryIt.files?.map((f) => (
+            <div key={f.name} className="learn-file">
+              <span className="learn-names">
+                {f.name} (our adaptation, not from the docs):
+              </span>
+              <pre className="learn-code" tabIndex={0} aria-label={`${f.name}, scrolls sideways`}>
+                <code>{f.content}</code>
+              </pre>
+            </div>
+          ))}
           <ul className="learn-try">
             {learn.tryIt.commands.map((c) => (
               <li key={c.command}>

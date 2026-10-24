@@ -61,6 +61,8 @@ export type Learn = {
   misconceptions: { myth: string; truth: string }[];
   tryIt: {
     intro: string;
+    /** Example files the commands read, our own adaptation of the cited pages; shown as scrollable code, labelled "not from the docs". */
+    files?: { name: string; content: string }[];
     commands: {
       /** Exactly what you type: no prompt character. Must appear in the cited page or a page it links to. */
       command: string;
@@ -151,6 +153,9 @@ export function checkLearn(l: Learn, topicSlugs: string[]): string[] {
   });
 
   (l.misconceptions ?? []).forEach((m) => citations(`${m.myth} ${m.truth}`).forEach((id) => known(id, "misconceptions")));
+  (l.tryIt?.files ?? []).forEach((f, i) => {
+    if (!nonEmpty(f.name) || !nonEmpty(f.content)) problems.push(`try it file ${i + 1} needs a name and content`);
+  });
   (l.tryIt?.commands ?? []).forEach((c) => known(c.source, `try it "${c.command}"`));
   (l.tryIt?.commands ?? []).forEach((c) => {
     if (RISKY_COMMAND.test(c.command) && !nonEmpty(c.warning)) {
