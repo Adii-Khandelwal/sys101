@@ -1,0 +1,483 @@
+{
+  "slug": "online-schema-migrations",
+  "title": "Schema Migrations",
+  "group": "Reliability",
+  "prerequisites": [
+    "databases"
+  ],
+  "summary": {
+    "points": [
+      "Changing a big table in place can lock it, so online migrations build the new shape beside the old one and switch with a brief lock.",
+      "Expand and contract adds first and removes last, so old and new code both keep working at every step and any step can be paused or undone.",
+      "Buildkite widened an integer key by adding a bigint column, writing both, backfilling in batches and swapping, where an in-place change needed days to weeks of downtime.",
+      "In 2020 GitHub queued its migrations and ran one ALTER at a time per cluster through gh-ost, because concurrent migrations compete for resources and run longer.",
+      "Shopify says sharding with Vitess turned migrations from weeks into hours, at the cost of added complexity for developers."
+    ],
+    "figures": [
+      {
+        "postId": "schema-buildkite-bigint-2021",
+        "row": 0,
+        "label": "Over 2 billion rows in one table moved to bigint without downtime"
+      },
+      {
+        "postId": "schema-github-skeefree-2020",
+        "row": 3,
+        "label": "1 ALTER at a time per cluster, since concurrent migrations take longer overall"
+      },
+      {
+        "postId": "schema-shopify-vitess-2024",
+        "row": 0,
+        "label": "Many weeks for the largest tables to migrate before moving to Vitess"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "databases": "Databases explain tables, columns, indexes and locks, which is what a migration changes and what a careless one blocks while the application is still reading and writing."
+  },
+  "concept": "A schema migration changes the shape of a live database, such as adding a column, changing a type or building an index, while the application keeps serving traffic. Run directly on a big table it can lock the table or take days. The online way builds the new shape beside the old one, moves the data in small steps and switches over with only a brief lock, in an order that old and new code can both survive.",
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why changing a table on a live system is risky and what makes it safe.",
+      "body": "A new feature usually needs a new column, a new table or a new index. On a small table that is one statement. On a table with billions of rows the same statement can lock the table, rewrite every row or run for days, and the product waits behind it.\n\nA second problem comes from deploys. A rollout takes minutes, so old and new code run together against one database. A schema that suits only the new code breaks the old code that is still serving requests, and a rollback brings old code back after the change is made.\n\nOnline schema migration answers both. Changes are cut into steps that each work for old and new code, and the heavy work runs beside live traffic with throttling instead of under a lock. The cost is more steps, more releases and more places for a mistake.",
+      "diagram": "<svg viewBox=\"0 0 560 190\" role=\"img\" aria-labelledby=\"dg-sm-why-t\" class=\"dg\"><title id=\"dg-sm-why-t\">During a rollout old and new code run together, so a schema change that only suits the new code breaks the old code that is still serving requests.</title><defs><marker id=\"dg-sm-why-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"14\" width=\"150\" height=\"46\" class=\"dg-box\"/><text x=\"87\" y=\"33.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Old code</text><text x=\"87\" y=\"49.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">still running</text><rect x=\"398\" y=\"14\" width=\"150\" height=\"46\" class=\"dg-box\"/><text x=\"473\" y=\"33.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">New code</text><text x=\"473\" y=\"49.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">just deployed</text><rect x=\"180\" y=\"96\" width=\"200\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"117.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">One database</text><text x=\"280\" y=\"133.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">one schema at a time</text><path d=\"M87,60 L200,96\" class=\"dg-line\" marker-end=\"url(#dg-sm-why-a)\"/><path d=\"M473,60 L360,96\" class=\"dg-line\" marker-end=\"url(#dg-sm-why-a)\"/><text x=\"280\" y=\"172\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Both versions read and write the same tables during the rollout.</text></svg>"
+    },
+    "mentalModel": {
+      "outcome": "After this you can describe expand and contract and why the order of its steps matters.",
+      "body": "Think of replacing a bridge's deck while traffic keeps crossing. You build the new lane beside the old one, move traffic over, and only then remove the old lane. Nobody is ever left without a road.\n\nExpand and contract works the same way. Expand adds the new column or table next to the old one, which old code never notices. Migrate fills it, by writing to both and copying the old rows. Contract switches readers to the new shape and, in a later release, removes the old one. Adding comes first and removing comes last, so the steps in between can be paused or undone.",
+      "diagram": "<svg viewBox=\"0 0 560 148\" role=\"img\" aria-labelledby=\"dg-sm-mm-t\" class=\"dg\"><title id=\"dg-sm-mm-t\">Expand and contract: first add the new shape beside the old one, then move data and readers over, then remove the old shape.</title><defs><marker id=\"dg-sm-mm-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12.0\" y=\"16\" width=\"160\" height=\"64\" class=\"dg-box\"/><text x=\"92\" y=\"36.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Expand</text><text x=\"92\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">add the new column</text><text x=\"92\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">or table beside the old</text><path d=\"M172.0,48 L200.0,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-mm-a)\"/><rect x=\"200.0\" y=\"16\" width=\"160\" height=\"64\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"36.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Migrate</text><text x=\"280\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">write to both,</text><text x=\"280\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">copy the old rows</text><path d=\"M360.0,48 L388.0,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-mm-a)\"/><rect x=\"388.0\" y=\"16\" width=\"160\" height=\"64\" class=\"dg-box\"/><text x=\"468\" y=\"36.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Contract</text><text x=\"468\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">read the new one,</text><text x=\"468\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">drop the old</text><text x=\"280\" y=\"108\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Every step works for old code and new code, so a rollout or a rollback is safe at any point.</text><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Only the last step removes anything, and it waits until nothing uses the old shape.</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can follow an online migration from the first copy to the final swap.",
+      "steps": [
+        {
+          "step": "Choose the tool for the kind of change",
+          "explanation": "Some changes are cheap and can run directly, such as creating a table. Others, such as changing a type on a big table, rewrite it. For those, an online tool such as gh-ost or pt-online-schema-change, or a built-in feature such as Vitess online DDL, does the work beside the live table."
+        },
+        {
+          "step": "Build the new shape beside the old",
+          "explanation": "The tool creates a shadow table with the new definition, or the team adds a new column. Nothing that old code reads is touched."
+        },
+        {
+          "step": "Copy and keep in sync",
+          "explanation": "Existing rows are copied in small batches. Changes made while the copy runs are captured, by a trigger or by reading the database's change log, and replayed on the new shape so it keeps up."
+        },
+        {
+          "step": "Throttle the work",
+          "explanation": "The tool watches load and replication lag, and pauses when the database is busy. A throttled copy takes longer but does not hurt production. A tool should also survive pauses and resume."
+        },
+        {
+          "step": "Cut over with a short lock",
+          "explanation": "When the new shape has caught up, the tool takes a brief lock and swaps the names, so the new table becomes the live one. The old table is kept for a while so the swap can be reversed."
+        },
+        {
+          "step": "Clean up later",
+          "explanation": "After a quiet period with nothing using the old shape, a later release drops it. Dropping last is what keeps every earlier step reversible."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 236\" role=\"img\" aria-labelledby=\"dg-sm-how-t\" class=\"dg\"><title id=\"dg-sm-how-t\">A shadow-table tool copies rows in batches into a new table with the new shape, replays changes made during the copy, then swaps the two tables with a short lock.</title><defs><marker id=\"dg-sm-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"28\" width=\"150\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"89\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Original table</text><text x=\"89\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">takes live traffic</text><rect x=\"396\" y=\"28\" width=\"150\" height=\"56\" class=\"dg-box\"/><text x=\"471\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Shadow table</text><text x=\"471\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">new shape, filling</text><path d=\"M164,48 L396,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-how-a)\"/><text x=\"280\" y=\"40\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">copy rows in small batches</text><path d=\"M164,70 L396,70\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-sm-how-a)\"/><text x=\"280\" y=\"90\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">replay changes made during the copy</text><rect x=\"160\" y=\"128\" width=\"240\" height=\"48\" class=\"dg-box\"/><text x=\"280\" y=\"148.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Cutover: short lock,</text><text x=\"280\" y=\"164.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">swap the two names</text><path d=\"M89,84 L200,128\" class=\"dg-line\" marker-end=\"url(#dg-sm-how-a)\"/><path d=\"M471,84 L360,128\" class=\"dg-line\" marker-end=\"url(#dg-sm-how-a)\"/><text x=\"280\" y=\"204\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The tool can pause when the database is busy and resume later.</text><text x=\"280\" y=\"222\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Keep the old table for a while so the swap can be reversed.</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can plan the steps to widen an integer key without downtime.",
+      "steps": [
+        {
+          "step": "The problem",
+          "explanation": "An orders table has a 32-bit integer id that is close to running out. Changing the type in place would rewrite the whole table under a lock."
+        },
+        {
+          "step": "Add the new column",
+          "explanation": "Add a nullable bigint column called id_big. This is cheap, and the application is told to ignore it for now."
+        },
+        {
+          "step": "Write both",
+          "explanation": "A trigger copies id into id_big on every insert and update, so new rows are correct from now on."
+        },
+        {
+          "step": "Backfill old rows",
+          "explanation": "A background job updates old rows in batches of a fixed size, pausing when database load rises. Build any index on id_big concurrently rather than in one blocking step."
+        },
+        {
+          "step": "Check, then swap",
+          "explanation": "Confirm no row has an empty id_big or a different value. Prove NOT NULL on the new column first with a validated CHECK constraint, as Buildkite did, so the key needs no table scan. Then, in one short transaction, stop the trigger, rename the columns and move the key and sequence over. Keep the old column for a while and drop it later."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 148\" role=\"img\" aria-labelledby=\"dg-sm-ex-t\" class=\"dg\"><title id=\"dg-sm-ex-t\">Widening an integer id in five steps: add a bigint column, write both, backfill old rows, check they match, swap names and drop the old column later.</title><defs><marker id=\"dg-sm-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"6.0\" y=\"16\" width=\"100\" height=\"64\" class=\"dg-box\"/><text x=\"56\" y=\"36.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">1. Add</text><text x=\"56\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">id_big</text><text x=\"56\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">column</text><path d=\"M106.0,48 L118.0,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-ex-a)\"/><rect x=\"118.0\" y=\"16\" width=\"100\" height=\"64\" class=\"dg-box\"/><text x=\"168\" y=\"36.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">2. Write</text><text x=\"168\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">both on</text><text x=\"168\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">every insert</text><path d=\"M218.0,48 L230.0,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-ex-a)\"/><rect x=\"230.0\" y=\"16\" width=\"100\" height=\"64\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"36.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">3. Backfill</text><text x=\"280\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">old rows</text><text x=\"280\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">in batches</text><path d=\"M330.0,48 L342.0,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-ex-a)\"/><rect x=\"342.0\" y=\"16\" width=\"100\" height=\"64\" class=\"dg-box\"/><text x=\"392\" y=\"36.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">4. Check</text><text x=\"392\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">columns</text><text x=\"392\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">match</text><path d=\"M442.0,48 L454.0,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-ex-a)\"/><rect x=\"454.0\" y=\"16\" width=\"100\" height=\"64\" class=\"dg-box\"/><text x=\"504\" y=\"36.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">5. Swap</text><text x=\"504\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">names, drop</text><text x=\"504\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">old later</text><text x=\"280\" y=\"108\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The app keeps serving traffic through all five steps.</text><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Each step holds a lock only briefly; the longest is the swap.</text></svg>"
+    },
+    "mistakesOutcome": "After this you can spot three ways a live migration goes wrong.",
+    "checkOutcome": "After this you can test your grasp of online migration steps and order.",
+    "quiz": [
+      {
+        "question": "A deploy rolls out over several minutes, so old and new code run together against one database. What does a schema change need to allow?",
+        "options": [
+          "Every server to stop first, so only one version of the code is ever running",
+          "The change to wait until the last old server is gone, because new code needs it first",
+          "Old and new code must both work during the rollout",
+          "Nothing special, because the database applies a change to all readers at once"
+        ],
+        "correct": 2,
+        "why": "A rollout leaves both versions running, so the schema has to suit both until the rollout is over.",
+        "wrong": [
+          "Stopping everything is the downtime these techniques exist to avoid.",
+          "New code that needs the change cannot wait for old servers to go, since both run during the rollout.",
+          "",
+          "Applying a change at once is the problem: old code meets a shape it does not know."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "What are the three phases of expand and contract?",
+        "options": [
+          "Add the new shape, move data and readers over, then remove the old",
+          "Drop the old shape, add the new one, then restore the data from a backup",
+          "Copy the whole database, change the copy, then point the application at it",
+          "Lock the table, alter it in place, then release the lock"
+        ],
+        "correct": 0,
+        "why": "Adding first and removing last means each step works for old and new code, so any step can be paused or reversed.",
+        "wrong": [
+          "",
+          "Dropping first loses data and breaks the old code at once.",
+          "Copying the whole database is a different, far heavier approach and loses writes made meanwhile.",
+          "An in-place alter with a lock is the plain approach that online migrations avoid."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "A shadow-table tool copies rows into a new table. Why must it also replay changes made while it copies?",
+        "options": [
+          "To keep the original table's indexes warm in memory while the copy is running",
+          "To let the shadow table be rolled back to an earlier state if the copy fails",
+          "To spread the copy over several more servers so that it finishes sooner",
+          "Rows keep changing during the copy, and the new table must match at the swap"
+        ],
+        "correct": 3,
+        "why": "Live traffic keeps writing to the original table, so the shadow table would be stale at the swap without replay.",
+        "wrong": [
+          "Replaying is about correctness, not cache warmth.",
+          "Rollback is a separate matter, handled by keeping the old table around.",
+          "Replay does not add servers to the copy.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "In the widen-an-integer example, why fill the new column with a trigger and a batched backfill instead of one UPDATE over every row?",
+        "options": [
+          "A single UPDATE is not allowed on any column that has a default value set",
+          "A single UPDATE holds a long transaction and load; batches can back off",
+          "The trigger fills the old rows too, so the backfill is only a spare check later",
+          "Batches make the old column and the new one differ on purpose"
+        ],
+        "correct": 1,
+        "why": "Small batches with backoff let the work yield to production traffic, and the trigger covers rows written meanwhile.",
+        "wrong": [
+          "Nothing forbids updating such a column, so this is not the reason.",
+          "",
+          "A trigger fires on writes, so rows nobody touches still need the backfill.",
+          "The goal is for both columns to hold the same value before the swap."
+        ],
+        "teaches": "example"
+      },
+      {
+        "question": "A team drops the old column in the same release that stops using it, then the release is rolled back. What goes wrong?",
+        "options": [
+          "Old code returns and finds the column and its data gone",
+          "Nothing, because a rollback also restores dropped columns",
+          "The new column is deleted automatically to match the old shape",
+          "Only an index is lost, which a later migration can rebuild for them"
+        ],
+        "correct": 0,
+        "why": "Dropping is the one step that cannot be undone, so it belongs in a later release once nothing uses the old shape.",
+        "wrong": [
+          "",
+          "Rolling back code does not bring back dropped data.",
+          "Nothing deletes the new column on a rollback.",
+          "The loss is the column and its data, not only an index."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "Two large online migrations are started at once on the same database cluster. What is the likely result?",
+        "options": [
+          "Both finish in half the time, since each one gets a thread of its own",
+          "The second fails at once, because online tools lock the whole cluster",
+          "They compete for resources and finish later than one after the other",
+          "Nothing changes, because throttling keeps each one fully independent of load"
+        ],
+        "correct": 2,
+        "why": "Migrations share disk, network and replication capacity, so running them together raises total time, which is why GitHub ran one ALTER at a time per cluster.",
+        "wrong": [
+          "Extra threads do not add disk or replication capacity.",
+          "Online tools do not lock the whole cluster; they just share it.",
+          "",
+          "Throttling reacts to load, so it cannot make two jobs independent."
+        ],
+        "teaches": "mistakes"
+      }
+    ],
+    "postsOutcome": "After this you can compare how three companies changed live databases and what each paid for it.",
+    "differOutcome": "After this you can say where the three approaches share a method and where their costs differ.",
+    "exercisesOutcome": "After this you can plan a rename, a team process and a migration at ten times the size.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "The column customer_name must be renamed to full_name on a very large live table while the application keeps serving traffic. What are the steps, in order?",
+        "answer": "Expand: add full_name and make every write fill both columns, in the application or with a trigger. Migrate: backfill the old rows in small batches that back off under load, and check the two columns match. Contract: deploy code that reads full_name, stop writing customer_name, and drop it in a later release once nothing uses it. Every step works for the code that is running at that moment.",
+        "tradeoffs": "This takes several releases and keeps extra data and write work for a while. In return there is no lock on a big table, and any step can be rolled back until the drop.",
+        "wrongAnswers": [
+          "Rename the column in one ALTER and deploy the new code at the same moment.",
+          "Schedule downtime at night and rename it directly.",
+          "Add the new column and drop the old one in the same migration."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "design",
+        "prompt": "Many teams ship schema changes every day to a fleet of MySQL clusters, and the database team is the bottleneck. Design the process.",
+        "answer": "Keep the schema in the repository and compute the change automatically for each pull request, with the statements shown on the pull request. Let the database team review only that diff. A scheduler then maps the change to a cluster, queues it, runs one big ALTER per cluster at a time through a shadow-table tool that throttles itself, and reports status on the pull request. Turn a DROP into a rename and delete the renamed table a few days later.",
+        "tradeoffs": "A queue gives predictable runtimes but means developers wait their turn. The scheduler is one more service to run, and it needs production access that the repository's own automation should not have.",
+        "wrongAnswers": [
+          "Let every developer run ALTER on production when they are ready.",
+          "Run all queued migrations at once to clear the queue sooner.",
+          "Drop tables directly so the cleanup is done at once."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "level": "scale",
+        "prompt": "Your largest tables are growing tenfold and migrations that took hours would now take days or weeks. What changes in how you run them, and what might you do about the size itself?",
+        "answer": "A run that lasts days is exposed to replication lag, throttling and failovers for much longer, so the tool must pause, resume, survive a failover and be reverted quickly, and one view must show its state. Plan the dual-write and backfill steps to start early, since backfills on huge tables take longer than expected. To shorten the work itself, spread the data over shards so each table is smaller and each shard migrates in parallel, as Shopify did to turn weeks into hours.",
+        "tradeoffs": "Sharding adds complexity for every developer and extra glue, such as coordinating a schema cache across shards. Keeping one big table avoids that but keeps migration time tied to its size.",
+        "wrongAnswers": [
+          "Keep the same one-shot ALTER and accept a longer lock.",
+          "Start every migration at once so they finish together.",
+          "Skip the backfill and let new code handle missing values forever."
+        ],
+        "teaches": "example"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can pick the next topic that builds on this one.",
+      "body": "Schema changes ship with code, so Safe Deployments covers the rollouts and rollbacks that expand and contract steps have to survive. Replication explains the lag that throttles a long copy, and Sharding shows how splitting the data shortens each migration, as in Shopify's account."
+    }
+  },
+  "posts": [
+    {
+      "id": "schema-buildkite-bigint-2021",
+      "title": "Avoiding integer overflows with zero downtime",
+      "url": "https://buildkite.com/blog/avoiding-integer-overflows-with-zero-downtime",
+      "company": "Buildkite",
+      "verifiedOn": "2026-10-24",
+      "published": "2021-03-25",
+      "ageNote": "A 2021 account that the page shows as updated on May 2, 2024. It is here for the add-a-column, write-both, backfill and swap pattern, which does not depend on a product version. It relies on PostgreSQL 12 behavior that the post names, and it does not say whether Buildkite still runs this way.",
+      "digest": {
+        "problem": "Buildkite runs a Rails monolith on a very large PostgreSQL database whose core tables use integer primary keys, the default when they were created. One of its largest tables was heading for integer overflow, so its key and the foreign keys that point at it had to become bigint without taking the product down.",
+        "constraints": "Changing the column type in place would lock and rewrite the tables, and the author puts that downtime in the range of days to weeks. Every step also had to be short or safe enough to run in production without hurting availability.",
+        "walkthrough": [
+          {
+            "step": "Add a second column and keep it filled",
+            "explanation": "Add a bigint column next to the integer key, and add a database trigger that copies the key into it for every new or updated row. The Rails model is told to ignore the extra columns, so the application does not notice them."
+          },
+          {
+            "step": "Build the index without blocking",
+            "explanation": "Building an index needs a full table scan, which would take far too long inside the transaction Rails wraps around each migration. So the migration runs outside a transaction and builds the index concurrently, and statement timeouts guard against any step running longer than planned."
+          },
+          {
+            "step": "Backfill existing rows",
+            "explanation": "A background task updates old rows in batches. It ran across several threads with backoff based on database load, and the team let it run until they were sure it would finish in time."
+          },
+          {
+            "step": "Prove the column is never empty",
+            "explanation": "A primary key needs NOT NULL. Since PostgreSQL 12.0 that can be added without a table scan if a validated CHECK constraint already proves it. The CHECK constraint is created without validation and then validated concurrently."
+          },
+          {
+            "step": "Swap under a momentary lock",
+            "explanation": "The trigger is dropped, the two columns are renamed, the sequence and default move over, and the primary key constraint is rebuilt from the new index. The only downtime is a momentary lock on the table."
+          },
+          {
+            "step": "Keep the old column for a while",
+            "explanation": "Writes continued to the old column while the team checked that everything had gone to plan, and the old column was dropped once they were satisfied."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 150\" role=\"img\" aria-labelledby=\"dg-sm-bk-t\" class=\"dg\"><title id=\"dg-sm-bk-t\">Buildkite widened a primary key from integer to bigint: add a bigint column with a trigger, build the index concurrently, backfill in batches, then swap the columns under a momentary lock.</title><defs><marker id=\"dg-sm-bk-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"2.0\" y=\"16\" width=\"124\" height=\"64\" class=\"dg-box\"/><text x=\"64\" y=\"44.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Bigint column</text><text x=\"64\" y=\"60.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">plus trigger</text><path d=\"M126.0,48 L146.0,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-bk-a)\"/><rect x=\"146.0\" y=\"16\" width=\"124\" height=\"64\" class=\"dg-box\"/><text x=\"208\" y=\"44.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Index built</text><text x=\"208\" y=\"60.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">concurrently</text><path d=\"M270.0,48 L290.0,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-bk-a)\"/><rect x=\"290.0\" y=\"16\" width=\"124\" height=\"64\" class=\"dg-box dg-accent\"/><text x=\"352\" y=\"44.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Backfill in</text><text x=\"352\" y=\"60.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">batches</text><path d=\"M414.0,48 L434.0,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-bk-a)\"/><rect x=\"434.0\" y=\"16\" width=\"124\" height=\"64\" class=\"dg-box\"/><text x=\"496\" y=\"44.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Swap columns</text><text x=\"496\" y=\"60.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">momentary lock</text><text x=\"280\" y=\"108\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">An in-place type change would have needed days to weeks of downtime.</text><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The table held over 2 billion rows across three partitions.</text></svg>",
+        "numbers": [
+          {
+            "value": "Over 2 billion rows",
+            "meaning": "Rows in the largest table, spread across three partitions"
+          },
+          {
+            "value": "8.5TB",
+            "meaning": "Size of that table across its three partitions"
+          },
+          {
+            "value": "Days to weeks",
+            "meaning": "Downtime the author says an in-place type change would have needed"
+          },
+          {
+            "value": "PostgreSQL 12.0",
+            "meaning": "Version from which NOT NULL can be added without a scan when a validated CHECK constraint proves it"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Add a bigint column, write both columns with a trigger, build the index concurrently, backfill in batches, then swap the columns with a momentary lock.",
+          "rejected": "An in-place change of the column type, which would lock and rewrite the tables and need days to weeks of downtime.",
+          "why": "The multi-step route needed more work and more migrations, but each step was short or ran beside live traffic, so the product stayed up."
+        },
+        "failures": "One foreign-key table was too big even for this approach and would have taken an unacceptably long time, so the team came up with something more novel that the post leaves to a second part. Smaller foreign-key tables were rewritten in place with only a momentary pause.",
+        "takeaways": "A slow, risky change becomes safe when it is cut into steps that each keep old and new code working: add beside, write both, backfill with a throttle, then swap quickly. Timeouts and concurrent index builds keep each step from hurting production."
+      }
+    },
+    {
+      "id": "schema-github-skeefree-2020",
+      "title": "Automating MySQL schema migrations with GitHub Actions and more",
+      "url": "https://github.blog/enterprise-software/automation/automating-mysql-schema-migrations-with-github-actions-and-more/",
+      "company": "GitHub",
+      "verifiedOn": "2026-10-24",
+      "published": "2020-02-14",
+      "ageNote": "A 2020 account that the page shows as updated on August 12, 2021. It is here for the process around online schema changes, which is about queues, review and ownership rather than a product version. The post describes GitHub's setup at the time and does not say whether it is unchanged.",
+      "digest": {
+        "problem": "GitHub runs MySQL behind a Rails app and a growing set of other repositories. Its schema changes were reviewed, turned into statements and started by hand by the database infrastructure team, and that work was taking too much of their time.",
+        "constraints": "Large tables must change while the site stays up. Concurrent migrations on one cluster slow each other down. Neither a repository nor its Actions may have access to production, so the automation had to be split across that boundary.",
+        "walkthrough": [
+          {
+            "step": "Treat the schema as code",
+            "explanation": "The full table definitions live in the same repository as the application, so every commit has a known schema, and a change goes through a normal pull request."
+          },
+          {
+            "step": "Compute the change with a diff tool",
+            "explanation": "A text diff of table definitions shows a dropped index badly. The open source tool skeema produces a correct list of statements that takes one schema to another, and a GitHub Action runs it on each pull request, comments the result and adds a label."
+          },
+          {
+            "step": "Run the change without blocking",
+            "explanation": "CREATE TABLE is instant. A DROP TABLE is turned into a RENAME to a dated name, kept for a few days, so an application failure can be undone at once. An ALTER runs through gh-ost, which emulates the change on a copy, throttles itself and can be controlled while it runs."
+          },
+          {
+            "step": "Schedule and report",
+            "explanation": "A service called skeefree watches labeled and approved pull requests, maps the schema to a production cluster, asks the right reviewers, queues the migration, runs one ALTER at a time per cluster and comments progress on the pull request."
+          },
+          {
+            "step": "Split ownership",
+            "explanation": "The Action looks at code and has no production access. The service reaches production but never reads the code. The database team only reviews, and developers can see the state from their pull request without asking."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 150\" role=\"img\" aria-labelledby=\"dg-sm-gh-t\" class=\"dg\"><title id=\"dg-sm-gh-t\">GitHub migration flow: a pull request triggers an Action that posts the schema diff, a review approves it, skeefree queues it, and gh-ost runs one ALTER at a time per cluster.</title><defs><marker id=\"dg-sm-gh-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"2.0\" y=\"16\" width=\"124\" height=\"64\" class=\"dg-box\"/><text x=\"64\" y=\"44.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Pull request</text><text x=\"64\" y=\"60.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">schema change</text><path d=\"M126.0,48 L146.0,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-gh-a)\"/><rect x=\"146.0\" y=\"16\" width=\"124\" height=\"64\" class=\"dg-box\"/><text x=\"208\" y=\"44.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">skeema-diff</text><text x=\"208\" y=\"60.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">posts the diff</text><path d=\"M270.0,48 L290.0,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-gh-a)\"/><rect x=\"290.0\" y=\"16\" width=\"124\" height=\"64\" class=\"dg-box\"/><text x=\"352\" y=\"44.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">skeefree</text><text x=\"352\" y=\"60.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">review, queue</text><path d=\"M414.0,48 L434.0,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-gh-a)\"/><rect x=\"434.0\" y=\"16\" width=\"124\" height=\"64\" class=\"dg-box dg-accent\"/><text x=\"496\" y=\"36.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">gh-ost</text><text x=\"496\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">one ALTER per</text><text x=\"496\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">cluster</text><text x=\"280\" y=\"108\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">A DROP TABLE is turned into a RENAME, so it can be undone for a few days.</text><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Large tables can take hours or even days to migrate.</text></svg>",
+        "numbers": [
+          {
+            "value": "2 a day",
+            "meaning": "Average schema migrations running on production servers, with some days at a half dozen"
+          },
+          {
+            "value": "Over 3.5 years",
+            "meaning": "How long GitHub had run gh-ost in production when the post was written"
+          },
+          {
+            "value": "Hours or days",
+            "meaning": "Time some of the larger tables still take to migrate with gh-ost"
+          },
+          {
+            "value": "1 ALTER at a time",
+            "meaning": "Limit per cluster, because concurrent migrations compete for resources and take longer overall"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "A pull-request flow with a diff Action, a scheduler service and gh-ost, running one ALTER at a time on each cluster and turning DROP into RENAME.",
+          "rejected": "Doing each step by hand, with engineers tracking several migrations in their heads, and running several migrations at once on a cluster.",
+          "why": "The manual flow could take hours of an engineer's day, while running one migration at a time is faster overall than running them together, and the queue gives a visible state."
+        },
+        "failures": "The manual process produced statements with occasional SQL syntax errors that had to be fixed by hand, left no formal record beyond the git log, and kept developers waiting on the infrastructure team. The released code is not buildable outside GitHub because it expects internal services.",
+        "takeaways": "A shadow-table tool removes the lock, but at scale the harder part is process: one migration per cluster, a queue, a visible status and a reversible drop. Automate the steps around the migration as well as the migration."
+      }
+    },
+    {
+      "id": "schema-shopify-vitess-2024",
+      "title": "Horizontally scaling the Rails backend of Shop app with Vitess",
+      "url": "https://shopify.engineering/horizontally-scaling-the-rails-backend-of-shop-app-with-vitess",
+      "company": "Shopify",
+      "verifiedOn": "2026-10-24",
+      "published": "2024-01-17",
+      "digest": {
+        "problem": "Shopify's Shop app grew quickly on a Rails backend and a MySQL database. After splitting tables over several databases, disk use reached many terabytes and schema migrations on the largest tables had become a major pain point, so the team moved the main database onto Vitess.",
+        "constraints": "The database ran near capacity at peak hours, background jobs were being throttled when it was busy, and the team preferred to run its own datastore that stayed compatible with SQL and with a mature Rails app.",
+        "walkthrough": [
+          {
+            "step": "Schema changes had stopped scaling",
+            "explanation": "With tables in the billions of rows and the database at capacity at peak hours, adding a user_id column and backfilling it was slow. Migrations on the largest tables would take many weeks."
+          },
+          {
+            "step": "Pick Vitess for several reasons",
+            "explanation": "Vitess shards and re-shards MySQL and makes it easier to coordinate schema migrations across many shards, among other features. Speeding up migrations was one reason for sharding at all."
+          },
+          {
+            "step": "Try the native online strategy",
+            "explanation": "Vitess offers its own online migration strategy and one that uses gh-ost. The native one can survive failovers and be reverted instantly. On Vitess V14, where it was still experimental, a migration that was throttled for longer than 10 minutes, for example by replication lag, was terminated."
+          },
+          {
+            "step": "Use the fix",
+            "explanation": "The community confirmed the bug and fixed it. Shopify now runs the native strategy on V15 and built its own UI over Vitess's migration commands."
+          },
+          {
+            "step": "Handle the schema cache",
+            "explanation": "Rails dumps its schema after a migration, and Vitess offers no hook for that. A background job checks the migration status and dumps the schema only when it is complete on every shard and no other migration is running, because Rails may ask any shard."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 214\" role=\"img\" aria-labelledby=\"dg-sm-sh-t\" class=\"dg\"><title id=\"dg-sm-sh-t\">Shopify before and after Vitess: one large MySQL where schema migrations took weeks, then a sharded Vitess cluster where each shard runs the online migration and the work takes hours.</title><defs><marker id=\"dg-sm-sh-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"70\" width=\"128\" height=\"64\" class=\"dg-box\"/><text x=\"76\" y=\"98.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">One large MySQL</text><text x=\"76\" y=\"114.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">migrations: weeks</text><path d=\"M140,102 L196,102\" class=\"dg-line\" marker-end=\"url(#dg-sm-sh-a)\"/><rect x=\"196\" y=\"70\" width=\"110\" height=\"64\" class=\"dg-box dg-accent\"/><text x=\"251\" y=\"98.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">VTGate</text><text x=\"251\" y=\"114.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">routes queries</text><rect x=\"372\" y=\"14\" width=\"176\" height=\"40\" class=\"dg-box\"/><text x=\"460\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Shard 1: online DDL</text><path d=\"M306,102 L372,34\" class=\"dg-line\" marker-end=\"url(#dg-sm-sh-a)\"/><rect x=\"372\" y=\"86\" width=\"176\" height=\"40\" class=\"dg-box\"/><text x=\"460\" y=\"110.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Shard 2: online DDL</text><path d=\"M306,102 L372,106\" class=\"dg-line\" marker-end=\"url(#dg-sm-sh-a)\"/><rect x=\"372\" y=\"158\" width=\"176\" height=\"40\" class=\"dg-box\"/><text x=\"460\" y=\"182.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">Shard n: online DDL</text><path d=\"M306,102 L372,178\" class=\"dg-line\" marker-end=\"url(#dg-sm-sh-a)\"/><text x=\"280\" y=\"206\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">More shards mean smaller tables, so each migration is shorter. The cost is added complexity.</text></svg>",
+        "numbers": [
+          {
+            "value": "Many weeks",
+            "meaning": "Time the largest tables would take to migrate before Vitess"
+          },
+          {
+            "value": "Hours",
+            "meaning": "Time schema migrations take after the move, according to the post's closing summary"
+          },
+          {
+            "value": "10 minutes",
+            "meaning": "Throttle time after which V14's experimental native migration was terminated"
+          },
+          {
+            "value": "Billions of rows",
+            "meaning": "Size of tables where adding user_id and backfilling it was slow"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Shard the main database with Vitess and run its native online migration strategy, with a custom UI and an application-side schema cache job.",
+          "rejected": "Keeping tables split across separate MySQL databases, where schema migrations on larger tables take a very long time and joins and application logic get harder.",
+          "why": "Sharding shortened migrations from weeks to hours and removed capacity pressure, at the cost of added complexity that developers must learn."
+        },
+        "failures": "The first test on Vitess V14 ended migrations that were throttled for over 10 minutes. The team reported it, and it was fixed for V15. The author also warns that the data changes needed before sharding may take longer than expected, so start them early.",
+        "takeaways": "Online migration time grows with table size, so splitting the data across shards shortens each one. The price is more concepts for developers and extra glue, such as handling the schema cache across shards."
+      }
+    }
+  ],
+  "comparison": "All three accounts avoid changing a large live table in place. Each builds the new shape beside the old and switches over with a brief step: Buildkite writes both columns and swaps them with a momentary lock, GitHub copies into a shadow table with gh-ost, and Shopify uses Vitess online DDL. Each also gives the alternative a cost, such as days to weeks of downtime, tables that take hours or days, or migrations that took many weeks.\n\nThey differ in where the cost lands. Buildkite pays in hand-built steps for one hard case, a key that was running out. GitHub pays in process for many routine changes, with review, a queue and one ALTER per cluster. Shopify cut the run time by splitting the data over shards, and says the price was added complexity for developers.\n\nThe evidence is each team's own account and the scales differ. Buildkite gives a table size but no backfill time, GitHub gives ranges such as hours or days, and Shopify says weeks became hours without giving table sizes, so the three cannot be ranked on speed.",
+  "glossary": [
+    {
+      "term": "Online schema change",
+      "definition": "A change to a table's structure that runs while the application keeps reading and writing it, with at most a brief lock."
+    },
+    {
+      "term": "Expand and contract",
+      "definition": "A pattern for changing a schema in three phases: add the new shape beside the old, move data and readers over, then remove the old shape."
+    },
+    {
+      "term": "Shadow table",
+      "definition": "A copy of a table with the new definition, filled in the background and swapped in place of the original at the end."
+    },
+    {
+      "term": "Backfill",
+      "definition": "Filling a new column or table with values for rows that existed before the change, usually in throttled batches."
+    },
+    {
+      "term": "Cutover",
+      "definition": "The final short step where the new table or column replaces the old, usually by swapping names under a brief lock."
+    },
+    {
+      "term": "Throttling",
+      "definition": "Pausing or slowing background work when the database is busy or replicas are behind, so production traffic comes first."
+    }
+  ],
+  "mistakes": [
+    "Changing a column type or adding a constraint directly on a huge table, expecting it to be quick. It can lock the table and rewrite every row.",
+    "Dropping the old column or table in the same release that stops using it. A rollback then finds the data gone, so the drop belongs in a later release.",
+    "Running a backfill as one huge update with no throttle, or starting several large migrations on one cluster at once. They hold long transactions and compete for the same resources."
+  ]
+}

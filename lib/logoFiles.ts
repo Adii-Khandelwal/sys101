@@ -2,6 +2,7 @@
 export type LogoFile = { src: string; dark?: string; w: number; h: number; source: "svgl" | "simple-icons" | "hunter" | "brand-kit" };
 export const LOGO_FILES: Record<string, LogoFile> = {
   "Amazon": {"src":"/logos/amazon.svg","w":304,"h":182,"dark":"/logos/amazon-dark.svg","source":"svgl"},
+  "Buildkite": {"src":"/logos/buildkite.svg","w":24,"h":16.2,"source":"simple-icons"},
   "Cloudflare": {"src":"/logos/cloudflare.svg","w":256,"h":116,"source":"svgl"},
   "Cockroach Labs": {"src":"/logos/cockroach-labs.svg","w":19.21,"h":24,"source":"simple-icons"},
   "CrowdStrike": {"src":"/logos/crowdstrike.svg","w":108,"h":84.71,"dark":"/logos/crowdstrike-dark.svg","source":"brand-kit"},
