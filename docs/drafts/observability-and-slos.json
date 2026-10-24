@@ -1,0 +1,33 @@
+{
+  "observability-and-slos": {
+    "summary": {
+      "points": [
+        "An SLO says how good a service must be, and the gap it leaves is an error budget for failure and release risk.",
+        "Averages hide slow tails, so latency is judged by percentiles: a typical 50 ms request with 5% of requests 20 times slower looks fine on a mean.",
+        "Alerts work best on burn rate: a fast burn pages, a slow one opens a ticket, and a short window lets the alert reset.",
+        "Tracing every request costs too much, so Dapper and Canopy sample, using a target rate of traces and a token bucket to cap volume.",
+        "These alerts and traces feed the earlier reliability topics, such as load shedding, rate limits, circuit breakers and safe rollouts."
+      ],
+      "figures": [
+        {
+          "postId": "google-dapper-2010",
+          "row": 0,
+          "label": "Tracing every request added 16.3% to average latency in a web search cluster"
+        },
+        {
+          "postId": "google-sre-alerting-2018",
+          "row": 1,
+          "label": "A total outage empties a 99.9% budget over 30 days in 43 minutes"
+        },
+        {
+          "postId": "meta-canopy-2017",
+          "row": 0,
+          "label": "Facebook recorded and processed 1.3 billion traces per day"
+        }
+      ]
+    },
+    "prerequisiteReasons": {
+      "overload-and-cascading-failures": "Overload and cascading failures are what these signals have to catch early, so seeing how a system fails comes before measuring whether it is failing."
+    }
+  }
+}
