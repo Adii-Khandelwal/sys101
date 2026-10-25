@@ -1,11 +1,11 @@
 {
   "slug": "chat-messaging",
   "title": "Chat and real-time messaging",
-  "summary": "Design the delivery path of a chat system: long-lived connections, an ordered store of recent messages, push to phones and an edge cache for big workspaces. Read three old posts from three companies: WhatsApp's 2012 connection count, Messenger's 2014 sync rewrite and Slack's 2017 Flannel cache. None of them is recent.",
+  "summary": "Design the delivery path of a chat system: long-lived connections, an ordered store of recent messages, push to phones, an edge cache for big workspaces, per-device encryption and message storage. Read six posts from four companies: WhatsApp 2012 and 2021, Messenger 2014, Slack 2017 and 2020, and Discord 2024. Half are old, and none gives figures for presence or read receipts.",
   "topics": [
     {
       "slug": "real-time-delivery",
-      "role": "Covers pushing updates to a client over a held connection (MQTT, WebSocket) instead of making it ask again."
+      "role": "Covers pushing updates to a client over a held connection (MQTT, WebSocket) instead of making it ask again. It also covers the gateway that sends websocket dispatches to connected clients."
     },
     {
       "slug": "message-queues",
@@ -22,10 +22,14 @@
     {
       "slug": "caching",
       "role": "Describes an application-level cache at the edge that answers client queries and shields the backend from reconnecting clients."
+    },
+    {
+      "slug": "sharding",
+      "role": "Covers splitting one dataset across database shards by a key, here by workspace or by channel."
     }
   ],
   "brief": {
-    "text": "A chat system keeps many phones and browsers connected at once, delivers each message to every device in order, and has to cope with devices that drop off the network and come back. Design the connection layer, the store of recent messages, the push path to the device and the cache that serves big workspaces. This page does not cover end-to-end encryption, media upload, search, group-call video or typing and read-receipt design. Be careful with the sources: they are from 2012 (WhatsApp), 2014 (Messenger, then run by Facebook) and 2017 (Slack, the page shows an update date of June 2020), from three different companies, and each describes its system as of that year. None of the three gives figures for presence (who is online) or for message acknowledgements. The Slack post only says that presence updates moved to pub/sub and that clients then received about 5 times fewer presence events. Nothing here says any of these designs still holds.",
+    "text": "A chat system keeps many phones and browsers connected at once, delivers each message to every device in order, and has to cope with devices that drop off the network and come back. Design the connection layer, the store of recent messages, the push path to the device, the cache that serves big workspaces and the storage under it all. This page does not cover media upload, search, group-call video or typing and read-receipt design. Be careful with the sources: they are from 2012 (WhatsApp), 2014 (Messenger, then run by Facebook), 2017 (Slack, the page shows an update date of June 2020), 2020 (Slack), 2021 (WhatsApp) and 2024 (Discord), from four companies, and each describes its system as of that year. None of them gives figures for presence (who is online), delivery acknowledgements or read receipts. The Slack 2017 post only says that presence updates moved to pub/sub and that clients then received about 5 times fewer presence events. Nothing here says any of the older designs still holds.",
     "requirements": [
       {
         "label": "1. Fewer bytes and fewer failed sends",
@@ -61,6 +65,21 @@
         "label": "7. Database failures are routine",
         "value": "Hardware failures in the queue's database should be handled in under 30 seconds (2014)",
         "sourceId": "messenger"
+      },
+      {
+        "label": "8. Clients not viewing a server should not get every event",
+        "value": "Discord sends clients that are not looking at a server a limited periodic update instead of every message. Its snapshot-style passive update was over 30% of gateway traffic from around 2% of dispatches until it was replaced by a delta (2024)",
+        "sourceId": "discord"
+      },
+      {
+        "label": "9. Several devices per account, still encrypted",
+        "value": "In one-on-one chats, a WhatsApp account can use the phone and up to four other nonphone devices at once, with each message encrypted separately for each device and not kept on the server after delivery. Groups still use the Sender Key scheme (2021)",
+        "sourceId": "wa2021"
+      },
+      {
+        "label": "10. Message storage that spreads load",
+        "value": "Slack's datastore served 2.3 million queries per second at peak (2M reads, 300K writes), with a median query latency of 2 ms and p99 of 11 ms, after moving to Vitess (2020)",
+        "sourceId": "vitess"
       }
     ]
   },
@@ -256,6 +275,78 @@
         "text": "Slack said it was moving clients to a pub/sub model, so that a client subscribes to the events that matter in its current view and changes subscriptions when the user switches view (2017). It had already moved user presence updates to pub/sub, and the number of presence events clients received fell by a factor of 5. The post gives no further presence detail, such as how online status is detected or how often it is refreshed. It also lists moving event fanout into Flannel as planned work, not as something finished.",
         "sourceId": "flannel"
       }
+    },
+    {
+      "id": "passive",
+      "question": "Most members of a very active server are not looking at it. Sending them every message wastes their bandwidth, but they still need a rough view of channels, members and who is in voice. What do you send them?",
+      "options": [
+        {
+          "label": "Every event, so that all of the clients stay identical to each other at all times",
+          "why": "Simple, but idle clients pay for messages they never read."
+        },
+        {
+          "label": "Nothing until they open the server, then a full load of everything the server holds",
+          "why": "Saves bandwidth, but the sidebar goes stale and the first open is slow."
+        },
+        {
+          "label": "A periodic update of only what changed, upgrading to the full stream on open",
+          "why": "Cheap for idle clients, but the server must track what each client has already been sent."
+        }
+      ],
+      "answerIndex": 2,
+      "realChoice": {
+        "company": "Discord",
+        "text": "Discord uses passive sessions so clients that may never open a server do not get its messages, and a session is upgraded to a normal one when the user tabs in (2024). Passive sessions still got a periodic update listing channels, members and members in voice. The first version sent all of them even if one element changed. The post says that dispatch was over 30% of gateway traffic while being around 2% of dispatches. Sending only the delta cut it from 35% of gateway bandwidth to 5%, a 20% cluster-wide reduction. Together, Passive Sessions v2 and zstandard cut gateway bandwidth by almost 40%. The post notes the snapshot design worked when passive sessions were introduced to scale servers to hundreds of thousands of users. It does not say how online status is detected.",
+        "sourceId": "discord"
+      }
+    },
+    {
+      "id": "fanout",
+      "question": "In one-on-one chats, a user now reads on a phone and several other devices, and the server must not be able to read the messages. Who creates the copies for each device, and how long does the server keep them?",
+      "options": [
+        {
+          "label": "The server keeps one plaintext copy and sends it on to each of the devices",
+          "why": "Cheapest for the sender, but the server can read everything."
+        },
+        {
+          "label": "The sender encrypts a copy per device; the server keeps none",
+          "why": "The server never sees content, but the sender does more work as the device count grows."
+        },
+        {
+          "label": "One phone stays the source of truth and the other devices only mirror it",
+          "why": "Simple keys, but the other devices are slow and drop whenever the phone is off."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "WhatsApp",
+        "text": "WhatsApp moved from a phone as the source of truth to independent companion devices (2021), after finding the old design left companions slower and often disconnected when the phone had a poor connection, low battery or was killed by the OS. Each device now has its own identity key, and the server keeps a mapping from account to devices. In one-on-one chats the sending client encrypts and sends the message N times, once per device in the sender's and recipient's device lists; for groups the post says WhatsApp still uses the Sender Key scheme from the Signal Protocol. The post says messages are not stored on the server after they are delivered, and that a companion device gets recent history as an encrypted bundle from the primary device when it is linked. It gives no latency or throughput numbers. It was a limited beta announcement.",
+        "sourceId": "wa2021"
+      }
+    },
+    {
+      "id": "shards",
+      "question": "All of a workspace's messages and channels sit on one database shard, with thousands of workspaces per shard. The biggest customer makes one shard hot, and a shard outage takes down every customer on it. How do you shard messages?",
+      "options": [
+        {
+          "label": "Keep sharding by workspace and move the big workspaces to their own hosts",
+          "why": "Small change, but one large workspace's load still lands on a single shard."
+        },
+        {
+          "label": "Shard messages by channel, using a layer that splits and routes shards",
+          "why": "Load spreads more evenly, but queries that assumed one workspace per shard must be reworked."
+        },
+        {
+          "label": "Keep everything in one large database and buy ever bigger hardware for it",
+          "why": "No routing logic, but there is a limit to one host."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "Slack",
+        "text": "Slack moved to Vitess, a layer over MySQL, from 2017, and said in December 2020 that it served 99% of query load (2020). The old design sharded by workspace id, which the post says made every customer on a shard feel a shard outage. Slack wanted to shard message data by channel id instead. It considered building the new sharding into the application but found the application too tightly coupled to how data was stored, and said building sharding awareness into the application would not address its operational issues or let it use read replicas more effectively, so it adopted Vitess. In March 2020 query rates rose by 50% in one week and it split a busy keyspace using Vitess. This post is from 2020 and shows nothing about 2021 or later.",
+        "sourceId": "vitess"
+      }
     }
   ],
   "sizing": {
@@ -340,6 +431,24 @@
         "step": 50,
         "default": 500,
         "unit": "bytes"
+      },
+      {
+        "id": "sdev",
+        "label": "Devices the sender uses (WhatsApp 2021: the phone plus up to four others)",
+        "min": 1,
+        "max": 5,
+        "step": 1,
+        "default": 2,
+        "unit": "devices"
+      },
+      {
+        "id": "rdev",
+        "label": "Devices the recipient uses (same limit)",
+        "min": 1,
+        "max": 5,
+        "step": 1,
+        "default": 2,
+        "unit": "devices"
       }
     ],
     "outputs": [
@@ -362,11 +471,16 @@
         "label": "Size of a week of queued updates (derived; the post says a week is kept but gives no size)",
         "formula": "users_m * 1000000 * msgs_day * msg_bytes * 7 / 1000000000",
         "unit": "GB"
+      },
+      {
+        "label": "Separately encrypted copies the sending client makes for one message in a one-on-one chat (derived; the post says one per device in both lists, we assume the sending device is not counted; groups use Sender Key)",
+        "formula": "sdev - 1 + rdev",
+        "unit": "copies"
       }
     ]
   },
   "diagram": {
-    "title": "Chat: Messenger's sync path (Iris), Slack's edge cache (Flannel) and WhatsApp's connection server, each part taken from the post named in its note",
+    "title": "Chat: Messenger's sync path (Iris), Slack's edge cache (Flannel) and datastore (Vitess), Discord's passive sessions and WhatsApp's connection server and device fan-out, each part taken from the post named in its note",
     "nodes": [
       {
         "id": "mclient",
@@ -458,6 +572,30 @@
         "company": "WhatsApp",
         "tradeoff": "From the WhatsApp post (2012). One tuned machine held over 2 million TCP connections with CPU 41.9% idle. The post gives no detail of what the server does with a message, how many servers there were or how they connect to the other parts drawn here, so no link is drawn.",
         "to": []
+      },
+      {
+        "id": "dpassive",
+        "label": "Discord passive sessions",
+        "topic": "real-time-delivery",
+        "company": "Discord",
+        "tradeoff": "From the Discord post (2024). Clients not viewing a server get a periodic limited update instead of every message and are upgraded when they open it. The first version sent full snapshots; the delta version cut that traffic from 35% of gateway bandwidth to 5%. The post does not describe presence detection.",
+        "to": []
+      },
+      {
+        "id": "wafan",
+        "label": "WhatsApp client fan-out per device",
+        "topic": "real-time-delivery",
+        "company": "WhatsApp",
+        "tradeoff": "From the WhatsApp 2021 post. In one-on-one chats the sending client encrypts one copy per device in both device lists (groups still use Sender Key), and messages are not stored on the server after delivery. More work for the sender as devices grow; the post gives no timings.",
+        "to": []
+      },
+      {
+        "id": "vitess",
+        "label": "Vitess keyspaces (sharded MySQL)",
+        "topic": "sharding",
+        "company": "Slack",
+        "tradeoff": "From the Slack 2020 post. Message data was meant to shard by channel id, not workspace id, to spread load. Served 2.3 million queries per second at peak with p99 11 ms. The post says that under the old workspace sharding, a shard outage meant a full outage for every customer on it.",
+        "to": []
       }
     ],
     "failures": [
@@ -511,8 +649,7 @@
       }
     ]
   },
-  "compare": "These are three old posts from three companies, so read them as three separate snapshots, not one system. WhatsApp is from January 2012, Messenger from October 2014 (when it was part of Facebook) and Slack from May 2017 (the page shows an update date of June 2020). Each describes its system as of that year. Nothing here says any of these designs still holds today. The posts do not say how WhatsApp's connection servers hand messages on, so the diagram draws no link from them, and it draws no link between the Messenger and Slack parts, which are separate products. None of the three gives numbers for presence or for message acknowledgements, so this page does not size them.\n\nThe posts attack different ends of the same path. WhatsApp shows what one machine can hold: over 2 million connections with CPU to spare, but it says nothing about the messages on them. Messenger works on the middle: an ordered queue with a pointer per consumer lets a phone or a disk tier fall behind without blocking the other, and the price is a queue with a one-week backlog, backed by MySQL on flash. Slack works on the edge: it sends less at startup and keeps a cache near the user, and the price is a new service that has to guess what the client will ask for next.\n\nThe common move is to stop sending everything to everyone. Messenger sends a snapshot once and then deltas. Slack sends a slim startup payload (7 times smaller for 1.5K users, 44 times for 32K) and then fills in on demand, and has moved presence to subscriptions. Each post also names its limit. Messenger's gains are measured in data use (about 40%) and send errors (roughly 20%), not in delivery latency. Slack's fanout and further pub/sub work were still plans in the post. WhatsApp's figure is for a single box, not a fleet."
-  ,
+  "compare": "These are six posts from four companies across 2012 to 2024, so read them as separate snapshots, not one system. WhatsApp is from January 2012 and July 2021, Messenger from October 2014 (when it was part of Facebook), Slack from May 2017 (the page shows an update date of June 2020) and December 2020, and Discord from September 2024. Each describes its system as of that year. Nothing here says the older designs still hold today. The posts do not say how WhatsApp's connection servers hand messages on, so the diagram draws no link from them, and it draws no links between products. There are still no figures here for presence or read receipts, so this page does not size them.\n\nThe older posts attack different ends of the same path. WhatsApp shows what one machine can hold: over 2 million connections with CPU to spare, but it says nothing about the messages on them. Messenger works on the middle: an ordered queue with a pointer per consumer lets a phone or a disk tier fall behind without blocking the other, and the price is a queue with a one-week backlog, backed by MySQL on flash. Slack works on the edge: it sends less at startup and keeps a cache near the user, and the price is a new service that has to guess what the client will ask for next. The newer posts add three more ends of the path. Discord cuts what idle clients receive: its passive update went from full snapshots to deltas, and the post says the snapshot design worked until servers grew larger. WhatsApp 2021 puts the cost of encryption on the sender, which encrypts one copy per device, in exchange for a server that keeps no message after delivery. Slack 2020 spreads storage load by sharding message data by channel instead of workspace, at the price of reworking queries written for one workspace per shard.\n\nThe common move is to stop sending everything to everyone. Messenger sends a snapshot once and then deltas. Slack sends a slim startup payload (7 times smaller for 1.5K users, 44 times for 32K) and then fills in on demand, and has moved presence to subscriptions. Each post also names its limit. Messenger's gains are measured in data use (about 40%) and send errors (roughly 20%), not in delivery latency. Slack's fanout and further pub/sub work were still plans in the post. WhatsApp's figure is for a single box, not a fleet.",
   "quiz": [
     {
       "question": "Why does Iris keep a separate pointer for the app and for the storage tier?",
@@ -593,6 +730,38 @@
         "A full snapshot is what the old model did, and Flannel slims it down."
       ],
       "teaches": "caching"
+    },
+    {
+      "question": "What did Discord change to cut the cost of passive sessions?",
+      "options": [
+        "It stopped sending passive sessions anything at all",
+        "It sent only the changes since the last update",
+        "It moved passive sessions to a different protocol"
+      ],
+      "correct": 1,
+      "why": "The post says the old update resent all channels, members and members in voice even if one element changed. The delta version cut it from 35% of gateway bandwidth to 5%.",
+      "wrong": [
+        "Passive sessions still get a periodic update.",
+        "",
+        "The post's change is to the content of the update."
+      ],
+      "teaches": "pub-sub"
+    },
+    {
+      "question": "In WhatsApp's 2021 multi-device design, who encrypts a one-on-one message for each recipient device?",
+      "options": [
+        "The server, which holds the plaintext until delivery",
+        "The sending client, once per device",
+        "The recipient's phone, which then forwards a copy to the other devices"
+      ],
+      "correct": 1,
+      "why": "In one-on-one chats the sending client encrypts and transmits it N times, and messages are not stored on the server after delivery. Groups still use Sender Key.",
+      "wrong": [
+        "The server cannot read the messages in this design.",
+        "",
+        "The phone is no longer the source of truth."
+      ],
+      "teaches": "real-time-delivery"
     }
   ],
   "sources": [
@@ -619,6 +788,30 @@
       "company": "WhatsApp",
       "published": "2012-01-06",
       "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "discord",
+      "title": "How Discord Reduced Websocket Traffic by 40%",
+      "url": "https://discord.com/blog/how-discord-reduced-websocket-traffic-by-40-percent",
+      "company": "Discord",
+      "published": "2024-09-20",
+      "verifiedOn": "2026-10-25"
+    },
+    {
+      "id": "wa2021",
+      "title": "How WhatsApp enables multi-device capability",
+      "url": "https://engineering.fb.com/2021/07/14/security/whatsapp-multi-device/",
+      "company": "WhatsApp",
+      "published": "2021-07-14",
+      "verifiedOn": "2026-10-25"
+    },
+    {
+      "id": "vitess",
+      "title": "Scaling Datastores at Slack with Vitess",
+      "url": "https://slack.engineering/scaling-datastores-at-slack-with-vitess/",
+      "company": "Slack",
+      "published": "2020-12-01",
+      "verifiedOn": "2026-10-25"
     }
   ]
 }
