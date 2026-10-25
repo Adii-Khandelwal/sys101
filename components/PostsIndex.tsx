@@ -20,6 +20,9 @@ type View = (typeof VIEWS)[number]["id"];
 // Runs as the page parses, so the chosen view shows with no flash. A #company or #topic link opens the view that holds it.
 const PICK_VIEW = `(function(){var d=document.documentElement,q=new URLSearchParams(location.search).get("view"),v=["topic","company","year"].indexOf(q)>-1?q:null,h=(function(s){try{return decodeURIComponent(s)}catch(x){return s}})(location.hash.slice(1)),e=h&&document.getElementById(h);if(!v&&e){var s=e.closest("[data-view]");if(s)v=s.getAttribute("data-view")}d.dataset.postsView=v||"topic";if(e)e.scrollIntoView()})()`;
 
+// Runs before the rails, so the first paint already hides the other two views (the script below sits after the content and ran a frame late). With a #hash the view is left to PICK_VIEW, which needs the target in the page.
+const EARLY_VIEW = `(function(){var d=document.documentElement,q=new URLSearchParams(location.search).get("view");if(!location.hash)d.dataset.postsView=["topic","company","year"].indexOf(q)>-1?q:"topic"})()`;
+
 const matches = (p: PostRow, q: string) => !q || matchesAll(`${p.title} ${p.company}`, q);
 
 /**
@@ -155,6 +158,7 @@ export default function PostsIndex({ data }: { data: Data }) {
 
   return (
     <>
+      <script dangerouslySetInnerHTML={{ __html: EARLY_VIEW }} />
       {VIEWS.map((v) => (
         <nav key={v.id} className="posts-rail" data-view={v.id} aria-label={`${rails[v.id].label} on this page`} data-pagefind-ignore>
           <p className="posts-rail-label label">{rails[v.id].label}</p>
