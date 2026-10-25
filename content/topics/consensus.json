@@ -182,7 +182,7 @@
         "teaches": "how"
       },
       {
-        "question": "The leader crashes just after committing an entry on itself and one follower. Why is that entry safe?",
+        "question": "In a three-node cluster, the leader crashes just after committing an entry on itself and one follower. Why is that entry safe?",
         "options": [
           "A new leader must win a majority and have an up-to-date log, so it already holds the entry",
           "The crashed leader will come back and replay it, because a leader's log is always kept on disk",

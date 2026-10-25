@@ -193,7 +193,7 @@
         },
         {
           "term": "Recovery time",
-          "definition": "How long until service is restored; set by the slowest of detect, decide, and redirect."
+          "definition": "How long until service is restored; set by the total of detect, decide, and redirect."
         }
       ],
       "reading": [
