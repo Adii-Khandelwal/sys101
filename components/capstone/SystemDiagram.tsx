@@ -3,6 +3,7 @@
 import Link from "next/link";
 import CompanyLogo from "@/components/CompanyLogo";
 import type { Capstone, NodeState } from "@/lib/capstones";
+import { LABEL_MAX_LINES, wrapLabel } from "@/lib/wrapLabel";
 
 type Node = Capstone["diagram"]["nodes"][number];
 type Props = {
@@ -18,7 +19,7 @@ type Props = {
 export const STATE_WORD: Record<NodeState, string> = { ok: "working", degraded: "degraded", down: "down" };
 
 const W = 200;
-const H = 64;
+const H = 88;
 const GAP_X = 48;
 const GAP_Y = 48;
 const COLS = 3;
@@ -90,6 +91,7 @@ export default function SystemDiagram({ title, nodes, states, selected, onSelect
           {nodes.map((n, i) => {
             const { x, y } = pos(i);
             const st = state(n.id);
+            const lines = wrapLabel(n.label);
             return (
               <g
                 key={n.id}
@@ -98,10 +100,14 @@ export default function SystemDiagram({ title, nodes, states, selected, onSelect
               >
                 <rect className="cap-node-box" x={x} y={y} width={W} height={H} />
                 {st === "down" && <line className="cap-node-cross" x1={x} y1={y} x2={x + W} y2={y + H} />}
-                <text className="dg-label" x={x + W / 2} y={y + 28} textAnchor="middle">
-                  {n.label}
+                <text className="dg-label" x={x + W / 2} y={y + 22 + (LABEL_MAX_LINES - lines.length) * 9} textAnchor="middle">
+                  {lines.map((l, k) => (
+                    <tspan key={k} x={x + W / 2} dy={k ? 18 : 0}>
+                      {l}
+                    </tspan>
+                  ))}
                 </text>
-                <text className="dg-note" x={x + W / 2} y={y + 48} textAnchor="middle">
+                <text className="dg-note" x={x + W / 2} y={y + 78} textAnchor="middle">
                   {st === "ok" ? n.company : STATE_WORD[st]}
                 </text>
               </g>
