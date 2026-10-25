@@ -146,13 +146,13 @@ function pdfPage(text) {
 function decode(s) {
   return s
     .replace(/&nbsp;|&#160;/g, " ")
-    .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;|&#34;/g, '"')
     .replace(/&#39;|&apos;|&rsquo;|&lsquo;/g, "'")
     .replace(/&times;/g, "×")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)));
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&amp;/g, "&");
 }
 
 /** Plain text of the page plus the character offset of each heading, so a match maps to its nearest heading. */
@@ -321,7 +321,7 @@ if (process.env.VF_DUMP) {
   for (const [u, pg] of pages) fs.writeFileSync(path.join(process.env.VF_DUMP, u.replace(/[^a-z0-9]+/gi, "_").slice(0, 120) + ".txt"), pg.text);
 }
 
-const esc = (s) => String(s).replace(/\|/g, "\\|").replace(/\n/g, " ");
+const esc = (s) => String(s).replace(/\\/g, "\\\\").replace(/\|/g, "\\|").replace(/\n/g, " ");
 const lines = [
   "# Verification log",
   "",
