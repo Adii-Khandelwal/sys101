@@ -335,7 +335,7 @@
         "tradeoffs": {
           "chosen": "Restore from the six hour old snapshot held in staging, accepting the loss of the changes made since.",
           "rejected": "Restore from the snapshot taken almost 24 hours before the outage, which would have lost far more.",
-          "why": "The newer copy lost the least data, though it was the only way to keep the loss to about 6 hours. Because it sat on cheap, slow staging disks, the speed of the restore was the price paid, and the team copied the data directory rather than the snapshot because that was simpler."
+          "why": "The newer copy lost the least data and was the only way to keep the loss to about 6 hours. Because it sat on cheap, slow staging disks, the speed of the restore was the price paid, and the team copied the data directory rather than the snapshot because that was simpler."
         },
         "failures": "Each procedure failed for its own reason: a version mismatch made the dump jobs fail, the failure emails were rejected, the disk snapshots were assumed unnecessary, and replication was never meant to be a recovery path. The root cause analysis in the post names a missing owner for testing the backup procedure.",
         "takeaways": "Replication keeps a second live copy, so it shares mistakes. A backup counts only if someone restores it and times the restore. Alert on the absence of a good backup, not on a failure message, and give recovery one named owner. Afterwards GitLab moved LVM snapshots of the production databases to hourly and started work on automated tests of restoring backups."

@@ -243,7 +243,7 @@
       {
         "level": "design",
         "prompt": "A service went down at a traffic peak. Traffic is back to normal an hour later but the service is still failing, and graphs show queues full and retries high. Give the first three things you do, in order.",
-        "answer": "First, confirm the loop: check retry rates and queue depth against normal traffic. Second, cut load below what the service can finish, by rejecting or pausing callers at the edge, or, as GitHub did, blocking inbound token requests from the retrying clients at the load balancers with a 403, and lower retry limits. Third, bring traffic back in stages, site by site or in percentages, while caches and connections warm up.",
+        "answer": "First, confirm the loop: check retry rates and queue depth against normal traffic. Second, cut load below what the service can finish, by rejecting or pausing callers at the edge, or, as GitHub did, blocking inbound token requests from the retrying clients at the load balancers with a 403, and by lowering retry limits. Third, bring traffic back in stages, site by site or in percentages, while caches and connections warm up.",
         "tradeoffs": "Cutting traffic causes visible errors for users, but a partial recovery that collapses again costs more. Restarting everything at once or only adding servers can make a cold-cache loop worse.",
         "wrongAnswers": [
           "Wait, since the peak is over.",

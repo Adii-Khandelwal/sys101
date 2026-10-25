@@ -68,7 +68,7 @@
         },
         {
           "step": "Widen in waves",
-          "explanation": "Move to a small group, then bigger ones. Early waves are cautious, and later waves can cover more machines at once once confidence has grown."
+          "explanation": "Move to a small group, then bigger ones. Early waves are cautious, and later waves can cover more machines at once when confidence has grown."
         },
         {
           "step": "Roll back automatically",

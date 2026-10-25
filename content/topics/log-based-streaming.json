@@ -457,7 +457,7 @@
         "consensus"
       ],
       "digest": {
-        "problem": "LinkedIn built Kafka 15 years ago and still runs it at 32 trillion records a day, 17 PB a day, across 400K topics on more than 10K machines in 150 clusters. Metadata and cluster size became bottlenecks, over 100 clusters needed a whole ecosystem of tools to manage, and partitions as the unit of replication hurt availability and consistency, and durability guarantees were too weak for critical applications.",
+        "problem": "LinkedIn built Kafka 15 years ago and still runs it at 32 trillion records a day, 17 PB a day, across 400K topics on more than 10K machines in 150 clusters. Metadata and cluster size became bottlenecks, and over 100 clusters needed a whole ecosystem of tools to manage. Partitions as the unit of replication hurt availability and consistency, and durability guarantees were too weak for critical applications.",
         "constraints": "Scale data and metadata together, make operations light-touch with even load by design, keep strong consistency and durability, and migrate thousands of applications, including critical ones, with no downtime.",
         "walkthrough": [
           {

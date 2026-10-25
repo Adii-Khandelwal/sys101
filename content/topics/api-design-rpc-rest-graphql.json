@@ -188,7 +188,7 @@
           "The operation itself, which has to be designed so repeating it has the same effect"
         ],
         "correct": 2,
-        "why": "Retrying is safe only when the operation is idempotent, which is a property of the API design that the previous topic covers, whatever the format.",
+        "why": "Retrying is safe only when the operation is idempotent, which is a property of the API design that Idempotency and Retries covers, whatever the format.",
         "wrong": [
           "A binary format changes how bytes are laid out, not what repeating a charge does.",
           "A transport can retry calls but cannot know whether doing the work twice is harmless.",

@@ -41,7 +41,7 @@
       "published": "2022-05-17",
       "digest": {
         "problem": "In Uber's service mesh, each host's proxy connects to only a subset of a backend service's tasks, chosen at random, and that subset had a fixed size. Callers sending heavy traffic squeezed it through the same small subset as quiet callers, so some backend tasks ran hot while others sat idle. Each case was fixed by hand-tuning subset sizes, and the right size kept drifting as traffic changed.",
-        "constraints": "The mesh spans thousands of services in millions of containers, with services from tens to tens of thousands of tasks and traffic that can swing from 100 to 100,000 requests per second within minutes. Fully connecting two 10,000-task services would need about 100,000,000 connections. One proxy is shared by every task on a host and must be ready for any destination. The fix had to reuse the existing control plane and load reports, avoid reserving capacity per service, The chosen design kept task selection random, with no coordination between proxies.",
+        "constraints": "The mesh spans thousands of services in millions of containers, with services from tens to tens of thousands of tasks and traffic that can swing from 100 to 100,000 requests per second within minutes. Fully connecting two 10,000-task services would need about 100,000,000 connections. One proxy is shared by every task on a host and must be ready for any destination. The fix had to reuse the existing control plane and load reports, avoid reserving capacity per service, and keep task selection random, with no coordination between proxies.",
         "walkthrough": [
           {
             "step": "Report load",

@@ -447,7 +447,7 @@
         "why": "It maps tokens to posting lists, so a search intersects a few lists instead of reading documents.",
         "wrong": [
           "",
-          "The name refers to inverting document to words into word to documents.",
+          "The name refers to turning a mapping from document to words into one from word to documents.",
           "That describes a B-tree on a primary key."
         ],
         "teaches": "model"

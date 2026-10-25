@@ -338,7 +338,7 @@
           "why": "The guide says commit latency is limited by network and disk latency, so the minimum time for a request is one round trip plus one fdatasync. It says batching is what lets etcd reach high throughput despite heavy load. It names no alternative design that was considered."
         },
         "failures": "The guide gives no failure account: it describes no incident, mistake or abandoned approach. It does state limits. The minimum request time is one round trip between members plus one fdatasync. A typical round trip is about 50 ms within the United States and as slow as 400 ms between continents, and a spinning disk's fdatasync is about 10 ms. Average latency usually rises as throughput rises under concurrent requests. Snapshots can double observed latency on a spinning disk, and gRPC adds latency, especially for local reads.",
-        "takeaways": "Consensus latency has a floor set by the network round trip between members plus a durable disk write, so, reading its figures, nearby members and SSDs would shrink them, and etcd raises throughput by batching requests into Raft. Knowing the two limits is what lets you place and size a consensus cluster sensibly."
+        "takeaways": "Consensus latency has a floor set by the network round trip between members plus a durable disk write, and nearby members and SSDs would lower that floor. etcd raises throughput by batching requests into Raft. Knowing the two limits is what lets you place and size a consensus cluster sensibly."
       },
       "edition": "page shows last modified June 14, 2021, v3.5 documentation"
     },

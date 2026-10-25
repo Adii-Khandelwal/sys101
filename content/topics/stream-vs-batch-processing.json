@@ -290,8 +290,8 @@
             "meaning": "What the production stateful job runs on in the YARN cluster; the backfill uses the same cluster configuration instead of extra resources"
           },
           {
-            "value": "One day to backfill a few day’s worth of data",
-            "meaning": "The post's example of backfill speed: one day to backfill a few day’s worth of data"
+            "value": "One day to backfill a few days’ worth of data",
+            "meaning": "The post's example of backfill speed: one day to backfill a few days’ worth of data"
           }
         ],
         "tradeoffs": {

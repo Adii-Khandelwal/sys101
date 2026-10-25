@@ -3,7 +3,7 @@
   "title": "Time, Clocks and Consistency",
   "group": "Data",
   "interviewRelevance": "common",
-  "concept": "Machines in a distributed system do not share a clock. Each has a quartz clock that drifts and is nudged back toward true time over a network, so two machines can disagree about which of two events came first. Systems answer in three ways: bound the clock error and wait it out, count events instead of seconds, or choose a weaker consistency level that does not need an exact order. The consistency models are the names for what a read is allowed to return as a result.",
+  "concept": "Machines in a distributed system do not share a clock. Each has a quartz clock that drifts and is nudged back toward true time over a network, so two machines can disagree about which of two events came first. Systems answer in three ways: bound the clock error and wait it out, count events instead of seconds, or choose a weaker consistency level that does not need an exact order. The consistency models are the names for what a read is allowed to return.",
   "prerequisites": [
     "distributed-transactions"
   ],

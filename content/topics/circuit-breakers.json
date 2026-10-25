@@ -346,7 +346,7 @@
         ],
         "tradeoffs": {
           "chosen": "Force-closing the breaker so real traffic returns and the autoscaler scales out, or pre-scaling the service before the breaker closes.",
-          "rejected": "The post does not weigh alternatives. It lists ideas it lists without reporting a test: autoscaling on queue depth or concurrency, longer or heavier probes, backpressure or load shedding at the service, and propagating cancellations.",
+          "rejected": "The post does not weigh alternatives. It lists ideas without reporting a test: autoscaling on queue depth or concurrency, longer or heavier probes, backpressure or load shedding at the service, and propagating cancellations.",
           "why": "Probes cannot detect autoscaling capacity: the breaker checks the service as it is while probing, not as it will be under full traffic."
         },
         "failures": "The breaker, the autoscaler and the probes each did what they were built to do, and together they trapped the system. The post does not give the breaker's threshold or timeout values, and no fix is measured; only the two manual mitigations are described. The service also keeps working on requests the client has already cancelled, which makes the queues worse.",

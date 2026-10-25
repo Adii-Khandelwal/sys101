@@ -48,7 +48,7 @@
       "steps": [
         {
           "step": "Produce a fact, not a command",
-          "explanation": "A service records that something happened in its past tense: OrderPlaced, PaymentCaptured. It describes a fact, so many readers can interpret it differently, rather than ordering one receiver to do a thing."
+          "explanation": "A service records that something happened, in the past tense: OrderPlaced, PaymentCaptured. It describes a fact, so many readers can interpret it differently, rather than ordering one receiver to do a thing."
         },
         {
           "step": "Publish it reliably alongside the state change",

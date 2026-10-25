@@ -52,7 +52,7 @@
           },
           {
             "step": "Retries are selfish",
-            "explanation": "A retry spends more of the server's time to raise one client's chance of success. That is fine while failures are rare, and when overload causes them the extra load can keep the load high long after the first problem is gone."
+            "explanation": "A retry spends more of the server's time to raise one client's chance of success. That is fine while failures are rare, but when overload causes them the extra load can keep the load high long after the first problem is gone."
           },
           {
             "step": "Back off, with a cap",
