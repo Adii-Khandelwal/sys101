@@ -109,8 +109,13 @@ async function warm() {
     }
   }
   if (!complete) return false;
-  // Next's data requests (?_rsc=...) are saved as they happen and never expire otherwise.
-  for (const req of await pages.keys()) if (new URL(req.url).searchParams.has("_rsc")) await pages.delete(req);
+  // Next's data requests (?_rsc=...) are saved as they happen and never expire otherwise; so are pages that have left the sitemap
+  // (a path without a file extension that is not listed; files such as icons and /pagefind/ keep their copies).
+  for (const req of await pages.keys()) {
+    const u = new URL(req.url);
+    const gonePage = !/\.[a-z0-9]+$/i.test(u.pathname) && u.pathname !== STAMP && !paths.has(u.pathname);
+    if (u.searchParams.has("_rsc") || gonePage) await pages.delete(req);
+  }
   for (const req of await statics.keys()) {
     const p = new URL(req.url).pathname;
     if (!wanted.has(p) && !wanted.has(decodeURI(p))) await statics.delete(req);
