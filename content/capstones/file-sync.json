@@ -85,7 +85,7 @@
       "answerIndex": 1,
       "realChoice": {
         "company": "Dropbox",
-        "text": "Dropbox spent about four years rebuilding the desktop sync engine as Nucleus and shipped it to all users by March 2020. The post says it would have been a terrible idea in many environments. It lists the reasons: incremental fixes had run out, the old data model gave no stable file identifier and few consistency guarantees, and the system was hard to test. It ran a checklist first (refactoring tried, hotspot tuning tried, understanding of the old system, engineering hours, a slower feature rate accepted).",
+        "text": "Dropbox spent about four years rebuilding the desktop sync engine as Nucleus and shipped it to all users by March 2020. The post says a rewrite would have been a terrible idea in many environments. It lists the reasons: incremental fixes had run out, the old data model gave no stable file identifier and few consistency guarantees, and the system was hard to test. It ran a checklist first (refactoring tried, hotspot tuning tried, understanding of the old system, engineering hours, a slower feature rate accepted).",
         "sourceId": "nucleus"
       }
     },
@@ -109,7 +109,7 @@
       "answerIndex": 1,
       "realChoice": {
         "company": "Dropbox",
-        "text": "Nucleus uses a redesigned protocol with strong consistency. Server and client must hold the same view of the remote filesystem before the client considers a change. Shared folders and files have globally unique ids, clients never see them duplicated or missing for a moment, and moves are atomic whatever the size of the subtree. Any difference between the client's and server's view is treated as a bug. For two users who each move a folder into the other's while offline, Nucleus keeps the original folders and the order depends on whose upload arrives first, where the old engine duplicated the folders.",
+        "text": "Nucleus uses a redesigned protocol with strong consistency. Server and client must hold the same view of the remote filesystem before the client considers a change. Shared folders and files have globally unique ids, clients never see them duplicated or missing for a moment, and moves are atomic whatever the size of the subtree. Any difference between the client's and server's view is treated as a bug. For two users who each move a folder into the other's while offline, Nucleus keeps the original folders, and the order depends on whose upload arrives first, where the old engine duplicated the folders.",
         "sourceId": "nucleus"
       }
     },
@@ -386,7 +386,7 @@
         "label": "Panda storage nodes (MVCC over MySQL)",
         "topic": "transactions-and-mvcc",
         "company": "Dropbox",
-        "tradeoff": "From the Panda post. Keep timestamped versions for non-blocking reads, at the price of write amplification and garbage collection. Storage nodes do not talk to each other on the data path.",
+        "tradeoff": "From the Panda post. Keeps timestamped versions for non-blocking reads, at the price of write amplification and garbage collection. Storage nodes do not talk to each other on the data path.",
         "to": [
           "mysql"
         ]

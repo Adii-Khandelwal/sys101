@@ -32,7 +32,7 @@
       "id": "basics",
       "name": "Basics",
       "body": [
-        "A server can finish only so much work each second. When more requests arrive than it can finish, it is overloaded. A cascading failure is a failure that grows over time through positive feedback: part of a system fails, which makes other parts more likely to fail [[sre-cascading]]. The book's example is a service with several replicas. One replica fails from overload, the others take on its share and become more likely to fail, and the effect can take down every replica [[sre-cascading]].",
+        "A server can finish only so much work each second. When more requests arrive than it can finish, it is overloaded. A cascading failure is a failure that grows over time through positive feedback: part of a system fails, which makes other parts more likely to fail [[sre-cascading]]. The SRE book's example is a service with several replicas. One replica fails from overload, the others take on its share and become more likely to fail, and the effect can take down every replica [[sre-cascading]].",
         "The same chapter says overload is the most common cause of cascading failures [[sre-cascading]]. Amazon's engineers separate two numbers. Throughput is the total requests per second sent to a server. Goodput is the part of that traffic handled without errors and with low enough latency for the client to use the reply [[aws-load-shedding]].",
         "The gap between them is the heart of the topic. When a server is so overloaded that its latency exceeds its client's timeout, requests start to fail [[aws-load-shedding]]. The server still does work for those requests, but nobody can use the result."
       ],

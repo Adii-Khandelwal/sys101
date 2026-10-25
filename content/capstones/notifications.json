@@ -54,7 +54,7 @@
       },
       {
         "label": "6. Too many and too few both cost",
-        "value": "Pinterest says too few notifications lose people ideas to discover and too many cause fatigue and unsubscribes (2020)",
+        "value": "Pinterest says too few notifications mean people miss ideas to discover and too many cause fatigue and unsubscribes (2020)",
         "sourceId": "pinterest"
       },
       {
@@ -100,7 +100,7 @@
       "options": [
         {
           "label": "They wait until the broken channel recovers so all three stay in step",
-          "why": "Consistent, but one broken channel stops everything, which is the Christmas lights problem."
+          "why": "Consistent, but one broken channel stops everything, like one dead bulb in a string of lights."
         },
         {
           "label": "Each channel gets its own task path, so a failure or delay in one does not block the others",

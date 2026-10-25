@@ -35,7 +35,7 @@
     ]
   },
   "prerequisiteReasons": {
-    "circuit-breakers": "Overload topics build on circuit breakers and load shedding, which are the main defences once a dependency is failing or a server is past its limit.",
+    "circuit-breakers": "This topic builds on circuit breakers and load shedding, which are the main defences once a dependency is failing or a server is past its limit.",
     "rate-limiting": "Rate limiting caps what one client can send, and this topic shows what happens when the total load still passes capacity and clients retry.",
     "load-balancing": "Load balancers decide where requests go and which instances count as healthy, so their health checks and panic mode shape how an overload spreads."
   },

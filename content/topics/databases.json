@@ -399,7 +399,7 @@
       {
         "level": "apply",
         "prompt": "Writes to a busy table got slower after the team added six indexes for new reports. What do you check and change?",
-        "answer": "Check which indexes are actually used. Every index adds write work when an indexed column changes, so drop unused ones. If reports must move off the primary, a replica can run them, but in Uber's Postgres 9.2 account long queries there can be cancelled.",
+        "answer": "Check which indexes are actually used. Every index adds write work when an indexed column changes, so drop unused ones. If reports must move off the primary, a replica can run them, but in Uber's Postgres 9.2 account, long queries on a replica can be cancelled.",
         "tradeoffs": "Fewer indexes make some reads slower; reports on a replica can see old data or be cancelled.",
         "wrongAnswers": [
           "Leaving the indexes alone and adding hardware.",

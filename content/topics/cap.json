@@ -445,7 +445,7 @@
   ],
   "mistakes": [
     "Reading CAP as \"pick any two of three\". Partition tolerance is not optional on a real network, so the real choice is consistency versus availability only while a partition is happening; with no partition you can have both.",
-    "Treating a whole database as permanently CP or AP. The trade-off is really per operation: the same quorum store can serve mergeable data available and must-be-correct data consistent by setting R and W differently.",
+    "Treating a whole database as permanently CP or AP. The trade-off is really per operation: the same quorum store can keep mergeable data available and must-be-correct data consistent by setting R and W differently.",
     "Assuming strong consistency across a wide area is free, or that eventual consistency means data is simply wrong. Consistency costs latency and minority availability; eventual consistency means converging after reconciliation, not never agreeing."
   ]
 }

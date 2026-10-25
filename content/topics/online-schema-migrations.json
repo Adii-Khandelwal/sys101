@@ -110,7 +110,7 @@
         "options": [
           "Every server to stop first, so only one version of the code is ever running",
           "The change to wait until the last old server is gone, because new code needs it first",
-          "Old and new code must both work during the rollout",
+          "Old and new code to keep working during the rollout",
           "Nothing special, because the database applies a change to all readers at once"
         ],
         "correct": 2,

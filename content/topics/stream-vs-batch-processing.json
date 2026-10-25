@@ -373,7 +373,7 @@
       "edition": "Data + AI Summit 2022 talk, slides",
       "ageNote": "This is a conference talk, not a company blog post: slides by two Netflix engineers whose PDF title is tagged DAIS22 (Data + AI Summit 2022). The slides show no date, so no more precise date is given. It is here for the backfill mechanism and its trade-offs. There is no speaker narration, so only what the slides say is used, and Netflix's setup may have changed since.",
       "digest": {
-        "problem": "Netflix's Real-time Merched Impression (RMI) Flink app joins impression and playback events to attribute plays to impressions, and is one of the largest stateful Flink apps at Netflix. When a streaming app fails, results must be corrected, missing data filled, or state bootstrapped by a backfill.",
+        "problem": "Netflix's Real-time Merged Impression (RMI) Flink app joins impression and playback events to attribute plays to impressions, and is one of the largest stateful Flink apps at Netflix. When a streaming app fails, results must be corrected, missing data filled, or state bootstrapped by a backfill.",
         "constraints": "Source data in Kafka can expire before the cause is found. Troubleshooting can take hours or days. A solution had to work for all kinds of apps, need minimal code changes, and scale horizontally to finish quickly.",
         "walkthrough": [
           {

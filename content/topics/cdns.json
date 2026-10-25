@@ -324,7 +324,7 @@
       {
         "question": "What are a CDN's two jobs?",
         "options": [
-          "Encrypting traffic and storing passwords for the sites it serves, so origins need not",
+          "Encrypting traffic and storing passwords for the sites it serves, so origins do not have to",
           "Replacing DNS and the origin, so that sites no longer need servers of their own",
           "Deciding what each edge keeps, and making misses to the origin cheap"
         ],

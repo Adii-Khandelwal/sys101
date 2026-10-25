@@ -298,7 +298,7 @@
     ],
     "next": {
       "outcome": "After this you can pick a related topic to read next.",
-      "body": "Related topics: Safe Deployments is where a spent error budget slows rollouts and where staged releases keep a bad change from burning the whole budget. Rate Limiting and Circuit Breakers and Load Shedding are the actions a fast-burn page leads to. Capacity covers what to do when the signal shows demand outgrowing what the system can serve."
+      "body": "Related topics: Safe Deployments is where a spent error budget slows rollouts and where staged releases keep a bad change from burning the whole budget. Rate Limiting, Circuit Breakers and Load Shedding are the actions a fast-burn page leads to. Capacity covers what to do when the signal shows demand outgrowing what the system can serve."
     }
   },
   "mistakes": [
@@ -355,7 +355,7 @@
       "edition": "page shows copyright 2017 Google, Inc., published by O'Reilly Media, SRE book chapter",
       "ageNote": "This is a book chapter, not a dated blog post: the page shows only a 2017 copyright for the book. It is here for the definitions of indicators, objectives and error budgets and for the case against averages, which do not depend on a product version. The chapter describes Google's practice as it was written about in 2017, and the page does not say whether Google works this way now.",
       "digest": {
-        "problem": "A service cannot be run well without knowing which behaviours matter to its users and how to measure them. Google's SRE chapter sets out the vocabulary it uses for that, indicators, objectives and agreements, and how to choose and tune them.",
+        "problem": "A service cannot be run well without knowing which behaviours matter to its users and how to measure them. Google's SRE chapter sets out the vocabulary it uses for that (indicators, objectives and agreements) and how to choose and tune them.",
         "constraints": "Metrics are cheap to collect and users want many things at once, so a team can drown in numbers. Targets also carry business effects, since an objective that is too strict wastes effort and one that is too loose delivers a poor product. The chapter is guidance with examples, not an incident report.",
         "walkthrough": [
           {

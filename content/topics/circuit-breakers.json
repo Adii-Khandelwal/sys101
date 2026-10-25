@@ -370,7 +370,7 @@
           },
           {
             "step": "Shed the same users everywhere",
-            "explanation": "Cohorts are based on the user in the request, so when a service sheds 5% of its tier 1 requests it is the same users everywhere, and hashing with timing information shifts which users so the same ones are not always shed first. Six tiers and 128 cohorts make 768 priorities."
+            "explanation": "Cohorts are based on the user in the request, so when a service sheds 5% of its tier 1 requests it is the same users everywhere, and hashing with timing information shifts which users are shed, so the same ones are not always shed first. Six tiers and 128 cohorts make 768 priorities."
           },
           {
             "step": "Decide a service is overloaded",

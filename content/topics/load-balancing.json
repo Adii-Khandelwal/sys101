@@ -57,7 +57,7 @@
           },
           {
             "step": "Size the subset",
-            "explanation": "Each proxy compares its own smoothed traffic to a service with that service's total and sizes its subset in proportion, so a proxy carrying a bigger share connects to more of the service's tasks."
+            "explanation": "Each proxy compares its own smoothed traffic to a service against that service's total and sizes its subset in proportion, so a proxy carrying a bigger share connects to more of the service's tasks."
           },
           {
             "step": "Guard the extremes",

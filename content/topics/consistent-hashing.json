@@ -346,7 +346,7 @@
         "correct": 2,
         "why": "Its keys pass to the next server along; everyone else keeps theirs.",
         "wrong": [
-          "That is the hash-mod-N behavior.",
+          "That is the hash-mod-N behaviour.",
           "Only the departing server's share moves.",
           ""
         ],
