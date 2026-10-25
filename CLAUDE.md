@@ -26,7 +26,7 @@ Still to do:
 
 1. Batch 4 is done.
 2. Parked: `multi-region-traffic-routing` (judged against failover, DNS and disaster recovery before building) and `exactly-once-processing` (mostly covered by idempotency and streaming; fold in or drop). `service-mesh-and-api-gateways` was dropped (overlaps load balancing and rate limiting; no recent source).
-3. Capstones: chat is built on three old sources (Slack 2023 belongs to `real-time-delivery`); a recent chat source would improve it; notifications is built (Patreon 2026, Pinterest 2020, Slack tracing 2023; no source on batching, de-duplication, push delivery or guarantees); ride dispatch not ready. Each new capstone is a content JSON plus research.
+3. Capstones: chat is built on six sources (WhatsApp 2012 and 2021, Messenger 2014, Slack 2017 and 2020, Discord 2024; Slack 2023 belongs to `real-time-delivery`), with no figures yet for presence or read receipts; notifications is built (Patreon 2026, Pinterest 2020, Slack tracing 2023; no source on batching, de-duplication, push delivery or guarantees); ride dispatch not ready. Each new capstone is a content JSON plus research.
 
 Go-live bar for an announcement is met for topics (batches 1 and 2) and the chat capstone now exists. Post rule 4 as decided by the owner: papers by teams that ran the system, MongoDB Atlas and the CrowdStrike RCA count; Confluent and Debezium are explanation only.
 
