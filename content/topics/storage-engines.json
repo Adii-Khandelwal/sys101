@@ -386,7 +386,7 @@
           },
           {
             "value": "5 ms",
-            "meaning": "Message insert p99 on ScyllaDB, down from between 5 ms and 70 ms on Cassandra"
+            "meaning": "Message insert p99 on ScyllaDB, down from a range of 5 ms to 70 ms on Cassandra"
           },
           {
             "value": "up to 3.2 million",
