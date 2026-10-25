@@ -126,7 +126,7 @@
       "name": "Going deeper",
       "body": [
         "A key makes a repeat safe. It does not say how often or how fast to retry. The AWS SDK reference gives one concrete answer. Its standard mode retries with exponential backoff and jitter, using shorter delays for transient errors and longer ones for throttling errors [[aws-sdk-retry-behavior]]. The page's formula for a retry delay is random(0, 1) times the smaller of 20,000 ms and base_delay times 2 to the power of the retry number, where the base delay is 50 ms for transient errors and 1,000 ms for throttling errors, and no single delay exceeds 20 seconds [[aws-sdk-retry-behavior]].",
-        "The same page describes a retry quota, a token bucket that takes tokens for each retry and gives them back when requests succeed. When the tokens run out the SDK returns the error without retrying, so the application fails fast [[aws-sdk-retry-behavior]]. The default is 3 total attempts, one initial request and up to two retries, and the DynamoDB clients default to 4 [[aws-sdk-retry-behavior]]. The page also says the behavior it describes requires opting in, by setting AWS_NEW_RETRIES_2026=true, until it becomes the default, and that without it the SDK uses pre-2026 behavior that differs in backoff timing, retry quota costs and service-specific defaults [[aws-sdk-retry-behavior]].",
+        "The same page describes a retry quota, a token bucket that takes tokens for each retry and gives them back when requests succeed. When the tokens run out the SDK returns the error without retrying, so the application fails fast [[aws-sdk-retry-behavior]]. The default is 3 total attempts, one initial request and up to two retries, and the DynamoDB clients default to 4 [[aws-sdk-retry-behavior]]. The page also says the behaviour it describes requires opting in, by setting AWS_NEW_RETRIES_2026=true, until it becomes the default, and that without it the SDK uses pre-2026 behaviour that differs in backoff timing, retry quota costs and service-specific defaults [[aws-sdk-retry-behavior]].",
         "Google's SRE book describes limits that count retries instead. A per-request retry budget allows up to three attempts, and a per-client budget retries a request only while retries are below 10% of that client's requests. The chapter works through a worst case: with the first budget alone, request volume grows to just below three times the attempted rate, and layering the second brings the growth to 1.1x in the general case [[google-sre-overload]]. It adds that a backend can answer with an overloaded, don't-retry error, and that in a stack of services only the layer directly above a rejection should retry [[google-sre-overload]]. That is Google's guidance, not a standard.",
         "Amazon's engineer describes what idempotency costs a service. It records the token and all the changes the request makes in one all-or-nothing step, replies to a repeat with a response equivalent to the first, and keeps the record only for a limited time, which for EC2 instances is the life of the resource plus a margin [[aws-making-retries-safe]]. This is AWS's view of its own design."
       ],
@@ -177,7 +177,7 @@
       "body": [
         "Deciding what to retry matters as much as how. EC2's table recommends not retrying a 200, which succeeded, or a 400-series response, which means a problem with the request. It recommends retrying 500-series responses, which it calls generally transient, with an appropriate backoff strategy [[ec2-idempotency]]. Google's Cloud Storage guide lists HTTP 408, 429 and 5xx responses, socket timeouts and TCP disconnects as transient problems that are useful to retry [[gcs-retry-strategy]].",
         "Not every request is idempotent all the time. Google's guide describes conditionally idempotent requests, which are idempotent only when they carry a precondition, such as IfMetagenerationMatch or an ETag, and says they should be retried by default only when the condition passes [[gcs-retry-strategy]]. Its Go example sets an initial retry delay of 2 seconds, subject to random jitter, a maximum delay of 60 seconds and a multiplier of 3 [[gcs-retry-strategy]]. Those are the example's values, not recommendations.",
-        "AWS's Builders' Library says retries are selfish: a retry spends more of the server's time for a better chance of success, which is fine when failures are rare and harmful when overload causes them. Its example is a stack five deep with three retries at each layer, where a failing database would see 243x the load, and its practice is to retry at a single point in the stack [[aws-timeouts-retries]]. It also says circuit breakers add behavior that is hard to test and can lengthen recovery, so it limits retries locally with a token bucket instead [[aws-timeouts-retries]]. That is AWS's view; the Circuit Breakers topic here shows what a breaker does in a real incident.",
+        "AWS's Builders' Library says retries are selfish: a retry spends more of the server's time for a better chance of success, which is fine when failures are rare and harmful when overload causes them. Its example is a stack five deep with three retries at each layer, where a failing database would see 243x the load, and its practice is to retry at a single point in the stack [[aws-timeouts-retries]]. It also says circuit breakers add behaviour that is hard to test and can lengthen recovery, so it limits retries locally with a token bucket instead [[aws-timeouts-retries]]. That is AWS's view; the Circuit Breakers topic here shows what a breaker does in a real incident.",
         "Idempotency has costs too. AWS says that building a service to meet the contract has cost and complexity, and is not right for every solution [[aws-making-retries-safe]]. It also says that deriving a token from the request's parameters fails where two identical requests are both wanted, such as launching two identical EC2 instances, which is why it prefers a caller-supplied identifier [[aws-making-retries-safe]]."
       ],
       "terms": [
@@ -289,7 +289,7 @@
       "kind": "Vendor documentation",
       "year": "no date shown",
       "verifiedOn": "2026-10-15",
-      "note": "The page describes API v1 and API v2 separately; this page uses the API v1 behavior."
+      "note": "The page describes API v1 and API v2 separately; this page uses the API v1 behaviour."
     },
     {
       "id": "gcs-retry-strategy",
@@ -302,13 +302,13 @@
     },
     {
       "id": "aws-sdk-retry-behavior",
-      "title": "Retry behavior (AWS SDKs and Tools reference guide)",
+      "title": "Retry behaviour (AWS SDKs and Tools reference guide)",
       "url": "https://docs.aws.amazon.com/sdkref/latest/guide/feature-retry-behavior.html",
       "publisher": "Amazon Web Services",
       "kind": "Vendor documentation",
       "year": "no date shown",
       "verifiedOn": "2026-10-15",
-      "note": "The page says the behavior it describes requires opting in until it becomes the default."
+      "note": "The page says the behaviour it describes requires opting in until it becomes the default."
     },
     {
       "id": "aws-making-retries-safe",

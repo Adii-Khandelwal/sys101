@@ -268,7 +268,7 @@
       "company": "Buildkite",
       "verifiedOn": "2026-10-24",
       "published": "2021-03-25",
-      "ageNote": "A 2021 account that the page shows as updated on May 2, 2024. It is here for the add-a-column, write-both, backfill and swap pattern, which does not depend on a product version. It relies on PostgreSQL 12 behavior that the post names, and it does not say whether Buildkite still runs this way.",
+      "ageNote": "A 2021 account that the page shows as updated on May 2, 2024. It is here for the add-a-column, write-both, backfill and swap pattern, which does not depend on a product version. It relies on PostgreSQL 12 behaviour that the post names, and it does not say whether Buildkite still runs this way.",
       "digest": {
         "problem": "Buildkite runs a Rails monolith on a very large PostgreSQL database whose core tables use integer primary keys, the default when they were created. One of its largest tables was heading for integer overflow, so its key and the foreign keys that point at it had to become bigint without taking the product down.",
         "constraints": "Changing the column type in place would lock and rewrite the tables, and the author puts that downtime in the range of days to weeks. Every step also had to be short or safe enough to run in production without hurting availability.",

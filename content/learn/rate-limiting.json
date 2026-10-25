@@ -226,7 +226,7 @@
     },
     {
       "myth": "A rate limit is an exact ceiling.",
-      "truth": "AWS says its throttles and quotas are best-effort targets, not guaranteed ceilings [[aws-apigw-throttling]]. That is AWS's behavior, and other systems differ, but any shared count can overshoot a little."
+      "truth": "AWS says its throttles and quotas are best-effort targets, not guaranteed ceilings [[aws-apigw-throttling]]. That is AWS's behaviour, and other systems differ, but any shared count can overshoot a little."
     }
   ],
   "tryIt": {

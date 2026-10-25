@@ -73,7 +73,7 @@
       "name": "How it works",
       "body": [
         "Argo Rollouts names the common strategies. Rolling update slowly replaces the old version with the new one. Recreate stops the old version before starting the new one, so there is downtime. Blue-green runs both versions side by side, with only the old one taking production traffic until you switch. Canary sends a subset of users to the new version while the rest stay on the old one [[argo-rollouts-concepts]].",
-        "Argo calls the wider idea progressive delivery: release in a controlled, gradual way, limit who sees the new version, watch for correct behavior, then increase exposure while checking it [[argo-rollouts-concepts]].",
+        "Argo calls the wider idea progressive delivery: release in a controlled, gradual way, limit who sees the new version, watch for correct behaviour, then increase exposure while checking it [[argo-rollouts-concepts]].",
         "The check is a comparison. The SRE workbook splits traffic between the old and new versions and then looks at a key metric, such as HTTP response codes, for each version separately. If the canary's error rate is too far from the control's, the deployment is bad, and the response is to pause and roll back, or to call a human [[sre-canarying]]. If the two are similar, the rollout goes on [[sre-canarying]].",
         "Looking per version matters. The workbook shows that when a canary is a small part of production, its errors are barely visible in the overall error rate [[sre-canarying]]."
       ],
