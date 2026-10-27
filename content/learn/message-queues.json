@@ -180,7 +180,7 @@
       "name": "In practice and trade-offs",
       "body": [
         "The two models suit different jobs. A classic broker like RabbitMQ, routing through exchanges with per-message acknowledgement, fits task distribution and complex routing where each message is handled and then gone. A log like Kafka keeps events for as long as you choose, so many consumers, or replays, can read the same ordered history. Many companies run both for different needs.",
-        "A queue is powerful but not free. It adds a component to operate and a new failure mode: a backlog. If consumers fall behind producers for long, the queue grows and latency rises. SQS's dead-letter page shows how to set an alarm for messages moved to a dead-letter queue and mentions the ApproximateAgeOfOldestMessage metric, the kind of signal to watch alongside the services themselves [[sqs-dlq]].",
+        "A queue is powerful but not free. It adds a component to operate and a new failure mode: a backlog. If consumers fall behind producers for long, the queue grows and latency rises. SQS's dead-letter page points to a guide for setting a CloudWatch alarm on messages moved to a dead-letter queue [[sqs-dlq]]. Watching how old the oldest waiting message is, alongside the services themselves, is our suggestion rather than the page's.",
         "Queues also change correctness. Asynchronous processing means a result is not ready the instant a request returns, so the caller must handle \"accepted, will finish later\". Combined with at-least-once delivery and idempotent consumers, this is the standard way large systems stay decoupled and resilient, and it is why queues come after the data topics they connect."
       ],
       "terms": [
@@ -205,7 +205,7 @@
         {
           "source": "sqs-dlq",
           "section": "Using policies for dead-letter queues",
-          "what": "How to set the retry limit and what signals to watch for a growing backlog."
+          "what": "How to set the retry limit with maxReceiveCount and where to read about alarms on a dead-letter queue."
         },
         {
           "source": "kafka-intro",
@@ -218,7 +218,7 @@
         "Explain the backlog failure mode and what to monitor.",
         "Describe how asynchronous processing changes a caller's design."
       ],
-      "diagram": "<svg viewBox=\"0 0 560 150\" role=\"img\" aria-labelledby=\"dg-mq-practice-t\" class=\"dg\"><title id=\"dg-mq-practice-t\">A queue adds a failure mode: if consumers fall behind producers the backlog grows and latency rises, so watch the age of the oldest message and alarm on the dead-letter queue.</title><defs><marker id=\"dg-mq-practice-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12.0\" y=\"20\" width=\"169.3\" height=\"50\" class=\"dg-box\"/><text x=\"96.65\" y=\"41.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Consumers fall</text><text x=\"96.65\" y=\"57.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">behind</text><rect x=\"195.3\" y=\"20\" width=\"169.3\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"279.95\" y=\"49.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Queue grows</text><path d=\"M181.3,45 L195.3,45\" class=\"dg-line\" marker-end=\"url(#dg-mq-practice-a)\"/><rect x=\"378.7\" y=\"20\" width=\"169.3\" height=\"50\" class=\"dg-box\"/><text x=\"463.35\" y=\"49.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Latency rises</text><path d=\"M364.7,45 L378.7,45\" class=\"dg-line\" marker-end=\"url(#dg-mq-practice-a)\"/><text x=\"280\" y=\"100\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Watch ApproximateAgeOfOldestMessage.</text><text x=\"280\" y=\"118\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Alarm on messages moved to a dead-letter queue.</text></svg>"
+      "diagram": "<svg viewBox=\"0 0 560 150\" role=\"img\" aria-labelledby=\"dg-mq-practice-t\" class=\"dg\"><title id=\"dg-mq-practice-t\">A queue adds a failure mode: if consumers fall behind producers the backlog grows and latency rises, so watch the age of the oldest message and alarm on the dead-letter queue.</title><defs><marker id=\"dg-mq-practice-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12.0\" y=\"20\" width=\"169.3\" height=\"50\" class=\"dg-box\"/><text x=\"96.65\" y=\"41.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Consumers fall</text><text x=\"96.65\" y=\"57.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">behind</text><rect x=\"195.3\" y=\"20\" width=\"169.3\" height=\"50\" class=\"dg-box dg-accent\"/><text x=\"279.95\" y=\"49.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Queue grows</text><path d=\"M181.3,45 L195.3,45\" class=\"dg-line\" marker-end=\"url(#dg-mq-practice-a)\"/><rect x=\"378.7\" y=\"20\" width=\"169.3\" height=\"50\" class=\"dg-box\"/><text x=\"463.35\" y=\"49.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Latency rises</text><path d=\"M364.7,45 L378.7,45\" class=\"dg-line\" marker-end=\"url(#dg-mq-practice-a)\"/><text x=\"280\" y=\"100\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Watch the age of the oldest message.</text><text x=\"280\" y=\"118\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Alarm on messages moved to a dead-letter queue.</text></svg>"
     }
   ],
   "misconceptions": [
@@ -236,11 +236,11 @@
     },
     {
       "myth": "Adding a queue removes failure modes.",
-      "truth": "A message that cannot be processed needs somewhere to go; SQS offers dead-letter queues and recommends alarms on messages moved to one [[sqs-dlq]]."
+      "truth": "A message that cannot be processed needs somewhere to go; SQS offers dead-letter queues and points to a guide for alarms on messages moved to one [[sqs-dlq]]."
     }
   ],
   "tryIt": {
-    "intro": "These use the command-line tools that ship with Apache Kafka against a local or test cluster. They are commands from the Kafka quickstart, with its example topic quickstart-events, which the page shows with Kafka 4.3.1. The page shows its own output; yours depends on your cluster.",
+    "intro": "These use the command-line tools that ship with Apache Kafka against a local or test cluster. They are commands from the Kafka quickstart, with its example topic quickstart-events, which the page now shows with Kafka 4.4.0. The page shows its own output; yours depends on your cluster.",
     "commands": [
       {
         "command": "bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server localhost:9092",
@@ -327,7 +327,7 @@
       "kind": "Project documentation",
       "year": "no date shown",
       "verifiedOn": "2026-10-13",
-      "note": "The page shows Kafka 4.3.1 and says a local Java 17 or newer is needed."
+      "note": "The page shows Kafka 4.4.0 and says a local Java 17 or newer is needed."
     }
   ]
 }
