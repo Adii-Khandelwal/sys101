@@ -109,7 +109,7 @@
       "body": [
         "Kafka relies on the file system and the operating system's page cache instead of keeping a cache of its own. Its design page argues that linear reads and writes are the most predictable pattern and well optimised by the OS, and that appending to a file keeps operations at constant cost whatever the data size [[kafka-design]]. That is why it can keep messages for a long time, for example a week [[kafka-design]].",
         "Deletion happens one log segment at a time, by age or by size [[kafka-log]]. Log compaction is a different kind of retention: it removes records whose key has a newer record, so the log keeps at least the final state of every key, in order, and offsets never change [[kafka-design]].",
-        "Delivery is at-least-once by default. Committing offsets before processing gives at-most-once, and Kafka's transactions can give exactly-once between topics by writing the output and the consumer's offset together [[kafka-design]]."
+        "Delivery is at-least-once by default. Turning off producer retries and committing offsets before processing gives at-most-once, and Kafka's transactions can give exactly-once between topics by writing the output and the consumer's offset together [[kafka-design]]."
       ],
       "terms": [
         {
