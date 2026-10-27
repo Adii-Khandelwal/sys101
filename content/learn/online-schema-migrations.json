@@ -87,7 +87,7 @@
         },
         {
           "term": "ALGORITHM (MySQL)",
-          "definition": "INSTANT changes only metadata, INPLACE works inside the existing table, COPY builds a new table."
+          "definition": "INSTANT changes only metadata, INPLACE avoids the table-copy method (though some in-place changes still rebuild the table), COPY builds a new table."
         }
       ],
       "reading": [
@@ -263,7 +263,7 @@
       },
       {
         "command": "ALTER TABLE t1 ADD COLUMN x INT, ALGORITHM=INPLACE, LOCK=NONE;",
-        "shows": "Asks for an in-place change that permits reads and writes, the statement used in the metadata lock example. If the table is in use by an open transaction it waits for the metadata lock.",
+        "shows": "Asks for an in-place change that permits reads and writes, the statement used in the metadata lock example. If another session has an open transaction that has read the table, it waits for the metadata lock.",
         "source": "mysql-ddl-performance",
         "warning": "This changes a table. Run it only on a test database."
       }
