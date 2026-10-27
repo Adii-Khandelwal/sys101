@@ -343,7 +343,7 @@
     },
     {
       "id": "meta-maelstrom-2018",
-      "title": "Maelstrom: Mitigating Data centre-level Disasters by Draining Interdependent Traffic Safely and Efficiently",
+      "title": "Maelstrom: Mitigating Datacenter-level Disasters by Draining Interdependent Traffic Safely and Efficiently",
       "url": "https://www.usenix.org/system/files/osdi18-veeraraghavan.pdf",
       "company": "Meta",
       "verifiedOn": "2026-10-17",
