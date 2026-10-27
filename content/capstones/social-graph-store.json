@@ -65,22 +65,22 @@
       "question": "The graph is stored in MySQL with a key-value cache beside it that the web code manages. What should the cache become?",
       "options": [
         {
-          "label": "Keep the lookaside key-value cache and add more machines",
+          "label": "Keep the lookaside key-value cache and simply add more cache machines to it",
           "why": "Easy to run, but each edge list must be fetched whole, and every client carries its own cache logic."
         },
         {
-          "label": "A cache that understands the graph: objects, edge lists and counts, behind one service with a fixed API",
-          "why": "Edge changes can be applied in place, and the cache can answer queries it has not seen before."
+          "label": "Skip the cache and shard MySQL across even more database servers",
+          "why": "Simple to reason about, but the read volume is far beyond what databases can serve."
         },
         {
-          "label": "Skip the cache and shard MySQL further",
-          "why": "Simple to reason about, but the read volume is far beyond what databases can serve."
+          "label": "A cache that understands the graph: objects, edge lists and counts behind one service",
+          "why": "Edge changes can be applied in place, and the cache can answer queries it has not seen before."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "realChoice": {
         "company": "Facebook",
-        "text": "TAO replaced the lookaside cache for data that fits an objects-and-associations model. The team listed three problems with the old design: a key-value cache is a poor fit for edge lists, control logic ran on clients that do not talk to each other, and read-after-write consistency was expensive. TAO still uses MySQL for storage, but mediates all access and holds its own graph-aware cache.",
+        "text": "TAO replaced the lookaside cache for data that fits an objects-and-associations model. The team listed three problems with the old design: a key-value cache is a poor fit for edge lists, control logic ran on clients that do not talk to each other, and read-after-write consistency was expensive. In the 2013 paper TAO keeps MySQL for storage, but mediates all access and holds its own graph-aware cache.",
         "sourceId": "tao"
       }
     },
@@ -89,19 +89,19 @@
       "question": "Many cache machines can miss on the same hot item at once. How should misses and writes reach the database?",
       "options": [
         {
-          "label": "Every cache machine queries the database itself",
-          "why": "Simple, but concurrent misses for one item all hit the database together."
-        },
-        {
-          "label": "Two levels: followers serve clients, and one leader per shard handles every miss and write for it",
+          "label": "Two levels: followers serve clients, one leader per shard handles every miss and write",
           "why": "One leader sees all requests for a shard, so it can serialise writes and avoid overlapping database queries."
         },
         {
-          "label": "Clients choose any cache machine and the machines gossip with each other",
+          "label": "Every cache machine queries the database itself whenever it misses",
+          "why": "Simple, but concurrent misses for one item all hit the database together."
+        },
+        {
+          "label": "Clients choose any cache machine, and the machines gossip with one another about every change",
           "why": "No central hop, but the consistency messages multiply and nothing limits queries to the database."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "realChoice": {
         "company": "Facebook",
         "text": "TAO splits the cache into a leader tier and follower tiers. Clients talk to the nearest follower, which forwards read misses and writes to the shard's leader. The leader serialises writes, avoids overlapping queries to the database, and caps the number of pending queries per shard.",
@@ -113,15 +113,15 @@
       "question": "Followers can be thousands of miles from the master database. How should reads and writes cross regions?",
       "options": [
         {
-          "label": "Send every read to the master region so answers are always fresh",
+          "label": "Send every read, from every region, to the master region so answers are always fresh",
           "why": "Always current, but every read pays the round trip between regions."
         },
         {
-          "label": "A full database copy in each region, reads served locally, writes forwarded to the master region",
+          "label": "A full database copy in each region, reads served locally, writes forwarded to the master",
           "why": "Read latency stops depending on distance, at the cost of stale reads while replication catches up."
         },
         {
-          "label": "Accept writes in every region and merge them later",
+          "label": "Accept writes in every region, and merge the conflicting copies later",
           "why": "Fast writes everywhere, but concurrent edits to the same edge now need conflict handling."
         }
       ],
@@ -137,19 +137,19 @@
       "question": "A cache machine stops answering. What should its clients do?",
       "options": [
         {
-          "label": "Rehash its keys across the remaining cache machines",
-          "why": "Uses the machines already running, but whichever one inherits a hot key may be overloaded in turn."
-        },
-        {
-          "label": "Send the request to a small pool of idle spare machines, and fill them from the database",
+          "label": "Send the request to a small pool of idle spare machines, filled from the database",
           "why": "The load lands on machines with nothing else to do, and repeat requests become hits."
         },
         {
-          "label": "Go straight to the database until the machine is replaced",
+          "label": "Rehash its keys across the remaining cache machines that are already serving traffic",
+          "why": "Uses the machines already running, but whichever one inherits a hot key may be overloaded in turn."
+        },
+        {
+          "label": "Go straight to the database for those keys until the machine is replaced",
           "why": "Simple, but every request for those keys now hits the backing store."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "realChoice": {
         "company": "Facebook",
         "text": "The memcache team set aside a small pool called Gutter, about 1% of the servers in a cluster. A client that gets no reply retries there and, on a miss, fills the entry after reading the database. Entries expire quickly instead of being invalidated, so Gutter serves slightly stale data. Rehashing was rejected because a single key can account for 20% of a server's requests.",
@@ -161,19 +161,19 @@
       "question": "A hot key is written often, and each write deletes the cached value. Many readers miss together. How do you stop the pile-up?",
       "options": [
         {
-          "label": "Let every reader query the database and set the value",
+          "label": "Let every reader that misses query the database itself and then set the value back",
           "why": "Simple, but the database sees one query per waiting reader, and slower readers can overwrite newer data."
         },
         {
-          "label": "Hand one reader a token to refill the value, and make the others wait briefly and retry",
-          "why": "One database query refills the cache, and a stale refill is rejected when the token is no longer valid."
+          "label": "Never delete on write; let values simply expire on a timer instead",
+          "why": "No stampede, but readers see old data for the whole timer."
         },
         {
-          "label": "Never delete on write, and let values expire on a timer",
-          "why": "No stampede, but readers see old data for the whole timer."
+          "label": "Hand one reader a token to refill the value; the others wait briefly and retry",
+          "why": "One database query refills the cache, and a stale refill is rejected when the token is no longer valid."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "realChoice": {
         "company": "Facebook",
         "text": "Memcache hands out a 64-bit lease token on a miss, by default once every 10 seconds per key. Others are told to wait a moment, and a delete invalidates the token so a stale set is refused. For keys prone to stampedes, the peak database rate over a week fell from 17K per second to 1.3K.",

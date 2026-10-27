@@ -238,7 +238,7 @@
       {
         "level": "design",
         "prompt": "Keep a search index in sync with an orders database without writing to both from the application. How do you feed the index, and how do you load rows that existed before you started?",
-        "answer": "Read the database's transaction log with a change-data-capture process and publish each row change to a topic keyed by primary key. The indexer consumes the topic and upserts by key, so repeats are harmless. For the existing rows, run chunked selects by primary key in order, interleaved with the log using watermark events as DBLog does, so a stale select result cannot overwrite a newer log event. Save the chunk progress so a restart resumes.",
+        "answer": "Read the database's transaction log with a change-data-capture process and publish each row change to a topic keyed by primary key. The indexer consumes the topic and upserts by key (inserts the row, or overwrites it if that key already exists), so repeats are harmless. For the existing rows, run chunked selects by primary key in order, interleaved with the log using watermark events as DBLog does, so a stale select result cannot overwrite a newer log event. Save the chunk progress so a restart resumes.",
         "tradeoffs": "Reading the log avoids dual writes, which can disagree when one write fails. It adds a moving part to run and a lag between database and index. Compaction on the topic lets a new consumer bootstrap from the topic itself, at the cost of losing intermediate versions of a row.",
         "wrongAnswers": [
           "Write to the database and the index in the application, which leaves them out of step when one fails.",
@@ -250,7 +250,7 @@
       {
         "level": "scale",
         "prompt": "Your topic has 12 partitions and 12 consumers in one group, and traffic will grow ten times. What stops you from just adding consumers, and what are your options?",
-        "answer": "In one group each partition is read by one member, so more than 12 consumers leaves some idle. To read in parallel you need more partitions, but changing the count changes which partition a key maps to, so ordering for existing keys breaks across the change. Uber hit the same cap and built a proxy that fans messages out to a pool of workers over gRPC. Also watch the cluster: Uber found about 150 nodes was the ideal ceiling and added clusters behind a federation layer.",
+        "answer": "In one group each partition is read by one member, so more than 12 consumers leaves some idle. To read in parallel you need more partitions, but changing the count changes which partition a key maps to, so ordering for existing keys breaks across the change. Uber hit the same cap and built a proxy that fans messages out to a pool of workers over gRPC, a remote-call protocol. Also watch the cluster: Uber found about 150 nodes was the ideal ceiling and added clusters behind a federation layer.",
         "tradeoffs": "More partitions raise parallelism and metadata load together. A consumer proxy lifts the cap but adds a service in the read path. Federation scales the cluster at the price of a metadata server that must stay correct.",
         "wrongAnswers": [
           "Add 120 consumers to the group, where most would sit idle.",

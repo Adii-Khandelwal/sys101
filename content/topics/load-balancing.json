@@ -234,7 +234,7 @@
         },
         {
           "step": "Choose a server per request",
-          "explanation": "Within the subset, a rule picks the server: in turn (round-robin), in proportion to weights (weighted round-robin), or by comparing load."
+          "explanation": "Within the subset, a rule picks the server: in turn (round-robin), in proportion to weights (weighted round-robin), or by comparing load, for example picking two servers at random and sending the request to the less busy one."
         },
         {
           "step": "Report load",

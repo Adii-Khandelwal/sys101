@@ -281,6 +281,8 @@ export function checkQuizPositions(quiz: Pick<LessonQuestion, "options" | "corre
   const problems: string[] = [];
   const at = quiz.map((q) => q.correct);
   if (quiz.length >= 2 && at.every((c) => c === at[0])) problems.push(`quiz: every correct answer is in position ${at[0] + 1}; spread them out`);
+  const perPosition = at.reduce<Record<number, number>>((n, c) => ({ ...n, [c]: (n[c] ?? 0) + 1 }), {});
+  for (const [pos, n] of Object.entries(perPosition)) if (quiz.length >= 4 && n * 2 > quiz.length) problems.push(`quiz: ${n} of ${quiz.length} correct answers are in position ${Number(pos) + 1}; no position may hold more than half`);
   let run = 1;
   for (let i = 1; i < at.length; i++) {
     run = at[i] === at[i - 1] ? run + 1 : 1;

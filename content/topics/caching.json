@@ -296,7 +296,7 @@
         },
         {
           "step": "Expire as a backstop",
-          "explanation": "Every entry has a TTL, so even a missed invalidation cannot leave it wrong forever."
+          "explanation": "Every entry has a TTL, so even a missed invalidation cannot leave it wrong forever. A cache with limited room also evicts, meaning drops, entries to make space."
         },
         {
           "step": "Guard against races",
@@ -350,7 +350,7 @@
         },
         {
           "step": "Catch it",
-          "explanation": "Meta's Polaris receives the same invalidations, asks every replica for the key, and rechecks flagged samples before reporting (the post's example timescales are one, five and ten minutes), so normal lag is not counted. Over the years, by one measure, TAO went from six to ten nines of writes consistent within five minutes, and Polaris is how Meta measured it."
+          "explanation": "Meta's Polaris receives the same invalidations, asks every replica for the key, and rechecks flagged samples before reporting (the post's example timescales are one, five and ten minutes), so normal lag (replicas briefly trailing behind a write) is not counted. Over the years, by one measure, TAO went from six to ten nines of writes consistent within five minutes, and Polaris is how Meta measured it."
         },
         {
           "step": "Prevent it",
@@ -358,7 +358,7 @@
         },
         {
           "step": "Bound it",
-          "explanation": "Uber also invalidates from the MySQL binary log and expires entries after 5 minutes by default, and leaves caching off for flows that need strong consistency."
+          "explanation": "Uber also invalidates from the MySQL binary log (the database's record of committed changes) and expires entries after 5 minutes by default, and leaves caching off for flows that need strong consistency."
         }
       ],
       "diagram": "<svg viewBox=\"0 0 560 136\" role=\"img\" aria-labelledby=\"dg-caching-ex-t\" class=\"dg\"><title id=\"dg-caching-ex-t\">A stale-cache race: a fill reads the old value, the value changes, then the fill writes the old value back; at Meta, Polaris asks every replica after an invalidation, flags the one still holding the old value and fires an alarm; Uber's cache rejects the old write by comparing row timestamps and expires entries after 5 minutes by default.</title><defs><marker id=\"dg-caching-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box\"/><text x=\"55\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Fill</text><text x=\"55\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">starts</text><text x=\"55\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">reads old value</text><rect x=\"124\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box\"/><text x=\"167\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Value</text><text x=\"167\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">changes</text><rect x=\"236\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"279\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Order</text><text x=\"279\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">swaps</text><text x=\"279\" y=\"99\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">stale wins</text><rect x=\"348\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box\"/><text x=\"391\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Catch it</text><text x=\"391\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Meta: Polaris</text><rect x=\"460\" y=\"36\" width=\"86\" height=\"48\" class=\"dg-box\"/><text x=\"503\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Bound it</text><text x=\"503\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Uber: TTL</text><path d=\"M98,60 L124,60\" class=\"dg-line\" marker-end=\"url(#dg-caching-ex-a)\"/><path d=\"M210,60 L236,60\" class=\"dg-line\" marker-end=\"url(#dg-caching-ex-a)\"/><path d=\"M322,60 L348,60\" class=\"dg-line\" marker-end=\"url(#dg-caching-ex-a)\"/><path d=\"M434,60 L460,60\" class=\"dg-line\" marker-end=\"url(#dg-caching-ex-a)\"/><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The fill and the write race; whoever writes last decides what the cache holds.</text></svg>"
@@ -496,7 +496,7 @@
       {
         "level": "scale",
         "prompt": "Traffic grows ten times and you add a second region that must take over during a failover. What do you plan for?",
-        "answer": "Keep the other region's cache warm by copying keys, not values, and let it fill from its own database. Shard the cache differently from the database so one cache failure does not hammer one database shard, and use a circuit breaker to skip failing cache nodes and adaptive timeouts so slow cache calls fall back to the database.",
+        "answer": "Keep the other region's cache warm by copying keys, not values, and let it fill from its own database. Shard the cache (split it across machines) differently from the database so one cache failure does not hammer one database shard, and use a circuit breaker (a switch that stops calls to something that keeps failing) to skip failing cache nodes and adaptive timeouts so slow cache calls fall back to the database.",
         "tradeoffs": "Warming costs extra reads in the second region, though only on cache misses. Protection adds moving parts to run.",
         "wrongAnswers": [
           "Failing over to a cold cache.",

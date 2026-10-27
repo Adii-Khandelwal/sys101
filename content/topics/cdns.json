@@ -255,7 +255,7 @@
       "steps": [
         {
           "step": "Route to a nearby edge",
-          "explanation": "Commonly the user's DNS lookup returns the address of an edge close to them; some CDNs steer users by anycast routing or their own control system instead."
+          "explanation": "Commonly the user's DNS lookup returns the address of an edge close to them; some CDNs steer users by anycast routing (several servers share one address and the network sends you to a close one) or their own control system instead."
         },
         {
           "step": "Check the edge cache",
@@ -285,7 +285,7 @@
         },
         {
           "step": "Rank files, not titles",
-          "explanation": "One episode of The Crown is around 1,200 files, one per encoding, bitrate and language. Ranking each file separately kept unpopular bitrates off scarce disk and, from 2016, gave the same efficiency with half the storage."
+          "explanation": "One episode of The Crown is around 1,200 files, one per encoding, bitrate and language (an encoding sets the format, a bitrate the quality). Ranking each file separately kept unpopular bitrates off scarce disk and, from 2016, gave the same efficiency with half the storage."
         },
         {
           "step": "Copy what is hot",
@@ -297,7 +297,7 @@
         },
         {
           "step": "Share one pool",
-          "explanation": "Its replacement, Pingora, uses threads sharing one pool. For one major customer, connection reuse went from 87.1% to 99.92%. Across all traffic, median and p95 time to first byte fell by 5 ms and 80 ms."
+          "explanation": "Its replacement, Pingora, uses threads sharing one pool. For one major customer, connection reuse went from 87.1% to 99.92%. Across all traffic, median and p95 (the time that 95 percent of requests beat) time to first byte fell by 5 ms and 80 ms."
         }
       ],
       "diagram": "<svg viewBox=\"0 0 560 136\" role=\"img\" aria-labelledby=\"dg-cdns-ex-t\" class=\"dg\"><title id=\"dg-cdns-ex-t\">Placing content ahead of demand: rank files by popularity, copy the hot ones to edges, make misses cheap by reusing connections, and share one pool across threads.</title><defs><marker id=\"dg-cdns-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"69\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Rank by</text><text x=\"69\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">popularity</text><text x=\"69\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">files, not titles</text><rect x=\"152\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"209\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Copy hot</text><text x=\"209\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">files</text><text x=\"209\" y=\"99\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">to the edges</text><rect x=\"292\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"349\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Make miss</text><text x=\"349\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">cheap</text><text x=\"349\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">reuse open ones</text><rect x=\"432\" y=\"36\" width=\"114\" height=\"48\" class=\"dg-box\"/><text x=\"489\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Share one</text><text x=\"489\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">pool</text><text x=\"489\" y=\"99\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">threads share it</text><path d=\"M126,60 L152,60\" class=\"dg-line\" marker-end=\"url(#dg-cdns-ex-a)\"/><path d=\"M266,60 L292,60\" class=\"dg-line\" marker-end=\"url(#dg-cdns-ex-a)\"/><path d=\"M406,60 L432,60\" class=\"dg-line\" marker-end=\"url(#dg-cdns-ex-a)\"/><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Push the popular bytes outward; keep the rare miss cheap.</text></svg>"
@@ -435,7 +435,7 @@
       {
         "level": "scale",
         "prompt": "Traffic grows ten times, mostly to content you cannot predict, such as customers' websites. What changes?",
-        "answer": "You cannot place content ahead of time, so misses dominate. Make the miss path cheap with shared connection pools and work stealing, so one slow request does not block others, and size edge caches for recently requested content.",
+        "answer": "You cannot place content ahead of time, so misses dominate. Make the miss path cheap with shared connection pools and work stealing (idle threads take queued work from busy ones), so one slow request does not block others, and size edge caches for recently requested content.",
         "tradeoffs": "Rebuilding the proxy is expensive up front; a shared pool adds coordination between threads.",
         "wrongAnswers": [
           "Relying on prediction for content you do not control.",

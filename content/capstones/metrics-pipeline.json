@@ -86,19 +86,19 @@
       "question": "Where should the recent data live?",
       "options": [
         {
-          "label": "On disk behind a read-through cache",
-          "why": "Cheap, but a dashboard asking for the newest point can miss the cache and fall through to the slow store."
-        },
-        {
           "label": "In memory, as a write-through window of recent data, with history kept elsewhere",
           "why": "New points land in fast memory as they arrive, so the common recent query never touches the slow store."
+        },
+        {
+          "label": "On disk behind a read-through cache",
+          "why": "Cheap, but a dashboard asking for the newest point can miss the cache and fall through to the slow store."
         },
         {
           "label": "In memory for everything, forever",
           "why": "Fast for all queries, but the cost of holding years of data in RAM is far beyond what the queries need."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "realChoice": {
         "company": "Facebook",
         "text": "Gorilla acts as a write-through cache of the most recent 26 hours. The team saw that at least 85% of queries to its older store asked for data from the past 26 hours, so a window that size serves most reads.",
@@ -111,7 +111,7 @@
       "question": "A zone is cut off and some data cannot be reached. What should a query do?",
       "options": [
         {
-          "label": "Wait until every part answers, so the result is complete",
+          "label": "Wait until every part has answered, so the result is complete",
           "why": "Complete, but an outage then takes longer to notice, which defeats the point of monitoring."
         },
         {
@@ -140,15 +140,15 @@
           "why": "Strong inside the region and cheap across regions, but a whole region loss takes its data with it until you query elsewhere."
         },
         {
-          "label": "One copy in memory, rebuilt from disk after a failure",
-          "why": "Simplest and cheapest, but a crash leaves a gap where reads cannot be served."
-        },
-        {
           "label": "Two independent full copies in different regions, each fed in parallel",
           "why": "Either region can answer alone, and a region failure is handled by reading from the other."
+        },
+        {
+          "label": "One copy in memory, rebuilt from disk after a failure",
+          "why": "Simplest and cheapest, but a crash leaves a gap where reads cannot be served."
         }
       ],
-      "answerIndex": 2,
+      "answerIndex": 1,
       "realChoice": {
         "company": "Facebook",
         "text": "Gorilla keeps two completely independent instances in separate regions. A write is streamed to each with no attempt to guarantee consistency, and reads go to the closest available one. When one region fails, reads are retried in the other.",
@@ -165,15 +165,15 @@
           "why": "The store controls the pace, but it needs discovery services and proxies for every source."
         },
         {
-          "label": "A central poller scrapes every source on a schedule",
-          "why": "Easy to reason about, but one poller becomes the bottleneck and the single point of failure."
-        },
-        {
           "label": "Each source pushes its data to the store",
           "why": "Sources only need an address to send to, which removes the discovery machinery."
+        },
+        {
+          "label": "A central poller scrapes every source on a schedule",
+          "why": "Easy to reason about, but one poller becomes the bottleneck and the single point of failure."
         }
       ],
-      "answerIndex": 2,
+      "answerIndex": 1,
       "realChoice": {
         "company": "Google",
         "text": "Early versions of Monarch discovered monitored entities and pulled from them, which needed discovery services and proxies and hurt scalability. Moving to push removed those dependencies.",
@@ -186,19 +186,19 @@
       "question": "Where should the data be reduced to a coarser form?",
       "options": [
         {
-          "label": "In a nightly batch job over stored data",
+          "label": "At collection time, as the points arrive",
+          "why": "The reduction happens once, and nothing has to be pulled back out of storage to do it."
+        },
+        {
+          "label": "In a nightly batch job that reads back the stored data",
           "why": "Easy to run, but every point is stored raw first and the job must read it all back."
         },
         {
           "label": "At query time, over the raw points",
           "why": "Nothing is lost, but each dashboard repeats the same expensive reduction."
-        },
-        {
-          "label": "At collection time, as the points arrive",
-          "why": "The reduction happens once, and nothing has to be pulled back out of storage to do it."
         }
       ],
-      "answerIndex": 2,
+      "answerIndex": 0,
       "realChoice": {
         "company": "Uber",
         "text": "M3 downsamples at the time of collection. Doing it later would mean pulling large volumes of stored data back out, which costs network, CPU and disk. Storage policies pick retention and downsampling by matching a metric's tags.",

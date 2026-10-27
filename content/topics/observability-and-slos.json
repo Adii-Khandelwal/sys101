@@ -52,7 +52,7 @@
       "steps": [
         {
           "step": "Pick a few indicators users would feel",
-          "explanation": "Start from what users care about, not from what is easy to measure. A serving system usually needs availability, latency and throughput, a storage system adds durability, and a data pipeline cares about throughput and how long data takes to get through. The SRE book advises a handful of indicators, not every metric a monitoring system holds, and measuring at the client when the server view would miss a problem such as a slow page script."
+          "explanation": "Start from what users care about, not from what is easy to measure. A serving system usually needs availability, latency and throughput, a storage system adds durability, and a data pipeline cares about throughput and how long data takes to get through. Google's Site Reliability Engineering (SRE) book advises a handful of indicators, not every metric a monitoring system holds, and measuring at the client when the server view would miss a problem such as a slow page script."
         },
         {
           "step": "Measure latency as a distribution",
@@ -337,7 +337,7 @@
     },
     {
       "term": "Span",
-      "definition": "One timed piece of work inside a trace, such as a single RPC, with a link to the span that caused it."
+      "definition": "One timed piece of work inside a trace, such as a single remote procedure call (RPC) from one service to another, with a link to the span that caused it."
     },
     {
       "term": "Sampling",
@@ -613,5 +613,5 @@
       }
     }
   ],
-  "comparison": "The four sources cover one loop at different layers. The SRE book and workbook define what to measure and when to wake someone, while Dapper and Canopy follow a single request through many services. All four refuse to look at everything: the SRE chapters choose a few indicators and alert on budget spend instead of every error, and both tracing papers keep only a fraction of requests.\n\nThey differ in who controls the volume. Dapper began with one probability of about 1 in 1024 and moved toward a target rate, with a second pass at collection that keeps or drops whole traces by trace id. Canopy lets teams write sampling policies and puts a distributed token bucket behind them, with 5 traces per second per tenant by default. The workbook applies the same idea to alerts: a fast, high threshold pages and a slow, low one opens a ticket.\n\nThe evidence is thin in places. Three of the four sources are Google, the oldest from 2010, and the Facebook paper is from 2017. None says whether the setup is the same today. The Dapper timings come from one web search cluster, and the SRE examples are illustrations with a made-up service, not measurements of a named outage."
+  "comparison": "The four sources cover one loop at different layers. The SRE book and workbook define what to measure and when to wake someone, while Dapper and Canopy follow a single request through many services. All four refuse to look at everything: the SRE chapters choose a few indicators and alert on budget spend instead of every error, and both tracing papers keep only a fraction of requests.\n\nThey differ in who controls the volume. Dapper began with one probability of about 1 in 1024 and moved toward a target rate, with a second pass at collection that keeps or drops whole traces by trace id. Canopy lets teams write sampling policies and puts a distributed token bucket behind them, with 5 traces per second per tenant (one team or service using the tracing system) by default. The workbook applies the same idea to alerts: a fast, high threshold pages and a slow, low one opens a ticket.\n\nThe evidence is thin in places. Three of the four sources are Google, the oldest from 2010, and the Facebook paper is from 2017. None says whether the setup is the same today. The Dapper timings come from one web search cluster, and the SRE examples are illustrations with a made-up service, not measurements of a named outage."
 }

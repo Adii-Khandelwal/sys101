@@ -83,19 +83,19 @@
       "question": "A public figure goes live and more than a million followers open the stream within moments. If every player connects to the one server that receives the stream, that server stampedes. How do you keep the crowd away from it?",
       "options": [
         {
-          "label": "Put the stream server behind a load balancer and add more servers as viewers arrive",
+          "label": "Put the stream server behind a load balancer and add more ingest servers as viewers arrive",
           "why": "Spreads the load, but each viewer still reaches the machines that must also ingest the video."
         },
         {
-          "label": "Cut the stream into short segments and serve them through layers of caches, so viewers hit the edge first",
-          "why": "Most requests never reach the stream server, but you now run cache layers and the stream becomes a series of HTTP requests."
+          "label": "Limit how many followers can join at once and ask the rest to wait their turn",
+          "why": "Protects the server, but the audience is the point of the event."
         },
         {
-          "label": "Limit how many followers can join and tell the rest to wait",
-          "why": "Protects the server, but the audience is the point of the event."
+          "label": "Cut the stream into short segments and serve them through layers of caches near viewers",
+          "why": "Most requests never reach the stream server, but you now run cache layers and the stream becomes a series of HTTP requests."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "realChoice": {
         "company": "Meta",
         "text": "Facebook put a network of edge caches around the world between viewers and the live stream server (2015). A live video was split into three-second HLS segments that the player requests one after another. An HTTP proxy in an edge data centre checks its cache; on a miss it asks the origin cache, which has the same structure, and only then the server handling that stream. The response is cached at each layer on the way back. The post says more than 98 percent of segments were already in an edge cache close to the user.",
@@ -107,19 +107,19 @@
       "question": "Even with edge caches, a new segment is not cached the first time anyone asks for it, and a million viewers ask at the same moment. A small leak is still a large number. What do you do on a cache miss?",
       "options": [
         {
-          "label": "Let every miss pass through and add capacity at the origin to absorb it",
-          "why": "Simple, but the cost lands on the one server holding the stream."
-        },
-        {
-          "label": "Answer the first request with a miss, hold the others in a queue and serve them from the cache once the segment arrives",
+          "label": "Miss on the first request, queue the others and serve them from cache once the segment lands",
           "why": "Many identical requests become one upstream request, but queued viewers wait for the first fetch."
         },
         {
-          "label": "Return an error to repeat requests and make the player ask again after a pause",
+          "label": "Let every miss pass through to the origin and add capacity there to absorb the whole surge of requests",
+          "why": "Simple, but the cost lands on the one server holding the stream."
+        },
+        {
+          "label": "Return an error to repeat requests and make the player ask again after a short pause",
           "why": "Keeps load down, but viewers see errors and the retries come back together."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "realChoice": {
         "company": "Meta",
         "text": "Facebook used request coalescing (2015). About 1.8 percent of requests were getting past the edge cache, which is a lot when a million people are watching. The edge cache returns a miss for the first request and holds the following ones in a queue. When the response comes back, the segment is stored and the queued requests are answered from the edge as hits. The origin cache runs the same mechanism for requests from several edge caches, since an edge cache in Chicago and one in Miami can ask for the same object.",
@@ -131,15 +131,15 @@
       "question": "For people broadcasting to a small group of friends, a conversation needs a delay of a few seconds, and three-second segments plus buffering are too slow. How do you get lower latency?",
       "options": [
         {
-          "label": "Keep segments but make them shorter and ask for them more often",
+          "label": "Keep HTTP segments but make them shorter and ask for them more often to cut the delay",
           "why": "Fits existing CDNs, but request volume grows as segments shrink."
         },
         {
-          "label": "Use a push protocol over a held connection that sends small chunks of video as soon as they are encoded",
+          "label": "Push small chunks of video over a held connection as soon as they are encoded",
           "why": "Lower delay and smoother flow, but you leave the HTTP caching path and must build proxies yourself."
         },
         {
-          "label": "Skip transcoding so each frame reaches viewers sooner",
+          "label": "Skip transcoding altogether so each frame reaches viewers sooner than it would",
           "why": "Removes a step, but viewers on slow networks cannot get a lower bit rate."
         }
       ],
@@ -155,15 +155,15 @@
       "question": "You must reach as many existing devices as possible, including resource-limited devices such as smart TVs, without asking people to upgrade. A UDP-based protocol offers very low latency. What do you stream over?",
       "options": [
         {
-          "label": "A UDP-based protocol, accepting that some devices cannot play it",
+          "label": "A UDP-based protocol for lowest latency, accepting that some devices cannot play it",
           "why": "Lowest delay, but fewer devices and less fit with existing delivery and encoding systems."
         },
         {
-          "label": "HTTPS with short fixed-length segments, and a manifest that tells the player how to find them by time",
+          "label": "HTTPS with short segments and a manifest that lets the player find them by time",
           "why": "Plays almost everywhere and reuses the CDN, but latency is bounded by the segment length."
         },
         {
-          "label": "A custom player protocol per device family",
+          "label": "A custom player protocol for each device family, tuned to that hardware",
           "why": "Could suit each device best, but the engineering cost multiplies across families."
         }
       ],
@@ -179,11 +179,11 @@
       "question": "Live feeds are never clean. A segment can be short, missing or have a timing break, and you cannot tell every device about it through a manifest. How do you keep a defective segment from reaching players?",
       "options": [
         {
-          "label": "Run two independent pipelines and let the origin choose the first valid segment for each request",
+          "label": "Run two independent pipelines; the origin serves the first valid segment",
           "why": "Defects rarely hit both at once, but you pay for two pipelines and need defect metadata to choose."
         },
         {
-          "label": "Make each device detect a bad segment and skip to the next one",
+          "label": "Make each device detect a bad segment, skip it and conceal the gap itself",
           "why": "No server cost, but every device must conceal the gap and playback can break."
         },
         {
@@ -203,19 +203,19 @@
       "question": "Your origin stores each published segment, and the same store feeds the CDN. Plain object storage worked for small events. Now every write is critical, there is a 2-second retry budget and a surge could mean hundreds of gigabits of reads. What do you store segments in?",
       "options": [
         {
-          "label": "Stay on object storage and add more retries and a bigger timeout",
+          "label": "Stay on object storage and add more retries and a bigger timeout for the slow requests",
           "why": "No new system, but the retry budget is only 2 seconds, so retries have no room."
         },
         {
-          "label": "A highly available key-value store for writes, with a write-through cache so reads rarely touch it",
-          "why": "Fast and available writes with read-write separation, but it costs more and you run two systems."
+          "label": "Keep segments only in memory on the origin machines for the fastest writes",
+          "why": "Fastest, but a machine failure loses recent segments and DVR viewers need them."
         },
         {
-          "label": "Keep segments only in memory on the origin machines",
-          "why": "Fastest, but a machine failure loses recent segments and DVR viewers need them."
+          "label": "A highly available key-value store for writes, plus a write-through cache for reads",
+          "why": "Fast and available writes with read-write separation, but it costs more and you run two systems."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "realChoice": {
         "company": "Netflix",
         "text": "Netflix first used AWS S3 for the Live Origin, as it did for on-demand video, and the post says it served well for low-traffic events (2025). S3 met its uptime guarantees, but the 2-second retry budget of live events led the team to start again from requirements, which looked more like those of a global, low-latency, highly available database. It built on its KeyValue abstraction over Apache Cassandra, which splits large values into chunks that can be retried and hedged, uses local-quorum writes and an LSM storage engine, and it added write-through caching of chunks in EVCache (Memcached based). The post says writes got a P99 latency similar to the earlier P50, and reads reached 200Gbps and beyond without affecting writes. It says this was significantly more expensive, and that cost was not a key objective.",
@@ -227,19 +227,19 @@
       "question": "The CDN may send a flood of requests to the origin: viewers behind the live edge catching up on replay, or asks for segments that do not exist yet. Storage and backbone bandwidth do not autoscale. What do you protect first?",
       "options": [
         {
-          "label": "Treat every request the same and rate limit them equally when load is high",
+          "label": "Treat every request the same and rate limit them equally across live and replay when load is high",
           "why": "Simple, but live viewers and replay viewers fail together."
         },
         {
-          "label": "Rank requests by user impact, serve the live edge first, and tell the CDN to cache the rejection briefly",
-          "why": "Protects the live edge, but replay requests fail while the system is under stress and must retry later."
+          "label": "Scale out origin servers faster as load rises, ahead of the surge",
+          "why": "Helps the stateless service, but the storage platform and backbone bandwidth do not scale with it."
         },
         {
-          "label": "Scale out origin servers faster when load rises",
-          "why": "Helps the stateless service, but the storage platform and backbone bandwidth do not scale with it."
+          "label": "Rank requests by impact: serve the live edge first and cache the rejection briefly at the CDN",
+          "why": "Protects the live edge, but replay requests fail while the system is under stress and must retry later."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "realChoice": {
         "company": "Netflix",
         "text": "The Live Origin uses priority-based rate limiting (2025). Requests with more user impact succeed, and lower-impact requests may fail under stress and retry later. It puts live edge traffic ahead of DVR traffic when the storage platform is under heavy load, working out which is which from the predictable segment template, which is cached in memory so the check does not read the datastore. When low-priority traffic is hit, the origin returns an HTTP 503 with max-age of 5 seconds so Open Connect caches the answer and does not come back for 5 seconds. Publishing is isolated on separate stacks and clusters, and the post also says the origin rejects requests for unknown events or wrong timing with 404 and for segments that will never exist with 410, using cached metadata, which easily exceeded a 90% hit ratio during such storms.",
@@ -251,19 +251,19 @@
       "question": "Viewership may beat your forecast and provisioned capacity, and viewers who hit a hiccup will restart the stream and add a retry wave. What do you plan for beyond adding servers?",
       "options": [
         {
-          "label": "Forecast generously and provision for the worst case so degradation never happens",
-          "why": "Avoids a degraded show on paper, but forecasts miss and the cost of idle capacity is high."
-        },
-        {
-          "label": "Pre-provision from predictions, scale the supporting services reactively, and prepare levers that remove nice-to-have features and slow retries",
+          "label": "Pre-provision from forecasts, scale supporting services reactively and keep levers to shed features and slow retries",
           "why": "Keeps the stream playing when you are wrong, but the product gets plainer under load and you must test the under-scaled case."
         },
         {
-          "label": "Let devices retry as fast as they like so every viewer reconnects quickly",
+          "label": "Forecast generously and provision for the worst case so that degradation never happens at all",
+          "why": "Avoids a degraded show on paper, but forecasts miss and the cost of idle capacity is high."
+        },
+        {
+          "label": "Let devices retry as fast as they like so every viewer reconnects quickly after a hiccup",
           "why": "Quick recovery for one viewer, and a larger spike for everyone."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "realChoice": {
         "company": "Netflix",
         "text": "Netflix uses prediction to pre-provision cloud and CDN capacity, shares forecasts with its ISP and cloud partners, and adds reactive scaling for sign-up, log-in, title discovery and playback services, with forward-looking predictions during an event (2025). It admits viewership has exceeded both predictions and provisioned capacity. It then has levers: service-level prioritised load shedding that puts live traffic ahead of non-critical traffic such as pre-fetch, dialing down personalisation, disabling bookmarks or lowering the maximum streaming quality. Its load tests include under-scaled systems. For retries it saw a 10x traffic increase from stream restarts after interruptions of as little as 30 seconds, and used server-guided backoff for device retries, prioritised shedding at the Cloud Edge Gateway and rebalancing between cloud regions.",

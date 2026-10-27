@@ -62,7 +62,7 @@
         },
         {
           "step": "Keep copies apart from the thing they protect",
-          "explanation": "A copy on the same disks, in the same account or in the same region as the original shares its fate. Put copies in another failure domain and use versioning or retention so a script or an attacker cannot delete them with one command."
+          "explanation": "A copy on the same disks, in the same account or in the same region as the original shares its fate. Put copies in another failure domain (a set of things that fail together, such as one disk, account or region) and use versioning or retention so a script or an attacker cannot delete them with one command. Versioning keeps old versions of a file, and retention refuses deletes for a set time."
         },
         {
           "step": "Choose a standby strategy for site loss",
@@ -74,7 +74,7 @@
         },
         {
           "step": "Test the recovery path, as chaos engineering does",
-          "explanation": "Chaos engineering injects failures on purpose in a controlled way to find weaknesses before a real one does. Applied to recovery, it means regular drills that fail a site over or drain its traffic, so runbooks and dependencies stay true as the system changes."
+          "explanation": "Chaos engineering injects failures on purpose in a controlled way to find weaknesses before a real one does. Applied to recovery, it means regular drills that fail a site over or drain its traffic, so runbooks (written step-by-step recovery instructions) and dependencies stay true as the system changes."
         }
       ],
       "diagram": "<svg viewBox=\"0 0 560 300\" role=\"img\" aria-labelledby=\"dg-c-dr-how-t\" class=\"dg\"><title id=\"dg-c-dr-how-t\">Four disaster recovery strategies from cheapest to costliest: backup and restore, pilot light, warm standby and active active. Cost and complexity rise left to right and recovery time falls.</title><defs><marker id=\"dg-c-dr-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"280\" y=\"40\" class=\"dg-note\" text-anchor=\"middle\">pick one per system from its RPO and RTO</text><rect x=\"20\" y=\"70\" width=\"115\" height=\"56\" class=\"dg-box\"/><text x=\"77.5\" y=\"94\" class=\"dg-label\" text-anchor=\"middle\">Backup and</text><text x=\"77.5\" y=\"111\" class=\"dg-label\" text-anchor=\"middle\">restore</text><text x=\"77\" y=\"150\" class=\"dg-note\" text-anchor=\"middle\">copies only,</text><text x=\"77\" y=\"168\" class=\"dg-note\" text-anchor=\"middle\">redeploy all</text><rect x=\"155\" y=\"70\" width=\"115\" height=\"56\" class=\"dg-box\"/><text x=\"212.5\" y=\"94\" class=\"dg-label\" text-anchor=\"middle\">Pilot</text><text x=\"212.5\" y=\"111\" class=\"dg-label\" text-anchor=\"middle\">light</text><text x=\"212\" y=\"150\" class=\"dg-note\" text-anchor=\"middle\">data live,</text><text x=\"212\" y=\"168\" class=\"dg-note\" text-anchor=\"middle\">servers off</text><rect x=\"290\" y=\"70\" width=\"115\" height=\"56\" class=\"dg-box\"/><text x=\"347.5\" y=\"94\" class=\"dg-label\" text-anchor=\"middle\">Warm</text><text x=\"347.5\" y=\"111\" class=\"dg-label\" text-anchor=\"middle\">standby</text><text x=\"347\" y=\"150\" class=\"dg-note\" text-anchor=\"middle\">small copy</text><text x=\"347\" y=\"168\" class=\"dg-note\" text-anchor=\"middle\">takes traffic</text><rect x=\"425\" y=\"70\" width=\"115\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"482.5\" y=\"94\" class=\"dg-label\" text-anchor=\"middle\">Active /</text><text x=\"482.5\" y=\"111\" class=\"dg-label\" text-anchor=\"middle\">active</text><text x=\"482\" y=\"150\" class=\"dg-note\" text-anchor=\"middle\">every site</text><text x=\"482\" y=\"168\" class=\"dg-note\" text-anchor=\"middle\">serves traffic</text><text x=\"20\" y=\"212\" class=\"dg-note\" text-anchor=\"start\">cheaper, slower to recover</text><text x=\"540\" y=\"212\" class=\"dg-note\" text-anchor=\"end\">costlier, faster</text><path d=\"M20,226 L540,226\" class=\"dg-line\" marker-end=\"url(#dg-c-dr-how-a)\"/><text x=\"280\" y=\"262\" class=\"dg-note\" text-anchor=\"middle\">each still needs point-in-time backups for corrupted data</text></svg>"
@@ -84,7 +84,7 @@
       "steps": [
         {
           "step": "List the copies the team believed it had",
-          "explanation": "GitLab had a nightly pg_dump uploaded to S3, an LVM snapshot refreshed into staging, Azure disk snapshots on some servers, and replication to a standby. On paper that looks like several layers."
+          "explanation": "GitLab had a nightly pg_dump (PostgreSQL's export tool) uploaded to S3 (Amazon's object storage), an LVM snapshot refreshed into staging (a test environment), Azure disk snapshots on some servers, and replication to a standby. On paper that looks like several layers."
         },
         {
           "step": "Ask three questions of each",
@@ -250,7 +250,7 @@
       {
         "level": "scale",
         "prompt": "The database grows tenfold and a full restore now takes longer than the recovery time objective. What changes?",
-        "answer": "Measure the restore, not the backup, and treat its duration as the number to beat. Shorten it by keeping a standby that is already restored and rolling forward from the log, by restoring shards in parallel rather than one stream, and by using incremental backups so that a restore chain stays short and is itself tested. Move the full-restore drill to a schedule you can keep, and keep a smaller, faster path for the common case of one table or one tenant.",
+        "answer": "Measure the restore, not the backup, and treat its duration as the number to beat. Shorten it by keeping a standby that is already restored and rolling forward from the log, by restoring shards in parallel rather than one stream, and by using incremental backups (copies of only what changed since the last one) so that a restore chain stays short and is itself tested. Move the full-restore drill to a schedule you can keep, and keep a smaller, faster path for the common case of one table or one tenant.",
         "tradeoffs": "A warm restored copy and parallel restore cost standing capacity and engineering work. Long incremental chains are cheap to take but add steps that can each fail on restore, so each chain needs its own periodic test.",
         "wrongAnswers": [
           "Back up more often and leave the restore as it is.",

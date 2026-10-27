@@ -70,19 +70,19 @@
       "question": "A card hold is placed at the start of a trip and later turned into a charge or voided. The next read must see the hold. How should its index be built?",
       "options": [
         {
-          "label": "Write the record, then build the index later in the background",
+          "label": "Write the record first and build the index afterwards in a background job",
           "why": "Fast and available, but the hold may not show for a while, and a duplicate charge becomes possible."
         },
         {
-          "label": "Write an index intent first, then the record, then commit the intent afterwards",
-          "why": "The index is never behind its record. Stale or orphaned intents can be settled by the next read."
+          "label": "Put the record and index in a single transaction across both databases",
+          "why": "Strict, but it couples two stores to one lock and one commit for every write."
         },
         {
-          "label": "Put the record and index in one cross-database transaction",
-          "why": "Strict, but it couples two stores to one lock and one commit for every write."
+          "label": "Write an index intent, then the record, then commit the intent",
+          "why": "The index is never behind its record. Stale or orphaned intents can be settled by the next read."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "realChoice": {
         "company": "Uber",
         "text": "LedgerStore uses a two-phase commit. An index intent is written before the record and committed after it, and the commit runs asynchronously so insert latency is not affected. If the intent write fails, the whole insert fails. A read that meets an intent checks whether the record exists, then commits or rolls back the intent. The post says only a very small percentage of indexes end up in the intent state.",
@@ -94,19 +94,19 @@
       "question": "The payment history page can show a payment a few seconds late. Should its index use the same strict path as the card hold?",
       "options": [
         {
-          "label": "Yes, use one strict path for every index so there is only one design",
-          "why": "Simple to reason about, but every write pays the extra latency and one failed index write fails the insert."
+          "label": "No, build it in a separate process outside the write path",
+          "why": "Write latency and availability stay unaffected, and the cost is a lag of seconds."
         },
         {
-          "label": "No, build it in the background by a separate process outside the write path",
-          "why": "Write latency and availability stay unaffected, and the cost is a lag of seconds."
+          "label": "Yes, use one strict path for every index so there is only one design",
+          "why": "Simple to reason about, but every write pays the extra latency and one failed index write fails the insert."
         },
         {
           "label": "No, skip the index and scan the ledger on each page view",
           "why": "No index to maintain, but each view reads far more than it needs."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "realChoice": {
         "company": "Uber",
         "text": "Eventually consistent indexes are generated in the background from Docstore's Materialized Views, away from the online write path. The post lists what strong indexes give up: a higher write latency, because the intent and record writes are serial, and a lower availability, because any one intent write that fails fails the whole write. It says strong indexes should be used only when the use case strongly demands it.",
@@ -118,15 +118,15 @@
       "question": "Ledger times cluster around the current clock. If the time index is partitioned by time, every new write lands on one partition. What do you do on a database that throttles hot partitions?",
       "options": [
         {
-          "label": "Partition by a finer time unit, such as one second",
+          "label": "Partition the time index by a finer unit of time, such as every second",
           "why": "Helps a little, but at 1,000 trips a second one second of writes already equals the peak before throttling."
         },
         {
-          "label": "Send writes to a temporary buffer table spread over M buckets by hash, and copy them in batches to a permanent table sorted by time",
+          "label": "Write to a temporary buffer table spread by hash over M buckets, then batch-copy to a time-sorted table",
           "why": "Online writes spread evenly. Throttling on the batch copy affects no one, and reads stay efficient."
         },
         {
-          "label": "Raise the provisioned write capacity until throttling stops",
+          "label": "Raise the provisioned write capacity of the table until the throttling stops",
           "why": "Works until traffic grows, and costs more with every step up."
         }
       ],
@@ -142,19 +142,19 @@
       "question": "The two-table design works but has an operational cost. What database property would let you use one table instead?",
       "options": [
         {
-          "label": "A store with a fixed number of shards, sorted by primary key, so you can partition on the full timestamp and scan windows",
-          "why": "Fine timestamps spread writes. A fixed shard count bounds how many reads a window needs."
-        },
-        {
-          "label": "A store that adds partitions without limit as data grows",
+          "label": "A store that adds new partitions without any limit as the table grows over time",
           "why": "Easy to grow, but the number of reads for a window keeps rising with table size."
         },
         {
-          "label": "A store with no ordering at all, scanned in full for each window",
+          "label": "A fixed shard count, data sorted by primary key, partitioned on the full timestamp",
+          "why": "Fine timestamps spread writes. A fixed shard count bounds how many reads a window needs."
+        },
+        {
+          "label": "A store with no ordering on its keys, so every time window is found by scanning the entire table",
           "why": "Writes spread evenly, but a time window has to read everything."
         }
       ],
-      "answerIndex": 0,
+      "answerIndex": 1,
       "realChoice": {
         "company": "Uber",
         "text": "Docstore is built on MySQL with a fixed number of shards and data sorted by primary key. Uber keeps a single time-range table, partitioned on the full timestamp, and reads a window as prefix scans over each shard, with a scatter-gather and sort merge. The post says the fixed shard count lets them bound the number of read requests, which does not work on DynamoDB, where partitions keep growing.",
@@ -166,19 +166,19 @@
       "question": "You have copied a trillion ledger entries to a new store. How do you decide it is safe to switch over?",
       "options": [
         {
-          "label": "Compare a sample of live traffic and stop at the first mismatch",
+          "label": "Compare a sample of live traffic against the old store and stop at the first mismatch",
           "why": "Catches bugs in code paths that real users hit, but says little about old data nobody reads."
         },
         {
-          "label": "Run live shadow comparison with a target that is below 100%, plus a full offline comparison of cold data",
-          "why": "Live checks cover current traffic and load. The offline job covers the rarely read history."
+          "label": "Trust the record counts reported by the backfill job itself",
+          "why": "Cheap, but a bug in the job would also be in its counts."
         },
         {
-          "label": "Trust the backfill job's own record counts",
-          "why": "Cheap, but a bug in the job would also be in its counts."
+          "label": "Live shadow comparison below 100%, plus a full offline comparison of cold data",
+          "why": "Live checks cover current traffic and load. The offline job covers the rarely read history."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "realChoice": {
         "company": "Uber",
         "text": "Uber used shadow validation with a target of at least 99.99% complete and correct and an upper bound of 99.9999%, and offline validation with Apache Spark. The biggest single job compared 760 billion records (70 TB compressed). The post notes that live shadow validation cannot give strong guarantees for rarely accessed history. The rollout ran over a few weeks with a fallback to DynamoDB, which was kept for a month before the table was dropped.",
@@ -190,19 +190,19 @@
       "question": "Backfilling years of history at a high rate can overload the live system. How should the backfill job run?",
       "options": [
         {
-          "label": "One long run at the highest rate the target can survive",
-          "why": "Finishes sooner, but any trouble in the middle means a restart from scratch."
-        },
-        {
-          "label": "Small idempotent batches with a rate limit, a dynamic speed-up when traffic is low, and an emergency stop",
+          "label": "Small idempotent batches, rate limited, faster when traffic is low, with an emergency stop",
           "why": "It can be stopped at any moment and resumed without double writes, and it never competes with live traffic for long."
         },
         {
-          "label": "Run it only during maintenance windows with all live traffic paused",
+          "label": "One long continuous run at the highest write rate the target can survive",
+          "why": "Finishes sooner, but any trouble in the middle means a restart from scratch."
+        },
+        {
+          "label": "Run it only in scheduled maintenance windows, with all live traffic paused for the duration of the copy",
           "why": "Safe for the target, but a money system has no quiet hours to give."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "realChoice": {
         "company": "Uber",
         "text": "Uber broke the backfill into batches that each finish within a few minutes, made them idempotent, wrote statistics after each batch, and rate-limited with additive increase and multiplicative decrease under an upper bound. Its worked example: 100 billion records at 10,000 a second take 120 days when production normally handles 1,000 a second. The post says to scale the job up in small steps and to stop it on any suspicion of overload.",
