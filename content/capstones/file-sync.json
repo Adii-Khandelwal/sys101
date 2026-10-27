@@ -163,7 +163,7 @@
     },
     {
       "id": "quality",
-      "question": "Compression at the same quality level used for long-term storage turns out to slow uploads on fast links (100 Mbps and above). Do you keep the best ratio, or change the setting?",
+      "question": "Compression at the same quality level used for long-term storage turns out to slow uploads on fast links (100 Mbps). Do you keep the best ratio, or change the setting?",
       "options": [
         {
           "label": "Keep the storage-grade setting, since a smaller block saves more bandwidth and storage",
@@ -537,7 +537,7 @@
         "Smaller blocks arrived at Magic Pocket in a format it could store directly"
       ],
       "correct": 1,
-      "why": "On 100 Mbps and faster links the compressor limited the upload. A lower level raised peak large-file bandwidth from about 35 to about 50 Mbps.",
+      "why": "On 100 Mbps links the compressor limited the upload. A lower level raised peak large-file bandwidth from about 35 to about 50 Mbps.",
       "wrong": [
         "The check still decompresses every block.",
         "",

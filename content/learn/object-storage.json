@@ -194,7 +194,7 @@
   "misconceptions": [
     {
       "myth": "An object store is a file system with a different name.",
-      "truth": "S3's docs describe general purpose buckets as a flat storage structure of keys, and say that directory buckets are the type that organize objects into directories [[aws-s3-intro]]."
+      "truth": "S3's docs describe general purpose buckets as a flat storage structure of keys, and say that directory buckets are the type that organise objects into directories [[aws-s3-intro]]."
     },
     {
       "myth": "Erasure coding means keeping several full copies.",

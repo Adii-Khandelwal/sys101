@@ -94,7 +94,7 @@
         },
         {
           "label": "Two levels: followers serve clients, and one leader per shard handles every miss and write for it",
-          "why": "One leader sees all requests for a shard, so it can serialize writes and avoid overlapping database queries."
+          "why": "One leader sees all requests for a shard, so it can serialise writes and avoid overlapping database queries."
         },
         {
           "label": "Clients choose any cache machine and the machines gossip with each other",
@@ -104,7 +104,7 @@
       "answerIndex": 1,
       "realChoice": {
         "company": "Facebook",
-        "text": "TAO splits the cache into a leader tier and follower tiers. Clients talk to the nearest follower, which forwards read misses and writes to the shard's leader. The leader serializes writes, avoids overlapping queries to the database, and caps the number of pending queries per shard.",
+        "text": "TAO splits the cache into a leader tier and follower tiers. Clients talk to the nearest follower, which forwards read misses and writes to the shard's leader. The leader serialises writes, avoids overlapping queries to the database, and caps the number of pending queries per shard.",
         "sourceId": "tao"
       }
     },
@@ -306,7 +306,7 @@
         "label": "Leader cache tier",
         "topic": "caching",
         "company": "Facebook",
-        "tradeoff": "One leader per shard serializes writes and shields the database from stampedes. It is also a hop that adds latency on a miss.",
+        "tradeoff": "One leader per shard serialises writes and shields the database from stampedes. It is also a hop that adds latency on a miss.",
         "to": [
           "master",
           "replica"

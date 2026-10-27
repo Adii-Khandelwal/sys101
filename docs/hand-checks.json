@@ -522,5 +522,9 @@
   "netflix-kappa-backfill-2022|24 hours": {
     "verdict": "ok",
     "source": "slide 66: \"processing 24 hours of data takes ~ 5 hours\""
+  },
+  "sentry-xid-2015|three million": {
+    "verdict": "ok",
+    "source": "current PostgreSQL docs (routine-vacuuming): warns at forty million, system refuses new XIDs below three million left; Sentry 2015 post says fewer than a million, and the digest attributes each figure to its source"
   }
 }

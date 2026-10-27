@@ -115,15 +115,15 @@
       "published": "2023-12-07",
       "digest": {
         "problem": "MySQL 5.7 was nearing the end of its support, so GitHub had to move its whole MySQL fleet to 8.0 without breaking its service level objectives, and with a way back at every step. This is the operational view: how a fleet of primaries, replicas and replication streams is actually run and changed at scale.",
-        "constraints": "The fleet has over 1,200 hosts on Azure virtual machines and bare metal hosts in its data center, holding over 300 TB across more than 50 clusters, each a primary with replicas, split by product area and, for the largest, sharded with Vitess. Each cluster had to be upgraded as one unit, mixed versions had to run for a long time, and a rollback had to be possible without disruption. MySQL officially supports replicating only to the next newer release, so replicating from 8.0 back to 5.7 was outside what it promises.",
+        "constraints": "The fleet has over 1,200 hosts on Azure virtual machines and bare metal hosts in its data centre, holding over 300 TB across more than 50 clusters, each a primary with replicas, split by product area and, for the largest, sharded with Vitess. Each cluster had to be upgraded as one unit, mixed versions had to run for a long time, and a rollback had to be possible without disruption. MySQL officially supports replicating only to the next newer release, so replicating from 8.0 back to 5.7 was outside what it promises.",
         "walkthrough": [
           {
             "step": "Prepare everything",
-            "explanation": "8.0 ran in CI next to 5.7, tooling learned the syntax differences, and the character set, collation and client settings were standardized so data could still replicate back to 5.7."
+            "explanation": "8.0 ran in CI next to 5.7, tooling learned the syntax differences, and the character set, collation and client settings were standardised so data could still replicate back to 5.7."
           },
           {
             "step": "Upgrade replicas first",
-            "explanation": "One replica was upgraded and watched, then data center by data center, always keeping enough 5.7 replicas to roll back."
+            "explanation": "One replica was upgraded and watched, then data centre by data centre, always keeping enough 5.7 replicas to roll back."
           },
           {
             "step": "Move reads",

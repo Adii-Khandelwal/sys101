@@ -109,7 +109,7 @@
       {
         "question": "A photo site stores every photo as its own file on a file server, and reads slow down as the photo count grows. According to the Haystack paper, which cost dominates?",
         "options": [
-          "Moving the large photo bytes across the network between data centers",
+          "Moving the large photo bytes across the network between data centres",
           "Reading the file's metadata from disk before the photo itself",
           "Directory names that grow longer than the path limit allows",
           "The CDN refusing to cache files that are small in size"
@@ -145,17 +145,17 @@
       {
         "question": "In Dropbox's Magic Pocket, the Master of a cell goes down. What does the post say keeps working?",
         "options": [
-          "Reads, and writes until the open volumes fill up",
+          "Reads, and writes until the cell runs out of available buckets",
           "Nothing, since every request passes through it",
           "Reads only, because writes fail the moment it stops",
           "Writes only, since reads need it to find blocks"
         ],
         "correct": 0,
-        "why": "The post says the Master is not on the data plane: the cell keeps serving reads, and can take writes until it runs out of buckets that the Master would normally create.",
+        "why": "The post says the Master is not on the data plane: the cell keeps serving reads, and can take writes until it runs out of available storage buckets, because only the Master creates new ones as they fill up.",
         "wrong": [
           "",
           "The post says no live traffic flows through the Master.",
-          "The post says writes can continue until the cell runs out of buckets, so they do not fail at once.",
+          "The post says writes can continue until the cell runs out of available storage buckets, so they do not fail at once.",
           "Reads do not need the Master, because the Block Index and Replication Table answer them."
         ],
         "teaches": "why"

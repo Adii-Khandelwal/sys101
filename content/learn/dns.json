@@ -54,7 +54,7 @@
         {
           "source": "bind-arm",
           "section": "1.4.1 DNS Fundamentals",
-          "what": "How the tree of names is organized, from the root to top-level and second-level domains."
+          "what": "How the tree of names is organised, from the root to top-level and second-level domains."
         },
         {
           "source": "rfc1034",
@@ -235,7 +235,7 @@
         {
           "source": "rfc1034",
           "section": "4.2 How the database is divided into zones",
-          "what": "How zones divide the tree so different organizations run their own parts."
+          "what": "How zones divide the tree so different organisations run their own parts."
         }
       ],
       "canNow": [

@@ -49,7 +49,7 @@
         },
         {
           "term": "Key movement",
-          "definition": "How many keys change owners when the node set changes; the thing consistent hashing minimizes."
+          "definition": "How many keys change owners when the node set changes; the thing consistent hashing minimises."
         }
       ],
       "reading": [

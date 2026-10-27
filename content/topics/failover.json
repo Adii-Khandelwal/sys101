@@ -80,7 +80,7 @@
       "steps": [
         {
           "step": "A primary and its replicas",
-          "explanation": "A MySQL cluster has one primary taking writes and several replicas replaying its changes and serving reads, spread across data centers."
+          "explanation": "A MySQL cluster has one primary taking writes and several replicas replaying its changes and serving reads, spread across data centres."
         },
         {
           "step": "The primary stops responding",
@@ -92,7 +92,7 @@
         },
         {
           "step": "Fence and redirect",
-          "explanation": "The old primary should be fenced so it cannot accept writes if it returns (GitHub sets it read-only when it can, and says a short period of split-brain is still possible in a data center isolation), and the new primary's identity is published to a proxy layer. Clients, which only ever knew a name routed through the proxy, now reach the new primary without a DNS wait."
+          "explanation": "The old primary should be fenced so it cannot accept writes if it returns (GitHub sets it read-only when it can, and says a short period of split-brain is still possible in a data centre isolation), and the new primary's identity is published to a proxy layer. Clients, which only ever knew a name routed through the proxy, now reach the new primary without a DNS wait."
         },
         {
           "step": "Measure the outage",
@@ -270,8 +270,8 @@
         "circuit-breakers"
       ],
       "digest": {
-        "problem": "GitHub runs multiple MySQL clusters in a classic primary-replicas setup: one primary accepts writes, replicas replay its changes asynchronously and serve reads. If the primary fails, writes stop until a replica is promoted, so GitHub needed automated failover that is fast, loses little or no data, works across data centers, and never produces two primaries.",
-        "constraints": "The previous design used Orchestrator for detection and failover but VIP and DNS for clients to find the primary, which had bad failure modes: VIP reassignment can split-brain, waiting to contact the dead primary to release its VIP wastes time, and DNS time-to-live means clients keep resolving the old address. The new design had to remove the DNS and VIP dependency and work cleanly across data centers.",
+        "problem": "GitHub runs multiple MySQL clusters in a classic primary-replicas setup: one primary accepts writes, replicas replay its changes asynchronously and serve reads. If the primary fails, writes stop until a replica is promoted, so GitHub needed automated failover that is fast, loses little or no data, works across data centres, and never produces two primaries.",
+        "constraints": "The previous design used Orchestrator for detection and failover but VIP and DNS for clients to find the primary, which had bad failure modes: VIP reassignment can split-brain, waiting to contact the dead primary to release its VIP wastes time, and DNS time-to-live means clients keep resolving the old address. The new design had to remove the DNS and VIP dependency and work cleanly across data centres.",
         "walkthrough": [
           {
             "step": "Detect failure holistically",
@@ -279,7 +279,7 @@
           },
           {
             "step": "Run the controller on consensus",
-            "explanation": "GitHub runs a cross-data-center orchestrator/raft setup: the Orchestrator nodes communicate by Raft consensus, so failover is driven by the single raft leader and the decision is agreed, not made independently by many actors."
+            "explanation": "GitHub runs a cross-data-centre orchestrator/raft setup: the Orchestrator nodes communicate by Raft consensus, so failover is driven by the single raft leader and the decision is agreed, not made independently by many actors."
           },
           {
             "step": "Promote a replica",
@@ -287,7 +287,7 @@
           },
           {
             "step": "Discover the new primary through Consul",
-            "explanation": "Instead of VIP and DNS, GitHub uses HashiCorp Consul for service discovery. Orchestrator writes the new primary's identity into Consul's key-value store, and propagates that change to all its nodes via Raft so every data center learns it."
+            "explanation": "Instead of VIP and DNS, GitHub uses HashiCorp Consul for service discovery. Orchestrator writes the new primary's identity into Consul's key-value store, and propagates that change to all its nodes via Raft so every data centre learns it."
           },
           {
             "step": "Route clients through GLB",
@@ -302,7 +302,7 @@
           },
           {
             "value": "up to 20-25 seconds",
-            "meaning": "Total outage in less frequent (20s) and extreme (25s) cases"
+            "meaning": "Total outage in less frequent (20 seconds) and extreme (25 seconds) cases"
           },
           {
             "value": "a single node in a cluster",
@@ -312,9 +312,9 @@
         "tradeoffs": {
           "chosen": "Holistic, replica-corroborated failure detection; a cross-DC orchestrator/raft consensus controller for promotion; Consul plus GLB/HAProxy for client discovery, removing VIP and DNS.",
           "rejected": "The earlier VIP-and-DNS discovery, which risked split-brain on VIP reassignment, wasted time contacting the dead primary, and left clients waiting on DNS time-to-live.",
-          "why": "VIP and DNS tied failover speed to cache expiry and to co-locating servers, and could leave two hosts claiming one VIP. Moving discovery into Consul fed by orchestrator/raft lets GitHub fail over across data centers without a DNS wait and with a single agreed decision, bringing most failovers to 10 to 13 seconds."
+          "why": "VIP and DNS tied failover speed to cache expiry and to co-locating servers, and could leave two hosts claiming one VIP. Moving discovery into Consul fed by orchestrator/raft lets GitHub fail over across data centres without a DNS wait and with a single agreed decision, bringing most failovers to 10 to 13 seconds."
         },
-        "failures": "The post is candid about the old design's failure modes it set out to kill: VIP reassignment split-brain, the wasted step of asking a dead primary to release its VIP, and DNS TTL delaying client cutover, with cross-DC failover especially slow. The new design still has limits it names: the proxy hides the application's identity from the primary, a data center isolation can leave a short period of split-brain until a planned STONITH is in place, and a Consul outage during a failover is an unhandled scenario.",
+        "failures": "The post is candid about the old design's failure modes it set out to kill: VIP reassignment split-brain, the wasted step of asking a dead primary to release its VIP, and DNS TTL delaying client cutover, with cross-DC failover especially slow. The new design still has limits it names: the proxy hides the application's identity from the primary, a data centre isolation can leave a short period of split-brain until a planned STONITH is in place, and a Consul outage during a failover is an unhandled scenario.",
         "takeaways": "Fast database failover is three problems, not one: detect without false positives (corroborate across replicas), decide once (consensus-backed promotion), and redirect without waiting on caches (a proxy fed by service discovery, not DNS). GitHub's setup does all three and reports 10 to 13 seconds of total outage in most cases; our own reading is that this is why failover leans on both replication and consensus."
       }
     },

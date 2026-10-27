@@ -270,7 +270,7 @@
         "walkthrough": [
           {
             "step": "Count per location",
-            "explanation": "Anycast announces the same IP from many places and sends traffic to the closest live data center, so one client IP normally reaches the same location. Each location gets its own counting system, with no counts shared between locations. The post assumes route changes are rare."
+            "explanation": "Anycast announces the same IP from many places and sends traffic to the closest live data centre, so one client IP normally reaches the same location. Each location gets its own counting system, with no counts shared between locations. The post assumes route changes are rare."
           },
           {
             "step": "Share counters inside a location",
@@ -349,7 +349,7 @@
           "rejected": "A central counter store, fixed windows, a timestamp log, a leaky bucket, and compare-and-set updates.",
           "why": "A central store would be slow and hard to keep available, and the other algorithms were too inaccurate, too memory hungry, or needed operations the store could not do atomically. The estimate is cheap and, in the post's test, close enough to the real rate."
         },
-        "failures": "The estimate is approximate: in the test, 3 sources got through despite being slightly over the limit. Compare-and-set updates would have failed often under attack. The post says the team had just started to explore how to protect customers with the limiter and was looking into more optimizations and new features. It gives no latency, memory or time-to-live figures.",
+        "failures": "The estimate is approximate: in the test, 3 sources got through despite being slightly over the limit. Compare-and-set updates would have failed often under attack. The post says the team had just started to explore how to protect customers with the limiter and was looking into more optimisations and new features. It gives no latency, memory or time-to-live figures.",
         "takeaways": "Choose the counting algorithm by what your store can do atomically and cheaply. Keep counting off the request path, and keep the block decision as a small flag that servers can cache. Measure the error of an approximate count instead of assuming it is small.",
         "figure": {
           "id": "sliding-window",
@@ -373,7 +373,7 @@
         "consistent-hashing"
       ],
       "digest": {
-        "problem": "Databricks' ingress gateway, built on Envoy, called a Ratelimit Service backed by a single Redis instance. The post names three problems: high tail latency, with a P99 network latency of 10ms to 20ms in one of the cloud providers; throughput that stopped growing with more machines and point optimizations; and the single Redis instance as a single point of failure. It gives no request volumes or instance counts.",
+        "problem": "Databricks' ingress gateway, built on Envoy, called a Ratelimit Service backed by a single Redis instance. The post names three problems: high tail latency, with a P99 network latency of 10 ms to 20 ms in one of the cloud providers; throughput that stopped growing with more machines and point optimisations; and the single Redis instance as a single point of failure. It gives no request volumes or instance counts.",
         "constraints": "Envoy is third-party code the team could not change, so new logic had to live in a sidecar on localhost. The backend services could tolerate some traffic over the limit, so exact counts were not required, though the team still wanted a bound on overshoot (the post's example is 5%).",
         "walkthrough": [
           {
@@ -386,7 +386,7 @@
           },
           {
             "step": "Count locally, report in batches",
-            "explanation": "Clients make no remote call on the critical path. They count locally and report periodically (the post's example is every 100ms), sending outstanding hits and rejected hits per key and getting back a time to reject until and a rejection rate."
+            "explanation": "Clients make no remote call on the critical path. They count locally and report periodically (the post's example is every 100 ms), sending outstanding hits and rejected hits per key and getting back a time to reject until and a rejection rate."
           },
           {
             "step": "Group by assignment",
@@ -401,7 +401,7 @@
             "explanation": "A token bucket allows controlled bursts, remembers overage by going negative, and can approximate a sliding window. It made the earlier rejection-rate prediction unnecessary, and all limits were converted."
           },
           {
-            "step": "Add defense in depth",
+            "step": "Add defence in depth",
             "explanation": "A client-side local limiter cuts off obvious excess before it reaches a server."
           }
         ],

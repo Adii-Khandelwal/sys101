@@ -108,7 +108,7 @@
       "name": "Going deeper",
       "body": [
         "To total an unbounded stream you cut it into windows. Flink offers tumbling, sliding and session windows, in event-time and processing-time versions. Processing-time windows are quicker, but they give different results on each run and mishandle old or out-of-order data [[flink-analytics]].",
-        "The Dataflow paper from Google frames the work as four questions: what results are computed, where in event time, when in processing time they are materialized, and how earlier results relate to later refinements. It argues that the choice of batch, micro-batch or streaming engine should come down to correctness, latency and cost [[dataflow-paper]]. It also says Lambda systems can meet many requirements but lose on simplicity, because two systems have to be built and maintained [[dataflow-paper]].",
+        "The Dataflow paper from Google frames the work as four questions: what results are computed, where in event time, when in processing time they are materialised, and how earlier results relate to later refinements. It argues that the choice of batch, micro-batch or streaming engine should come down to correctness, latency and cost [[dataflow-paper]]. It also says Lambda systems can meet many requirements but lose on simplicity, because two systems have to be built and maintained [[dataflow-paper]].",
         "Batch mode changes behaviour in ways to know: rolling operations such as reduce() or sum() emit only the final result, and checkpointing does not work, so a transactional sink must use the Unified Sink API [[flink-exec]]."
       ],
       "terms": [

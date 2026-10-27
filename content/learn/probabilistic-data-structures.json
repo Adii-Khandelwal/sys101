@@ -72,8 +72,8 @@
       "body": [
         "RocksDB describes the mechanism: several hash functions are applied to a key, each picking a bit to set to 1. At read time the same hash functions are applied to the search key and the bits are probed. If at least one probe returns 0, the key definitely does not exist [[rocks-bloom]].",
         "Redis gives the sizing arithmetic. The optimal number of hash functions is ceil(-ln(error_rate) / ln(2)), and the bits per item are -ln(error_rate) / ln(2)^2. A 1% error rate needs 7 hash functions and 9.585 bits per item; 0.1% needs 10 and 14.378; 0.01% needs 14 and 19.170 [[redis-bloom]]. The page contrasts this with a Redis set holding IP addresses, at around 40 bytes (320 bits) per item [[redis-bloom]].",
-        "Counting distinct items works differently. Redis describes a HyperLogLog as a probabilistic structure that estimates the cardinality of a set. PFADD adds elements, PFCOUNT returns the approximate count, and PFMERGE combines several into one, and a write or read takes constant time and space [[redis-hll]]. Google's paper on running HyperLogLog in practice describes improvements that cut its memory and raise its accuracy for an important range of cardinalities, and notes that the algorithm parallelizes perfectly and computes its estimate in one pass [[hll-practice]].",
-        "For frequencies, the count-min sketch paper introduces a data structure of sublinear space for summarizing data streams. It allows point, range and inner-product queries to be answered approximately and quickly, with accuracy set by two parameters the user chooses [[cm-paper]]."
+        "Counting distinct items works differently. Redis describes a HyperLogLog as a probabilistic structure that estimates the cardinality of a set. PFADD adds elements, PFCOUNT returns the approximate count, and PFMERGE combines several into one, and a write or read takes constant time and space [[redis-hll]]. Google's paper on running HyperLogLog in practice describes improvements that cut its memory and raise its accuracy for an important range of cardinalities, and notes that the algorithm parallelises perfectly and computes its estimate in one pass [[hll-practice]].",
+        "For frequencies, the count-min sketch paper introduces a data structure of sublinear space for summarising data streams. It allows point, range and inner-product queries to be answered approximately and quickly, with accuracy set by two parameters the user chooses [[cm-paper]]."
       ],
       "terms": [
         {
@@ -307,12 +307,12 @@
     {
       "id": "cm-paper",
       "title": "An Improved Data Stream Summary: The Count-Min Sketch and its Applications",
-      "url": "https://dsf.berkeley.edu/cs286/papers/countmin-latin2004.pdf",
+      "url": "https://web.archive.org/web/2024/https://dsf.berkeley.edu/cs286/papers/countmin-latin2004.pdf",
       "publisher": "Graham Cormode and S. Muthukrishnan (Rutgers DIMACS), copy hosted by UC Berkeley CS 286",
       "kind": "Research paper",
       "year": "2004",
       "verifiedOn": "2026-10-17",
-      "note": "Only the abstract and the first two sections were read."
+      "note": "Only the abstract and the first two sections were read. The original Berkeley address no longer loads, so this is the Internet Archive copy of the same file."
     }
   ]
 }

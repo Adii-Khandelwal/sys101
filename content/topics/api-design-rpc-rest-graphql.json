@@ -124,7 +124,7 @@
           "JSON needs a table for every request, and Protobuf removes that step"
         ],
         "correct": 0,
-        "why": "Protobuf needs explicit field numbers and Rest.li's modeling language had none, so a two-way mapping from names to integers filled that gap while keeping the existing model.",
+        "why": "Protobuf needs explicit field numbers and Rest.li's modelling language had none, so a two-way mapping from names to integers filled that gap while keeping the existing model.",
         "wrong": [
           "",
           "Protobuf carries strings fine; the problem was field identity, not string content.",
@@ -229,7 +229,7 @@
         "level": "scale",
         "prompt": "Internal service-to-service traffic grows 10x and JSON encoding shows up in your profiles. How would you move to a binary format across hundreds of services without a freeze?",
         "answer": "Upgrade the shared library first so every service can read both formats, then switch callers one at a time with a client setting that picks the format and tells the server which format to answer in. Watch latency and errors per service as the share of Protobuf calls grows, and roll back a client by flipping its setting. If your schema has no field numbers, generate a mapping from names to numbers and publish it with each build, keeping it append-only.",
-        "tradeoffs": "Binary payloads are harder to read in logs and need tooling to debug. You carry both formats until the ramp ends, and a new encoding only pays off where serialization is a real share of the time, so measure before and after.",
+        "tradeoffs": "Binary payloads are harder to read in logs and need tooling to debug. You carry both formats until the ramp ends, and a new encoding only pays off where serialisation is a real share of the time, so measure before and after.",
         "wrongAnswers": [
           "Switch every service in one release, which leaves no way back if one of them breaks.",
           "Renumber fields when the schema changes, which makes old clients read the wrong fields."
@@ -254,15 +254,15 @@
       "published": "2023-04-11",
       "digest": {
         "problem": "LinkedIn's Rest.li framework used JSON as its default format across a very large number of internal endpoints. JSON was readable and well supported, but turning it into objects was slow and its text payloads were large, which showed up in performance profiles.",
-        "constraints": "The replacement had to be compact, fast to encode and decode, supported in all the languages Rest.li is used in, and easy to plug into the existing serialization mechanism and data modeling. It also had to roll out to every service without disrupting developers.",
+        "constraints": "The replacement had to be compact, fast to encode and decode, supported in all the languages Rest.li is used in, and easy to plug into the existing serialisation mechanism and data modelling. It also had to roll out to every service without disrupting developers.",
         "walkthrough": [
           {
             "step": "Set criteria and compare formats",
-            "explanation": "The team looked for compact payloads, efficient serialization, wide language support and an easy fit with Rest.li. It evaluated Protobuf, Flatbuffers, Cap'n'Proto, SMILE, MessagePack, CBOR and Kryo, and chose Protobuf."
+            "explanation": "The team looked for compact payloads, efficient serialisation, wide language support and an easy fit with Rest.li. It evaluated Protobuf, Flatbuffers, Cap'n'Proto, SMILE, MessagePack, CBOR and Kryo, and chose Protobuf."
           },
           {
             "step": "Close the field number gap",
-            "explanation": "Protobuf identifies fields by number, and Rest.li's modeling language has no way to give fields numbers. The team invented symbol tables, a two-way mapping from field names and enum values to integers, and used it with runtime type information to behave like a Protobuf schema."
+            "explanation": "Protobuf identifies fields by number, and Rest.li's modelling language has no way to give fields numbers. The team invented symbol tables, a two-way mapping from field names and enum values to integers, and used it with runtime type information to behave like a Protobuf schema."
           },
           {
             "step": "Generate the tables two ways",
@@ -285,7 +285,7 @@
           },
           {
             "value": "8%",
-            "meaning": "Improvement in resource utilization"
+            "meaning": "Improvement in resource utilisation"
           },
           {
             "value": "6.25%",
@@ -297,9 +297,9 @@
           }
         ],
         "tradeoffs": {
-          "chosen": "Protobuf with generated symbol tables, kept behind Rest.li's existing serialization layer and ramped with client configuration.",
+          "chosen": "Protobuf with generated symbol tables, kept behind Rest.li's existing serialisation layer and ramped with client configuration.",
           "rejected": "Flatbuffers, Cap'n'Proto, SMILE, MessagePack, CBOR and Kryo, which were evaluated, and further tuning of JSON, which kept being a bottleneck.",
-          "why": "Protobuf did best against the team's criteria, and symbol tables let services keep their existing data modeling."
+          "why": "Protobuf did best against the team's criteria, and symbol tables let services keep their existing data modelling."
         },
         "failures": "The post names no incident. It notes that JSON is easier to read and debug, and says the team saw no statistically significant degradation against JSON in any service.",
         "takeaways": "Changing the wire format can be hidden behind the same schema and rolled out by configuration. The post says LinkedIn plans to move from Rest.li to gRPC later, so the figures describe the Protobuf step, not that move.",
@@ -359,7 +359,7 @@
           "rejected": "Request-based credits, which charge the same regardless of how much data a client needs.",
           "why": "A cost that follows the data requested gives a more predictable load for servers and encourages clients to ask only for what they need."
         },
-        "failures": "The post names no incident. It says the cost is proportional to server load measured by execution time, and that outliers in that link are used to find places to optimize.",
+        "failures": "The post names no incident. It says the cost is proportional to server load measured by execution time, and that outliers in that link are used to find places to optimise.",
         "takeaways": "A limit works best when it counts the work a call causes. GraphQL makes that possible because the query states what it will touch before it runs."
       }
     },

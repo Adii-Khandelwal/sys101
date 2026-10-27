@@ -13,7 +13,7 @@
     "points": [
       "Event-driven architecture has each service announce facts about what already happened, and other services react on their own.",
       "The event log becomes the backbone and state can be rebuilt by replaying it, but publishing reliably and processing idempotently get harder.",
-      "Zapier wrote each event to a local SQLite outbox before Kafka so a Kafka outage would not lose it, then decided to move away after scaling pain.",
+      "Zapier wrote events to a local SQLite outbox before Kafka so an outage would not lose them, then decided to move away after running it for years.",
       "Grab found that cross-AZ traffic, mostly consumers reading a far leader, can be about half the cost of its Kafka platform."
     ],
     "figures": [
@@ -237,8 +237,8 @@
       {
         "level": "scale",
         "prompt": "Your event backbone now carries hundreds of billions of events a week across three availability zones, and the cloud bill is dominated by network traffic. Where is the cost and what do you do?",
-        "answer": "By default Kafka clients talk to the partition leader, which is in a different AZ most of the time, and most traffic is on the consuming side because a topic has many consumers. That cross-AZ traffic can be about half the platform's cost. Make the cluster rack-aware and let consumers fetch from the closest (same-AZ) replica, so reads stay in-zone. Keep the producer and replication paths correct, since those cross-AZ transfers are unavoidable and comparatively small.",
-        "tradeoffs": "Closest-replica reads need broker and consumer configuration and a Kafka version that supports it (2.3 or newer), and Grab saw up to 500 ms more end-to-end latency, so its most latency-sensitive uses stayed on leader fetch. The saving is large because consumer traffic scales with the number of consumers.",
+        "answer": "By default Kafka clients talk to the partition leader, which is in a different AZ most of the time, and most traffic is on the consuming side because a topic has many consumers. That cross-AZ traffic can be about half the platform's cost. Make the cluster rack-aware and let consumers fetch from the closest (same-AZ) replica, so reads stay in-zone. Leave the producer and replication paths alone at first: the post calls their cross-AZ cost minimal and relatively small, and the zone spread is what gives fault tolerance.",
+        "tradeoffs": "Closest-replica reads need broker and consumer configuration and a Kafka version that supports it, and Grab saw up to 500 ms more end-to-end latency, so its most latency-sensitive uses stayed on leader fetch. The saving is large because consumer traffic scales with the number of consumers.",
         "wrongAnswers": [
           "Collapse to a single AZ to avoid cross-AZ traffic, losing fault tolerance.",
           "Assume producer traffic is the main cost and optimise that first.",
@@ -367,7 +367,7 @@
           }
         ],
         "tradeoffs": {
-          "chosen": "A transactional outbox backed by local, sharded SQLite on EBS, with WAL, per-shard mutexes and aggressive vacuuming, shipping to Kafka at-least-once.",
+          "chosen": "A non-textbook outbox backed by local, sharded SQLite on EBS, with WAL, per-shard mutexes and aggressive vacuuming, shipping to Kafka at-least-once.",
           "rejected": "Publishing directly to Kafka from the service, and (for the outbox store) a traditional RDS setup rather than local SQLite.",
           "why": "Direct publishing made Kafka a single point of failure whose latency spikes during upgrades could lose critical events. Local SQLite gave a local durable buffer with no provisioned database or network hop, and kept the service out of the relational database transition. The post is explicit that this was not the textbook transactional outbox, and that the team has since decided to move away from it."
         },

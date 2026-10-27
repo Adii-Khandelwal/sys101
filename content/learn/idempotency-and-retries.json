@@ -76,7 +76,7 @@
       "name": "How it works",
       "body": [
         "Methods such as PUT cover many cases. For an operation that must happen once, such as creating a resource or charging a card, APIs add a key that the client supplies. EC2 calls it a client token: a unique, case-sensitive string of up to 64 ASCII characters, specified in the request. If you retry a request that completed successfully using the same client token and the same parameters, the retry succeeds without performing any further actions [[ec2-idempotency]]. If the token is the same but one or more parameters differ, other than the Region or Availability Zone, the retry fails with an IdempotentParameterMismatch error [[ec2-idempotency]].",
-        "Stripe describes the same idea as an idempotency key, which the client generates and which the server uses to recognize later retries of the same request. For API v1, Stripe saves the status code and body of the first request made with a key, after the endpoint begins executing, and retries with the same key return the saved response, including 500 errors. Keys can be up to 255 characters long, and Stripe suggests V4 UUIDs or another random string with enough entropy to avoid collisions [[stripe-idempotent-requests]]. Its idempotency layer compares the incoming parameters with those of the original request and returns an error if they differ [[stripe-idempotent-requests]].",
+        "Stripe describes the same idea as an idempotency key, which the client generates and which the server uses to recognise later retries of the same request. For API v1, Stripe saves the status code and body of the first request made with a key, after the endpoint begins executing, and retries with the same key return the saved response, including 500 errors. Keys can be up to 255 characters long, and Stripe suggests V4 UUIDs or another random string with enough entropy to avoid collisions [[stripe-idempotent-requests]]. Its idempotency layer compares the incoming parameters with those of the original request and returns an error if they differ [[stripe-idempotent-requests]].",
         "Both pages put the key in the client's hands: one key for one intended action, reused on every retry, with the server keeping the key and the outcome. Stripe tells you not to use sensitive data, such as an email address, as a key [[stripe-idempotent-requests]]. It also says that for API v1 it may remove keys once they are at least 24 hours old, and that a request that reuses a key after the original was removed is treated as new [[stripe-idempotent-requests]].",
         "A saved result exists only if the request got far enough to produce one. Stripe says that for API v1 it saves results only after the endpoint begins executing, so a request that fails parameter validation, or that conflicts with another request still running, saves nothing and can be retried [[stripe-idempotent-requests]]."
       ],
@@ -84,7 +84,7 @@
       "terms": [
         {
           "term": "Client token",
-          "definition": "EC2's name for the unique string a caller sends so a retry of the same request can be recognized."
+          "definition": "EC2's name for the unique string a caller sends so a retry of the same request can be recognised."
         },
         {
           "term": "Idempotency key",
@@ -116,7 +116,7 @@
         }
       ],
       "canNow": [
-        "Say what a client sends to make a retry recognizable.",
+        "Say what a client sends to make a retry recognisable.",
         "Say what the server does with a key it has seen, and with one it has not.",
         "Say what happens when a key is reused with different parameters."
       ]

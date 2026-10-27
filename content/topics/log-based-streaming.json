@@ -311,7 +311,7 @@
         "numbers": [
           {
             "value": "Over 60 billion",
-            "meaning": "Unique message writes through Kafka per day at LinkedIn in 2013; several hundred billion if writes from mirroring between datacentres are counted"
+            "meaning": "Unique message writes through Kafka per day at LinkedIn in 2013; several hundred billion if writes from mirroring between data centres are counted"
           },
           {
             "value": "Several hundred",

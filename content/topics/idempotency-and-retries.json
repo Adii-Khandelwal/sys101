@@ -122,7 +122,7 @@
         "walkthrough": [
           {
             "step": "A small or a large share overloaded",
-            "explanation": "If a small subset of tasks in a datacenter is overloaded, the preferred response is to retry at once, because other tasks probably have room. If a large subset is overloaded, requests should not be retried, and the error should go back up to the caller."
+            "explanation": "If a small subset of tasks in a data centre is overloaded, the preferred response is to retry at once, because other tasks probably have room. If a large subset is overloaded, requests should not be retried, and the error should go back up to the caller."
           },
           {
             "step": "Retries are ordinary requests",
@@ -130,7 +130,7 @@
           },
           {
             "step": "A budget per request",
-            "explanation": "A request is attempted at most three times. After the third failure the error goes back to the caller, on the reasoning that a request that has landed on overloaded tasks three times suggests the whole datacenter is overloaded."
+            "explanation": "A request is attempted at most three times. After the third failure the error goes back to the caller, on the reasoning that a request that has landed on overloaded tasks three times suggests the whole data centre is overloaded."
           },
           {
             "step": "A budget per client",
@@ -138,7 +138,7 @@
           },
           {
             "step": "What the budgets do in the worst case",
-            "explanation": "If a datacenter accepts few requests and rejects many, the per-request budget alone takes request volume to just below three times the attempted rate. Layering the 10% per-client budget on top brings the growth to 1.1x in the general case."
+            "explanation": "If a data centre accepts few requests and rejects many, the per-request budget alone takes request volume to just below three times the attempted rate. Layering the 10% per-client budget on top brings the growth to 1.1x in the general case."
           },
           {
             "step": "Backends tell clients not to retry",
@@ -161,7 +161,7 @@
           },
           {
             "value": "just below 3X",
-            "meaning": "Worst-case growth in request volume with only the per-request budget, when a datacenter rejects a large portion of requests"
+            "meaning": "Worst-case growth in request volume with only the per-request budget, when a data centre rejects a large portion of requests"
           },
           {
             "value": "1.1x",
@@ -185,7 +185,7 @@
     },
     {
       "term": "Idempotency key",
-      "definition": "A unique value a client sends with a request and reuses on every retry, so the server can recognize a repeat."
+      "definition": "A unique value a client sends with a request and reuses on every retry, so the server can recognise a repeat."
     },
     {
       "term": "Retry",
@@ -232,7 +232,7 @@
   "lesson": {
     "why": {
       "outcome": "After this you can explain why a call that seems to have failed cannot simply be sent again, and what makes a retry safe.",
-      "body": "A call across a network can fail in ways the caller cannot tell apart. The request may never have arrived. It may have arrived and run, with only the reply lost. It may still be running. After a timeout the caller knows only that it heard nothing, so sending the call again is a guess.\n\nFor a read, the guess is harmless. For a call that charges a card, creates an order or adds a message, a repeat can do the work twice. The same problem sits inside a queue: a message is delivered again when its acknowledgment is lost, so a consumer has to cope with seeing it twice.\n\nTwo things make retrying safe and considerate. Idempotency makes a repeat harmless, so the work happens once however many times the call is made. Limits keep retries from adding load to something that is already failing, as the Circuit Breakers topic showed. A good retry policy needs both.",
+      "body": "A call across a network can fail in ways the caller cannot tell apart. The request may never have arrived. It may have arrived and run, with only the reply lost. It may still be running. After a timeout the caller knows only that it heard nothing, so sending the call again is a guess.\n\nFor a read, the guess is harmless. For a call that charges a card, creates an order or adds a message, a repeat can do the work twice. The same problem sits inside a queue: a message is delivered again when its acknowledgement is lost, so a consumer has to cope with seeing it twice.\n\nTwo things make retrying safe and considerate. Idempotency makes a repeat harmless, so the work happens once however many times the call is made. Limits keep retries from adding load to something that is already failing, as the Circuit Breakers topic showed. A good retry policy needs both.",
       "diagram": "<svg viewBox=\"0 0 560 200\" role=\"img\" aria-labelledby=\"dg-idem-why-t\" class=\"dg\"><title id=\"dg-idem-why-t\">After a timeout the caller cannot tell the cases apart: the request may never have arrived, it may have run with the reply lost, or it may still be running, so sending it again is a guess.</title><defs><marker id=\"dg-idem-why-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"190\" y=\"12\" width=\"180\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"36.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Call times out</text><path d=\"M280,52 L280,72\" class=\"dg-line\"/><path d=\"M86,72 L474,72\" class=\"dg-line\"/><rect x=\"12\" y=\"92\" width=\"148\" height=\"46\" class=\"dg-box\"/><text x=\"86\" y=\"111.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Never</text><text x=\"86\" y=\"127.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">arrived</text><path d=\"M86,72 L86,92\" class=\"dg-line\" marker-end=\"url(#dg-idem-why-a)\"/><rect x=\"206\" y=\"92\" width=\"148\" height=\"46\" class=\"dg-box\"/><text x=\"280\" y=\"111.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Ran, reply</text><text x=\"280\" y=\"127.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">lost</text><path d=\"M280,72 L280,92\" class=\"dg-line\" marker-end=\"url(#dg-idem-why-a)\"/><rect x=\"400\" y=\"92\" width=\"148\" height=\"46\" class=\"dg-box\"/><text x=\"474\" y=\"111.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Still</text><text x=\"474\" y=\"127.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">running</text><path d=\"M474,72 L474,92\" class=\"dg-line\" marker-end=\"url(#dg-idem-why-a)\"/><text x=\"280\" y=\"168\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The caller only knows it heard nothing.</text><text x=\"280\" y=\"186\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">For a card charge, a repeat can do the work twice.</text></svg>"
     },
     "mentalModel": {
@@ -253,7 +253,7 @@
         },
         {
           "step": "Retry with the same key",
-          "explanation": "For a call with side effects, the client sends the key from the first attempt, so the server can recognize the repeat."
+          "explanation": "For a call with side effects, the client sends the key from the first attempt, so the server can recognise the repeat."
         },
         {
           "step": "The server checks the key",
@@ -287,7 +287,7 @@
         },
         {
           "step": "Cap the tries",
-          "explanation": "Google lets a request be attempted up to three times. With only that rule, if a datacenter rejects most requests, volume still grows to just below three times the attempted rate."
+          "explanation": "Google lets a request be attempted up to three times. With only that rule, if a data centre rejects most requests, volume still grows to just below three times the attempted rate."
         },
         {
           "step": "Add a client budget",
@@ -364,7 +364,7 @@
         "wrong": [
           "Growing waits are backoff; jitter is the random part added to them.",
           "",
-          "A key, not a delay, is how a server recognizes a repeat."
+          "A key, not a delay, is how a server recognises a repeat."
         ],
         "teaches": "how"
       },
@@ -408,7 +408,7 @@
       {
         "level": "apply",
         "prompt": "A client calls a payment provider and the call times out. Should it retry, and what has to be true first?",
-        "answer": "It should retry only if the provider can recognize a repeat. Send a unique key with the first attempt and reuse the same key on every retry, so the provider returns the stored result instead of charging again. Without a key, the client has to find out whether the first call worked before it sends another, for example by asking the provider.",
+        "answer": "It should retry only if the provider can recognise a repeat. Send a unique key with the first attempt and reuse the same key on every retry, so the provider returns the stored result instead of charging again. Without a key, the client has to find out whether the first call worked before it sends another, for example by asking the provider.",
         "tradeoffs": "Keys cost the provider storage and a lookup on every request, and the record has to be kept long enough to catch late retries.",
         "wrongAnswers": [
           "Retry with a new key so the call is treated as fresh.",
