@@ -352,7 +352,7 @@
         "label": "Cold storage",
         "topic": "object-storage",
         "company": "Uber",
-        "tradeoff": "Older data sits in a cold tier built for storage cost, while hot data stays where it serves requests best. Indexes can be rebuilt from this cold data, which is how historical backfill works. Reads from it are slower than from the hot tier.",
+        "tradeoff": "Older data sits in a cold tier built for storage cost, while hot data stays where it serves requests best. Indexes can be rebuilt from this cold data, which is how historical backfill works.",
         "to": []
       }
     ],

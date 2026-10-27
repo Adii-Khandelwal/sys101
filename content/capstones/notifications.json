@@ -54,7 +54,7 @@
       },
       {
         "label": "6. Too many and too few both cost",
-        "value": "Pinterest says too few notifications lose people ideas to discover and too many cause fatigue and unsubscribes (2020)",
+        "value": "Pinterest says too few notifications mean people miss ideas to discover and too many cause fatigue and unsubscribes (2020)",
         "sourceId": "pinterest"
       },
       {
@@ -100,7 +100,7 @@
       "options": [
         {
           "label": "They wait until the broken channel recovers so all three stay in step",
-          "why": "Consistent, but one broken channel stops everything, which is the Christmas lights problem."
+          "why": "Consistent, but one broken channel stops everything, like one dead bulb in a string of lights."
         },
         {
           "label": "Each channel gets its own task path, so a failure or delay in one does not block the others",
@@ -162,7 +162,7 @@
       "answerIndex": 1,
       "realChoice": {
         "company": "Slack",
-        "text": "Slack modelled each notification sent as its own trace, with the notification_id used as the trace id, and tied it to the sender's trace with span links (2023). The reasons it gives: customer experience staff wanted 100 percent fidelity, while backend requests were sampled at 1 percent; an @here or @channel could send a push to potentially hundreds of thousands of users across devices and make billions of spans in one trace; and standard tracing ties a trace to one request context, which a notification flow does not fit. It agreed a spec of six spans (trigger, notify, sent, received, opened, read in app). Tracing took several quarters across teams. The post says debugging a notification issue had taken several days and deep expertise, and that after tracing support staff could see where a notification was dropped. It gives no storage cost.",
+        "text": "Slack modelled each notification sent as its own trace, with the notification_id used as the trace id, and tied it to the sender's trace with span links (2023). The reasons it gives: customer experience staff wanted 100 percent fidelity, while backend requests were sampled at 1 percent; an @here or @channel could send a push to potentially hundreds of thousands of users across devices and make billions of spans in one trace; and standard tracing ties a trace to one request context, which a notification flow does not fit. It agreed a spec of six spans (trigger, notify, sent, received, opened, read in app). Tracing took several quarters across teams. The post says investigating a notification issue had taken several days and deep technical expertise (and, elsewhere, several hours of very senior engineers' time), and that after tracing anyone could see where a notification was dropped. It gives no storage cost.",
         "sourceId": "slack"
       }
     },
@@ -186,7 +186,7 @@
       "answerIndex": 1,
       "realChoice": {
         "company": "Patreon",
-        "text": "Patreon first tried a bottom-up approach where product teams prioritised their own migrations, and it got about 20 percent of the way in six months (2026). It then took engineering leadership alignment on a Q1 2026 deadline and finished the rest in six weeks. The job covered more than 200 notifications, 10 teams and more than 30 engineers. For nine months it ran two notification systems in parallel, so every platform change had to work with both; it saw a couple of minor incidents from compatibility problems. The post says it built AI skills to produce first-pass migrations, which still needed engineers because AI can hallucinate or miss business logic. A final sweep found 4 net-new migrations and several incomplete ones.",
+        "text": "Patreon first tried a bottom-up approach where product teams prioritised their own migrations, and it got about 20 percent of the way in six months (2026). It then took engineering leadership alignment on a Q1 2026 deadline and finished the rest in six weeks. The job covered more than 200 notifications, 10 teams and more than 30 engineers. It ran two notification systems in parallel for nine months, so every platform change had to work with both, and it saw a couple of minor incidents from compatibility problems. The post gives the nine months and the six months plus six weeks as separate figures and does not say how they overlap. The post says it built AI skills to produce first-pass migrations, which still needed engineers because AI can hallucinate or miss business logic. A final sweep found 4 net-new migrations and several incomplete ones.",
         "sourceId": "patreon"
       }
     }

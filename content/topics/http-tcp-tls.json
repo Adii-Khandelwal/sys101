@@ -385,7 +385,7 @@
         ],
         "tradeoffs": {
           "chosen": "A new proxy where threads share one pool of origin connections, instead of one pool per process.",
-          "rejected": "Continuing to invest in NGINX and possibly forking it, or moving to another third-party proxy such as Envoy, because the per-worker model would remain.",
+          "rejected": "Continuing to invest in NGINX and possibly forking it, or moving to another third-party proxy such as Envoy, which the post says may mean the same cycle repeating in a few years.",
           "why": "The post says the latency gains were not from faster code, since the old service already answered in under a millisecond, but from architecture that shares connections, which means fewer handshakes."
         },
         "failures": "The reuse problem was a side effect of scaling: the usual way to add capacity, more workers, made connection reuse worse. The post says Cloudflare had workarounds for some of NGINX's limits, but wanted to fix the worker model itself, which is why it built a new proxy.",

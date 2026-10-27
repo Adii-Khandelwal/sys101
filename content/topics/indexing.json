@@ -126,7 +126,7 @@
       "published": "2025-04-24",
       "digest": {
         "problem": "Discord indexes messages in Elasticsearch so people can search them, with each guild's messages, or each DM's, kept together in one index. As message volume grew, the clusters reached more than 200 nodes, indexing slowed and failed more often, upgrades became nearly impossible, and the biggest guilds started hitting a hard limit on index size.",
-        "constraints": "Each Elasticsearch index is a single Lucene index, and Lucene caps an index at about 2 billion documents; past that, every write to it fails. Discord cites a recommendation to keep an index within 200M messages and 50GB. Large clusters also carry coordination overhead on their master nodes, which grows with nodes and indexes.",
+        "constraints": "Each Elasticsearch index is a single Lucene index, and Lucene caps an index at about 2 billion documents; past that, every write to it fails. Discord cites a recommendation to keep an index within 200M messages and 50 GB. Large clusters also carry coordination overhead on their master nodes, which grows with nodes and indexes.",
         "walkthrough": [
           {
             "step": "Batch by destination",
@@ -134,7 +134,7 @@
           },
           {
             "step": "Run many small clusters",
-            "explanation": "Instead of clusters of over 200 nodes, messages live on many smaller clusters grouped into cells, with indexes kept within the 200M message and 50GB recommendation."
+            "explanation": "Instead of clusters of over 200 nodes, messages live on many smaller clusters grouped into cells, with indexes kept within the 200M message and 50 GB recommendation."
           },
           {
             "step": "Give nodes one job",
@@ -153,7 +153,7 @@
             "explanation": "Most indexes keep a single primary shard, so a query hits one node. Guilds nearing the Lucene limit are moved to new indexes with more primary shards: new messages are written to both, history is copied, then queries switch over."
           }
         ],
-        "diagram": "<svg viewBox=\"0 0 560 280\" role=\"img\" aria-labelledby=\"dg-dc-cells-t\" class=\"dg\"><title id=\"dg-dc-cells-t\">Discord&#x27;s search indexing from 2025: a router groups messages by destination so each bulk write goes to one Elasticsearch node; messages live in cells of small clusters, guild messages sharded by guild, DMs by user, and very large guilds on indices with more shards.</title><defs><marker id=\"dg-dc-cells-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"40\" width=\"110\" height=\"44\" class=\"dg-box\"/><text x=\"69\" y=\"67\" class=\"dg-label\" text-anchor=\"middle\">New messages</text><path d=\"M124,62 L156,62\" class=\"dg-line\" marker-end=\"url(#dg-dc-cells-a)\"/><rect x=\"150\" y=\"34\" width=\"150\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"225\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\">Router: group</text><text x=\"225\" y=\"75.5\" class=\"dg-label\" text-anchor=\"middle\">by destination</text><text x=\"225\" y=\"110\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">one bulk write, one node</text><rect x=\"330\" y=\"14\" width=\"216\" height=\"50\" class=\"dg-box\"/><text x=\"438\" y=\"35.5\" class=\"dg-label\" text-anchor=\"middle\">guild cell</text><text x=\"438\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\">sharded by guild_id</text><rect x=\"330\" y=\"82\" width=\"216\" height=\"50\" class=\"dg-box\"/><text x=\"438\" y=\"103.5\" class=\"dg-label\" text-anchor=\"middle\">user DM cell</text><text x=\"438\" y=\"120.5\" class=\"dg-label\" text-anchor=\"middle\">sharded by user_id</text><rect x=\"330\" y=\"150\" width=\"216\" height=\"50\" class=\"dg-box dg-dashed\"/><text x=\"438\" y=\"171.5\" class=\"dg-label\" text-anchor=\"middle\">BFG cell</text><text x=\"438\" y=\"188.5\" class=\"dg-label\" text-anchor=\"middle\">more primary shards</text><path d=\"M300,54 L326,40\" class=\"dg-line\" marker-end=\"url(#dg-dc-cells-a)\"/><path d=\"M300,64 L326,104\" class=\"dg-line\" marker-end=\"url(#dg-dc-cells-a)\"/><path d=\"M300,74 L326,170\" class=\"dg-line\" marker-end=\"url(#dg-dc-cells-a)\"/><text x=\"438\" y=\"220\" class=\"dg-note\" text-anchor=\"middle\">each index kept under</text><text x=\"438\" y=\"236\" class=\"dg-note\" text-anchor=\"middle\">200M messages and 50GB</text><text x=\"225\" y=\"150\" class=\"dg-note\" text-anchor=\"middle\">before: a 50-message batch</text><text x=\"225\" y=\"166\" class=\"dg-note\" text-anchor=\"middle\">could touch 50 nodes</text><text x=\"280\" y=\"266\" class=\"dg-note\" text-anchor=\"middle\">small clusters in cells, instead of clusters of over 200 nodes</text></svg>",
+        "diagram": "<svg viewBox=\"0 0 560 280\" role=\"img\" aria-labelledby=\"dg-dc-cells-t\" class=\"dg\"><title id=\"dg-dc-cells-t\">Discord&#x27;s search indexing from 2025: a router groups messages by destination so each bulk write goes to one Elasticsearch node; messages live in cells of small clusters, guild messages sharded by guild, DMs by user, and very large guilds on indices with more shards.</title><defs><marker id=\"dg-dc-cells-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"40\" width=\"110\" height=\"44\" class=\"dg-box\"/><text x=\"69\" y=\"67\" class=\"dg-label\" text-anchor=\"middle\">New messages</text><path d=\"M124,62 L156,62\" class=\"dg-line\" marker-end=\"url(#dg-dc-cells-a)\"/><rect x=\"150\" y=\"34\" width=\"150\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"225\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\">Router: group</text><text x=\"225\" y=\"75.5\" class=\"dg-label\" text-anchor=\"middle\">by destination</text><text x=\"225\" y=\"110\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\">one bulk write, one node</text><rect x=\"330\" y=\"14\" width=\"216\" height=\"50\" class=\"dg-box\"/><text x=\"438\" y=\"35.5\" class=\"dg-label\" text-anchor=\"middle\">guild cell</text><text x=\"438\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\">sharded by guild_id</text><rect x=\"330\" y=\"82\" width=\"216\" height=\"50\" class=\"dg-box\"/><text x=\"438\" y=\"103.5\" class=\"dg-label\" text-anchor=\"middle\">user DM cell</text><text x=\"438\" y=\"120.5\" class=\"dg-label\" text-anchor=\"middle\">sharded by user_id</text><rect x=\"330\" y=\"150\" width=\"216\" height=\"50\" class=\"dg-box dg-dashed\"/><text x=\"438\" y=\"171.5\" class=\"dg-label\" text-anchor=\"middle\">BFG cell</text><text x=\"438\" y=\"188.5\" class=\"dg-label\" text-anchor=\"middle\">more primary shards</text><path d=\"M300,54 L326,40\" class=\"dg-line\" marker-end=\"url(#dg-dc-cells-a)\"/><path d=\"M300,64 L326,104\" class=\"dg-line\" marker-end=\"url(#dg-dc-cells-a)\"/><path d=\"M300,74 L326,170\" class=\"dg-line\" marker-end=\"url(#dg-dc-cells-a)\"/><text x=\"438\" y=\"220\" class=\"dg-note\" text-anchor=\"middle\">each index kept under</text><text x=\"438\" y=\"236\" class=\"dg-note\" text-anchor=\"middle\">200M messages and 50 GB</text><text x=\"225\" y=\"150\" class=\"dg-note\" text-anchor=\"middle\">before: a 50-message batch</text><text x=\"225\" y=\"166\" class=\"dg-note\" text-anchor=\"middle\">could touch 50 nodes</text><text x=\"280\" y=\"266\" class=\"dg-note\" text-anchor=\"middle\">small clusters in cells, instead of clusters of over 200 nodes</text></svg>",
         "numbers": [
           {
             "value": "~40%",
@@ -205,7 +205,7 @@
       "verifiedOn": "2026-10-17",
       "published": "2026-08-10",
       "digest": {
-        "problem": "Notion keeps an Elasticsearch index current with an online pipeline, but sometimes the whole index has to be rebuilt from a database snapshot: to backfill a new searchable field, change how text is tokenized, move to a new Elasticsearch version or open a new region. The old rebuild was a quarterly event that took weeks, needed constant watching and ended with gaps in the index.",
+        "problem": "Notion keeps an Elasticsearch index current with an online pipeline, but sometimes the whole index has to be rebuilt from a database snapshot: to backfill a new searchable field, change how text is tokenised, move to a new Elasticsearch version or open a new region. The old rebuild was a quarterly event that took weeks, needed constant watching and ended with gaps in the index.",
         "constraints": "The code that turns a block into a search document holds years of edge cases about permissions, deletions and field formatting, so rewriting it in one step risked quiet search-quality regressions. Each change also had to be checkable alone, with a small blast radius, because if the index is wrong, search breaks for everyone.",
         "walkthrough": [
           {
@@ -233,11 +233,11 @@
         "numbers": [
           {
             "value": "under 2 days",
-            "meaning": "Full reindex time with the new reindexer, down from 2+ weeks"
+            "meaning": "Full reindex time in the post's results table, down from 2+ weeks"
           },
           {
             "value": "under 24 hours",
-            "meaning": "How long the post's introduction says the operation now takes"
+            "meaning": "What the post's introduction says the whole rebuild now takes; the results table says under 2 days for the full reindex, and the post does not explain the gap"
           },
           {
             "value": "under 1 hour",
@@ -266,7 +266,7 @@
           "why": "Reuse gave the same documents online and offline for free, but it ran a batch job on a runtime built for online services: one core per Node worker, repeated per-process state, and every write competing with live traffic. Snapshots avoid the live write path and make rollback a restore of yesterday's snapshot. Porting the riskiest code only after the snapshot path was proven, behind validators, kept each step small."
         },
         "failures": "The old workers crashed with out-of-memory errors and partial writes, and each run began with an engineer hand-computing a memory budget. Two embedded Elasticsearch tasks on one executor shared a disk and ran it out of space, so each executor now runs one task. EBS volumes were too small for the biggest shards and too slow for sequential writes, so executors moved to instance-store NVMe. The old catchup pipeline was a second ECS system with the same problems. The old rebuild also silently dropped some legacy blocks.",
-        "takeaways": "A rebuild of an index is a backfill plus a catchup, and version numbers on documents make the catchup safe to retry. Do not run a batch job on an online runtime just to reuse code; check parity with validators instead. Build the artifact offline and swap it in, which gives rollback for free. Split a risky migration into steps that can be deployed and verified alone."
+        "takeaways": "A rebuild of an index is a backfill plus a catchup, and version numbers on documents make the catchup safe to retry. Do not run a batch job on an online runtime just to reuse code; check parity with validators instead. Build the artefact offline and swap it in, which gives rollback for free. Split a risky migration into steps that can be deployed and verified alone."
       }
     }
   ],
@@ -309,7 +309,7 @@
     }
   ],
   "mistakes": [
-    "Adding an index for every slow query. Each index is another structure to update on every write; in Uber's 2016 account of Postgres 9.2, one small update cost at least 4 physical writes in its example table.",
+    "Adding an index for every slow query. Each index is another structure to update on every write; in Uber's 2016 account of Postgres 9.2 (covered on the Databases topic), one small update to its example table with three indexes took at least four physical writes, before the write-ahead log is counted.",
     "Putting the columns of a composite index in the wrong order. A B-tree on (a, b) is sorted by a first, so it does little for a query that filters only on b.",
     "Letting one index grow without limit. Lucene caps an index at about 2 billion documents, and Discord found that once an index reached it, every write to it failed."
   ],
@@ -329,7 +329,7 @@
       "steps": [
         {
           "step": "Plan the query",
-          "explanation": "The database's query planner looks at the filter and decides whether an index helps. An index on (org, kind) helps a filter on org, or org and kind, but not on kind alone."
+          "explanation": "The database's query planner looks at the filter and decides whether an index helps. An index on (org, kind) helps a filter on org, or org and kind, but does little for kind alone."
         },
         {
           "step": "Walk the B-tree",
@@ -340,7 +340,7 @@
           "explanation": "Each insert, update or delete must also update every index on the table, so each extra index adds write work and storage."
         },
         {
-          "step": "Tokenize for search",
+          "step": "Tokenise for search",
           "explanation": "A search engine splits text into words or ngrams and adds each document to the posting list of every token it contains."
         },
         {
@@ -352,7 +352,7 @@
           "explanation": "Shard by document and every query must ask every shard and merge the results. Shard by the thing users search within, such as a team or a user, and most queries go to one shard."
         }
       ],
-      "diagram": "<svg viewBox=\"0 0 560 153\" role=\"img\" aria-labelledby=\"dg-idx-how-t\" class=\"dg\"><title id=\"dg-idx-how-t\">Using an index: the planner picks it, walks the B-tree to the rows, and pays to update it on every write; search tokenizes text and intersects posting lists.</title><defs><marker id=\"dg-idx-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"55\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Plan the</text><text x=\"55\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">query</text><rect x=\"124\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box dg-accent\"/><text x=\"167\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Walk the</text><text x=\"167\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">B-tree</text><text x=\"167\" y=\"116\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">jump to rows</text><rect x=\"236\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"279\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Pay on</text><text x=\"279\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">write</text><text x=\"279\" y=\"116\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">update index</text><rect x=\"348\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"391\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Tokenize</text><text x=\"391\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">for</text><text x=\"391\" y=\"90.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">search</text><rect x=\"460\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"503\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Intersect</text><text x=\"503\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">lists</text><text x=\"503\" y=\"116\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">inverted index</text><path d=\"M98,68.5 L124,68.5\" class=\"dg-line\" marker-end=\"url(#dg-idx-how-a)\"/><path d=\"M210,68.5 L236,68.5\" class=\"dg-line\" marker-end=\"url(#dg-idx-how-a)\"/><path d=\"M322,68.5 L348,68.5\" class=\"dg-line\" marker-end=\"url(#dg-idx-how-a)\"/><path d=\"M434,68.5 L460,68.5\" class=\"dg-line\" marker-end=\"url(#dg-idx-how-a)\"/><text x=\"280\" y=\"143\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">An index speeds the read and taxes every write.</text></svg>"
+      "diagram": "<svg viewBox=\"0 0 560 153\" role=\"img\" aria-labelledby=\"dg-idx-how-t\" class=\"dg\"><title id=\"dg-idx-how-t\">Using an index: the planner picks it, walks the B-tree to the rows, and pays to update it on every write; search tokenises text and intersects posting lists.</title><defs><marker id=\"dg-idx-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"55\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Plan the</text><text x=\"55\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">query</text><rect x=\"124\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box dg-accent\"/><text x=\"167\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Walk the</text><text x=\"167\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">B-tree</text><text x=\"167\" y=\"116\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">jump to rows</text><rect x=\"236\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"279\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Pay on</text><text x=\"279\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">write</text><text x=\"279\" y=\"116\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">update index</text><rect x=\"348\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"391\" y=\"56.166666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Tokenise</text><text x=\"391\" y=\"73.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">for</text><text x=\"391\" y=\"90.16666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">search</text><rect x=\"460\" y=\"36\" width=\"86\" height=\"65\" class=\"dg-box\"/><text x=\"503\" y=\"64.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Intersect</text><text x=\"503\" y=\"81.66666666666667\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">lists</text><text x=\"503\" y=\"116\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">inverted index</text><path d=\"M98,68.5 L124,68.5\" class=\"dg-line\" marker-end=\"url(#dg-idx-how-a)\"/><path d=\"M210,68.5 L236,68.5\" class=\"dg-line\" marker-end=\"url(#dg-idx-how-a)\"/><path d=\"M322,68.5 L348,68.5\" class=\"dg-line\" marker-end=\"url(#dg-idx-how-a)\"/><path d=\"M434,68.5 L460,68.5\" class=\"dg-line\" marker-end=\"url(#dg-idx-how-a)\"/><text x=\"280\" y=\"143\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">An index speeds the read and taxes every write.</text></svg>"
     },
     "workedExample": {
       "outcome": "After this you can estimate what an index saves and see how the shard key shapes a real query.",
@@ -375,7 +375,7 @@
         },
         {
           "step": "Shard by scope",
-          "explanation": "Discord shards messages by guild, so a search inside a guild usually touches one node. Its median query latency went from 500ms to under 100ms after its rebuild."
+          "explanation": "Discord shards messages by guild, so a search inside a guild usually touches one node. Its median query latency went from 500 ms to under 100 ms after its rebuild."
         },
         {
           "step": "Watch the limits",
@@ -447,7 +447,7 @@
         "why": "It maps tokens to posting lists, so a search intersects a few lists instead of reading documents.",
         "wrong": [
           "",
-          "The name refers to inverting document to words into word to documents.",
+          "The name refers to turning a mapping from document to words into one from word to documents.",
           "That describes a B-tree on a primary key."
         ],
         "teaches": "model"

@@ -39,7 +39,7 @@
       "verifiedOn": "2026-10-13",
       "published": "2026-09-18",
       "digest": {
-        "problem": "Cloudflare routes cacheable requests to servers by URL with consistent hashing, so each data center keeps one copy of each file. Its internal load balancer builds these rings with the open-source pingora-ketama library, and an engineer flagged that the rings were using far too much memory, about 6GB in some cases.",
+        "problem": "Cloudflare routes cacheable requests to servers by URL with consistent hashing, so each data centre keeps one copy of each file. Its internal load balancer builds these rings with the open-source pingora-ketama library, and an engineer flagged that the rings were using far too much memory, about 6GB in some cases.",
         "constraints": "Every service runs on every machine, so wasted memory is multiplied across the fleet. With one point per server the ring is badly uneven, so each server gets many points, and weighting servers by disk size multiplies the count further. Compliance and caching features restrict which servers may handle a request, so each feature combination needs its own ring. Any change to a ring moves cached files and sends extra traffic to customers' origin servers, so the rollout had to be careful and reversible.",
         "walkthrough": [
           {
@@ -60,7 +60,7 @@
           },
           {
             "step": "Roll out by location",
-            "explanation": "The change went data center by data center, small locations first, with traffic share and location controlled separately."
+            "explanation": "The change went data centre by data centre, small locations first, with traffic share and location controlled separately."
           },
           {
             "step": "Clean up",
@@ -103,8 +103,8 @@
           }
         ],
         "tradeoffs": {
-          "chosen": "Far fewer points per server, a smaller entry layout, and a slow rollout by data center with both rings running side by side.",
-          "rejected": "Keeping the default point counts, forcing a packed struct layout, and switching every data center at once.",
+          "chosen": "Far fewer points per server, a smaller entry layout, and a slow rollout by data centre with both rings running side by side.",
+          "rejected": "Keeping the default point counts, forcing a packed struct layout, and switching every data centre at once.",
           "why": "The math showed most points bought almost no extra balance while costing memory on every machine. A global switch would have invalidated most cached content at once and flooded origins, so they accepted a slower rollout and temporarily holding both rings in memory."
         },
         "failures": "Changing only the index type saved nothing because of alignment padding. Adding ever more points stopped paying off: each step down in error needs roughly ten times more points, and with 32-bit hashes, collisions at high point counts actually add error. Separate rings per feature combination grow quickly, so more points could never solve that part.",
@@ -292,7 +292,7 @@
         },
         {
           "step": "Roll out gently",
-          "explanation": "Every ring change moves cached files and sends traffic to origins, so both rings ran side by side and the switch went data center by data center."
+          "explanation": "Every ring change moves cached files and sends traffic to origins, so both rings ran side by side and the switch went data centre by data centre."
         },
         {
           "step": "Make lookups free",
@@ -346,7 +346,7 @@
         "correct": 2,
         "why": "Its keys pass to the next server along; everyone else keeps theirs.",
         "wrong": [
-          "That is the hash-mod-N behavior.",
+          "That is the hash-mod-N behaviour.",
           "Only the departing server's share moves.",
           ""
         ],
@@ -420,7 +420,7 @@
       },
       {
         "level": "design",
-        "prompt": "Design how a load balancer routes cacheable URLs to servers in a data center, with servers of different disk sizes.",
+        "prompt": "Design how a load balancer routes cacheable URLs to servers in a data centre, with servers of different disk sizes.",
         "answer": "Build a ring with points weighted by disk size, pick the point count from the balance you need rather than a default, store entries compactly, and keep one ring per set of servers allowed for a request.",
         "tradeoffs": "Fewer points means slightly less even load; separate rings per feature combination multiply memory.",
         "wrongAnswers": [
@@ -437,7 +437,7 @@
         "answer": "Run the old and new rings side by side, choose one per request, and move traffic location by location, small sites first, with separate controls for traffic share and location. Remove the old ring only at 100%.",
         "tradeoffs": "Holding two rings in memory costs extra memory during the move, and the rollout is slow.",
         "wrongAnswers": [
-          "Switching every data center at once and flooding origins with misses.",
+          "Switching every data centre at once and flooding origins with misses.",
           "No way to roll back.",
           "Assuming more points will fix any imbalance."
         ],

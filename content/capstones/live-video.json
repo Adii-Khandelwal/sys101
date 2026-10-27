@@ -98,7 +98,7 @@
       "answerIndex": 1,
       "realChoice": {
         "company": "Meta",
-        "text": "Facebook put a network of edge caches around the world between viewers and the live stream server (2015). A live video was split into three-second HLS segments that the player requests one after another. An HTTP proxy in an edge data center checks its cache; on a miss it asks the origin cache, which has the same structure, and only then the server handling that stream. The response is cached at each layer on the way back. The post says more than 98 percent of segments were already in an edge cache close to the user.",
+        "text": "Facebook put a network of edge caches around the world between viewers and the live stream server (2015). A live video was split into three-second HLS segments that the player requests one after another. An HTTP proxy in an edge data centre checks its cache; on a miss it asks the origin cache, which has the same structure, and only then the server handling that stream. The response is cached at each layer on the way back. The post says more than 98 percent of segments were already in an edge cache close to the user.",
         "sourceId": "facebook"
       }
     },
@@ -266,7 +266,7 @@
       "answerIndex": 1,
       "realChoice": {
         "company": "Netflix",
-        "text": "Netflix uses prediction to pre-provision cloud and CDN capacity, shares forecasts with its ISP and cloud partners, and adds reactive scaling for sign-up, log-in, title discovery and playback services, with forward-looking predictions during an event (2025). It admits viewership has exceeded both predictions and provisioned capacity. It then has levers: service-level prioritized load shedding that puts live traffic ahead of non-critical traffic such as pre-fetch, dialing down personalization, disabling bookmarks or lowering the maximum streaming quality. Its load tests include under-scaled systems. For retries it saw a 10x traffic increase from stream restarts after interruptions of as little as 30 seconds, and used server-guided backoff for device retries, prioritized shedding at the Cloud Edge Gateway and rebalancing between cloud regions.",
+        "text": "Netflix uses prediction to pre-provision cloud and CDN capacity, shares forecasts with its ISP and cloud partners, and adds reactive scaling for sign-up, log-in, title discovery and playback services, with forward-looking predictions during an event (2025). It admits viewership has exceeded both predictions and provisioned capacity. It then has levers: service-level prioritised load shedding that puts live traffic ahead of non-critical traffic such as pre-fetch, dialing down personalisation, disabling bookmarks or lowering the maximum streaming quality. Its load tests include under-scaled systems. For retries it saw a 10x traffic increase from stream restarts after interruptions of as little as 30 seconds, and used server-guided backoff for device retries, prioritised shedding at the Cloud Edge Gateway and rebalancing between cloud regions.",
         "sourceId": "netflix-live"
       }
     }
@@ -425,7 +425,7 @@
         "label": "Cloud playback and discovery services",
         "topic": "autoscaling-and-capacity",
         "company": "Netflix",
-        "tradeoff": "From the Netflix Part 1 post (2025). Dozens of services (playback configuration, personalization, metrics) see far higher load around event start, so they scale dynamically and balance across regions. They do not carry the video.",
+        "tradeoff": "From the Netflix Part 1 post (2025). Dozens of services (playback configuration, personalisation, metrics) see far higher load around event start, so they scale dynamically and balance across regions. They do not carry the video.",
         "to": []
       },
       {
@@ -501,7 +501,7 @@
       }
     ]
   },
-  "compare": "These posts come from two companies and two eras, so read them as snapshots, not one design. Facebook's is from December 2015, more than ten years old, and describes the launch of Live for Facebook Mentions and a first test of live sharing for a small share of people in the U.S. on iPhones. The two Netflix posts are from July and December 2025 and are by the same company and blog, so they are one source of evidence, not two. Each describes its system at its date. Nothing here says Facebook's design still holds, and the Facebook post does not cover origin storage, redundancy between pipelines, load shedding or capacity planning, which Netflix covers. The diagram draws no link between the two companies.\n\nBoth start from the same fear, a crowd asking for the same fresh object, and answer it with caches. Facebook merges identical misses at the edge: one request goes upstream while the rest wait. Netflix goes further because its origin must never miss a write: it chooses between two pipelines, moves storage from S3 to a Cassandra-based store fronted by a write-through cache, and separates publishing from reads so a flood of reads cannot slow a write. The price is a more expensive store, which Netflix says was acceptable. The two diverge on delivery. Facebook added RTMP, a push protocol, to get a few seconds of delay for small interactive broadcasts, and admitted that most products use HLS because it works with existing CDNs. Netflix chose HTTPS with 2-second segments to reach as many devices as possible, and picked 2-second segments to balance compression efficiency, infrastructure load and latency. The post says UDP-based protocols can offer extras such as ultra-low latency.\n\nThe common thread is deciding what to protect. Facebook keeps load off the stream server, and Netflix puts the live edge ahead of replay, shed prefetch and personalization, and slows retries. Neither post gives a number for how much video quality or latency was traded, Facebook gives no figure for RTMP viewers, and Netflix gives no latency figure beyond saying A/B tests removed about 10 seconds.",
+  "compare": "These posts come from two companies and two eras, so read them as snapshots, not one design. Facebook's is from December 2015, more than ten years old, and describes the launch of Live for Facebook Mentions and a first test of live sharing for a small share of people in the U.S. on iPhones. The two Netflix posts are from July and December 2025 and are by the same company and blog, so they are one source of evidence, not two. Each describes its system at its date. Nothing here says Facebook's design still holds, and the Facebook post does not cover origin storage, redundancy between pipelines, load shedding or capacity planning, which Netflix covers. The diagram draws no link between the two companies.\n\nBoth start from the same fear, a crowd asking for the same fresh object, and answer it with caches. Facebook merges identical misses at the edge: one request goes upstream while the rest wait. Netflix goes further because its origin must never miss a write: it chooses between two pipelines, moves storage from S3 to a Cassandra-based store fronted by a write-through cache, and separates publishing from reads so a flood of reads cannot slow a write. The price is a more expensive store, which Netflix says was acceptable. The two diverge on delivery. Facebook added RTMP, a push protocol, to get a few seconds of delay for small interactive broadcasts, and admitted that most products use HLS because it works with existing CDNs. Netflix chose HTTPS to reach as many devices as possible, and picked 2-second segments to balance compression efficiency, infrastructure load and latency. The post says UDP-based protocols can offer extras such as ultra-low latency.\n\nThe common thread is deciding what to protect. Facebook keeps load off the stream server, and Netflix puts the live edge ahead of replay, sheds prefetch and personalisation, and slows retries. Neither post gives a number for how much video quality or latency was traded, Facebook gives no figure for RTMP viewers, and Netflix gives no latency figure beyond saying A/B tests removed about 10 seconds.",
   "quiz": [
     {
       "question": "What does request coalescing do at Facebook's edge cache?",
@@ -559,7 +559,7 @@
         "S3 could not hold objects as large as one video segment in a single write"
       ],
       "correct": 1,
-      "why": "The post says S3 met its stated uptime but the retry budget of live events led to starting from requirements, ending with Cassandra-based chunked storage and an EVCache write-through cache.",
+      "why": "The post says S3 met its stated uptime, but the retry budget of live events led Netflix to start from requirements, ending with Cassandra-based chunked storage and an EVCache write-through cache.",
       "wrong": [
         "The post says S3 met its stated uptime guarantees.",
         "",
@@ -575,7 +575,7 @@
         "No measurable change, because the player hides short gaps from every viewer"
       ],
       "correct": 0,
-      "why": "The post names the 10x increase and says Netflix responded with server-guided backoff, prioritized shedding at the Cloud Edge Gateway and rebalancing between regions.",
+      "why": "The post names the 10x increase and says Netflix responded with server-guided backoff, prioritised shedding at the Cloud Edge Gateway and rebalancing between regions.",
       "wrong": [
         "",
         "The figure is 10x for gaps of as little as 30 seconds.",

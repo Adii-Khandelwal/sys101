@@ -55,7 +55,7 @@
       "topicPage": "rate-limiting",
       "sources": [
         {
-          "title": "AWS SDKs and Tools reference guide: Retry behavior",
+          "title": "AWS SDKs and Tools reference guide: Retry behaviour",
           "publisher": "Amazon Web Services",
           "url": "https://docs.aws.amazon.com/sdkref/latest/guide/feature-retry-behavior.html",
           "year": "no date shown",

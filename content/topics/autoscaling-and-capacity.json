@@ -357,7 +357,7 @@
       "published": "2026-04-07",
       "digest": {
         "problem": "MongoDB Atlas already scaled replica sets with a reactive rule, which waits for a few minutes of overload before scaling up, and a few hours of underload before scaling down. The scaling step itself then takes a few minutes, and only moves one size tier at a time. The team asked whether a forecast could add capacity before a spike and skip the in-between tiers.",
-        "constraints": "The scaler cannot see customers' queries or data, and it must not forecast CPU directly, because scaling changes CPU and would erase the spike it predicted. Only some replica sets follow a pattern. Every forecast also has to be good enough to act on, since a wrong scale-up costs money. The post calls its production version conservative and gives no reason; a plausible reason is that a wrong scale-down could overload a database.",
+        "constraints": "The scaler cannot see customers' queries or data, and it must not forecast CPU directly, because scaling changes CPU and would erase the spike it predicted. Only some replica sets follow a pattern. Every forecast also has to be good enough to act on. The post calls its production version conservative and gives no reason; a plausible reason is that a wrong scale-down could overload a database.",
         "walkthrough": [
           {
             "step": "The reactive baseline",

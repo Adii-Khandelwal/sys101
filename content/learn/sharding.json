@@ -77,7 +77,7 @@
       "name": "How it works",
       "body": [
         "Everything turns on the shard key and how its values map to shards. MongoDB says it uses the shard key to distribute a collection's documents across shards, and supports two strategies. Hashed sharding computes a hash of the shard key value and assigns each chunk a range of hashed values. Ranged sharding divides data into ranges of shard key values, so keys whose values are close are more likely to live together [[mongodb-sharding]].",
-        "Hash-based placement is where consistent hashing returns. Dynamo describes treating the output of a hash function as a ring, with each node at a position on it, so a key's hash decides which node owns it and adding or removing a node affects only its neighbours [[dynamo]]. The ring you learned earlier is one mechanism for hash placement; Redis Cluster's fixed hash slots are another.",
+        "Hash-based placement is where consistent hashing returns. Dynamo describes treating the output of a hash function as a ring, with each node at a position on it, so a key's hash decides which node owns it and adding or removing a node affects only its neighbours [[dynamo]]. The ring you learned earlier is one mechanism for hash placement; Redis Cluster does it differently, with a fixed set of 16384 hash slots, each served by one master node [[redis-cluster-spec]].",
         "A router sits between clients and shards. MongoDB's page says a mongos acts as a query router between client applications and the sharded cluster, while config servers store the cluster's metadata [[mongodb-sharding]]. When a query names the shard key, the router can send it to the shard that holds the data; when it does not, it has to ask every shard and merge the results, which is much more expensive. MongoDB notes that with hashed sharding, range queries on the shard key are less likely to target a single shard and cause more cluster-wide broadcast operations [[mongodb-sharding]].",
         "Picking the shard key is the single most important decision. A good key spreads both data and traffic evenly and lets common queries target one shard. A poor key sends most traffic to one shard, a hot shard, or forces most queries to scatter to all shards."
       ],
@@ -113,6 +113,11 @@
           "source": "dynamo",
           "section": "Section 4.2, Partitioning Algorithm",
           "what": "How hashing keys onto a ring places data across nodes and limits movement."
+        },
+        {
+          "source": "redis-cluster-spec",
+          "section": "Key distribution model",
+          "what": "How Redis Cluster splits the key space into 16384 hash slots."
         }
       ],
       "canNow": [
@@ -177,7 +182,7 @@
       "body": [
         "The deepest trade-off is that sharding adds permanent complexity to buy scale. Routing, rebalancing, cross-shard queries and multi-shard transactions all become harder, so the usual advice is to shard only when a single replicated database can no longer cope, not before. MongoDB frames sharding as a response to the data and write limits of a single machine [[mongodb-sharding]].",
         "The shard key is costly to change. Once data is spread by a key and queries are written around it, changing it means redistributing the data. MongoDB 5.0 and later can reshard a collection by changing its shard key, but its page still tells you to choose the key carefully [[mongodb-sharding]]. A key that spreads load today but concentrates tomorrow's hot data, like a monotonically increasing timestamp sending all new writes to one shard, is a classic trap. Hashed sharding avoids that at the cost of range scans, as MongoDB's note on range queries shows [[mongodb-sharding]].",
-        "Range versus hash is the recurring practical choice. Ranged sharding keeps neighbours together, so range scans hit few shards, but risks hot shards at the end of the range. Hashed sharding spreads writes evenly but makes range scans cluster-wide broadcasts [[mongodb-sharding]]. PostgreSQL's partitioning page offers the same menu inside one server, range, list and hash, and the right answer follows your dominant query pattern [[pg-partitioning]]."
+        "Range versus hash is the recurring practical choice. Ranged sharding keeps neighbours together, so range scans hit few shards, but risks hot shards at the end of the range. Hashed sharding spreads writes evenly but makes range scans cluster-wide broadcasts [[mongodb-sharding]]. PostgreSQL's partitioning page offers the same menu inside one server (range, list and hash), and the right answer follows your dominant query pattern [[pg-partitioning]]."
       ],
       "terms": [
         {
@@ -312,6 +317,15 @@
       "kind": "Project documentation",
       "year": "no date shown",
       "verifiedOn": "2026-10-13"
+    },
+    {
+      "id": "redis-cluster-spec",
+      "title": "Redis cluster specification",
+      "url": "https://redis.io/docs/latest/operate/oss_and_stack/reference/cluster-spec/",
+      "publisher": "Redis",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-26"
     }
   ]
 }

@@ -144,7 +144,7 @@
       "body": [
         "When many transactions run at once, they can step on each other: one reads a half-finished change from another, or two reads of the same row inside one transaction disagree. The database controls this with isolation levels: stricter levels forbid more of these anomalies, but applications may have to retry transactions. The SQL standard names four levels and defines them by which anomalies they forbid, such as dirty reads and phantom reads [[pg-iso]].",
         "Traditional systems isolate transactions with locking: block anyone from touching a row you are using. PostgreSQL's page describes the alternative, a multiversion model (MVCC) in which each SQL statement sees a snapshot of the data as it was some time ago, and says that with MVCC locks acquired for reading do not conflict with locks acquired for writing, so reading never blocks writing and writing never blocks reading [[pg-mvcc]].",
-        "The top isolation level is not the default. PostgreSQL says Read Committed is its default isolation level, and that applications using Repeatable Read must be prepared to retry transactions due to serialization failures. Picking a level is a real trade-off, not a setting you can leave on maximum for free [[pg-iso]]."
+        "The top isolation level is not the default. PostgreSQL says Read Committed is its default isolation level, and that applications using Repeatable Read must be prepared to retry transactions due to serialisation failures. Picking a level is a real trade-off, not a setting you can leave on maximum for free [[pg-iso]]."
       ],
       "diagram": "<svg viewBox=\"0 0 560 215\" role=\"img\" aria-labelledby=\"dg-db-deeper-t\" class=\"dg\"><title id=\"dg-db-deeper-t\">With multiversion concurrency control a reader sees a snapshot of the data as it was some time ago while a writer changes a row, so reading never blocks writing and writing never blocks reading.</title><defs><marker id=\"dg-db-deeper-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"30\" width=\"80\" height=\"40\" class=\"dg-box\"/><text x=\"52\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Writer</text><rect x=\"110\" y=\"30\" width=\"260\" height=\"40\" class=\"dg-box\"/><text x=\"240\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Changes a row</text><rect x=\"12\" y=\"100\" width=\"80\" height=\"40\" class=\"dg-box\"/><text x=\"52\" y=\"124.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Reader</text><rect x=\"160\" y=\"100\" width=\"260\" height=\"40\" class=\"dg-box dg-accent\"/><text x=\"290\" y=\"124.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Sees a snapshot</text><text x=\"280\" y=\"88\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">reading never blocks writing, writing never blocks reading</text><path d=\"M110,172 L520,172\" class=\"dg-line\" marker-end=\"url(#dg-db-deeper-a)\"/><text x=\"110\" y=\"195\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">time</text></svg>",
       "terms": [
@@ -191,7 +191,7 @@
       "id": "practice",
       "name": "In practice and trade-offs",
       "body": [
-        "On a single-machine database you can pick an isolation level that matches which concurrency anomalies you can tolerate. PostgreSQL lists the phenomena each level prevents, such as dirty reads and phantom reads, and notes that applications using Repeatable Read must be prepared to retry on serialization failures. Its default is Read Committed [[pg-iso]].",
+        "On a single-machine database you can pick an isolation level that matches which concurrency anomalies you can tolerate. PostgreSQL lists the phenomena each level prevents, such as dirty reads and phantom reads, and notes that applications using Repeatable Read must be prepared to retry on serialisation failures. Its default is Read Committed [[pg-iso]].",
         "A transaction is something you write explicitly. PostgreSQL's tutorial treats a transaction as a group of statements surrounded by BEGIN and COMMIT, with ROLLBACK available to cancel all the updates so far, and says every statement outside a BEGIN is treated as its own transaction [[pg-transactions]].",
         "Our own framing, not from a cited source: these single-node ideas are the starting point for the later topics, where data is copied or split across more than one machine, such as replication and sharding."
       ],
@@ -206,7 +206,7 @@
           "definition": "A re-run of the same query returns a different set of rows because another transaction committed a change in between."
         },
         {
-          "term": "Serialization failure",
+          "term": "Serialisation failure",
           "definition": "The database aborts a transaction rather than allow a result that strict isolation forbids, asking you to retry."
         },
         {
@@ -228,7 +228,7 @@
       ],
       "canNow": [
         "Choose an isolation level by naming the anomaly you cannot allow.",
-        "Explain what a serialization failure is and why your code may need to retry.",
+        "Explain what a serialisation failure is and why your code may need to retry.",
         "See why replication and sharding are the next topics after single-node databases."
       ]
     }

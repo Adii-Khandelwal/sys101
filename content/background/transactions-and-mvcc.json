@@ -5,7 +5,7 @@
     {
       "id": "autovacuum-settings",
       "name": "Autovacuum and its settings",
-      "explanation": "Autovacuum is a background process that vacuums tables for you. A few settings decide how many workers run, how often it wakes and how much it pauses to spare the server, so a busy database can set it to fall behind.",
+      "explanation": "Autovacuum is a background process that vacuums tables for you. A few settings decide how many workers run, how often it wakes and how much it pauses to spare the server, so on a busy database it can fall behind if they are set badly.",
       "assumedBy": [
         {
           "postId": "sentry-xid-2015",

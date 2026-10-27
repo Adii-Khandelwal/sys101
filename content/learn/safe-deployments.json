@@ -73,7 +73,7 @@
       "name": "How it works",
       "body": [
         "Argo Rollouts names the common strategies. Rolling update slowly replaces the old version with the new one. Recreate stops the old version before starting the new one, so there is downtime. Blue-green runs both versions side by side, with only the old one taking production traffic until you switch. Canary sends a subset of users to the new version while the rest stay on the old one [[argo-rollouts-concepts]].",
-        "Argo calls the wider idea progressive delivery: release in a controlled, gradual way, limit who sees the new version, watch for correct behavior, then increase exposure while checking it [[argo-rollouts-concepts]].",
+        "Argo calls the wider idea progressive delivery: release in a controlled, gradual way, limit who sees the new version, watch for correct behaviour, then increase exposure while checking it [[argo-rollouts-concepts]].",
         "The check is a comparison. The SRE workbook splits traffic between the old and new versions and then looks at a key metric, such as HTTP response codes, for each version separately. If the canary's error rate is too far from the control's, the deployment is bad, and the response is to pause and roll back, or to call a human [[sre-canarying]]. If the two are similar, the rollout goes on [[sre-canarying]].",
         "Looking per version matters. The workbook shows that when a canary is a small part of production, its errors are barely visible in the overall error rate [[sre-canarying]]."
       ],
@@ -147,7 +147,7 @@
       "id": "practice",
       "name": "In practice and trade-offs",
       "body": [
-        "Argo's guide says Blue-green is the easier strategy to start with and also the more limited, and suggests moving to canaries as you gain confidence in your metrics and application [[argo-rollouts-concepts]]. Not every application can run two versions at once, which it calls a possible showstopper for canaries, especially for legacy applications [[argo-rollouts-concepts]].",
+        "Argo's guide says blue-green is the easier strategy to start with and also the more limited, and suggests moving to canaries as you gain confidence in your metrics and application [[argo-rollouts-concepts]]. Not every application can run two versions at once, which it calls a possible showstopper for canaries, especially for legacy applications [[argo-rollouts-concepts]].",
         "Blue-green switches all traffic at once, so the guide's table lists its failure blast radius as massive. Canaries list it as low [[argo-rollouts-concepts]]. A canary also needs a way to control traffic finely, and advanced canary features assume a traffic manager such as a service mesh or ingress controller [[argo-rollouts-concepts]].",
         "Speed is the other side. The workbook says a canary must run long enough to be representative, and that the length depends on how often you release: a team that deploys many times a day needs a much shorter canary than one that deploys weekly [[sre-canarying]]. It also notes that performance defects usually show only under heavy load, so an off-peak canary may miss them [[sre-canarying]].",
         "The risk is also easy to bound. The workbook's example: a defect that fails 20% of requests, on a 5% canary, gives about a 1% overall error rate, and the impact on the error budget is proportional to the traffic exposed [[sre-canarying]]."

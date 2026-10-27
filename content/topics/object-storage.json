@@ -71,7 +71,7 @@
         },
         {
           "step": "Record the location",
-          "explanation": "Only after the data is stored does the metadata index learn where it is. A reader asks the index for the key, then fetches the shards. If the data was never recorded, the object does not exist."
+          "explanation": "Only after the data is stored does the metadata index learn where it is. A reader asks the index for the key, then fetches the shards. If the location was never recorded, the object does not exist."
         }
       ],
       "diagram": "<svg viewBox=\"0 0 560 170\" role=\"img\" aria-labelledby=\"dg-os-how-t\" class=\"dg\"><title id=\"dg-os-how-t\">Five steps of storing an object: receive it, split it into shards, choose drives, write the shards in parallel, then record where it is in the metadata index.</title><defs><marker id=\"dg-os-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"40\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"62\" y=\"64.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Receive</text><text x=\"62\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">the object</text><path d=\"M112,68 L124,68\" class=\"dg-line\" marker-end=\"url(#dg-os-how-a)\"/><rect x=\"124\" y=\"40\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"174\" y=\"64.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Split into</text><text x=\"174\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">shards</text><path d=\"M224,68 L236,68\" class=\"dg-line\" marker-end=\"url(#dg-os-how-a)\"/><rect x=\"236\" y=\"40\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"286\" y=\"64.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Pick drives</text><text x=\"286\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">to spread it</text><path d=\"M336,68 L348,68\" class=\"dg-line\" marker-end=\"url(#dg-os-how-a)\"/><rect x=\"348\" y=\"40\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"398\" y=\"64.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Write shards</text><text x=\"398\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">in parallel</text><path d=\"M448,68 L460,68\" class=\"dg-line\" marker-end=\"url(#dg-os-how-a)\"/><rect x=\"460\" y=\"40\" width=\"100\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"510\" y=\"64.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Record the</text><text x=\"510\" y=\"80.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">location</text><text x=\"280\" y=\"140\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">A read runs the same path backwards: look up the location, then fetch the shards.</text></svg>"
@@ -109,7 +109,7 @@
       {
         "question": "A photo site stores every photo as its own file on a file server, and reads slow down as the photo count grows. According to the Haystack paper, which cost dominates?",
         "options": [
-          "Moving the large photo bytes across the network between data centers",
+          "Moving the large photo bytes across the network between data centres",
           "Reading the file's metadata from disk before the photo itself",
           "Directory names that grow longer than the path limit allows",
           "The CDN refusing to cache files that are small in size"
@@ -145,17 +145,17 @@
       {
         "question": "In Dropbox's Magic Pocket, the Master of a cell goes down. What does the post say keeps working?",
         "options": [
-          "Reads, and writes until the open volumes fill up",
+          "Reads, and writes until the cell runs out of available buckets",
           "Nothing, since every request passes through it",
           "Reads only, because writes fail the moment it stops",
           "Writes only, since reads need it to find blocks"
         ],
         "correct": 0,
-        "why": "The post says the Master is not on the data plane: the cell keeps serving reads, and can take writes until it runs out of buckets that the Master would normally create.",
+        "why": "The post says the Master is not on the data plane: the cell keeps serving reads, and can take writes until it runs out of available storage buckets, because only the Master creates new ones as they fill up.",
         "wrong": [
           "",
           "The post says no live traffic flows through the Master.",
-          "The post says writes can continue until the cell runs out of buckets, so they do not fail at once.",
+          "The post says writes can continue until the cell runs out of available storage buckets, so they do not fail at once.",
           "Reads do not need the Master, because the Block Index and Replication Table answer them."
         ],
         "teaches": "why"

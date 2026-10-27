@@ -113,7 +113,7 @@
       "ageNote": "From February 2021. It is here for fundamentals that have not changed: leases, acks and nacks, the choice between at-least-once and at-most-once delivery, and a priority queue built on sharded storage. No newer Meta source cited here confirms FOQS still works this way, so its figures and design may have changed.",
       "digest": {
         "problem": "Many services at Facebook need to run work later, at off-peak times or on another service, from notifications and integrity checks to video encoding and translation. FOQS is the shared queue they use: a multitenant, persistent priority queue built on sharded MySQL, where each item is one row.",
-        "constraints": "Workloads differ widely: some topics need items within milliseconds and others can wait days, and processing rates range from tens of items per minute to over 10 million per minute. Some items must be processed in a particular region. Every MySQL shard is replicated to two more regions, and FOQS has to keep working when a whole data center is drained.",
+        "constraints": "Workloads differ widely: some topics need items within milliseconds and others can wait days, and processing rates range from tens of items per minute to over 10 million per minute. Some items must be processed in a particular region. Every MySQL shard is replicated to two more regions, and FOQS has to keep working when a whole data centre is drained.",
         "walkthrough": [
           {
             "step": "Give each item a priority and a time",
@@ -193,7 +193,7 @@
       "definition": "The part that takes messages from a queue and processes them."
     },
     {
-      "term": "Acknowledgment (ack)",
+      "term": "Acknowledgement (ack)",
       "definition": "A consumer's signal that a message was processed, so it can be removed."
     },
     {
@@ -421,7 +421,7 @@
         "why": "In-memory storage made a slowdown into a full outage; a durable log in front turns it into a backlog.",
         "wrong": [
           "Kafka was what Slack added afterwards to fix this.",
-          "The failure was about memory, not acknowledgments.",
+          "The failure was about memory, not acknowledgements.",
           ""
         ],
         "teaches": "mistakes"
