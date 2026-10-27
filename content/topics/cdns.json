@@ -6,7 +6,8 @@
   "concept": "A content delivery network keeps copies of content on servers spread close to users, so most requests are answered nearby instead of crossing the internet to the origin server. A CDN has two jobs: deciding what to keep at each edge when disk space is limited, and making the misses that still go back to the origin as cheap as possible.",
   "prerequisites": [
     "dns",
-    "caching"
+    "caching",
+    "http-tcp-tls"
   ],
   "summary": {
     "points": [
@@ -30,7 +31,8 @@
   },
   "prerequisiteReasons": {
     "dns": "CDNs take from DNS the way a user's request is pointed at a nearby server, which is how each user lands on a close edge.",
-    "caching": "CDNs take from caching the hit, the miss and the fill, applied to many edge copies that sit in front of one origin."
+    "caching": "CDNs take from caching the hit, the miss and the fill, applied to many edge copies that sit in front of one origin.",
+    "http-tcp-tls": "CDNs lean on HTTP and TCP connection reuse and the TLS handshake, since an edge saves most of its time by keeping connections to users and to the origin warm."
   },
   "posts": [
     {

@@ -4,7 +4,8 @@
   "group": "Messaging",
   "concept": "An API is the contract between a service and the callers that depend on it. Choosing a style decides who controls the shape of the data and what the wire format costs: RPC with a schema and binary encoding, REST with resources and HTTP, or GraphQL where the caller names the fields. A contract that works for years also needs rules for change and limits that match the work each call causes.",
   "prerequisites": [
-    "idempotency-and-retries"
+    "idempotency-and-retries",
+    "http-tcp-tls"
   ],
   "summary": {
     "points": [
@@ -32,7 +33,8 @@
     ]
   },
   "prerequisiteReasons": {
-    "idempotency-and-retries": "A contract is only useful if callers can retry against it safely, so you need to know what makes a repeated call harmless before designing one."
+    "idempotency-and-retries": "A contract is only useful if callers can retry against it safely, so you need to know what makes a repeated call harmless before designing one.",
+    "http-tcp-tls": "REST uses HTTP verbs and status codes, and every style here travels over a connection, so you need to know how HTTP requests and responses work first."
   },
   "lesson": {
     "why": {

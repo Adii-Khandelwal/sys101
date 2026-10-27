@@ -6,7 +6,8 @@
   "interviewRelevance": "core",
   "concept": "A storage engine is the layer of a database that decides how data is laid out on disk and how it is found, changed and removed. B-tree engines keep sorted pages and update them in place; LSM-tree engines collect writes in memory, write them out as immutable sorted files and merge the files in the background. The choice moves cost between reads, writes, disk space and background work.",
   "prerequisites": [
-    "databases"
+    "databases",
+    "transactions-and-mvcc"
   ],
   "summary": {
     "points": [
@@ -29,7 +30,8 @@
     ]
   },
   "prerequisiteReasons": {
-    "databases": "Storage Engines takes from databases the tables and rows that a database stores, since an engine decides how that data reaches the disk."
+    "databases": "Storage Engines takes from databases the tables and rows that a database stores, since an engine decides how that data reaches the disk.",
+    "transactions-and-mvcc": "Engines are tested on how they keep many versions of a row and honour isolation levels, which is the transaction and MVCC machinery they must support."
   },
   "lesson": {
     "why": {

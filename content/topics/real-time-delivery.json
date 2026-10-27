@@ -4,7 +4,8 @@
   "group": "Scaling",
   "concept": "Real-time delivery lets a server send data to a client the moment it exists, instead of waiting for the client to ask. It works by keeping a connection open, which turns the server into something that remembers who is connected. That memory is the hard part: messages must be routed to the right server, a lost server must not cause a stampede of reconnects, and one message may have to reach very many clients.",
   "prerequisites": [
-    "http-tcp-tls"
+    "http-tcp-tls",
+    "consistent-hashing"
   ],
   "summary": {
     "points": [
@@ -32,7 +33,8 @@
     ]
   },
   "prerequisiteReasons": {
-    "http-tcp-tls": "Real-time delivery starts from an HTTP request that is upgraded or held open, and it depends on how a TCP connection stays up and recovers."
+    "http-tcp-tls": "Real-time delivery starts from an HTTP request that is upgraded or held open, and it depends on how a TCP connection stays up and recovers.",
+    "consistent-hashing": "Spreading millions of open connections or channels over servers uses consistent hashing, so a server change moves only a small share of them."
   },
   "lesson": {
     "why": {
