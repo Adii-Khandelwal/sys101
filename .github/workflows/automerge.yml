@@ -1,0 +1,36 @@
+name: Automerge
+
+# Turns on GitHub auto-merge for a pull request the repository owner opens from a branch in this repository. `--auto`
+# waits for the checks that branch protection requires (check, Vercel) and merges when they are green; a failing check
+# leaves the pull request open. Nothing here checks out or runs pull request code.
+# Never for changes to what runs or what an agent may do (.github/**, .claude/**, CLAUDE.md): those stay manual.
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+
+permissions: {}
+
+jobs:
+  enable:
+    name: automerge
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login == github.repository_owner &&
+      !startsWith(github.head_ref, 'claude/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if gh pr diff "$PR_URL" --name-only | grep -qE '^(\.github/|\.claude/|CLAUDE\.md$)'; then
+            echo "touches .github, .claude or CLAUDE.md: merge by hand"
+            exit 0
+          fi
+          # Only the commit that was checked may be merged: a later push leaves the pull request unmerged.
+          gh pr merge --auto --squash --match-head-commit "$HEAD_SHA" "$PR_URL"
