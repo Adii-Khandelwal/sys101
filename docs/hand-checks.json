@@ -433,55 +433,55 @@
   },
   "google-autopilot-2020|1870 to 162 machines": {
     "verdict": "ok",
-    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): section 4: before migration the sampled jobs wasted RAM equal to 1870 machines, after only 162, saving the capacity of 1708 machines"
+    "source": "EuroSys 2020 paper, English PDF (copy hosted at homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf), re-read 27 Oct 2026: Fig 4b text: 1870 machines of wasted RAM before, 162 after, saving 1708"
   },
   "google-autopilot-2020|12 hours and 48 hours": {
     "verdict": "ok",
-    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): section 3: half-life of 12 hours for the CPU signal and 48 hours for memory"
+    "source": "EuroSys 2020 paper, English PDF (copy hosted at homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf), re-read 27 Oct 2026: section 3.2.2: 12 hour half life for CPU, 48 hour for memory"
   },
   "google-autopilot-2020|10 to 15%": {
     "verdict": "ok",
-    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): section 3: a 10-15% safety margin, smaller for larger limits, and the largest recommendation of the last hour"
+    "source": "EuroSys 2020 paper, English PDF (copy hosted at homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf), re-read 27 Oct 2026: section 3.2.2: recommendation increased by a 10-15% safety margin (less for large limits)"
   },
   "google-autopilot-2020|5 minute": {
     "verdict": "ok",
-    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): section 3: usage is aggregated into histograms over 5 minute windows (1 s raw samples)"
+    "source": "EuroSys 2020 paper, English PDF (copy hosted at homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf), re-read 27 Oct 2026: section 2/4.1: 5 minute aggregation windows (default of the monitoring system)"
   },
   "google-autopilot-2020|12 hours": {
     "verdict": "ok",
-    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): half-life for CPU, same passage as 12 and 48 hours"
+    "source": "EuroSys 2020 paper, English PDF (copy hosted at homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf), re-read 27 Oct 2026: section 3.2.2: 12 hour half life for the CPU signal"
   },
   "google-autopilot-2020|48 hours": {
     "verdict": "ok",
-    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): half-life for memory, same passage"
+    "source": "EuroSys 2020 paper, English PDF (copy hosted at homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf), re-read 27 Oct 2026: section 3.2.2: 48 hour half life for memory"
   },
   "google-autopilot-2020|10": {
     "verdict": "ok",
-    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): the 10 of the 10-15% safety margin"
+    "source": "EuroSys 2020 paper, English PDF (copy hosted at homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf), re-read 27 Oct 2026: 10-15% safety margin, section 3.2.2"
   },
   "google-autopilot-2020|15": {
     "verdict": "ok",
-    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): the 15 of the 10-15% safety margin"
+    "source": "EuroSys 2020 paper, English PDF (copy hosted at homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf), re-read 27 Oct 2026: 10-15% safety margin, section 3.2.2"
   },
   "google-autopilot-2020|60": {
     "verdict": "ok",
-    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): section 4: average relative slack of manual jobs is 60% with hard limits and 46% with soft limits"
+    "source": "EuroSys 2020 paper, English PDF (copy hosted at homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf), re-read 27 Oct 2026: section 4.1: average relative slack of non-Autopiloted jobs ranges from 60% (hard limits) to 46% (soft)"
   },
   "google-autopilot-2020|31": {
     "verdict": "ok",
-    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): section 4: Autopilot average relative slack is 31% for the moving-window recommender and 23% for ML"
+    "source": "EuroSys 2020 paper, English PDF (copy hosted at homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf), re-read 27 Oct 2026: section 4.1: Autopiloted jobs 31% (moving window) to 23% (ML)"
   },
   "google-autopilot-2020|1708": {
     "verdict": "ok",
-    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): section 4: saved the capacity of 1708 machines (1870 minus 162)"
+    "source": "EuroSys 2020 paper, English PDF (copy hosted at homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf), re-read 27 Oct 2026: Fig 4b text: saved the capacity of 1708 machines"
   },
   "google-autopilot-2020|0.013": {
     "verdict": "ok",
-    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): section 4: ML recommender relative OOMs 0.013 against 0.002 per task-day for moving window"
+    "source": "EuroSys 2020 paper, English PDF (copy hosted at homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf), re-read 27 Oct 2026: section 4.2: 0.013 relative OOMs per task-day for ML recommender versus 0.002 for moving window"
   },
   "google-autopilot-2020|0.002": {
     "verdict": "ok",
-    "source": "EuroSys 2020 paper, read in the full-text Chinese translation at juejin.cn/post/6915996875107598343 (the paper's PDF host was unreachable on 2026-10-24; official abstract at research.google confirms 23%, 46%, 10x and 48%): same sentence as 0.013"
+    "source": "EuroSys 2020 paper, English PDF (copy hosted at homepages.dcc.ufmg.br/~cunha/teaching/20221/cloudcomp/readings/10-readings/rzadca20autopilot.pdf), re-read 27 Oct 2026: section 4.2: 0.013 versus 0.002 per task-day"
   },
   "google-autopilot-2020|23% vs 46%": {
     "verdict": "ok",
