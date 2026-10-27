@@ -122,6 +122,8 @@ export default function GraphView({ nodes, edges }: Props) {
   const read = useReadTopics();
 
   const [ready, setReady] = useState(false);
+  // True once the layout effect has put every node in place; until then the canvas holds nodes stacked at the origin.
+  const [placed, setPlaced] = useState(false);
   const [orientation, setOrientation] = useState<Orientation>("horizontal");
   // Phones get a fixed, non-interactive map so a finger scrolls the page past
   // it and a tap opens the topic. Starts false (desktop-first) to match SSR,
@@ -790,6 +792,7 @@ export default function GraphView({ nodes, edges }: Props) {
       renderer?.kill();
       rendererRef.current = null;
       setReady(false);
+      setPlaced(false);
     };
   // The renderer is built once per graph; setCursor and zoomAt are stable helpers, so they are left out on purpose.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -877,6 +880,7 @@ export default function GraphView({ nodes, edges }: Props) {
       scrollToRestore.current = saved.scrollLeft;
     }
     renderer.refresh();
+    setPlaced(true);
   // Re-runs only when the layout inputs change; the saved view and camera helpers are read from refs on purpose.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, cols, layered, drawn, hidden, fits, size, isPhone]);
@@ -1043,8 +1047,8 @@ export default function GraphView({ nodes, edges }: Props) {
           data-interactive={interactive || undefined}
           style={{ "--rows": rowCount(layered, "horizontal"), "--layers": rowCount(layered, "vertical"), width: contentWidth || undefined } as React.CSSProperties}
         >
-        {!ready && <GraphSkeleton />}
-        <div ref={container} className="graph-canvas" aria-hidden="true" />
+        {!placed && <GraphSkeleton />}
+        <div ref={container} className="graph-canvas" aria-hidden="true" style={placed ? undefined : { visibility: "hidden" }} />
 
         {/* Edges implied by a longer path: faint and dashed, on hover or focus of either end, or always with "Show all links". */}
         <svg className="graph-extra" aria-hidden="true">

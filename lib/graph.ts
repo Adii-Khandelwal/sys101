@@ -586,6 +586,60 @@ export function chooseLayers<T extends Node>(
   stage: { minX: number; maxX: number; minY: number; maxY: number },
   limit = 720,
 ) {
+  // The search takes about 0.7s on a laptop and the map's layout effect asks again with the same inputs (every
+  // re-run, every return to the homepage), so remember the answer, and keep it for the tab so a refresh skips it too.
+  const key = JSON.stringify([base.map((c) => c.map((n) => `${n.slug}|${n.title}`)), edges.map((e) => `${e.from}>${e.to}`), box.width, box.height, [...box.labelWidth], stage, limit]);
+  let hit = chosenLayers.get(key) as (T | Slot)[][] | undefined;
+  if (!hit) {
+    const slugs = readTabLayers(key);
+    const bySlug = new Map(base.flat().map((n) => [n.slug, n] as const));
+    const rebuilt = slugs?.map((c) => c.map((slug) => bySlug.get(slug) ?? (slug.startsWith("blank#") ? ({ slug, title: "", slot: true, edge: "" } as Slot) : undefined)));
+    hit = rebuilt && rebuilt.every((c) => c.every(Boolean)) ? (rebuilt as (T | Slot)[][]) : undefined;
+  }
+  if (!hit) {
+    hit = searchLayers(base, edges, box, stage, limit);
+    writeTabLayers(key, hit.map((c) => c.map((n) => n.slug)));
+  }
+  // shortcut: keeps the 12 most recent widths, enough for resizing a window; upgrade if layouts become per-user.
+  if (!chosenLayers.has(key) && chosenLayers.size >= 12) chosenLayers.delete(chosenLayers.keys().next().value!);
+  chosenLayers.set(key, hit);
+  return hit;
+}
+
+const chosenLayers = new Map<string, unknown>();
+
+// The chosen ordering also lives in sessionStorage (slugs only, a pure speed-up with no personal data), so a refresh
+// in the same tab does not repeat the search. Anything unreadable or blocked just means the search runs.
+const TAB_KEY = "sys101:layers";
+const fnv = (t: string) => [...t].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0, 2166136261).toString(36);
+function readTabLayers(key: string): string[][] | undefined {
+  try {
+    const all = JSON.parse(window.sessionStorage.getItem(TAB_KEY) ?? "{}");
+    const v = all[fnv(key) + key.length];
+    return Array.isArray(v) && v.every((c) => Array.isArray(c) && c.every((x) => typeof x === "string")) ? v : undefined;
+  } catch {
+    return undefined;
+  }
+}
+function writeTabLayers(key: string, slugs: string[][]) {
+  try {
+    const all = JSON.parse(window.sessionStorage.getItem(TAB_KEY) ?? "{}");
+    const keys = Object.keys(all);
+    if (keys.length >= 12) delete all[keys[0]];
+    all[fnv(key) + key.length] = slugs;
+    window.sessionStorage.setItem(TAB_KEY, JSON.stringify(all));
+  } catch {
+    // Storage blocked or full: the next refresh searches again.
+  }
+}
+
+function searchLayers<T extends Node>(
+  base: (T | Slot)[][],
+  edges: Edge[],
+  box: { width: number; height: number; labelWidth: Map<string, number> },
+  stage: { minX: number; maxX: number; minY: number; maxY: number },
+  limit: number,
+) {
   const perms = <U,>(a: U[]): U[][] =>
     a.length <= 1 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map((p) => [x, ...p]));
   const count = base.reduce((n, col) => n * [...Array(col.length)].reduce((f, _, i) => f * (i + 1), 1), 1);

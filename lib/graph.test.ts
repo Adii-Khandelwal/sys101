@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   LABEL_START,
   MIN_LABEL_GAP,
@@ -36,6 +36,26 @@ describe("transitive reduction", () => {
     const edges = topics.flatMap((t) => t.prerequisites.map((p: string) => ({ from: p, to: t.slug })));
     const reduced = transitiveReduction(edges);
     expect(keys(edges).filter((k) => !keys(reduced).includes(k)).sort()).toEqual(["caching->rate-limiting", "databases->indexing", "databases->storage-engines", "dns->cdns", "http-tcp-tls->api-design-rpc-rest-graphql", "http-tcp-tls->cdns", "http-tcp-tls->real-time-delivery", "load-balancing->overload-and-cascading-failures", "load-balancing->safe-deployments", "rate-limiting->overload-and-cascading-failures", "replication->cap", "replication->consensus", "replication->disaster-recovery-and-backups", "replication->failover", "replication->object-storage", "sharding->distributed-transactions"]);
+  });
+
+  it("remembers the chosen layers for equal inputs, even for freshly built nodes", () => {
+    const nodes = [{ slug: "a", title: "A" }, { slug: "b", title: "B" }, { slug: "c", title: "C" }];
+    const es = [{ from: "a", to: "b" }, { from: "a", to: "c" }];
+    const cols = layers(nodes, es);
+    const box = { width: 800, height: 300, labelWidth: new Map(nodes.map((n) => [n.slug, 40])) };
+    const stage = { minX: -40, maxX: 840, minY: -40, maxY: 300 };
+    const first = chooseLayers(cols, es, box, stage);
+    expect(chooseLayers(cols.map((c) => c.map((n) => ({ ...n }))), es, box, stage)).toBe(first);
+  });
+
+  it("keeps the chosen layers in the tab's session storage", () => {
+    const data = new Map<string, string>();
+    vi.stubGlobal("window", { sessionStorage: { getItem: (k: string) => data.get(k) ?? null, setItem: (k: string, v: string) => void data.set(k, v) } });
+    const nodes = [{ slug: "p", title: "P" }, { slug: "q", title: "Q" }];
+    const es = [{ from: "p", to: "q" }];
+    chooseLayers(layers(nodes, es), es, { width: 777, height: 250, labelWidth: new Map(nodes.map((n) => [n.slug, 30])) }, { minX: -40, maxX: 800, minY: -40, maxY: 250 });
+    vi.unstubAllGlobals();
+    expect(JSON.parse(data.get("sys101:layers")!)).toBeTruthy();
   });
 
   it("leaves a graph with no redundant edges unchanged", () => {
