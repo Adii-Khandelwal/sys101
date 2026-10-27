@@ -194,7 +194,7 @@
     },
     {
       "term": "Quorum",
-      "definition": "The number of members that must agree before a write or decision counts."
+      "definition": "The number of members, usually a majority, that must agree before a write or decision counts."
     },
     {
       "term": "Failover",
@@ -255,7 +255,7 @@
         },
         {
           "step": "Redirect clients",
-          "explanation": "Clients learn the new primary through service discovery or proxies. Until they do, writes fail, and a reachable old primary must be stopped from accepting writes."
+          "explanation": "Clients learn the new primary through service discovery (a lookup of where a service currently runs) or proxies. Until they do, writes fail, and a reachable old primary must be stopped from accepting writes."
         }
       ],
       "diagram": "<svg viewBox=\"0 0 560 238\" role=\"img\" aria-labelledby=\"dg-repl-how-t\" class=\"dg\"><title id=\"dg-repl-how-t\">A replicated write and failover: write to the primary, ship the log, decide when it is safe, detect a failure, elect a new primary, and redirect clients.</title><defs><marker id=\"dg-repl-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"12\" y=\"36\" width=\"161\" height=\"44\" class=\"dg-box\"/><text x=\"92.5\" y=\"62.666666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Write to primary</text><rect x=\"199\" y=\"36\" width=\"161\" height=\"44\" class=\"dg-box\"/><text x=\"279.5\" y=\"62.666666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Ship the log</text><rect x=\"386\" y=\"36\" width=\"161\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"466.5\" y=\"62.666666666666664\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Decide when safe</text><text x=\"466.5\" y=\"95\" class=\"dg-note dg-note-accent\" text-anchor=\"middle\" font-size=\"11\">sync vs async</text><rect x=\"386\" y=\"142\" width=\"161\" height=\"44\" class=\"dg-box\"/><text x=\"466.5\" y=\"168.66666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Redirect clients</text><rect x=\"199\" y=\"142\" width=\"161\" height=\"44\" class=\"dg-box\"/><text x=\"279.5\" y=\"168.66666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Elect new primary</text><rect x=\"12\" y=\"142\" width=\"161\" height=\"44\" class=\"dg-box\"/><text x=\"92.5\" y=\"168.66666666666666\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"14\">Detect failure</text><path d=\"M173,58 L199,58\" class=\"dg-line\" marker-end=\"url(#dg-repl-how-a)\"/><path d=\"M360,58 L386,58\" class=\"dg-line\" marker-end=\"url(#dg-repl-how-a)\"/><path d=\"M466.5,80 L466.5,142\" class=\"dg-line\" marker-end=\"url(#dg-repl-how-a)\"/><path d=\"M386,164 L360,164\" class=\"dg-line\" marker-end=\"url(#dg-repl-how-a)\"/><path d=\"M199,164 L173,164\" class=\"dg-line\" marker-end=\"url(#dg-repl-how-a)\"/><text x=\"280\" y=\"228\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Writes flow to one primary; failover promotes a replica and moves clients.</text></svg>",
@@ -293,11 +293,11 @@
       "steps": [
         {
           "step": "Failover from outside",
-          "explanation": "In a 2018 account, GitHub ran failover outside MySQL: orchestrator detects the dead primary, and orchestrator nodes in several data centres agree through Raft."
+          "explanation": "In a 2018 account, GitHub ran failover outside MySQL: orchestrator detects the dead primary, and orchestrator nodes in several data centres agree through Raft, a protocol that gets machines to agree on one decision by majority vote."
         },
         {
           "step": "Announce through proxies",
-          "explanation": "orchestrator writes the new primary to Consul, and HAProxy is rewritten to route writes there. A typical outage was 10 to 13 seconds."
+          "explanation": "orchestrator writes the new primary to Consul (a store of where services currently run), and HAProxy (a proxy that forwards connections) is rewritten to route writes there. A typical outage was 10 to 13 seconds."
         },
         {
           "step": "Wait, but not forever",
@@ -448,7 +448,7 @@
       {
         "level": "scale",
         "diagram": "<svg viewBox=\"0 0 560 290\" role=\"img\" aria-labelledby=\"dg-rep-ex3-sk-t\" class=\"dg\"><title id=\"dg-rep-ex3-sk-t\">Model answer: commits, elections and membership changes live in the replicated log; a small local quorum commits, a wider one elects, failures are injected in testing and failed members are replaced quickly.</title><defs><marker id=\"dg-rep-ex3-sk-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"205\" y=\"20\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"280\" y=\"41.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Inject failures</text><text x=\"280\" y=\"57.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">in testing</text><rect x=\"205\" y=\"100\" width=\"150\" height=\"66\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"121.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Replicated log:</text><text x=\"280\" y=\"137.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">commits, elections,</text><text x=\"280\" y=\"153.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">membership</text><rect x=\"14\" y=\"100\" width=\"150\" height=\"66\" class=\"dg-box\"/><text x=\"89\" y=\"129.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Commit: small</text><text x=\"89\" y=\"145.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">local quorum</text><rect x=\"396\" y=\"100\" width=\"150\" height=\"66\" class=\"dg-box\"/><text x=\"471\" y=\"129.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Election: wider</text><text x=\"471\" y=\"145.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">quorum</text><rect x=\"205\" y=\"200\" width=\"150\" height=\"50\" class=\"dg-box\"/><text x=\"280\" y=\"221.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Replace failed</text><text x=\"280\" y=\"237.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">members quickly</text><path d=\"M280,70 L280,100\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-rep-ex3-sk-a)\"/><path d=\"M164,133 L205,133\" class=\"dg-line\" marker-end=\"url(#dg-rep-ex3-sk-a)\"/><path d=\"M396,133 L355,133\" class=\"dg-line\" marker-end=\"url(#dg-rep-ex3-sk-a)\"/><path d=\"M280,166 L280,200\" class=\"dg-line\" marker-end=\"url(#dg-rep-ex3-sk-a)\"/></svg>",
-        "prompt": "You now run millions of shards across continents. What makes failover fast and correct at that size?",
+        "prompt": "You now run millions of shards (separate slices of the data, each with its own primary) across continents. What makes failover fast and correct at that size?",
         "answer": "Put commits, elections and membership changes in the replicated log itself, use a small local quorum for commits and a wider one for elections, inject failures in testing, and replace failed members quickly.",
         "tradeoffs": "Years of tooling work, and a local quorum that two bad members can break.",
         "wrongAnswers": [

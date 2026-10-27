@@ -93,15 +93,15 @@
           "why": "Smallest change, but every new message still costs a full round trip on a weak network."
         },
         {
-          "label": "Fetch one snapshot, then subscribe to small delta updates pushed over a light connection and apply them locally",
-          "why": "After the first snapshot the app needs no further queries, but the server must now stream ordered updates."
-        },
-        {
           "label": "Poll the server on a short timer and fetch only the changes since the last poll",
           "why": "Easy to build, but idle phones still send requests and waste battery and data."
+        },
+        {
+          "label": "Fetch one snapshot, then subscribe to small delta updates and apply them locally",
+          "why": "After the first snapshot the app needs no further queries, but the server must now stream ordered updates."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "realChoice": {
         "company": "Meta",
         "text": "Messenger moved to a push-based snapshot plus delta model (2014). The client gets an initial snapshot, typically the only HTTPS pull it makes, then subscribes to delta updates that are pushed over MQTT, a low-power, low-bandwidth protocol, as messages arrive. The client applies each delta to its local copy, so it can show an up-to-date view without an HTTPS request. The post says this sync protocol cut non-media data use by about 40%, and that reducing network congestion led to roughly 20% fewer people seeing errors when sending a message.",
@@ -113,19 +113,19 @@
       "question": "The deltas travel as JSON. It is flexible and readable, and compression helps, but the wire format is still wasteful. Bytes on a mobile network matter. What do you do about the encoding?",
       "options": [
         {
+          "label": "Move to a compact binary encoding with a schema, accepting less readable traffic",
+          "why": "Smaller on the wire, at the price of tooling and a schema to keep in step on every client."
+        },
+        {
           "label": "Stay on JSON and rely on compression, since developers can read it and change it quickly",
           "why": "Lowest developer overhead, but compression does not fully offset the format's waste."
         },
         {
           "label": "Drop messages that are older than a few minutes so fewer bytes are sent in total",
           "why": "Saves bytes, but users lose messages they were waiting for."
-        },
-        {
-          "label": "Move to a compact binary encoding with a schema, accepting less readable traffic",
-          "why": "Smaller on the wire, at the price of tooling and a schema to keep in step on every client."
         }
       ],
-      "answerIndex": 2,
+      "answerIndex": 0,
       "realChoice": {
         "company": "Meta",
         "text": "Messenger evaluated several replacements for JSON and chose Thrift for messages and delta updates (2014). The post says JSON is good when you need a flexible, human-readable format with little developer overhead, but is not efficient on the wire, and that compression does not entirely make up for it. Switching to Thrift reduced the payload size on the wire by roughly 50%.",
@@ -137,11 +137,11 @@
       "question": "One big disk storage tier handles both real-time message delivery and full conversation history. A disk outage or a slow write now delays what the phone sees. How do you split the work?",
       "options": [
         {
-          "label": "Buy faster disks and add more servers to the one storage tier",
+          "label": "Buy faster disks and add more servers, keeping one storage tier for both jobs",
           "why": "Keeps one system, but it still serves two jobs and one slow write still holds up delivery."
         },
         {
-          "label": "Put an ordered queue in front, with separate pointers for the phone and for the storage tier",
+          "label": "Put an ordered queue in front with separate pointers for phone and storage",
           "why": "Each side advances at its own pace and can fall behind, but you now run a queue with a bounded backlog."
         },
         {
@@ -161,11 +161,11 @@
       "question": "The queue needs a durable backing store that holds a week of messages, is fast to write and survives a machine failure within seconds. Nothing off the shelf meets all of scale, reliability, speed and flexibility. What do you build it on?",
       "options": [
         {
-          "label": "A new custom storage engine written for this queue alone",
+          "label": "A new custom storage engine written from scratch for this queue alone",
           "why": "Fits the need exactly, but it is a long project and every bug is yours."
         },
         {
-          "label": "The existing MySQL on flash, with semi-sync replication so each write is on more than one server",
+          "label": "MySQL on flash, with semi-sync replication across several servers",
           "why": "Reuses known tooling and gains durability across servers, but the database's availability had to be improved first."
         },
         {
@@ -185,19 +185,19 @@
       "question": "Every user holds a connection open. Do you spread them over many small servers, or tune each server to hold as many connections as it can?",
       "options": [
         {
+          "label": "Tune the operating system and runtime so one machine holds millions of connections",
+          "why": "Far fewer machines, but it takes OS limits, memory sizing and testing that the defaults do not give you."
+        },
+        {
           "label": "Many small servers with a few thousand connections each, so one failure affects few users",
           "why": "Simple to reason about, but the fleet is large and each connection costs more hardware."
         },
         {
           "label": "Cap each server at a round number such as 10,000 connections to leave headroom",
           "why": "Safe margin, but you pay for machines that sit mostly idle."
-        },
-        {
-          "label": "Tune the operating system and runtime so one machine holds millions of connections",
-          "why": "Far fewer machines, but it takes OS limits, memory sizing and testing that the defaults do not give you."
         }
       ],
-      "answerIndex": 2,
+      "answerIndex": 0,
       "realChoice": {
         "company": "WhatsApp",
         "text": "In January 2012 WhatsApp reported pushing its servers to over 2 million TCP connections on one box, after an earlier post about 1 million. The box showed 2,277,845 open sockets, CPU at 37.9% user, 13.6% system and 41.9% idle, and 27G of memory free. It ran FreeBSD 8.2-STABLE on 24 cores of Intel Xeon X5675 with about 103 GB of RAM, with Erlang R14B03 as the runtime. The post lists the tuned limits (for example kern.ipc.maxsockets=2400000 and kern.maxfiles=3000000) and says the load was sustainable. It does not say how many such servers the service ran or how connections were spread across them.",
@@ -209,19 +209,19 @@
       "question": "Your client downloads a full snapshot of the workspace at startup: every user, channel, member and recent message. That works for hundreds of people. For tens of thousands it gets slow, and a reconnect after closing a laptop costs almost as much as the first load. What changes?",
       "options": [
         {
-          "label": "Send less at startup and put a cache near the user that answers queries for the rest as they are needed",
-          "why": "Fast to start and cheap to reconnect, but you run a new service and must predict what the client will ask for next."
-        },
-        {
           "label": "Make the backend faster so the full snapshot is built more quickly for every client",
           "why": "No client change, but each reconnect still costs the backend a full snapshot."
         },
         {
           "label": "Cap the workspace size so that no team grows beyond what the full snapshot can handle",
           "why": "Removes the problem, but turns away the largest customers."
+        },
+        {
+          "label": "Send less at startup and put a cache near users that answers the rest on demand",
+          "why": "Fast to start and cheap to reconnect, but you run a new service and must predict what the client will ask for next."
         }
       ],
-      "answerIndex": 0,
+      "answerIndex": 2,
       "realChoice": {
         "company": "Slack",
         "text": "Slack built Flannel, an application-level cache deployed to its edge points of presence (2017). On connect, Flannel gathers the full startup data, opens a WebSocket to Slack servers in the main AWS region to stay current from real-time events, and gives the client a slimmed-down version. The client then asks Flannel for users and channels on demand, and Flannel pushes data it expects the client to need next. The post says startup data shrank by 7 times on a team of 1.5K users and by 44 times on a team of 32K users. Flannel had been running at the edge since January, serving 4 million simultaneous connections at peak and 600K client queries per second.",
@@ -233,19 +233,19 @@
       "question": "You run many cache hosts at the edge. A cache only helps if the data a user needs is already on the host they reach. How should a user be sent to a host?",
       "options": [
         {
-          "label": "Send each connection to the least busy host, so load stays level",
-          "why": "Level load, but teammates land on different hosts and each host caches the same team's data."
+          "label": "Hash by team and region so teammates in one region reach the same host",
+          "why": "Teammates share one cache, but one big team can make one host busy and adding hosts moves some teams."
         },
         {
-          "label": "Hash the team and region so that people from the same team in one region reach the same host",
-          "why": "Teammates share one cache, but one big team can make one host busy and adding hosts moves some teams."
+          "label": "Send each connection to the least busy host so load stays level across the fleet",
+          "why": "Level load, but teammates land on different hosts and each host caches the same team's data."
         },
         {
           "label": "Pin every user to one fixed host for good, chosen when they sign up",
           "why": "Warm caches, but users cannot move when a host is lost or the network region changes."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "realChoice": {
         "company": "Slack",
         "text": "Flannel uses consistent hashing to choose the host a user connects to, so that users on the same team and in the same networking region reach the same Flannel instance, for the best cache efficiency (2017). New or recently disconnected users are then served straight from the Flannel cache, which lowers the impact of reconnect storms on the Slack backend. The post does not say how it handles one very large team landing on a single host.",
@@ -257,19 +257,19 @@
       "question": "Every client listens to every event for its team: messages in all its channels, profile updates, presence changes. Most of those events are not relevant to what the user is looking at. How do you cut the traffic?",
       "options": [
         {
-          "label": "Let clients subscribe to only the events the current view needs and change subscriptions when the view changes",
-          "why": "Far fewer events per client, but the server now tracks each client's subscriptions."
-        },
-        {
           "label": "Batch all events into one packet every few seconds and send it to every client",
           "why": "Fewer packets, but every client still gets every event and live updates become delayed."
+        },
+        {
+          "label": "Let clients subscribe to only the events their current view needs",
+          "why": "Far fewer events per client, but the server now tracks each client's subscriptions."
         },
         {
           "label": "Ask each client to filter on the device and ignore what it does not need",
           "why": "No server change, but the bytes have already been sent and received."
         }
       ],
-      "answerIndex": 0,
+      "answerIndex": 1,
       "realChoice": {
         "company": "Slack",
         "text": "Slack said it was moving clients to a pub/sub model, so that a client subscribes to the events that matter in its current view and changes subscriptions when the user switches view (2017). It had already moved user presence updates to pub/sub, and the number of presence events clients received fell by a factor of 5. The post gives no further presence detail, such as how online status is detected or how often it is refreshed. It also lists moving event fanout into Flannel as planned work, not as something finished.",
@@ -285,15 +285,15 @@
           "why": "Simple, but idle clients pay for messages they never read."
         },
         {
-          "label": "Nothing until they open the server, then a full load of everything the server holds",
-          "why": "Saves bandwidth, but the sidebar goes stale and the first open is slow."
-        },
-        {
           "label": "A periodic update of only what changed, upgrading to the full stream on open",
           "why": "Cheap for idle clients, but the server must track what each client has already been sent."
+        },
+        {
+          "label": "Nothing until they open the server, then a full load of everything the server holds",
+          "why": "Saves bandwidth, but the sidebar goes stale and the first open is slow."
         }
       ],
-      "answerIndex": 2,
+      "answerIndex": 1,
       "realChoice": {
         "company": "Discord",
         "text": "Discord uses passive sessions so clients that may never open a server do not get its messages, and a session is upgraded to a normal one when the user tabs in (2024). Passive sessions still got a periodic update listing channels, members and members in voice. The first version sent all of them even if one element changed. The post says that dispatch was over 30% of gateway traffic while being around 2% of dispatches. Sending only the delta cut it from 35% of gateway bandwidth to 5%, which the post calls a 20% reduction cluster-wide. It does not say how it gets from 35% to 5% to 20%: the drop is 30 percentage points of the gateway's bandwidth, so the 20% figure uses a basis the post does not explain. Together, Passive Sessions v2 and zstandard cut gateway bandwidth by almost 40%. The post notes the snapshot design worked when passive sessions were introduced to scale servers to hundreds of thousands of users. It does not say how online status is detected.",
@@ -309,18 +309,18 @@
           "why": "Cheapest for the sender, but the server can read everything."
         },
         {
-          "label": "The sender encrypts a copy per device; the server keeps none",
-          "why": "The server never sees content, but the sender does more work as the device count grows."
-        },
-        {
           "label": "One phone stays the source of truth and the other devices only mirror it",
           "why": "Simple keys, but the other devices are slow and drop whenever the phone is off."
+        },
+        {
+          "label": "The sender encrypts a copy per device; the server keeps none",
+          "why": "The server never sees content, but the sender does more work as the device count grows."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "realChoice": {
         "company": "WhatsApp",
-        "text": "WhatsApp moved from a phone as the source of truth to independent companion devices (2021), after finding the old design left companions slower and often disconnected when the phone had a poor connection, low battery or was killed by the OS. Each device now has its own identity key, and the server keeps a mapping from account to devices. In one-on-one chats the sending client encrypts and sends the message N times, once per device in the sender's and recipient's device lists; for groups the post says WhatsApp still uses the Sender Key scheme from the Signal Protocol. The post says messages are not stored on the server after they are delivered, and that a companion device gets recent history as an encrypted bundle from the primary device when it is linked. It gives no latency or throughput numbers. It was a limited beta announcement.",
+        "text": "WhatsApp moved from a phone as the source of truth to independent companion devices (2021), after finding the old design left companions slower and often disconnected when the phone had a poor connection, low battery or was killed by the OS. In the 2021 design each device has its own identity key, and the server keeps a mapping from account to devices. In one-on-one chats the sending client encrypts and sends the message N times, once per device in the sender's and recipient's device lists; for groups the 2021 post says WhatsApp uses the Sender Key scheme from the Signal Protocol. The post says messages are not stored on the server after they are delivered, and that a companion device gets recent history as an encrypted bundle from the primary device when it is linked. It gives no latency or throughput numbers. It was a limited beta announcement.",
         "sourceId": "wa2021"
       }
     },
@@ -329,19 +329,19 @@
       "question": "All of a workspace's messages and channels sit on one database shard, with thousands of workspaces per shard. The biggest customer makes one shard hot, and a shard outage takes down every customer on it. How do you shard messages?",
       "options": [
         {
-          "label": "Keep sharding by workspace and move the big workspaces to their own hosts",
-          "why": "Small change, but one large workspace's load still lands on a single shard."
-        },
-        {
           "label": "Shard messages by channel, using a layer that splits and routes shards",
           "why": "Load spreads more evenly, but queries that assumed one workspace per shard must be reworked."
+        },
+        {
+          "label": "Keep sharding by workspace and move the big workspaces to their own hosts",
+          "why": "Small change, but one large workspace's load still lands on a single shard."
         },
         {
           "label": "Keep everything in one large database and buy ever bigger hardware for it",
           "why": "No routing logic, but there is a limit to one host."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "realChoice": {
         "company": "Slack",
         "text": "Slack moved to Vitess, a layer over MySQL, from 2017, and said in December 2020 that it served 99% of query load (2020). The old design sharded by workspace id, which the post says made every customer on a shard feel a shard outage. Slack wanted to shard message data by channel id instead. It considered building the new sharding into the application but found the application too tightly coupled to how data was stored, and said building sharding awareness into the application would not address its operational issues or let it use read replicas more effectively, so it adopted Vitess. In March 2020 query rates rose by 50% in one week and it split a busy keyspace using Vitess. This post is from 2020 and shows nothing about 2021 or later.",
@@ -654,15 +654,15 @@
     {
       "question": "Why does Iris keep a separate pointer for the app and for the storage tier?",
       "options": [
-        "Each side moves at its own pace, so a slow disk cannot stall delivery",
         "It lets the phone write straight to the disk tier after it confirms a message",
+        "Each side moves at its own pace, so a slow disk cannot stall delivery",
         "It keeps two copies of every message so one copy is always available"
       ],
-      "correct": 0,
+      "correct": 1,
       "why": "A pointer advances only after a successful send. If the phone is offline or the disk is down, its pointer stays while new messages are still queued and the other pointers advance.",
       "wrong": [
-        "",
         "The queue writes to disk, not the app.",
+        "",
         "The pointers mark positions in one queue, not two copies."
       ],
       "teaches": "message-queues"
@@ -671,30 +671,30 @@
       "question": "Why did Messenger move from pull to a snapshot plus pushed deltas?",
       "options": [
         "Pushed deltas mean the server no longer has to keep any message history at all",
-        "After one snapshot the app stays current with no more HTTPS queries",
-        "MQTT guarantees that no delta is ever lost between server and phone"
+        "MQTT guarantees that no delta is ever lost between server and phone",
+        "After one snapshot the app stays current with no more HTTPS queries"
       ],
-      "correct": 1,
+      "correct": 2,
       "why": "The old way needed a complex HTTPS query and a large JSON reply for each push notification. The new way applies small deltas to a local copy, and non-media data use fell by about 40%.",
       "wrong": [
         "The queue still keeps a week of messages.",
-        "",
-        "The post calls MQTT low-power and low-bandwidth, and does not make a delivery guarantee."
+        "The post calls MQTT low-power and low-bandwidth, and does not make a delivery guarantee.",
+        ""
       ],
       "teaches": "real-time-delivery"
     },
     {
       "question": "What does Slack's use of consistent hashing in Flannel aim for?",
       "options": [
-        "Spreading each team's users evenly across every host in their whole region",
         "Sending one team's users in a region to one host for a warm cache",
+        "Spreading each team's users evenly across every host in their whole region",
         "Choosing the host that is geographically nearest to each single user"
       ],
-      "correct": 1,
+      "correct": 0,
       "why": "Users of one team in the same networking region reach the same Flannel instance, which gives the best cache efficiency and serves reconnecting users from cache.",
       "wrong": [
-        "Spreading teams out would split the cache.",
         "",
+        "Spreading teams out would split the cache.",
         "The post names team and region, not distance to each user."
       ],
       "teaches": "consistent-hashing"
@@ -703,15 +703,15 @@
       "question": "What did Slack report after moving presence updates to pub/sub?",
       "options": [
         "Presence events fell by about 40% and send errors fell with them",
-        "The post gives no figure, only that presence now uses subscriptions",
-        "Clients got about 5 times fewer presence events"
+        "Clients got about 5 times fewer presence events",
+        "The post gives no figure, only that presence now uses subscriptions"
       ],
-      "correct": 2,
+      "correct": 1,
       "why": "The post says the number of presence events received by clients was reduced by a factor of 5. It gives no detail on how presence is detected.",
       "wrong": [
         "The 40% figure belongs to Messenger's data use.",
-        "It does give a figure, a factor of 5.",
-        ""
+        "",
+        "It does give a figure, a factor of 5."
       ],
       "teaches": "pub-sub"
     },
@@ -735,15 +735,15 @@
       "question": "What did Discord change to cut the cost of passive sessions?",
       "options": [
         "It stopped sending passive sessions anything at all",
-        "It sent only the changes since the last update",
-        "It moved passive sessions to a different protocol"
+        "It moved passive sessions to a different protocol",
+        "It sent only the changes since the last update"
       ],
-      "correct": 1,
+      "correct": 2,
       "why": "The post says the old update resent all channels, members and members in voice even if one element changed. The delta version cut it from 35% of gateway bandwidth to 5%.",
       "wrong": [
         "Passive sessions still get a periodic update.",
-        "",
-        "The post's change is to the content of the update."
+        "The post's change is to the content of the update.",
+        ""
       ],
       "teaches": "pub-sub"
     },

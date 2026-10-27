@@ -91,6 +91,7 @@ export function capstoneProblems(c: Capstone, file: string, topicSlugs: readonly
   }
 
   if (arr(c.decisions, "decisions")) {
+    const decisionsBefore = p.length;
     unique(c.decisions.map((d) => d.id), "decision");
     c.decisions.forEach((d) => {
       const w = `decision "${d.id}"`;
@@ -102,6 +103,11 @@ export function capstoneProblems(c: Capstone, file: string, topicSlugs: readonly
       source(d.realChoice?.sourceId, w);
       if (d.diagram !== undefined) checkDiagram(d.diagram).forEach((p) => add(`${w}: diagram ${p}`));
     });
+    // Same position and length rules as a quiz, so the better fit cannot be guessed from where it sits or how long it is.
+    if (p.length === decisionsBefore) {
+      const asQuiz = c.decisions.map((d) => ({ options: d.options.map((o) => o.label), correct: d.answerIndex, why: "", wrong: [] }));
+      for (const m of [...checkQuizPositions(asQuiz), ...checkQuizStyle(asQuiz)]) add(m.replace(/^quiz/, "decisions"));
+    }
   }
 
   const inputs = c.sizing?.inputs ?? [];

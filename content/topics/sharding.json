@@ -268,11 +268,11 @@
         },
         {
           "step": "Accept what breaks",
-          "explanation": "Foreign keys, unique indexes and transactions across shards are no longer enforced by the database."
+          "explanation": "Foreign keys (a rule that a row must point at a row that exists), unique indexes and transactions across shards are no longer enforced by the database, because each shard only sees its own rows."
         },
         {
           "step": "Move data safely",
-          "explanation": "Double-write new changes, backfill old ones, compare both systems, then switch traffic."
+          "explanation": "Double-write new changes to old and new databases, backfill (copy over) the old rows, compare both systems, then switch traffic."
         },
         {
           "step": "Grow by moving shards",
@@ -298,7 +298,7 @@
         },
         {
           "step": "Make a reversible step",
-          "explanation": "Figma first sharded logically: each shard was a Postgres view over a range of hashed keys in the still-unsplit table, behind feature flags, so going back was a config change."
+          "explanation": "Figma first sharded logically: each shard was a Postgres view (a saved query that looks like a table) over a range of hashed keys in the still-unsplit table, behind feature flags, so going back was a config change."
         },
         {
           "step": "Route by understanding SQL",
@@ -419,7 +419,7 @@
       {
         "level": "apply",
         "diagram": "<svg viewBox=\"0 0 560 140\" role=\"img\" aria-labelledby=\"dg-sh-ex1-sk-t\" class=\"dg\"><title id=\"dg-sh-ex1-sk-t\">Model answer: start sharding before the database is in crisis: pick a key most queries include, fix a shard count with many divisors, and plan the move with double writes and verification.</title><defs><marker id=\"dg-sh-ex1-sk-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"280\" y=\"16\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">start now, before the database is in crisis</text><rect x=\"14\" y=\"30\" width=\"150\" height=\"66\" class=\"dg-box\"/><text x=\"89\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Pick a shard key</text><text x=\"89\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">most queries</text><text x=\"89\" y=\"83.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">include</text><rect x=\"205\" y=\"30\" width=\"150\" height=\"66\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Fix a shard count</text><text x=\"280\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">with many</text><text x=\"280\" y=\"83.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">divisors</text><rect x=\"396\" y=\"30\" width=\"150\" height=\"66\" class=\"dg-box\"/><text x=\"471\" y=\"51.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Plan the move:</text><text x=\"471\" y=\"67.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">double writes,</text><text x=\"471\" y=\"83.55\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">verification</text><path d=\"M164,63 L205,63\" class=\"dg-line\" marker-end=\"url(#dg-sh-ex1-sk-a)\"/><path d=\"M355,63 L396,63\" class=\"dg-line\" marker-end=\"url(#dg-sh-ex1-sk-a)\"/></svg>",
-        "prompt": "Your largest table is growing fast and vacuum is starting to stall, but the database still copes. What do you do now?",
+        "prompt": "Your largest table is growing fast and vacuum (Postgres's clean-up of dead rows) is starting to stall, but the database still copes. What do you do now?",
         "answer": "Start sharding now, before the database is in crisis: pick a key most queries include, fix a shard count with many divisors, and plan the move with double writes and verification.",
         "tradeoffs": "Work and complexity now, before the pain is obvious.",
         "wrongAnswers": [

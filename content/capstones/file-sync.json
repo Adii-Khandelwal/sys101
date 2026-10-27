@@ -74,7 +74,7 @@
           "why": "Lowest risk and features keep shipping, but small steps cannot change the nouns the system is built on."
         },
         {
-          "label": "Rewrite it from scratch around a strict data model, with testing built in from day one",
+          "label": "Rewrite it from scratch around a strict data model, with testing built in",
           "why": "Costly and slow, but the data model fixes what small steps could not, and tight invariants make it checkable."
         },
         {
@@ -94,19 +94,19 @@
       "question": "The old engine stores a move as a delete at the old path plus an add at the new one. A network error lets the delete through but not the add. What should the new client-server protocol do?",
       "options": [
         {
-          "label": "Keep the pair, but retry the add until it succeeds",
-          "why": "Simple, but other devices can see the file missing in between, and a client that gives up leaves it lost."
-        },
-        {
-          "label": "Give files and folders stable global ids and make a move one atomic operation, whatever the folder's size",
+          "label": "Give files and folders stable global ids and make a move one atomic operation",
           "why": "No device sees the item missing or doubled, and the server and client can compare views to catch bugs."
         },
         {
-          "label": "Let each device decide, and merge by duplicating folders when views disagree",
+          "label": "Keep the delete and add pair, but retry the add until it succeeds",
+          "why": "Simple, but other devices can see the file missing in between, and a client that gives up leaves it lost."
+        },
+        {
+          "label": "Let each device decide what happened and merge by duplicating folders when views disagree",
           "why": "Nothing is lost, but users end up with copies they did not make."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "realChoice": {
         "company": "Dropbox",
         "text": "Nucleus uses a redesigned protocol with strong consistency. Server and client must hold the same view of the remote filesystem before the client considers a change. Shared folders and files have globally unique ids, clients never see them duplicated or missing for a moment, and moves are atomic whatever the size of the subtree. Any difference between the client's and server's view is treated as a bug. For two users who each move a folder into the other's while offline, Nucleus keeps the original folders, and the order depends on whose upload arrives first, where the old engine duplicated the folders.",
@@ -118,19 +118,19 @@
       "question": "Sync is highly concurrent: uploads, downloads, hashing and disk work all overlap. The old engine used threads and the OS scheduler, so tests could not be repeated. How do you structure the new one?",
       "options": [
         {
-          "label": "Keep threads, but hold coarse locks for long stretches to make it easier to reason about",
+          "label": "Keep threads, but hold coarse locks for long stretches to make the code easier to reason about",
           "why": "Fewer races, but you give up the parallelism and the runs are still not repeatable."
-        },
-        {
-          "label": "Run nearly everything on one control thread with futures, and send only IO and heavy work to other threads",
-          "why": "Fewer states to consider, and with fixed inputs the run is the same every time, so a failing test can be replayed."
         },
         {
           "label": "Add more locks and finer grained scheduling hints to the existing threads",
           "why": "Gets some parallelism back, but each new lock is another place for a bug nobody can replay."
+        },
+        {
+          "label": "Run nearly everything on one control thread with futures; send only IO and heavy work elsewhere",
+          "why": "Fewer states to consider, and with fixed inputs the run is the same every time, so a failing test can be replayed."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "realChoice": {
         "company": "Dropbox",
         "text": "Nucleus runs almost all code on a single control thread, with Rust futures scheduling many actions on it. Network IO goes to an event loop, hashing to a thread pool, and filesystem IO to a dedicated thread. With inputs and scheduling fixed, the control thread is fully deterministic, so tests can generate random filesystem states and schedules from a seed, replay any failure from that seed, and run millions of scenarios a day. The post states the old engine used very coarse locks held for long periods, which gave up the benefit of parallelism.",
@@ -142,19 +142,19 @@
       "question": "You want to compress file blocks on the client before upload. Client machines rarely have ECC memory, so the compressor itself can corrupt a block. What do you do?",
       "options": [
         {
-          "label": "Trust the compressor, since the network already checks packets",
+          "label": "Trust the compressor, since the network already checks every packet and the server stores the result",
           "why": "Fastest. A bad bit written during compression passes every network check and is stored."
         },
         {
-          "label": "Send the hash of the uncompressed block and decompress the result to check it matches before it is accepted",
-          "why": "Costs an extra decompression on the request path, and catches corruption from compression or the wire."
+          "label": "Skip compression for the sake of simplicity and send every block raw",
+          "why": "Safe, but every user pays for the bandwidth and slower uploads."
         },
         {
-          "label": "Skip compression for the sake of simplicity and send raw blocks",
-          "why": "Safe, but every user pays for the bandwidth and slower uploads."
+          "label": "Send the hash of the uncompressed block and decompress the result to check it matches",
+          "why": "Costs an extra decompression on the request path, and catches corruption from compression or the wire."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "realChoice": {
         "company": "Dropbox",
         "text": "The upload request carries the hash of the uncompressed block and a format value. The post says the extra decompression call can be expensive but is needed to be sure the compressed file encodes the original, and that choosing durability over performance is easy because durability is table stakes at Dropbox. Benchmarks showed the check runs at upwards of 300 MiB a second per core, a cost they were willing to pay. Median latency fell by more than 30% and data on the wire by the same amount.",
@@ -170,7 +170,7 @@
           "why": "Best ratio, but the compressor becomes the bottleneck and a fast link sits partly idle."
         },
         {
-          "label": "Lower the quality level, accept slightly larger blocks, and put the user's upload time first",
+          "label": "Lower the quality level, accept slightly larger blocks, and put upload time first",
           "why": "Total savings drop a little, and the link fills better on fast connections."
         },
         {
@@ -190,19 +190,19 @@
       "question": "Your metadata runs on sharded MySQL, and the next capacity step is to split every machine in two. One outlier shard may outgrow a whole machine. Off-the-shelf options exist. What do you do?",
       "options": [
         {
-          "label": "Move to FoundationDB, Vitess or CockroachDB, which already scale and support transactions",
+          "label": "Build a transactional key-value layer between the app and MySQL, with data in movable ranges",
+          "why": "Expensive to build, and it gives incremental capacity, rebalancing and transactions that do not depend on the engine."
+        },
+        {
+          "label": "Move to FoundationDB, Vitess or CockroachDB, which already scale and support transactions well",
           "why": "Less to build, but each one failed a hard need: scale, strong reads, or the replication model."
         },
         {
-          "label": "Keep splitting machines in two as the data grows",
+          "label": "Keep splitting every machine in two as the data grows",
           "why": "No new system, but you pay for double the fleet each time and cannot split the one oversized shard."
-        },
-        {
-          "label": "Build a transactional key-value layer between the application and MySQL, with data in movable ranges",
-          "why": "Expensive to build, and it gives incremental capacity, rebalancing and transactions that do not depend on the engine."
         }
       ],
-      "answerIndex": 2,
+      "answerIndex": 0,
       "realChoice": {
         "company": "Dropbox",
         "text": "Dropbox built Panda, an ordered key-value store between Edgestore and sharded MySQL. It looked at open source first and rejected three. FoundationDB is tuned for up to 500 storage processes against more than 10,000 cores per Dropbox cluster, with a central timestamp oracle and a full outage on any transactional node failure. Vitess lacks production-ready cross-shard ACID and relaxes consistency. CockroachDB did not fit the replication model of two regions about 80 ms apart, nor the scale: a 64 MB default range over 2 PB is more than 30 million ranges, roughly 60 GB of memory just to track them.",
@@ -214,19 +214,19 @@
       "question": "Reads are more than 95% of the metadata workload, and most must see the latest writes. How do you provide transactions without making readers wait for writers?",
       "options": [
         {
-          "label": "Take read locks so each transaction sees a stable view",
+          "label": "Take read locks so each transaction sees a stable view of the data until it ends",
           "why": "Easy to explain. Readers and writers block each other, which is costly when nearly everything is a read."
         },
         {
-          "label": "Keep timestamped versions of each key, so a read at one timestamp sees a fixed snapshot with no locks",
-          "why": "Reads never block and can use followers, but every write and delete adds a row, and old versions need cleanup."
+          "label": "Give up isolation and let reads see whatever happens to be committed at that moment",
+          "why": "Fast and simple, but a file system cannot show a half-finished transaction."
         },
         {
-          "label": "Give up isolation and let reads see whatever is committed at that moment",
-          "why": "Fast and simple, but a file system cannot show a half-finished transaction."
+          "label": "Keep timestamped versions of each key, so a read at a timestamp sees a fixed snapshot",
+          "why": "Reads never block and can use followers, but every write and delete adds a row, and old versions need cleanup."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "realChoice": {
         "company": "Dropbox",
         "text": "Panda uses MVCC over the storage engine and two-phase commit with hybrid logical clocks. Because reads are over 95% of the load, non-blocking reads help scale, and snapshot reads at an older timestamp can be served by followers as well as the leader. The post names two costs: write amplification, since every operation including delete becomes a row insert, and garbage collection. Old versions can turn hot keys into dense ranges that scans must churn through, which Dropbox hit and fixed with a queue of keys and timestamps vacuumed in strict order.",

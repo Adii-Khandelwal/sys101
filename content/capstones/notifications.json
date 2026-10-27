@@ -75,15 +75,15 @@
       "question": "A creator with a very large audience publishes a post. One asynchronous task fetches all recipients, filters them by their notification settings, builds each person's notification and hands them to delivery. For the biggest creators it runs out of time. How do you restructure it?",
       "options": [
         {
-          "label": "Give the one task a longer time limit and more memory",
+          "label": "Give the single task a longer time limit and more memory to get through the whole audience",
           "why": "The smallest change, but the work still sits in one task, so it has a ceiling that grows with the audience."
         },
         {
-          "label": "Split the recipient list into batches and handle each batch in its own task, then fan out again for delivery",
+          "label": "Split recipients into batches, handle each batch in its own task, then fan out again for delivery",
           "why": "Work spreads over many workers, but you add a layer to run, and a way to say which batch failed."
         },
         {
-          "label": "Let each product team solve it for its own notification type",
+          "label": "Let each product team solve the scaling problem for its own notification type",
           "why": "Each team can tune for its case, but every team repeats the same scaling work."
         }
       ],
@@ -99,19 +99,19 @@
       "question": "Feed, push and email notifications for the same event are generated and handed off together. If one channel breaks, what should happen to the others?",
       "options": [
         {
-          "label": "They wait until the broken channel recovers so all three stay in step",
+          "label": "They wait until the broken channel recovers, so that all three channels stay in step",
           "why": "Consistent, but one broken channel stops everything, like one dead bulb in a string of lights."
-        },
-        {
-          "label": "Each channel gets its own task path, so a failure or delay in one does not block the others",
-          "why": "Failures stay local, but you run and watch several paths instead of one."
         },
         {
           "label": "Drop the slow channel from the event for good",
           "why": "Protects the others, but people lose a channel they chose."
+        },
+        {
+          "label": "Each channel gets its own task path, so a failure in one does not block the others",
+          "why": "Failures stay local, but you run and watch several paths instead of one."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "realChoice": {
         "company": "Patreon",
         "text": "Patreon found that its legacy flow coupled in-app feed, push and email so tightly that one broken channel could take down the whole notification flow, which the post compares to an old string of lights where one bulb out darkens the strand (2026). The new send_fanout_notifications API looks up the notification's factory, picks a batch size and a priority, and fans out work separately for each channel, so failures or delays in one channel do not block the others. One of the six design requirements was priority: time-sensitive notifications are to run on dedicated queues and worker pools. The post lists this as a requirement and gives no measured result for it.",
@@ -123,19 +123,19 @@
       "question": "People can be notified too often, which wears them out, or too rarely, which loses them. A single weekly cap for everyone is easy to run. What do you do instead, if you can predict how each person responds?",
       "options": [
         {
-          "label": "One fixed weekly cap for all users",
-          "why": "Simple to explain and run, but it treats a person who comes back daily like one who has gone quiet."
-        },
-        {
-          "label": "Predict, for each person, how likely they are to be active at each volume, and give each a weekly budget by dropping the notifications with the lowest added value",
+          "label": "Predict each person's activity at each volume, then give each a weekly budget by dropping the lowest-value notifications",
           "why": "Volume follows value, but you must train and maintain models and read their results."
         },
         {
-          "label": "Send everything and let people mute what they dislike",
+          "label": "One fixed weekly cap on notifications for every user, whatever their activity",
+          "why": "Simple to explain and run, but it treats a person who comes back daily like one who has gone quiet."
+        },
+        {
+          "label": "Send everything, and let people mute or unsubscribe from what they dislike",
           "why": "No modelling, but the cost shows up as fatigue and unsubscribes."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "realChoice": {
         "company": "Pinterest",
         "text": "Pinterest's system in 2020 had two steps from a 2018 KDD paper: predict a utility value for each user at volumes between a minimum and a maximum, then choose the week's budget by keeping the notifications with the highest added utility until the average added value falls below a threshold. The 2020 change was to stop using one model for all users. Users get one of six states and are clustered into two groups, with a model for each trained to a different goal (weekly active use for low-engagement users, daily for high-engagement users). In A/B tests on users who only subscribed to push, weekly active users rose 1 percent in the enabled group, with notifications to dormant users cut by 3 percent and notifications to resurrected users raised by 17 percent and to marginal users by 7 percent. The post says push open rates and other key metrics were not affected overall. It gives no cost for the models and no figure for how many users were in the test beyond 'a significant fraction'.",
@@ -147,19 +147,19 @@
       "question": "A notification passes through the application, a job queue, a push service and third-party services before it reaches a device, and each system logs in its own format. Customers ask where theirs went. How do you make the path visible?",
       "options": [
         {
-          "label": "Keep each system's logs and write a runbook for searching all of them",
-          "why": "No new instrumentation, but it needs deep knowledge of every system and takes days."
-        },
-        {
           "label": "Give every notification its own trace with a shared event model, and link it to the sender's trace",
           "why": "One join key and the same format everywhere, but every notification becomes trace data and you must not sample it away."
+        },
+        {
+          "label": "Keep each system's logs and write a runbook for searching all of them",
+          "why": "No new instrumentation, but it needs deep knowledge of every system and takes days."
         },
         {
           "label": "Put every notification inside the trace of the message that caused it, sampled like other requests",
           "why": "Fits existing tracing, but sampling drops notifications and one message can fan out to a huge trace."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 0,
       "realChoice": {
         "company": "Slack",
         "text": "Slack modelled each notification sent as its own trace, with the notification_id used as the trace id, and tied it to the sender's trace with span links (2023). The reasons it gives: customer experience staff wanted 100 percent fidelity, while backend requests were sampled at 1 percent; an @here or @channel could send a push to potentially hundreds of thousands of users across devices and make billions of spans in one trace; and standard tracing ties a trace to one request context, which a notification flow does not fit. It agreed a spec of six spans (trigger, notify, sent, received, opened, read in app). Tracing took several quarters across teams. The post says investigating a notification issue had taken several days and deep technical expertise (and, elsewhere, several hours of very senior engineers' time), and that after tracing anyone could see where a notification was dropped. It gives no storage cost.",
@@ -171,19 +171,19 @@
       "question": "You are replacing the notification path while live notifications keep flowing through it. Each of 200 or more notification types has its own rules. How do you move them over?",
       "options": [
         {
-          "label": "Let each product team migrate its own notifications when its roadmap allows",
+          "label": "Let each product team migrate its own notifications whenever there is room on its own roadmap",
           "why": "Low coordination, but migrations compete with product work and the old system stays up."
-        },
-        {
-          "label": "Set a company-wide deadline, split the work across teams, and keep both paths running until the end",
-          "why": "Finishes, but every platform change must work on both paths for the whole period."
         },
         {
           "label": "Stop sending the old notifications until the new platform is ready",
           "why": "A clean cut, but notifications stop for people."
+        },
+        {
+          "label": "Set a company-wide deadline, split work across teams, and keep both paths running to the end",
+          "why": "Finishes, but every platform change must work on both paths for the whole period."
         }
       ],
-      "answerIndex": 1,
+      "answerIndex": 2,
       "realChoice": {
         "company": "Patreon",
         "text": "Patreon first tried a bottom-up approach where product teams prioritised their own migrations, and it got about 20 percent of the way in six months (2026). It then took engineering leadership alignment on a Q1 2026 deadline and finished the rest in six weeks. The job covered more than 200 notifications, 10 teams and more than 30 engineers. It ran two notification systems in parallel for nine months, so every platform change had to work with both, and it saw a couple of minor incidents from compatibility problems. The post gives the nine months and the six months plus six weeks as separate figures and does not say how they overlap. The post says it built AI skills to produce first-pass migrations, which still needed engineers because AI can hallucinate or miss business logic. A final sweep found 4 net-new migrations and several incomplete ones.",

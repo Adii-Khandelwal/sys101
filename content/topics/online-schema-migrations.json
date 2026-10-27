@@ -59,11 +59,11 @@
         },
         {
           "step": "Copy and keep in sync",
-          "explanation": "Existing rows are copied in small batches. Changes made while the copy runs are captured, by a trigger or by reading the database's change log, and replayed on the new shape so it keeps up."
+          "explanation": "Existing rows are copied in small batches. Changes made while the copy runs are captured, by a trigger (code the database runs automatically on every insert, update or delete) or by reading the database's change log, and replayed on the new shape so it keeps up."
         },
         {
           "step": "Throttle the work",
-          "explanation": "The tool watches load and replication lag, and pauses when the database is busy. A throttled copy takes longer but does not hurt production. A tool should also survive pauses and resume."
+          "explanation": "The tool watches load and replication lag (how far replicas are behind the primary), and pauses when the database is busy. A throttled copy takes longer but does not hurt production. A tool should also survive pauses and resume."
         },
         {
           "step": "Cut over with a short lock",
@@ -97,7 +97,7 @@
         },
         {
           "step": "Check, then swap",
-          "explanation": "Confirm no row has an empty id_big or a different value. Prove NOT NULL on the new column first with a validated CHECK constraint, as Buildkite did, so the key needs no table scan. Then, in one short transaction, stop the trigger, rename the columns and move the key and sequence over. Keep the old column for a while and drop it later."
+          "explanation": "Confirm no row has an empty id_big or a different value. Prove NOT NULL on the new column first with a validated CHECK constraint (a rule the database confirms every row obeys), as Buildkite did, so the key needs no table scan. Then, in one short transaction, stop the trigger, rename the columns and move the key and sequence over. Keep the old column for a while and drop it later."
         }
       ],
       "diagram": "<svg viewBox=\"0 0 560 148\" role=\"img\" aria-labelledby=\"dg-sm-ex-t\" class=\"dg\"><title id=\"dg-sm-ex-t\">Widening an integer id in five steps: add a bigint column, write both, backfill old rows, check they match, swap names and drop the old column later.</title><defs><marker id=\"dg-sm-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"6.0\" y=\"16\" width=\"100\" height=\"64\" class=\"dg-box\"/><text x=\"56\" y=\"36.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">1. Add</text><text x=\"56\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">id_big</text><text x=\"56\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">column</text><path d=\"M106.0,48 L118.0,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-ex-a)\"/><rect x=\"118.0\" y=\"16\" width=\"100\" height=\"64\" class=\"dg-box\"/><text x=\"168\" y=\"36.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">2. Write</text><text x=\"168\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">both on</text><text x=\"168\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">every insert</text><path d=\"M218.0,48 L230.0,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-ex-a)\"/><rect x=\"230.0\" y=\"16\" width=\"100\" height=\"64\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"36.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">3. Backfill</text><text x=\"280\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">old rows</text><text x=\"280\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">in batches</text><path d=\"M330.0,48 L342.0,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-ex-a)\"/><rect x=\"342.0\" y=\"16\" width=\"100\" height=\"64\" class=\"dg-box\"/><text x=\"392\" y=\"36.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">4. Check</text><text x=\"392\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">columns</text><text x=\"392\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">match</text><path d=\"M442.0,48 L454.0,48\" class=\"dg-line\" marker-end=\"url(#dg-sm-ex-a)\"/><rect x=\"454.0\" y=\"16\" width=\"100\" height=\"64\" class=\"dg-box\"/><text x=\"504\" y=\"36.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">5. Swap</text><text x=\"504\" y=\"52.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">names, drop</text><text x=\"504\" y=\"68.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"12\">old later</text><text x=\"280\" y=\"108\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">The app keeps serving traffic through all five steps.</text><text x=\"280\" y=\"126\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Each step holds a lock only briefly; the longest is the swap.</text></svg>"
@@ -412,7 +412,7 @@
           },
           {
             "step": "Use the fix",
-            "explanation": "The community confirmed the bug and fixed it. Shopify now runs the native strategy on V15 and built its own UI over Vitess's migration commands."
+            "explanation": "The community confirmed the bug and fixed it. The post says Shopify runs the native strategy on V15 and built its own UI over Vitess's migration commands."
           },
           {
             "step": "Handle the schema cache",

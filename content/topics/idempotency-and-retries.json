@@ -253,7 +253,7 @@
         },
         {
           "step": "Retry with the same key",
-          "explanation": "For a call with side effects, the client sends the key from the first attempt, so the server can recognise the repeat."
+          "explanation": "For a call with side effects (changes beyond returning an answer), the client sends the key from the first attempt, so the server can recognise the repeat."
         },
         {
           "step": "The server checks the key",
@@ -261,7 +261,7 @@
         },
         {
           "step": "Wait before the next try",
-          "explanation": "The client waits longer after each failure, with a cap, and adds randomness so clients that failed together do not retry together."
+          "explanation": "The client waits longer after each failure (exponential backoff), with a cap, and adds randomness (jitter) so clients that failed together do not retry together."
         },
         {
           "step": "Stop when the budget says so",
@@ -421,7 +421,7 @@
       {
         "level": "design",
         "prompt": "A client calls service A, which calls B, which calls C, which reads a database. Design the retry policy: where retries happen, how many, how long to wait, and what stops them.",
-        "answer": "Retry at one layer only, and let the layers below fail fast and report the error. Cap the tries per request at a small number, wait longer after each try with some randomness added, and keep a budget that stops retries when too large a share of the client's requests are already retries. Make every retried call idempotent with a key. Have a lower layer tell the layers above not to retry when it knows the failure is not transient.",
+        "answer": "Retry at one layer only, and let the layers below fail fast and report the error. Cap the tries per request at a small number, wait longer after each try with some randomness added, and keep a budget that stops retries when too large a share of the client's requests are already retries. Make every retried call idempotent with a key. Have a lower layer tell the layers above not to retry when it knows the failure is not transient (temporary).",
         "tradeoffs": "Retrying at the top wastes the work lower layers already did, and retrying low saves that work but leaves the top unable to recover from some failures. A small budget protects the dependency and gives up on more requests.",
         "wrongAnswers": [
           "Let every layer retry three times.",

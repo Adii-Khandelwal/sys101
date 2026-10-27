@@ -3,7 +3,9 @@
 import { useCallback, useSyncExternalStore } from "react";
 
 const EVENT = "sys101:capstone-change";
-const PREFIX = "sys101:capstone:";
+// "2": options were reordered (answers are stored by position), so picks saved under "sys101:capstone:" no longer match and are dropped.
+const PREFIX = "sys101:capstone2:";
+const OLD_PREFIX = "sys101:capstone:";
 // When storage is blocked or full, picks last for the visit in this map.
 const memory: Record<string, string> = {};
 
@@ -11,7 +13,7 @@ const memory: Record<string, string> = {};
 export function clearCapstoneChoices() {
   for (const k of Object.keys(memory)) delete memory[k];
   try {
-    for (const k of Object.keys(window.localStorage).filter((x) => x.startsWith(PREFIX))) window.localStorage.removeItem(k);
+    for (const k of Object.keys(window.localStorage).filter((x) => x.startsWith(PREFIX) || x.startsWith(OLD_PREFIX))) window.localStorage.removeItem(k);
   } catch {
     // Storage unavailable: nothing saved to clear.
   }

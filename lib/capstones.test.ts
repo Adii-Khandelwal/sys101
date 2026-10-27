@@ -58,6 +58,10 @@ describe("capstone loader", () => {
     expect(problems((c) => (c.sizing.outputs[0].formula = "ghost * 2"))).toMatch(/unknown input/);
     expect(problems((c) => (c.sizing.outputs[0].formula = "points_per_min / (retention_hours - 1)"))).toMatch(/division by zero/);
   });
+  it("fails when the better fit sits in one place or is always the longest", () => {
+    expect(problems((c) => c.decisions.forEach((d) => (d.answerIndex = 1)))).toMatch(/decisions: every correct answer is in position 2/);
+    expect(problems((c) => c.decisions.forEach((d, i) => { d.options[d.answerIndex].label = "x".repeat(200); d.options.forEach((o, j) => j !== d.answerIndex && (o.label = "y" + i)); }))).toMatch(/longest/);
+  });
   it("fails on an em dash or an it's-not phrase", () => {
     expect(problems((c) => (c.summary = "A pipeline — with a dash."))).toMatch(/banned phrasing/);
     expect(problems((c) => (c.brief.text = "It's not a queue, it's a log."))).toMatch(/banned phrasing/);

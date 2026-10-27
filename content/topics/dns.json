@@ -267,7 +267,7 @@
         },
         {
           "step": "Ask the top-level domain",
-          "explanation": "The .com servers name the domain's authoritative servers. For a signed domain they also return a DS record that vouches for the domain's signing key."
+          "explanation": "The .com servers name the domain's authoritative servers. A signed domain uses DNSSEC, which adds signatures to answers so resolvers can check them. For such a domain they also return a DS record that vouches for the domain's signing key."
         },
         {
           "step": "Ask the authoritative servers",
@@ -301,7 +301,7 @@
         },
         {
           "step": "Undo at the parent",
-          "explanation": "In Slack's incident the team pulled the DS record at the registrar. Resolvers that already had it cached kept expecting signatures for up to 24 hours, 6 on Google's resolver."
+          "explanation": "In Slack's incident the team pulled the DS record at the registrar (the company where the domain is registered). Resolvers that already had it cached kept expecting signatures for up to 24 hours, 6 on Google's resolver."
         },
         {
           "step": "Undo at the domain too",
@@ -453,7 +453,7 @@
       },
       {
         "level": "scale",
-        "prompt": "Your main domain now carries ten times the traffic and has to be signed with DNSSEC. It has many subdomains, including a wildcard. Plan the rollout and the way back.",
+        "prompt": "Your main domain now carries ten times the traffic and has to be signed with DNSSEC. It has many subdomains, including a wildcard (one record that matches any subdomain name). Plan the rollout and the way back.",
         "answer": "Test signing on a domain shaped like the main one, wildcard included, and watch several public resolvers. Sign, validate, wait, and publish the DS record last. Plan the rollback around the parent's DS TTL: once published, removing the DS record does not take effect until cached copies expire, so keep signing in place and never delete keys until those caches have cleared.",
         "tradeoffs": "A slower rollout and more testing, against an outage that cannot be undone faster than other people's caches expire.",
         "wrongAnswers": [

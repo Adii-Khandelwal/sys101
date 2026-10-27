@@ -18,8 +18,13 @@ describe("quiz answer positions", () => {
   });
 
   it("fails when one position repeats more than 3 times in a row, and allows 3", () => {
-    expect(checkQuizPositions([q(1), q(1), q(1), q(2)])).toEqual([]);
-    expect(checkQuizPositions([q(1), q(1), q(1), q(1), q(2)]).join()).toMatch(/4 questions in a row/);
+    expect(checkQuizPositions([q(1), q(1), q(1), q(2), q(0), q(2), q(0)])).toEqual([]);
+    expect(checkQuizPositions([q(1), q(1), q(1), q(1), q(2), q(0), q(2), q(0)]).join()).toMatch(/4 questions in a row/);
+  });
+
+  it("fails when one position holds more than half of four or more questions", () => {
+    expect(checkQuizPositions([q(1), q(0), q(1), q(2), q(1)]).join()).toMatch(/3 of 5 correct answers are in position 2/);
+    expect(checkQuizPositions([q(1), q(0), q(1), q(2)])).toEqual([]);
   });
 
   it("fails on a bare option letter in an explanation", () => {

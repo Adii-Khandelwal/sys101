@@ -39,7 +39,7 @@
   "lesson": {
     "why": {
       "outcome": "After this you can explain why a change should reach a small part of a fleet first, and why files count as changes.",
-      "body": "A load balancer lets many servers share traffic. That is also what makes a bad change dangerous: if every server takes the new version at once, every server fails at once, and the same load balancer sends users to all of them.\n\nSo teams limit the blast radius of each change. The new version goes to one box first, then to a small wave, then to larger waves, with a pause and a check between each. If the check fails, the change is rolled back before most users see it.\n\nThis applies to more than code. A configuration file, a feature flag or a generated data file is a change too. Two of the posts below are outages where the thing pushed was a file, and it reached a huge fleet before anyone could stop it.",
+      "body": "A load balancer lets many servers share traffic. That is also what makes a bad change dangerous: if every server takes the new version at once, every server fails at once, and the same load balancer sends users to all of them.\n\nSo teams limit the blast radius of each change. The new version goes to one box first, then to a small wave, then to larger waves, with a pause and a check between each. If the check fails, the change is rolled back before most users see it.\n\nThis applies to more than code. A configuration file, a feature flag (a switch that turns a feature on or off without a new release) or a generated data file is a change too. Two of the posts below are outages where the thing pushed was a file, and it reached a huge fleet before anyone could stop it.",
       "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-sd-why-t\" class=\"dg\"><title id=\"dg-sd-why-t\">Blast radius: a change pushed to every server at once fails everywhere at once, while a change in waves with a check between each is rolled back before most users see it.</title><defs><marker id=\"dg-sd-why-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><text x=\"12\" y=\"16\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">All at once</text><rect x=\"12\" y=\"26\" width=\"100\" height=\"56\" class=\"dg-box\"/><text x=\"62\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Change</text><rect x=\"140\" y=\"26\" width=\"190\" height=\"56\" class=\"dg-box\"/><text x=\"235\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Every server</text><text x=\"235\" y=\"67\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">takes it at once</text><rect x=\"358\" y=\"26\" width=\"190\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"453\" y=\"50\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Every server</text><text x=\"453\" y=\"67\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">fails at once</text><path d=\"M112,54 L140,54\" class=\"dg-line\" marker-end=\"url(#dg-sd-why-a)\"/><path d=\"M330,54 L358,54\" class=\"dg-line\" marker-end=\"url(#dg-sd-why-a)\"/><text x=\"12\" y=\"122\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">In waves, with a pause and a check between each</text><rect x=\"12\" y=\"132\" width=\"88\" height=\"56\" class=\"dg-box\"/><text x=\"56\" y=\"156\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">One box</text><text x=\"56\" y=\"173\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">first</text><rect x=\"124\" y=\"132\" width=\"88\" height=\"56\" class=\"dg-box\"/><text x=\"168\" y=\"164.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Check</text><rect x=\"236\" y=\"132\" width=\"88\" height=\"56\" class=\"dg-box\"/><text x=\"280\" y=\"156\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Small</text><text x=\"280\" y=\"173\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">wave</text><rect x=\"348\" y=\"132\" width=\"88\" height=\"56\" class=\"dg-box\"/><text x=\"392\" y=\"164.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Check</text><rect x=\"460\" y=\"132\" width=\"88\" height=\"56\" class=\"dg-box\"/><text x=\"504\" y=\"156\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Larger</text><text x=\"504\" y=\"173\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">waves</text><path d=\"M100,160 L124,160\" class=\"dg-line\" marker-end=\"url(#dg-sd-why-a)\"/><path d=\"M212,160 L236,160\" class=\"dg-line\" marker-end=\"url(#dg-sd-why-a)\"/><path d=\"M324,160 L348,160\" class=\"dg-line\" marker-end=\"url(#dg-sd-why-a)\"/><path d=\"M436,160 L460,160\" class=\"dg-line\" marker-end=\"url(#dg-sd-why-a)\"/><text x=\"12\" y=\"226\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">If a check fails, the change is rolled back before most users see it</text></svg>"
     },
     "mentalModel": {
@@ -68,7 +68,7 @@
         },
         {
           "step": "Widen in waves",
-          "explanation": "Move to a small group, then bigger ones. Early waves are cautious, and later waves can cover more machines at once when confidence has grown."
+          "explanation": "Move to a small group, then bigger ones. Early waves are cautious, and later waves can cover more machines at once when confidence has grown. In a large cloud, waves can be whole Regions, separate geographic areas that each hold their own data centres."
         },
         {
           "step": "Roll back automatically",
@@ -90,7 +90,7 @@
         },
         {
           "step": "What happened",
-          "explanation": "The file reached the machines quickly. Each one hit the limit and the proxy code panicked. Failures began at 11:20, and a known good file was back by 14:30."
+          "explanation": "The file reached the machines quickly. Each one hit the limit and the proxy code panicked, meaning it crashed on purpose after hitting an error it could not handle. Failures began at 11:20, and a known good file was back by 14:30."
         },
         {
           "step": "Same file, one machine first",
@@ -497,6 +497,6 @@
   "mistakes": [
     "Treating configuration and data files as safer than code. Cloudflare's feature file reached the whole network within minutes, and CrowdStrike's content update crashed systems, yet neither was a code release.",
     "Promoting a change the moment its deployment finishes, or watching only fleet-wide metrics. Amazon adds bake time for slow-burning problems and rolls back on metrics scoped to a one-box stage.",
-    "Testing only with easy inputs. CrowdStrike's test content used a wildcard in the one field that held the gap, so the tests passed."
+    "Testing only with easy inputs. CrowdStrike's test content used a wildcard (a placeholder that matches anything) in the one field that held the gap, so the tests passed."
   ]
 }

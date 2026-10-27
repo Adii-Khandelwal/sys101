@@ -239,7 +239,7 @@
       "steps": [
         {
           "step": "Enqueue durably",
-          "explanation": "The producer writes the message and waits for the queue to confirm it is stored. How many copies must confirm, one or several, decides whether a crash right after can lose it."
+          "explanation": "The producer writes the message and waits for the queue to confirm it is stored. How many copies must confirm, only the leader's or its followers' too, decides whether a crash right after can lose it."
         },
         {
           "step": "Deliver with a lease",
@@ -247,7 +247,7 @@
         },
         {
           "step": "Acknowledge or retry",
-          "explanation": "On success the consumer acknowledges and the message is deleted. On failure it gives the message back, ideally with a delay that grows on each attempt."
+          "explanation": "On success the consumer acknowledges and the message is deleted. On failure it gives the message back (a negative acknowledgement, or nack), ideally with a delay that grows on each attempt."
         },
         {
           "step": "Redeliver on silence",
@@ -259,7 +259,7 @@
         },
         {
           "step": "Set aside the poison",
-          "explanation": "A message that fails every time is moved aside after a set number of attempts, to a dead-letter queue, so it does not block or flood everything else."
+          "explanation": "A message that fails every time is moved aside after a set number of attempts, to a dead-letter queue (a separate queue for messages that keep failing), so it does not block or flood everything else."
         },
         {
           "step": "Control the drain rate",
