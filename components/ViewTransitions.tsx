@@ -10,6 +10,34 @@ type Doc = Document & { startViewTransition?: (cb: () => Promise<void>) => unkno
 type Transition = { finished?: Promise<unknown>; skipTransition?: () => void };
 
 let running: Transition | undefined;
+let revealing = false;
+
+/**
+ * Theme reveal: run `update` (theme attribute + flushSync of React state) inside a same-document view transition whose new
+ * picture grows as a circle from (x, y). Returns false, having done nothing, when it cannot run (no API, reduced motion uses
+ * the plain cross-fade, a navigation or reveal already running, the opening screen up): the caller then swaps instantly.
+ */
+export function runThemeReveal(update: () => void, x: number, y: number) {
+  const doc = document as Doc;
+  const root = document.documentElement;
+  if (!doc.startViewTransition || running || revealing || root.hasAttribute("data-splash")) return false;
+  const reduced = prefersReducedMotion();
+  if (!reduced) {
+    root.style.setProperty("--reveal-x", `${x}px`);
+    root.style.setProperty("--reveal-y", `${y}px`);
+    root.style.setProperty("--reveal-r", `${Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))}px`);
+    root.setAttribute("data-theme-reveal", "");
+  }
+  revealing = true;
+  const t = (doc.startViewTransition as unknown as (cb: () => void) => Transition)(update);
+  running = t;
+  void t.finished?.finally(() => {
+    revealing = false;
+    if (running === t) running = undefined;
+    root.removeAttribute("data-theme-reveal");
+  });
+  return true;
+}
 
 /** Ends the cross-fade early, which shows the live page again instead of the frozen picture of the old one (NavPending needs that to be seen). */
 export function skipRunningTransition() {
