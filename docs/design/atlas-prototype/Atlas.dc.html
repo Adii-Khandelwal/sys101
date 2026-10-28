@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>sys101 atlas, two-ink print</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600&family=Libre+Caslon+Display&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E6E2D6}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+a{color:var(--ink);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+button,input{font-family:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.ink{mix-blend-mode:var(--blend)}
+.lnk{background:none;border:0;padding:0;min-height:44px;text-align:left;font-size:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px;color:var(--ink)}
+.lnk[aria-pressed="true"]{font-weight:600;text-decoration-thickness:3px}
+.st{position:absolute;left:0;top:0;width:176px;height:70px;padding:0;background:none;border:0;transition:transform 420ms cubic-bezier(.77,0,.175,1),opacity 200ms ease-out}
+.stin{display:flex;flex-direction:column-reverse;align-items:flex-start;gap:3px;height:70px;animation:printin 380ms cubic-bezier(.23,1,.32,1) both}
+.stin svg{transition:transform 120ms ease-out}
+.st:active svg{transform:scale(.88)}
+.lab{font-family:'Cabin',sans-serif;font-size:14px;font-weight:500;line-height:1.15;text-align:left;max-width:168px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;color:var(--ink)}
+@keyframes printin{from{opacity:0}to{opacity:1}}
+@media (hover:hover) and (pointer:fine){.st:hover .lab{text-decoration:underline;text-underline-offset:3px}.lnk:hover,a:hover{color:var(--ink2)}}
+@media (prefers-reduced-motion:reduce){.st{transition:opacity 200ms ease-out}.stin{animation:none}.stin svg{transition:none}}
+</style>
+</helmet>
+<div style="{{themeVars}};position:relative;background:var(--paper);color:var(--ink);font-family:'Libre Caslon Text',Georgia,serif;font-size:17px;line-height:1.65;min-height:1800px;overflow:hidden">
+
+<svg width="100%" height="100%" aria-hidden="true" style="position:absolute;left:0;top:0;pointer-events:none;opacity:0.5;mix-blend-mode:var(--blend)"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 0.35  0 0 0 0 0.3  0 0 0 0 0.2  0 0 0 0.09 0"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
+
+<div style="position:relative;max-width:1360px;margin:0 auto;padding:0 40px 96px">
+
+<!-- masthead -->
+<header style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 32px;padding:22px 0 18px">
+<a href="Atlas.dc.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;font-family:'Libre Caslon Display',serif;font-size:36px;line-height:1">
+<svg width="30" height="30" viewBox="0 0 30 30" role="img" aria-label="sys101 registration mark"><circle cx="15" cy="15" r="9" fill="none" stroke="var(--ink)" stroke-width="1.5"/><path d="M15 1V29M1 15H29" stroke="var(--ink)" stroke-width="1.5"/><circle cx="15" cy="15" r="3.4" fill="var(--ink2)" class="ink"/></svg>
+sys101</a>
+<div role="img" aria-label="{{tallyLabel}}" style="display:flex;align-items:center;gap:10px;font-family:'Cabin',sans-serif;font-size:14px">
+<svg width="{{tallyW}}" height="26" aria-hidden="true"><path d="{{tallyD}}" fill="none" stroke="var(--ink2)" stroke-width="2.4" stroke-linecap="round" class="ink"></path></svg>
+<span>{{tallyLabel}}</span>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:0 28px;align-items:center;font-family:'Cabin',sans-serif;font-size:15px;margin-left:auto">
+<span>View</span>
+<sc-for list="{{views}}" as="v" hint-placeholder-count="2">
+<button class="lnk" onClick="{{v.pick}}" aria-pressed="{{v.on}}">{{v.label}}</button>
+</sc-for>
+<label style="display:flex;gap:10px;align-items:center;min-height:44px"><span>Find</span>
+<input type="search" aria-label="Find a topic" value="{{q}}" onInput="{{onQ}}" style="width:150px;background:transparent;border:0;border-bottom:1.5px solid var(--ink);border-radius:0;font-size:16px;padding:4px 0;min-height:36px"></label>
+<sc-if value="{{canFlip}}" hint-placeholder-val="{{ true }}"><button class="lnk" onClick="{{flip}}">{{themeLabel}}</button></sc-if>
+</div>
+</header>
+
+<div style="display:flex;flex-wrap:wrap;gap:24px 72px;padding:36px 0 40px;align-items:flex-end">
+<h1 style="flex:1 1 620px;margin:0;position:relative;font-family:'Libre Caslon Display',serif;font-weight:400;font-size:104px;line-height:0.92;letter-spacing:-0.02em;min-width:0">
+<span aria-hidden="true" class="ink" style="position:absolute;left:0;top:0;transform:translate(5px,4px);color:var(--ink2);pointer-events:none">Which chapter<br>comes first?</span>
+<span class="ink" style="position:relative">Which chapter<br>comes first?</span>
+</h1>
+<p style="flex:0 1 380px;margin:0;font-size:18px">Pick any station. The lines running in are what to read before it. The lines running out are what it makes possible. Every chapter is drawn from write-ups by the teams that ran the system.</p>
+</div>
+
+<sc-if value="{{noMatch}}" hint-placeholder-val="{{ false }}"><p role="status" style="margin:0 0 16px;font-family:'Cabin',sans-serif;font-size:15px">No chapter starts with "{{q}}". Clear the search to see the whole chart again.</p></sc-if>
+
+<!-- PLATE -->
+<section aria-label="The chart" style="position:relative;margin:0 22px">
+<svg width="22" height="22" aria-hidden="true" style="position:absolute;left:-22px;top:-22px"><path d="M22 10V0M10 22H0" stroke="var(--ink)" fill="none"/></svg>
+<svg width="22" height="22" aria-hidden="true" style="position:absolute;right:-22px;top:-22px"><path d="M0 10V0M12 22H22" stroke="var(--ink)" fill="none"/></svg>
+<div style="border:1.5px solid var(--ink);background:var(--lift)">
+<div style="overflow-x:auto">
+<div style="position:relative;width:{{plateW}}px;height:{{plateH}}px;margin:0 auto">
+<svg width="{{plateW}}" height="{{plateH}}" viewBox="{{plateBox}}" style="position:absolute;left:0;top:0" role="img" aria-label="Prerequisite chart. Each station is a chapter. Lines show what each chapter builds on.">
+<sc-for list="{{cols}}" as="c" hint-placeholder-count="6">
+<g><line x1="{{c.x}}" y1="26" x2="{{c.x}}" y2="{{plateH}}" stroke="var(--ink)" stroke-opacity="0.13" stroke-dasharray="2 6"></line><text x="{{c.x}}" y="18" text-anchor="middle" font-family="Cabin, sans-serif" font-size="12" fill="var(--ink)">{{c.l}}</text></g>
+</sc-for>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+<g><line x1="30" y1="{{r.y}}" x2="{{plateW}}" y2="{{r.y}}" stroke="var(--ink)" stroke-opacity="0.13" stroke-dasharray="2 6"></line><text x="12" y="{{r.ty}}" font-family="Cabin, sans-serif" font-size="12" fill="var(--ink)">{{r.l}}</text></g>
+</sc-for>
+<g style="{{blueStyle}}">
+<sc-for list="{{edges}}" as="e" hint-placeholder-count="4">
+<path d="{{e.d}}" fill="none" stroke="var(--ink)" stroke-width="3" opacity="{{e.op}}"></path>
+</sc-for>
+</g>
+<g class="ink" style="{{ink2Style}}">
+<sc-for list="{{hot}}" as="e" hint-placeholder-count="2">
+<path d="{{e.d}}" fill="none" stroke="var(--ink2)" stroke-width="4.5"></path>
+</sc-for>
+<path d="{{ring}}" fill="none" stroke="var(--ink2)" stroke-width="2.5" stroke-linecap="round"></path>
+</g>
+</svg>
+<sc-for list="{{stations}}" as="s" hint-placeholder-count="4">
+<button class="st" onClick="{{s.pick}}" aria-pressed="{{s.pressed}}" title="{{s.name}}" style="{{s.style}}">
+<span class="stin" style="{{s.inStyle}}">
+<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true" style="flex:0 0 28px"><circle cx="14" cy="14" r="{{s.ro}}" fill="{{s.of}}" stroke="var(--ink)" stroke-width="3"/><circle cx="14" cy="14" r="{{s.ri}}" fill="{{s.base}}" stroke="var(--ink)" stroke-width="{{s.rw}}"/><path d="{{s.pl}}" fill="{{s.cf}}"/><path d="{{s.pr}}" fill="var(--ink)" fill-opacity="{{s.po}}"/></svg>
+<span class="lab" style="{{s.labStyle}}">{{s.name}}{{s.frac}}</span>
+</span>
+</button>
+</sc-for>
+<sc-for list="{{lanes}}" as="ln" hint-placeholder-count="2">
+<div style="{{ln.style}}">{{ln.label}}</div>
+</sc-for>
+</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:10px 28px;padding:12px 18px;border-top:1.5px solid var(--ink);font-family:'Cabin',sans-serif;font-size:13px;align-items:center">
+<span style="display:flex;align-items:center;gap:8px"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8" fill="var(--paper)" stroke="var(--ink)" stroke-width="3"/></svg>not started</span>
+<span style="display:flex;align-items:center;gap:8px"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8" fill="var(--paper)" stroke="var(--ink)" stroke-width="3"/><path d="M11 3A8 8 0 0 0 11 19Z" fill="var(--ink)"/></svg>concept read</span>
+<span style="display:flex;align-items:center;gap:8px"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="8" fill="var(--paper)" stroke="var(--ink)" stroke-width="3"/><path d="M11 3A8 8 0 0 1 11 19Z" fill="var(--ink)" fill-opacity="0.45"/></svg>some posts read</span>
+<span style="display:flex;align-items:center;gap:8px"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="var(--paper)" stroke="var(--ink)" stroke-width="3"/><circle cx="14" cy="14" r="6.5" fill="var(--paper)" stroke="var(--ink)" stroke-width="2"/></svg>interchange, needs two or more first</span>
+<span style="display:flex;align-items:center;gap:8px"><svg width="28" height="8" aria-hidden="true"><line x1="0" y1="4" x2="28" y2="4" stroke="var(--ink2)" stroke-width="4"/></svg>your selection and route</span>
+<span aria-hidden="true" style="margin-left:auto;display:flex;gap:2px">
+<span style="width:14px;height:14px;background:var(--ink);opacity:.25"></span><span style="width:14px;height:14px;background:var(--ink);opacity:.5"></span><span style="width:14px;height:14px;background:var(--ink);opacity:.75"></span><span style="width:14px;height:14px;background:var(--ink)"></span>
+<span style="width:8px"></span>
+<span style="width:14px;height:14px;background:var(--ink2);opacity:.25"></span><span style="width:14px;height:14px;background:var(--ink2);opacity:.5"></span><span style="width:14px;height:14px;background:var(--ink2);opacity:.75"></span><span style="width:14px;height:14px;background:var(--ink2)"></span>
+</span>
+</div>
+</div>
+<svg width="22" height="22" aria-hidden="true" style="position:absolute;left:-22px;bottom:-22px"><path d="M0 0V12M10 0H0M0 22H22" stroke="var(--ink)" fill="none" transform="translate(0,0)"/></svg>
+<svg width="22" height="22" aria-hidden="true" style="position:absolute;right:-22px;bottom:-22px"><path d="M22 0V12M12 0H22" stroke="var(--ink)" fill="none"/></svg>
+</section>
+
+<!-- STATION SIGN: the selected chapter, as wayfinding -->
+<section aria-label="Selected chapter" style="margin-top:72px;border:1.5px solid var(--ink)">
+<div style="background:var(--ink);color:var(--paper);display:flex;flex-wrap:wrap;align-items:center;gap:10px 28px;padding:18px 28px">
+<span style="border:2px solid var(--paper);padding:1px 14px;font-family:'Cabin',sans-serif;font-size:14px;font-weight:600">{{sel.group}}</span>
+<h2 style="flex:1 1 380px;min-width:0;margin:0;font-family:'Libre Caslon Display',serif;font-weight:400;font-size:64px;line-height:1;color:var(--paper);overflow-wrap:anywhere">{{sel.label}}</h2>
+<span style="font-family:'Cabin',sans-serif;font-size:14px">Chapter {{sel.plate}}</span>
+</div>
+<div style="display:flex;flex-wrap:wrap">
+<div style="flex:1 1 230px;min-width:0;padding:22px 28px">
+<div style="display:flex;align-items:center;gap:10px;font-family:'Cabin',sans-serif;font-size:14px;font-weight:600;margin-bottom:6px"><svg width="14" height="18" viewBox="0 0 14 18" aria-hidden="true"><path d="M11 2L3 9L11 16" fill="none" stroke="var(--ink)" stroke-width="2.6" stroke-linecap="square"/></svg>Read first</div>
+<sc-for list="{{sel.from}}" as="f" hint-placeholder-count="2"><div style="font-family:'Cabin',sans-serif;font-size:16px"><button class="lnk" onClick="{{f.pick}}">{{f.label}}</button></div></sc-for>
+<sc-if value="{{sel.none}}" hint-placeholder-val="{{ false }}">Nothing. Begin here.</sc-if>
+</div>
+<div style="flex:2 1 420px;min-width:0;padding:22px 28px">
+<p style="margin:0 0 16px;font-size:20px;max-width:560px">{{sel.blurb}}</p>
+<div style="font-family:'Cabin',sans-serif;font-size:15px;margin-bottom:10px">{{sel.mins}} to read. {{sel.progress}}.</div>
+<div style="display:flex;flex-wrap:wrap;gap:0 28px;font-family:'Cabin',sans-serif;font-size:17px">
+<a href="Chapter.dc.html" style="font-weight:600;min-height:44px;display:inline-flex;align-items:center">Read this chapter</a>
+<button class="lnk" onClick="{{planHere}}">Plan a route here</button>
+</div>
+</div>
+<div style="flex:1 1 230px;min-width:0;padding:22px 28px">
+<div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;font-family:'Cabin',sans-serif;font-size:14px;font-weight:600;margin-bottom:6px">Makes possible<svg width="14" height="18" viewBox="0 0 14 18" aria-hidden="true"><path d="M3 2L11 9L3 16" fill="none" stroke="var(--ink)" stroke-width="2.6" stroke-linecap="square"/></svg></div>
+<sc-for list="{{sel.to}}" as="t" hint-placeholder-count="2"><div style="font-family:'Cabin',sans-serif;font-size:16px;text-align:right"><button class="lnk" style="text-align:right" onClick="{{t.pick}}">{{t.label}}</button></div></sc-for>
+<sc-if value="{{sel.end}}" hint-placeholder-val="{{ false }}"><div style="text-align:right">End of the line.</div></sc-if>
+</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;border-top:1.5px solid var(--ink)">
+<!-- timetable -->
+<div style="flex:1 1 440px;min-width:0;padding:26px 28px">
+<h2 style="margin:0 0 4px;font-family:'Libre Caslon Display',serif;font-weight:400;font-size:40px;line-height:1">{{ttTitle}}</h2>
+<p style="margin:0 0 10px">{{ttSub}}</p>
+<div style="display:flex;flex-wrap:wrap;gap:0 22px;margin-bottom:8px;font-family:'Cabin',sans-serif;font-size:15px">
+<sc-for list="{{goals}}" as="g" hint-placeholder-count="3">
+<button class="lnk" onClick="{{g.pick}}" aria-pressed="{{g.on}}">{{g.label}}</button>
+</sc-for>
+</div>
+<div style="border-top:2px solid var(--ink)">
+<sc-for list="{{timetable}}" as="r" hint-placeholder-count="4">
+<div style="display:flex;gap:14px;align-items:baseline;padding:7px 0;font-family:'Cabin',sans-serif;font-size:14px;font-variant-numeric:tabular-nums"><span style="width:40px">{{r.at}}</span><span style="flex:1;min-width:0;overflow-wrap:anywhere;font-family:'Libre Caslon Text',serif;font-size:16px;{{r.style}}">{{r.label}}</span><span>{{r.state}}</span></div>
+</sc-for>
+</div>
+<sc-if value="{{hasRoute}}" hint-placeholder-val="{{ false }}"><p style="margin:12px 0 0;font-family:'Cabin',sans-serif;font-size:14px">{{routeSummary}}</p></sc-if>
+</div>
+<!-- question -->
+<div style="flex:1 1 360px;min-width:0;padding:26px 28px">
+<h2 style="margin:0 0 4px;font-family:'Libre Caslon Display',serif;font-weight:400;font-size:40px;line-height:1">Try one</h2>
+<p style="margin:0 0 10px">A cache serves 90 of every 100 reads. How many still reach the database?</p>
+<div>
+<sc-for list="{{choices}}" as="c" hint-placeholder-count="3">
+<button class="lnk" onClick="{{c.pick}}" style="display:flex;align-items:center;gap:14px;width:100%;min-height:48px;text-decoration:none">
+<span style="{{c.box}}">{{c.tick}}</span><span style="font-family:'Cabin',sans-serif;font-size:16px;font-weight:400">{{c.label}}</span><span style="margin-left:auto;font-family:'Cabin',sans-serif;font-size:13px">{{c.mark}}</span>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{answered}}" hint-placeholder-val="{{ false }}"><p role="status" style="margin:12px 0 0;font-size:15px"><strong style="font-weight:600">{{verdict}}</strong> Ten in every hundred miss, so the database carries a tenth. At a 99% hit rate it carries a hundredth, which is why teams fight for the last few points.</p></sc-if>
+</div>
+</div>
+</section>
+
+<footer style="margin-top:80px;padding-top:14px;border-top:1px solid var(--h3);display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;font-family:'Cabin',sans-serif;font-size:14px">
+<span>Works offline after one visit.</span>
+<span style="display:flex;gap:20px"><a href="Atlas.dc.html">About</a><a href="Atlas.dc.html">Terms</a><a href="Atlas.dc.html">Privacy</a></span>
+</footer>
+</div>
+
+<sc-if value="{{canFlip}}" hint-placeholder-val="{{ true }}">
+<div role="group" aria-label="Data for design review" style="position:fixed;right:14px;bottom:14px;display:flex;align-items:center;gap:2px;background:var(--ink);color:var(--paper);padding:3px;font-family:'Cabin',sans-serif;font-size:12px;z-index:20">
+<button onClick="{{demoData}}" aria-pressed="{{demoOn}}" style="{{demoStyle}}">Demo data</button>
+<button onClick="{{worstData}}" aria-pressed="{{worstOn}}" style="{{worstStyle}}">Worst case</button>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"forceTheme":{"editor":"enum","default":"auto","options":["auto","day","night"]},"ink2":{"editor":"color","default":"#E8452A","options":["#E8452A","#D81B7E","#0E8C8C","#E3A400"]},"$preview":{"width":1440,"height":2100}}'>
+class Component extends DCLogic {
+  state = { view: 'map', sel: 'ch', q: '', group: null, goal: null, pick: null, kick: false, swap: false, worst: false,
+    theme: (() => { try { return localStorage.getItem('sys101-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'day'); } catch (e) { return 'day'; } })() };
+  renderVals() {
+    const S = this.state, view = S.view, sel = S.sel;
+    const forced = this.props.forceTheme && this.props.forceTheme !== 'auto' ? this.props.forceTheme : null;
+    const night = (forced || S.theme) === 'night';
+    const INK2 = night ? '#FF7050' : (this.props.ink2 ?? '#E8452A');
+    const themeVars = night
+      ? '--ink:#EDE3CC;--paper:#1A1512;--ink2:' + INK2 + ';--h1:rgba(237,227,204,.13);--h2:rgba(237,227,204,.3);--h3:rgba(237,227,204,.5);--lift:rgba(255,255,255,.04);--lift2:rgba(255,255,255,.06);--tt:#2A211C;--tl:#3A2E26;--tr:#221A15;--blend:screen'
+      : '--ink:#1B2A6B;--paper:#E6E2D6;--ink2:' + INK2 + ';--h1:rgba(27,42,107,.13);--h2:rgba(27,42,107,.3);--h3:rgba(27,42,107,.5);--lift:rgba(255,255,255,.2);--lift2:rgba(255,255,255,.35);--tt:#F3F0E6;--tl:#B9BDCF;--tr:#8C93B3;--blend:multiply';
+    const GROUPS = ['Foundations', 'Data', 'Distribution', 'Messaging', 'Reliability'];
+    const pl = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+    // id, label, col, row, group, concept read, posts read, posts total, minutes, blurb
+    const T = [
+      ['net','Networking basics',0,1,0,1,2,2,20,'How packets, DNS and TCP behave, so every later latency number makes sense.'],
+      ['db','Databases',0,3,1,1,3,3,25,'Tables, transactions, and why one machine eventually stops being enough.'],
+      ['lb','Load balancing',1,0,0,1,2,2,18,'Spreading requests across servers, and what happens when one disappears.'],
+      ['cache','Caching',1,1,0,1,1,3,22,'Trading freshness for speed, and the invalidation traps that follow.'],
+      ['idx','Indexing',1,3,1,1,0,2,20,'How a lookup stays fast while the data grows by orders of magnitude.'],
+      ['cdn','CDNs',2,1,0,0,1,2,16,'Moving content close to the reader, and the cost of getting it wrong.'],
+      ['ch','Consistent hashing',2,2,1,1,0,3,24,'Adding a server without reshuffling every key.'],
+      ['repl','Replication',2,3,1,0,0,3,26,'Copies of the data, and the ordering problems they bring.'],
+      ['queue','Queues',3,0,3,0,0,2,19,'Decoupling a producer from a slow consumer, and what you owe the caller.'],
+      ['rl','Rate limiting',3,1,4,0,0,2,17,'Saying no on purpose, so one noisy client cannot take everyone down.'],
+      ['cap','CAP',3,2,2,0,0,1,15,'What a network partition forces you to give up.'],
+      ['shard','Sharding',3,3,1,0,0,3,28,'Splitting data across machines and living with the seams.'],
+      ['pubsub','Pub-sub',4,0,3,0,0,2,18,'One event, many listeners, none aware of each other.'],
+      ['cb','Circuit breakers',4,1,4,0,0,2,14,'Failing fast so a sick dependency does not drag its callers down.'],
+      ['cons','Consensus',4,2,2,0,0,3,30,'How a group of machines agrees on one answer when some of them fail.'],
+      ['event','Event-driven design',5,0,3,0,0,2,24,'Systems that react to facts instead of calling each other.'],
+      ['fail','Failover',5,1,4,0,0,2,22,'Detecting a dead primary and promoting a replacement without losing writes.'],
+      ['dtx','Distributed transactions',5,2,2,0,0,2,32,'Keeping several services consistent when there is no shared database.']
+    ];
+    const WORST = {
+      dtx: ['Distributed transactions across services, sagas and two-phase commit', 'Keeping several services consistent when there is no shared database, and what each approach costs you in latency, retries and operator attention when a step half-succeeds.', 32],
+      event: ['Event-driven design with event sourcing and CQRS', null, 24],
+      ch: ['Consistent hashing with bounded loads', null, 24],
+      lb: ['Équilibrage de charge', null, 18],
+      repl: ['Réplication multi-région et résolution des conflits', null, 26],
+      cb: ['Circuit breakers', null, 1]
+    };
+    if (S.worst) T.forEach(t => { const w = WORST[t[0]]; if (w) { t[1] = w[0]; if (w[1]) t[9] = w[1]; t[8] = w[2]; } });
+    const E = [['net','lb'],['net','cache'],['db','idx'],['db','repl'],['cache','cdn'],['cache','ch'],['lb','ch'],['lb','queue'],['lb','rl'],['ch','shard'],['repl','shard'],['repl','cap'],['cap','cons'],['queue','pubsub'],['rl','cb'],['pubsub','event'],['cb','fail'],['cons','fail'],['cons','dtx'],['shard','dtx']];
+    const by = {}; T.forEach(t => { by[t[0]] = t; });
+    const isDone = t => t[5] === 1 && t[6] === t[7];
+    const prereqs = id => E.filter(e => e[1] === id).map(e => e[0]);
+
+    const route = new Set();
+    if (S.goal) { const walk = id => { if (route.has(id)) return; route.add(id); prereqs(id).forEach(walk); }; S.goal.targets.forEach(walk); }
+    const q = S.q.trim().toLowerCase();
+    const matchQ = t => !q || t[1].toLowerCase().split(/[\s-]+/).some(w => w.startsWith(q));
+    const matchG = t => S.group === null || t[4] === S.group;
+    const lit = t => (!S.goal || route.has(t[0])) && matchQ(t) && matchG(t);
+    const noMatch = !!q && !T.some(matchQ);
+
+    const CX = 200, RY = 100, LEFT = 70, TOP = 78, LH = 70;
+    const pos = {}; let plateW = LEFT + 5 * CX + 190, plateH = TOP + 3 * RY + 64;
+    const lanes = [];
+    if (view === 'lines') {
+      const stack = {}, laneMax = GROUPS.map(() => 0);
+      T.forEach(t => { const k = t[4] + ':' + t[2]; const s = stack[k] || 0; stack[k] = s + 1; pos[t[0]] = { gi: t[4], s }; laneMax[t[4]] = Math.max(laneMax[t[4]], s + 1); });
+      let y = 34; const tops = [];
+      GROUPS.forEach((g, i) => { tops.push(y); const h = laneMax[i] * LH + 20; lanes.push({ label: g, style: 'position:absolute;left:0;top:' + y + 'px;width:' + plateW + 'px;height:' + h + 'px;box-sizing:border-box;border-top:1px solid var(--h3);padding:6px 0 0 12px;font-family:Cabin,sans-serif;font-size:13px;font-weight:600;pointer-events:none;' + (i % 2 ? 'background:var(--h1);' : '') }); y += h; });
+      T.forEach(t => { const p = pos[t[0]]; p.x = LEFT + 40 + t[2] * CX; p.y = tops[p.gi] + 52 + p.s * LH; });
+      plateH = y + 12;
+    } else {
+      T.forEach(t => { pos[t[0]] = { x: LEFT + t[2] * CX, y: TOP + t[3] * RY }; });
+    }
+    const go = id => () => { this.setState({ sel: id, kick: true }); setTimeout(() => this.setState({ kick: false }), 40); };
+    const froms = prereqs(sel);
+    const tos = E.filter(e => e[0] === sel).map(e => e[1]);
+
+    const stations = T.map(t => {
+      const id = t[0], p = pos[id], isSel = id === sel;
+      const on = lit(t) || isSel;
+      const po = t[6] === 0 ? 0 : (t[6] === t[7] ? 1 : 0.45);
+      const ix = prereqs(id).length >= 2;
+      const r = ix ? 6.5 : 8;
+      return {
+        name: t[1], pick: go(id), pressed: isSel,
+        ro: ix ? 12 : 8, of: ix ? 'var(--paper)' : (isSel ? 'var(--ink2)' : 'var(--paper)'),
+        ri: ix ? 6.5 : 0, rw: ix ? 2 : 0, base: isSel ? 'var(--ink2)' : 'var(--paper)',
+        pl: 'M14 ' + (14 - r) + 'A' + r + ' ' + r + ' 0 0 0 14 ' + (14 + r) + 'Z',
+        pr: 'M14 ' + (14 - r) + 'A' + r + ' ' + r + ' 0 0 1 14 ' + (14 + r) + 'Z',
+        cf: t[5] === 1 ? 'var(--ink)' : 'none', po,
+        frac: t[6] > 0 && t[6] < t[7] ? ' ' + t[6] + '/' + t[7] : '',
+        labStyle: (isSel ? 'font-weight:600;' : '') + (froms.includes(id) || tos.includes(id) ? 'text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;' : ''),
+        inStyle: 'animation-delay:' + (t[2] * 70 + t[3] * 18) + 'ms',
+        style: 'transform:translate(' + (p.x - 14) + 'px,' + (p.y - 56) + 'px);opacity:' + (on ? 1 : 0.25) + ';'
+      };
+    });
+
+    const D = 9;
+    const mk = e => {
+      const a = pos[e[0]], b = pos[e[1]];
+      const x1 = a.x + 11, y1 = a.y, x2 = b.x - 11, y2 = b.y, xm = x2 - 22;
+      const dy = y2 - y1, sg = dy > 0 ? 1 : -1;
+      if (Math.abs(dy) < 2 * D) return 'M' + x1 + ' ' + y1 + ' L' + x2 + ' ' + y2;
+      return 'M' + x1 + ' ' + y1 + ' L' + (xm - D) + ' ' + y1 + ' L' + xm + ' ' + (y1 + sg * D) + ' L' + xm + ' ' + (y2 - sg * D) + ' L' + (xm + D) + ' ' + y2 + ' L' + x2 + ' ' + y2;
+    };
+    const isHot = e => e[1] === sel || e[0] === sel || (S.goal && route.has(e[0]) && route.has(e[1]));
+    const edges = E.map(e => ({ d: mk(e), op: ((S.goal || q || S.group !== null) && !(lit(by[e[0]]) && lit(by[e[1]]))) ? 0.15 : 1 }));
+    const hot = E.filter(isHot).map(e => ({ d: mk(e) }));
+
+    const sp = pos[sel]; const rcx = sp.x + 62, rcy = sp.y - 22, rx = 92, ry = 40;
+    let ring = '';
+    for (let i = 0; i <= 44; i++) {
+      const a = -2.2 + i / 44 * (Math.PI * 2 + 0.55), k = 1 + 0.04 * Math.sin(a * 3 + 1) + i * 0.0014;
+      ring += (i ? ' L' : 'M') + (rcx + rx * k * Math.cos(a)).toFixed(1) + ' ' + (rcy + ry * k * Math.sin(a)).toFixed(1);
+    }
+
+    const X0 = view === 'lines' ? LEFT + 40 : LEFT;
+    const cols = [0,1,2,3,4,5].map(c => ({ x: X0 + c * CX, l: 'ABCDEF'[c] }));
+    const rows = view === 'lines' ? [] : [0,1,2,3].map(r => ({ y: TOP + r * RY, ty: TOP + r * RY - 6, l: String(r + 1) }));
+
+    // hand-kept tally of chapters finished: bundles of five, the fifth strikes through
+    const done = T.filter(isDone).length;
+    let td = '', tx = 2;
+    for (let g = 0; g < Math.floor(done / 5); g++) { for (let k = 0; k < 4; k++) { td += 'M' + (tx + k * 6) + ' 4 L' + (tx + k * 6 + (k % 2 ? 0.8 : -0.6)) + ' 21 '; } td += 'M' + (tx - 3) + ' 18 L' + (tx + 22) + ' 6 '; tx += 32; }
+    for (let k = 0; k < done % 5; k++) { td += 'M' + (tx + k * 6) + ' 4 L' + (tx + k * 6 + (k % 2 ? 0.8 : -0.6)) + ' 21 '; }
+    const tallyW = Math.max(8, tx + (done % 5) * 6 + 4);
+    const tallyLabel = done + ' of ' + T.length + ' chapters read';
+
+    const s = by[sel];
+    const sInfo = {
+      label: s[1], blurb: s[9], group: GROUPS[s[4]],
+      mins: pl(s[8], 'minute'),
+      plate: (T.indexOf(s) + 1) + ' of ' + T.length,
+      progress: (s[5] === 1 ? 'Concept read' : 'Concept not read') + ', ' + s[6] + ' of ' + pl(s[7], 'post') + ' read',
+      from: froms.map(id => ({ label: by[id][1], pick: go(id) })),
+      to: tos.map(id => ({ label: by[id][1], pick: go(id) })),
+      none: froms.length === 0, end: tos.length === 0
+    };
+
+    const sw = fn => () => { this.setState({ swap: true }); fn(); setTimeout(() => this.setState({ swap: false }), 440); };
+    const views = [['map', 'The chart'], ['lines', 'Chapters by line']].map(v => ({ label: v[1], on: view === v[0], pick: view === v[0] ? () => {} : sw(() => this.setState({ view: v[0] })) }));
+    const goalDefs = [{ name: 'a chat app', targets: ['event', 'shard'] }, { name: 'a payments ledger', targets: ['dtx', 'fail'] }, { name: 'live video', targets: ['cdn', 'queue'] }];
+    const goals = goalDefs.map(g => ({ label: 'To ' + g.name, on: !!S.goal && S.goal.name === g.name, pick: () => this.setState({ goal: S.goal && S.goal.name === g.name ? null : g }) }));
+    if (S.goal && !goalDefs.some(g => g.name === S.goal.name)) goals.push({ label: 'To ' + S.goal.name + ' (clear)', on: true, pick: () => this.setState({ goal: null }) });
+
+    // with no destination chosen, the timetable lists what you can start now
+    const ready = T.filter(t => !isDone(t) && prereqs(t[0]).every(p => isDone(by[p]))).sort((a, b) => (b[5] + b[6]) - (a[5] + a[6]) || a[2] - b[2]).slice(0, 4);
+    const rn = S.goal ? T.filter(t => route.has(t[0])).sort((a, b) => a[2] - b[2] || a[3] - b[3]) : ready;
+    let clock = 0;
+    const fmt = m => Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
+    const timetable = rn.map(t => { const at = fmt(clock); if (!isDone(t)) clock += t[8]; return { at, label: t[1], state: isDone(t) ? 'read' : t[8] + ' min', style: isDone(t) ? 'text-decoration:line-through;opacity:0.65;' : '' }; });
+
+    const picked = S.pick;
+    const choices = [['10 of every 100', true], ['90 of every 100', false], ['1 of every 100', false]].map((o, i) => {
+      const show = picked !== null, chosen = picked === i;
+      return {
+        label: o[0], pick: () => this.setState({ pick: i }),
+        tick: show && (chosen || o[1]) ? '×' : '',
+        mark: show && o[1] ? 'correct' : (show && chosen ? 'not quite' : ''),
+        box: 'display:flex;align-items:center;justify-content:center;width:22px;height:22px;flex:0 0 22px;border:1.5px solid var(--ink);font-family:Cabin,sans-serif;font-size:16px;line-height:1;' + (show && o[1] ? 'font-weight:600;' : '')
+      };
+    });
+    const seg = on => 'min-height:44px;padding:0 14px;border:0;background:' + (on ? 'var(--paper)' : 'transparent') + ';color:' + (on ? 'var(--ink)' : 'var(--paper)') + ';font-size:12px;';
+    const kick = S.kick;
+    return {
+      themeVars, themeLabel: night ? 'Day press' : 'Night press', canFlip: !forced,
+      flip: () => { const n = night ? 'day' : 'night'; try { localStorage.setItem('sys101-theme', n); } catch (e) {} this.setState({ theme: n }); },
+      tallyD: td, tallyW, tallyLabel,
+      stations, edges, hot, lanes, cols, rows, ring,
+      plateW, plateH, plateBox: '0 0 ' + plateW + ' ' + plateH,
+      blueStyle: 'opacity:' + (S.swap ? 0 : 1) + ';transition:opacity ' + (S.swap ? '90ms' : '240ms') + ' ease-out;',
+      ink2Style: 'opacity:' + (S.swap ? 0 : 1) + ';transform:translate(' + (kick ? 5 : 1) + 'px,' + (kick ? 4 : 1) + 'px);transition:' + (kick ? 'opacity 90ms ease-out' : 'transform 360ms cubic-bezier(.23,1,.32,1),opacity 240ms ease-out') + ';',
+      views, goals, sel: sInfo, choices, timetable, noMatch,
+      ttTitle: S.goal ? 'Timetable' : 'Next stops',
+      ttSub: S.goal ? 'Every chapter between you and ' + S.goal.name + ', in order.' : 'What you can start today. Where do you want to get to?',
+      hasRoute: !!S.goal,
+      routeSummary: S.goal ? pl(rn.length, 'chapter') + ' on the route, ' + clock + ' minutes of reading left.' : '',
+      q: S.q, onQ: e => this.setState({ q: e.target.value }),
+      planHere: () => this.setState({ goal: { name: s[1].toLowerCase(), targets: [sel] } }),
+      answered: picked !== null, verdict: picked === 0 ? 'Right.' : 'Not quite.',
+      demoData: () => this.setState({ worst: false }), worstData: () => this.setState({ worst: true }),
+      demoOn: !S.worst, worstOn: S.worst, demoStyle: seg(!S.worst), worstStyle: seg(S.worst)
+    };
+  }
+}
+</script>
+</body>
+</html>

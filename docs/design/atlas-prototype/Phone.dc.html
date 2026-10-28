@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>sys101 on a phone, the line</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600&family=Libre+Caslon+Display&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:var(--paper);overscroll-behavior:none}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+a{color:var(--ink);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+button,input{font-family:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.ink{mix-blend-mode:var(--blend)}
+.lnk{background:none;border:0;padding:0;min-height:44px;text-align:left;font-size:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px;color:var(--ink)}
+.lnk[aria-pressed="true"]{font-weight:600;text-decoration-thickness:3px}
+.row{width:100%;display:flex;align-items:center;gap:14px;background:none;border:0;padding:0;min-height:56px;text-align:left}
+.row:active .dot{transform:scale(.88)}
+.dot{transition:transform 120ms ease-out}
+.chips{display:flex;gap:0 20px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.chips>*{flex:0 0 auto;scroll-snap-align:start}
+@media (hover:hover) and (pointer:fine){.lnk:hover{color:var(--ink2)}a:hover{color:var(--ink2)}}
+@media (prefers-reduced-motion:reduce){.dot{transition:none}}
+</style>
+</helmet>
+<div style="{{themeVars}};position:relative;background:var(--paper);color:var(--ink);font-family:'Libre Caslon Text',Georgia,serif;font-size:17px;line-height:1.6;min-height:100dvh;overflow:hidden">
+<svg width="100%" height="100%" aria-hidden="true" style="position:absolute;left:0;top:0;pointer-events:none;opacity:0.5;mix-blend-mode:var(--blend)"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 0.35  0 0 0 0 0.3  0 0 0 0 0.2  0 0 0 0.09 0"/></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>
+
+<div style="position:relative;padding:0 16px calc(32px + env(safe-area-inset-bottom,0px));padding-top:env(safe-area-inset-top,0px)">
+
+<header style="display:flex;align-items:center;gap:10px;padding:14px 0 10px">
+<svg width="26" height="26" viewBox="0 0 30 30" role="img" aria-label="sys101 registration mark"><circle cx="15" cy="15" r="9" fill="none" stroke="var(--ink)" stroke-width="1.5"/><path d="M15 1V29M1 15H29" stroke="var(--ink)" stroke-width="1.5"/><circle cx="15" cy="15" r="3.4" fill="{{ink2}}" class="ink"/></svg>
+<span style="font-family:'Libre Caslon Display',serif;font-size:30px;line-height:1">sys101</span>
+<button class="lnk" onClick="{{flip}}" style="margin-left:auto;font-family:'Cabin',sans-serif;font-size:15px">{{themeLabel}}</button>
+</header>
+
+<h1 style="position:relative;margin:14px 0 14px;font-family:'Libre Caslon Display',serif;font-weight:400;font-size:56px;line-height:0.94;letter-spacing:-0.02em">
+<span aria-hidden="true" class="ink" style="position:absolute;left:0;top:0;transform:translate(3px,3px);color:{{ink2}};pointer-events:none">Which chapter<br>comes first?</span>
+<span class="ink" style="position:relative">Which chapter<br>comes first?</span>
+</h1>
+<p style="margin:0 0 18px;font-size:16px">Read down the line. Each stage needs only what is above it.</p>
+
+<label style="display:flex;align-items:center;gap:10px;border-bottom:1.5px solid var(--ink);min-height:48px;margin-bottom:6px">
+<span>Find</span>
+<input type="search" aria-label="Find a topic" value="{{q}}" onInput="{{onQ}}" style="flex:1;min-width:0;background:transparent;border:0;border-radius:0;font-size:16px;min-height:44px;padding:0">
+</label>
+<div class="chips" style="font-family:'Cabin',sans-serif;font-size:15px" role="group" aria-label="Lines">
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="5"><button class="lnk" onClick="{{g.pick}}" aria-pressed="{{g.on}}">{{g.label}}</button></sc-for>
+</div>
+<div class="chips" style="font-family:'Cabin',sans-serif;font-size:15px;border-top:1px solid var(--h2)" role="group" aria-label="Plan a route">
+<sc-for list="{{goals}}" as="g" hint-placeholder-count="3"><button class="lnk" onClick="{{g.pick}}" aria-pressed="{{g.on}}">{{g.label}}</button></sc-for>
+</div>
+<sc-if value="{{hasRoute}}" hint-placeholder-val="{{ false }}"><p role="status" style="margin:8px 0 0;font-family:'Cabin',sans-serif;font-size:14px">{{routeSummary}}</p></sc-if>
+<sc-if value="{{noMatch}}" hint-placeholder-val="{{ false }}"><p role="status" style="margin:8px 0 0;font-family:'Cabin',sans-serif;font-size:14px">Nothing starts with "{{q}}". Clear the search to see every chapter.</p></sc-if>
+
+<ol style="list-style:none;margin:18px 0 0;padding:0">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+<li style="margin:0;padding:0">
+<sc-if value="{{r.isHead}}" hint-placeholder-val="{{ false }}"><div style="font-family:'Cabin',sans-serif;font-size:13px;font-weight:600;padding:16px 0 2px 46px">{{r.title}}</div></sc-if>
+<sc-if value="{{r.isSt}}" hint-placeholder-val="{{ true }}">
+<div style="position:relative;opacity:{{r.op}}">
+<div aria-hidden="true" style="position:absolute;left:10px;top:0;bottom:0;width:3px;background:var(--ink)"></div>
+<div aria-hidden="true" class="ink" style="{{r.railHot}}"></div>
+<button class="row" onClick="{{r.pick}}" aria-expanded="{{r.open}}" style="position:relative">
+<svg class="dot" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" style="flex:0 0 22px"><circle cx="11" cy="11" r="8" fill="{{r.base}}" stroke="var(--ink)" stroke-width="3"/><path d="M11 3A8 8 0 0 0 11 19Z" fill="{{r.cf}}"/><path d="M11 3A8 8 0 0 1 11 19Z" fill="var(--ink)" fill-opacity="{{r.po}}"/></svg>
+<span style="flex:1;min-width:0;overflow-wrap:anywhere;font-family:'Cabin',sans-serif;font-size:17px;line-height:1.2;{{r.labStyle}}">{{r.label}}</span>
+<span style="font-family:'Cabin',sans-serif;font-size:13px;white-space:nowrap">{{r.mins}}</span>
+</button>
+<sc-if value="{{r.open}}" hint-placeholder-val="{{ false }}">
+<div style="position:relative;margin:0 0 10px 46px;padding:12px 14px 14px;border:1.5px solid var(--ink);background:var(--lift2)">
+<p style="margin:0 0 10px;font-size:16px;line-height:1.5">{{r.blurb}}</p>
+<div style="font-family:'Cabin',sans-serif;font-size:14px">
+<div style="margin-bottom:6px">{{r.fromLine}}</div>
+<div style="margin-bottom:8px">{{r.toLine}}</div>
+<div style="margin-bottom:2px">{{r.progress}}</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:0 24px;font-family:'Cabin',sans-serif;font-size:16px">
+<a href="Chapter.dc.html" style="font-weight:600;min-height:44px;display:inline-flex;align-items:center;text-decoration:none">Read this chapter</a>
+<button class="lnk" onClick="{{r.plan}}">Plan a route here</button>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+</li>
+</sc-for>
+</ol>
+
+<p style="margin:28px 0 0;font-family:'Cabin',sans-serif;font-size:13px">Works offline after one visit.</p>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"ink2":{"editor":"color","default":"#E8452A","options":["#E8452A","#D81B7E","#0E8C8C","#E3A400"]},"$preview":{"width":390,"height":1900}}'>
+class Component extends DCLogic {
+  state = { sel: 'ch', q: '', group: null, goal: null, theme: (() => { try { return localStorage.getItem('sys101-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'day'); } catch (e) { return 'day'; } })() };
+  renderVals() {
+    const S = this.state, BLUE = 'var(--ink)', INK2 = 'var(--ink2)';
+    const night = S.theme === 'night';
+    const raw = night ? '#FF7050' : (this.props.ink2 ?? '#E8452A');
+    const themeVars = night
+      ? '--ink:#EDE3CC;--paper:#1A1512;--ink2:' + raw + ';--h1:rgba(237,227,204,.13);--h2:rgba(237,227,204,.3);--h3:rgba(237,227,204,.5);--lift:rgba(255,255,255,.04);--lift2:rgba(255,255,255,.06);--blend:screen'
+      : '--ink:#1B2A6B;--paper:#E6E2D6;--ink2:' + raw + ';--h1:rgba(27,42,107,.13);--h2:rgba(27,42,107,.3);--h3:rgba(27,42,107,.5);--lift:rgba(255,255,255,.2);--lift2:rgba(255,255,255,.35);--blend:multiply';
+    const GROUPS = ['Foundations', 'Data', 'Distribution', 'Messaging', 'Reliability'];
+    const pl = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+    const T = [
+      ['net','Networking basics',0,1,0,1,2,2,20,'How packets, DNS and TCP behave, so every later latency number makes sense.'],
+      ['db','Databases',0,3,1,1,3,3,25,'Tables, transactions, and why one machine eventually stops being enough.'],
+      ['lb','Load balancing',1,0,0,1,2,2,18,'Spreading requests across servers, and what happens when one disappears.'],
+      ['cache','Caching',1,1,0,1,1,3,22,'Trading freshness for speed, and the invalidation traps that follow.'],
+      ['idx','Indexing',1,3,1,1,0,2,20,'How a lookup stays fast while the data grows by orders of magnitude.'],
+      ['cdn','CDNs',2,1,0,0,1,2,16,'Moving content close to the reader, and the cost of getting it wrong.'],
+      ['ch','Consistent hashing',2,2,1,1,0,3,24,'Adding a server without reshuffling every key.'],
+      ['repl','Replication',2,3,1,0,0,3,26,'Copies of the data, and the ordering problems they bring.'],
+      ['queue','Queues',3,0,3,0,0,2,19,'Decoupling a producer from a slow consumer, and what you owe the caller.'],
+      ['rl','Rate limiting',3,1,4,0,0,2,17,'Saying no on purpose, so one noisy client cannot take everyone down.'],
+      ['cap','CAP',3,2,2,0,0,1,15,'What a network partition forces you to give up.'],
+      ['shard','Sharding',3,3,1,0,0,3,28,'Splitting data across machines and living with the seams.'],
+      ['pubsub','Pub-sub',4,0,3,0,0,2,18,'One event, many listeners, none aware of each other.'],
+      ['cb','Circuit breakers',4,1,4,0,0,2,14,'Failing fast so a sick dependency does not drag its callers down.'],
+      ['cons','Consensus',4,2,2,0,0,3,30,'How a group of machines agrees on one answer when some of them fail.'],
+      ['event','Event-driven design',5,0,3,0,0,2,24,'Systems that react to facts instead of calling each other.'],
+      ['fail','Failover',5,1,4,0,0,2,22,'Detecting a dead primary and promoting a replacement without losing writes.'],
+      ['dtx','Distributed transactions',5,2,2,0,0,2,32,'Keeping several services consistent when there is no shared database.']
+    ];
+    const E = [['net','lb'],['net','cache'],['db','idx'],['db','repl'],['cache','cdn'],['cache','ch'],['lb','ch'],['lb','queue'],['lb','rl'],['ch','shard'],['repl','shard'],['repl','cap'],['cap','cons'],['queue','pubsub'],['rl','cb'],['pubsub','event'],['cb','fail'],['cons','fail'],['cons','dtx'],['shard','dtx']];
+    const by = {}; T.forEach(t => { by[t[0]] = t; });
+    const isDone = t => t[5] === 1 && t[6] === t[7];
+    const route = new Set();
+    if (S.goal) { const walk = id => { if (route.has(id)) return; route.add(id); E.filter(e => e[1] === id).forEach(e => walk(e[0])); }; S.goal.targets.forEach(walk); }
+    const q = S.q.trim().toLowerCase();
+    const matchQ = t => !q || t[1].toLowerCase().split(/[\s-]+/).some(w => w.startsWith(q));
+    const matchG = t => S.group === null || t[4] === S.group;
+    const lit = t => (!S.goal || route.has(t[0])) && matchQ(t) && matchG(t);
+    const names = ids => ids.map(i => by[i][1]).join(', ');
+
+    const sorted = T.slice().sort((a, b) => a[2] - b[2] || a[3] - b[3]);
+    const rows = []; let lastCol = -1;
+    sorted.forEach(t => {
+      if (t[2] !== lastCol) { lastCol = t[2]; rows.push({ isHead: true, isSt: false, title: 'Stage ' + (t[2] + 1) + (t[2] === 0 ? ', needs nothing' : '') }); }
+      const id = t[0], open = id === S.sel, inRoute = route.has(id);
+      const froms = E.filter(e => e[1] === id).map(e => e[0]), tos = E.filter(e => e[0] === id).map(e => e[1]);
+      const po = t[6] === 0 ? 0 : (t[6] === t[7] ? 1 : 0.45);
+      rows.push({
+        isHead: false, isSt: true, open, label: t[1] + (t[6] > 0 && t[6] < t[7] ? ' ' + t[6] + '/' + t[7] : ''), mins: t[8] + ' min',
+        op: lit(t) || open ? 1 : 0.3,
+        base: open ? INK2 : 'var(--paper)', cf: t[5] === 1 ? BLUE : 'none', po,
+        labStyle: open ? 'font-weight:600;' : '',
+        railHot: inRoute ? 'position:absolute;left:9px;top:0;bottom:0;width:5px;background:' + INK2 + ';transform:translate(1px,1px)' : 'display:none',
+        pick: () => this.setState({ sel: open ? null : id }),
+        blurb: t[9],
+        fromLine: 'Read first: ' + (froms.length ? names(froms) : 'nothing, begin here'),
+        toLine: 'Makes possible: ' + (tos.length ? names(tos) : 'the end of this line'),
+        progress: (t[5] === 1 ? 'Concept read' : 'Concept not read') + ', ' + t[6] + ' of ' + pl(t[7], 'post') + ' read',
+        plan: () => this.setState({ goal: { name: t[1].toLowerCase(), targets: [id] } })
+      });
+    });
+
+    const groups = GROUPS.map((g, i) => ({ label: g, on: S.group === i, pick: () => this.setState({ group: S.group === i ? null : i }) }));
+    const goalDefs = [{ name: 'a chat app', targets: ['event', 'shard'] }, { name: 'a payments ledger', targets: ['dtx', 'fail'] }, { name: 'live video', targets: ['cdn', 'queue'] }];
+    const goals = goalDefs.map(g => ({ label: 'To ' + g.name, on: !!S.goal && S.goal.name === g.name, pick: () => this.setState({ goal: S.goal && S.goal.name === g.name ? null : g }) }));
+    if (S.goal && !goalDefs.some(g => g.name === S.goal.name)) goals.push({ label: 'To ' + S.goal.name + ' (clear)', on: true, pick: () => this.setState({ goal: null }) });
+    const rn = T.filter(t => route.has(t[0]));
+    const mins = rn.filter(t => !isDone(t)).reduce((a, t) => a + t[8], 0);
+    return {
+      themeVars, themeLabel: night ? 'Day press' : 'Night press',
+      flip: () => { const t = night ? 'day' : 'night'; try { localStorage.setItem('sys101-theme', t); } catch (e) {} this.setState({ theme: t }); },
+      ink2: INK2, rows, groups, goals, noMatch: !!q && !T.some(matchQ), hasRoute: !!S.goal,
+      routeSummary: S.goal ? pl(rn.length, 'chapter') + ' on the route, ' + mins + ' minutes of reading left. Chapters off the route are dimmed.' : '',
+      q: S.q, onQ: e => this.setState({ q: e.target.value })
+    };
+  }
+}
+</script>
+</body>
+</html>
