@@ -8,6 +8,7 @@ export const DURATION = {
   slow: 320, // camera moves, progress fills
   page: 160, // cross-fade between pages
   reduced: 80, // the longest fade allowed under prefers-reduced-motion
+  reveal: 560, // theme reveal: the circle growing from the click
   pulse: 1400, // skeleton loading pulse
 } as const;
 

@@ -20,6 +20,7 @@ describe("motion tokens", () => {
     expect(token("dur-base")).toBe(`${DURATION.base}ms`);
     expect(token("dur-slow")).toBe(`${DURATION.slow}ms`);
     expect(token("dur-page")).toBe(`${DURATION.page}ms`);
+    expect(token("dur-reveal")).toBe(`${DURATION.reveal}ms`);
     expect(token("dur-reduced")).toBe(`${DURATION.reduced}ms`);
     expect(token("ease-out")).toBe(`cubic-bezier(${EASING.out.join(", ")})`);
     expect(token("ease-in-out")).toBe(`cubic-bezier(${EASING.inOut.join(", ")})`);

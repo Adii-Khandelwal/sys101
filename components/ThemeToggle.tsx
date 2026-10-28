@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { flushSync } from "react-dom";
+import { runThemeReveal } from "./ViewTransitions";
 import { usePathname } from "next/navigation";
 
 type Theme = "light" | "dark";
@@ -51,9 +53,13 @@ export default function ThemeToggle() {
     });
   }, [theme, pathname]); // Next may rebuild the metas on a client navigation, so set them again after one
 
-  const choose = (next: Theme) => {
-    setTheme(next);
-    document.documentElement.setAttribute("data-theme", next);
+  const choose = (next: Theme, from?: React.MouseEvent) => {
+    const apply = () => {
+      flushSync(() => setTheme(next)); // else the new picture still shows the old sun or moon
+      document.documentElement.setAttribute("data-theme", next);
+    };
+    // Pointer clicks reveal outward from the pointer; a key press (detail 0) swaps at once.
+    if (!(from && from.detail > 0 && runThemeReveal(apply, from.clientX, from.clientY))) apply();
     try {
       localStorage.setItem(KEY, next);
     } catch {
@@ -68,7 +74,7 @@ export default function ThemeToggle() {
     <button
       type="button"
       className="theme-toggle"
-      onClick={() => theme && choose(next)}
+      onClick={(e) => theme && choose(next, e)}
       aria-label={theme ? `Switch to ${next} theme` : "Switch theme"}
       title={theme ? `Switch to ${next} theme` : "Switch theme"}
       suppressHydrationWarning

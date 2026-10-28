@@ -15,6 +15,7 @@
   --dur-base: 200ms;
   --dur-slow: 320ms;
   --dur-page: 160ms;
+  --dur-reveal: 560ms;
   --dur-pulse: 1400ms;
   --dur-reduced: 80ms;
   --flicker: 900ms; /* the opening screen: one bulb flicker */
@@ -322,7 +323,7 @@ h1[tabindex="-1"]:focus {
   align-items: center;
   min-height: 48px;
   padding: 0 24px;
-  border-radius: 2px;
+  border-radius: 0;
   background: var(--ink);
   color: var(--paper);
   font-size: 1.1111rem;
@@ -359,7 +360,7 @@ h1[tabindex="-1"]:focus {
   width: 100%;
   padding: 8px 0;
   border: 0;
-  border-bottom: 1px solid var(--ink-soft);
+  border-bottom: 1.5px solid var(--ink);
   border-radius: 0;
   background: transparent;
   color: var(--ink);
@@ -2483,8 +2484,10 @@ h1[tabindex="-1"]:focus {
   flex-wrap: wrap;
   gap: 10px 40px;
   margin-top: 72px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
   font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 0.6667rem;
+  font-size: 0.7222rem;
   color: var(--ink-soft);
 }
 
@@ -2765,6 +2768,31 @@ button:active:not(:disabled),
   animation: none;
 }
 
+/* Theme reveal (ThemeToggle, runThemeReveal): the new theme grows as a circle from the click. The flag is on <html> only while it runs. */
+html[data-theme-reveal]::view-transition-old(root),
+html[data-theme-reveal]::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html[data-theme-reveal]::view-transition-new(root) {
+  animation: theme-reveal var(--dur-reveal) var(--ease-out) both;
+}
+
+html[data-theme-reveal] .site-header {
+  view-transition-name: none; /* else the header cross-fades outside the circle */
+}
+
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0 at var(--reveal-x) var(--reveal-y));
+  }
+
+  to {
+    clip-path: circle(var(--reveal-r) at var(--reveal-x) var(--reveal-y));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     /* Movement becomes instant; a fade that helps you follow a change stays, at 80ms. */
@@ -2884,7 +2912,8 @@ html {
   top: 0;
   z-index: 30;
   height: var(--header-h);
-  background: var(--paper); /* no rule: only the logo shows, content passes under it */
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule); /* hairline: content passes under the bar */
 }
 
 .site-header-inner {
@@ -2901,7 +2930,7 @@ html {
   margin-left: auto;
   flex: none;
   font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 0.6667rem;
+  font-size: 0.7778rem;
 }
 .site-nav ul {
   list-style: none;
@@ -2916,11 +2945,15 @@ html {
   padding: 0 12px;
   color: var(--ink-soft);
 }
+.site-nav a {
+  border-bottom: 1.5px solid transparent;
+}
 .site-nav a[aria-current="page"] {
   color: var(--ink);
+  border-bottom: 1.5px solid var(--ink); /* the current page shows by shape as well as colour */
 }
 .site-nav-button {
-  border: 0;
+  border: 1.5px solid var(--ink-soft);
   background: none;
   font: inherit;
   letter-spacing: inherit;
@@ -3193,10 +3226,10 @@ html {
   gap: 8px;
   min-width: 44px;
   min-height: 44px;
-  padding: 0 8px;
+  padding: 0 12px;
   background: var(--paper);
-  border: 0;
-  /* Same look as .text-button: ink, Cabin small caps, underlined text. */
+  border: 1.5px solid var(--ink-soft);
+  /* Ink Cabin text in a square 1.5px frame; the frame is what sets it apart from .text-button. */
   color: var(--ink);
   font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
