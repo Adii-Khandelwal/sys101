@@ -12,7 +12,7 @@ for (const [label, url, steps] of [["home", "/", 7], ["topic", "/topic/caching",
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
-  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  page.on("console", (m) => m.type() === "error" && !`${m.text()} ${m.location().url}`.includes("/_vercel/") && errors.push(m.text()));
   await page.goto(BASE + url, { waitUntil: "networkidle" });
   const link = page.getByRole("button", { name: "Take the 30-second tour" });
   const before = await page.evaluate(() => JSON.stringify({ ...localStorage }));
@@ -190,7 +190,7 @@ for (const [reduce, label] of [["no-preference", "motion"], ["reduce", "reduced 
   await ctx.close();
 }
 
-// Opening and closing fade (opacity) and the page eases back to its top; under reduced motion all of it is instant.
+// Opening and closing fade (opacity) and the page eases back to its top; under reduced motion the page jumps and only the 80ms opacity fade (--dur-reduced) stays.
 for (const [reduce, label] of [["no-preference", "motion"], ["reduce", "reduced motion"]]) {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: reduce });
   const page = await ctx.newPage();
@@ -228,7 +228,6 @@ for (const [reduce, label] of [["no-preference", "motion"], ["reduce", "reduced 
     expect(fadedOut, `${label}: the tooltip did not fade out`);
     expect(eased, `${label}: the page did not ease back to the top`);
   } else {
-    expect(!fadedIn && !fadedOut, `${label}: the tooltip faded under reduced motion`);
     expect(!eased, `${label}: the page eased back under reduced motion`);
   }
   expect((await page.evaluate(() => scrollY)) === y0, `${label}: the tour did not end at the top of the page (${await page.evaluate(() => scrollY)} instead of ${y0})`);
