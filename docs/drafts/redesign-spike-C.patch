@@ -1,0 +1,146 @@
+diff --git a/app/globals.css b/app/globals.css
+index a544245..52417cb 100644
+--- a/app/globals.css
++++ b/app/globals.css
+@@ -13,6 +13,7 @@
+   --dur-base: 200ms;
+   --dur-slow: 320ms;
+   --dur-page: 160ms;
++  --dur-reveal: 560ms;
+   --dur-pulse: 1400ms;
+   --dur-reduced: 80ms;
+   --flicker: 900ms; /* the opening screen: one bulb flicker */
+@@ -2776,6 +2777,31 @@ button:active:not(:disabled),
+   animation: none;
+ }
+ 
++/* Theme reveal (ThemeToggle, runThemeReveal): the new theme grows as a circle from the click. The flag is on <html> only while it runs. */
++html[data-theme-reveal]::view-transition-old(root),
++html[data-theme-reveal]::view-transition-new(root) {
++  animation: none;
++  mix-blend-mode: normal;
++}
++
++html[data-theme-reveal]::view-transition-new(root) {
++  animation: theme-reveal var(--dur-reveal) var(--ease-out) both;
++}
++
++html[data-theme-reveal] .site-header {
++  view-transition-name: none; /* else the header cross-fades outside the circle */
++}
++
++@keyframes theme-reveal {
++  from {
++    clip-path: circle(0 at var(--reveal-x) var(--reveal-y));
++  }
++
++  to {
++    clip-path: circle(var(--reveal-r) at var(--reveal-x) var(--reveal-y));
++  }
++}
++
+ @media (prefers-reduced-motion: reduce) {
+   :root {
+     /* Movement becomes instant; a fade that helps you follow a change stays, at 80ms. */
+diff --git a/components/ThemeToggle.tsx b/components/ThemeToggle.tsx
+index 9faf1c2..83dffff 100644
+--- a/components/ThemeToggle.tsx
++++ b/components/ThemeToggle.tsx
+@@ -1,6 +1,8 @@
+ "use client";
+ 
+ import { useEffect, useState } from "react";
++import { flushSync } from "react-dom";
++import { runThemeReveal } from "./ViewTransitions";
+ import { usePathname } from "next/navigation";
+ 
+ type Theme = "light" | "dark";
+@@ -51,9 +53,13 @@ export default function ThemeToggle() {
+     });
+   }, [theme, pathname]); // Next may rebuild the metas on a client navigation, so set them again after one
+ 
+-  const choose = (next: Theme) => {
+-    setTheme(next);
+-    document.documentElement.setAttribute("data-theme", next);
++  const choose = (next: Theme, from?: React.MouseEvent) => {
++    const apply = () => {
++      flushSync(() => setTheme(next)); // else the new picture still shows the old sun or moon
++      document.documentElement.setAttribute("data-theme", next);
++    };
++    // Pointer clicks reveal outward from the pointer; a key press (detail 0) swaps at once.
++    if (!(from && from.detail > 0 && runThemeReveal(apply, from.clientX, from.clientY))) apply();
+     try {
+       localStorage.setItem(KEY, next);
+     } catch {
+@@ -68,7 +74,7 @@ export default function ThemeToggle() {
+     <button
+       type="button"
+       className="theme-toggle"
+-      onClick={() => theme && choose(next)}
++      onClick={(e) => theme && choose(next, e)}
+       aria-label={theme ? `Switch to ${next} theme` : "Switch theme"}
+       title={theme ? `Switch to ${next} theme` : "Switch theme"}
+       suppressHydrationWarning
+diff --git a/components/ViewTransitions.tsx b/components/ViewTransitions.tsx
+index 841de4f..c861365 100644
+--- a/components/ViewTransitions.tsx
++++ b/components/ViewTransitions.tsx
+@@ -10,6 +10,34 @@ type Doc = Document & { startViewTransition?: (cb: () => Promise<void>) => unkno
+ type Transition = { finished?: Promise<unknown>; skipTransition?: () => void };
+ 
+ let running: Transition | undefined;
++let revealing = false;
++
++/**
++ * Theme reveal: run `update` (theme attribute + flushSync of React state) inside a same-document view transition whose new
++ * picture grows as a circle from (x, y). Returns false, having done nothing, when it cannot run (no API, reduced motion uses
++ * the plain cross-fade, a navigation or reveal already running, the opening screen up): the caller then swaps instantly.
++ */
++export function runThemeReveal(update: () => void, x: number, y: number) {
++  const doc = document as Doc;
++  const root = document.documentElement;
++  if (!doc.startViewTransition || running || revealing || root.hasAttribute("data-splash")) return false;
++  const reduced = prefersReducedMotion();
++  if (!reduced) {
++    root.style.setProperty("--reveal-x", `${x}px`);
++    root.style.setProperty("--reveal-y", `${y}px`);
++    root.style.setProperty("--reveal-r", `${Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))}px`);
++    root.setAttribute("data-theme-reveal", "");
++  }
++  revealing = true;
++  const t = (doc.startViewTransition as unknown as (cb: () => void) => Transition)(update);
++  running = t;
++  void t.finished?.finally(() => {
++    revealing = false;
++    if (running === t) running = undefined;
++    root.removeAttribute("data-theme-reveal");
++  });
++  return true;
++}
+ 
+ /** Ends the cross-fade early, which shows the live page again instead of the frozen picture of the old one (NavPending needs that to be seen). */
+ export function skipRunningTransition() {
+diff --git a/lib/motion.test.ts b/lib/motion.test.ts
+index deb526b..f85a282 100644
+--- a/lib/motion.test.ts
++++ b/lib/motion.test.ts
+@@ -20,6 +20,7 @@ describe("motion tokens", () => {
+     expect(token("dur-base")).toBe(`${DURATION.base}ms`);
+     expect(token("dur-slow")).toBe(`${DURATION.slow}ms`);
+     expect(token("dur-page")).toBe(`${DURATION.page}ms`);
++    expect(token("dur-reveal")).toBe(`${DURATION.reveal}ms`);
+     expect(token("dur-reduced")).toBe(`${DURATION.reduced}ms`);
+     expect(token("ease-out")).toBe(`cubic-bezier(${EASING.out.join(", ")})`);
+     expect(token("ease-in-out")).toBe(`cubic-bezier(${EASING.inOut.join(", ")})`);
+diff --git a/lib/motion.ts b/lib/motion.ts
+index 8f964d5..2d332bb 100644
+--- a/lib/motion.ts
++++ b/lib/motion.ts
+@@ -8,6 +8,7 @@ export const DURATION = {
+   slow: 320, // camera moves, progress fills
+   page: 160, // cross-fade between pages
+   reduced: 80, // the longest fade allowed under prefers-reduced-motion
++  reveal: 560, // theme reveal: the circle growing from the click
+   pulse: 1400, // skeleton loading pulse
+ } as const;
+ 
