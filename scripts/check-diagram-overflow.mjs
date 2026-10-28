@@ -35,7 +35,7 @@ for (const f of files) walk(JSON.parse(fs.readFileSync(f, "utf8")), f);
 // (Libre Caslon Text, Cabin) so measurement matches production, not a system fallback.
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Cabin:wght@400..700&display=swap');
-  :root { --font-serif: 'Libre Caslon Text'; --font-sans: 'Cabin'; }
+  :root { --font-sans: 'Cabin'; }
   svg.dg { display:block; width:560px; }
   .dg-label { font-family: var(--font-sans), sans-serif; font-size:15px; }
   .dg-note  { font-family: var(--font-sans), sans-serif; font-size:12px; }
