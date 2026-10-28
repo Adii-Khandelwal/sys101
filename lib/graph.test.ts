@@ -72,7 +72,7 @@ describe("transitive reduction", () => {
 
 
 // Lay a graph out the way GraphView does, with label widths estimated at
-// 9.2px per character (Newsreader 500 at 18px averages under 9px).
+// 9.2px per character (estimate for the body serif at 500 and 18px, which averages under 9px).
 function plan(nodes: { slug: string; title: string }[], edges: E[], stageWidth: number, orientation: Orientation, perChar = 9.2, scale = 1) {
   const drawn = transitiveReduction(edges);
   const cols = layers(nodes, drawn);

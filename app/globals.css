@@ -1,12 +1,14 @@
 :root {
   color-scheme: light;
-  --paper: #f3ecdc;
-  --ink: #1f1b16;
-  --ink-soft: #5c5346;
-  --rule: #cfc3a8;
-  --accent: #9a3b1f;
-  --skeleton: #e2d8c2;
-  --edge: #8a7f6c;
+  --paper: #e6e2d6;
+  --ink: #1b2a6b;
+  --ink-soft: #505b8a;
+  --rule: #b3b4bb;
+  --accent: #aa3012;
+  --ink2: #e8452a; /* second ink: lines, rings, large type only (3.05:1 on paper) */
+  --skeleton: #dedbd2; /* raised surface, a 4% ink tint: put ink text on it, not muted or accent */
+  --edge: #767d9b;
+  --highlight: #e6ded3;
 
   /* Motion tokens: mirror lib/motion.ts (checked by lib/motion.test.ts). */
   --dur-fast: 120ms;
@@ -27,32 +29,36 @@
 }
 
 /* Dark theme: a warm, low-glare dark that keeps the handcrafted feel - deep
-   brown-charcoal paper, warm off-white ink, and a brighter rust that holds
+   brown-charcoal paper, warm off-white ink, and a brighter orange that holds
    WCAG AA on the dark background. Applied when the reader chooses dark, or when
    the OS prefers dark and the reader has made no explicit choice. The colour
    tokens are the whole system, so the SVG diagrams (var(--paper)/--ink/--edge)
    theme for free; the Sigma map reads these same values at runtime. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --paper: #1a1713;
-  --ink: #ece4d4;
-  --ink-soft: #a89b85;
-  --rule: #39332a;
-  --accent: #d4683f;
-  --skeleton: #2a251e;
-  --edge: #6b6252;
+  --paper: #1a1512;
+  --ink: #ede3cc;
+  --ink-soft: #a39b8b;
+  --rule: #403a33;
+  --accent: #ff7050;
+  --ink2: #ff7050;
+  --skeleton: #2a241f;
+  --edge: #797266;
+  --highlight: #352019;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --paper: #1a1713;
-    --ink: #ece4d4;
-    --ink-soft: #a89b85;
-    --rule: #39332a;
-    --accent: #d4683f;
-    --skeleton: #2a251e;
-    --edge: #6b6252;
+    --paper: #1a1512;
+    --ink: #ede3cc;
+    --ink-soft: #a39b8b;
+    --rule: #403a33;
+    --accent: #ff7050;
+    --ink2: #ff7050;
+    --skeleton: #2a241f;
+    --edge: #797266;
+    --highlight: #352019;
   }
 }
 
@@ -84,8 +90,8 @@ body {
 h1,
 h2,
 h3 {
-  font-family: var(--font-serif), Georgia, serif;
-  font-weight: 500;
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 400;
   letter-spacing: -0.01em;
   margin: 0;
 }
@@ -123,7 +129,7 @@ h3,
 }
 
 /* Links are not underlined: where one stands on its own (a list, a heading, a label, the footer) the colour shift on hover and
-   the layout say "link". Links inside running sentences keep an underline below, because rust against ink is under 3:1. */
+   the layout say "link". Links inside running sentences keep an underline below, because the accent against ink is under 3:1. */
 a {
   color: inherit;
   text-decoration: none;
@@ -137,7 +143,7 @@ a {
   }
 }
 
-/* Touch has no hover: a tapped link takes the same rust while it is pressed. */
+/* Touch has no hover: a tapped link takes the accent while it is pressed. */
 @media (hover: none) {
   a:active:not(.cta) {
     color: var(--accent);
@@ -145,8 +151,8 @@ a {
 }
 
 /* Links inside running text share the body's colour, so the underline is their only cue: draw it in --ink-soft
-   (6.4:1 light, 6.5:1 dark against the paper) instead of the faint --rule that lists of links use. A colour change
-   cannot do it: rust against ink is 2.5:1 light and 2.8:1 dark, under the 3:1 that WCAG 1.4.1 asks for. */
+   (5.06:1 light, 6.57:1 dark against the paper) instead of the faint --rule that lists of links use. A colour change
+   cannot do it: the accent against ink is 2.0:1 light and 2.1:1 dark, under the 3:1 that WCAG 1.4.1 asks for. */
 :is(p, dd, blockquote) a:not(.text-button, .label, .cta, .footer-group a, .explain a, .inside-source a, .label a) {
   text-decoration: underline;
   text-decoration-color: var(--ink-soft);
@@ -163,7 +169,7 @@ a {
   }
 }
 
-/* Selected text: ink on a tint of the rule colour (9.8:1 light, 9.9:1 dark); rust on it would be 4.0 and 3.5. */
+/* Selected text: ink on a tint of the rule colour (6.4:1 light, 8.8:1 dark); the accent on it would be 3.2 and 4.1. */
 ::selection {
   background: var(--rule);
   color: var(--ink);
@@ -181,10 +187,8 @@ h1[tabindex="-1"]:focus {
 }
 
 .label {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
@@ -201,7 +205,7 @@ h1[tabindex="-1"]:focus {
 .topic-tagline .reading-time {
   color: var(--ink-soft);
 }
-/* "Core" earns the one rust accent; the others stay quiet. State reads from the
+/* "Core" earns the one orange accent; the others stay quiet. State reads from the
    text, so colour is never the only signal. */
 .interview-tag.is-core {
   color: var(--accent);
@@ -229,7 +233,7 @@ h1[tabindex="-1"]:focus {
 
 .masthead h1 {
   font-size: 3.5556rem;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1;
   letter-spacing: -0.02em;
 }
@@ -319,14 +323,14 @@ h1[tabindex="-1"]:focus {
   min-height: 48px;
   padding: 0 24px;
   border-radius: 2px;
-  background: var(--accent);
+  background: var(--ink);
   color: var(--paper);
   font-size: 1.1111rem;
   text-decoration: none;
   transition: transform var(--dur-fast) var(--ease-out);
 }
 
-/* The global a:hover turns links rust; on the rust button that made the text vanish, so the label keeps its colour. */
+/* The global a:hover turns links orange; on the orange button that made the text vanish, so the label keeps its colour. */
 @media (hover: hover) and (pointer: fine) {
   .cta:hover {
     color: var(--paper);
@@ -377,7 +381,7 @@ h1[tabindex="-1"]:focus {
   transform: translateY(-50%);
   padding: 0 7px;
   border: 1px solid var(--rule);
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   line-height: 20px;
   color: var(--ink-soft);
@@ -422,7 +426,7 @@ h1[tabindex="-1"]:focus {
 }
 
 .inside-count {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   color: var(--ink-soft);
 }
@@ -818,20 +822,18 @@ h1[tabindex="-1"]:focus {
 }
 
 .graph-tooltip strong {
-  font-weight: 500;
+  font-weight: 400;
   font-size: 0.8889rem;
   line-height: 1.2;
 }
 
 .graph-tooltip span {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
-/* The description reads as prose, not a mono label. */
+/* The description reads as prose, not a Cabin label. */
 .graph-tooltip .tip-desc {
   font-family: var(--font-serif), Georgia, serif;
   font-size: 0.7222rem;
@@ -882,7 +884,7 @@ h1[tabindex="-1"]:focus {
 }
 
 .index-number {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   color: var(--ink-soft);
   min-width: 2ch;
@@ -923,13 +925,13 @@ h1[tabindex="-1"]:focus {
   max-width: none;
 }
 
-/* Section titles on the homepage: serif and larger than the mono labels, so each section starts clearly. */
+/* Section titles on the homepage: serif and larger than the Cabin labels, so each section starts clearly. */
 .home-extra h2.label,
 .index > h2.label {
   margin: 0 0 12px;
   font-family: inherit;
   font-size: 1.5556rem;
-  font-weight: 500;
+  font-weight: 400;
   letter-spacing: -0.01em;
   text-transform: none;
   line-height: 1.15;
@@ -1010,7 +1012,7 @@ h1[tabindex="-1"]:focus {
   height: 22px;
 }
 
-/* The small slot beside a company name in a mono label (post headers, Original posts, In short, Background, the daily figure). */
+/* The small slot beside a company name in a Cabin label (post headers, Original posts, In short, Background, the daily figure). */
 .company-logo-sm {
   width: 20px;
   height: 16px;
@@ -1027,7 +1029,7 @@ h1[tabindex="-1"]:focus {
   vertical-align: middle;
 }
 
-/* In the left rail the mark sits inline with the mono name, a touch smaller. */
+/* In the left rail the mark sits inline with the Cabin name, a touch smaller. */
 .lesson-rail .company-logo {
   display: inline-flex;
   width: 16px;
@@ -1139,7 +1141,7 @@ h1[tabindex="-1"]:focus {
   color: var(--rule);
 }
 
-/* The Map / Path buttons must read as the same mono small-caps label as "View";
+/* The Map / Path buttons must read as the same Cabin small-caps label as "View";
    buttons do not inherit font or text-transform from the container, so set them. */
 .home-view-toggle .text-button {
   font: inherit;
@@ -1211,7 +1213,7 @@ h1[tabindex="-1"]:focus {
   margin-top: 24px;
 }
 
-/* Group name as a mono small-caps marker with a rule running to the edge. */
+/* Group name as a Cabin small-caps marker with a rule running to the edge. */
 .path-group-name {
   display: flex;
   align-items: center;
@@ -1297,7 +1299,7 @@ h1[tabindex="-1"]:focus {
 }
 
 .path-number {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   line-height: 44px;
   color: var(--ink-soft);
@@ -1344,7 +1346,7 @@ h1[tabindex="-1"]:focus {
   background: var(--accent);
   border-color: var(--accent);
 }
-/* In progress: a hollow marker ringed in rust with a small rust centre, so it
+/* In progress: a hollow marker ringed in orange with a small orange centre, so it
    matches the map's in-progress node and reads as "started, not full". */
 .path-item.is-progress .path-marker {
   border-width: 2.5px;
@@ -1386,17 +1388,13 @@ h1[tabindex="-1"]:focus {
 }
 
 .path-ready-tag {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--accent);
 }
 .path-progress-tag {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--accent);
 }
 
@@ -1509,7 +1507,7 @@ h1[tabindex="-1"]:focus {
   font-size: 1.1111rem;
   font-style: italic;
   font-family: var(--font-serif-italic), Georgia, serif;
-  font-weight: 500;
+  font-weight: 400;
   margin: 32px 0 8px;
 }
 
@@ -1532,13 +1530,13 @@ h1[tabindex="-1"]:focus {
 }
 
 .walkthrough li::marker {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7222rem;
   color: var(--ink-soft);
 }
 
 .walkthrough strong {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .diagram {
@@ -1563,9 +1561,9 @@ h1[tabindex="-1"]:focus {
 .numbers th {
   width: 38%;
   padding-right: 16px;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7222rem;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .tradeoffs {
@@ -1578,10 +1576,8 @@ h1[tabindex="-1"]:focus {
 
 .tradeoffs dt,
 .glossary dt {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
@@ -1629,7 +1625,7 @@ h1[tabindex="-1"]:focus {
 
 .mistakes li::marker,
 .quiz li::marker {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7222rem;
   color: var(--ink-soft);
 }
@@ -1699,10 +1695,8 @@ h1[tabindex="-1"]:focus {
 }
 
 .age-note .age-year {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--accent);
 }
 
@@ -1737,7 +1731,7 @@ h1[tabindex="-1"]:focus {
   margin: 0;
 }
 
-/* 44px touch targets without extra visible space. The two ways in are serif text, not tiny mono labels, so a beginner sees them. */
+/* 44px touch targets without extra visible space. The two ways in are serif text, not tiny Cabin labels, so a beginner sees them. */
 .lesson-top .lesson-jump a {
   display: inline-flex;
   align-items: center;
@@ -1794,16 +1788,14 @@ h1[tabindex="-1"]:focus {
 }
 
 .option[aria-pressed="true"] {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .verdict {
   margin-left: 12px;
   white-space: nowrap;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--accent);
 }
 
@@ -2149,10 +2141,8 @@ h1[tabindex="-1"]:focus {
   padding: 0 4px;
   background: none;
   border: 0;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--ink-soft);
   cursor: pointer;
   opacity: 0;
@@ -2216,9 +2206,9 @@ h1[tabindex="-1"]:focus {
   margin: 0 0 4px;
 }
 
-/* The number matches the mono label beside it (same face and size, so the baselines meet). */
+/* The number matches the Cabin label beside it (same face and size, so the baselines meet). */
 .exercises > li::marker {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   color: var(--ink-soft);
 }
@@ -2226,7 +2216,7 @@ h1[tabindex="-1"]:focus {
 .exercises h3 {
   margin: 12px 0 4px;
   font-size: 0.8889rem;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 /* Thin progress rail, desktop only: it sits in the margin left of the text column. */
@@ -2270,9 +2260,8 @@ h1[tabindex="-1"]:focus {
 
   .lesson-rail li {
     margin: 0 0 8px;
-    font-family: var(--font-mono), monospace;
+    font-family: var(--font-sans), system-ui, sans-serif;
     font-size: 0.6667rem;
-    letter-spacing: 0.04em;
   }
 
   .lesson-rail a {
@@ -2281,7 +2270,7 @@ h1[tabindex="-1"]:focus {
   }
 
   @media (hover: hover) and (pointer: fine) {
-    /* Ink, not rust: rust marks the current section in this list. */
+    /* Ink, not orange: orange marks the current section in this list. */
     .lesson-rail a:hover {
       color: var(--ink);
     }
@@ -2337,13 +2326,13 @@ h1[tabindex="-1"]:focus {
 }
 
 .dg-label {
-  font-family: var(--font-serif), Georgia, serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.8333rem;
   fill: var(--ink);
 }
 
 .dg-note {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   fill: var(--ink-soft);
 }
@@ -2494,7 +2483,7 @@ h1[tabindex="-1"]:focus {
   flex-wrap: wrap;
   gap: 10px 40px;
   margin-top: 72px;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   color: var(--ink-soft);
 }
@@ -2907,14 +2896,12 @@ html {
   padding: 0 40px;
 }
 
-/* Content pages in the bar: small mono links on wide screens, a Menu button below 900px (components/SiteNav.tsx). */
+/* Content pages in the bar: small Cabin links on wide screens, a Menu button below 900px (components/SiteNav.tsx). */
 .site-nav {
   margin-left: auto;
   flex: none;
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 .site-nav ul {
   list-style: none;
@@ -2980,10 +2967,8 @@ html {
   padding: 4px 16px 12px;
   background: var(--paper);
   border-bottom: 1px solid var(--rule);
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7778rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   animation: menu-in var(--dur-fast) var(--ease-out);
 }
 @keyframes menu-in {
@@ -3089,7 +3074,7 @@ html {
 .logo-word {
   font-family: var(--font-serif), Georgia, serif;
   font-size: 1.3333rem;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1;
   letter-spacing: -0.01em;
 }
@@ -3211,12 +3196,10 @@ html {
   padding: 0 8px;
   background: var(--paper);
   border: 0;
-  /* Same look as .text-button: ink, mono small caps, underlined text. */
+  /* Same look as .text-button: ink, Cabin small caps, underlined text. */
   color: var(--ink);
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
@@ -3339,7 +3322,7 @@ html {
 .learn-terms dt,
 .glossary-terms dt,
 .learn-myths dt {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .learn-terms dd,
@@ -3433,7 +3416,7 @@ html {
   padding: 10px 14px;
   border: 1px solid var(--rule);
   background: var(--skeleton);
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7778rem;
   line-height: 1.55;
   tab-size: 2;
@@ -3824,10 +3807,8 @@ html {
 }
 
 .gloss-pop .gloss-more {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--accent);
   text-decoration: none;
   display: inline-flex;
@@ -3842,11 +3823,6 @@ html {
 }
 
 /* ── Background page: what the posts of each topic assume ── */
-:root {
-  /* A faint wash of the accent, so it follows both themes and needs no literal colour. */
-  --highlight: color-mix(in srgb, var(--accent) 12%, transparent);
-}
-
 .background-lead {
   margin: 0 0 8px;
   color: var(--ink-soft);
@@ -3938,10 +3914,8 @@ html {
   align-items: center;
   width: fit-content;
   min-height: 44px;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .bg-assumed q {
@@ -4162,7 +4136,7 @@ html[data-posts-view] .posts-view-h {
   margin: 28px 0 0;
   padding-bottom: 6px;
   font-size: 1.2222rem;
-  font-weight: 500;
+  font-weight: 400;
   border-bottom: 1px solid var(--rule);
 }
 .posts-topic-h a {
@@ -4247,7 +4221,7 @@ html[data-posts-view] .posts-view-h {
 .reads-topicbar-label {
   margin: 20px 0 0;
 }
-/* Quiet by default: small mono text in the soft ink, the box fills rust once read. */
+/* Quiet by default: small Cabin text in the soft ink, the box fills orange once read. */
 .reads-read {
   display: inline-flex;
   align-items: center;
@@ -4332,7 +4306,7 @@ html[data-posts-view] .posts-view-h {
 .reads-topics a {
   color: inherit;
 }
-/* These set color: inherit, which would beat the global a:hover; give them the same rust on hover. */
+/* These set color: inherit, which would beat the global a:hover; give them the same orange on hover. */
 @media (hover: hover) and (pointer: fine) {
   .reads-topics a:hover,
   .posts-topics a:hover,
@@ -4387,16 +4361,14 @@ html[data-posts-view] .posts-view-h {
   .posts-rail li {
     position: relative;
     margin: 0 0 8px;
-    font-family: var(--font-mono), monospace;
+    font-family: var(--font-sans), system-ui, sans-serif;
     font-size: 0.6667rem;
-    letter-spacing: 0.04em;
     line-height: 1.4;
   }
   .posts-rail-group {
     display: block;
     margin: 14px 0 6px;
     color: var(--ink);
-    text-transform: uppercase;
   }
   .posts-rail li:first-child .posts-rail-group {
     margin-top: 0;
@@ -4431,11 +4403,11 @@ html[data-posts-view] .posts-view-h {
   :root,
   :root[data-theme="dark"],
   :root:not([data-theme="light"]) {
-    --paper: #fff;
-    --ink: #1f1b16;
-    --ink-soft: #5c5346;
-    --rule: #cfc3a8;
-    --accent: #9a3b1f;
+    --paper: #ffffff;
+    --ink: #1b2a6b;
+    --ink-soft: #505b8a;
+    --rule: #b3b4bb;
+    --accent: #aa3012;
   }
 
   .site-header,
@@ -4505,7 +4477,7 @@ html[data-posts-view] .posts-view-h {
   }
 }
 
-/* Newsreader ships tabular figures (checked in the served woff2: GSUB tnum), so years and counts line up in columns. The mono labels are tabular already. */
+/* Years and counts in a list. */
 .posts-year,
 .posts-count,
 .glossary-count {
@@ -4593,7 +4565,7 @@ html[data-posts-view] .posts-view-h {
   stroke: var(--ink);
 }
 
-/* Counted beads are filled rust; beads outside the frame are hollow, so the state is shape, not colour. */
+/* Counted beads are filled orange; beads outside the frame are hollow, so the state is shape, not colour. */
 .fig-svg .fig-bead {
   fill: none;
   stroke: var(--ink-soft);
@@ -4625,16 +4597,15 @@ html[data-posts-view] .posts-view-h {
 }
 
 .fig-formula {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.8333rem;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 
 .fig-status {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7222rem;
-  letter-spacing: 0.04em;
   color: var(--ink-soft);
 }
 
@@ -4705,7 +4676,7 @@ html[data-posts-view] .posts-view-h {
 .fig-seconds {
   min-width: 4ch;
   white-space: nowrap;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7222rem;
   color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
@@ -4714,10 +4685,8 @@ html[data-posts-view] .posts-view-h {
 .fig-controls .text-button {
   min-height: 44px;
   padding: 0 4px;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .fig-legend {
@@ -5023,7 +4992,7 @@ html[data-posts-view] .posts-view-h {
   border: 1px solid var(--rule);
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 1rem; /* 16px or more: iOS does not zoom the page on focus */
 }
 
@@ -5170,7 +5139,6 @@ html[data-posts-view] .posts-view-h {
   display: block;
   margin-top: 2px;
   font-size: 0.6111rem;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
@@ -5219,9 +5187,8 @@ html[data-posts-view] .posts-view-h {
   display: block;
   padding: 10px 0;
   color: var(--ink-soft);
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.04em;
   text-decoration: none;
 }
 
@@ -5376,7 +5343,7 @@ html[data-posts-view] .posts-view-h {
 .tour-title {
   margin: 4px 0 0;
   font-size: 1.1111rem;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .tour-text {
@@ -5424,7 +5391,7 @@ html[data-splash] .splash {
   /* Leaves by itself even if the scripts never load, so it can never cover the page for good. It waits out the flight below. */
   animation: splash-away var(--dur-base) var(--ease-out) calc(var(--splash-hold) + var(--dur-slow) + var(--dur-fast)) forwards;
 }
-/* The cream backdrop is its own layer so it can fade while the mark and name fly into the masthead. */
+/* The paper backdrop is its own layer so it can fade while the mark and name fly into the masthead. */
 html[data-splash] .splash::before {
   content: "";
   position: absolute;
