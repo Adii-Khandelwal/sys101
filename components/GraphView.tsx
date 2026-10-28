@@ -619,12 +619,12 @@ export default function GraphView({ nodes, edges }: Props) {
           const lit = highlighting && near;
           // Ready: unread with every prerequisite read. A thicker outline and a centre dot, so it reads without colour.
           const ready = !isRead && (prereqsRef.current.get(slug) ?? []).every((p) => readRef.current.includes(p));
-          // In progress: started but not finished. A rust outline and a rust centre dot on a hollow node,
+          // In progress: started but not finished. An orange outline and an orange centre dot on a hollow node,
           // so it sits between unread (soft outline) and read (solid fill): "yours, but not full yet".
           const inProg = !isRead && inProgressRef.current.includes(slug);
           const fill = isRead ? c.accent : c.paper;
-          // Lit nodes take the strong ink (read: darker rust); otherwise the usual soft outline.
-          // In progress uses the rust accent on the outline even when not read.
+          // Lit nodes take the strong ink (read: darker orange); otherwise the usual soft outline.
+          // In progress uses the orange accent on the outline even when not read.
           const border = isRead
             ? isActive || lit
               ? c.accentDark
@@ -642,7 +642,7 @@ export default function GraphView({ nodes, edges }: Props) {
           // The lit set thickens by 1; the single hovered/focused node thickens
           // a little more, so you still see exactly which node you are on.
           const borderSize = isActive ? baseSize + 1.5 : lit ? baseSize + 1 : baseSize;
-          // Centre dot colour: in-progress gets the rust border colour; ready keeps the soft outline colour.
+          // Centre dot colour: in-progress gets the orange border colour; ready keeps the soft outline colour.
           const dot = dotted ? (near ? border : fadeTo(border, c.paper)) : near ? fill : fadeTo(fill, c.paper);
           return {
             ...data,

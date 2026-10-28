@@ -151,7 +151,7 @@ a {
 }
 
 /* Links inside running text share the body's colour, so the underline is their only cue: draw it in --ink-soft
-   (6.4:1 light, 6.5:1 dark against the paper) instead of the faint --rule that lists of links use. A colour change
+   (5.06:1 light, 6.57:1 dark against the paper) instead of the faint --rule that lists of links use. A colour change
    cannot do it: the accent against ink is 2.0:1 light and 2.1:1 dark, under the 3:1 that WCAG 1.4.1 asks for. */
 :is(p, dd, blockquote) a:not(.text-button, .label, .cta, .footer-group a, .explain a, .inside-source a, .label a) {
   text-decoration: underline;
@@ -205,7 +205,7 @@ h1[tabindex="-1"]:focus {
 .topic-tagline .reading-time {
   color: var(--ink-soft);
 }
-/* "Core" earns the one rust accent; the others stay quiet. State reads from the
+/* "Core" earns the one orange accent; the others stay quiet. State reads from the
    text, so colour is never the only signal. */
 .interview-tag.is-core {
   color: var(--accent);
@@ -330,7 +330,7 @@ h1[tabindex="-1"]:focus {
   transition: transform var(--dur-fast) var(--ease-out);
 }
 
-/* The global a:hover turns links rust; on the rust button that made the text vanish, so the label keeps its colour. */
+/* The global a:hover turns links orange; on the orange button that made the text vanish, so the label keeps its colour. */
 @media (hover: hover) and (pointer: fine) {
   .cta:hover {
     color: var(--paper);
@@ -833,7 +833,7 @@ h1[tabindex="-1"]:focus {
   color: var(--ink-soft);
 }
 
-/* The description reads as prose, not a mono label. */
+/* The description reads as prose, not a Cabin label. */
 .graph-tooltip .tip-desc {
   font-family: var(--font-serif), Georgia, serif;
   font-size: 0.7222rem;
@@ -925,7 +925,7 @@ h1[tabindex="-1"]:focus {
   max-width: none;
 }
 
-/* Section titles on the homepage: serif and larger than the mono labels, so each section starts clearly. */
+/* Section titles on the homepage: serif and larger than the Cabin labels, so each section starts clearly. */
 .home-extra h2.label,
 .index > h2.label {
   margin: 0 0 12px;
@@ -1012,7 +1012,7 @@ h1[tabindex="-1"]:focus {
   height: 22px;
 }
 
-/* The small slot beside a company name in a mono label (post headers, Original posts, In short, Background, the daily figure). */
+/* The small slot beside a company name in a Cabin label (post headers, Original posts, In short, Background, the daily figure). */
 .company-logo-sm {
   width: 20px;
   height: 16px;
@@ -1029,7 +1029,7 @@ h1[tabindex="-1"]:focus {
   vertical-align: middle;
 }
 
-/* In the left rail the mark sits inline with the mono name, a touch smaller. */
+/* In the left rail the mark sits inline with the Cabin name, a touch smaller. */
 .lesson-rail .company-logo {
   display: inline-flex;
   width: 16px;
@@ -1141,7 +1141,7 @@ h1[tabindex="-1"]:focus {
   color: var(--rule);
 }
 
-/* The Map / Path buttons must read as the same mono small-caps label as "View";
+/* The Map / Path buttons must read as the same Cabin small-caps label as "View";
    buttons do not inherit font or text-transform from the container, so set them. */
 .home-view-toggle .text-button {
   font: inherit;
@@ -1213,7 +1213,7 @@ h1[tabindex="-1"]:focus {
   margin-top: 24px;
 }
 
-/* Group name as a mono small-caps marker with a rule running to the edge. */
+/* Group name as a Cabin small-caps marker with a rule running to the edge. */
 .path-group-name {
   display: flex;
   align-items: center;
@@ -1346,7 +1346,7 @@ h1[tabindex="-1"]:focus {
   background: var(--accent);
   border-color: var(--accent);
 }
-/* In progress: a hollow marker ringed in rust with a small rust centre, so it
+/* In progress: a hollow marker ringed in orange with a small orange centre, so it
    matches the map's in-progress node and reads as "started, not full". */
 .path-item.is-progress .path-marker {
   border-width: 2.5px;
@@ -1731,7 +1731,7 @@ h1[tabindex="-1"]:focus {
   margin: 0;
 }
 
-/* 44px touch targets without extra visible space. The two ways in are serif text, not tiny mono labels, so a beginner sees them. */
+/* 44px touch targets without extra visible space. The two ways in are serif text, not tiny Cabin labels, so a beginner sees them. */
 .lesson-top .lesson-jump a {
   display: inline-flex;
   align-items: center;
@@ -2206,7 +2206,7 @@ h1[tabindex="-1"]:focus {
   margin: 0 0 4px;
 }
 
-/* The number matches the mono label beside it (same face and size, so the baselines meet). */
+/* The number matches the Cabin label beside it (same face and size, so the baselines meet). */
 .exercises > li::marker {
   font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
@@ -2270,7 +2270,7 @@ h1[tabindex="-1"]:focus {
   }
 
   @media (hover: hover) and (pointer: fine) {
-    /* Ink, not rust: rust marks the current section in this list. */
+    /* Ink, not orange: orange marks the current section in this list. */
     .lesson-rail a:hover {
       color: var(--ink);
     }
@@ -2896,7 +2896,7 @@ html {
   padding: 0 40px;
 }
 
-/* Content pages in the bar: small mono links on wide screens, a Menu button below 900px (components/SiteNav.tsx). */
+/* Content pages in the bar: small Cabin links on wide screens, a Menu button below 900px (components/SiteNav.tsx). */
 .site-nav {
   margin-left: auto;
   flex: none;
@@ -3196,7 +3196,7 @@ html {
   padding: 0 8px;
   background: var(--paper);
   border: 0;
-  /* Same look as .text-button: ink, mono small caps, underlined text. */
+  /* Same look as .text-button: ink, Cabin small caps, underlined text. */
   color: var(--ink);
   font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
@@ -3823,10 +3823,6 @@ html {
 }
 
 /* ── Background page: what the posts of each topic assume ── */
-:root {
-  /* A faint wash of the accent, so it follows both themes and needs no literal colour. */
-}
-
 .background-lead {
   margin: 0 0 8px;
   color: var(--ink-soft);
@@ -4225,7 +4221,7 @@ html[data-posts-view] .posts-view-h {
 .reads-topicbar-label {
   margin: 20px 0 0;
 }
-/* Quiet by default: small mono text in the soft ink, the box fills rust once read. */
+/* Quiet by default: small Cabin text in the soft ink, the box fills orange once read. */
 .reads-read {
   display: inline-flex;
   align-items: center;
@@ -4310,7 +4306,7 @@ html[data-posts-view] .posts-view-h {
 .reads-topics a {
   color: inherit;
 }
-/* These set color: inherit, which would beat the global a:hover; give them the same rust on hover. */
+/* These set color: inherit, which would beat the global a:hover; give them the same orange on hover. */
 @media (hover: hover) and (pointer: fine) {
   .reads-topics a:hover,
   .posts-topics a:hover,
@@ -4407,7 +4403,7 @@ html[data-posts-view] .posts-view-h {
   :root,
   :root[data-theme="dark"],
   :root:not([data-theme="light"]) {
-    --paper: #fff;
+    --paper: #ffffff;
     --ink: #1b2a6b;
     --ink-soft: #505b8a;
     --rule: #b3b4bb;
@@ -4481,7 +4477,7 @@ html[data-posts-view] .posts-view-h {
   }
 }
 
-/* Newsreader ships tabular figures (checked in the served woff2: GSUB tnum), so years and counts line up in columns. The mono labels are tabular already. */
+/* Years and counts in a list. */
 .posts-year,
 .posts-count,
 .glossary-count {
@@ -4569,7 +4565,7 @@ html[data-posts-view] .posts-view-h {
   stroke: var(--ink);
 }
 
-/* Counted beads are filled rust; beads outside the frame are hollow, so the state is shape, not colour. */
+/* Counted beads are filled orange; beads outside the frame are hollow, so the state is shape, not colour. */
 .fig-svg .fig-bead {
   fill: none;
   stroke: var(--ink-soft);
@@ -5395,7 +5391,7 @@ html[data-splash] .splash {
   /* Leaves by itself even if the scripts never load, so it can never cover the page for good. It waits out the flight below. */
   animation: splash-away var(--dur-base) var(--ease-out) calc(var(--splash-hold) + var(--dur-slow) + var(--dur-fast)) forwards;
 }
-/* The cream backdrop is its own layer so it can fade while the mark and name fly into the masthead. */
+/* The paper backdrop is its own layer so it can fade while the mark and name fly into the masthead. */
 html[data-splash] .splash::before {
   content: "";
   position: absolute;

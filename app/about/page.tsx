@@ -40,8 +40,8 @@ export default function About() {
 
       <h2>How to use it</h2>
       <p>
-        Start on the map. A hollow ring is Unread, a thicker ring with a dot is Ready, a rust ring with a
-        dot is In progress, and a filled rust circle is Read. &ldquo;Next up&rdquo; at the top tells you
+        Start on the map. A hollow ring is Unread, a thicker ring with a dot is Ready, an orange ring with a
+        dot is In progress, and a filled orange circle is Read. &ldquo;Next up&rdquo; at the top tells you
         where to go.
       </p>
       <p>Already know a topic&apos;s idea? Use &ldquo;Skip to the posts&rdquo; at the top of any topic page.</p>

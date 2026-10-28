@@ -36,3 +36,10 @@ Items 1 to 14 and 17 to 22 stand as written in `docs/redesign-plan.md`. Item 15 
 ## Owner answers (28 Oct 2026)
 
 "All as recommended": items 1 to 9 above and register items 1 to 22 stand as recommended.
+
+## Phase 1 outcomes (28 Oct 2026)
+
+- Light muted ink is `#505b8a` and the text-safe accent is `#aa3012` (plan had `#55608f` and `#b33414`): the originals were 4.39 and 4.44 on the 4% raised surface; the new ones are 4.73 and 4.83.
+- Fonts: LCP gate passed with Text 400 and 700 and Display preloaded (home 704 ms, topic 808 ms against 732 and 844), so the preload mitigations were not needed and 700 stays preloaded.
+- Diagram labels (`.dg-label`) use Cabin at 15px: Caslon Text at that size overflowed 118 labels.
+- `scripts/make-og.mjs` uses literal hex for its one-off image; it is an offline script, not site CSS.

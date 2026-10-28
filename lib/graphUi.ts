@@ -48,7 +48,7 @@ export function readThemeColors(): ThemeColors {
   };
 }
 
-/** A slightly darker shade of a hex colour, for the pressed/active rust outline. */
+/** A slightly darker shade of a hex colour, for the pressed/active orange outline. */
 function darken(hex: string, amount = 0.82) {
   if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex;
   const n = parseInt(hex.slice(1), 16);
