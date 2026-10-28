@@ -1,11 +1,12 @@
 // Pure pieces of the homepage graph's hover and focus behaviour.
 
-export const INK = "#1f1b16";
-export const INK_SOFT = "#5c5346";
-export const EDGE = "#8a7f6c";
-export const PAPER = "#f3ecdc";
-export const ACCENT = "#9a3b1f";
-const ACCENT_DARK = "#7a2c15";
+export const INK = "#1b2a6b";
+export const INK_SOFT = "#505b8a";
+export const EDGE = "#767d9b";
+export const PAPER = "#e6e2d6";
+export const ACCENT = "#aa3012";
+export const INK2 = "#e8452a";
+const ACCENT_DARK = "#932b10";
 
 /** Unrelated nodes and edges keep 60% of their colour while a node is highlighted. */
 const FADE = 0.6;
@@ -16,10 +17,11 @@ export type ThemeColors = {
   edge: string;
   paper: string;
   accent: string;
+  ink2: string;
   accentDark: string;
 };
 
-export const LIGHT_COLORS: ThemeColors = { ink: INK, inkSoft: INK_SOFT, edge: EDGE, paper: PAPER, accent: ACCENT, accentDark: ACCENT_DARK };
+export const LIGHT_COLORS: ThemeColors = { ink: INK, inkSoft: INK_SOFT, edge: EDGE, paper: PAPER, accent: ACCENT, ink2: INK2, accentDark: ACCENT_DARK };
 
 /**
  * The current theme's map colours, read from the CSS custom properties so the
@@ -41,6 +43,7 @@ export function readThemeColors(): ThemeColors {
     edge: v("--edge", EDGE),
     paper: v("--paper", PAPER),
     accent,
+    ink2: v("--ink2", INK2),
     accentDark: v("--accent-dark", darken(accent)),
   };
 }

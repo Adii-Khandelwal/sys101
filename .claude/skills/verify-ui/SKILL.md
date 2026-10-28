@@ -8,7 +8,7 @@ description: Verify a sys101 UI change by rendering it at 1440px and 390px, ligh
 A feature is not done until it works on a phone and a laptop. Read `.claude/rules/accessibility-and-chrome.md` for the bar.
 
 1. **Run the dev server** (leave it up on :3000; never `npm run build` over it: use `NEXT_DIST_DIR`). Use Playwright from `node_modules` for screenshots; temporary scripts go in the job's tmp directory, not the repo.
-2. **Look at it.** Render the changed pages at 1440x900 and 390x844, light and dark (`colorScheme`). Read the screenshots; check it reads as part of the whole: mono small-caps labels, generous whitespace, state shown by shape not colour alone, no text or controls running together, readable wrapping.
+2. **Look at it.** Render the changed pages at 1440x900 and 390x844, light and dark (`colorScheme`). Read the screenshots; check it reads as part of the whole: Cabin labels, generous whitespace, state shown by shape not colour alone, no text or controls running together, readable wrapping.
 3. **Run the automated check:** `npm run check:ui` (all sitemap pages x 1440 and 390 x light and dark): sideways scroll, hover-tooltip sources, short labels split over lines, broken company marks, layout shift. Fix what it reports. Add a case to `scripts/ui-audit.mjs` when a new class of bug shows up.
 4. **Specific checks by area:**
    - Homepage: the map's top edge is visible at 1440x800 and 390x844; the right edges (pitch, search underline, Map/Path, Fit to size) line up; the start button reads for a first visit, with one started topic, with several, and when everything is read (seed `localStorage` keys `sys101:read`, `sys101:progress`, `sys101:updated`).

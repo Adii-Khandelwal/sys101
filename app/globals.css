@@ -1,12 +1,14 @@
 :root {
   color-scheme: light;
-  --paper: #f3ecdc;
-  --ink: #1f1b16;
-  --ink-soft: #5c5346;
-  --rule: #cfc3a8;
-  --accent: #9a3b1f;
-  --skeleton: #e2d8c2;
-  --edge: #8a7f6c;
+  --paper: #e6e2d6;
+  --ink: #1b2a6b;
+  --ink-soft: #505b8a;
+  --rule: #b3b4bb;
+  --accent: #aa3012;
+  --ink2: #e8452a; /* second ink: lines, rings, large type only (3.05:1 on paper) */
+  --skeleton: #dedbd2; /* raised surface, a 4% ink tint: put ink text on it, not muted or accent */
+  --edge: #767d9b;
+  --highlight: #e6ded3;
 
   /* Motion tokens: mirror lib/motion.ts (checked by lib/motion.test.ts). */
   --dur-fast: 120ms;
@@ -27,32 +29,36 @@
 }
 
 /* Dark theme: a warm, low-glare dark that keeps the handcrafted feel - deep
-   brown-charcoal paper, warm off-white ink, and a brighter rust that holds
+   brown-charcoal paper, warm off-white ink, and a brighter orange that holds
    WCAG AA on the dark background. Applied when the reader chooses dark, or when
    the OS prefers dark and the reader has made no explicit choice. The colour
    tokens are the whole system, so the SVG diagrams (var(--paper)/--ink/--edge)
    theme for free; the Sigma map reads these same values at runtime. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --paper: #1a1713;
-  --ink: #ece4d4;
-  --ink-soft: #a89b85;
-  --rule: #39332a;
-  --accent: #d4683f;
-  --skeleton: #2a251e;
-  --edge: #6b6252;
+  --paper: #1a1512;
+  --ink: #ede3cc;
+  --ink-soft: #a39b8b;
+  --rule: #403a33;
+  --accent: #ff7050;
+  --ink2: #ff7050;
+  --skeleton: #2a241f;
+  --edge: #797266;
+  --highlight: #352019;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --paper: #1a1713;
-    --ink: #ece4d4;
-    --ink-soft: #a89b85;
-    --rule: #39332a;
-    --accent: #d4683f;
-    --skeleton: #2a251e;
-    --edge: #6b6252;
+    --paper: #1a1512;
+    --ink: #ede3cc;
+    --ink-soft: #a39b8b;
+    --rule: #403a33;
+    --accent: #ff7050;
+    --ink2: #ff7050;
+    --skeleton: #2a241f;
+    --edge: #797266;
+    --highlight: #352019;
   }
 }
 
@@ -84,8 +90,8 @@ body {
 h1,
 h2,
 h3 {
-  font-family: var(--font-serif), Georgia, serif;
-  font-weight: 500;
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 400;
   letter-spacing: -0.01em;
   margin: 0;
 }
@@ -123,7 +129,7 @@ h3,
 }
 
 /* Links are not underlined: where one stands on its own (a list, a heading, a label, the footer) the colour shift on hover and
-   the layout say "link". Links inside running sentences keep an underline below, because rust against ink is under 3:1. */
+   the layout say "link". Links inside running sentences keep an underline below, because the accent against ink is under 3:1. */
 a {
   color: inherit;
   text-decoration: none;
@@ -137,7 +143,7 @@ a {
   }
 }
 
-/* Touch has no hover: a tapped link takes the same rust while it is pressed. */
+/* Touch has no hover: a tapped link takes the accent while it is pressed. */
 @media (hover: none) {
   a:active:not(.cta) {
     color: var(--accent);
@@ -146,7 +152,7 @@ a {
 
 /* Links inside running text share the body's colour, so the underline is their only cue: draw it in --ink-soft
    (6.4:1 light, 6.5:1 dark against the paper) instead of the faint --rule that lists of links use. A colour change
-   cannot do it: rust against ink is 2.5:1 light and 2.8:1 dark, under the 3:1 that WCAG 1.4.1 asks for. */
+   cannot do it: the accent against ink is 2.0:1 light and 2.1:1 dark, under the 3:1 that WCAG 1.4.1 asks for. */
 :is(p, dd, blockquote) a:not(.text-button, .label, .cta, .footer-group a, .explain a, .inside-source a, .label a) {
   text-decoration: underline;
   text-decoration-color: var(--ink-soft);
@@ -163,7 +169,7 @@ a {
   }
 }
 
-/* Selected text: ink on a tint of the rule colour (9.8:1 light, 9.9:1 dark); rust on it would be 4.0 and 3.5. */
+/* Selected text: ink on a tint of the rule colour (6.4:1 light, 8.8:1 dark); the accent on it would be 3.2 and 4.1. */
 ::selection {
   background: var(--rule);
   color: var(--ink);
@@ -181,10 +187,8 @@ h1[tabindex="-1"]:focus {
 }
 
 .label {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
@@ -229,7 +233,7 @@ h1[tabindex="-1"]:focus {
 
 .masthead h1 {
   font-size: 3.5556rem;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1;
   letter-spacing: -0.02em;
 }
@@ -319,7 +323,7 @@ h1[tabindex="-1"]:focus {
   min-height: 48px;
   padding: 0 24px;
   border-radius: 2px;
-  background: var(--accent);
+  background: var(--ink);
   color: var(--paper);
   font-size: 1.1111rem;
   text-decoration: none;
@@ -377,7 +381,7 @@ h1[tabindex="-1"]:focus {
   transform: translateY(-50%);
   padding: 0 7px;
   border: 1px solid var(--rule);
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   line-height: 20px;
   color: var(--ink-soft);
@@ -422,7 +426,7 @@ h1[tabindex="-1"]:focus {
 }
 
 .inside-count {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   color: var(--ink-soft);
 }
@@ -818,16 +822,14 @@ h1[tabindex="-1"]:focus {
 }
 
 .graph-tooltip strong {
-  font-weight: 500;
+  font-weight: 400;
   font-size: 0.8889rem;
   line-height: 1.2;
 }
 
 .graph-tooltip span {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
@@ -882,7 +884,7 @@ h1[tabindex="-1"]:focus {
 }
 
 .index-number {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   color: var(--ink-soft);
   min-width: 2ch;
@@ -929,7 +931,7 @@ h1[tabindex="-1"]:focus {
   margin: 0 0 12px;
   font-family: inherit;
   font-size: 1.5556rem;
-  font-weight: 500;
+  font-weight: 400;
   letter-spacing: -0.01em;
   text-transform: none;
   line-height: 1.15;
@@ -1297,7 +1299,7 @@ h1[tabindex="-1"]:focus {
 }
 
 .path-number {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   line-height: 44px;
   color: var(--ink-soft);
@@ -1386,17 +1388,13 @@ h1[tabindex="-1"]:focus {
 }
 
 .path-ready-tag {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--accent);
 }
 .path-progress-tag {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--accent);
 }
 
@@ -1509,7 +1507,7 @@ h1[tabindex="-1"]:focus {
   font-size: 1.1111rem;
   font-style: italic;
   font-family: var(--font-serif-italic), Georgia, serif;
-  font-weight: 500;
+  font-weight: 400;
   margin: 32px 0 8px;
 }
 
@@ -1532,13 +1530,13 @@ h1[tabindex="-1"]:focus {
 }
 
 .walkthrough li::marker {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7222rem;
   color: var(--ink-soft);
 }
 
 .walkthrough strong {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .diagram {
@@ -1563,9 +1561,9 @@ h1[tabindex="-1"]:focus {
 .numbers th {
   width: 38%;
   padding-right: 16px;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7222rem;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .tradeoffs {
@@ -1578,10 +1576,8 @@ h1[tabindex="-1"]:focus {
 
 .tradeoffs dt,
 .glossary dt {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
@@ -1629,7 +1625,7 @@ h1[tabindex="-1"]:focus {
 
 .mistakes li::marker,
 .quiz li::marker {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7222rem;
   color: var(--ink-soft);
 }
@@ -1699,10 +1695,8 @@ h1[tabindex="-1"]:focus {
 }
 
 .age-note .age-year {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--accent);
 }
 
@@ -1794,16 +1788,14 @@ h1[tabindex="-1"]:focus {
 }
 
 .option[aria-pressed="true"] {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .verdict {
   margin-left: 12px;
   white-space: nowrap;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--accent);
 }
 
@@ -2149,10 +2141,8 @@ h1[tabindex="-1"]:focus {
   padding: 0 4px;
   background: none;
   border: 0;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--ink-soft);
   cursor: pointer;
   opacity: 0;
@@ -2218,7 +2208,7 @@ h1[tabindex="-1"]:focus {
 
 /* The number matches the mono label beside it (same face and size, so the baselines meet). */
 .exercises > li::marker {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   color: var(--ink-soft);
 }
@@ -2226,7 +2216,7 @@ h1[tabindex="-1"]:focus {
 .exercises h3 {
   margin: 12px 0 4px;
   font-size: 0.8889rem;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 /* Thin progress rail, desktop only: it sits in the margin left of the text column. */
@@ -2270,9 +2260,8 @@ h1[tabindex="-1"]:focus {
 
   .lesson-rail li {
     margin: 0 0 8px;
-    font-family: var(--font-mono), monospace;
+    font-family: var(--font-sans), system-ui, sans-serif;
     font-size: 0.6667rem;
-    letter-spacing: 0.04em;
   }
 
   .lesson-rail a {
@@ -2337,13 +2326,13 @@ h1[tabindex="-1"]:focus {
 }
 
 .dg-label {
-  font-family: var(--font-serif), Georgia, serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.8333rem;
   fill: var(--ink);
 }
 
 .dg-note {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   fill: var(--ink-soft);
 }
@@ -2494,7 +2483,7 @@ h1[tabindex="-1"]:focus {
   flex-wrap: wrap;
   gap: 10px 40px;
   margin-top: 72px;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   color: var(--ink-soft);
 }
@@ -2911,10 +2900,8 @@ html {
 .site-nav {
   margin-left: auto;
   flex: none;
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 .site-nav ul {
   list-style: none;
@@ -2980,10 +2967,8 @@ html {
   padding: 4px 16px 12px;
   background: var(--paper);
   border-bottom: 1px solid var(--rule);
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7778rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   animation: menu-in var(--dur-fast) var(--ease-out);
 }
 @keyframes menu-in {
@@ -3089,7 +3074,7 @@ html {
 .logo-word {
   font-family: var(--font-serif), Georgia, serif;
   font-size: 1.3333rem;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1;
   letter-spacing: -0.01em;
 }
@@ -3213,10 +3198,8 @@ html {
   border: 0;
   /* Same look as .text-button: ink, mono small caps, underlined text. */
   color: var(--ink);
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
@@ -3339,7 +3322,7 @@ html {
 .learn-terms dt,
 .glossary-terms dt,
 .learn-myths dt {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .learn-terms dd,
@@ -3433,7 +3416,7 @@ html {
   padding: 10px 14px;
   border: 1px solid var(--rule);
   background: var(--skeleton);
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7778rem;
   line-height: 1.55;
   tab-size: 2;
@@ -3824,10 +3807,8 @@ html {
 }
 
 .gloss-pop .gloss-more {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--accent);
   text-decoration: none;
   display: inline-flex;
@@ -3844,7 +3825,6 @@ html {
 /* ── Background page: what the posts of each topic assume ── */
 :root {
   /* A faint wash of the accent, so it follows both themes and needs no literal colour. */
-  --highlight: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .background-lead {
@@ -3938,10 +3918,8 @@ html {
   align-items: center;
   width: fit-content;
   min-height: 44px;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .bg-assumed q {
@@ -4162,7 +4140,7 @@ html[data-posts-view] .posts-view-h {
   margin: 28px 0 0;
   padding-bottom: 6px;
   font-size: 1.2222rem;
-  font-weight: 500;
+  font-weight: 400;
   border-bottom: 1px solid var(--rule);
 }
 .posts-topic-h a {
@@ -4387,16 +4365,14 @@ html[data-posts-view] .posts-view-h {
   .posts-rail li {
     position: relative;
     margin: 0 0 8px;
-    font-family: var(--font-mono), monospace;
+    font-family: var(--font-sans), system-ui, sans-serif;
     font-size: 0.6667rem;
-    letter-spacing: 0.04em;
     line-height: 1.4;
   }
   .posts-rail-group {
     display: block;
     margin: 14px 0 6px;
     color: var(--ink);
-    text-transform: uppercase;
   }
   .posts-rail li:first-child .posts-rail-group {
     margin-top: 0;
@@ -4432,10 +4408,10 @@ html[data-posts-view] .posts-view-h {
   :root[data-theme="dark"],
   :root:not([data-theme="light"]) {
     --paper: #fff;
-    --ink: #1f1b16;
-    --ink-soft: #5c5346;
-    --rule: #cfc3a8;
-    --accent: #9a3b1f;
+    --ink: #1b2a6b;
+    --ink-soft: #505b8a;
+    --rule: #b3b4bb;
+    --accent: #aa3012;
   }
 
   .site-header,
@@ -4625,16 +4601,15 @@ html[data-posts-view] .posts-view-h {
 }
 
 .fig-formula {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.8333rem;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 
 .fig-status {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7222rem;
-  letter-spacing: 0.04em;
   color: var(--ink-soft);
 }
 
@@ -4705,7 +4680,7 @@ html[data-posts-view] .posts-view-h {
 .fig-seconds {
   min-width: 4ch;
   white-space: nowrap;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7222rem;
   color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
@@ -4714,10 +4689,8 @@ html[data-posts-view] .posts-view-h {
 .fig-controls .text-button {
   min-height: 44px;
   padding: 0 4px;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .fig-legend {
@@ -5023,7 +4996,7 @@ html[data-posts-view] .posts-view-h {
   border: 1px solid var(--rule);
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 1rem; /* 16px or more: iOS does not zoom the page on focus */
 }
 
@@ -5170,7 +5143,6 @@ html[data-posts-view] .posts-view-h {
   display: block;
   margin-top: 2px;
   font-size: 0.6111rem;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
@@ -5219,9 +5191,8 @@ html[data-posts-view] .posts-view-h {
   display: block;
   padding: 10px 0;
   color: var(--ink-soft);
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.04em;
   text-decoration: none;
 }
 
@@ -5376,7 +5347,7 @@ html[data-posts-view] .posts-view-h {
 .tour-title {
   margin: 4px 0 0;
   font-size: 1.1111rem;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .tour-text {

@@ -4,7 +4,7 @@
 // Usage: node scripts/check-diagram-overflow.mjs            (report, exit 1 if any overflow)
 //        node scripts/check-diagram-overflow.mjs --json      (machine-readable)
 //
-// Why a browser: label width depends on the exact font (Newsreader / IBM Plex Mono) and the
+// Why a browser: label width depends on the exact font (Libre Caslon / Cabin) and the
 // browser's text shaping. getComputedTextLength() gives the true rendered advance width, so we
 // are not guessing per-character widths.
 import fs from "node:fs";
@@ -32,13 +32,13 @@ function walk(o, where) {
 for (const f of files) walk(JSON.parse(fs.readFileSync(f, "utf8")), f);
 
 // The real diagram CSS (fonts + sizes), mirroring app/globals.css. We load the Google Fonts
-// (Newsreader, IBM Plex Mono) so measurement matches production, not a system fallback.
+// (Libre Caslon Text, Cabin) so measurement matches production, not a system fallback.
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=IBM+Plex+Mono:wght@400;500&display=swap');
-  :root { --font-serif: 'Newsreader'; --font-mono: 'IBM Plex Mono'; }
+  @import url('https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Cabin:wght@400..700&display=swap');
+  :root { --font-serif: 'Libre Caslon Text'; --font-sans: 'Cabin'; }
   svg.dg { display:block; width:560px; }
-  .dg-label { font-family: var(--font-serif), Georgia, serif; font-size:15px; }
-  .dg-note  { font-family: var(--font-mono), monospace; font-size:11px; }
+  .dg-label { font-family: var(--font-sans), sans-serif; font-size:15px; }
+  .dg-note  { font-family: var(--font-sans), sans-serif; font-size:12px; }
 `;
 
 let browser;
@@ -56,9 +56,8 @@ const page = await browser.newPage();
 await page.setContent(`<!doctype html><html><head><meta charset="utf-8"><style>${CSS}</style></head><body></body></html>`);
 // Wait for the web fonts to be ready so measurements use the real faces.
 await page.evaluate(async () => {
-  await document.fonts.load("15px Newsreader");
-  await document.fonts.load("500 15px Newsreader");
-  await document.fonts.load("11px 'IBM Plex Mono'");
+  await document.fonts.load("15px Cabin");
+  await document.fonts.load("12px Cabin");
   await document.fonts.ready;
 });
 
