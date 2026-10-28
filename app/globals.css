@@ -402,7 +402,7 @@ h1[tabindex="-1"]:focus {
   margin: 0 0 24px;
 }
 
-/* Five across, two rows: each step is a top rule, a number, a name, and a count line. */
+/* Five across, two rows: each step is a number, a name, and a count line. */
 .inside-sequence {
   list-style: none;
   margin: 0;
@@ -417,7 +417,6 @@ h1[tabindex="-1"]:focus {
   flex-direction: column;
   gap: 4px;
   padding: 12px 0 18px;
-  border-top: 1px solid var(--rule);
   font-size: 1rem;
   line-height: 1.25;
 }
@@ -439,9 +438,8 @@ h1[tabindex="-1"]:focus {
   align-items: baseline;
   gap: 8px 28px;
   margin: 8px 0 0;
-  padding: 20px 0;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
+  padding: 20px 24px;
+  border: 1.5px solid var(--ink);
 }
 
 .inside-kicker {
@@ -492,8 +490,6 @@ h1[tabindex="-1"]:focus {
 
 .search input::placeholder {
   color: var(--ink-soft);
-  font-style: italic;
-  font-family: var(--font-serif-italic), Georgia, serif;
 }
 
 .search input:focus-visible {
@@ -865,9 +861,11 @@ h1[tabindex="-1"]:focus {
 }
 
 .index h3 {
-  margin: 0 0 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--rule);
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 1px 10px;
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
 }
 
 .index ol {
@@ -930,13 +928,19 @@ h1[tabindex="-1"]:focus {
 .home-extra h2.label,
 .index > h2.label {
   margin: 0 0 12px;
-  font-family: inherit;
-  font-size: 1.5556rem;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 2rem;
   font-weight: 400;
   letter-spacing: -0.01em;
   text-transform: none;
   line-height: 1.15;
   color: var(--ink);
+}
+
+/* On the homepage the section has its one rule; the capstone rows need none. */
+.put-together .cap-index li {
+  padding: 16px 0;
+  border-top: 0;
 }
 
 .home-extra-note {
@@ -1160,9 +1164,9 @@ h1[tabindex="-1"]:focus {
 
 /* The active view word sits right after "View" and is the one marked pressed. */
 .home-view-toggle .home-view-active {
-  color: var(--accent);
+  color: var(--ink);
   text-decoration: underline;
-  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
   text-underline-offset: 4px;
 }
 
@@ -1214,18 +1218,21 @@ h1[tabindex="-1"]:focus {
   margin-top: 24px;
 }
 
-/* Group name as a Cabin small-caps marker with a rule running to the edge. */
+/* Group name as a framed Cabin marker with a rule running to the edge. */
 .path-group-name {
   display: flex;
   align-items: center;
   gap: 14px;
   margin: 0 0 4px;
-  color: var(--ink-soft);
+  color: var(--ink);
 }
-/* The connecting rule follows the group name and fills to the controls on the right. */
+/* The group name is a line badge: a framed Cabin word, like a metro line sign. */
 .path-group-name > span:first-child {
+  padding: 1px 10px;
+  border: 1.5px solid var(--ink);
   flex: 0 0 auto;
 }
+/* The connecting rule follows the group name and fills to the controls on the right. */
 .path-group-name::after {
   content: "";
   order: 1;
@@ -1319,8 +1326,8 @@ h1[tabindex="-1"]:focus {
   position: absolute;
   top: -2px;
   bottom: -12px;
-  width: 1px;
-  background: var(--rule);
+  width: 2px;
+  background: var(--ink2);
 }
 .path-list .path-item:first-child .path-rail::before {
   top: 22px;
@@ -1332,16 +1339,23 @@ h1[tabindex="-1"]:focus {
 .path-marker {
   position: relative;
   z-index: 1;
-  margin-top: 16px;
-  width: 11px;
-  height: 11px;
+  margin-top: 14px;
+  width: 15px;
+  height: 15px;
   border: 1.5px solid var(--ink-soft);
   border-radius: 50%;
   background: var(--paper);
 }
 .path-item.is-ready .path-marker {
-  border-width: 2.5px;
-  border-color: var(--ink);
+  border-width: 3px;
+  border-color: var(--ink-soft);
+}
+.path-item.is-ready .path-marker::after {
+  content: "";
+  position: absolute;
+  inset: 2.5px;
+  border-radius: 50%;
+  background: var(--ink-soft);
 }
 .path-item.is-read .path-marker {
   background: var(--accent);
@@ -1350,7 +1364,7 @@ h1[tabindex="-1"]:focus {
 /* In progress: a hollow marker ringed in orange with a small orange centre, so it
    matches the map's in-progress node and reads as "started, not full". */
 .path-item.is-progress .path-marker {
-  border-width: 2.5px;
+  border-width: 3px;
   border-color: var(--accent);
 }
 .path-item.is-progress .path-marker::after {
