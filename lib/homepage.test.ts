@@ -14,6 +14,8 @@ const FILES = [
   "lib/lessonOutline.ts",
   "components/TopicIndex.tsx",
   "components/TryQuestion.tsx",
+  "components/StationSign.tsx",
+  "lib/stationSign.ts",
 ];
 const NOUN = "(topics?|posts?|companies|company|questions?|sources?|exercises?|sections?)";
 const NUMBER_WORDS = "(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|\\d+)";

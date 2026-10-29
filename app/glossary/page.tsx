@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PAGE_DATES, pageMeta } from "@/lib/site";
 import { getAllTopics } from "@/lib/topics";
+import Overprint from "@/components/Overprint";
 import GlossaryFilter from "@/components/GlossaryFilter";
 import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
@@ -24,7 +25,7 @@ export default function Glossary() {
     <article className="dossier legal glossary-page lesson">
       <div data-pagefind-body>
         {/* The key on the h1 silences a dev-only "unique key" warning React raises for a server element passed to a client component as a prop. */}
-        <GlossaryFilter groups={groups} heading={<h1 key="heading" data-pagefind-meta="title">Glossary</h1>} />
+        <GlossaryFilter groups={groups} heading={<Overprint key="heading" as="h1" className="page-h1" data-pagefind-meta="title">Glossary</Overprint>} />
       </div>
 
       <PageUpdated date={PAGE_DATES.glossary} />

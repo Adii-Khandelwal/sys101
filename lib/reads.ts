@@ -128,4 +128,4 @@ export type ReadsData = ReturnType<typeof buildReads>;
 export const readsUpdated = (reads: Pick<Read, "verifiedOn">[]) => reads.reduce((a, r) => (r.verifiedOn > a ? r.verifiedOn : a), "");
 
 export const readsDescription = (d: { total: number; themeCount: number }) =>
-  `${d.total} posts and papers chosen because others adopted what they introduced, or because they are simply excellent, in ${d.themeCount} themes.`;
+  `${d.total} posts and papers chosen because other teams adopted their ideas, or because they are unusually well written, in ${d.themeCount} themes.`;

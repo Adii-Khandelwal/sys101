@@ -1,6 +1,7 @@
 "use client";
 
 import IntentLink from "./IntentLink";
+import Overprint from "./Overprint";
 import { useReadTopics } from "@/lib/progress";
 
 type Entry = { slug: string; title: string; number: string; minutes: number };
@@ -11,9 +12,7 @@ export default function TopicIndex({ groups }: Props) {
 
   return (
     <section className="index" aria-labelledby="index-heading">
-      <h2 id="index-heading" className="label">
-        All topics
-      </h2>
+      <Overprint id="index-heading" className="label">All topics</Overprint>
       <div className="index-groups">
         {groups.map((g) => (
           <div key={g.name}>

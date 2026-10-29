@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { glossaryId, markTerms, termVariants, type GlossaryEntry } from "./glossaryMatch";
+import { glossaryId, markTerms, sectionTerms, termVariants, type GlossaryEntry } from "./glossaryMatch";
 
 const e = (term: string): GlossaryEntry => ({ term, definition: "d" });
 const run = (text: string, terms: string[], seen = new Set<string>()) => markTerms(text, terms.map(e), seen);
@@ -47,4 +47,35 @@ describe("markTerms", () => {
 
 describe("glossaryId", () => {
   it("is topic plus term slug", () => expect(glossaryId("cap", "Quorum (N, R, W)")).toBe("cap-quorum-n-r-w"));
+});
+
+describe("sectionTerms", () => {
+  const entries: GlossaryEntry[] = [
+    { term: "Hash", definition: "a number" },
+    { term: "Ring", definition: "a circle" },
+    { term: "Shard", definition: "a slice" },
+  ];
+  it("lists each term once, in order of first use, across the section's texts", () => {
+    const got = sectionTerms(["A ring of shards.", "The hash, the ring and the hash again."], entries);
+    expect(got.map((e) => e.term)).toEqual(["Ring", "Shard", "Hash"]);
+  });
+  it("returns every term, and nothing for prose with no terms", () => {
+    expect(sectionTerms(["hash ring shard"], entries)).toHaveLength(3);
+    expect(sectionTerms(["nothing here"], entries)).toEqual([]);
+  });
+});
+
+describe("note numbers", () => {
+  it("number a term the same in the prose and in the margin: its place in first-use order", () => {
+    const entries: GlossaryEntry[] = [
+      { term: "ring", definition: "r" },
+      { term: "hash", definition: "h" },
+    ];
+    const texts = ["The hash comes first.", "Then the ring, then the hash again."];
+    const seen = new Set<string>();
+    const prose = texts.flatMap((t) => markTerms(t, entries, seen).flatMap((s) => (typeof s === "string" ? [] : [[...seen].indexOf(s.entry.term) + 1])));
+    const margin = sectionTerms(texts, entries).map((_, i) => i + 1);
+    expect(prose).toEqual(margin);
+    expect(prose).toEqual([1, 2]);
+  });
 });

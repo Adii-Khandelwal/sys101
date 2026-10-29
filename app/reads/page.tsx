@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import JsonLd from "@/components/JsonLd";
+import Overprint from "@/components/Overprint";
 import PageUpdated from "@/components/PageUpdated";
 import ReadsList from "@/components/ReadsList";
 import SiteFooter from "@/components/SiteFooter";
@@ -32,9 +33,9 @@ export default function Reads() {
   return (
     <article className="dossier posts-page reads-page">
       <div data-pagefind-body>
-        <h1 data-pagefind-meta="title">Great reads</h1>
+        <Overprint as="h1" className="page-h1" data-pagefind-meta="title">Great reads</Overprint>
         <p className="posts-lead">
-          Posts and papers I chose because others adopted what they introduced, or because they are simply excellent. They are not tied to one topic, and they are not the sources the topics are built on (those are under{" "}
+          Posts and papers I picked because other teams adopted their ideas, or because they are unusually well written. They fit no single topic, and they are separate from the posts the topics are built on (see{" "}
           <Link href="/posts">Blogs</Link>). Each describes its system as of the year shown.
         </p>
         <ReadsList data={data} />

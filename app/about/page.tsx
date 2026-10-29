@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { AI_ASSISTANCE, CONTACT_EMAIL, PAGE_DATES, pageMeta } from "@/lib/site";
 import Link from "next/link";
+import Overprint from "@/components/Overprint";
+import PageRail from "@/components/PageRail";
 import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -9,12 +11,34 @@ export const dynamic = "error";
 
 export const metadata: Metadata = pageMeta({ path: "/about", title: "About", description: "Why sys101 exists, how the map of topics works, how to use it, and how the engineering posts on each topic are picked." });
 
+const SECTIONS = [
+  ["why-i-made-it", "Why I made it"],
+  ["how-it-works", "How the map works"],
+  ["how-to-use-it", "How to use it"],
+  ["how-posts-are-picked", "How posts are picked"],
+  ["about-the-write-ups", "How the write-ups are made"],
+  ["whats-new", "What’s new"],
+  ["your-progress", "Your progress"],
+  ["questions", "Common questions"],
+];
+
+const FAQ = [
+  ["What is sys101?", "A map of system design topics in the order they depend on each other, with the engineering posts from companies that run these systems picked out and explained."],
+  ["Is it free?", "Yes. There are no accounts and nothing to buy."],
+  ["Where is my progress kept?", "In your own browser and nowhere else. You can export, import or reset it on the Your data page."],
+  ["Does it work offline?", "After one visit online, the whole site works offline. Only links to other sites need a connection."],
+  ["Where do the posts come from?", "From the engineering teams that built and ran the system. Each one needs real numbers and an honest account of what went wrong, and the original is always linked."],
+];
+
 export default function About() {
   return (
-    <article className="dossier legal" data-pagefind-body>
-      <h1 data-pagefind-meta="title">About sys101</h1>
+    <article className="dossier legal rail-page" data-pagefind-body>
+      <PageRail sections={SECTIONS} />
+      <Overprint as="h1" className="page-h1" data-pagefind-meta="title">
+        About sys101
+      </Overprint>
 
-      <h2>Why I made it</h2>
+      <Overprint as="h2" id="why-i-made-it">Why I made it</Overprint>
       <p>
         I’m learning system design, and the best material I found was the engineering blogs, where the
         people who run these systems explain what broke and what they tried. But each company has its own
@@ -23,7 +47,7 @@ export default function About() {
         each other, with the good posts picked out and explained.
       </p>
 
-      <h2>How it works</h2>
+      <Overprint as="h2" id="how-it-works">How the map works</Overprint>
       <p>
         On a wide screen the homepage is a map; on a phone it is a list in the same order. On the map,
         each topic sits to the right of what it builds on, so you start on the left and work across. A
@@ -38,7 +62,7 @@ export default function About() {
       </p>
       <p>New to a topic? Every topic has a Start from zero page with official sources.</p>
 
-      <h2>How to use it</h2>
+      <Overprint as="h2" id="how-to-use-it">How to use it</Overprint>
       <p>
         Start on the map. A hollow ring is Unread, a thicker ring with a dot is Ready, an orange ring with a
         dot is In progress, and a filled orange circle is Read. &ldquo;Next up&rdquo; at the top tells you
@@ -58,7 +82,7 @@ export default function About() {
         Your progress is yours. Export it, import it, or reset it on the <Link href="/data">Your data</Link> page.
       </p>
 
-      <h2>How posts are picked</h2>
+      <Overprint as="h2" id="how-posts-are-picked">How posts are picked</Overprint>
       <p>
         A post gets in only if it has real numbers, is honest about what went wrong, comes from the team
         that built the system, and teaches something you can reuse. Older posts are allowed when the idea
@@ -68,7 +92,7 @@ export default function About() {
         check only reports links that stop working.
       </p>
 
-      <h2>About the write-ups</h2>
+      <Overprint as="h2" id="about-the-write-ups">How the write-ups are made</Overprint>
       <p>
         {AI_ASSISTANCE} The figures are compared against the original pages with a script I run by hand,
         and a person may not have reviewed each one. The posts belong to their authors and companies, and
@@ -76,7 +100,7 @@ export default function About() {
         <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
       </p>
 
-      <h2>What&apos;s new</h2>
+      <Overprint as="h2" id="whats-new">What’s new</Overprint>
       <p>
         Some topics end with a short &quot;What&apos;s new&quot; list: a few recent pages from approved
         official or engineering sites. An automated routine finds them and checks each against the page it
@@ -84,12 +108,22 @@ export default function About() {
         toward your progress.
       </p>
 
-      <h2>Your progress</h2>
+      <Overprint as="h2" id="your-progress">Your progress</Overprint>
       <p>
         What you mark as done, your theme and Map or Path choice, and whether you have taken the guided
         tour are saved in your own browser and nowhere else. There are no accounts. See{" "}
         <Link href="/data">Your data</Link> and <Link href="/privacy">Privacy</Link>.
       </p>
+
+      <Overprint as="h2" id="questions">Common questions</Overprint>
+      <div className="faq">
+        {FAQ.map(([q, a]) => (
+          <details key={q}>
+            <summary>{q}</summary>
+            <p>{a}</p>
+          </details>
+        ))}
+      </div>
 
       <PageUpdated date={PAGE_DATES.about} />
       <SiteFooter />

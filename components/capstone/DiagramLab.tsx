@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Capstone, NodeState } from "@/lib/capstones";
 import { TOUCHED } from "@/lib/capstoneRail";
 import { useStoredChoices } from "./useStoredChoices";
+import Overprint from "@/components/Overprint";
 import BreakIt from "./BreakIt";
 import SystemDiagram from "./SystemDiagram";
 
@@ -23,12 +24,12 @@ export default function DiagramLab({ slug, diagram, topicTitles }: { slug: strin
   return (
     <>
       <section className="cap-section" id="system">
-        <h2>The system</h2>
+        <Overprint as="h2">The system</Overprint>
         <p className="cap-outcome">After this you can say what each part is for, which company built it that way and what it costs.</p>
         <SystemDiagram title={diagram.title} nodes={diagram.nodes} states={states} selected={selected} onSelect={setSelected} topicTitles={topicTitles} />
       </section>
       <section className="cap-section" id="break">
-        <h2>Break it</h2>
+        <Overprint as="h2">Break it</Overprint>
         <p className="cap-outcome">After this you can predict which parts fail together and which only slow down.</p>
         <BreakIt
           failures={diagram.failures}

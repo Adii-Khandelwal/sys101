@@ -1,11 +1,14 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import TopicDossier from "@/components/TopicDossier";
+import { routeTo } from "@/lib/route";
+import { readingMinutes } from "@/lib/readingTime";
 import TopicLesson from "@/components/TopicLesson";
 import { getAllTopics, getDependents, getTopic } from "@/lib/topics";
 import { getLearn } from "@/lib/learn";
 import { getNews } from "@/lib/news";
 import { backgroundHref } from "@/lib/background";
+import { formatNumber, topicNumbers, topicOrder } from "@/lib/order";
 import JsonLd from "@/components/JsonLd";
 import { breadcrumbLd, pageMeta, pageTitle, topicLd, topicPageUpdated } from "@/lib/site";
 
@@ -48,7 +51,9 @@ export default async function TopicPage({ params }: Props) {
       <JsonLd data={topicLd(topic, prerequisites)} />
       <Template
         topic={topic}
+        number={formatNumber(topicNumbers(topicOrder(getAllTopics())).get(slug) ?? 0)}
         prerequisites={prerequisites}
+        route={routeTo(slug, getAllTopics()).map((t) => ({ slug: t.slug, title: t.title, minutes: readingMinutes(t, getNews(t.slug)) }))}
         dependents={getDependents(slug)}
         titles={new Map(getAllTopics().map((t) => [t.slug, t.title]))}
         news={getNews(slug)}

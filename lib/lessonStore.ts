@@ -155,6 +155,15 @@ export function isTopicRead(p: Progress, meta: LessonMeta) {
   );
 }
 
+/** Which single half of a topic is finished: every concept section (left) or every post (right). Neither when both or none. */
+export type Half = "concept" | "posts";
+export function halfOf(p: Progress, meta: LessonMeta): Half | null {
+  const t = topicOf(p, meta.slug);
+  const concept = CONCEPT_SECTIONS.every((s) => t.done.includes(s));
+  const posts = meta.postIds.length > 0 && meta.postIds.every((id) => p.posts.includes(id));
+  return concept === posts ? null : concept ? "concept" : "posts";
+}
+
 /** Units in page order, for "Continue" and the rail. */
 const units = (meta: LessonMeta) => [...CONCEPT_SECTIONS, "check", ...meta.postIds];
 

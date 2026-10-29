@@ -2,41 +2,35 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LABEL_START, NODE_RADIUS, MIN_LABEL_SCALE, chooseLayers, columns, edgeCurvatures, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
-import { useInProgressTopics, useReadTopics } from "@/lib/progress";
-import { edgeShape, groupSet, highlightSet, mapIsInteractiveAt, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "@/lib/graphUi";
+import { NODE_RADIUS, MIN_LABEL_SCALE, chooseLayers, columns, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
+import { useHalves, useInProgressTopics, useReadTopics } from "@/lib/progress";
+import type { LessonMeta } from "@/lib/lessonStore";
+import { groupSet, highlightSet, nextHighlight, nextStation, placeTooltip, prerequisiteLines, revealDelta, type HighlightEvent } from "@/lib/graphUi";
 import { createPortal } from "react-dom";
-import { DURATION, easeInOut, prefersReducedMotion } from "@/lib/motion";
-import { navigateWithTransition } from "./ViewTransitions";
-import { clickIntent } from "@/lib/nodeOpen";
+import { LABEL_BASELINE, LABEL_LEFT, edgeId, handRing, ringFor, routeEdges, routeHidden, routeShape } from "@/lib/metroRoute";
+import { readyTopics } from "@/lib/nextUp";
+import { prefersReducedMotion } from "@/lib/motion";
+import { navigateWithTransition, pageReady } from "./ViewTransitions";
+import { clickIntent, playNodeOpen, removeBubbles, stationSpec } from "@/lib/nodeOpen";
 import { saveMapView, takeMapView } from "@/lib/mapView";
 import { DESKTOP, PHONE } from "@/lib/breakpoints";
 import StateLegend from "./StateLegend";
-import {
-  STEP,
-  clampPan,
-  dragView,
-  fitRatio,
-  fitState,
-  isFitted,
-  moveView,
-  clampRatio,
-  wheelFactor,
-  zoomBy,
-  type Camera,
-} from "@/lib/camera";
-
+import { firstSentence } from "@/lib/stationSign";
 type GraphNode = { slug: string; title: string; posts: number; group?: string; concept?: string };
 type GraphEdge = { from: string; to: string };
 
 type Props = {
   nodes: GraphNode[];
   edges: GraphEdge[];
+  /** Called with the hovered or focused station, or null, so the station sign can follow it. */
+  onActive?: (slug: string | null) => void;
+  /** Posts and quiz key per topic, so a finished concept or finished posts can be drawn as a half mark. */
+  metas?: LessonMeta[];
 };
 
 type P = { x: number; y: number };
-/** What the layout effect decides, in stage pixels (y down). The camera maps these to the screen. */
-type Layout = { W: number; H: number; fit: number; px: Map<string, P>; bends: Map<string, number>; hiddenBends: Map<string, number> };
+/** What the layout effect decides, in stage pixels (y down), which are also screen pixels inside the stage. */
+type Layout = { W: number; H: number; px: Map<string, P>; routes: Map<string, P[]>; hiddenRoutes: Map<string, P[]>; labelWidth: Map<string, number> };
 
 const LABEL_SIZE = 18;
 const NARROW = PHONE; // below this the map stacks top to bottom; matches the CSS and the mobile Path default
@@ -44,26 +38,16 @@ const PADDING = 48; // px between the stage edge and the outermost nodes
 const PADDING_TOP = 58; // node centres sit this far below the stage top, so the first row clears the top rule and the edges stay TOP_CLEAR below it
 const TOP_CLEAR = 24; // edges stay this far below the legend and controls line
 const HIT_RADIUS = 22; // 44px pointer and touch target around each node
-const CLICK_SLOP = 5; // px a pointer may move before a press becomes a drag
+const CLICK_SLOP = 5; // px a mouse may move before a press becomes a drag that scrolls the map
 
 const TIP_DELAY_MS = 300;
 const TIP_COOL_MS = 150;
 
-/** The first sentence of a concept, trimmed, for a one-line tooltip description. */
-function firstSentence(text: string) {
-  const end = text.search(/\.\s/);
-  const s = end === -1 ? text : text.slice(0, end + 1);
-  return s.length > 140 ? s.slice(0, 137).trimEnd() + "…" : s;
-}
-
-/** The quadratic control point for a curvature, in stage pixels (y down; the layout's curvature assumes y up). */
-function control(a: P, b: P, c: number): P {
-  return { x: (a.x + b.x) / 2 + (b.y - a.y) * c, y: (a.y + b.y) / 2 - (b.x - a.x) * c };
-}
-
 const NO_NODES = new Set<string>();
 
-export default function GraphView({ nodes, edges }: Props) {
+const NO_METAS: LessonMeta[] = [];
+
+export default function GraphView({ nodes, edges, onActive, metas = NO_METAS }: Props) {
   const stage = useRef<HTMLDivElement>(null);
   const scrollWrap = useRef<HTMLDivElement>(null);
   const container = useRef<SVGSVGElement>(null);
@@ -74,25 +58,24 @@ export default function GraphView({ nodes, edges }: Props) {
   const router = useRouter();
   const read = useReadTopics();
   const inProgress = useInProgressTopics();
+  const halves = useHalves(metas);
 
   const [ready, setReady] = useState(false);
   // True once the layout effect has put every node in place; until then the skeleton stands in.
   const [placed, setPlaced] = useState(false);
   const [orientation, setOrientation] = useState<Orientation>("horizontal");
-  // Phones get a fixed, non-interactive map so a finger scrolls the page past
-  // it and a tap opens the topic. Starts false (desktop-first) to match SSR,
-  // then follows the NARROW media query. See the orientation effect below.
+  // Starts false (desktop-first) to match SSR, then follows the NARROW media query. See the orientation effect below.
   const [isPhone, setIsPhone] = useState(false);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [active, setActive] = useState<string | null>(null);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  // What the one polite live region says (prerequisites of the station keyboard focus is on).
+  const [announce, setAnnounce] = useState("");
   // The stage's pixel width when the horizontal map is wider than the viewport
   // (so the wrapper scrolls); 0 means it fits, and the stage fills the viewport.
   const [contentWidth, setContentWidth] = useState(0);
   const [layout, setLayout] = useState<Layout | null>(null);
   const layoutRef = useRef<Layout | null>(null);
-  const [cam, setCam] = useState<Camera>(fitState(1));
-  const camRef = useRef<Camera>(fitState(1));
 
   // Draw only the transitive reduction; the full edge set still drives
   // neighbours, ready state and the "Also builds on" hints.
@@ -112,16 +95,6 @@ export default function GraphView({ nodes, edges }: Props) {
   // Labels shrink a little (never below MIN_LABEL_SCALE) to keep the horizontal map on narrower stages.
   const [labelScale, setLabelScale] = useState(1);
   const effective: Orientation = orientation === "horizontal" && fits ? "horizontal" : "vertical";
-
-  // "Show all links" draws the hidden edges permanently. Remembered for the session.
-  const [showAll, setShowAll] = useState(false);
-  useEffect(() => {
-    try {
-      setShowAll(sessionStorage.getItem("sys101:showAllLinks") === "1");
-    } catch {
-      // storage blocked: default off
-    }
-  }, []);
 
   const bySlug = useMemo(() => new Map(nodes.map((n) => [n.slug, n])), [nodes]);
 
@@ -170,232 +143,57 @@ export default function GraphView({ nodes, edges }: Props) {
     setActiveGroup(next);
   }, []);
 
-  // ── Camera ────────────────────────────────────────────────────────────
-  // Camera state is the one lib/camera.ts keeps: x and y are the view centre in framed units (one unit is the stage's
-  // longer side), ratio grows as you zoom out. Node and edge geometry is recomputed in screen pixels from it, so
-  // strokes, labels and the 44px targets keep their size at any zoom.
-  const fitRef = useRef(1);
-  /** The view is the fitted one, so the fit button has nothing to do. */
-  const [fitted, setFitted] = useState(true);
-  // Small maps fit on screen: no zoom, pan or controls until there are enough
-  // topics to need them. Phones always get the fixed map, whatever the count,
-  // so a finger scrolls the page past it and a tap opens the topic.
-  const interactive = mapIsInteractiveAt(nodes.length, isPhone);
-  const animFrame = useRef(0);
-  /** The view saved when a node was opened, if the map is being returned to by Back or Forward (undefined: not read yet). */
+  /** The sideways scroll saved when a node was opened, if the map is being returned to by Back or Forward (undefined: not read yet). */
   const viewToRestore = useRef<ReturnType<typeof takeMapView> | undefined>(undefined);
   const scrollToRestore = useRef<number | null>(null);
   const draggedRef = useRef(false);
   const dragging = useRef(false);
 
-  const setCursor = useCallback(() => {
-    const el = container.current;
-    if (el) el.style.cursor = dragging.current ? "grabbing" : "";
-  }, []);
-
-  const cancelAnimation = useCallback(() => {
-    cancelAnimationFrame(animFrame.current);
-    animFrame.current = 0;
-  }, []);
-
-  const commitCamera = useCallback(
-    (next: Camera) => {
-      camRef.current = next;
-      setCam(next);
-      setFitted(isFitted(next, fitRef.current));
-      // Any zoom or pan clears the highlight and tooltip.
-      if (activeRef.current) activate(nextHighlight(activeRef.current, { type: "camera" }));
-    },
-    [activate],
-  );
-
-  /** Set the camera, animating unless reduced motion is on. Any running animation is cancelled first. */
-  const applyCamera = useCallback(
-    (next: Camera, animate: boolean) => {
-      cancelAnimation();
-      if (!animate || prefersReducedMotion()) {
-        commitCamera(next);
-        return;
-      }
-      const from = camRef.current;
-      const start = performance.now();
-      const step = (now: number) => {
-        const t = Math.min(1, (now - start) / DURATION.slow);
-        if (t >= 1) {
-          // Land exactly on the target, so Fit all always gives the identical state.
-          commitCamera(next);
-          animFrame.current = 0;
-          return;
-        }
-        const e = easeInOut(t);
-        commitCamera({
-          x: from.x + (next.x - from.x) * e,
-          y: from.y + (next.y - from.y) * e,
-          ratio: from.ratio * Math.pow(next.ratio / from.ratio, e),
-          angle: 0,
-        });
-        animFrame.current = requestAnimationFrame(step);
-      };
-      animFrame.current = requestAnimationFrame(step);
-    },
-    [cancelAnimation, commitCamera],
-  );
-
-  /** Framed point under a stage point (pixels from the stage's top left), at the current camera. */
-  const framed = useCallback((p: P) => {
-    const L = layoutRef.current!;
-    const c = camRef.current;
-    const k = Math.max(L.W, L.H) * (L.fit / c.ratio);
-    return { x: c.x + (p.x - L.W / 2) / k, y: c.y + (p.y - L.H / 2) / k };
-  }, []);
-
-  /** Zoom by a factor around a stage point (the pointer). */
-  const zoomAt = useCallback(
-    (factor: number, at: P, animate: boolean) => {
-      const L = layoutRef.current;
-      if (!L) return;
-      applyCamera(zoomBy(camRef.current, factor, framed(at), L.fit), animate);
-    },
-    [applyCamera, framed],
-  );
-
-  /** Move the view by a screen distance, keeping part of the graph on screen. */
-  const panBy = useCallback(
-    (dx: number, dy: number) => {
-      const L = layoutRef.current;
-      if (!L) return;
-      const U = Math.max(L.W, L.H);
-      const cam0 = camRef.current;
-      const k = U * (L.fit / cam0.ratio);
-      const pts = [...L.px.values()].map((p) => ({ x: 0.5 + (p.x - L.W / 2) / U, y: 0.5 + (p.y - L.H / 2) / U }));
-      const box = {
-        minX: Math.min(...pts.map((p) => p.x)),
-        maxX: Math.max(...pts.map((p) => p.x)),
-        minY: Math.min(...pts.map((p) => p.y)),
-        maxY: Math.max(...pts.map((p) => p.y)),
-      };
-      const moved = moveView(cam0, { x: dx / k, y: dy / k });
-      applyCamera(clampPan(moved, box, { width: L.W, height: L.H }, 1 / (U * L.fit)), false);
-    },
-    [applyCamera],
-  );
-
-  /** Fit all: the fitted camera, which also clears the hovered or focused topic. */
-  const fitAll = useCallback((animate = true) => {
-    activate(null);
-    if (stage.current?.contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
-    applyCamera(fitState(fitRef.current), animate);
-  }, [activate, applyCamera]);
-
-  const zoomCenter = useCallback(
-    (factor: number) => {
-      const cam0 = camRef.current;
-      applyCamera(zoomBy(cam0, factor, { x: cam0.x, y: cam0.y }, fitRef.current), false); // only keys call this, and keys never animate
-    },
-    [applyCamera],
-  );
-
-  // Pointer, wheel and key input. Plain wheel scrolls the page.
+  // A mouse can drag the map sideways (touch and trackpads scroll it natively). The snap is off while dragging so the
+  // scroll follows the pointer, and comes back when it is let go. A press that moves less than CLICK_SLOP is a click.
   useEffect(() => {
     const el = container.current;
-    const host = stage.current;
-    if (!ready || !el || !host) return;
-    setCursor();
-    if (!interactive) return; // fixed map: page scroll and clicks only
-    const pointers = new Map<number, P>();
-    let start = { x: 0, y: 0 };
-    const local = (e: { clientX: number; clientY: number }) => {
-      const rect = el.getBoundingClientRect();
-      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    };
-    const pinch = () => {
-      const [a, b] = [...pointers.values()];
-      return { dist: Math.hypot(a.x - b.x, a.y - b.y), mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } };
-    };
-
+    const wrap = scrollWrap.current;
+    if (!ready || !el || !wrap) return;
+    let start: { x: number; left: number } | null = null;
     const onDown = (e: PointerEvent) => {
-      if (e.button !== 0 && e.pointerType === "mouse") return;
-      cancelAnimation();
-      const p = local(e);
-      pointers.set(e.pointerId, p);
-      if (pointers.size === 1) {
-        start = p;
-        draggedRef.current = false;
-      }
+      draggedRef.current = false; // every press starts clean, whatever the pointer, so a tap after a drag still opens
+      if (e.pointerType !== "mouse" || e.button !== 0) return;
+      start = { x: e.clientX, left: wrap.scrollLeft };
+    };
+    const onUp = () => {
+      start = null;
+      if (!dragging.current) return;
+      dragging.current = false;
+      wrap.style.scrollSnapType = "";
+      el.style.cursor = "";
     };
     const onMove = (e: PointerEvent) => {
-      const prev = pointers.get(e.pointerId);
-      if (!prev) return;
-      const p = local(e);
-      if (pointers.size >= 2) {
-        const before = pinch();
-        pointers.set(e.pointerId, p);
-        const after = pinch();
-        draggedRef.current = true;
-        if (before.dist > 0 && after.dist > 0) zoomAt(after.dist / before.dist, after.mid, false);
-        const v = dragView(before.mid, after.mid);
-        panBy(v.x, v.y);
-        return;
-      }
-      pointers.set(e.pointerId, p);
-      if (!dragging.current && Math.hypot(p.x - start.x, p.y - start.y) < CLICK_SLOP) return;
+      if (!start) return;
+      if (!(e.buttons & 1)) return onUp(); // the button was let go outside the map: no drag in progress
+      const dx = e.clientX - start.x;
       if (!dragging.current) {
+        if (Math.abs(dx) < CLICK_SLOP) return;
         dragging.current = true;
         draggedRef.current = true;
+        wrap.style.scrollSnapType = "none";
+        el.style.cursor = "grabbing";
         // Capture only once it is a drag: capturing on press would send the click to the map instead of the node.
         el.setPointerCapture(e.pointerId);
-        setCursor();
       }
-      const v = dragView(prev, p);
-      panBy(v.x, v.y);
+      wrap.scrollLeft = start.left - dx;
     };
-    const onUp = (e: PointerEvent) => {
-      pointers.delete(e.pointerId);
-      if (pointers.size === 0 && dragging.current) {
-        dragging.current = false;
-        setCursor();
-      }
-    };
-    const onWheel = (e: WheelEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        // Ctrl/Cmd + wheel, and trackpad pinch, zoom at the pointer.
-        e.preventDefault();
-        zoomAt(wheelFactor(e.deltaY), local(e), false);
-      } else if (e.shiftKey) {
-        e.preventDefault();
-        panBy(e.deltaX || e.deltaY, e.deltaX ? e.deltaY : 0);
-      }
-    };
-    const onDouble = (e: MouseEvent) => {
-      if ((e.target as Element).closest(".graph-node-link")) return;
-      zoomAt(e.shiftKey ? 1 / 2 : 2, local(e), true);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "+" || e.key === "=") zoomCenter(STEP);
-      else if (e.key === "-" || e.key === "_") zoomCenter(1 / STEP);
-      else if (e.key === "0") fitAll(false);
-      else return;
-      e.preventDefault();
-    };
-
     el.addEventListener("pointerdown", onDown);
     el.addEventListener("pointermove", onMove);
     el.addEventListener("pointerup", onUp);
     el.addEventListener("pointercancel", onUp);
-    el.addEventListener("wheel", onWheel, { passive: false });
-    el.addEventListener("dblclick", onDouble);
-    host.addEventListener("keydown", onKey);
     return () => {
       el.removeEventListener("pointerdown", onDown);
       el.removeEventListener("pointermove", onMove);
       el.removeEventListener("pointerup", onUp);
       el.removeEventListener("pointercancel", onUp);
-      el.removeEventListener("wheel", onWheel);
-      el.removeEventListener("dblclick", onDouble);
-      host.removeEventListener("keydown", onKey);
-      cancelAnimation();
     };
-  }, [ready, interactive, setCursor, cancelAnimation, zoomAt, panBy, zoomCenter, fitAll]);
+  }, [ready]);
 
   // Phones only get the Path view (HomeView swaps GraphView out right after its first render), so they skip the layout.
   // Going wider than 767px makes HomeView mount GraphView again. Waits for the fonts, so labels are measured true.
@@ -410,7 +208,7 @@ export default function GraphView({ nodes, edges }: Props) {
     };
   }, [nodes, edges]);
 
-  // Place nodes in stage pixels. The stage is as wide as the layout needs and the camera starts fitted.
+  // Place nodes in stage pixels. The stage is as wide as the layout needs.
   useEffect(() => {
     if (!ready || !size.width || !size.height) return;
     const viewport = Math.max(1, size.width - PADDING * 2);
@@ -435,7 +233,7 @@ export default function GraphView({ nodes, edges }: Props) {
       const room = viewport + PADDING - 8;
       scale = Math.max(
         MIN_LABEL_SCALE,
-        Math.min(1, ...cols.flat().map((n) => (room - probe.get(n.slug)!.x - LABEL_START) / baseWidth.get(n.slug)!)),
+        Math.min(1, ...cols.flat().map((n) => (room - probe.get(n.slug)!.x + LABEL_LEFT) / baseWidth.get(n.slug)!)),
       );
     }
     const labelWidth = new Map([...baseWidth].map(([slug, w]) => [slug, w * scale] as const));
@@ -462,31 +260,29 @@ export default function GraphView({ nodes, edges }: Props) {
       const pos = positions.get(n.slug)!;
       px.set(n.slug, { x: pos.x + PADDING, y: height + PADDING_TOP - pos.y });
     }
-    const labels = new Map(cols.flat().map((n) => [n.slug, { start: LABEL_START, width: labelWidth.get(n.slug)! }]));
-    const bends = edgeCurvatures(positions, drawn, slotsByEdge(lay, positions), stageBox, effectiveNow, labels);
-    const hiddenBends = edgeCurvatures(positions, hidden, new Map(), stageBox, effectiveNow, labels);
+    // Metro routes (lib/metroRoute.ts): elbows with 45-degree chamfers; long edges pass through their reserved corridors.
+    // Stacked (a phone, which has no map) is plain straight lines.
+    const slots = slotsByEdge(lay, positions);
+    const route = (list: GraphEdge[], through: boolean) =>
+      effectiveNow === "horizontal"
+        ? routeEdges(px, list.map((e) => ({ from: e.from, to: e.to, via: through ? (slots.get(edgeId(e)) ?? []).map((q) => ({ x: q.x + PADDING, y: height + PADDING_TOP - q.y })) : [] })), labelWidth)
+        : new Map(list.map((e): [string, P[]] => [edgeId(e), [px.get(e.from)!, px.get(e.to)!]]));
+    const routes = route(drawn, true);
+    const hiddenRoutes = effectiveNow === "horizontal" ? routeHidden(px, hidden, labelWidth) : route(hidden, false);
 
-    // Static map: fit the full content into the stage (which is content-width when
-    // overflowing), so no zoom or pan is needed and the wrapper scrolls sideways.
+    // The stage is content-wide when the map overflows, and the wrapper scrolls sideways.
     const W = width + PADDING * 2;
-    const fit = fitRatio(W, height + PADDING + PADDING_TOP, W, size.height);
-    fitRef.current = fit;
-    const next: Layout = { W, H: size.height, fit, px, bends, hiddenBends };
+    const next: Layout = { W, H: size.height, px, routes, hiddenRoutes, labelWidth };
     layoutRef.current = next;
     setLayout(next);
-    cancelAnimation();
-    commitCamera(fitState(fit));
-    // Back or Forward to the map: put the zoom, pan and sideways scroll back as they were (read once).
+    // Back or Forward to the map: put the sideways scroll back as it was (read once).
     if (viewToRestore.current === undefined) viewToRestore.current = takeMapView();
     const saved = viewToRestore.current;
     if (saved) {
       viewToRestore.current = null;
-      if (interactive) commitCamera({ ...saved.camera, ratio: clampRatio(saved.camera.ratio, fit) });
       scrollToRestore.current = saved.scrollLeft;
     }
     setPlaced(true);
-  // Re-runs only when the layout inputs change; the saved view and camera helpers are read from refs on purpose.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, cols, layered, drawn, hidden, fits, size, isPhone]);
 
   // The sideways scroll can only be set once the stage has its full width.
@@ -506,7 +302,11 @@ export default function GraphView({ nodes, edges }: Props) {
       // but not by the pointer leaving the canvas (that is hover only).
       if (activeGroupRef.current && event.type !== "leave") activateGroup(null);
     };
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && clear({ type: "escape" });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setAnnounce("");
+      clear({ type: "escape" });
+    };
     const onScroll = () => clear({ type: "scroll" });
     const onDown = (e: PointerEvent) => {
       // The group row is part of the map: its own click toggles the group, so pressing it must not clear it first.
@@ -526,17 +326,19 @@ export default function GraphView({ nodes, edges }: Props) {
     };
   }, [activate, activateGroup, ready]);
 
-  // Screen pixels (inside the stage) of every node at the current camera, and the mapping itself.
-  const view = useMemo(() => {
-    if (!layout) return null;
-    const { W, H, fit } = layout;
-    const U = Math.max(W, H);
-    const s = fit / cam.ratio;
-    const to = (p: P): P => ({ x: W / 2 + (p.x - W / 2) * s + (0.5 - cam.x) * U * s, y: H / 2 + (p.y - H / 2) * s + (0.5 - cam.y) * U * s });
-    return { to, pos: new Map([...layout.px].map(([slug, p]) => [slug, to(p)] as const)) };
-  }, [layout, cam]);
-  const points = useMemo(() => (view ? nodes.flatMap((n) => (view.pos.has(n.slug) ? [{ slug: n.slug, ...view.pos.get(n.slug)!, r: NODE_RADIUS }] : [])) : []), [view, nodes]);
+  // Positions of the stations inside the stage, and the points the tooltip is placed from.
+  const pos = layout?.px;
+  const points = useMemo(() => (pos ? nodes.flatMap((n) => (pos.has(n.slug) ? [{ slug: n.slug, ...pos.get(n.slug)!, r: NODE_RADIUS }] : [])) : []), [pos, nodes]);
 
+  // The ring goes round the station the reader is on: a topic in progress, else the best ready one (as the Next up
+  // button picks it, without the lesson metadata it also weighs, so it can differ when several are started).
+  const current = useMemo(() => {
+    const started = inProgress.find((slug) => bySlug.has(slug) && !read.includes(slug));
+    if (started) return started;
+    if (read.length === 0) return cols[0]?.[0]?.slug ?? null; // "Start with", the map's first topic
+    const entries = nodes.map((n) => ({ slug: n.slug, title: n.title, prerequisites: prereqs.get(n.slug) ?? [] }));
+    return readyTopics(entries, read)[0]?.slug ?? null;
+  }, [inProgress, read, nodes, prereqs, bySlug, cols]);
   // Opaque while something is highlighted: the node, its prerequisite chain and dependents, or a clicked group.
   const highlighting = active !== null || activeGroup !== null;
   const lit = useMemo(
@@ -544,15 +346,85 @@ export default function GraphView({ nodes, edges }: Props) {
     [activeGroup, active, nodes, edges],
   );
 
-  // Open a topic. Ctrl, Cmd, Shift, Alt and middle clicks are left to the browser (new tab). The camera and sideways
-  // scroll are kept for the Back button.
-  // 4c: the node-open bubble (lib/nodeOpen.ts playNodeOpen) plays here again; 4a is a plain navigation.
-  const openNode = (e: React.MouseEvent, slug: string) => {
+  // Open a topic from a click. Ctrl, Cmd, Shift, Alt and middle clicks are left to the browser (a new tab), reduced motion
+  // and clicks a script made go at once, and a plain pointer or touch click grows the station's bubble while the topic
+  // loads behind it (lib/nodeOpen.ts). The sideways scroll is saved for the Back button either way.
+  const pendingOpen = useRef<{ cancel: () => void; isActive: () => boolean } | null>(null);
+  const openNode = (e: React.MouseEvent<Element>, slug: string) => {
     if (draggedRef.current) return e.preventDefault();
-    if (clickIntent(e.nativeEvent, prefersReducedMotion()) === "new-tab") return;
+    const intent = clickIntent(e.nativeEvent, prefersReducedMotion());
+    if (intent === "new-tab") return;
     e.preventDefault();
-    if (scrollWrap.current) saveMapView({ camera: camRef.current, scrollLeft: scrollWrap.current.scrollLeft });
-    navigateWithTransition(router, `/topic/${slug}`);
+    // A second click, or the second of a double click, cancels the opening instead of starting another.
+    if (pendingOpen.current?.isActive() || e.detail > 1) {
+      pendingOpen.current?.cancel();
+      pendingOpen.current = null;
+      return;
+    }
+    const href = `/topic/${slug}`;
+    router.prefetch(href); // ready when the growth ends
+    if (scrollWrap.current) saveMapView({ scrollLeft: scrollWrap.current.scrollLeft });
+    const shape = e.currentTarget.querySelector(".graph-node-shape");
+    const dot = e.currentTarget.querySelector(".graph-node-dot");
+    if (intent === "instant" || !shape || !dot) return navigateWithTransition(router, href);
+    activate(slug);
+    const paint = getComputedStyle(shape);
+    const halfEl = e.currentTarget.querySelector(".graph-node-half");
+    const side = e.currentTarget.closest(".graph-node")?.getAttribute("data-half") === "posts" ? "right" : "left";
+    pendingOpen.current = playNodeOpen(
+      stationSpec(shape.getBoundingClientRect(), {
+        stroke: paint.stroke,
+        fill: paint.fill,
+        strokeWidth: parseFloat(paint.strokeWidth),
+        dot: getComputedStyle(dot).fill,
+        dotRadius: Number(dot.getAttribute("r")),
+      }, halfEl ? { side, color: getComputedStyle(halfEl).fill } : undefined),
+      // Runs behind the plain screen, so the page swap can take as long as it likes without a visible stall.
+      async () => {
+        router.push(href);
+        await pageReady(href, 3500);
+      },
+    );
+  };
+
+  // A page restored from the back/forward cache keeps its DOM: make sure no bubble is left on it. Leaving the map any
+  // other way than opening a node also clears them; after opening one, the screen is still fading out over the new page.
+  useEffect(() => {
+    const onShow = (e: PageTransitionEvent) => e.persisted && removeBubbles();
+    window.addEventListener("pageshow", onShow);
+    return () => {
+      window.removeEventListener("pageshow", onShow);
+      if (!pendingOpen.current) removeBubbles();
+    };
+  }, []);
+
+  // Arrow keys move between stations (see nextStation); one polite live region says where focus landed.
+  const moveFocus = (e: React.KeyboardEvent<Element>, slug: string) => {
+    if (!layout || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+    const to = nextStation(e.key, slug, layout.px, drawn);
+    if (e.key.startsWith("Arrow")) e.preventDefault(); // at the end of a column or line the browser must not scroll the map instead
+    if (!to) return;
+    // Focus without the browser's own scrolling, then bring the station (and the start of its label) into view by scrolling
+    // the map sideways. The page itself never scrolls.
+    stage.current?.querySelector<HTMLElement>(`.graph-node-link[href="/topic/${to}"]`)?.focus({ preventScroll: true });
+    const p = layout.px.get(to);
+    const wrap = scrollWrap.current;
+    if (!p || !wrap) return;
+    const label = Math.min(layout.labelWidth.get(to) ?? 0, 220);
+    const need = revealDelta(p.x - wrap.scrollLeft, 0, wrap.clientWidth, 40, 40 + label);
+    if (!need) return;
+    // The wrapper snaps its sideways scroll so the window ends on a column mark: land on a mark that still shows the
+    // station and its label, the nearest one to where it would have gone, so the browser has nothing to correct.
+    const want = wrap.scrollLeft + need;
+    const ends = [...snapEnds, wrap.scrollWidth].filter((end) => end - wrap.clientWidth <= p.x - 40 && end >= p.x + 40 + label);
+    const end = ends.sort((m, n) => Math.abs(m - wrap.clientWidth - want) - Math.abs(n - wrap.clientWidth - want))[0];
+    wrap.scrollLeft = end === undefined ? want : end - wrap.clientWidth;
+  };
+  // The link's own name already says the title and state; the live region adds what it builds on.
+  const say = (slug: string) => {
+    const pre = prereqs.get(slug) ?? [];
+    const lines = prerequisiteLines(pre, read, (q) => bySlug.get(q)?.title ?? q);
+    setAnnounce([lines.builtOn ?? (pre.length ? "" : "Nothing to read first."), lines.finish ?? ""].filter(Boolean).join(" "));
   };
 
   // Tooltip: rendered in a portal with fixed coordinates, so nothing clips it.
@@ -596,25 +468,10 @@ export default function GraphView({ nodes, edges }: Props) {
       const p = layout.px.get(n.slug);
       if (!p) continue;
       const column = Math.round(p.x);
-      ends.set(column, Math.max(ends.get(column) ?? 0, p.x + LABEL_START + ctx.measureText(n.title).width));
+      ends.set(column, Math.max(ends.get(column) ?? 0, p.x - LABEL_LEFT + ctx.measureText(n.title).width));
     }
     return [...ends.values()];
   }, [layout, nodes, effective, labelScale, contentWidth]);
-
-  // Whether the map can still be scrolled to the right: drives the quiet "Scroll sideways" cue.
-  const [moreToScroll, setMoreToScroll] = useState(false);
-  useEffect(() => {
-    const el = scrollWrap.current;
-    if (!el) return;
-    const update = () => setMoreToScroll(el.scrollWidth - el.clientWidth - el.scrollLeft > 4);
-    update();
-    el.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      el.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, [contentWidth, ready]);
 
   useLayoutEffect(() => {
     const tip = tipRef.current;
@@ -630,19 +487,9 @@ export default function GraphView({ nodes, edges }: Props) {
 
   return (
     <>
+      {/* The key sits above the chart, in front of the group badges. */}
       <div className="graph-toolbar">
         <StateLegend />
-        <div className="graph-toolbar-end">
-          <span className="graph-scroll-cue label" data-shown={moreToScroll || undefined} aria-hidden="true">
-            Scroll sideways for more
-          </span>
-          {/* One button, for the zoom or pan a stray click can cause. Only on a map that can zoom and pan. */}
-          {interactive && (
-            <button type="button" className="text-button label graph-fit" onClick={() => fitAll()} disabled={fitted}>
-              Fit to size
-            </button>
-          )}
-        </div>
       </div>
 
       <div className="graph-groups label" role="group" aria-label="Highlight a group of topics">
@@ -653,6 +500,12 @@ export default function GraphView({ nodes, edges }: Props) {
         ))}
       </div>
 
+      <div className="graph-frame">
+      {/* Crop marks: hairline ticks just outside each corner of the chart, decoration only. */}
+      <svg className="graph-crop" style={{ left: -22, top: -22 }} aria-hidden="true"><path d="M22 10V0M10 22H0" /></svg>
+      <svg className="graph-crop" style={{ right: -22, top: -22 }} aria-hidden="true"><path d="M0 10V0M12 22H22" /></svg>
+      <svg className="graph-crop" style={{ left: -22, bottom: -22 }} aria-hidden="true"><path d="M22 12V22M10 0H0" /></svg>
+      <svg className="graph-crop" style={{ right: -22, bottom: -22 }} aria-hidden="true"><path d="M0 12V22M12 0H22" /></svg>
       <div ref={scrollWrap} className="graph-scrollwrap">
         {/* Snap points live here, not in the stage: the stage clips, so it is its own scroll container. */}
         {snapEnds.map((end) => (
@@ -668,50 +521,57 @@ export default function GraphView({ nodes, edges }: Props) {
           // Stage height comes from the layout; CSS picks one per breakpoint (no shift on load).
           data-orientation={effective}
           data-label-size={Math.round(LABEL_SIZE * labelScale * 10) / 10}
-          // Only an interactive map captures touch (to pan/zoom); a fixed small map
-          // must let a finger scroll the page past it.
-          data-interactive={interactive || undefined}
           style={{ "--rows": rowCount(layered, "horizontal"), "--layers": rowCount(layered, "vertical"), width: contentWidth || undefined } as React.CSSProperties}
         >
         {!placed && <GraphSkeleton />}
+        <div className="visually-hidden" aria-live="polite">
+          {announce}
+        </div>
         <svg ref={container} role="group" aria-label="Topics" aria-hidden={placed ? undefined : true} className="graph-canvas" style={placed ? undefined : { visibility: "hidden" }}>
-          {layout && view && (
+          {layout && pos && (
             <>
               <g aria-hidden="true">
-                {/* Edges implied by a longer path: faint and dashed, on hover or focus of either end, or always with "Show all links". */}
+                {/* Edges implied by a longer path: faint and dashed, on hover or focus of either end. */}
                 {hidden
-                  .filter((e) => (interactive && showAll) || (!activeGroup && (active === e.from || active === e.to)))
+                  .filter((e) => !activeGroup && (active === e.from || active === e.to))
                   .map((e) => {
-                    const a = layout.px.get(e.from);
-                    const b = layout.px.get(e.to);
-                    if (!a || !b) return null;
-                    const c = control(a, b, layout.hiddenBends.get(`${e.from}->${e.to}`) ?? 0);
-                    const shape = edgeShape(view.to(a), view.to(c), view.to(b), NODE_RADIUS, 1, false);
-                    return <path key={`${e.from}->${e.to}`} className="graph-edge graph-edge-extra" d={shape.d} />;
+                    const pts = layout.hiddenRoutes.get(edgeId(e));
+                    if (!pts) return null;
+                    const shape = routeShape(pts, NODE_RADIUS, false);
+                    return <path key={edgeId(e)} className="graph-edge graph-edge-extra" d={shape.d} />;
                   })}
                 {drawn.map((e) => {
-                  const a = layout.px.get(e.from);
-                  const b = layout.px.get(e.to);
-                  if (!a || !b) return null;
+                  const pts = layout.routes.get(edgeId(e));
+                  if (!pts) return null;
                   const inChain = highlighting && lit.has(e.from) && lit.has(e.to);
                   const faded = highlighting && !inChain;
-                  const c = control(a, b, layout.bends.get(`${e.from}->${e.to}`) ?? 0);
-                  const shape = edgeShape(view.to(a), view.to(c), view.to(b), NODE_RADIUS, inChain ? 2 : 1);
+                  const shape = routeShape(pts, NODE_RADIUS);
                   return (
-                    <g key={`${e.from}->${e.to}`}>
+                    <g key={edgeId(e)}>
                       <path className="graph-edge" d={shape.d} data-lit={inChain || undefined} data-faded={faded || undefined} />
                       <polygon className="graph-edge-head" points={shape.head} data-lit={inChain || undefined} data-faded={faded || undefined} />
                     </g>
                   );
                 })}
+                {/* The current station: a hand-drawn ring in the second ink, drawn once and never animated. */}
+                {current && pos.has(current) && (
+                  <path
+                    className="graph-ring"
+                    d={(() => {
+                      const { cx, cy, rx, ry } = ringFor(pos.get(current)!, layout.labelWidth.get(current) ?? 100);
+                      return handRing(cx, cy, rx, ry);
+                    })()}
+                  />
+                )}
               </g>
 
               {/* Each node is a real link: keyboard focus, middle and Ctrl click, and screen readers all work. */}
               {nodes.map((n) => {
-                const p = view.pos.get(n.slug);
+                const p = pos.get(n.slug);
                 if (!p) return null;
                 const isRead = read.includes(n.slug);
-                const inProg = !isRead && inProgress.includes(n.slug);
+                const half = isRead ? undefined : halves[n.slug];
+                const inProg = !isRead && !half && inProgress.includes(n.slug);
                 const isReady = !isRead && (prereqs.get(n.slug) ?? []).every((q) => read.includes(q));
                 const near = !highlighting || lit.has(n.slug);
                 const faded = !near || undefined;
@@ -721,7 +581,8 @@ export default function GraphView({ nodes, edges }: Props) {
                     className="graph-node"
                     data-read={isRead || undefined}
                     data-progress={inProg || undefined}
-                    data-ready={(isReady && !inProg) || undefined}
+                    data-half={half}
+                    data-ready={(isReady && !inProg && !half) || undefined}
                     data-lit={(highlighting && near) || undefined}
                     data-active={(!activeGroup && active === n.slug) || undefined}
                     data-faded={faded}
@@ -729,31 +590,52 @@ export default function GraphView({ nodes, edges }: Props) {
                     <a
                       className="graph-node-link"
                       href={`/topic/${n.slug}`}
-                      aria-label={`${n.title}, ${n.posts} ${n.posts === 1 ? "post" : "posts"}, ${isRead ? "read" : inProg ? "in progress" : isReady ? "ready to read" : "unread"}`}
+                      data-own-transition=""
+                      aria-label={`${n.title}, ${n.posts} ${n.posts === 1 ? "post" : "posts"}, ${isRead ? "read" : half === "concept" ? "concept read" : half === "posts" ? "posts read" : inProg ? "in progress" : isReady ? "ready to read" : "unread"}`}
                       onClick={(e) => openNode(e, n.slug)}
+                      onKeyDown={(e) => {
+                        draggedRef.current = false; // Enter after a mouse drag still opens
+                        moveFocus(e, n.slug);
+                      }}
                       onPointerEnter={() => {
                         router.prefetch(`/topic/${n.slug}`); // ready before the click lands
                         tipByKey.current = false;
                         activate(nextHighlight(activeRef.current, { type: "enter", node: n.slug }));
+                        onActive?.(n.slug);
                       }}
-                      onPointerLeave={() => activate(nextHighlight(activeRef.current, { type: "leave" }))}
+                      onPointerLeave={() => {
+                        activate(nextHighlight(activeRef.current, { type: "leave" }));
+                        onActive?.(null);
+                      }}
                       onFocus={(e) => {
                         router.prefetch(`/topic/${n.slug}`);
                         tipByKey.current = e.currentTarget.matches(":focus-visible");
+                        if (tipByKey.current) say(n.slug);
                         activate(nextHighlight(activeRef.current, { type: "focus", node: n.slug }));
+                        onActive?.(n.slug); // not from `active`: a page scroll clears that, and focus itself can scroll
                       }}
-                      onBlur={() => activate(nextHighlight(activeRef.current, { type: "blur" }))}
+                      onBlur={() => {
+                        setAnnounce("");
+                        activate(nextHighlight(activeRef.current, { type: "blur" }));
+                        onActive?.(null);
+                      }}
                     >
                       <circle className="graph-node-hit" cx={p.x} cy={p.y} r={HIT_RADIUS} />
                       <circle className="graph-node-focus" cx={p.x} cy={p.y} r={NODE_RADIUS + 5} />
                       <circle className="graph-node-shape" cx={p.x} cy={p.y} r={NODE_RADIUS - 1} />
                       <circle className="graph-node-dot" cx={p.x} cy={p.y} r={3.5} />
+                      {half && (
+                        <path
+                          className="graph-node-half"
+                          d={`M${p.x} ${p.y - (NODE_RADIUS - 1)}A${NODE_RADIUS - 1} ${NODE_RADIUS - 1} 0 0 ${half === "concept" ? 0 : 1} ${p.x} ${p.y + (NODE_RADIUS - 1)}Z`}
+                        />
+                      )}
                     </a>
-                    {/* 4b: labels move under the station in 4b; here they sit right of the node, as before. */}
+                    {/* The label hangs under the station, left-aligned with the station's left edge. */}
                     <text
                       className="graph-label"
-                      x={p.x + LABEL_START}
-                      y={p.y + (LABEL_SIZE * labelScale) / 3}
+                      x={p.x - LABEL_LEFT}
+                      y={p.y + LABEL_BASELINE}
                       fontSize={LABEL_SIZE * labelScale}
                       data-faded={faded}
                       aria-hidden="true"
@@ -783,7 +665,8 @@ export default function GraphView({ nodes, edges }: Props) {
                 const isRead = read.includes(activeNode.slug);
                 const pending = pre.filter((q) => !read.includes(q));
                 const isReady = !isRead && pending.length === 0;
-                const status = isRead ? "Read" : isReady ? "Ready to read" : "Not ready yet";
+                const half = isRead ? undefined : halves[activeNode.slug];
+                const status = isRead ? "Read" : half === "concept" ? "Concept read" : half === "posts" ? "Posts read" : isReady ? "Ready to read" : "Not ready yet";
                 const lines = prerequisiteLines(pre, read, (q) => bySlug.get(q)?.title ?? q);
                 return (
                   <>
@@ -799,6 +682,7 @@ export default function GraphView({ nodes, edges }: Props) {
             document.body,
           )}
         </div>
+      </div>
       </div>
     </>
   );

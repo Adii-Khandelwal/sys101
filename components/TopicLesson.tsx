@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
-import HeadingText from "./HeadingText";
 import GlossTerm from "./GlossTerm";
 import CopyLink from "./CopyLink";
-import { glossaryId, markTerms } from "@/lib/glossaryMatch";
+import { glossaryId, markTerms, noteId, sectionTerms } from "@/lib/glossaryMatch";
+import MarginTerms from "./MarginTerms";
+import Overprint from "./Overprint";
 import { diagramHtml } from "@/lib/diagramHtml";
 import { StepThroughLazy } from "./StepThroughLazy";
 import Link from "next/link";
@@ -13,6 +14,7 @@ import { readingLabel } from "@/lib/readingTime";
 import { OriginalPosts, PostDigest, TopicList } from "./TopicDossier";
 import { CompactProgress, FinishTopic, MarkDone, QuizBlock, ResumeLine } from "./LessonTrackers";
 import type { LessonMeta } from "@/lib/lessonStore";
+import RouteToTopic, { type RouteItem } from "./RouteToTopic";
 import LessonRail from "./LessonRail";
 import InterviewTag from "./InterviewTag";
 import Reveal from "./Reveal";
@@ -34,8 +36,12 @@ type Props = {
   news?: News | null;
   /** Link to this topic's section of /background, when it has one. */
   backgroundHref?: string;
+  /** Every topic to read first, in order, with its reading time. */
+  route?: RouteItem[];
   /** When the page was last edited, shown once at the bottom. */
   updated: string;
+  /** Reading-order number ("07"), shown as "Topic 07". */
+  number?: string;
 };
 
 const SECTION_NAMES: Record<string, string> = {
@@ -107,7 +113,7 @@ function InShort({ topic }: { topic: Topic }) {
 }
 
 /** Topic page in the teaching-journey format: concept first, then real-world posts. */
-export default function TopicLesson({ topic, prerequisites, dependents, titles, learnHref, news, backgroundHref, updated }: Props) {
+export default function TopicLesson({ topic, prerequisites, dependents, titles, learnHref, news, backgroundHref, updated, number, route = [] }: Props) {
   const l = topic.lesson!;
   const meta: LessonMeta = { slug: topic.slug, postIds: topic.posts.map((p) => p.id!), correct: l.quiz.map((q) => optionId(q.options[q.correct])) };
   const names: Record<string, string> = {
@@ -115,20 +121,24 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
     ...Object.fromEntries(topic.posts.map((p) => [p.id!, `${p.company} post`])),
   };
   // One gloss per section: it marks the first use of each of this topic's glossary terms in that section's prose.
-  const glossFor = (): Gloss => {
+  const glossFor = (section: string): Gloss => {
     const seen = new Set<string>();
     return (text) =>
       markTerms(text, topic.glossary, seen).map((seg, i) =>
         typeof seg === "string" ? (
           seg
         ) : (
-          <GlossTerm key={i} href={`/glossary#${glossaryId(topic.slug, seg.entry.term)}`} definition={seg.entry.definition}>
+          <GlossTerm key={i} num={[...seen].indexOf(seg.entry.term) + 1} note={noteId(section, seg.entry.term)} href={`/glossary#${glossaryId(topic.slug, seg.entry.term)}`} definition={seg.entry.definition}>
             {seg.text}
           </GlossTerm>
         ),
       );
   };
-  const [gHow, gExample, gMistakes, gDiffer] = [glossFor(), glossFor(), glossFor(), glossFor()];
+  // The margin copy of each section's popover terms (same first-use rule as the prose, so the two cannot differ).
+  const mt = (section: string, ...texts: string[]) => (
+    <MarginTerms terms={sectionTerms(texts, topic.glossary).map((e) => ({ term: e.term, definition: e.definition, id: noteId(section, e.term) }))} />
+  );
+  const [gHow, gExample, gMistakes, gDiffer] = [glossFor("how"), glossFor("example"), glossFor("mistakes"), glossFor("differ")];
   const entries = [
     ...["why", "model", "how", "example", "mistakes", "check"].map((id) => ({ id, name: SECTION_NAMES[id], tracked: true })),
     { id: "posts", name: "How companies use it", tracked: false },
@@ -139,69 +149,99 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
   ];
 
   return (
-    <article className="dossier lesson">
-      <LessonRail meta={meta} entries={entries} />
+    <article className="dossier lesson chapter">
       <div className="progress-sticky" data-pagefind-ignore>
         <CompactProgress meta={meta} variant="line" />
         <StripBackToTop />
       </div>
 
-      <div data-pagefind-body>
-        <div className="topic-tagline" data-pagefind-ignore>
-          <span className="label">{topic.group ?? "Concept"}</span>
-          {topic.interviewRelevance && <InterviewTag level={topic.interviewRelevance} />}
-          <span className="label reading-time">{readingLabel(topic, news)}</span>
-        </div>
-        <h1 data-pagefind-meta="title"><HeadingText text={topic.title} /></h1>
-        <p className="concept">{topic.concept}</p>
-        <div className="lesson-top" data-pagefind-ignore>
-          <ResumeLine meta={meta} names={names} />
-
-          <p className="lesson-jump" data-tour="jump">
-            {learnHref && (
-              <Link className="text-button" href={learnHref} prefetch={false}>
-                New to this? Start from zero
-              </Link>
+      <div data-pagefind-body className="chapter-grid">
+        <header className="chapter-head">
+          <div className="chapter-title">
+            <div className="topic-tagline" data-pagefind-ignore>
+              <span className="chapter-group">{topic.group ?? "Concept"}</span>
+              {number && <span className="label">Topic {number}</span>}
+              {topic.interviewRelevance && <InterviewTag level={topic.interviewRelevance} />}
+            </div>
+            <Overprint as="h1" className="chapter-h1" data-pagefind-meta="title">
+              {topic.title}
+            </Overprint>
+          </div>
+          <dl className="chapter-meta" data-pagefind-ignore>
+            <div>
+              <dt>Read first</dt>
+              <dd>
+                <TopicList topics={prerequisites} reasons={topic.prerequisiteReasons} />
+              </dd>
+            </div>
+            <div>
+              <dt>Makes possible</dt>
+              <dd>
+                <TopicList topics={dependents} />
+              </dd>
+            </div>
+            <div>
+              <dt>Time</dt>
+              <dd className="reading-time">{readingLabel(topic, news)}</dd>
+            </div>
+            {route.length > 0 && (
+              <div>
+                <dt>Full route</dt>
+                <dd>
+                  <RouteToTopic items={route} />
+                </dd>
+              </div>
             )}
-            <a className="text-button" href="#posts">
-              Skip to the posts
-            </a>
-          </p>
-          <p className="lesson-tour">
-            <TourLink tour="topic" />
-          </p>
-        </div>
+          </dl>
+        </header>
 
-        <InShort topic={topic} />
+        <div className="chapter-body">
+          <LessonRail meta={meta} entries={entries} />
+          <div className="chapter-main">
+            <div className="chapter-intro">
+            <div className="lesson-top" data-pagefind-ignore>
+              <ResumeLine meta={meta} names={names} />
+            </div>
 
-        <div className="relations" data-pagefind-ignore>
-          <div>
-            <div className="label">Builds on</div>
-            <TopicList topics={prerequisites} reasons={topic.prerequisiteReasons} />
-          </div>
-          <div>
-            <div className="label">Leads to</div>
-            <TopicList topics={dependents} />
-          </div>
-        </div>
+            <InShort topic={topic} />
+
+            <p className="concept">{topic.concept}</p>
+            <div className="lesson-top" data-pagefind-ignore>
+              <p className="lesson-jump" data-tour="jump">
+                {learnHref && (
+                  <Link className="text-button" href={learnHref} prefetch={false}>
+                    New to this? Start from zero
+                  </Link>
+                )}
+                <a className="text-button" href="#posts">
+                  Skip to the posts
+                </a>
+              </p>
+              <p className="lesson-tour">
+                <TourLink tour="topic" />
+              </p>
+            </div>
+            </div>
 
         <div id="concept" className="part">
           <p className="label part-label">Part A: Concept</p>
 
           <section id="why" aria-labelledby="why-h">
-            <h2 id="why-h">Why it exists</h2>
+            <Overprint as="h2" id="why-h">Why it exists</Overprint>
             <CopyLink id="why" />
             <Outcome text={l.why.outcome} />
-            <Paragraphs text={l.why.body} g={glossFor()} />
+            <Paragraphs text={l.why.body} g={glossFor("why")} />
+            {mt("why", ...l.why.body.split("\n\n"))}
             {l.why.diagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.why.diagram) }} />}
             <MarkDone meta={meta} unit="why" />
           </section>
 
           <section id="model" aria-labelledby="model-h">
-            <h2 id="model-h">Mental model</h2>
+            <Overprint as="h2" id="model-h">Mental model</Overprint>
             <CopyLink id="model" />
             <Outcome text={l.mentalModel.outcome} />
-            <Paragraphs text={l.mentalModel.body} g={glossFor()} />
+            <Paragraphs text={l.mentalModel.body} g={glossFor("model")} />
+            {mt("model", ...l.mentalModel.body.split("\n\n"))}
             <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.mentalModel.diagram) }} />
             <h3>Words to know</h3>
             <dl className="glossary">
@@ -215,7 +255,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
           </section>
 
           <section id="how" aria-labelledby="how-h">
-            <h2 id="how-h">How it works</h2>
+            <Overprint as="h2" id="how-h">How it works</Overprint>
             <CopyLink id="how" />
             <Outcome text={l.howItWorks.outcome} />
             <ol className="walkthrough">
@@ -229,11 +269,12 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             {l.howItWorks.stepper && (
               <StepThroughLazy frames={l.howItWorks.stepper.frames.map((f) => ({ caption: f.caption, html: diagramHtml(f.diagram) }))} />
             )}
+            {mt("how", ...l.howItWorks.steps.map((x) => x.explanation))}
             <MarkDone meta={meta} unit="how" />
           </section>
 
           <section id="example" aria-labelledby="example-h">
-            <h2 id="example-h">Worked example</h2>
+            <Overprint as="h2" id="example-h">Worked example</Overprint>
             <CopyLink id="example" />
             <Outcome text={l.workedExample.outcome} />
             <ol className="walkthrough">
@@ -244,11 +285,12 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
               ))}
             </ol>
             <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.workedExample.diagram) }} />
+            {mt("example", ...l.workedExample.steps.map((x) => x.explanation))}
             <MarkDone meta={meta} unit="example" />
           </section>
 
           <section id="mistakes" aria-labelledby="mistakes-h">
-            <h2 id="mistakes-h">Common mistakes</h2>
+            <Overprint as="h2" id="mistakes-h">Common mistakes</Overprint>
             <CopyLink id="mistakes" />
             <Outcome text={l.mistakesOutcome} />
             <ol className="mistakes">
@@ -257,13 +299,12 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
               ))}
             </ol>
             {l.mistakesDiagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.mistakesDiagram) }} />}
+            {mt("mistakes", ...topic.mistakes)}
             <MarkDone meta={meta} unit="mistakes" />
           </section>
 
           <section id="check" aria-labelledby="check-h" data-pagefind-ignore>
-            <h2 id="check-h" data-tour="check">
-              Check yourself
-            </h2>
+            <Overprint as="h2" id="check-h" data-tour="check">Check yourself</Overprint>
             <CopyLink id="check" />
             <Outcome text={l.checkOutcome} />
             <QuizBlock meta={meta} quiz={l.quiz} names={names} />
@@ -280,9 +321,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
           </div>
 
           <section aria-labelledby="posts-h">
-            <h2 id="posts-h" className="part-title" data-tour="posts">
-              How companies use it
-            </h2>
+            <Overprint as="h2" id="posts-h" className="part-title" data-tour="posts">How companies use it</Overprint>
             <Outcome text={l.postsOutcome} />
             {backgroundHref && (
               <p className="posts-background" data-pagefind-ignore>
@@ -301,20 +340,19 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
 
           {topic.posts.length >= 2 && topic.comparison && (
             <section id="differ" className="closing" aria-labelledby="differ-h">
-              <h2 id="differ-h">Where they differ</h2>
+              <Overprint as="h2" id="differ-h">Where they differ</Overprint>
               <CopyLink id="differ" />
               <Outcome text={l.differOutcome} />
               {topic.comparison.split("\n\n").map((para) => (
                 <p key={para.slice(0, 40)}>{gDiffer(para)}</p>
               ))}
+              {mt("differ", ...topic.comparison!.split("\n\n"))}
               {topic.comparisonDiagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(topic.comparisonDiagram) }} />}
             </section>
           )}
 
           <section id="exercises" className="closing" aria-labelledby="exercises-h" data-pagefind-ignore>
-            <h2 id="exercises-h" data-tour="exercises">
-              Design exercises
-            </h2>
+            <Overprint as="h2" id="exercises-h" data-tour="exercises">Design exercises</Overprint>
             <CopyLink id="exercises" />
             <Outcome text={l.exercisesOutcome} />
             <ol className="exercises">
@@ -343,15 +381,18 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
           </section>
 
           <section id="next" className="closing" aria-labelledby="next-h">
-            <h2 id="next-h">What to learn next</h2>
+            <Overprint as="h2" id="next-h">What to learn next</Overprint>
             <Outcome text={l.next.outcome} />
-            <Paragraphs text={l.next.body} g={glossFor()} />
+            <Paragraphs text={l.next.body} g={glossFor("next")} />
+            {mt("next", ...l.next.body.split("\n\n"))}
             <div data-pagefind-ignore>
               <TopicList topics={dependents} />
             </div>
           </section>
 
           <FinishTopic meta={meta} />
+        </div>
+          </div>
         </div>
       </div>
 

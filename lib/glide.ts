@@ -1,9 +1,11 @@
 import { DURATION, easeInOut, prefersReducedMotion } from "./motion";
 
-/** Where to scroll so `el` lands just under the sticky header. */
+/** Where to scroll so `el` lands just under the sticky header (and the phone contents strip). */
 function anchorTop(el: HTMLElement) {
   const header = document.querySelector<HTMLElement>(".site-header")?.offsetHeight ?? 0;
-  return Math.max(0, el.getBoundingClientRect().top + window.scrollY - header - 16);
+  // The phone contents strip sticks under the header (display: none on desktop, so 0 there).
+  const strip = document.querySelector<HTMLElement>(".progress-sticky")?.offsetHeight ?? 0;
+  return Math.max(0, el.getBoundingClientRect().top + window.scrollY - header - strip - 16);
 }
 
 let stop: (() => void) | null = null;

@@ -160,6 +160,6 @@ describe("the footer", () => {
     expect(html(createElement(SiteFooter, { tour: "home" }))).toContain("Take the tour");
     expect(html(createElement(SiteFooter, { tour: "topic" }))).toContain("Take the tour");
     expect(html(createElement(SiteFooter))).not.toContain("Take the tour");
-    expect(html(createElement(SiteFooter))).toContain("footer-group");
+    expect(html(createElement(SiteFooter))).toContain("footer-col");
   });
 });

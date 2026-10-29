@@ -40,7 +40,7 @@ Path-scoped rule files load when you read, write or edit a matching file; open t
 | `learn-pages.md` | /topic/<slug>/learn, official-source rules, videos, Try it commands |
 | `progress-tracking.md` | Tracked units, "in progress", localStorage store, the Path group toggle |
 | `homepage.md` | Masthead, the one start button and its priority, map or Path, Inside a topic, Try a question, sources, topic numbering |
-| `graph.md` | The map: layout, states, zoom and pan, group labels, node-open transition |
+| `graph.md` | The map: layout, states, sideways scroll, group labels, node-open transition |
 | `motion.md` | Duration and easing tokens, what may animate |
 | `seo.md` | Canonicals, titles, descriptions, JSON-LD, sitemap, images, `check-seo` |
 | `accessibility-and-chrome.md` | Contrast, focus, touch targets, phone and laptop parity, skeletons, header, footer, AI sentence |

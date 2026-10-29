@@ -1,6 +1,7 @@
 import { optionId } from "@/lib/quizIds";
 import type { Metadata } from "next";
 import { pageMeta } from "@/lib/site";
+import Overprint from "@/components/Overprint";
 import DataControls from "@/components/DataControls";
 import SiteFooter from "@/components/SiteFooter";
 import { getAllTopics } from "@/lib/topics";
@@ -18,8 +19,8 @@ export default function YourData() {
     .filter((t) => t.lesson)
     .map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites, postIds: t.posts.map((p) => p.id!), correct: t.lesson!.quiz.map((q) => optionId(q.options[q.correct])) }));
   return (
-    <article className="dossier legal" data-pagefind-body>
-      <h1 data-pagefind-meta="title">Your data</h1>
+    <article className="dossier legal rail-page" data-pagefind-body>
+      <Overprint as="h1" className="page-h1" data-pagefind-meta="title">Your data</Overprint>
       <p>Your reading progress is stored in this browser only. Nothing is sent anywhere, and there are no accounts.</p>
       <DataControls topics={topics} />
       <SiteFooter />
