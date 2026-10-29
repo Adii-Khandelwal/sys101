@@ -5,57 +5,9 @@ export const INK_SOFT = "#505b8a";
 export const EDGE = "#767d9b";
 export const PAPER = "#e6e2d6";
 export const ACCENT = "#aa3012";
-export const INK2 = "#e8452a";
-const ACCENT_DARK = "#932b10";
 
 /** Unrelated nodes and edges keep 60% of their colour while a node is highlighted. */
 const FADE = 0.6;
-/** The map's palette. Defaults are the light theme; readThemeColors() reads the live CSS vars. */
-export type ThemeColors = {
-  ink: string;
-  inkSoft: string;
-  edge: string;
-  paper: string;
-  accent: string;
-  ink2: string;
-  accentDark: string;
-};
-
-export const LIGHT_COLORS: ThemeColors = { ink: INK, inkSoft: INK_SOFT, edge: EDGE, paper: PAPER, accent: ACCENT, ink2: INK2, accentDark: ACCENT_DARK };
-
-/**
- * The current theme's map colours, read from the CSS custom properties so the
- * Sigma canvas (which cannot use CSS) matches the themed page. Falls back to the
- * light constants on the server or before styles resolve. --accent-dark is
- * derived if the theme does not define it.
- */
-export function readThemeColors(): ThemeColors {
-  if (typeof window === "undefined") return LIGHT_COLORS;
-  const s = getComputedStyle(document.documentElement);
-  const v = (name: string, fallback: string) => {
-    const raw = s.getPropertyValue(name).trim();
-    return /^#[0-9a-f]{6}$/i.test(raw) ? raw : fallback;
-  };
-  const accent = v("--accent", ACCENT);
-  return {
-    ink: v("--ink", INK),
-    inkSoft: v("--ink-soft", INK_SOFT),
-    edge: v("--edge", EDGE),
-    paper: v("--paper", PAPER),
-    accent,
-    ink2: v("--ink2", INK2),
-    accentDark: v("--accent-dark", darken(accent)),
-  };
-}
-
-/** A slightly darker shade of a hex colour, for the pressed/active orange outline. */
-function darken(hex: string, amount = 0.82) {
-  if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex;
-  const n = parseInt(hex.slice(1), 16);
-  const ch = (s: number) => Math.round(((n >> s) & 255) * amount);
-  return `#${((ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).padStart(6, "0")}`;
-}
-
 /** Blend `hex` toward `paper`, keeping `amount` of the original. */
 export function fadeTo(hex: string, paper: string, amount = FADE) {
   const a = parseInt(hex.slice(1), 16);
@@ -170,5 +122,30 @@ export function prerequisiteLines(prerequisites: string[], read: readonly string
     builtOn: prerequisites.length > 0 && pending.length < prerequisites.length ? `Builds on: ${prerequisites.map(titleOf).join(", ")}` : null,
     // Three or more are joined by commas only: a title may itself contain "and".
     finish: pending.length > 0 ? `Finish ${pending.map(titleOf).join(pending.length === 2 ? " and " : ", ")} first.` : null,
+  };
+}
+
+type Pt = { x: number; y: number };
+
+/**
+ * One drawn edge in screen pixels: a quadratic curve from `a` to `b` through `ctrl`, trimmed to the node rims (radius `r`),
+ * plus an arrowhead (a triangle, 7 wide per unit of `width`, 5 across) whose tip touches the target's rim.
+ */
+export function edgeShape(a: Pt, ctrl: Pt, b: Pt, r: number, width = 1, arrow = true) {
+  const unit = (f: Pt, t: Pt) => {
+    const l = Math.hypot(t.x - f.x, t.y - f.y) || 1;
+    return { x: (t.x - f.x) / l, y: (t.y - f.y) / l };
+  };
+  const d0 = unit(a, ctrl);
+  const d1 = unit(ctrl, b);
+  const len = arrow ? 7 * width : 0;
+  const start = { x: a.x + d0.x * r, y: a.y + d0.y * r };
+  const tip = { x: b.x - d1.x * r, y: b.y - d1.y * r };
+  const base = { x: tip.x - d1.x * len, y: tip.y - d1.y * len };
+  const half = 2.5 * width;
+  const f = (n: number) => Math.round(n * 100) / 100;
+  return {
+    d: `M${f(start.x)},${f(start.y)} Q${f(ctrl.x)},${f(ctrl.y)} ${f(base.x)},${f(base.y)}`,
+    head: `${f(tip.x)},${f(tip.y)} ${f(base.x - d1.y * half)},${f(base.y + d1.x * half)} ${f(base.x + d1.y * half)},${f(base.y - d1.x * half)}`,
   };
 }

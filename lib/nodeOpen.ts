@@ -16,7 +16,7 @@ type ClickIntent =
 type PointerLike = { type?: string; button?: number; detail?: number; ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean; altKey?: boolean };
 
 /**
- * Decide from the browser event behind a Sigma click or tap. Modified and middle clicks never animate, even without
+ * Decide from the browser event behind a node click or tap. Modified and middle clicks never animate, even without
  * reduced motion. A "click" with detail 0 is one a script or assistive technology made, not a pointer: no animation.
  */
 export function clickIntent(original: PointerLike | undefined, reducedMotion: boolean): ClickIntent {

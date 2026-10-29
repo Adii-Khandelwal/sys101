@@ -111,7 +111,7 @@ Every post records the date someone last opened it, and each page ends with "Pag
 
 ## Built with
 
-Next.js (App Router) and TypeScript, every page generated at build time and served from Vercel's CDN. The map is Sigma.js on graphology. Search runs in the browser against a Pagefind index built with the site. Vitest runs the unit tests; Playwright drives the browser checks. Vercel Web Analytics counts page views. Nothing is fetched from a third party at runtime, and company marks are local files.
+Next.js (App Router) and TypeScript, every page generated at build time and served from Vercel's CDN. The map is one SVG drawn from the site's own layout (no map library). Search runs in the browser against a Pagefind index built with the site. Vitest runs the unit tests; Playwright drives the browser checks. Vercel Web Analytics counts page views. Nothing is fetched from a third party at runtime, and company marks are local files.
 
 ---
 

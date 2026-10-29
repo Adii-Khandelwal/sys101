@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 /*
  * Token contrast, read from app/globals.css so the numbers cannot drift from the CSS.
- * Text pairs (ink, ink-soft, accent on paper and on --skeleton) need 4.5:1; graphic pairs (ink2, --edge on paper) need 3:1.
+ * Text pairs (ink, ink-soft, accent on paper and on --skeleton) need 4.5:1; graphic pairs (ink2, --edge, --accent-dark on paper) need 3:1.
  * In-sentence links: --accent against --ink is under 3:1 in both themes (checked below), so a colour change cannot mark
  * a link inside running text (WCAG 1.4.1) and those links keep their underline. The a:active colour (--accent on paper)
  * passes 4.5:1 as text, so it is safe as the pressed state.
@@ -41,7 +41,7 @@ describe.each(Object.entries(themes))("%s contrast", (_n, t) => {
       it(`${fg} on ${bg} is at least 4.5:1`, () => {
         expect(ratio(t[fg], t[bg])).toBeGreaterThanOrEqual(4.5);
       });
-  for (const fg of ["ink2", "edge"])
+  for (const fg of ["ink2", "edge", "accent-dark"])
     it(`${fg} on paper is at least 3:1`, () => {
       expect(ratio(t[fg], t.paper)).toBeGreaterThanOrEqual(3);
     });

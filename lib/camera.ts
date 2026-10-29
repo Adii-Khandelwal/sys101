@@ -1,6 +1,6 @@
 // Pure camera math for the homepage graph. Every input (wheel, pinch,
 // buttons, keys, double-click) goes through zoomTo, so they all share the
-// same limits. Coordinates are Sigma's "framed graph" space: the camera's
+// same limits. Coordinates are a "framed" space (one unit is the stage's longer side, y down): the camera's
 // x/y is the view center, and ratio grows as you zoom out.
 
 export type Camera = { x: number; y: number; ratio: number; angle: number };

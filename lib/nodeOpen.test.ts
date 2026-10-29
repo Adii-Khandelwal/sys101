@@ -12,7 +12,7 @@ describe("which clicks play the node-open animation", () => {
 
   it("a plain pointer click or a touch tap animates", () => {
     expect(clickIntent(click, false)).toBe("animate");
-    expect(clickIntent({ type: "touchend" }, false)).toBe("animate"); // Sigma's tap carries a touch event: no detail, no button
+    expect(clickIntent({ type: "touchend" }, false)).toBe("animate"); // a tap carries a touch event: no detail, no button
     expect(clickIntent({ type: "click", button: 0, detail: 2 }, false)).toBe("animate");
   });
 
@@ -43,12 +43,9 @@ describe("which clicks play the node-open animation", () => {
   });
 
   it("the Map's click handler wires the intents: new tab for modified clicks, no bubble unless the intent is animate", () => {
-    expect(graphView).toContain("clickIntent(event.original");
-    expect(graphView).toMatch(/intent === "new-tab"\)[^}]*window\.open\(href, "_blank", "noopener,noreferrer"\)/s);
-    // the animation is only reached after the new-tab and instant branches have returned
-    const handler = graphView.slice(graphView.indexOf("const openNode"));
-    expect(handler.indexOf("playNodeOpen(")).toBeGreaterThan(handler.indexOf('intent === "instant"'));
-    expect(handler.indexOf("playNodeOpen(")).toBeGreaterThan(handler.indexOf('intent === "new-tab"'));
+    // 4a: the Map's node links are plain links; modified clicks are left to the browser. 4c puts playNodeOpen back.
+    expect(graphView).toContain("clickIntent(e.nativeEvent");
+    expect(graphView).toMatch(/=== "new-tab"\) return;/);
     // the animation lives only in the Map: Path view, search and plain links never import it
     for (const f of ["components/PathView.tsx", "components/Search.tsx", "components/TopicList.tsx", "components/TopicIndex.tsx", "components/HomeView.tsx"]) {
       if (fs.existsSync(path.join(root, f))) expect(fs.readFileSync(path.join(root, f), "utf8"), f).not.toMatch(/nodeOpen|growBubble|playNodeOpen|node-open/);
@@ -277,11 +274,8 @@ describe("playNodeOpen: the whole sequence", () => {
     expect(t.doc.body.children).toHaveLength(0);
   });
 
-  it("the Map starts it only for the animate intent, runs the page swap inside it, and keeps the screen across the swap", () => {
-    expect(graphView).toContain("playNodeOpen(");
-    expect(graphView).toMatch(/router\.push\(href\);\s*await pageReady\(href/);
-    expect(graphView).toContain("if (!pendingOpen.current) removeBubbles()");
-  });
+  // 4c: restore the Map's wiring test (playNodeOpen inside the page swap, removeBubbles on leaving) with the transition.
+  it.todo("the Map starts it only for the animate intent, runs the page swap inside it, and keeps the screen across the swap");
 });
 
 type FakeEl = { className: string; attrs: Record<string, string>; style: Record<string, string> & { cssText: string }; children: FakeEl[]; reflowed: boolean; listeners: Record<string, () => void>; setAttribute: (k: string, v: string) => void; append: (...c: FakeEl[]) => void; getBoundingClientRect: () => object; addEventListener: (t: string, f: () => void) => void; remove: () => void };
