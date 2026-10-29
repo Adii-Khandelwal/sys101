@@ -7,9 +7,8 @@ import { RAIL_SECTIONS, TRACKED, railDone, railStates } from "@/lib/capstoneRail
 import { useStoredChoices } from "./useStoredChoices";
 
 /**
- * Section tracker, built on the topic rail's classes (.lesson-rail, .progress-head, .progress-bar, .rail-marker, .status).
- * From 1180px a fixed left rail: a count and segmented bar, then the sections with one sliding marker, a filled square on a finished
- * one and its state word. Below that, the same one sticky line the topic page has, with "Back to top"; the section name opens the list.
+ * Section tracker, built on the topic rail's classes (.lesson-rail, .progress-head, .progress-bar, .status).
+ * From 1180px a fixed left rail: a count and segmented bar, then a station per section, filled once done, and the state word. Below that, the same one sticky line the topic page has, with "Back to top"; the section name opens the list.
  * The current section comes from an IntersectionObserver on the top third of the screen. Real anchors, so it works without JavaScript.
  */
 export default function CapstoneRail({ slug, decisionIds, quizLength }: { slug: string; decisionIds: string[]; quizLength: number }) {
@@ -19,8 +18,6 @@ export default function CapstoneRail({ slug, decisionIds, quizLength }: { slug: 
   const [current, setCurrent] = useState<string>(RAIL_SECTIONS[0].id);
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
-  const list = useRef<HTMLOListElement>(null);
-  const [markerY, setMarkerY] = useState<number | null>(null);
 
   useEffect(() => {
     const els = RAIL_SECTIONS.map((s) => document.getElementById(s.id)).filter((e): e is HTMLElement => !!e);
@@ -40,12 +37,6 @@ export default function CapstoneRail({ slug, decisionIds, quizLength }: { slug: 
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
   }, []);
-
-  // One marker slides (transform only) to the current row, as on the topic rail.
-  useEffect(() => {
-    const row = list.current?.querySelector<HTMLElement>(`[data-id="${current}"]`);
-    setMarkerY(row ? row.offsetTop : null);
-  }, [current, states.design, states.check]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,13 +59,12 @@ export default function CapstoneRail({ slug, decisionIds, quizLength }: { slug: 
   };
 
   const index = RAIL_SECTIONS.findIndex((s) => s.id === current);
-  const rows = (withMarker: boolean) => (
-    <ol ref={withMarker ? list : undefined}>
-      {withMarker && markerY !== null && <span className="rail-marker" aria-hidden="true" style={{ transform: `translateY(${markerY}px)` }} />}
+  const rows = () => (
+    <ol>
       {RAIL_SECTIONS.map((s) => (
-        <li key={s.id} data-id={s.id} className={s.id === current ? "is-current" : undefined}>
+        <li key={s.id} data-id={s.id} className={`${s.id === current ? "is-current" : ""}${done.includes(s.id) ? " is-done" : ""}` || undefined}>
           <a href={`#${s.id}`} aria-current={s.id === current ? "location" : undefined} onClick={(e) => go(e, s.id)}>
-            {done.includes(s.id) && <span className="status is-done" aria-hidden="true" />}
+            <span className="station" aria-hidden="true" />
             {s.label}
             {done.includes(s.id) && <span className="visually-hidden"> (done)</span>}
             {states[s.id] && <span className="cap-rail-state">{states[s.id]}</span>}
@@ -97,7 +87,7 @@ export default function CapstoneRail({ slug, decisionIds, quizLength }: { slug: 
             ))}
           </div>
         </div>
-        {rows(true)}
+        {rows()}
       </nav>
       <div className="progress-sticky cap-bar" data-pagefind-ignore>
         <p className="progress-line label">
@@ -107,7 +97,7 @@ export default function CapstoneRail({ slug, decisionIds, quizLength }: { slug: 
         </p>
         <StripBackToTop />
         <nav id="cap-bar-list" className="cap-bar-list" aria-label="Sections on this page" hidden={!open}>
-          {rows(false)}
+          {rows()}
         </nav>
       </div>
     </>

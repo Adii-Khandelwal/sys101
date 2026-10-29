@@ -2785,6 +2785,74 @@ h1[tabindex="-1"]:focus {
   margin: 36px 0 8px;
 }
 
+/* Page title on the list and text pages: the chapter title, smaller (it has no station sign beside it). */
+.dossier .page-h1 {
+  --offset: 3px;
+  margin: 12px 0 24px;
+  font-size: clamp(2.3rem, 5.2vw, 4.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  overflow-wrap: break-word;
+}
+
+/* About: the section titles are overprinted, so they are set larger than the plain legal ones. */
+.about-page h2 {
+  --offset: 2px;
+  margin: 56px 0 12px;
+  font-size: 1.9rem;
+  line-height: 1.1;
+  scroll-margin-top: calc(var(--header-h, 60px) + 16px);
+}
+
+/* The left margin from 1200px: a short contents list that stays in view. Without it the margin is empty. */
+.about-page {
+  position: relative;
+}
+
+.dossier .about-rail {
+  display: none;
+}
+
+@media (min-width: 1200px) {
+  .dossier .about-rail {
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: calc(100% + 16px);
+    width: 190px;
+    margin: 0;
+  }
+
+  .about-rail-in {
+    position: sticky;
+    top: calc(var(--header-h, 60px) + 24px);
+    padding-top: 6px;
+    border-top: 1.5px solid var(--ink2);
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 0.8333rem;
+    line-height: 1.35;
+  }
+
+  .about-rail .label {
+    margin: 0 0 10px;
+    font-size: 0.7222rem;
+    color: var(--ink-soft);
+  }
+
+  .about-rail ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .about-rail a {
+    display: block;
+    padding: 7px 0;
+    color: var(--ink);
+  }
+}
+
 .legal p {
   margin: 0 0 12px;
 }
@@ -6259,6 +6327,18 @@ html[data-splash] .splash.is-leaving::before {
     border-left-color: var(--ink);
   }
 
+}
+
+/* Capstone: the sections sit in the chapter grid; its own top rule goes (the overprinted title is the divider) and the margin is the chapter's. */
+.chapter .cap-section {
+  margin-top: 64px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.chapter .posts-lead {
+  font-size: 1.0556rem;
+  line-height: 1.7;
 }
 
 /* Clear of the scroll ruler: from 1280px the page pads itself; below that body already pads 52px (see the ruler rules), so not twice. */

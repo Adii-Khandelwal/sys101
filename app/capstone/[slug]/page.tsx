@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import CompanyLogo from "@/components/CompanyLogo";
 import { diagramHtml } from "@/lib/diagramHtml";
 import JsonLd from "@/components/JsonLd";
+import Link from "next/link";
+import Overprint from "@/components/Overprint";
 import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
 import CapstoneRail from "@/components/capstone/CapstoneRail";
@@ -44,23 +46,52 @@ export default async function CapstonePage({ params }: Props) {
   const source = (id: string) => c.sources.find((s) => s.id === id)!;
 
   return (
-    <article className="dossier cap-page">
+    <article className="dossier chapter cap-page">
       <JsonLd data={breadcrumbLd([{ name: "Home", path: "/" }, { name: "Capstones", path: "/capstones" }, { name: c.title, path: `/capstone/${c.slug}` }])} />
       <JsonLd data={capstoneLd(c, titles)} />
-      <CapstoneRail slug={c.slug} decisionIds={c.decisions.map((d) => d.id)} quizLength={c.quiz.length} />
-      <div data-pagefind-body>
-        <p className="label">Capstone</p>
-        <h1 data-pagefind-meta="title">{c.title}</h1>
+      <div data-pagefind-body className="chapter-grid">
+        <CapstoneRail slug={c.slug} decisionIds={c.decisions.map((d) => d.id)} quizLength={c.quiz.length} />
+        <header className="chapter-head">
+          <div className="chapter-title">
+            <div className="topic-tagline" data-pagefind-ignore>
+              <span className="chapter-group">Capstone</span>
+            </div>
+            <Overprint as="h1" className="chapter-h1" data-pagefind-meta="title">
+              {c.title}
+            </Overprint>
+          </div>
+          <dl className="chapter-meta" data-pagefind-ignore>
+            <div>
+              <dt>Read first</dt>
+              <dd>
+                <ul>
+                  {c.topics.map((t) => (
+                    <li key={t.slug}>
+                      <Link href={`/topic/${t.slug}`}>{topicTitles[t.slug]}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </dd>
+            </div>
+            <div>
+              <dt>Built on posts from</dt>
+              <dd>{[...new Set(c.sources.map((s) => s.company))].join(", ")}</dd>
+            </div>
+          </dl>
+        </header>
+
+        <div className="chapter-body">
+          <div className="chapter-main">
         <p className="posts-lead">{c.summary}</p>
 
         <section className="cap-section" id="need">
-          <h2>What you need</h2>
+          <Overprint as="h2">What you need</Overprint>
           <p className="cap-outcome">After this you can see which finished topics this design leans on, and which to revisit first.</p>
           <TopicReadiness mode="list" items={c.topics.map((t) => ({ slug: t.slug, title: topicTitles[t.slug], role: t.role }))} />
         </section>
 
         <section className="cap-section" id="brief">
-          <h2>The brief</h2>
+          <Overprint as="h2">The brief</Overprint>
           <p className="cap-outcome">After this you can state what the system must do before choosing any part of it.</p>
           <p>{c.brief.text}</p>
           <dl className="cap-reqs">
@@ -76,13 +107,13 @@ export default async function CapstonePage({ params }: Props) {
         </section>
 
         <section className="cap-section" id="design">
-          <h2>Design it first</h2>
+          <Overprint as="h2">Design it first</Overprint>
           <p className="cap-outcome">After this you can compare your own choice with the one a company made, and say why they differ.</p>
           <DesignItFirst slug={c.slug} decisions={c.decisions} sources={c.sources} />
         </section>
 
         <section className="cap-section" id="size">
-          <h2>Size it</h2>
+          <Overprint as="h2">Size it</Overprint>
           <p className="cap-outcome">After this you can turn a write rate into memory and machines and see which input dominates.</p>
           <SizingCalculator slug={c.slug} sizing={c.sizing} />
         </section>
@@ -110,7 +141,7 @@ export default async function CapstonePage({ params }: Props) {
         </noscript>
 
         <section className="cap-section" id="differ">
-          <h2>Where they differ</h2>
+          <Overprint as="h2">Where they differ</Overprint>
           <p className="cap-outcome">After this you can explain where the sources agree and where their designs split.</p>
           {c.compare.split("\n\n").map((para) => (
             <p key={para}>{para}</p>
@@ -119,13 +150,13 @@ export default async function CapstonePage({ params }: Props) {
         </section>
 
         <section className="cap-section" id="check">
-          <h2>Check yourself</h2>
+          <Overprint as="h2">Check yourself</Overprint>
           <p className="cap-outcome">After this you can answer questions that cross topic boundaries.</p>
           <CapstoneQuiz slug={c.slug} quiz={c.quiz} topicTitles={topicTitles} />
         </section>
 
         <section className="cap-section" id="sources">
-          <h2>Original posts</h2>
+          <Overprint as="h2">Original posts</Overprint>
           <p className="cap-outcome">After this you can open each source and read the full account.</p>
           <ul className="cap-sources">
             {c.sources.map((s) => (
@@ -141,6 +172,8 @@ export default async function CapstonePage({ params }: Props) {
             ))}
           </ul>
         </section>
+          </div>
+        </div>
       </div>
       <PageUpdated date={capstoneUpdated(c)} />
       <SiteFooter />
