@@ -322,7 +322,7 @@ export const MIN_LABEL_GAP = 16;
  * left column plus MIN_LABEL_GAP, measured from `labelWidth`; spare width is
  * shared equally. Rows span only the rows real topics use, so there is no
  * empty band above or below. Vertical (narrow screens): one topic per row.
- * Sigma's y axis points up, so the first row gets the largest y.
+ * The layout's y axis points up (the SVG map flips it), so the first row gets the largest y.
  */
 export function fitPositions(
   cols: (Node | Slot)[][],
@@ -374,7 +374,7 @@ type Point = { x: number; y: number };
  * sits `length * curvature` from the chord's midpoint along its normal
  * (-dy, dx), so the curve passes `length * curvature / 2` from the midpoint.
  * Positive curvature bends left-to-right edges up and top-to-bottom edges to
- * the right (sigma's y axis points up).
+ * the right (the layout's y axis points up; the SVG map flips it).
  *
  * Horizontal: a long edge is bent so its middle runs through its reserved
  * slots. A short edge bends toward where it is going, so it leaves its source
@@ -479,7 +479,7 @@ export function edgeCurvatures(
   return result;
 }
 
-/** Points along the quadratic curve Sigma draws for curvature c. */
+/** Points along the quadratic curve the map draws for curvature c. */
 export function sample(a: Point, b: Point, c: number, steps = 40) {
   const ctrl = { x: (a.x + b.x) / 2 - (b.y - a.y) * c, y: (a.y + b.y) / 2 + (b.x - a.x) * c };
   return Array.from({ length: steps + 1 }, (_, i) => {

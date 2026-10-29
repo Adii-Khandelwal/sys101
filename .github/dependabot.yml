@@ -6,7 +6,7 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
-    # A major version can break the build (eslint 10 against eslint-config-next, sigma 4 against GraphView), so it is done by hand.
+    # A major version can break the build (eslint 10 against eslint-config-next), so it is done by hand.
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]

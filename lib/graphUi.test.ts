@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { INTERACTIVE_MIN_NODES, groupSet, mapIsInteractive, mapIsInteractiveAt, INK_SOFT, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "./graphUi";
+import { INTERACTIVE_MIN_NODES, edgeShape, groupSet, mapIsInteractive, mapIsInteractiveAt, INK_SOFT, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "./graphUi";
 
 describe("tooltip placement", () => {
   const tip = { w: 280, h: 72 };
@@ -133,7 +133,15 @@ describe("the Fit to size button", () => {
     expect(button).toContain("disabled={fitted}");
     expect(src.match(/Fit to size/g)).toHaveLength(1);
     // the camera feeds its state, and there are still no zoom or show-all buttons on screen
-    expect(src).toContain("setFitted(isFitted(state, fitRef.current))");
+    expect(src).toContain("setFitted(isFitted(next, fitRef.current))");
     expect(src).not.toMatch(/>\s*(Zoom in|Zoom out|Show all links|Fit all)\s*</);
+  });
+});
+
+describe("edgeShape", () => {
+  it("a straight edge starts at the source rim and the arrow tip touches the target rim", () => {
+    const e = edgeShape({ x: 0, y: 0 }, { x: 50, y: 0 }, { x: 100, y: 0 }, 14);
+    expect(e.d).toBe("M14,0 Q50,0 79,0");
+    expect(e.head).toBe("86,0 79,2.5 79,-2.5");
   });
 });
