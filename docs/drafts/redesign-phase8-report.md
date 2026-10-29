@@ -27,3 +27,14 @@ Home, topic (route open, notes), learn, capstone chat-messaging, glossary, about
 - Fixed: Enter in the glossary filter did nothing (its selector `.glossary-terms a` matched no link); it now focuses the first topic heading link (components/GlossaryFilter.tsx).
 - Fixed: the "Start with Databases" button lost its edge under forced-colors (it had only a fill); added a 1px LinkText border (app/globals.css).
 - Not checked: Safari, a real phone, Lighthouse, Splash playing (webdriver disables it). og.png, icon.svg, icon-32.png and apple-touch-icon.png answer 200 on :3000 (not viewed). No /favicon.ico (404, the page links its own icons).
+
+## Round 2 verification (branch claude/redesign-extras)
+
+- tsc, lint, npm test (710), build (NEXT_DIST_DIR), check-seo, check-news, check-diagram-overflow: OK.
+- check:ui (86 pages, 1440 and 390, light and dark): OK on the merged branch and again after the fixes.
+- check:tour: OK, twice in a row on the merged branch and once after fixes. The earlier timeout did not reproduce (flaky tour-tip wait, not fixed).
+- check:offline, audit:figures (55 states): OK.
+- Screenshots looked at: home map with legend and ring, Path view, reads (jump line, after a jump click the group heading clears the sticky line), glossary no-result, greyscale map (interchange ring still reads apart from a ready node). Not individually looked at in every theme: terms, privacy, capstones, topic and learn pages (covered by check:ui only).
+- Fixed from review: privacy Short version now ends "until you play a video or follow a link out"; .reads-theme scroll-margin-top; jump-line focus outline offset; PathView hidden text separator; "Back to the idea"; learn page heading back to "Where to go next" (rules and copy-pass row corrected); JumpLine recomputes on filter change (no unit test: it reads the DOM); tally starts at x = 4.
+- Found and fixed: glossary no-result state said "0 terms match" and "No terms match" on one page; the note now only says to clear the filter.
+- Not checked: Safari, a real phone, Pagefind (skipped with NEXT_DIST_DIR).
