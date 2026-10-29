@@ -16,7 +16,7 @@ const KINDS = [
 ] as const;
 
 /** Sticky row of group names that jump to the group; no counts (the group headings carry them). The current group has a rule under it as well as the colour. */
-function JumpLine({ groups }: { groups: { id: string; theme: string }[] }) {
+function JumpLine({ groups, watch }: { groups: { id: string; theme: string }[]; watch: string }) {
   const [current, setCurrent] = useState("");
   const ids = groups.map((g) => g.id).join();
   useEffect(() => {
@@ -30,7 +30,7 @@ function JumpLine({ groups }: { groups: { id: string; theme: string }[] }) {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [ids]);
+  }, [ids, watch]);
   if (groups.length < 2) return null;
   return (
     <nav className="jump-line label" aria-label="Jump to a group">
@@ -121,7 +121,7 @@ export default function ReadsList({ data }: { data: ReadsData }) {
         {filtered ? `${shown} of ${data.total} reads match.${q && shown ? " Press Enter to go to the first." : ""}` : null}
       </p>
       {shown === 0 && <p className="search-note">No reads match. Clear a filter to see every read.</p>}
-      <JumpLine groups={groups} />
+      <JumpLine groups={groups} watch={`${kind}|${topic}|${query}`} />
       {groups.map((g) => (
         <section key={g.id} aria-labelledby={g.id} className="reads-theme">
           <h2 id={g.id} className="label posts-group-h">

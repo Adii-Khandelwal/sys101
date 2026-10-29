@@ -4747,6 +4747,7 @@ html[data-posts-view] .posts-view-h {
 }
 .reads-theme {
   margin-top: 32px;
+  scroll-margin-top: calc(var(--header-h) + 60px);
 }
 .reads-row {
   display: grid;
@@ -6696,6 +6697,9 @@ html[data-splash] .splash.is-leaving::before {
   white-space: nowrap;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
+}
+.dossier .jump-line a:focus-visible {
+  outline-offset: -2px;
 }
 .dossier .jump-line a[aria-current] {
   color: var(--ink);

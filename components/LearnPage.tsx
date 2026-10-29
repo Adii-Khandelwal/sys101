@@ -54,7 +54,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
     ...learn.stages.map((st) => ({ id: st.id, name: st.name })),
     { id: "myths", name: "Common misconceptions" },
     { id: "try", name: "Try it" },
-    { id: "next", name: "What to learn next" },
+    { id: "next", name: "Where to go next" },
   ];
 
   return (
@@ -255,7 +255,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
         </section>
 
         <section id="next" className="learn-section" aria-labelledby="next-h">
-          <Overprint as="h2" id="next-h">What to learn next</Overprint>
+          <Overprint as="h2" id="next-h">Where to go next</Overprint>
           <p>
             <Cited text={learn.next} number={number} />
           </p>

@@ -101,7 +101,7 @@ export default function PathView({ entries, headingId = "path-heading", metas = 
               </span>
               <span className="path-group-count">
                 <span className="visually-hidden">
-                  {readInGroup} of {slugs.length} read
+                  , {readInGroup} of {slugs.length} read
                 </span>
                 <svg className="path-tally" width={tally(readInGroup).width} height="26" aria-hidden="true">
                   <path d={tally(readInGroup).d} />

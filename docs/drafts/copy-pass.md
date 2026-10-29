@@ -52,7 +52,7 @@ Read the topic, learn, capstone, list and home-section frames rendered from a pr
 | Home, Put it together note | Whole systems that combine topics from the map. | Whole systems built on several topics from the map: you design, size and break each one. |
 | Home, Inside a topic note | What every topic page holds. | The sections every topic page follows, in order. |
 | Topic page, part labels | Part A: Concept / Part B: Real world | Part A: The idea / Part B: Real companies (matches the tour step "Idea first, then the real world") |
-| Learn page, last section (rail and h2) | Where to go next | What to learn next (same as the topic page) |
+| Learn page, last section (rail and h2) | Where to go next | Kept: learn page texts say "Go back to the topic page"; the topic page keeps "What to learn next" |
 | Home search, no results | Nothing on the site mentions "x". | No topic, post or term matches "x". Try a shorter word. |
 | Glossary, no results | No terms match "x". | No terms match "x". Clear the filter to see every term. |
 | Great reads, no results | Clear a filter to see the list again. | Clear a filter to see every read. |

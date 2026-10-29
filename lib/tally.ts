@@ -12,7 +12,7 @@ export function tallyPath(n: number) {
   const { fives, rest } = tallyBundles(n);
   const stroke = (x: number, k: number) => `M${x + k * STROKE} 4L${x + k * STROKE + (k % 2 ? 0.8 : -0.6)} 21`;
   let d = "";
-  let x = 3;
+  let x = 4;
   for (let g = 0; g < fives; g++) {
     for (let k = 0; k < 4; k++) d += stroke(x, k);
     d += `M${x - 3} 18L${x + 22} 6`;

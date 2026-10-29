@@ -316,7 +316,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
           <div className="part-head" data-pagefind-ignore>
             <p className="label part-label">Part B: Real companies</p>
             <a className="text-button label" href="#concept">
-              Back to concept
+              Back to the idea
             </a>
           </div>
 

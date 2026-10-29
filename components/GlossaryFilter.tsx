@@ -79,7 +79,7 @@ export default function GlossaryFilter({ groups, heading }: { groups: GlossaryGr
       </p>
 
       {total === 0 ? (
-        <p className="search-note">No terms match “{query.trim()}”. Clear the filter to see every term.</p>
+        <p className="search-note">Clear the filter to see every term.</p>
       ) : (
         filtered.map((g) => (
           <section key={g.slug} className="glossary-topic" aria-labelledby={`g-${g.slug}`}>
