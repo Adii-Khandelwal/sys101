@@ -26,7 +26,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const topic = getTopic((await params).slug);
   if (!topic) return {};
-  return pageMeta({ path: `/topic/${topic.slug}`, title: pageTitle(topic), description: topic.description ?? topic.concept });
+  return pageMeta({ path: `/topic/${topic.slug}`, title: pageTitle(topic), description: topic.description ?? topic.concept, image: { path: `/og/${topic.slug}.png`, alt: `${topic.title} on sys101` } });
 }
 
 export default async function TopicPage({ params }: Props) {

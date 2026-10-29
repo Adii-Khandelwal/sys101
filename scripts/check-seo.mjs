@@ -69,7 +69,7 @@ for (const file of htmlFiles(APP)) {
     titles.set(title, route);
     descriptions.set(description, route);
 
-    if (!/^https:\/\/.+\/og\.png$/.test($('meta[property="og:image"]').attr("content") ?? "")) fail("missing og:image (/og.png)");
+    if (!/^https:\/\/[^/]+\/og(\.png|\/[a-z0-9-]+\.png)$/.test($('meta[property="og:image"]').attr("content") ?? "")) fail("missing og:image (/og.png or /og/<slug>.png)");
     if ($('meta[name="twitter:card"]').attr("content") !== "summary_large_image") fail("twitter:card must be summary_large_image");
     const canonical = $('link[rel="canonical"]');
     if (canonical.length !== 1) fail(`has ${canonical.length} canonical links, needs exactly 1`);

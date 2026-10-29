@@ -9,7 +9,7 @@ export const REPORT_EMAIL = CONTACT_EMAIL;
 /** Origin for canonical URLs, the sitemap, and JSON-LD. No trailing slash. */
 export const SITE_URL = (process.env.SITE_URL || "https://sys101.vercel.app").replace(/\/+$/, "");
 export const SITE_NAME = "sys101";
-/** Static 1200x630 social image, drawn by scripts/make-og.mjs from the wordmark and tagline. */
+/** Static 1200x630 social image, drawn by scripts/make-og.mjs from the wordmark and tagline (topic pages use public/og/<slug>.png from scripts/make-topic-og.mjs). */
 const OG_IMAGE = { path: "/og.png", width: 1200, height: 630, alt: "sys101: learn system design from what real companies built, broke and fixed" } as const;
 /** A page title must be shorter than this many characters (checked by scripts/check-seo.mjs). */
 const TITLE_MAX = 60;
@@ -62,10 +62,10 @@ export function pageTitle(name: { title: string; shortTitle?: string }, prefix =
  * Per-page metadata: one canonical URL without query strings, plus Open Graph
  * and Twitter text tags. `title` is the bare page title; the layout adds the suffix.
  */
-export function pageMeta({ path, title, description: raw }: { path: string; title: string | { absolute: string }; description: string }): Metadata {
+export function pageMeta({ path, title, description: raw, image: own }: { path: string; title: string | { absolute: string }; description: string; image?: { path: string; alt: string } }): Metadata {
   const url = absoluteUrl(path);
   const description = metaDescription(raw);
-  const image = { url: absoluteUrl(OG_IMAGE.path), width: OG_IMAGE.width, height: OG_IMAGE.height, alt: OG_IMAGE.alt };
+  const image = { url: absoluteUrl(own?.path ?? OG_IMAGE.path), width: OG_IMAGE.width, height: OG_IMAGE.height, alt: own?.alt ?? OG_IMAGE.alt };
   const fullTitle = typeof title === "string" ? `${title} · ${SITE_NAME}` : title.absolute;
   return {
     title,

@@ -15,6 +15,7 @@
     "check:news": "node scripts/check-news.mjs",
     "check:diagrams": "node scripts/check-diagram-overflow.mjs",
     "audit:figures": "node scripts/audit-figures.mjs",
+    "og:topics": "node scripts/make-topic-og.mjs http://localhost:3000",
     "check:tour": "node scripts/check-tour.mjs",
     "check:offline": "node scripts/check-offline.mjs",
     "check:ui": "node scripts/ui-audit.mjs",
