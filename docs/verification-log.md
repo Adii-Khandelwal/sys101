@@ -741,6 +741,22 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | linkedin-northguard-2025 | meaning | 400K | https://www.linkedin.com/blog/engineering/infrastructure/introducing-northguard-and-xinfra | Why we needed a new solution | found |
 | linkedin-northguard-2025 | meaning | 10K | https://www.linkedin.com/blog/engineering/infrastructure/introducing-northguard-and-xinfra | Why we needed a new solution | found |
 | linkedin-northguard-2025 | meaning | 150 | https://www.linkedin.com/blog/engineering/infrastructure/introducing-northguard-and-xinfra | Why we needed a new solution | found |
+| uber-exactly-once-ads-2021 | numbers | Every 2 minutes | https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/ | Exactly-Once | found |
+| uber-exactly-once-ads-2021 | numbers | 10 minutes | https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/ | Union and Load Job | found |
+| uber-exactly-once-ads-2021 | numbers | 1 minute | https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/ | Real-Time Exactly-Once Ad Event Processing with Apache Flink, | found with different formatting |
+| uber-exactly-once-ads-2021 | numbers | 3 Flink jobs, 2 regions | https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/ | (before first heading) | found (other spelling) |
+| uber-exactly-once-ads-2021 | numbers | 3 days | https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/ | Union and Load Job | found |
+| uber-exactly-once-ads-2021 | numbers | Hundreds of millions of ad events per week | https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/ | Parting Thoughts | found |
+| uber-exactly-once-ads-2021 | problem | 2 regions | https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/ | (before first heading) | found (other spelling) |
+| uber-exactly-once-ads-2021 | walkthrough | 1 minute | https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/ | Real-Time Exactly-Once Ad Event Processing with Apache Flink, | found with different formatting |
+| uber-exactly-once-ads-2021 | walkthrough | 2 minutes | https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/ | Exactly-Once | found |
+| uber-exactly-once-ads-2021 | walkthrough | 3 Flink | https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/ | (before first heading) | found (other spelling) |
+| uber-exactly-once-ads-2021 | walkthrough | 2 regions | https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/ | (before first heading) | found (other spelling) |
+| uber-exactly-once-ads-2021 | walkthrough | Three Flink | https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/ | (before first heading) | found (other spelling) |
+| uber-exactly-once-ads-2021 | meaning | 10 minutes | https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/ | Union and Load Job | found |
+| uber-exactly-once-ads-2021 | meaning | two regions | https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/ | (before first heading) | found (other spelling) |
+| uber-exactly-once-ads-2021 | tradeoffs | 2 minutes | https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/ | Exactly-Once | found |
+| uber-exactly-once-ads-2021 | tradeoffs | 10, | https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/ | Union and Load Job | found with different formatting |
 
 ## Message Queues
 
@@ -1564,7 +1580,7 @@ Pages marked "(archive copy)" were blocked to curl and were read from the Intern
 | idempotency-and-retries | 20 | 1 | 0 | 7 | 2 | 0 |
 | indexing | 52 | 9 | 0 | 5 | 2 | 0 |
 | load-balancing | 17 | 4 | 0 | 1 | 0 | 0 |
-| log-based-streaming | 20 | 5 | 0 | 2 | 7 | 0 |
+| log-based-streaming | 27 | 8 | 0 | 8 | 7 | 0 |
 | message-queues | 16 | 3 | 0 | 2 | 0 | 0 |
 | object-storage | 23 | 14 | 0 | 7 | 1 | 0 |
 | observability-and-slos | 65 | 11 | 0 | 10 | 4 | 0 |
