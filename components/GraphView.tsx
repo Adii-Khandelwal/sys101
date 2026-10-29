@@ -369,6 +369,8 @@ export default function GraphView({ nodes, edges, onActive, metas = NO_METAS }: 
     if (intent === "instant" || !shape || !dot) return navigateWithTransition(router, href);
     activate(slug);
     const paint = getComputedStyle(shape);
+    const halfEl = e.currentTarget.querySelector(".graph-node-half");
+    const side = e.currentTarget.closest(".graph-node")?.getAttribute("data-half") === "posts" ? "right" : "left";
     pendingOpen.current = playNodeOpen(
       stationSpec(shape.getBoundingClientRect(), {
         stroke: paint.stroke,
@@ -376,7 +378,7 @@ export default function GraphView({ nodes, edges, onActive, metas = NO_METAS }: 
         strokeWidth: parseFloat(paint.strokeWidth),
         dot: getComputedStyle(dot).fill,
         dotRadius: Number(dot.getAttribute("r")),
-      }),
+      }, halfEl ? { side, color: getComputedStyle(halfEl).fill } : undefined),
       // Runs behind the plain screen, so the page swap can take as long as it likes without a visible stall.
       async () => {
         router.push(href);

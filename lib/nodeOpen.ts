@@ -33,7 +33,7 @@ export const BURST_SCALE = 12; // the pop itself
 export const SHOCK_SCALE = 2.2; // how far the shock ring travels past the bubble's full size
 
 /** The node as drawn by the map: a ring, a band of fill, and a centre dot (see the "bordered" program in GraphView). */
-export type BubbleSpec = { x: number; y: number; r: number; border: string; fill: string; dot: string; borderSize: number; dotRadius?: number };
+export type BubbleSpec = { x: number; y: number; r: number; border: string; fill: string; dot: string; borderSize: number; dotRadius?: number; /** A half mark: which half of the inside is filled, and with what. */ half?: { side: "left" | "right"; color: string } };
 
 const FILL_BAND = 0.55; // the fill layer's width as a share of the radius, as in the map's node program
 
@@ -51,6 +51,7 @@ export function bubbleLayers(r: number, borderSize: number, dotRadius?: number) 
 export function stationSpec(
   rect: { left: number; top: number; width: number; height: number },
   paint: { stroke: string; fill: string; strokeWidth: number; dot: string; dotRadius: number },
+  half?: BubbleSpec["half"],
 ): BubbleSpec {
   const r = rect.width / 2 + paint.strokeWidth / 2;
   const hasDot = paint.dot !== "none" && paint.dot !== "";
@@ -63,6 +64,7 @@ export function stationSpec(
     dot: hasDot ? paint.dot : paint.fill,
     borderSize: paint.strokeWidth,
     dotRadius: hasDot ? paint.dotRadius : 0,
+    ...(half && { half }),
   };
 }
 
@@ -98,7 +100,13 @@ export function growBubble(spec: BubbleSpec): Bubble {
     c.style.cssText = `width:${big(size) * 2}px;height:${big(size) * 2}px;margin:${-big(size)}px 0 0 ${-big(size)}px;background:${color}`;
     return c;
   };
-  el.append(circle(outer, spec.border), circle(inner, spec.fill), circle(dot, spec.dot));
+  const layers = [circle(outer, spec.border), circle(inner, spec.fill)];
+  if (spec.half) {
+    const h = circle(inner, spec.half.color);
+    h.style.cssText += `;clip-path:inset(0 ${spec.half.side === "left" ? "50% 0 0" : "0 0 50%"})`; // the half disc, as the map draws it
+    layers.push(h);
+  }
+  el.append(...layers, circle(dot, spec.dot));
   document.body.append(el);
   el.getBoundingClientRect(); // commit the starting frame before the transition begins
   return {

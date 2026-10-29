@@ -317,6 +317,9 @@ describe("playNodeOpen: the whole sequence", () => {
     expect([unread.dot, unread.dotRadius]).toEqual(["b", 0]);
     // the layers the bubble builds from it: ring, inside the ring, the dot at its own size
     expect(bubbleLayers(15.25, 4.5, 3.5)).toEqual({ outer: 15.25, inner: 10.75, dot: 3.5 });
+    // a half mark carries its side and colour into the spec
+    expect(stationSpec(rect, { stroke: "a", fill: "b", strokeWidth: 2.5, dot: "none", dotRadius: 3.5 }, { side: "right", color: "c" }).half).toEqual({ side: "right", color: "c" });
+    expect(unread.half).toBeUndefined();
     expect(bubbleLayers(15.25, 4.5, 99).dot).toBe(10.75); // never larger than the space inside the ring
   });
 });
