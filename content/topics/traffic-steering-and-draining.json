@@ -14,7 +14,7 @@
     "points": [
       "Steering decides where each user or request goes, and draining lowers a site's share to zero while work already running finishes.",
       "The layer you steer with sets the speed: DNS answers are cached and slow, while a load balancer you run applies weights in seconds.",
-      "Dropbox found that a one-minute DNS time-to-live still left a long tail of traffic, so it keeps faster layers behind DNS.",
+      "Dropbox found that a one-minute DNS time-to-live still left a long tail of traffic, and it describes a hybrid setup that does not wait on DNS.",
       "Slack drains a whole Availability Zone with weights at its edge load balancers, which works because each zone is siloed from the others.",
       "Slack's drain is zone-level inside one region, so it says little about moving users between regions."
     ],
@@ -39,7 +39,7 @@
   "lesson": {
     "why": {
       "outcome": "After this you can explain why moving traffic between sites is its own problem, separate from deciding that a site has failed.",
-      "body": "Failover answers one question: when something breaks, what takes over. A second question comes up all the time without anything breaking. You want to take a site out for maintenance, shed load from a data centre that is struggling, test a new site with a sliver of users, or stop sending people to a zone you only suspect is bad. In each case the real work is moving traffic, and doing it without hurting the users who are in the middle of something.\n\nThat work has two halves. Steering decides where each new request or connection goes. Draining lowers a site's share toward zero while letting what is already running finish, so the site can be repaired or retired. Both depend on the layer you use to move traffic, because layers differ wildly in how fast they obey and how gently they let go.\n\nThe lesson that surprises people is the speed. A change at your own load balancer can apply in seconds. A change made through DNS can take an hour to reach most users, because every resolver and device between you and them keeps its own copy of the old answer. Choosing the layer is most of the design."
+      "body": "Failover answers one question: when something breaks, what takes over. A second question comes up all the time without anything breaking. You want to take a site out for maintenance, shed load from a data centre that is struggling, test a new site with a sliver of users, or stop sending people to a zone you only suspect is bad. In each case the real work is moving traffic, and doing it without hurting the users who are in the middle of something.\n\nThat work has two halves. Steering decides where each new request or connection goes. Draining lowers a site's share toward zero while letting what is already running finish, so the site can be repaired or retired. Both depend on the layer you use to move traffic, because layers differ wildly in how fast they obey and how gently they let go.\n\nThe lesson that surprises people is the speed. A change at your own load balancer can apply in seconds. A change made through DNS can take about 15 minutes to reach most users and up to an hour for nearly all of them, because every resolver and device between you and them keeps its own copy of the old answer. Choosing the layer is most of the design."
     },
     "mentalModel": {
       "outcome": "After this you can picture steering as a dial per site, and name the three questions that separate steering layers.",
@@ -89,7 +89,7 @@
         },
         {
           "step": "What Dropbox measured",
-          "explanation": "With a one-minute time-to-live on its main web domain, Dropbox saw 90% of traffic leave after 15 minutes. It took a full hour for 95%. Some devices resolve a name only when they power on, so a tail never moves."
+          "explanation": "With a one-minute time-to-live on its main web domain, Dropbox saw 90% of traffic leave after 15 minutes. It took a full hour for 95%. Some devices resolve a name only when they power on, so some traffic lags far behind the TTL."
         },
         {
           "step": "Plan around the tail",
@@ -182,7 +182,7 @@
         "teaches": "mistakes"
       },
       {
-        "question": "Slack can drain an Availability Zone in minutes. What does that show about moving users between regions?",
+        "question": "Slack built a button to drain an Availability Zone within minutes. What does that show about moving users between regions?",
         "options": [
           "Nothing, because the zones were all in one region, so it shows zone draining, not regional failover",
           "That regional failover is solved, since a region is just a larger zone",
@@ -225,7 +225,7 @@
       {
         "level": "apply",
         "prompt": "A web domain is steered by GeoDNS with a one-minute time-to-live. You must take one point of presence out of service for maintenance. What do you do, and when?",
-        "answer": "Do not assume the site empties in a minute. Dropbox saw 90% of traffic leave after 15 minutes and 95% only after a full hour on a one-minute TTL, with some devices never re-resolving. Remove the site from DNS well before the work, at least an hour ahead, then watch the site's own traffic graph and begin only when it is low. If you must act sooner, use a layer you control, such as a load balancer weight, or keep the site able to serve stragglers until they are gone.",
+        "answer": "Do not assume the site empties in a minute. Dropbox saw 90% of traffic leave after 15 minutes and 95% only after a full hour on a one-minute TTL, with some devices resolving only when they power on. Remove the site from DNS well before the work, at least an hour ahead, then watch the site's own traffic graph and begin only when it is low. If you must act sooner, use a layer you control, such as a load balancer weight, or keep the site able to serve stragglers until they are gone.",
         "tradeoffs": "Starting early costs lead time and delays the work. A faster layer, such as a hybrid setup in which every site can answer on a shared address, costs a more complicated configuration, because every site must handle traffic meant for any other.",
         "wrongAnswers": [
           "Shut the site down after a minute, since the TTL has expired.",
@@ -280,7 +280,7 @@
       ],
       "digest": {
         "problem": "Dropbox serves more than half a billion registered users from points of presence (PoPs) around the world. Each user has to reach a nearby PoP, and the team has to be able to move users away from a PoP that is over capacity or under maintenance.",
-        "constraints": "Internet routing knows nothing about latency or loss, so the nearest path is only a guess. DNS can steer by location but caches answers. Any steering method has to cope with embedded devices that resolve a name once and never again.",
+        "constraints": "Internet routing knows nothing about latency or loss, so the nearest path is only a guess. DNS can steer by location but caches answers. Any steering method has to cope with embedded devices that resolve a name only when they power on.",
         "walkthrough": [
           {
             "step": "Put a PoP near the user",
@@ -299,15 +299,15 @@
             "explanation": "Each PoP gets its own address range and DNS hands out addresses by the user's apparent location. That gives control and graceful drain, but DNS caching makes drains slow: a one-minute time-to-live still needed 15 minutes for 90% and a full hour for 95%."
           },
           {
-            "step": "Keep anycast as a fallback and build a hybrid",
-            "explanation": "Dropbox keeps anycast for its apex domains and as a fallback during large denial-of-service attacks. A hybrid setup announces a PoP's own range and a shared range from every PoP, so traffic can be pulled away without waiting for DNS, at the price of every PoP being ready to serve any PoP's addresses."
+            "step": "Keep anycast as a fallback and describe a hybrid",
+            "explanation": "Dropbox keeps anycast for its apex domains and as a fallback during large denial-of-service attacks. The post describes a hybrid setup that announces a PoP's own range and a shared range from every PoP, so traffic can be pulled away without waiting for DNS, at the price of every PoP being ready to serve any PoP's addresses."
           },
           {
             "step": "Move toward measured maps",
-            "explanation": "Instead of guessing from hops or distance, Dropbox collects latency from its desktop clients and builds a client-subnet-to-PoP map for DNS. It expected this to be the only way to use more than 25-30 PoPs well."
+            "explanation": "Instead of guessing from hops or distance, Dropbox collects latency from its desktop clients and builds a client-subnet-to-PoP map for DNS, a project that had not yet shipped to its main addresses. It expected this to be the only way to use more than 25-30 PoPs well."
           }
         ],
-        "diagram": "<svg viewBox=\"0 0 560 236\" role=\"img\" aria-labelledby=\"dg-ts-dbx-t\" class=\"dg\"><title id=\"dg-ts-dbx-t\">Dropbox's three ways to steer users to a point of presence: GeoDNS steers by location and can drain gracefully but stale caches outlast the time-to-live; BGP anycast is hard to steer and cannot drain gracefully; a hybrid of unicast and anycast announcements gives a quick fallback and a graceful drain.</title><defs><marker id=\"dg-ts-dbx-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"14\" width=\"112\" height=\"56\" class=\"dg-box\"/><text x=\"70\" y=\"46.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">GeoDNS</text><rect x=\"142\" y=\"14\" width=\"200\" height=\"56\" class=\"dg-box\"/><text x=\"242\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Steers by user location;</text><text x=\"242\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">graceful drain possible</text><rect x=\"358\" y=\"14\" width=\"188\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"452\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Stale caches outlast TTL:</text><text x=\"452\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">15 minutes for 90%</text><rect x=\"14\" y=\"90\" width=\"112\" height=\"56\" class=\"dg-box\"/><text x=\"70\" y=\"122.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">BGP anycast</text><rect x=\"142\" y=\"90\" width=\"200\" height=\"56\" class=\"dg-box\"/><text x=\"242\" y=\"114.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Network routing picks the</text><text x=\"242\" y=\"130.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">cheapest route, hard to steer</text><rect x=\"358\" y=\"90\" width=\"188\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"452\" y=\"114.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">No graceful drain:</text><text x=\"452\" y=\"130.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">open connections reset</text><rect x=\"14\" y=\"166\" width=\"112\" height=\"56\" class=\"dg-box\"/><text x=\"70\" y=\"198.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Hybrid</text><rect x=\"142\" y=\"166\" width=\"200\" height=\"56\" class=\"dg-box\"/><text x=\"242\" y=\"190.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Announce a PoP's own range</text><text x=\"242\" y=\"206.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">and a shared one from all</text><rect x=\"358\" y=\"166\" width=\"188\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"452\" y=\"190.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Quick fallback, no wait</text><text x=\"452\" y=\"206.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">for DNS; graceful drain</text></svg>",
+        "diagram": "<svg viewBox=\"0 0 560 236\" role=\"img\" aria-labelledby=\"dg-ts-dbx-t\" class=\"dg\"><title id=\"dg-ts-dbx-t\">Dropbox's three ways to steer users to a point of presence: GeoDNS steers by location and can drain gracefully but stale caches outlast the time-to-live; BGP anycast is hard to steer and cannot drain gracefully; a hybrid of unicast and anycast announcements gives a quick fallback and a graceful drain.</title><defs><marker id=\"dg-ts-dbx-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"14\" width=\"112\" height=\"56\" class=\"dg-box\"/><text x=\"70\" y=\"46.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">GeoDNS</text><rect x=\"142\" y=\"14\" width=\"200\" height=\"56\" class=\"dg-box\"/><text x=\"242\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Steers by user location;</text><text x=\"242\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">graceful drain possible</text><rect x=\"358\" y=\"14\" width=\"188\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"452\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Stale caches outlast TTL:</text><text x=\"452\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">15 minutes for 90%</text><rect x=\"14\" y=\"90\" width=\"112\" height=\"56\" class=\"dg-box\"/><text x=\"70\" y=\"122.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">BGP anycast</text><rect x=\"142\" y=\"90\" width=\"200\" height=\"56\" class=\"dg-box\"/><text x=\"242\" y=\"114.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Routing picks the cheapest</text><text x=\"242\" y=\"130.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">route, hard to steer</text><rect x=\"358\" y=\"90\" width=\"188\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"452\" y=\"114.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">No graceful drain:</text><text x=\"452\" y=\"130.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">open connections reset</text><rect x=\"14\" y=\"166\" width=\"112\" height=\"56\" class=\"dg-box\"/><text x=\"70\" y=\"198.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Hybrid</text><rect x=\"142\" y=\"166\" width=\"200\" height=\"56\" class=\"dg-box\"/><text x=\"242\" y=\"190.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Announce a PoP's own range</text><text x=\"242\" y=\"206.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">and a shared one from all</text><rect x=\"358\" y=\"166\" width=\"188\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"452\" y=\"190.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Quick fallback, no wait</text><text x=\"452\" y=\"206.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">for DNS; graceful drain</text></svg>",
         "numbers": [
           {
             "value": "15 minutes",
@@ -339,11 +339,11 @@
           }
         ],
         "tradeoffs": {
-          "chosen": "GeoDNS for its web domains, anycast kept for the apex domains and as a DDoS fallback, with a hybrid of both and a measured latency map under development.",
+          "chosen": "GeoDNS for its web domains, anycast kept for the apex domains and as a DDoS fallback, with a hybrid setup described and a latency-based DNS map under development.",
           "rejected": "BGP anycast as the main method, because traffic is hard to steer and a graceful drain is impossible.",
           "why": "GeoDNS gives control and graceful drains and is easier to reason about, but it relies on guesses about user location and its caches are stale. Anycast is simple but opaque. The hybrid adds configuration cost, since every PoP has to serve every PoP's addresses."
         },
-        "failures": "DNS caching defeated the one-minute time-to-live, and embedded devices such as cameras resolve only at power-on, so some traffic never follows the DNS change. Different DNS providers make different location guesses, which makes performance harder to monitor.",
+        "failures": "DNS caching defeated the one-minute time-to-live, and embedded devices such as cameras resolve only at power-on, so some traffic lags far behind the TTL. Different DNS providers make different location guesses, which makes performance harder to monitor.",
         "takeaways": "A short TTL is a request, not a guarantee, so any plan that depends on DNS needs a long tail in its schedule and a faster layer behind it for urgent moves."
       }
     },
@@ -425,7 +425,7 @@
       }
     }
   ],
-  "comparison": "Both posts are about moving traffic off a place without waiting for the failure to be understood, and both conclude that the layer you steer with decides how fast and how gently you can do it.\n\nDropbox works at the internet end. It steers users to points of presence with DNS and anycast, which it does not fully control, and measures the result: a one-minute time-to-live still took 15 minutes to drain 90% of traffic. Its answer is to keep faster layers behind DNS, a hybrid announcement and a measured map.\n\nSlack works inside one region. It controls the layer in front of its zones, so it can reweight at its edge load balancers within seconds in steps of 1%, and it pays for that by siloing every service per zone. Neither post covers moving users between regions: Dropbox's unit is a point of presence, and Slack's is a zone in one region.",
+  "comparison": "Both posts are about moving traffic off a place without waiting for the failure to be understood, and both conclude that the layer you steer with decides how fast and how gently you can do it.\n\nDropbox works at the internet end. It steers users to points of presence with DNS and anycast, which it does not fully control, and measures the result: a one-minute time-to-live still took 15 minutes to drain 90% of traffic. It describes a hybrid setup that does not wait on DNS, and was building a latency map to make its DNS answers better.\n\nSlack works inside one region. It controls the layer in front of its zones, so it can reweight at its edge load balancers within seconds in steps of 1%, and it pays for that by siloing every service per zone. Neither post covers moving users between regions: Dropbox's unit is a point of presence, and Slack's is a zone in one region.",
   "glossary": [
     {
       "term": "Traffic steering",

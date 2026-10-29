@@ -4,7 +4,7 @@
       "points": [
         "Steering decides where each user or request goes, and draining lowers a site's share to zero while work already running finishes.",
         "The layer you steer with sets the speed: DNS answers are cached and slow, while a load balancer you run applies weights in seconds.",
-        "Dropbox found that a one-minute DNS time-to-live still left a long tail of traffic, so it keeps faster layers behind DNS.",
+        "Dropbox found that a one-minute DNS time-to-live still left a long tail of traffic, and it describes a hybrid setup that does not wait on DNS.",
         "Slack drains a whole Availability Zone with weights at its edge load balancers, which works because each zone is siloed from the others.",
         "Slack's drain is zone-level inside one region, so it says little about moving users between regions."
       ],

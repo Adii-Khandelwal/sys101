@@ -203,7 +203,7 @@
     "intro": "These official sources have no short commands that show a drain without changing a real system, so there is nothing to run here. To practise, work out shares by hand: with weights of 1 and 255 the first gets 1/256th, so try weights of 1, 1 and 2 and write each share, then move the 2 to 0 and see who takes the traffic.",
     "commands": []
   },
-  "next": "Go back to the Traffic Steering and Draining topic page for the worked example and the quiz, then read the Dropbox post on its edge network and the Slack post on its cellular architecture. They show a one-minute DNS time-to-live that still took an hour to drain, and a zone drain done with weights at the load balancer.",
+  "next": "Go back to the Traffic Steering and Draining topic page for the worked example and the quiz, then read the Dropbox post on its edge network and the Slack post on its cellular architecture. They show a one-minute DNS time-to-live that still took 15 minutes to drain 90% of traffic and up to an hour for 95%, and a zone drain done with weights at the load balancer.",
   "sources": [
     {
       "id": "r53-policy",
