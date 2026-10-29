@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import CompanyLogo from "./CompanyLogo";
+import { glideToSection } from "@/lib/glide";
 import { useReadReads } from "@/lib/readsRead";
 import { matchesAll } from "@/lib/searchMatch";
 import { focusFirstResult, useSlashFocus } from "@/lib/useSlashFocus";
@@ -13,6 +14,45 @@ const KINDS = [
   { id: "post", label: "Posts" },
   { id: "paper", label: "Papers" },
 ] as const;
+
+/** Sticky row of group names that jump to the group; no counts (the group headings carry them). The current group has a rule under it as well as the colour. */
+function JumpLine({ groups }: { groups: { id: string; theme: string }[] }) {
+  const [current, setCurrent] = useState("");
+  const ids = groups.map((g) => g.id).join();
+  useEffect(() => {
+    const onScroll = () => {
+      const line = document.querySelector<HTMLElement>(".jump-line");
+      const edge = (line?.getBoundingClientRect().bottom ?? 0) + 48;
+      let now = "";
+      for (const id of ids.split(",")) if (id && (document.getElementById(id)?.getBoundingClientRect().top ?? Infinity) <= edge) now = id;
+      setCurrent(now);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [ids]);
+  if (groups.length < 2) return null;
+  return (
+    <nav className="jump-line label" aria-label="Jump to a group">
+      {groups.map((g) => (
+        <a
+          key={g.id}
+          href={`#${g.id}`}
+          aria-current={current === g.id ? "location" : undefined}
+          onClick={(e) => {
+            const target = document.getElementById(g.id)?.closest<HTMLElement>("section");
+            if (!target) return;
+            e.preventDefault();
+            history.replaceState(null, "", `#${g.id}`);
+            void glideToSection(target);
+          }}
+        >
+          {g.theme}
+        </a>
+      ))}
+    </nav>
+  );
+}
 
 /**
  * Great reads grouped by what they introduced. Every row is in the server-rendered HTML; the filters only hide rows,
@@ -81,6 +121,7 @@ export default function ReadsList({ data }: { data: ReadsData }) {
         {filtered ? `${shown} of ${data.total} reads match.${q && shown ? " Press Enter to go to the first." : ""}` : null}
       </p>
       {shown === 0 && <p className="search-note">No reads match. Clear a filter to see every read.</p>}
+      <JumpLine groups={groups} />
       {groups.map((g) => (
         <section key={g.id} aria-labelledby={g.id} className="reads-theme">
           <h2 id={g.id} className="label posts-group-h">

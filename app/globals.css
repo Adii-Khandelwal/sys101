@@ -6668,3 +6668,64 @@ html[data-splash] .splash.is-leaving::before {
   font-size: 0.8889rem;
   font-weight: 700;
 }
+
+/* ===== Study ideas (claude/extras-study): jump line and left-label list layout. Keep this block together. ===== */
+.jump-line {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 5;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0 24px;
+  margin: 24px 0 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+.jump-line::-webkit-scrollbar {
+  display: none;
+}
+.dossier .jump-line a {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  min-height: 44px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.dossier .jump-line a[aria-current] {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+@media (hover: hover) and (pointer: fine) {
+  .dossier .jump-line a:hover {
+    color: var(--accent);
+  }
+}
+.jump-line + .reads-theme {
+  margin-top: 8px;
+}
+@media (min-width: 900px) {
+  .reads-page .reads-theme {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr);
+    column-gap: 32px;
+    align-items: start;
+    margin-top: 40px;
+  }
+  .reads-page .reads-theme .posts-group-h {
+    margin: 14px 0 0;
+  }
+  .reads-page .reads-theme .posts-list {
+    border-top: 1px solid var(--rule);
+  }
+}
+.legal .short-version {
+  font-size: 1.1111rem;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+}
