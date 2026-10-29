@@ -29,10 +29,6 @@
       }
     ]
   },
-  "pullQuote": {
-    "text": "We’ve learned that the key to static stability is to anticipate impairments before they happen.",
-    "postId": "aws-static-stability-azs"
-  },
   "prerequisiteReasons": {
     "replication": "Failover takes from replication the standby copies that are already current enough to be promoted when the primary dies.",
     "consensus": "Failover takes from consensus the way to choose exactly one replacement, since only one backed by a majority may take over.",

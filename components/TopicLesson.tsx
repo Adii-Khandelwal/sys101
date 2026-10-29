@@ -339,7 +339,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 </blockquote>
                 <figcaption className="label company-label">
                   <a href={`#${pullPost.id}`}>
-                    <CompanyLogo name={pullPost.company} size="sm" />
+                    <span aria-hidden="true"><CompanyLogo name={pullPost.company} size="sm" /></span>
                     <span>{companyWhen(pullPost, "month")}</span>
                   </a>
                 </figcaption>

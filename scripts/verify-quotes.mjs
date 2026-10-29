@@ -13,6 +13,7 @@ for (const f of fs.readdirSync("content/topics")) {
   const t = JSON.parse(fs.readFileSync(`content/topics/${f}`, "utf8"));
   if (!t.pullQuote) continue;
   const post = t.posts.find((p) => p.id === t.pullQuote.postId);
+  if (!post) { bad++; console.log(`NO POST ${t.slug}`); continue; }
   const want = t.pullQuote.text.replace(/\s+/g, " ").trim();
   let ok = false;
   try {

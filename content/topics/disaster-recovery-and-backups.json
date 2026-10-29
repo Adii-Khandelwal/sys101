@@ -34,10 +34,6 @@
       }
     ]
   },
-  "pullQuote": {
-    "text": "This means we were never aware of the backups failing, until it was too late.",
-    "postId": "gitlab-db-outage-2017"
-  },
   "prerequisiteReasons": {
     "replication": "Recovery takes from replication the live copies that cover a failed machine, and shows why they cannot undo a mistake that was copied to every replica.",
     "failover": "Recovery takes from failover the switch to a standby, and extends it from one machine to a whole site that must be recovered or drained."
