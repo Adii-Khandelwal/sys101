@@ -21,9 +21,6 @@ export default function PostSources({ companies }: Props) {
           </li>
         ))}
       </ul>
-      <p className="home-extra-note">
-        <Link href="/posts">Browse all posts</Link>, or start with the <Link href="/reads">great reads</Link>.
-      </p>
     </section>
   );
 }
