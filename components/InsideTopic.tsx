@@ -1,4 +1,5 @@
 import { topicSections, type Figure } from "@/lib/lessonOutline";
+import Overprint from "./Overprint";
 import DailyFigure from "./DailyFigure";
 import type { Topic } from "@/lib/topics";
 
@@ -7,9 +8,7 @@ export default function InsideTopic({ topic, figures }: { topic: Topic; figures:
   const sections = topicSections(topic);
   return (
     <section className="home-extra inside-topic" aria-labelledby="inside-heading">
-      <h2 id="inside-heading" className="label">
-        Inside a topic
-      </h2>
+      <Overprint id="inside-heading" className="label">Inside a topic</Overprint>
       <p className="home-extra-note">What every topic page holds.</p>
       <ol className="inside-sequence">
         {sections.map((s, i) => (

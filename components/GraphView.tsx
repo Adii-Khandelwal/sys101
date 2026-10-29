@@ -14,6 +14,7 @@ import { clickIntent, playNodeOpen, removeBubbles, stationSpec } from "@/lib/nod
 import { saveMapView, takeMapView } from "@/lib/mapView";
 import { DESKTOP, PHONE } from "@/lib/breakpoints";
 import StateLegend from "./StateLegend";
+import { firstSentence } from "@/lib/stationSign";
 import {
   STEP,
   clampPan,
@@ -35,6 +36,8 @@ type GraphEdge = { from: string; to: string };
 type Props = {
   nodes: GraphNode[];
   edges: GraphEdge[];
+  /** Called with the hovered or focused station, or null, so the station sign can follow it. */
+  onActive?: (slug: string | null) => void;
 };
 
 type P = { x: number; y: number };
@@ -52,16 +55,9 @@ const CLICK_SLOP = 5; // px a pointer may move before a press becomes a drag
 const TIP_DELAY_MS = 300;
 const TIP_COOL_MS = 150;
 
-/** The first sentence of a concept, trimmed, for a one-line tooltip description. */
-function firstSentence(text: string) {
-  const end = text.search(/\.\s/);
-  const s = end === -1 ? text : text.slice(0, end + 1);
-  return s.length > 140 ? s.slice(0, 137).trimEnd() + "…" : s;
-}
-
 const NO_NODES = new Set<string>();
 
-export default function GraphView({ nodes, edges }: Props) {
+export default function GraphView({ nodes, edges, onActive }: Props) {
   const stage = useRef<HTMLDivElement>(null);
   const scrollWrap = useRef<HTMLDivElement>(null);
   const container = useRef<SVGSVGElement>(null);
@@ -726,7 +722,6 @@ export default function GraphView({ nodes, edges }: Props) {
   return (
     <>
       <div className="graph-toolbar">
-        <StateLegend />
         <div className="graph-toolbar-end">
           <span className="graph-scroll-cue label" data-shown={moreToScroll || undefined} aria-hidden="true">
             Scroll sideways for more
@@ -847,17 +842,23 @@ export default function GraphView({ nodes, edges }: Props) {
                         router.prefetch(`/topic/${n.slug}`); // ready before the click lands
                         tipByKey.current = false;
                         activate(nextHighlight(activeRef.current, { type: "enter", node: n.slug }));
+                        onActive?.(n.slug);
                       }}
-                      onPointerLeave={() => activate(nextHighlight(activeRef.current, { type: "leave" }))}
+                      onPointerLeave={() => {
+                        activate(nextHighlight(activeRef.current, { type: "leave" }));
+                        onActive?.(null);
+                      }}
                       onFocus={(e) => {
                         router.prefetch(`/topic/${n.slug}`);
                         tipByKey.current = e.currentTarget.matches(":focus-visible");
                         if (tipByKey.current) say(n.slug);
                         activate(nextHighlight(activeRef.current, { type: "focus", node: n.slug }));
+                        onActive?.(n.slug); // not from `active`: a page scroll clears that, and focus itself can scroll
                       }}
                       onBlur={() => {
                         setAnnounce("");
                         activate(nextHighlight(activeRef.current, { type: "blur" }));
+                        onActive?.(null);
                       }}
                     >
                       <circle className="graph-node-hit" cx={p.x} cy={p.y} r={HIT_RADIUS} />
@@ -916,6 +917,8 @@ export default function GraphView({ nodes, edges }: Props) {
           )}
         </div>
       </div>
+      {/* The key sits along the bottom edge of the chart, inside its frame. */}
+      <StateLegend />
       </div>
     </>
   );

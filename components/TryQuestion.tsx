@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Overprint from "./Overprint";
 import { DURATION, prefersReducedMotion } from "@/lib/motion";
 import type { LessonQuestion } from "@/lib/topics";
 
@@ -55,9 +56,7 @@ export default function TryQuestion({ slug, topicTitle, questions }: Props) {
       onFocus={() => setHeld(true)}
       onBlur={() => setHeld(false)}
     >
-      <h2 id="try-heading" className="label">
-        Try a question
-      </h2>
+      <Overprint id="try-heading" className="label">Try a question</Overprint>
       <div key={index} className={`try-body${leaving ? " is-leaving" : ""}`}>
         <p className="try-source label">From {topicTitle}, Check yourself</p>
         <p className="try-question" id="try-q">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Overprint from "@/components/Overprint";
 import HomeView from "@/components/HomeView";
 import InsideTopic from "@/components/InsideTopic";
 import { featuredFigures } from "@/lib/lessonOutline";
@@ -72,6 +73,8 @@ export default function Home() {
   const companies = [...credits.keys()]
     .sort((x, y) => x.localeCompare(y))
     .map((name) => ({ name, label: credits.get(name)!.size > 1 ? (MIXED_LABEL[name] ?? name) : name }));
+  const nextEntries = ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }));
+  const metas = ordered.map((t) => ({ slug: t.slug, postIds: t.posts.map((p) => p.id!), correct: (t.lesson?.quiz ?? []).map((q) => optionId(q.options[q.correct])) }));
   return (
     <main className="home">
       <header className="masthead">
@@ -80,11 +83,11 @@ export default function Home() {
             <LogoMark size={46} />
             <h1>sys101</h1>
           </div>
-          <p className="masthead-lead">Learn system design from what real companies built, broke and fixed.</p>
+          <Overprint as="p" className="masthead-lead">Learn system design from what real companies built, broke and fixed.</Overprint>
           <NextUp
             start={{ slug: ordered[0].slug, title: ordered[0].title }}
-            entries={ordered.map((t) => ({ slug: t.slug, title: t.title, prerequisites: t.prerequisites }))}
-            metas={ordered.map((t) => ({ slug: t.slug, postIds: t.posts.map((p) => p.id!), correct: (t.lesson?.quiz ?? []).map((q) => optionId(q.options[q.correct])) }))}
+            entries={nextEntries}
+            metas={metas}
           />
           <p className="masthead-actions">
             <Link className="label" href="/about">
@@ -112,6 +115,8 @@ export default function Home() {
         nodes={nodes}
         edges={edges}
         indexGroups={groups}
+        nextEntries={nextEntries}
+        metas={metas}
         pathEntries={ordered.map((t) => ({
           slug: t.slug,
           title: t.title,

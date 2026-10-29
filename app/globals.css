@@ -10,6 +10,7 @@
   --skeleton: #dedbd2; /* raised surface, a 4% ink tint: put ink text on it, not muted or accent */
   --edge: #767d9b;
   --highlight: #e6ded3;
+  --overprint: multiply; /* second-ink copies darken where they cross the ink (light) and lighten it (dark) */
 
   /* Motion tokens: mirror lib/motion.ts (checked by lib/motion.test.ts). */
   --dur-fast: 120ms;
@@ -48,6 +49,7 @@
   --skeleton: #2a241f;
   --edge: #797266;
   --highlight: #352019;
+  --overprint: screen;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -63,6 +65,7 @@
     --skeleton: #2a241f;
     --edge: #797266;
     --highlight: #352019;
+    --overprint: screen;
   }
 }
 
@@ -564,7 +567,7 @@ h1[tabindex="-1"]:focus {
 
 .graph-toolbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: baseline;
   margin: 4px 0 8px;
 }
@@ -658,6 +661,15 @@ h1[tabindex="-1"]:focus {
   overflow-y: hidden;
   scroll-snap-type: x proximity;
   border: 1.5px solid var(--ink);
+  border-bottom: 0;
+}
+
+/* The key along the chart's bottom edge: inside the frame, under a solid hairline. */
+.graph-frame > .graph-legend {
+  padding: 10px 18px;
+  border: 1.5px solid var(--ink);
+  border-top: 1px solid var(--ink);
+  flex-wrap: wrap;
 }
 
 /* Zero-size marks at the right edge of each column's labels: the scroll window ends on one of them. */
@@ -1075,6 +1087,146 @@ h1[tabindex="-1"]:focus {
   text-transform: none;
   line-height: 1.15;
   color: var(--ink);
+}
+
+/* Overprint: a second-ink copy of the heading, 2px down and right. A pseudo-element, so the text exists once in the DOM. Large type only (the lead line and
+   the 32px section titles); the copy is not text for reading, so --ink2 is allowed here. */
+.overprint {
+  position: relative;
+}
+
+/* The lead line is 26px: 1px keeps the copy a shadow of the ink, not a second word. */
+.masthead-lead.overprint {
+  --offset: 1px;
+}
+
+.overprint::before {
+  content: attr(data-text);
+  content: attr(data-text) / "";
+  position: absolute;
+  inset: 0;
+  transform: translate(var(--offset, 2px), var(--offset, 2px));
+  color: var(--ink2);
+  mix-blend-mode: var(--overprint);
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+  .overprint::before {
+    content: none;
+  }
+}
+
+/* The station sign under the map: a reversed-out bar (ink with paper text), then three columns. Shown from 1024px; below that the Path view and
+   the Next up button do its job. */
+.sign-slot {
+  margin: 56px 0 0;
+}
+
+@media (max-width: 1023px) {
+  .sign-slot {
+    display: none;
+  }
+}
+
+.station-sign {
+  border: 1.5px solid var(--ink);
+}
+
+.sign-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px 28px;
+  padding: 16px 28px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.sign-badge {
+  padding: 1px 14px;
+  border: 2px solid var(--paper);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.sign-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 2.5rem;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.sign-number {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.875rem;
+}
+
+.sign-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+  min-height: 11rem;
+}
+
+.sign-body > div {
+  padding: 20px 28px;
+}
+
+.sign-label {
+  margin: 0 0 6px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.sign-side ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 1rem;
+}
+
+.sign-side li a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+}
+
+.sign-side p:not(.sign-label) {
+  margin: 0;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  color: var(--ink-soft);
+}
+
+.sign-after {
+  text-align: right;
+}
+
+.sign-summary {
+  margin: 0 0 12px;
+  max-width: 36rem;
+  font-size: 1.25rem;
+}
+
+.sign-meta {
+  margin: 0 0 8px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+}
+
+.sign-open {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 600;
 }
 
 /* On the homepage the section has its one rule; the capstone rows need none. */

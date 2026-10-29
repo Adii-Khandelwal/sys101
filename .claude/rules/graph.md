@@ -56,3 +56,7 @@ Applies when editing the map, its layout or the node-open transition.
 - Back keeps the view: when a node is opened the camera and the sideways scroll are saved to sessionStorage (lib/mapView.ts, version 2: the camera is y down; version 1 views from the old renderer are ignored). The Map restores them once if it mounts right after a popstate (Back or Forward) and the data is under 30 minutes old; any other visit starts fitted. A later layout run on a stage of the same size keeps the camera instead of resetting it, which is what lets the restored view survive.
 - Judge smoothness on `npm run build && npm start`: under `npm run dev` the first click on each topic compiles its route, and the loader state is what you see.
 - The Map is not shown under 768px (the Path view is), so the animation is for pointer and touch devices at 768px and up.
+
+## Frame and sign (Phase 4d)
+
+- The state legend (`StateLegend`) sits inside `.graph-frame`, along its bottom edge under a solid hairline; the toolbar above keeps only "Scroll sideways" and "Fit to size". `GraphView` takes an optional `onActive(slug | null)` called with the hovered or focused station; the station sign under the map follows it (homepage.md).

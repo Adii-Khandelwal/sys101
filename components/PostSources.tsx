@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Overprint from "./Overprint";
 import CompanyLogo from "./CompanyLogo";
 import { slugify } from "@/lib/posts";
 import { NOT_COMPANIES } from "@/lib/organization";
@@ -10,9 +11,7 @@ export default function PostSources({ companies }: Props) {
   const notCompanies = companies.filter((c) => NOT_COMPANIES.includes(c.name)).map((c) => c.label);
   return (
     <section className="home-extra" aria-labelledby="sources-heading">
-      <h2 id="sources-heading" className="label">
-        Companies we learn from
-      </h2>
+      <Overprint id="sources-heading" className="label">Companies we learn from</Overprint>
       <ul className="sources-list">
         {companies.map((c) => (
           <li key={c.name}>
