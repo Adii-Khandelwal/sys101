@@ -224,7 +224,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             </div>
 
         <div id="concept" className="part">
-          <p className="label part-label">Part A: Concept</p>
+          <p className="label part-label">Part A: The idea</p>
 
           <section id="why" aria-labelledby="why-h">
             <Overprint as="h2" id="why-h">Why it exists</Overprint>
@@ -314,7 +314,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
 
         <div id="posts" className="part">
           <div className="part-head" data-pagefind-ignore>
-            <p className="label part-label">Part B: Real world</p>
+            <p className="label part-label">Part B: Real companies</p>
             <a className="text-button label" href="#concept">
               Back to concept
             </a>

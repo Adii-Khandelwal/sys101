@@ -69,7 +69,7 @@ export default function DesignItFirst({ slug, decisions, sources }: Props) {
       })}
       <noscript>
         <div className="cap-noscript">
-          <p className="label">Answers (shown because scripts are off)</p>
+          <p className="label">Answers (shown because JavaScript is off)</p>
           {decisions.map((d) => (
             <p key={d.id}>
               {d.question} Better fit: {d.options[d.answerIndex].label}. {d.options[d.answerIndex].why} {d.realChoice.company} chose: {d.realChoice.text}

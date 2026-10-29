@@ -9,7 +9,7 @@ export default function InsideTopic({ topic, figures }: { topic: Topic; figures:
   return (
     <section className="home-extra inside-topic" aria-labelledby="inside-heading">
       <Overprint id="inside-heading" className="label">Inside a topic</Overprint>
-      <p className="home-extra-note">What every topic page holds.</p>
+      <p className="home-extra-note">The sections every topic page follows, in order.</p>
       <ol className="inside-sequence">
         {sections.map((s, i) => (
           <li key={s.id}>

@@ -45,7 +45,7 @@ export default function CapstoneQuiz({ slug, quiz, topicTitles }: { slug: string
       })}
       <noscript>
         <div className="cap-noscript">
-          <p className="label">Answers (shown because scripts are off)</p>
+          <p className="label">Answers (shown because JavaScript is off)</p>
           {quiz.map((q) => (
             <p key={q.question}>
               {q.question} {q.options[q.correct]}. {q.why}

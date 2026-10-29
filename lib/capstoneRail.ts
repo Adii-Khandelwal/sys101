@@ -1,12 +1,12 @@
 /** The sections the capstone rail lists, in page order. The ids are the section ids on the page. */
 export const RAIL_SECTIONS = [
-  { id: "brief", label: "Brief" },
-  { id: "design", label: "Design it" },
+  { id: "brief", label: "The brief" },
+  { id: "design", label: "Design it first" },
   { id: "size", label: "Size it" },
-  { id: "system", label: "System" },
+  { id: "system", label: "The system" },
   { id: "break", label: "Break it" },
-  { id: "differ", label: "Compare" },
-  { id: "check", label: "Quiz" },
+  { id: "differ", label: "Where they differ" },
+  { id: "check", label: "Check yourself" },
 ] as const;
 
 /** Reserved keys in the stored picks (decision ids start with a letter, so they never clash). */

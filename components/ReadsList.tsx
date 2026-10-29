@@ -80,7 +80,7 @@ export default function ReadsList({ data }: { data: ReadsData }) {
       <p className="posts-count" aria-live="polite">
         {filtered ? `${shown} of ${data.total} reads match.${q && shown ? " Press Enter to go to the first." : ""}` : null}
       </p>
-      {shown === 0 && <p className="search-note">No reads match. Clear a filter to see the list again.</p>}
+      {shown === 0 && <p className="search-note">No reads match. Clear a filter to see every read.</p>}
       {groups.map((g) => (
         <section key={g.id} aria-labelledby={g.id} className="reads-theme">
           <h2 id={g.id} className="label posts-group-h">
