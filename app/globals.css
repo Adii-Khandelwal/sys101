@@ -3143,17 +3143,6 @@ button:active:not(:disabled),
   outline: 2px solid var(--accent);
 }
 
-/* Left rail: one marker slides to the current row. */
-.rail-marker {
-  position: absolute;
-  left: -1px;
-  top: 0;
-  width: 1px;
-  height: 18px;
-  background: var(--accent);
-  transition: transform var(--dur-base) var(--ease-in-out);
-}
-
 /* Page to page: cross-fade the content (browsers with View Transitions). */
 /* Old page fades out quickly; the new one fades in over it and settles up by a few pixels. */
 ::view-transition-old(root) {
@@ -3303,7 +3292,6 @@ html[data-theme-reveal] .site-header {
 
   .seg::after,
   .learn-progress-fill,
-  .rail-marker,
   .read-toggle[aria-pressed="true"] .read-box,
   .legend-dot.is-read {
     background: Highlight;
