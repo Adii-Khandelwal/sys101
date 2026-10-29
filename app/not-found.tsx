@@ -10,7 +10,7 @@ export default function NotFound() {
     <article className="dossier legal">
       <Overprint as="h1" className="page-h1">Page not found</Overprint>
       <p>
-        There is no page at this address. <Link href="/">Go to the map</Link> to pick a topic.
+        This address leads nowhere, perhaps because the page moved or the link has a typo. <Link href="/">Go to the map</Link> to pick a topic.
       </p>
       <SiteFooter />
     </article>

@@ -114,7 +114,7 @@ export default function PostsIndex({ data }: { data: Data }) {
       <h2 id={`by-${id}-h`} className="label posts-view-h">
         {title}
       </h2>
-      {empty ? <p className="search-note">No posts match “{query.trim()}”.</p> : children}
+      {empty ? <p className="search-note">No posts match “{query.trim()}”. Clear the filter to see every post.</p> : children}
     </section>
   );
 
