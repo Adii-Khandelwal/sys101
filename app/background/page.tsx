@@ -38,8 +38,8 @@ export default function Background() {
       <div data-pagefind-body>
         <Overprint as="h1" className="page-h1" data-pagefind-meta="title">Background</Overprint>
         <p className="background-lead">
-          The posts on each topic assume a few things the topic itself does not teach. They are listed here, each with the sentence that
-          assumes it. A concept marked Taught later comes up in a later topic, and its one-line gist is enough for now.
+          Each topic&apos;s posts take a few ideas for granted that the topic does not teach. Every idea is listed here with the sentence that
+          assumes it. A concept marked Taught later has its own topic further along, and its one-line gist is enough for now.
         </p>
 
         {files.map((b) => {

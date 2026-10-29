@@ -3,7 +3,7 @@ import Link from "next/link";
 import Overprint from "@/components/Overprint";
 import SiteFooter from "@/components/SiteFooter";
 
-export const metadata: Metadata = { title: "Page not found" };
+export const metadata: Metadata = { title: "Page not found", description: "This page does not exist. Go back to the sys101 map to pick a topic." };
 
 export default function NotFound() {
   return (

@@ -151,7 +151,7 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
           it, or reset everything below.
         </p>
       )}
-      {empty && <p className="data-note">Nothing has been saved in this browser yet.</p>}
+      {empty && <p className="data-note">Nothing saved in this browser yet. Mark a section done and it will show here.</p>}
 
       {!blocked && !corrupt && (
         <section aria-labelledby="summary-h">

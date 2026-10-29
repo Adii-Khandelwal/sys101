@@ -91,7 +91,7 @@ export default function Home() {
           />
           <p className="masthead-actions">
             <Link className="label" href="/about">
-              Why I made this
+              Why I made it
             </Link>
             <TourLink tour="home" />
           </p>

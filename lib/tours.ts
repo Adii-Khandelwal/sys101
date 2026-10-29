@@ -40,7 +40,7 @@ export const TOURS: Record<TourId, TourStep[]> = {
     },
     {
       target: "nav",
-      title: "Look around",
+      title: "Find your way around",
       text: "Glossary defines every term the topics use. Blogs lists every write-up they are built on, by topic, company or year. Great reads is a short list of the posts and papers the field leans on. Capstones are whole systems built from several topics.",
       phone: { text: "Menu opens the Glossary, which defines every term the topics use; Blogs, every write-up they are built on; Great reads, a short list of the posts and papers the field leans on; and Capstones, whole systems built from several topics." },
     },
@@ -52,7 +52,7 @@ export const TOURS: Record<TourId, TourStep[]> = {
     },
     {
       target: "capstones",
-      title: "Put it together",
+      title: "Whole systems",
       text: "Near the bottom, Put it together lists capstones: whole systems, like a metrics pipeline, that combine several topics. Each shows how many of its topics you have finished, so you can tell when you are ready to read it.",
     },
     {
@@ -64,7 +64,7 @@ export const TOURS: Record<TourId, TourStep[]> = {
   topic: [
     {
       target: "jump",
-      title: "Two halves",
+      title: "Idea first, then the real world",
       text: "The page has two halves: the idea first, then how companies use it. If you already know the idea, Skip to the posts takes you straight there.",
     },
     {
@@ -79,7 +79,7 @@ export const TOURS: Record<TourId, TourStep[]> = {
     },
     {
       target: "posts",
-      title: "The posts",
+      title: "Posts in plain words",
       text: "Each post is rewritten in plain words, with the original linked at the end. If there is a Background link, it lists what the posts assume you already know.",
     },
     {

@@ -59,7 +59,7 @@ export default function GlossaryFilter({ groups, heading }: { groups: GlossaryGr
             ref={inputRef}
             id="glossary-filter"
             type="search"
-            placeholder="Filter terms"
+            placeholder="Filter terms, e.g. replica"
             autoComplete="off"
             spellCheck={false}
             value={query}

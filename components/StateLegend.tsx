@@ -22,7 +22,7 @@ export default function StateLegend() {
   return (
     <p className="graph-legend label" data-tour="states">
       <span className="legend-item">
-        <LegendMark state="unread" /> not started
+        <LegendMark state="unread" /> unread
       </span>
       <span className="legend-item">
         <LegendMark state="ready" /> ready to read

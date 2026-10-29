@@ -63,7 +63,7 @@ export default async function CapstonePage({ params }: Props) {
             <div>
               <dt>Read first</dt>
               <dd>
-                <a href="#need">{c.topics.length} topics, listed under What you need</a>
+                <a href="#need">{c.topics.length} topics, listed under Topics it builds on</a>
               </dd>
             </div>
             <div>
@@ -78,7 +78,7 @@ export default async function CapstonePage({ params }: Props) {
         <p className="posts-lead">{c.summary}</p>
 
         <section className="cap-section" id="need">
-          <Overprint as="h2">What you need</Overprint>
+          <Overprint as="h2">Topics it builds on</Overprint>
           <p className="cap-outcome">After this you can see which finished topics this design leans on, and which to revisit first.</p>
           <TopicReadiness mode="list" items={c.topics.map((t) => ({ slug: t.slug, title: topicTitles[t.slug], role: t.role }))} />
         </section>

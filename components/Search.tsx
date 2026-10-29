@@ -109,7 +109,7 @@ export default function Search() {
         ref={inputRef}
         id="site-search"
         type="search"
-        placeholder="Search topics, companies, terms"
+        placeholder="Search, e.g. sharding or consensus"
         autoComplete="off"
         spellCheck={false}
         value={query}

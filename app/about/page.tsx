@@ -13,13 +13,13 @@ export const metadata: Metadata = pageMeta({ path: "/about", title: "About", des
 
 const SECTIONS = [
   ["why-i-made-it", "Why I made it"],
-  ["how-it-works", "How it works"],
+  ["how-it-works", "How the map works"],
   ["how-to-use-it", "How to use it"],
   ["how-posts-are-picked", "How posts are picked"],
-  ["about-the-write-ups", "About the write-ups"],
+  ["about-the-write-ups", "How the write-ups are made"],
   ["whats-new", "What’s new"],
   ["your-progress", "Your progress"],
-  ["questions", "Questions"],
+  ["questions", "Common questions"],
 ];
 
 const FAQ = [
@@ -47,7 +47,7 @@ export default function About() {
         each other, with the good posts picked out and explained.
       </p>
 
-      <Overprint as="h2" id="how-it-works">How it works</Overprint>
+      <Overprint as="h2" id="how-it-works">How the map works</Overprint>
       <p>
         On a wide screen the homepage is a map; on a phone it is a list in the same order. On the map,
         each topic sits to the right of what it builds on, so you start on the left and work across. A
@@ -92,7 +92,7 @@ export default function About() {
         check only reports links that stop working.
       </p>
 
-      <Overprint as="h2" id="about-the-write-ups">About the write-ups</Overprint>
+      <Overprint as="h2" id="about-the-write-ups">How the write-ups are made</Overprint>
       <p>
         {AI_ASSISTANCE} The figures are compared against the original pages with a script I run by hand,
         and a person may not have reviewed each one. The posts belong to their authors and companies, and
@@ -115,7 +115,7 @@ export default function About() {
         <Link href="/data">Your data</Link> and <Link href="/privacy">Privacy</Link>.
       </p>
 
-      <Overprint as="h2" id="questions">Questions</Overprint>
+      <Overprint as="h2" id="questions">Common questions</Overprint>
       <div className="faq">
         {FAQ.map(([q, a]) => (
           <details key={q}>
