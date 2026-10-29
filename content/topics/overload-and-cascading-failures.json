@@ -376,7 +376,7 @@
           },
           {
             "step": "Clients keep the overload alive",
-            "explanation": "Errors in some Copilot services started a client-side retry loop that raised traffic during recovery, and GitHub had to stop that behaviour before restoring traffic safely. The thread puts Copilot Token Service traffic at 70K to 100K requests per second against a normal 7K to 9K, and says a latent VS Code retry bug amplified traffic by about ten times."
+            "explanation": "Errors in some Copilot services started a client-side retry loop that raised traffic during recovery, and GitHub had to stop that behaviour before restoring traffic safely. The thread puts Copilot Token Service traffic at 70K to 100K requests per second against a normal 7K to 9K, and says a latent VS Code retry bug caused it."
           },
           {
             "step": "Mitigation",
@@ -396,10 +396,6 @@
           {
             "value": "70–100K RPS",
             "meaning": "Copilot Token Service traffic during the retry loop, against a normal 7–9K RPS; from GitHub's incident thread (community discussion 205164), not the blog post"
-          },
-          {
-            "value": "approximately 10x",
-            "meaning": "Traffic amplification from a latent VS Code retry bug, per the same incident thread, not the blog post"
           },
           {
             "value": "approximately 20%",

@@ -271,10 +271,6 @@
     "verdict": "ok",
     "source": "RCA: On July 19, 2024, two additional IPC Template Instances were deployed"
   },
-  "github-aug-17-outage-2026|ten times": {
-    "verdict": "ok",
-    "source": "incident thread #205164 (not the blog page): a latent VS Code retry bug \"amplified traffic by approximately 10x\""
-  },
   "google-autopilot-2020|two change": {
     "verdict": "ok",
     "source": "paper: one loop for horizontal scaling, \"the other two for vertical scaling of per-task resources\""
