@@ -63,7 +63,7 @@ export default async function CapstonePage({ params }: Props) {
             <div>
               <dt>Read first</dt>
               <dd>
-                <a href="#need">{c.topics.length} topics, listed under Topics it builds on</a>
+                <a href="#need">{c.topics.length} topics, listed below</a>
               </dd>
             </div>
             <div>
@@ -114,7 +114,7 @@ export default async function CapstonePage({ params }: Props) {
         <DiagramLab slug={c.slug} diagram={c.diagram} topicTitles={topicTitles} />
         <noscript>
           <section className="cap-section cap-noscript">
-            <h2>Parts and failures (scripts are off)</h2>
+            <h2>Parts and failures (JavaScript is off)</h2>
             <dl>
               {c.diagram.nodes.map((n) => (
                 <div key={n.id}>

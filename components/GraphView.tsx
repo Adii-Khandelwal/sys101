@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { NODE_RADIUS, MIN_LABEL_SCALE, chooseLayers, columns, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
 import { useHalves, useInProgressTopics, useReadTopics } from "@/lib/progress";
 import type { LessonMeta } from "@/lib/lessonStore";
-import { groupSet, highlightSet, nextHighlight, nextStation, placeTooltip, prerequisiteLines, revealDelta, type HighlightEvent } from "@/lib/graphUi";
+import { groupSet, isInterchange, highlightSet, nextHighlight, nextStation, placeTooltip, prerequisiteLines, revealDelta, type HighlightEvent } from "@/lib/graphUi";
 import { createPortal } from "react-dom";
 import { LABEL_BASELINE, LABEL_LEFT, edgeId, handRing, ringFor, routeEdges, routeHidden, routeShape } from "@/lib/metroRoute";
 import { readyTopics } from "@/lib/nextUp";
@@ -489,7 +489,7 @@ export default function GraphView({ nodes, edges, onActive, metas = NO_METAS }: 
     <>
       {/* The key sits above the chart, in front of the group badges. */}
       <div className="graph-toolbar">
-        <StateLegend />
+        <StateLegend interchange />
       </div>
 
       <div className="graph-groups label" role="group" aria-label="Highlight a group of topics">
@@ -573,6 +573,7 @@ export default function GraphView({ nodes, edges, onActive, metas = NO_METAS }: 
                 const half = isRead ? undefined : halves[n.slug];
                 const inProg = !isRead && !half && inProgress.includes(n.slug);
                 const isReady = !isRead && (prereqs.get(n.slug) ?? []).every((q) => read.includes(q));
+                const interchange = isInterchange(n.group, prereqs.get(n.slug) ?? [], (q) => bySlug.get(q)?.group);
                 const near = !highlighting || lit.has(n.slug);
                 const faded = !near || undefined;
                 return (
@@ -582,6 +583,7 @@ export default function GraphView({ nodes, edges, onActive, metas = NO_METAS }: 
                     data-read={isRead || undefined}
                     data-progress={inProg || undefined}
                     data-half={half}
+                    data-interchange={interchange || undefined}
                     data-ready={(isReady && !inProg && !half) || undefined}
                     data-lit={(highlighting && near) || undefined}
                     data-active={(!activeGroup && active === n.slug) || undefined}
@@ -622,6 +624,7 @@ export default function GraphView({ nodes, edges, onActive, metas = NO_METAS }: 
                     >
                       <circle className="graph-node-hit" cx={p.x} cy={p.y} r={HIT_RADIUS} />
                       <circle className="graph-node-focus" cx={p.x} cy={p.y} r={NODE_RADIUS + 5} />
+                      {interchange && <circle className="graph-node-interchange" cx={p.x} cy={p.y} r={NODE_RADIUS + 3} />}
                       <circle className="graph-node-shape" cx={p.x} cy={p.y} r={NODE_RADIUS - 1} />
                       <circle className="graph-node-dot" cx={p.x} cy={p.y} r={3.5} />
                       {half && (

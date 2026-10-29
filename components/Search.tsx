@@ -145,7 +145,7 @@ export default function Search() {
         )}
         {showResults &&
           (results.length === 0 ? (
-            <p className="search-note">Nothing on the site mentions “{query.trim()}”.</p>
+            <p className="search-note">No topic, post or term matches “{query.trim()}”. Try a shorter word.</p>
           ) : (
             <>
               <p className="visually-hidden">

@@ -23,7 +23,7 @@ function LegendMark({ state }: { state: State }) {
 }
 
 /** The six states, shown the same way above the map and above the Path list. */
-export default function StateLegend() {
+export default function StateLegend({ interchange = false }: { interchange?: boolean }) {
   return (
     <p className="graph-legend label" data-tour="states">
       <span className="legend-item">
@@ -44,6 +44,15 @@ export default function StateLegend() {
       <span className="legend-item">
         <LegendMark state="read" /> read
       </span>
+      {interchange && (
+        <span className="legend-item">
+          <svg className="legend-mark" viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" focusable="false">
+            <circle cx="8" cy="8" r="4" fill="var(--paper)" stroke="var(--ink)" strokeWidth="2" />
+            <circle cx="8" cy="8" r="7" fill="none" stroke="var(--ink)" strokeWidth="1" />
+          </svg>
+          {"\u0020"}outer ring: joins two groups
+        </span>
+      )}
     </p>
   );
 }

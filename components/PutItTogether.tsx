@@ -12,7 +12,7 @@ export default function PutItTogether({ capstones, titles }: { capstones: Capsto
   return (
     <section className="home-extra put-together" aria-labelledby="put-heading" data-tour="capstones">
       <Overprint id="put-heading" className="label">Put it together</Overprint>
-      <p className="home-extra-note">Whole systems that combine topics from the map.</p>
+      <p className="home-extra-note">Whole systems built on several topics from the map: you design, size and break each one.</p>
       <ul className="cap-index">
         {capstones.slice(0, SHOWN).map((c) => (
           <li key={c.slug}>

@@ -5,6 +5,7 @@ import IntentLink from "./IntentLink";
 import { markTopics, useHalves, useInProgressTopics, useReadTopics } from "@/lib/progress";
 import { readyTopics, type IndexEntry } from "@/lib/nextUp";
 import type { LessonMeta } from "@/lib/lessonStore";
+import { tallyPath as tally } from "@/lib/tally";
 import StateLegend from "./StateLegend";
 
 export type PathEntry = {
@@ -99,7 +100,12 @@ export default function PathView({ entries, headingId = "path-heading", metas = 
                 {g.name}, {slugs.length} of {entries.length} topics
               </span>
               <span className="path-group-count">
-                {readInGroup} / {slugs.length} read
+                <span className="visually-hidden">
+                  , {readInGroup} of {slugs.length} read
+                </span>
+                <svg className="path-tally" width={tally(readInGroup).width} height="26" aria-hidden="true">
+                  <path d={tally(readInGroup).d} />
+                </svg>
               </span>
               <button
                 type="button"

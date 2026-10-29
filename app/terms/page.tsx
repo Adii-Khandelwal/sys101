@@ -24,6 +24,8 @@ export default function Terms() {
       <PageRail sections={SECTIONS} />
       <Overprint as="h1" className="page-h1" data-pagefind-meta="title">Terms</Overprint>
 
+      <p className="short-version">Short version: free to use, provided as is, and every linked post belongs to its authors.</p>
+
       <p>
         sys101 is a personal, non-commercial project: a map of system design topics with links to
         engineering posts about them. It is free to use.

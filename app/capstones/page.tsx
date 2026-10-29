@@ -39,7 +39,7 @@ export default function Capstones() {
     <article className="dossier posts-page cap-page">
       <div data-pagefind-body>
         <h1 data-pagefind-meta="title">Capstones</h1>
-        <p className="posts-lead">Each capstone combines topics from the map into one system. You decide first, size it, break it, then see what the companies chose.</p>
+        <p className="posts-lead">Each capstone is one whole system built on several topics. You make the design choices first, size it, break it, then see what the companies chose.</p>
         <ul className="cap-index">
           {capstones.map((c) => (
             <li key={c.slug}>

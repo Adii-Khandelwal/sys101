@@ -58,6 +58,14 @@ export function groupSet(group: string, nodes: { slug: string; group?: string }[
   return new Set(nodes.filter((n) => n.group === group).map((n) => n.slug));
 }
 
+/** An interchange station: a topic that builds on a topic from another group, so it joins two groups of the map. */
+export function isInterchange(group: string | undefined, prerequisites: string[], groupOf: (slug: string) => string | undefined) {
+  return !!group && prerequisites.some((q) => {
+    const g = groupOf(q);
+    return !!g && g !== group;
+  });
+}
+
 export type HighlightEvent =
   | { type: "enter"; node: string }
   | { type: "focus"; node: string }

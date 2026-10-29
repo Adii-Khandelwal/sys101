@@ -38,3 +38,21 @@ Read every page type as rendered HTML from the dev server (home, topic, learn, c
 | Tour step (topic) | The posts | Posts in plain words |
 
 Anchors and tour targets are unchanged. `.claude/rules/capstones.md` and `graph.md` and `lib/background.test.ts` were updated to match.
+
+## Round three (29 Oct 2026)
+
+Read the topic, learn, capstone, list and home-section frames rendered from a production build, plus component labels and empty states. Sourced figures, quotes, quiz answers and content JSON were not touched; tour targets and anchors are unchanged.
+
+| Page | Old | New |
+| - | - | - |
+| /capstones lead | Each capstone combines topics from the map into one system. You decide first, size it, break it, then see what the companies chose. | Each capstone is one whole system built on several topics. You make the design choices first, size it, break it, then see what the companies chose. |
+| Capstone page, Read first | N topics, listed under Topics it builds on | N topics, listed below |
+| Capstone rail | Brief / Design it / System / Compare / Quiz | The brief / Design it first / The system / Where they differ / Check yourself (same as the section headings) |
+| Capstone, scripts off | Parts and failures (scripts are off); Answers (shown because scripts are off) | ... (JavaScript is off); ... because JavaScript is off |
+| Home, Put it together note | Whole systems that combine topics from the map. | Whole systems built on several topics from the map: you design, size and break each one. |
+| Home, Inside a topic note | What every topic page holds. | The sections every topic page follows, in order. |
+| Topic page, part labels | Part A: Concept / Part B: Real world | Part A: The idea / Part B: Real companies (matches the tour step "Idea first, then the real world") |
+| Learn page, last section (rail and h2) | Where to go next | Kept: learn page texts say "Go back to the topic page"; the topic page keeps "What to learn next" |
+| Home search, no results | Nothing on the site mentions "x". | No topic, post or term matches "x". Try a shorter word. |
+| Glossary, no results | No terms match "x". | No terms match "x". Clear the filter to see every term. |
+| Great reads, no results | Clear a filter to see the list again. | Clear a filter to see every read. |
