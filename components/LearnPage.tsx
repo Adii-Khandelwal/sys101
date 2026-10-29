@@ -9,7 +9,7 @@ import LearnRail, { type LearnEntry } from "./LearnRail";
 import VideoEmbed from "./VideoEmbed";
 import { prerequisiteLabel, type Learn, type Source, type VideoSource } from "@/lib/learn";
 import type { Topic } from "@/lib/topics";
-import { learnUpdated } from "@/lib/site";
+import { hostOf, learnUpdated } from "@/lib/site";
 import { learnReadingLabel } from "@/lib/readingTime";
 import { StripBackToTop } from "./BackToTop";
 
@@ -165,7 +165,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
               <ul className="learn-reading">
                 {st.reading.map((r, j) => (
                   <li key={j}>
-                    <a href={byId.get(r.source)!.url} target="_blank" rel="noopener noreferrer">
+                    <a href={byId.get(r.source)!.url} data-host={hostOf(byId.get(r.source)!.url)} target="_blank" rel="noopener noreferrer">
                       {name(r.source)}
                     </a>
                     , {r.section}. {r.what}{" "}
@@ -273,7 +273,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
         <ol className="learn-sources">
           {learn.sources.map((s) => (
             <li key={s.id} id={`src-${s.id}`}>
-              <a href={s.url} target="_blank" rel="noopener noreferrer">
+              <a href={s.url} data-host={hostOf(s.url)} target="_blank" rel="noopener noreferrer">
                 {s.title}
               </a>
               <span className="learn-source-meta">

@@ -11,6 +11,7 @@ import Reveal from "./Reveal";
 import PageUpdated from "./PageUpdated";
 import SiteFooter from "./SiteFooter";
 import PostFigure from "./figures/PostFigure";
+import { hostOf } from "@/lib/site";
 
 type Props = {
   topic: Topic;
@@ -59,7 +60,7 @@ export function PostDigest({ post, index, titles }: { post: Post; index: number;
           {post.stillCitedBy && (
             <p>
               Still cited in {post.stillCitedBy.year}:{" "}
-              <a href={post.stillCitedBy.url} target="_blank" rel="noopener noreferrer">
+              <a href={post.stillCitedBy.url} data-host={hostOf(post.stillCitedBy.url)} target="_blank" rel="noopener noreferrer">
                 {post.stillCitedBy.title}
               </a>
             </p>
@@ -69,7 +70,7 @@ export function PostDigest({ post, index, titles }: { post: Post; index: number;
       {!old && post.stillCitedBy && (
         <p className="age-cited">
           Still cited in {post.stillCitedBy.year}:{" "}
-          <a href={post.stillCitedBy.url} target="_blank" rel="noopener noreferrer">
+          <a href={post.stillCitedBy.url} data-host={hostOf(post.stillCitedBy.url)} target="_blank" rel="noopener noreferrer">
             {post.stillCitedBy.title}
           </a>
         </p>
@@ -245,7 +246,7 @@ export function OriginalPosts({ posts }: { posts: Post[] }) {
       <ul>
         {posts.map((post) => (
           <li key={post.url}>
-            <a href={post.url} target="_blank" rel="noopener noreferrer">
+            <a href={post.url} data-host={hostOf(post.url)} target="_blank" rel="noopener noreferrer">
               {post.title}
             </a>
             <span className="source-meta label">

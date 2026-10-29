@@ -23,6 +23,9 @@ export const PAGE_DATES = { about: "2026-10-14", terms: "2026-10-14", privacy: "
 export const AI_ASSISTANCE =
   "The write-ups are drafted with an AI assistant that reads each source. They have not all been reviewed line by line and may contain errors. When a write-up and the original disagree, trust the original.";
 
+/** The host of an external link without "www.", printed after the link on paper (the `data-host` attribute, app/globals.css print block). */
+export const hostOf = (url: string) => new URL(url).hostname.replace(/^www\./, "");
+
 export const absoluteUrl = (path: string) => SITE_URL + (path === "/" ? "" : path);
 
 /** A meta description must be shorter than this many characters (checked by scripts/check-seo.mjs). */

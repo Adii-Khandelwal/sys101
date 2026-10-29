@@ -4944,11 +4944,11 @@ html[data-posts-view] .posts-view-h {
     transform: none;
   }
 
-  a[target="_blank"][href^="http"]::after {
-    content: " (" attr(href) ")";
-    font-size: 0.8em;
+  /* External sources carry their host in small type; internal links print as plain text. */
+  a[data-host]::after {
+    content: " " attr(data-host);
+    font-size: 0.75em;
     color: var(--ink-soft);
-    overflow-wrap: anywhere;
   }
 
   h1,
@@ -4959,8 +4959,83 @@ html[data-posts-view] .posts-view-h {
 
   figure,
   svg,
-  .post {
+  .post,
+  .quiz > li,
+  .in-short,
+  .margin-note,
+  .route li {
     break-inside: avoid;
+  }
+
+  /* A printed plate: the page chrome and the guided-tour links go, the title block stays. */
+  .scroll-ruler,
+  .lesson-tour,
+  .lesson-jump,
+  .lesson-top,
+  .text-button,
+  .quiz-score {
+    display: none !important;
+  }
+
+  .overprint::before {
+    content: none;
+  }
+
+  .chapter-grid,
+  .chapter-head,
+  .chapter-body,
+  .chapter-main {
+    display: block !important;
+  }
+
+  .chapter-head {
+    padding: 0 0 16pt;
+    border-bottom: 1pt solid var(--ink);
+  }
+
+  .chapter-h1 {
+    font-size: 30pt;
+    line-height: 1.1;
+    margin: 6pt 0 10pt;
+  }
+
+  .chapter-meta {
+    margin: 0;
+  }
+
+  .in-short {
+    border: 1pt solid var(--ink);
+    padding: 8pt 12pt;
+    background: none !important;
+  }
+
+  .margin-num {
+    margin-right: 6pt;
+  }
+
+  /* The margin notes and the full route print open, in the flow instead of beside the text. */
+  .chapter .margin-terms,
+  .margin-terms[data-placed] .margin-note {
+    display: block !important;
+    position: static !important;
+    width: auto;
+    transform: none !important;
+    margin: 6pt 0 0;
+    font-size: 10pt;
+  }
+
+  .margin-terms-in {
+    position: static !important;
+  }
+
+  .route::details-content {
+    content-visibility: visible;
+    display: block;
+    height: auto;
+  }
+
+  .route summary {
+    display: none;
   }
 }
 
