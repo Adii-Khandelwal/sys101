@@ -5,6 +5,7 @@ import {
   answer,
   emptyProgress,
   exportFile,
+  halfOf,
   isTopicRead,
   loadProgress,
   migrate,
@@ -330,5 +331,19 @@ describe("renamed post ids", () => {
     expect(p.topics.failover.done).toEqual(["github-mysql-ha-failover-2018", "check"]);
     expect(p.topics.failover.visited).toEqual(["github-mysql-ha-failover-2018"]);
     expect(p.topics.failover.last).toBe("github-mysql-ha-failover-2018");
+  });
+});
+
+describe("halfOf", () => {
+  const meta = { slug: "t", postIds: ["a", "b"], correct: [] };
+  const p = (done: string[], posts: string[]) => ({ version: 3 as const, topics: { t: { done, visited: [], answers: {} } }, posts });
+  it("names the one finished half, and none for both or neither", () => {
+    expect(halfOf(p([...CONCEPT_SECTIONS], ["a"]), meta)).toBe("concept");
+    expect(halfOf(p(["why"], ["a", "b"]), meta)).toBe("posts");
+    expect(halfOf(p([...CONCEPT_SECTIONS], ["a", "b"]), meta)).toBeNull();
+    expect(halfOf(p(["why"], ["a"]), meta)).toBeNull();
+  });
+  it("does not count a topic with no posts as posts read", () => {
+    expect(halfOf(p(["why"], []), { ...meta, postIds: [] })).toBeNull();
   });
 });

@@ -1,10 +1,15 @@
-type State = "unread" | "ready" | "progress" | "read";
+type State = "unread" | "ready" | "progress" | "concept" | "posts" | "read";
 
 /** Legend icons drawn like the nodes: thin ring, thick ring with a centre dot, filled orange. */
 function LegendMark({ state }: { state: State }) {
   return (
     <svg className="legend-mark" viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" focusable="false">
-      {state === "read" ? (
+      {state === "concept" || state === "posts" ? (
+        <>
+          <circle cx="8" cy="8" r="5.5" fill="var(--paper)" stroke="var(--accent)" strokeWidth="3" />
+          <path d={state === "concept" ? "M8 2.5A5.5 5.5 0 0 0 8 13.5Z" : "M8 2.5A5.5 5.5 0 0 1 8 13.5Z"} fill="var(--accent)" />
+        </>
+      ) : state === "read" ? (
         <circle cx="8" cy="8" r="7" fill="var(--accent)" />
       ) : state === "progress" ? (
         <circle cx="8" cy="8" r="5.5" fill="var(--paper)" stroke="var(--accent)" strokeWidth="3" />
@@ -17,7 +22,7 @@ function LegendMark({ state }: { state: State }) {
   );
 }
 
-/** The four states, shown the same way above the map and above the Path list. */
+/** The six states, shown the same way above the map and above the Path list. */
 export default function StateLegend() {
   return (
     <p className="graph-legend label" data-tour="states">
@@ -29,6 +34,12 @@ export default function StateLegend() {
       </span>
       <span className="legend-item">
         <LegendMark state="progress" /> in progress
+      </span>
+      <span className="legend-item">
+        <LegendMark state="concept" /> concept read
+      </span>
+      <span className="legend-item">
+        <LegendMark state="posts" /> posts read
       </span>
       <span className="legend-item">
         <LegendMark state="read" /> read

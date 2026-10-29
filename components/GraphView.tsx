@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { NODE_RADIUS, MIN_LABEL_SCALE, chooseLayers, columns, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
-import { useInProgressTopics, useReadTopics } from "@/lib/progress";
+import { useHalves, useInProgressTopics, useReadTopics } from "@/lib/progress";
+import type { LessonMeta } from "@/lib/lessonStore";
 import { groupSet, highlightSet, nextHighlight, nextStation, placeTooltip, prerequisiteLines, revealDelta, type HighlightEvent } from "@/lib/graphUi";
 import { createPortal } from "react-dom";
 import { LABEL_BASELINE, LABEL_LEFT, edgeId, handRing, ringFor, routeEdges, routeHidden, routeShape } from "@/lib/metroRoute";
@@ -23,6 +24,8 @@ type Props = {
   edges: GraphEdge[];
   /** Called with the hovered or focused station, or null, so the station sign can follow it. */
   onActive?: (slug: string | null) => void;
+  /** Posts and quiz key per topic, so a finished concept or finished posts can be drawn as a half mark. */
+  metas?: LessonMeta[];
 };
 
 type P = { x: number; y: number };
@@ -42,7 +45,9 @@ const TIP_COOL_MS = 150;
 
 const NO_NODES = new Set<string>();
 
-export default function GraphView({ nodes, edges, onActive }: Props) {
+const NO_METAS: LessonMeta[] = [];
+
+export default function GraphView({ nodes, edges, onActive, metas = NO_METAS }: Props) {
   const stage = useRef<HTMLDivElement>(null);
   const scrollWrap = useRef<HTMLDivElement>(null);
   const container = useRef<SVGSVGElement>(null);
@@ -53,6 +58,7 @@ export default function GraphView({ nodes, edges, onActive }: Props) {
   const router = useRouter();
   const read = useReadTopics();
   const inProgress = useInProgressTopics();
+  const halves = useHalves(metas);
 
   const [ready, setReady] = useState(false);
   // True once the layout effect has put every node in place; until then the skeleton stands in.
@@ -562,7 +568,8 @@ export default function GraphView({ nodes, edges, onActive }: Props) {
                 const p = pos.get(n.slug);
                 if (!p) return null;
                 const isRead = read.includes(n.slug);
-                const inProg = !isRead && inProgress.includes(n.slug);
+                const half = isRead ? undefined : halves[n.slug];
+                const inProg = !isRead && !half && inProgress.includes(n.slug);
                 const isReady = !isRead && (prereqs.get(n.slug) ?? []).every((q) => read.includes(q));
                 const near = !highlighting || lit.has(n.slug);
                 const faded = !near || undefined;
@@ -572,7 +579,8 @@ export default function GraphView({ nodes, edges, onActive }: Props) {
                     className="graph-node"
                     data-read={isRead || undefined}
                     data-progress={inProg || undefined}
-                    data-ready={(isReady && !inProg) || undefined}
+                    data-half={half}
+                    data-ready={(isReady && !inProg && !half) || undefined}
                     data-lit={(highlighting && near) || undefined}
                     data-active={(!activeGroup && active === n.slug) || undefined}
                     data-faded={faded}
@@ -581,7 +589,7 @@ export default function GraphView({ nodes, edges, onActive }: Props) {
                       className="graph-node-link"
                       href={`/topic/${n.slug}`}
                       data-own-transition=""
-                      aria-label={`${n.title}, ${n.posts} ${n.posts === 1 ? "post" : "posts"}, ${isRead ? "read" : inProg ? "in progress" : isReady ? "ready to read" : "unread"}`}
+                      aria-label={`${n.title}, ${n.posts} ${n.posts === 1 ? "post" : "posts"}, ${isRead ? "read" : half === "concept" ? "concept read" : half === "posts" ? "posts read" : inProg ? "in progress" : isReady ? "ready to read" : "unread"}`}
                       onClick={(e) => openNode(e, n.slug)}
                       onKeyDown={(e) => {
                         draggedRef.current = false; // Enter after a mouse drag still opens
@@ -614,6 +622,12 @@ export default function GraphView({ nodes, edges, onActive }: Props) {
                       <circle className="graph-node-focus" cx={p.x} cy={p.y} r={NODE_RADIUS + 5} />
                       <circle className="graph-node-shape" cx={p.x} cy={p.y} r={NODE_RADIUS - 1} />
                       <circle className="graph-node-dot" cx={p.x} cy={p.y} r={3.5} />
+                      {half && (
+                        <path
+                          className="graph-node-half"
+                          d={`M${p.x} ${p.y - (NODE_RADIUS - 1)}A${NODE_RADIUS - 1} ${NODE_RADIUS - 1} 0 0 ${half === "concept" ? 0 : 1} ${p.x} ${p.y + (NODE_RADIUS - 1)}Z`}
+                        />
+                      )}
                     </a>
                     {/* The label hangs under the station, left-aligned with the station's left edge. */}
                     <text
@@ -649,7 +663,8 @@ export default function GraphView({ nodes, edges, onActive }: Props) {
                 const isRead = read.includes(activeNode.slug);
                 const pending = pre.filter((q) => !read.includes(q));
                 const isReady = !isRead && pending.length === 0;
-                const status = isRead ? "Read" : isReady ? "Ready to read" : "Not ready yet";
+                const half = isRead ? undefined : halves[activeNode.slug];
+                const status = isRead ? "Read" : half === "concept" ? "Concept read" : half === "posts" ? "Posts read" : isReady ? "Ready to read" : "Not ready yet";
                 const lines = prerequisiteLines(pre, read, (q) => bySlug.get(q)?.title ?? q);
                 return (
                   <>

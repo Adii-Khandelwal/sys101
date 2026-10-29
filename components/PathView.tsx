@@ -2,8 +2,9 @@
 
 import { useRef, useState } from "react";
 import IntentLink from "./IntentLink";
-import { markTopics, useInProgressTopics, useReadTopics } from "@/lib/progress";
+import { markTopics, useHalves, useInProgressTopics, useReadTopics } from "@/lib/progress";
 import { readyTopics, type IndexEntry } from "@/lib/nextUp";
+import type { LessonMeta } from "@/lib/lessonStore";
 import StateLegend from "./StateLegend";
 
 export type PathEntry = {
@@ -24,7 +25,11 @@ type Props = {
   entries: PathEntry[];
   /** Heading id so the homepage can label the view. */
   headingId?: string;
+  /** Posts per topic, for the half marks. */
+  metas?: LessonMeta[];
 };
+
+const NO_METAS: LessonMeta[] = [];
 
 /**
  * A linear syllabus: topics in prerequisite order, grouped, each showing its
@@ -32,11 +37,12 @@ type Props = {
  * Reads the same browser read-state as the graph, so the two stay in step.
  * This is the graph's fallback and the mobile homepage (docs/ideas.md ideas 5, 6).
  */
-export default function PathView({ entries, headingId = "path-heading" }: Props) {
+export default function PathView({ entries, headingId = "path-heading", metas = NO_METAS }: Props) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const blocks = useRef<Record<string, HTMLDivElement | null>>({});
   const read = useReadTopics();
   const inProgress = new Set(useInProgressTopics());
+  const halves = useHalves(metas);
   const indexEntries: IndexEntry[] = entries.map((e) => ({ slug: e.slug, title: e.title, prerequisites: e.prerequisites }));
   const ready = new Set(readyTopics(indexEntries, read).map((e) => e.slug));
   const titleOf = new Map(entries.map((e) => [e.slug, e.title]));
@@ -50,7 +56,7 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
 
   // In progress (started, not finished) takes priority over ready, matching the map.
   const state = (slug: string) =>
-    read.includes(slug) ? "read" : inProgress.has(slug) ? "progress" : ready.has(slug) ? "ready" : "unread";
+    read.includes(slug) ? "read" : halves[slug] === "concept" ? "concept" : halves[slug] === "posts" ? "posts" : inProgress.has(slug) ? "progress" : ready.has(slug) ? "ready" : "unread";
 
   return (
     <section className="path" aria-labelledby={headingId}>
@@ -121,6 +127,7 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
                       {e.title}
                       {st === "ready" && <span className="path-ready-tag">, ready</span>}
                       {st === "progress" && <span className="path-progress-tag">, in progress</span>}
+                      {(st === "concept" || st === "posts") && <span className="path-progress-tag">, {st} read</span>}
                     </IntentLink>
                     <span className="path-meta">
                       <span className="visually-hidden">

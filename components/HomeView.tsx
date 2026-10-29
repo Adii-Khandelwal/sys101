@@ -131,7 +131,7 @@ export default function HomeView({
 
       {view === "map" ? (
         <>
-          <GraphView nodes={nodes} edges={edges} onActive={setSignActive} />
+          <GraphView nodes={nodes} edges={edges} onActive={setSignActive} metas={metas} />
           <div className="sign-slot">
             <StationSign
               topics={nodes.map((n) => {
@@ -147,7 +147,7 @@ export default function HomeView({
           <TopicIndex groups={indexGroups} />
         </>
       ) : (
-        <PathView entries={pathEntries} />
+        <PathView entries={pathEntries} metas={metas} />
       )}
     </>
   );

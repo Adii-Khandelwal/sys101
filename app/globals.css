@@ -833,6 +833,35 @@ h1[tabindex="-1"]:focus {
   fill: var(--accent);
 }
 
+/* Half marks: the in-progress ring with the left half filled (concept read) or the right half (posts read), no centre dot. */
+.graph-node[data-half] .graph-node-shape {
+  stroke: var(--accent);
+  stroke-width: 4.5;
+}
+
+.graph-node-half {
+  fill: var(--accent);
+  stroke: none;
+  pointer-events: none;
+}
+
+.graph-node[data-faded] .graph-node-half {
+  opacity: 0.6;
+}
+
+.graph-node[data-lit][data-half] .graph-node-shape {
+  stroke: var(--accent-dark);
+  stroke-width: 5.5;
+}
+
+.graph-node[data-lit] .graph-node-half {
+  fill: var(--accent-dark);
+}
+
+.graph-node[data-active][data-half] .graph-node-shape {
+  stroke-width: 6;
+}
+
 .graph-node[data-read] .graph-node-shape {
   fill: var(--accent);
   stroke: var(--accent);
@@ -1609,6 +1638,24 @@ h1[tabindex="-1"]:focus {
 .path-item.is-progress .path-marker {
   border-width: 3px;
   border-color: var(--accent);
+}
+/* Half marks: the same ring, the marker's left half (concept) or right half (posts) filled. */
+.path-item.is-concept .path-marker,
+.path-item.is-posts .path-marker {
+  border-width: 2px;
+  border-color: var(--accent);
+}
+.path-item.is-concept .path-marker::after,
+.path-item.is-posts .path-marker::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  clip-path: inset(0 50% 0 0);
+}
+.path-item.is-posts .path-marker::after {
+  clip-path: inset(0 0 0 50%);
 }
 .path-item.is-progress .path-marker::after {
   content: "";
