@@ -64,7 +64,7 @@ export default function GlossaryFilter({ groups, heading }: { groups: GlossaryGr
             spellCheck={false}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => (e.key === "Escape" ? (setQuery(""), e.currentTarget.blur()) : e.key === "Enter" && focusFirstResult(".glossary-terms a"))}
+            onKeyDown={(e) => (e.key === "Escape" ? (setQuery(""), e.currentTarget.blur()) : e.key === "Enter" && focusFirstResult(".glossary-topic h2 a"))}
             aria-describedby="glossary-filter-status"
             aria-keyshortcuts="/"
           />

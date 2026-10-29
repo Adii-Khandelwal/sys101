@@ -3245,6 +3245,9 @@ html[data-theme-reveal] .site-header {
 
 /* Windows high contrast: author backgrounds are dropped, so fills use system colours and boxes get a visible edge. */
 @media (forced-colors: active) {
+  .cta {
+    border: 1px solid LinkText;
+  }
   .seg,
   .learn-progress-track,
   .read-box {
