@@ -26,7 +26,7 @@ export default function Privacy() {
       <PageRail sections={SECTIONS} />
       <Overprint as="h1" className="page-h1" data-pagefind-meta="title">Privacy</Overprint>
 
-      <p>Short version: sys101 doesn&apos;t know who you are and doesn&apos;t try to find out.</p>
+      <p className="short-version">Short version: there are no accounts, your progress stays in your browser, and only the host and the visit counter see standard technical data.</p>
 
       <Overprint as="h2" id="no-accounts">No accounts</Overprint>
       <p>
