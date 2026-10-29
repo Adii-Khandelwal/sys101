@@ -3,7 +3,8 @@
 import type { Camera } from "./camera";
 
 export type MapView = { camera: Camera; scrollLeft: number };
-type Saved = { v: 1; at: number; view: MapView };
+/** v2: the camera is in the SVG map's framed convention (y down); v1 saved the old Sigma camera (y up) and is ignored. */
+type Saved = { v: 2; at: number; view: MapView };
 
 const KEY = "sys101:mapView";
 /** The Map mounts within this long of a popstate (Back or Forward) when it is the page being returned to. */
@@ -26,7 +27,7 @@ const store = (): Store | null => {
 
 export function saveMapView(view: MapView, s: Store | null = store(), now = Date.now()) {
   try {
-    s?.setItem(KEY, JSON.stringify({ v: 1, at: now, view } satisfies Saved));
+    s?.setItem(KEY, JSON.stringify({ v: 2, at: now, view } satisfies Saved));
   } catch {
     // storage full or blocked: Back simply returns to the fitted map
   }
@@ -48,7 +49,7 @@ export function takeMapView(s: Store | null = store(), now = Date.now(), popped 
   try {
     const p = JSON.parse(raw) as Saved;
     const c = p?.view?.camera;
-    if (p.v !== 1 || !finite(p.at) || now - p.at > MAX_AGE_MS) return null;
+    if (p.v !== 2 || !finite(p.at) || now - p.at > MAX_AGE_MS) return null;
     if (!c || !finite(c.x) || !finite(c.y) || !finite(c.ratio) || c.ratio <= 0 || !finite(p.view.scrollLeft) || p.view.scrollLeft < 0) return null;
     return { camera: { x: c.x, y: c.y, ratio: c.ratio, angle: 0 }, scrollLeft: p.view.scrollLeft };
   } catch {

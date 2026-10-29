@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { INTERACTIVE_MIN_NODES, groupSet, mapIsInteractive, mapIsInteractiveAt, INK_SOFT, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "./graphUi";
+import { INTERACTIVE_MIN_NODES, nextStation, groupSet, mapIsInteractive, mapIsInteractiveAt, INK_SOFT, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "./graphUi";
 
 describe("tooltip placement", () => {
   const tip = { w: 280, h: 72 };
@@ -135,5 +135,26 @@ describe("the Fit to size button", () => {
     // the camera feeds its state, and there are still no zoom or show-all buttons on screen
     expect(src).toContain("setFitted(isFitted(next, fitRef.current))");
     expect(src).not.toMatch(/>\s*(Zoom in|Zoom out|Show all links|Fit all)\s*</);
+  });
+});
+
+describe("arrow keys between stations", () => {
+  const px = new Map([["a", { x: 0, y: 100 }], ["b", { x: 100, y: 40 }], ["c", { x: 100, y: 130 }], ["d", { x: 100, y: 220 }], ["e", { x: 200, y: 100 }]]);
+  const edges = [{ from: "a", to: "b" }, { from: "a", to: "c" }, { from: "b", to: "e" }, { from: "c", to: "e" }];
+  it("left goes to the nearest prerequisite and right to the nearest topic that builds on this one", () => {
+    expect(nextStation("ArrowRight", "a", px, edges)).toBe("c"); // c is 30 away, b is 60
+    expect(nextStation("ArrowLeft", "e", px, edges)).toBe("c");
+    expect(nextStation("ArrowLeft", "a", px, edges)).toBeNull();
+    expect(nextStation("ArrowRight", "e", px, edges)).toBeNull();
+  });
+  it("up and down walk the column, and stop at its ends", () => {
+    expect(nextStation("ArrowDown", "b", px, edges)).toBe("c");
+    expect(nextStation("ArrowDown", "c", px, edges)).toBe("d");
+    expect(nextStation("ArrowDown", "d", px, edges)).toBeNull();
+    expect(nextStation("ArrowUp", "b", px, edges)).toBeNull();
+  });
+  it("other keys and unknown stations do nothing", () => {
+    expect(nextStation("Enter", "a", px, edges)).toBeNull();
+    expect(nextStation("ArrowUp", "zzz", px, edges)).toBeNull();
   });
 });

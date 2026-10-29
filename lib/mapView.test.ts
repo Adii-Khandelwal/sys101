@@ -40,7 +40,7 @@ describe("restoring the Map's zoom and position for the Back button", () => {
   });
 
   it("ignores corrupt, wrongly shaped and out-of-range data", () => {
-    for (const raw of ["not json", "null", "{}", JSON.stringify({ v: 2, at: 1, view }), JSON.stringify({ v: 1, at: 1, view: { camera: { x: "a", y: 0, ratio: 1 }, scrollLeft: 0 } }), JSON.stringify({ v: 1, at: 1, view: { camera: { x: 0, y: 0, ratio: 0 }, scrollLeft: 0 } }), JSON.stringify({ v: 1, at: 1, view: { camera: { x: 0, y: 0, ratio: 1 }, scrollLeft: -5 } })]) {
+    for (const raw of ["not json", "null", "{}", JSON.stringify({ v: 1, at: 1, view }), JSON.stringify({ v: 2, at: 1, view: { camera: { x: "a", y: 0, ratio: 1 }, scrollLeft: 0 } }), JSON.stringify({ v: 2, at: 1, view: { camera: { x: 0, y: 0, ratio: 0 }, scrollLeft: 0 } }), JSON.stringify({ v: 2, at: 1, view: { camera: { x: 0, y: 0, ratio: 1 }, scrollLeft: -5 } })]) {
       expect(takeMapView(memory({ [KEY]: raw }), 100, 90), raw).toBeNull();
     }
   });
@@ -53,8 +53,13 @@ describe("restoring the Map's zoom and position for the Back button", () => {
     expect(takeMapView(broken, 100, 90)).toBeNull();
   });
 
+  it("a view saved by the old y-up camera (version 1) is ignored, so it can never flip the map", () => {
+    const old = memory({ [KEY]: JSON.stringify({ v: 1, at: 10, view }) });
+    expect(takeMapView(old, 20, 15)).toBeNull();
+  });
+
   it("always restores with angle 0", () => {
-    const s = memory({ [KEY]: JSON.stringify({ v: 1, at: 10, view: { camera: { x: 1, y: 2, ratio: 3, angle: 99 }, scrollLeft: 0 } }) });
+    const s = memory({ [KEY]: JSON.stringify({ v: 2, at: 10, view: { camera: { x: 1, y: 2, ratio: 3, angle: 99 }, scrollLeft: 0 } }) });
     expect(takeMapView(s, 20, 15)?.camera.angle).toBe(0);
   });
 });

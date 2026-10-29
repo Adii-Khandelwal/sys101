@@ -124,3 +124,26 @@ export function prerequisiteLines(prerequisites: string[], read: readonly string
     finish: pending.length > 0 ? `Finish ${pending.map(titleOf).join(pending.length === 2 ? " and " : ", ")} first.` : null,
   };
 }
+
+/**
+ * Which station an arrow key moves keyboard focus to, or null. Left goes to a prerequisite and right to a topic that builds
+ * on this one (the nearest by height when there are several); up and down go to the station above or below in the same
+ * column. `px` are stage positions (y down) and `edges` the drawn prerequisites.
+ */
+export function nextStation(
+  key: string,
+  slug: string,
+  px: Map<string, { x: number; y: number }>,
+  edges: { from: string; to: string }[],
+): string | null {
+  const here = px.get(slug);
+  if (!here) return null;
+  const nearest = (slugs: string[]) =>
+    slugs.filter((s) => px.has(s)).sort((a, b) => Math.abs(px.get(a)!.y - here.y) - Math.abs(px.get(b)!.y - here.y) || a.localeCompare(b))[0] ?? null;
+  if (key === "ArrowLeft") return nearest(edges.filter((e) => e.to === slug).map((e) => e.from));
+  if (key === "ArrowRight") return nearest(edges.filter((e) => e.from === slug).map((e) => e.to));
+  if (key !== "ArrowUp" && key !== "ArrowDown") return null;
+  const column = [...px].filter(([, p]) => Math.abs(p.x - here.x) < 1).sort((a, b) => a[1].y - b[1].y);
+  const i = column.findIndex(([s]) => s === slug);
+  return column[i + (key === "ArrowDown" ? 1 : -1)]?.[0] ?? null;
+}

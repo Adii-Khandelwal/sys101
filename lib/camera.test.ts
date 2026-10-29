@@ -4,6 +4,7 @@ import {
   MIN_ZOOM,
   STEP,
   clampPan,
+  revealDelta,
   dragView,
   moveView,
   fitRatio,
@@ -158,5 +159,19 @@ describe("isFitted (the Fit to size button's state)", () => {
     const dragged = moveView(zoomBy(fitState(fit), 3, { x: 0.4, y: 0.6 }, fit), { x: 0.05, y: -0.03 });
     expect(isFitted(dragged, fit)).toBe(false);
     expect(isFitted(fitState(fit), fit)).toBe(true);
+  });
+});
+
+describe("revealDelta (keyboard focus on a station that is off screen)", () => {
+  it("is zero when the point is already inside the margins", () => {
+    expect(revealDelta(300, 0, 1000)).toBe(0);
+    expect(revealDelta(40, 0, 1000)).toBe(0);
+  });
+  it("moves left or up (negative) for a point before the low margin, and right or down for one past the high margin", () => {
+    expect(revealDelta(-100, 0, 1000)).toBe(-140);
+    expect(revealDelta(1200, 0, 1000, 40, 100)).toBe(300);
+  });
+  it("leaves room for a label that extends past the station", () => {
+    expect(revealDelta(900, 0, 1000, 40, 40 + 150)).toBe(90);
   });
 });

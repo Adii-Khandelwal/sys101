@@ -4,19 +4,20 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useRouter } from "next/navigation";
 import { NODE_RADIUS, MIN_LABEL_SCALE, chooseLayers, columns, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
 import { useInProgressTopics, useReadTopics } from "@/lib/progress";
-import { groupSet, highlightSet, mapIsInteractiveAt, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "@/lib/graphUi";
+import { groupSet, highlightSet, mapIsInteractiveAt, nextHighlight, nextStation, placeTooltip, prerequisiteLines, type HighlightEvent } from "@/lib/graphUi";
 import { createPortal } from "react-dom";
 import { LABEL_BASELINE, LABEL_LEFT, edgeId, handRing, ringFor, routeEdges, routeHidden, routeShape } from "@/lib/metroRoute";
 import { readyTopics } from "@/lib/nextUp";
 import { DURATION, easeInOut, prefersReducedMotion } from "@/lib/motion";
-import { navigateWithTransition } from "./ViewTransitions";
-import { clickIntent } from "@/lib/nodeOpen";
+import { navigateWithTransition, pageReady } from "./ViewTransitions";
+import { clickIntent, playNodeOpen, removeBubbles, stationSpec } from "@/lib/nodeOpen";
 import { saveMapView, takeMapView } from "@/lib/mapView";
 import { DESKTOP, PHONE } from "@/lib/breakpoints";
 import StateLegend from "./StateLegend";
 import {
   STEP,
   clampPan,
+  revealDelta,
   dragView,
   fitRatio,
   fitState,
@@ -83,6 +84,8 @@ export default function GraphView({ nodes, edges }: Props) {
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [active, setActive] = useState<string | null>(null);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  // What the one polite live region says (prerequisites of the station keyboard focus is on).
+  const [announce, setAnnounce] = useState("");
   // The stage's pixel width when the horizontal map is wider than the viewport
   // (so the wrapper scrolls); 0 means it fits, and the stage fills the viewport.
   const [contentWidth, setContentWidth] = useState(0);
@@ -475,10 +478,14 @@ export default function GraphView({ nodes, edges }: Props) {
     const fit = fitRatio(W, height + PADDING + PADDING_TOP, W, size.height);
     fitRef.current = fit;
     const next: Layout = { W, H: size.height, fit, px, routes, hiddenRoutes, labelWidth };
+    // The layout runs again for small reasons (fonts, a scrollbar, the topic list); a stage of the same size keeps the
+    // camera the reader has (or Back just restored). A different size starts fitted.
+    const prev = layoutRef.current;
+    const keepCamera = !!prev && prev.W === W && prev.H === next.H && prev.fit === fit;
     layoutRef.current = next;
     setLayout(next);
     cancelAnimation();
-    commitCamera(fitState(fit));
+    commitCamera(keepCamera ? camRef.current : fitState(fit));
     // Back or Forward to the map: put the zoom, pan and sideways scroll back as they were (read once).
     if (viewToRestore.current === undefined) viewToRestore.current = takeMapView();
     const saved = viewToRestore.current;
@@ -509,7 +516,11 @@ export default function GraphView({ nodes, edges }: Props) {
       // but not by the pointer leaving the canvas (that is hover only).
       if (activeGroupRef.current && event.type !== "leave") activateGroup(null);
     };
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && clear({ type: "escape" });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setAnnounce("");
+      clear({ type: "escape" });
+    };
     const onScroll = () => clear({ type: "scroll" });
     const onDown = (e: PointerEvent) => {
       // The group row is part of the map: its own click toggles the group, so pressing it must not clear it first.
@@ -556,15 +567,87 @@ export default function GraphView({ nodes, edges }: Props) {
     [activeGroup, active, nodes, edges],
   );
 
-  // Open a topic. Ctrl, Cmd, Shift, Alt and middle clicks are left to the browser (new tab). The camera and sideways
-  // scroll are kept for the Back button.
-  // 4c: the node-open bubble (lib/nodeOpen.ts playNodeOpen) plays here again; 4a is a plain navigation.
-  const openNode = (e: React.MouseEvent, slug: string) => {
+  // Open a topic from a click. Ctrl, Cmd, Shift, Alt and middle clicks are left to the browser (a new tab), reduced motion
+  // and clicks a script made go at once, and a plain pointer or touch click grows the station's bubble while the topic
+  // loads behind it (lib/nodeOpen.ts). The camera and sideways scroll are saved for the Back button either way.
+  const pendingOpen = useRef<{ cancel: () => void; isActive: () => boolean } | null>(null);
+  const openNode = (e: React.MouseEvent<Element>, slug: string) => {
     if (draggedRef.current) return e.preventDefault();
-    if (clickIntent(e.nativeEvent, prefersReducedMotion()) === "new-tab") return;
+    const intent = clickIntent(e.nativeEvent, prefersReducedMotion());
+    if (intent === "new-tab") return;
     e.preventDefault();
+    // A second click, or the second of a double click, cancels the opening instead of starting another.
+    if (pendingOpen.current?.isActive() || e.detail > 1) {
+      pendingOpen.current?.cancel();
+      pendingOpen.current = null;
+      return;
+    }
+    const href = `/topic/${slug}`;
+    router.prefetch(href); // ready when the growth ends
     if (scrollWrap.current) saveMapView({ camera: camRef.current, scrollLeft: scrollWrap.current.scrollLeft });
-    navigateWithTransition(router, `/topic/${slug}`);
+    const shape = e.currentTarget.querySelector(".graph-node-shape");
+    const dot = e.currentTarget.querySelector(".graph-node-dot");
+    if (intent === "instant" || !shape || !dot) return navigateWithTransition(router, href);
+    activate(slug);
+    const paint = getComputedStyle(shape);
+    pendingOpen.current = playNodeOpen(
+      stationSpec(shape.getBoundingClientRect(), {
+        stroke: paint.stroke,
+        fill: paint.fill,
+        strokeWidth: parseFloat(paint.strokeWidth),
+        dot: getComputedStyle(dot).fill,
+        dotRadius: Number(dot.getAttribute("r")),
+      }),
+      // Runs behind the plain screen, so the page swap can take as long as it likes without a visible stall.
+      async () => {
+        router.push(href);
+        await pageReady(href, 3500);
+      },
+    );
+  };
+
+  // A page restored from the back/forward cache keeps its DOM: make sure no bubble is left on it. Leaving the map any
+  // other way than opening a node also clears them; after opening one, the screen is still fading out over the new page.
+  useEffect(() => {
+    const onShow = (e: PageTransitionEvent) => e.persisted && removeBubbles();
+    window.addEventListener("pageshow", onShow);
+    return () => {
+      window.removeEventListener("pageshow", onShow);
+      if (!pendingOpen.current) removeBubbles();
+    };
+  }, []);
+
+  // Arrow keys move between stations (see nextStation); one polite live region says where focus landed.
+  const moveFocus = (e: React.KeyboardEvent<Element>, slug: string) => {
+    if (!layout || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+    const to = nextStation(e.key, slug, layout.px, drawn);
+    if (e.key.startsWith("Arrow")) e.preventDefault(); // at the end of a column or line the browser must not scroll the map instead
+    if (!to) return;
+    // Focus without the browser's own scrolling, then bring the station (and the start of its label) into view: the
+    // camera pans when it is zoomed, and the sideways scroll of the map moves when it is wider than the window. The page
+    // itself never scrolls.
+    stage.current?.querySelector<HTMLElement>(`.graph-node-link[href="/topic/${to}"]`)?.focus({ preventScroll: true });
+    const p = view?.pos.get(to);
+    const wrap = scrollWrap.current;
+    if (!p || !wrap) return;
+    const label = Math.min(layout.labelWidth.get(to) ?? 0, 220);
+    if (!fitted) panBy(revealDelta(p.x, 0, layout.W, 40, 40 + label), revealDelta(p.y, 0, layout.H, 60, 80));
+    else {
+      const need = revealDelta(p.x - wrap.scrollLeft, 0, wrap.clientWidth, 40, 40 + label);
+      if (!need) return;
+      // The wrapper snaps its sideways scroll so the window ends on a column mark: land on a mark that still shows the
+      // station and its label, the nearest one to where it would have gone, so the browser has nothing to correct.
+      const want = wrap.scrollLeft + need;
+      const ends = [...snapEnds, wrap.scrollWidth].filter((end) => end - wrap.clientWidth <= p.x - 40 && end >= p.x + 40 + label);
+      const end = ends.sort((m, n) => Math.abs(m - wrap.clientWidth - want) - Math.abs(n - wrap.clientWidth - want))[0];
+      wrap.scrollLeft = end === undefined ? want : end - wrap.clientWidth;
+    }
+  };
+  // The link's own name already says the title and state; the live region adds what it builds on.
+  const say = (slug: string) => {
+    const pre = prereqs.get(slug) ?? [];
+    const lines = prerequisiteLines(pre, read, (q) => bySlug.get(q)?.title ?? q);
+    setAnnounce([lines.builtOn ?? (pre.length ? "" : "Builds on nothing."), lines.finish ?? ""].filter(Boolean).join(" "));
   };
 
   // Tooltip: rendered in a portal with fixed coordinates, so nothing clips it.
@@ -692,6 +775,9 @@ export default function GraphView({ nodes, edges }: Props) {
           style={{ "--rows": rowCount(layered, "horizontal"), "--layers": rowCount(layered, "vertical"), width: contentWidth || undefined } as React.CSSProperties}
         >
         {!placed && <GraphSkeleton />}
+        <div className="visually-hidden" aria-live="polite">
+          {announce}
+        </div>
         <svg ref={container} role="group" aria-label="Topics" aria-hidden={placed ? undefined : true} className="graph-canvas" style={placed ? undefined : { visibility: "hidden" }}>
           {layout && view && (
             <>
@@ -753,8 +839,10 @@ export default function GraphView({ nodes, edges }: Props) {
                     <a
                       className="graph-node-link"
                       href={`/topic/${n.slug}`}
+                      data-own-transition=""
                       aria-label={`${n.title}, ${n.posts} ${n.posts === 1 ? "post" : "posts"}, ${isRead ? "read" : inProg ? "in progress" : isReady ? "ready to read" : "unread"}`}
                       onClick={(e) => openNode(e, n.slug)}
+                      onKeyDown={(e) => moveFocus(e, n.slug)}
                       onPointerEnter={() => {
                         router.prefetch(`/topic/${n.slug}`); // ready before the click lands
                         tipByKey.current = false;
@@ -764,9 +852,13 @@ export default function GraphView({ nodes, edges }: Props) {
                       onFocus={(e) => {
                         router.prefetch(`/topic/${n.slug}`);
                         tipByKey.current = e.currentTarget.matches(":focus-visible");
+                        if (tipByKey.current) say(n.slug);
                         activate(nextHighlight(activeRef.current, { type: "focus", node: n.slug }));
                       }}
-                      onBlur={() => activate(nextHighlight(activeRef.current, { type: "blur" }))}
+                      onBlur={() => {
+                        setAnnounce("");
+                        activate(nextHighlight(activeRef.current, { type: "blur" }));
+                      }}
                     >
                       <circle className="graph-node-hit" cx={p.x} cy={p.y} r={HIT_RADIUS} />
                       <circle className="graph-node-focus" cx={p.x} cy={p.y} r={NODE_RADIUS + 5} />

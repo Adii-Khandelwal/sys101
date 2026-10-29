@@ -33,14 +33,37 @@ export const BURST_SCALE = 12; // the pop itself
 export const SHOCK_SCALE = 2.2; // how far the shock ring travels past the bubble's full size
 
 /** The node as drawn by the map: a ring, a band of fill, and a centre dot (see the "bordered" program in GraphView). */
-type BubbleSpec = { x: number; y: number; r: number; border: string; fill: string; dot: string; borderSize: number };
+export type BubbleSpec = { x: number; y: number; r: number; border: string; fill: string; dot: string; borderSize: number; dotRadius?: number };
 
 const FILL_BAND = 0.55; // the fill layer's width as a share of the radius, as in the map's node program
 
 /** Sizes of the three circles for a node of radius `r`: the whole node, inside the ring, and the centre dot. */
-export function bubbleLayers(r: number, borderSize: number) {
+export function bubbleLayers(r: number, borderSize: number, dotRadius?: number) {
   const inner = Math.max(0, r - borderSize);
-  return { outer: r, inner, dot: Math.max(0, inner - FILL_BAND * r) };
+  return { outer: r, inner, dot: Math.max(0, Math.min(inner, dotRadius ?? inner - FILL_BAND * r)) };
+}
+
+/**
+ * The bubble for a station of the SVG map: where it is (its circle's rect on screen), and how it is drawn (the circle's
+ * computed paint, so a theme and a state are copied as they are). The ring's outer radius is the circle's radius plus
+ * half its stroke; the centre dot is `dotRadius` (unread and read stations have none: it takes the fill colour).
+ */
+export function stationSpec(
+  rect: { left: number; top: number; width: number; height: number },
+  paint: { stroke: string; fill: string; strokeWidth: number; dot: string; dotRadius: number },
+): BubbleSpec {
+  const r = rect.width / 2 + paint.strokeWidth / 2;
+  const hasDot = paint.dot !== "none" && paint.dot !== "";
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
+    r,
+    border: paint.stroke,
+    fill: paint.fill,
+    dot: hasDot ? paint.dot : paint.fill,
+    borderSize: paint.strokeWidth,
+    dotRadius: hasDot ? paint.dotRadius : 0,
+  };
 }
 
 type Bubble = {
@@ -68,7 +91,7 @@ export function growBubble(spec: BubbleSpec): Bubble {
   el.className = "node-bubble";
   el.setAttribute("aria-hidden", "true");
   const big = (n: number) => n * SWELL_SCALE;
-  const { outer, inner, dot } = bubbleLayers(spec.r, spec.borderSize);
+  const { outer, inner, dot } = bubbleLayers(spec.r, spec.borderSize, spec.dotRadius);
   el.style.cssText = `left:${spec.x - big(outer)}px;top:${spec.y - big(outer)}px;width:${big(outer) * 2}px;height:${big(outer) * 2}px;transform:scale(${1 / SWELL_SCALE})`;
   const circle = (size: number, color: string) => {
     const c = document.createElement("span");
@@ -125,7 +148,7 @@ const sleep = (ms: number) => new Promise<void>((resolve) => window.setTimeout(r
  *   show the topic. If the page is slower than that, the bubble keeps growing, then breathes: it is the page loader.
  * Only transform and opacity are animated. `cancel` removes everything at once.
  */
-export function playNodeOpen(spec: BubbleSpec, navigate: () => Promise<void>): { cancel: () => void } {
+export function playNodeOpen(spec: BubbleSpec, navigate: () => Promise<void>): { cancel: () => void; isActive: () => boolean } {
   let cancelled = false;
   const curtain = document.createElement("div");
   curtain.className = "node-curtain";
@@ -133,13 +156,15 @@ export function playNodeOpen(spec: BubbleSpec, navigate: () => Promise<void>): {
   document.body.append(curtain);
   const bubble = growBubble(spec); // appended after the screen, so it sits above it
   let shock: HTMLElement | null = null;
+  let safety = 0;
   const cancel = () => {
     cancelled = true;
+    window.clearTimeout(safety);
     bubble.remove();
     shock?.remove();
     curtain.remove();
   };
-  window.setTimeout(cancel, SAFETY_MS);
+  safety = window.setTimeout(cancel, SAFETY_MS);
   let bursting = false;
   const burstTime = sleep(BURST_AT_MS);
   curtain.getBoundingClientRect();
@@ -160,7 +185,7 @@ export function playNodeOpen(spec: BubbleSpec, navigate: () => Promise<void>): {
     shock = document.createElement("div");
     shock.className = "node-burst";
     shock.setAttribute("aria-hidden", "true");
-    const full = bubbleLayers(spec.r, spec.borderSize).outer * SWELL_SCALE;
+    const full = bubbleLayers(spec.r, spec.borderSize, spec.dotRadius).outer * SWELL_SCALE;
     shock.style.cssText = `left:${spec.x - full}px;top:${spec.y - full}px;width:${full * 2}px;height:${full * 2}px;border-color:${spec.border}`;
     document.body.append(shock);
     shock.getBoundingClientRect();
@@ -174,5 +199,5 @@ export function playNodeOpen(spec: BubbleSpec, navigate: () => Promise<void>): {
     await ended;
     cancel();
   })();
-  return { cancel };
+  return { cancel, isActive: () => !cancelled };
 }

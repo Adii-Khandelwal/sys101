@@ -91,3 +91,14 @@ export function dragView(prev: { x: number; y: number }, now: { x: number; y: nu
 export function moveView(cam: Camera, delta: { x: number; y: number }): Camera {
   return { ...cam, x: cam.x + delta.x, y: cam.y + delta.y };
 }
+
+/**
+ * How far to move the view (in screen px, positive is right or down) so a point at `p` sits at least `before` px inside the
+ * low edge and `after` px inside the high edge of the range [lo, hi]; 0 when it already does. For keyboard focus landing
+ * on a station that is off screen.
+ */
+export function revealDelta(p: number, lo: number, hi: number, before = 40, after = 40) {
+  if (p < lo + before) return p - (lo + before);
+  if (p > hi - after) return p - (hi - after);
+  return 0;
+}
