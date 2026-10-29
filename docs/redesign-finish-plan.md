@@ -47,3 +47,17 @@ Branch `claude/redesign-extras` from `main`, one worker at a time (shared CSS, s
 | Copy round three | Topic and learn page frames, glossary, posts, terms, learn pages, empty states, tour text; same rules as before | check-seo, tours, tests in step |
 | Study ideas | Left-label / right-list layout on grouped list pages; a jump line without counts on /capstones, /reads, /glossary; "Short version" under Privacy and Terms titles (only claims the policy makes); oldstyle figures for years if Libre Caslon has them | 390 and 1440 screenshots; accessibility rules |
 | Not doing | "Try this first" and "Where people slip" (35+ new sourced texts), numbered section markers (clash with overprint and station numbers), collapsible side contents (layout shift) | Said again in the PR |
+
+## Queue: next design items (owner "add them all to queue", 29 Oct 2026)
+
+Start only after the extras PR is merged, on a fresh branch from `main`, one worker at a time, one commit per item. Order is the recommendation; the owner can reorder.
+
+| # | Item | Notes and gate |
+| - | - | - |
+| 1 | "Seen this before?" line | Fold the prerequisite reason into the existing Read first list instead of adding a second list; no new facts; check no repeat on the page |
+| 2 | Social image per topic | Offline script like `scripts/make-og.mjs`, committed PNGs, topic title in the print look; `check-seo` and image sizes stay green; nothing fetched at runtime |
+| 3 | Print as a printed plate | `@media print` for topic pages: clean title block, margin notes and route kept, ruler and header hidden; check with print emulation |
+| 4 | References list | Numbered list at the foot of each topic with superscript marks in the text (extends the numbered margin notes); some sources are cited inline already, so no double counting; year shown as the post header shows it |
+| 5 | Pull quote per topic | One sentence copied from the raw page of an opened post (curl check, per CLAUDE.md honesty rules), Caslon italic, company in Cabin below; skipped for any topic with no plainly quotable sentence; goes through `add-post` and `verify:figures` rules |
+
+Not queued (reasons above): filter chips, "Try this first", "Where people slip", collapsible side contents, a decorative section break.
