@@ -4,7 +4,7 @@ import fs from "node:fs";
 
 const H = { "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15", accept: "text/html,application/xhtml+xml", "accept-language": "en-US,en;q=0.9" };
 const text = (h) =>
-  h.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ")
+  h.replace(/<script\b[\s\S]*?<\/script\b[^>]*>/gi, " ").replace(/<style\b[\s\S]*?<\/style\b[^>]*>/gi, " ").replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ").replace(/&quot;/g, '"').replace(/&#0?39;|&#x27;/g, "'").replace(/&rsquo;|&#8217;/g, "’").replace(/&lsquo;|&#8216;/g, "‘")
     .replace(/&ldquo;|&#8220;/g, "“").replace(/&rdquo;|&#8221;/g, "”").replace(/&amp;/g, "&").replace(/\s+/g, " ");
 
