@@ -19,6 +19,15 @@ const SECTIONS = [
   ["about-the-write-ups", "About the write-ups"],
   ["whats-new", "What’s new"],
   ["your-progress", "Your progress"],
+  ["questions", "Questions"],
+];
+
+const FAQ = [
+  ["What is sys101?", "A map of system design topics in the order they depend on each other, with the engineering posts from companies that run these systems picked out and explained."],
+  ["Is it free?", "Yes. There are no accounts and nothing to buy."],
+  ["Where is my progress kept?", "In your own browser and nowhere else. You can export, import or reset it on the Your data page."],
+  ["Does it work offline?", "After one visit online, the whole site works offline. Only links to other sites need a connection."],
+  ["Where do the posts come from?", "From the engineering teams that built and ran the system. Each one needs real numbers and an honest account of what went wrong, and the original is always linked."],
 ];
 
 export default function About() {
@@ -105,6 +114,16 @@ export default function About() {
         tour are saved in your own browser and nowhere else. There are no accounts. See{" "}
         <Link href="/data">Your data</Link> and <Link href="/privacy">Privacy</Link>.
       </p>
+
+      <Overprint as="h2" id="questions">Questions</Overprint>
+      <div className="faq">
+        {FAQ.map(([q, a]) => (
+          <details key={q}>
+            <summary>{q}</summary>
+            <p>{a}</p>
+          </details>
+        ))}
+      </div>
 
       <PageUpdated date={PAGE_DATES.about} />
       <SiteFooter />

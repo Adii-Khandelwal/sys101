@@ -160,7 +160,7 @@ a {
 /* Links inside running text share the body's colour, so the underline is their only cue: draw it in --ink-soft
    (5.06:1 light, 6.57:1 dark against the paper) instead of the faint --rule that lists of links use. A colour change
    cannot do it: the accent against ink is 2.0:1 light and 2.1:1 dark, under the 3:1 that WCAG 1.4.1 asks for. */
-:is(p, dd, blockquote) a:not(.text-button, .label, .cta, .footer-group a, .explain a, .inside-source a, .label a) {
+:is(p, dd, blockquote) a:not(.text-button, .label, .cta, .site-footer a, .explain a, .inside-source a, .label a) {
   text-decoration: underline;
   text-decoration-color: var(--ink-soft);
 }
@@ -2747,12 +2747,29 @@ h1[tabindex="-1"]:focus {
   align-items: center;
 }
 
-.site-footer .footer-group {
+.site-footer .footer-col {
+  min-width: 140px;
+}
+
+@media (max-width: 640px) {
+  .site-footer {
+    flex-direction: column;
+  }
+}
+
+.site-footer .footer-label {
+  margin: 0 0 8px;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+
+.site-footer ul {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 /* The tour button looks like the footer links beside it. */
@@ -2851,6 +2868,30 @@ h1[tabindex="-1"]:focus {
     padding: 7px 0;
     color: var(--ink);
   }
+}
+
+.faq details {
+  border-top: 1px solid var(--rule);
+  padding: 12px 0;
+}
+
+.faq details:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+
+.faq summary {
+  cursor: pointer;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.8889rem;
+  min-height: 24px;
+}
+
+.faq summary:hover {
+  color: var(--accent);
+}
+
+.faq details p {
+  margin: 8px 0 0;
 }
 
 .legal p {
@@ -3869,9 +3910,11 @@ html {
     inset: -15px -4px;
   }
   /* Wrapped footer rows sit 44px apart, so one link's tap area never overlaps the row above or below. */
-  .site-footer,
-  .site-footer .footer-group {
+  .site-footer {
     row-gap: 25px;
+  }
+  .site-footer ul {
+    gap: 25px;
   }
   /* The Map and Path toggle sits close together, so its areas grow sideways just enough to reach 44px. */
   .home-view-toggle .text-button::after {
