@@ -1,0 +1,265 @@
+{
+  "slug": "traffic-steering-and-draining",
+  "promise": "After this you can follow the topic page and the posts: what steering and draining mean, why the layer you steer with sets the speed, and how weights drain a site gently.",
+  "before": {
+    "prerequisites": [
+      "dns",
+      "failover",
+      "load-balancing"
+    ],
+    "terms": [
+      {
+        "term": "Site",
+        "definition": "Any place that can serve users: a data centre, a point of presence or a zone."
+      },
+      {
+        "term": "Time-to-live (TTL)",
+        "definition": "How long a DNS answer may be cached before asking again."
+      },
+      {
+        "term": "In-flight request",
+        "definition": "A request already being handled when a decision changes."
+      }
+    ],
+    "note": "Read DNS, Failover and Load Balancing first: steering by name relies on how DNS answers are cached, the decision to move traffic comes from failover, and weights are a load balancing idea. The terms below are enough to begin."
+  },
+  "stages": [
+    {
+      "id": "basics",
+      "name": "Basics",
+      "body": [
+        "Sometimes you want to move traffic from one site to another without anything having broken: for maintenance, to ease a load, or to try a new site with a few users. Two words cover it. Steering is choosing where each user or request goes. Draining is lowering one site's share to zero while the work already running finishes.",
+        "Amazon's DNS service shows the idea at the name level. Route 53 lets you pick a routing policy for a record, and the list includes weighted, geolocation, latency and failover policies, each answering queries differently [[r53-policy]]. A weighted policy sends traffic to resources in the proportions you state [[r53-weighted]]."
+      ],
+      "terms": [
+        {
+          "term": "Traffic steering",
+          "definition": "Choosing which site serves each user or request."
+        },
+        {
+          "term": "Draining",
+          "definition": "Lowering a site's share toward zero while in-flight work finishes."
+        },
+        {
+          "term": "Routing policy",
+          "definition": "The rule a DNS service uses to decide which answer to give."
+        }
+      ],
+      "reading": [
+        {
+          "source": "r53-policy",
+          "section": "Choosing a routing policy",
+          "what": "The list of policies, and which one suits location, latency, failover or proportions."
+        },
+        {
+          "source": "r53-weighted",
+          "section": "Weighted routing",
+          "what": "How a weight becomes a share of the total, and what a weight of zero does."
+        }
+      ],
+      "canNow": [
+        "Say what steering and draining mean.",
+        "Name a few ways a DNS service can choose an answer.",
+        "Explain what a weight of zero is for."
+      ]
+    },
+    {
+      "id": "how",
+      "name": "How it works",
+      "body": [
+        "A weighted record gives each resource a relative weight, and a resource gets its weight as a share of the total. The Route 53 page gives an example: weights of 1 and 255 send 1/256th of the traffic to the first resource and the rest to the other, and you can change the balance slowly by changing the weights [[r53-weighted]].",
+        "The same idea works at a proxy. Envoy's weighted_clusters option lets a route name several upstream clusters with weights that say what percentage of traffic each should get, and the router picks a cluster on that basis [[envoy-route]]. Because the proxy decides per request, a change of weights applies to the next request.",
+        "Anycast is a different layer. The IETF's guidance describes announcing one service address from many places so that routing delivers each request to one of them [[rfc4786]]. It is simple, but the sender has little say in where its packets end up."
+      ],
+      "terms": [
+        {
+          "term": "Weight",
+          "definition": "A number that sets a resource's share of traffic relative to the others."
+        },
+        {
+          "term": "Weighted cluster",
+          "definition": "In Envoy, an upstream cluster listed on a route with a weight."
+        },
+        {
+          "term": "Anycast",
+          "definition": "One address announced from many places, with routing picking where a request lands."
+        }
+      ],
+      "reading": [
+        {
+          "source": "r53-weighted",
+          "section": "Weighted routing",
+          "what": "The 1 and 255 example and the sentence about changing the balance slowly."
+        },
+        {
+          "source": "envoy-route",
+          "section": "RouteAction: weighted_clusters",
+          "what": "How weights map to a percentage of traffic across clusters."
+        },
+        {
+          "source": "rfc4786",
+          "section": "Introduction and Anycast Service Distribution",
+          "what": "What anycast is and who it is written for."
+        }
+      ],
+      "canNow": [
+        "Work out a share from two weights.",
+        "Say where weights can be applied: DNS or a proxy.",
+        "Describe anycast in one sentence."
+      ]
+    },
+    {
+      "id": "deeper",
+      "name": "Going deeper",
+      "body": [
+        "Graceful draining is about what happens to work already under way. Envoy describes shedding connections gently: by default it discourages new requests for a period while still accepting connections until a drain timeout, and for HTTP/1 it adds Connection: close while for HTTP/2 it sends GOAWAY [[envoy-draining]]. The point is that the client is told to go elsewhere, not cut off.",
+        "Anycast has an awkward fact for drains. The IETF guidance notes that a TCP service needs several packets per transaction, so if routes change, packets of one transaction can be delivered to more than one node [[rfc4786]]. That is why changing routes under open connections is not graceful.",
+        "DNS has its own limit. Steering by location depends on knowing where the user is, and resolvers do not always say. RFC 7871 describes a DNS option that carries information about the network that originated a query, so an answer can fit the user rather than the resolver; the RFC itself notes known operational and privacy shortcomings [[rfc7871]]."
+      ],
+      "terms": [
+        {
+          "term": "Graceful drain",
+          "definition": "A drain that stops new work but lets in-flight work complete."
+        },
+        {
+          "term": "Drain timeout",
+          "definition": "The period after which connections still open during a drain are closed."
+        },
+        {
+          "term": "EDNS Client Subnet",
+          "definition": "A DNS option that carries the network a query came from."
+        }
+      ],
+      "reading": [
+        {
+          "source": "envoy-draining",
+          "section": "Draining",
+          "what": "When draining happens and how HTTP connections are told to move on."
+        },
+        {
+          "source": "rfc4786",
+          "section": "Design: Protocol Suitability",
+          "what": "Why services with multi-packet transactions need care under anycast."
+        },
+        {
+          "source": "rfc7871",
+          "section": "Abstract and Introduction",
+          "what": "What the option carries and the shortcomings the RFC admits."
+        }
+      ],
+      "canNow": [
+        "Explain what a graceful drain does for in-flight requests.",
+        "Say why a routing change can break open TCP connections.",
+        "Say why DNS steering by location is a guess."
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "In practice and trade-offs",
+      "body": [
+        "In practice you combine layers. A slow, coarse layer such as DNS places users near a site, and a fast layer you run does the day-to-day moving. Weights give you partial moves, so a drain can run in small steps, and a trial of a recovered site can start small. Whether you use the Envoy or Route 53 vocabulary, the plan has the same shape: set shares, move them in steps, and watch the result.",
+        "The costs are real. Weighted DNS answers are cached, so a change reaches users at the speed of the caches, not the operator [[r53-weighted]]. Anycast saves setup but gives up control [[rfc4786]]. A proxy gives the control but is one more component that has to stay up and be reachable when the site it fronts is failing. The topic page's two posts measure these trade-offs in real systems."
+      ],
+      "terms": [
+        {
+          "term": "Control plane",
+          "definition": "The part of a system that sends configuration, such as weights, to the components that move traffic."
+        }
+      ],
+      "reading": [
+        {
+          "source": "r53-weighted",
+          "section": "Health checks and weighted routing",
+          "what": "How zero-weight records behave with health checks, a case to know before relying on them."
+        },
+        {
+          "source": "envoy-draining",
+          "section": "Draining",
+          "what": "The drain_type setting and why ingress and egress listeners may differ."
+        }
+      ],
+      "canNow": [
+        "Describe a two-layer plan.",
+        "Name two costs of draining through each layer.",
+        "Read the posts with the trade-offs in mind."
+      ]
+    }
+  ],
+  "misconceptions": [
+    {
+      "myth": "A short DNS time-to-live means a site empties as soon as it expires.",
+      "truth": "The TTL asks caches to expire an answer, it does not force them to. The topic page's Dropbox post measured a long tail even with a one-minute TTL."
+    },
+    {
+      "myth": "Anycast lets you move users off a site cleanly.",
+      "truth": "Anycast leaves routing to pick the destination, and the IETF guidance warns that packets of one TCP transaction can reach different nodes if routes change [[rfc4786]]."
+    },
+    {
+      "myth": "A weight of zero cuts a user off mid-request.",
+      "truth": "Route 53 uses a weight of zero to stop sending traffic to a record [[r53-weighted]], and Envoy's draining discourages new requests while open connections finish within a timeout [[envoy-draining]]. What happens to work in flight depends on the layer."
+    }
+  ],
+  "tryIt": {
+    "intro": "These official sources have no short commands that show a drain without changing a real system, so there is nothing to run here. To practise, work out shares by hand: with weights of 1 and 255 the first gets 1/256th, so try weights of 1, 1 and 2 and write each share, then move the 2 to 0 and see who takes the traffic.",
+    "commands": []
+  },
+  "next": "Go back to the Traffic Steering and Draining topic page for the worked example and the quiz, then read the Dropbox post on its edge network and the Slack post on its cellular architecture. They show a one-minute DNS time-to-live that still took an hour to drain, and a zone drain done with weights at the load balancer.",
+  "sources": [
+    {
+      "id": "r53-policy",
+      "title": "Amazon Route 53: Choosing a routing policy",
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-29"
+    },
+    {
+      "id": "r53-weighted",
+      "title": "Amazon Route 53: Weighted routing",
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy-weighted.html",
+      "publisher": "Amazon Web Services",
+      "kind": "Vendor documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-29"
+    },
+    {
+      "id": "envoy-route",
+      "title": "Envoy: Route components (RouteAction and weighted_clusters)",
+      "url": "https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto",
+      "publisher": "Envoy project",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-29",
+      "note": "Latest development documentation; field names may change between releases."
+    },
+    {
+      "id": "envoy-draining",
+      "title": "Envoy: Draining",
+      "url": "https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/draining",
+      "publisher": "Envoy project",
+      "kind": "Project documentation",
+      "year": "no date shown",
+      "verifiedOn": "2026-10-29",
+      "note": "Latest development documentation; defaults may change between releases."
+    },
+    {
+      "id": "rfc4786",
+      "title": "RFC 4786: Operation of Anycast Services",
+      "url": "https://www.rfc-editor.org/rfc/rfc4786.html",
+      "publisher": "IETF",
+      "kind": "Best Current Practice",
+      "year": "2006",
+      "verifiedOn": "2026-10-29"
+    },
+    {
+      "id": "rfc7871",
+      "title": "RFC 7871: Client Subnet in DNS Queries",
+      "url": "https://www.rfc-editor.org/rfc/rfc7871.html",
+      "publisher": "IETF",
+      "kind": "Informational RFC",
+      "year": "2016",
+      "verifiedOn": "2026-10-29"
+    }
+  ]
+}
