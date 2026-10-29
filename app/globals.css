@@ -816,6 +816,7 @@ h1[tabindex="-1"]:focus {
   fill: none;
 }
 
+
 .graph-node[data-ready] .graph-node-shape,
 .graph-node[data-progress] .graph-node-shape {
   stroke-width: 4.5;
@@ -1516,6 +1517,18 @@ h1[tabindex="-1"]:focus {
   order: 2;
   flex: 0 0 auto;
   color: var(--ink-soft);
+  display: inline-flex;
+  align-items: center;
+}
+/* Topics read in the group, as hand-kept tally strokes; the number is in the visually hidden text. */
+.path-tally {
+  display: block;
+}
+.path-tally path {
+  fill: none;
+  stroke: var(--ink2);
+  stroke-width: 2.4;
+  stroke-linecap: round;
 }
 .path-group-mark {
   order: 3;
