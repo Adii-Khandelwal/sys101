@@ -1,6 +1,6 @@
 # Redesign plan: the two-ink print ("Atlas")
 
-Status: FINAL v3, 28 Oct 2026 (two independent review rounds done). Nothing is built. Phase 0 may start on the owner's "go"; Phase 1 needs the decision register (section 6) answered.
+Status: 29 Oct 2026. Phases 0 to 7 and the Phase 8 automated proof pass are done on branch claude/redesign-p5-topic-pages (report: docs/drafts/redesign-phase8-report.md). Still open: real phone, Safari, Lighthouse, forced-colors, owner walk-through, the PR to main.
 
 ## 1. What this is
 
