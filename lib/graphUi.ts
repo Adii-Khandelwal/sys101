@@ -124,28 +124,3 @@ export function prerequisiteLines(prerequisites: string[], read: readonly string
     finish: pending.length > 0 ? `Finish ${pending.map(titleOf).join(pending.length === 2 ? " and " : ", ")} first.` : null,
   };
 }
-
-type Pt = { x: number; y: number };
-
-/**
- * One drawn edge in screen pixels: a quadratic curve from `a` to `b` through `ctrl`, trimmed to the node rims (radius `r`),
- * plus an arrowhead (a triangle, 7 wide per unit of `width`, 5 across) whose tip touches the target's rim.
- */
-export function edgeShape(a: Pt, ctrl: Pt, b: Pt, r: number, width = 1, arrow = true) {
-  const unit = (f: Pt, t: Pt) => {
-    const l = Math.hypot(t.x - f.x, t.y - f.y) || 1;
-    return { x: (t.x - f.x) / l, y: (t.y - f.y) / l };
-  };
-  const d0 = unit(a, ctrl);
-  const d1 = unit(ctrl, b);
-  const len = arrow ? 7 * width : 0;
-  const start = { x: a.x + d0.x * r, y: a.y + d0.y * r };
-  const tip = { x: b.x - d1.x * r, y: b.y - d1.y * r };
-  const base = { x: tip.x - d1.x * len, y: tip.y - d1.y * len };
-  const half = 2.5 * width;
-  const f = (n: number) => Math.round(n * 100) / 100;
-  return {
-    d: `M${f(start.x)},${f(start.y)} Q${f(ctrl.x)},${f(ctrl.y)} ${f(base.x)},${f(base.y)}`,
-    head: `${f(tip.x)},${f(tip.y)} ${f(base.x - d1.y * half)},${f(base.y + d1.x * half)} ${f(base.x + d1.y * half)},${f(base.y - d1.x * half)}`,
-  };
-}

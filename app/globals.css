@@ -632,12 +632,32 @@ h1[tabindex="-1"]:focus {
   opacity: 0.5;
 }
 
+/* The chart frame and its crop marks: four hairline ticks just outside the corners, as on a printed plate. */
+.graph-frame {
+  position: relative;
+  margin: 26px 22px;
+}
+
+.graph-crop {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+}
+
+.graph-crop path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
 /* Wraps the map so a map wider than the viewport scrolls sideways (step 1 test). */
 .graph-scrollwrap {
   position: relative;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x proximity;
+  border: 1.5px solid var(--ink);
 }
 
 /* Zero-size marks at the right edge of each column's labels: the scroll window ends on one of them. */
@@ -673,8 +693,6 @@ h1[tabindex="-1"]:focus {
   min-width: 100%;
   height: clamp(250px, calc(var(--rows, 1) * 120px + 130px), 70vh);
   overflow: hidden;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
 }
 
 /* "Next up" under the tagline: the start button's twin, with the second ready topic on its own quiet line. */
@@ -697,46 +715,52 @@ h1[tabindex="-1"]:focus {
   color: var(--ink-soft);
 }
 
-/* Group names in a row above the map: each is a button that highlights that group's topics. */
+/* Group names in a row above the map: line badges (framed Cabin labels), each a button that highlights that group's topics. */
 .graph-groups {
   display: flex;
   flex-wrap: wrap;
-  gap: 0 20px;
-  margin: 0 0 4px;
+  gap: 8px 12px;
+  margin: 4px 0 4px;
 }
 .graph-group {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
+  min-height: 32px;
+  padding: 0 12px;
   white-space: nowrap;
-  color: var(--ink-soft);
+  color: var(--ink);
   appearance: none;
   margin: 0;
-  padding: 0;
-  border: 0;
+  border: 1.5px solid var(--ink);
   background: transparent;
   font: inherit;
   letter-spacing: inherit;
   text-transform: inherit;
   cursor: pointer;
-  border-radius: 2px;
-  transition: color var(--dur-fast) var(--ease-out);
+  border-radius: 0;
+  transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+}
+/* The badge is 32px tall; its tap target is 44px. */
+.graph-group::after {
+  content: "";
+  position: absolute;
+  inset: -6px -2px;
 }
 @media (hover: hover) and (pointer: fine) {
   .graph-group:hover {
-    color: var(--ink);
+    background: var(--highlight);
   }
 }
 .graph-group:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-/* Pressed: this group's topics are the highlighted ones. */
+/* Pressed: this group's topics are the highlighted ones. The badge is reversed out, a shape change, not only a colour. */
 .graph-group[aria-pressed="true"] {
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  color: var(--paper);
+  background: var(--ink);
 }
 
 .legend-mark {
@@ -770,25 +794,27 @@ h1[tabindex="-1"]:focus {
   }
 }
 
-/* The map is one SVG; every colour is a token, so a theme change needs no repaint. */
+/* The map is one SVG; every colour is a token, so a theme change needs no repaint. Lines are the metro lines. */
 .graph-edge {
   fill: none;
-  stroke: var(--edge);
-  stroke-width: 1;
+  stroke: var(--ink);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
 }
 
 .graph-edge-head {
-  fill: var(--edge);
+  fill: var(--ink);
   stroke: none;
 }
 
+/* The lit route is overprinted in the second ink. */
 .graph-edge[data-lit] {
-  stroke: var(--ink);
-  stroke-width: 2;
+  stroke: var(--ink2);
+  stroke-width: 3.5;
 }
 
 .graph-edge-head[data-lit] {
-  fill: var(--ink);
+  fill: var(--ink2);
 }
 
 .graph-edge[data-faded],
@@ -800,14 +826,27 @@ h1[tabindex="-1"]:focus {
 
 /* Edges implied by a longer path: shown faint and dashed as a hint. */
 .graph-edge-extra {
+  stroke: var(--edge);
+  stroke-width: 1.5;
   stroke-dasharray: 4 4;
   opacity: 0.6;
 }
 
+/* The hand-drawn ring round the current station, in the second ink. */
+.graph-ring {
+  fill: none;
+  stroke: var(--ink2);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+/* Stations: unread a plain ring, ready a thicker ring with a centre dot, in progress the same in the accent, read filled. */
 .graph-node-shape {
   fill: var(--paper);
-  stroke: var(--ink-soft);
-  stroke-width: 1.5;
+  stroke: var(--ink);
+  stroke-width: 2.5;
 }
 
 .graph-node-dot {
@@ -816,11 +855,11 @@ h1[tabindex="-1"]:focus {
 
 .graph-node[data-ready] .graph-node-shape,
 .graph-node[data-progress] .graph-node-shape {
-  stroke-width: 3;
+  stroke-width: 4.5;
 }
 
 .graph-node[data-ready] .graph-node-dot {
-  fill: var(--ink-soft);
+  fill: var(--ink);
 }
 
 .graph-node[data-progress] .graph-node-shape {
@@ -837,17 +876,12 @@ h1[tabindex="-1"]:focus {
 }
 
 .graph-node[data-lit] .graph-node-shape {
-  stroke: var(--ink);
-  stroke-width: 2.5;
+  stroke-width: 3.5;
 }
 
 .graph-node[data-lit][data-progress] .graph-node-shape,
 .graph-node[data-lit][data-read] .graph-node-shape {
   stroke: var(--accent-dark);
-}
-
-.graph-node[data-lit][data-ready] .graph-node-dot {
-  fill: var(--ink);
 }
 
 .graph-node[data-lit][data-progress] .graph-node-dot {
@@ -856,24 +890,24 @@ h1[tabindex="-1"]:focus {
 
 .graph-node[data-lit][data-ready] .graph-node-shape,
 .graph-node[data-lit][data-progress] .graph-node-shape {
-  stroke-width: 4;
+  stroke-width: 5.5;
 }
 
 .graph-node[data-active] .graph-node-shape {
-  stroke-width: 3;
+  stroke-width: 4;
 }
 
 .graph-node[data-active][data-ready] .graph-node-shape,
 .graph-node[data-active][data-progress] .graph-node-shape {
-  stroke-width: 4.5;
+  stroke-width: 6;
 }
 
-/* Labels sit on a paper-coloured halo, so an edge passing behind never runs through the text. */
+/* Labels hang under their station on a paper-coloured halo, so a line passing beside them never touches the text. */
 .graph-label {
   fill: var(--ink);
   font-weight: 500;
   stroke: var(--paper);
-  stroke-width: 6;
+  stroke-width: 5;
   stroke-linejoin: round;
   paint-order: stroke;
   pointer-events: none;
@@ -1448,20 +1482,20 @@ h1[tabindex="-1"]:focus {
   margin-top: 14px;
   width: 15px;
   height: 15px;
-  border: 1.5px solid var(--ink-soft);
+  border: 2px solid var(--ink);
   border-radius: 50%;
   background: var(--paper);
 }
 .path-item.is-ready .path-marker {
   border-width: 3px;
-  border-color: var(--ink-soft);
+  border-color: var(--ink);
 }
 .path-item.is-ready .path-marker::after {
   content: "";
   position: absolute;
   inset: 2.5px;
   border-radius: 50%;
-  background: var(--ink-soft);
+  background: var(--ink);
 }
 .path-item.is-read .path-marker {
   background: var(--accent);

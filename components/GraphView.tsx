@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LABEL_START, NODE_RADIUS, MIN_LABEL_SCALE, chooseLayers, columns, edgeCurvatures, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
+import { NODE_RADIUS, MIN_LABEL_SCALE, chooseLayers, columns, fitPositions, layers, rowCount, slotsByEdge, transitiveReduction, type Orientation } from "@/lib/graph";
 import { useInProgressTopics, useReadTopics } from "@/lib/progress";
-import { edgeShape, groupSet, highlightSet, mapIsInteractiveAt, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "@/lib/graphUi";
+import { groupSet, highlightSet, mapIsInteractiveAt, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "@/lib/graphUi";
 import { createPortal } from "react-dom";
+import { LABEL_BASELINE, LABEL_LEFT, edgeId, handRing, ringFor, routeEdges, routeHidden, routeShape } from "@/lib/metroRoute";
+import { readyTopics } from "@/lib/nextUp";
 import { DURATION, easeInOut, prefersReducedMotion } from "@/lib/motion";
 import { navigateWithTransition } from "./ViewTransitions";
 import { clickIntent } from "@/lib/nodeOpen";
@@ -36,7 +38,7 @@ type Props = {
 
 type P = { x: number; y: number };
 /** What the layout effect decides, in stage pixels (y down). The camera maps these to the screen. */
-type Layout = { W: number; H: number; fit: number; px: Map<string, P>; bends: Map<string, number>; hiddenBends: Map<string, number> };
+type Layout = { W: number; H: number; fit: number; px: Map<string, P>; routes: Map<string, P[]>; hiddenRoutes: Map<string, P[]>; labelWidth: Map<string, number> };
 
 const LABEL_SIZE = 18;
 const NARROW = PHONE; // below this the map stacks top to bottom; matches the CSS and the mobile Path default
@@ -54,11 +56,6 @@ function firstSentence(text: string) {
   const end = text.search(/\.\s/);
   const s = end === -1 ? text : text.slice(0, end + 1);
   return s.length > 140 ? s.slice(0, 137).trimEnd() + "…" : s;
-}
-
-/** The quadratic control point for a curvature, in stage pixels (y down; the layout's curvature assumes y up). */
-function control(a: P, b: P, c: number): P {
-  return { x: (a.x + b.x) / 2 + (b.y - a.y) * c, y: (a.y + b.y) / 2 - (b.x - a.x) * c };
 }
 
 const NO_NODES = new Set<string>();
@@ -435,7 +432,7 @@ export default function GraphView({ nodes, edges }: Props) {
       const room = viewport + PADDING - 8;
       scale = Math.max(
         MIN_LABEL_SCALE,
-        Math.min(1, ...cols.flat().map((n) => (room - probe.get(n.slug)!.x - LABEL_START) / baseWidth.get(n.slug)!)),
+        Math.min(1, ...cols.flat().map((n) => (room - probe.get(n.slug)!.x + LABEL_LEFT) / baseWidth.get(n.slug)!)),
       );
     }
     const labelWidth = new Map([...baseWidth].map(([slug, w]) => [slug, w * scale] as const));
@@ -462,16 +459,22 @@ export default function GraphView({ nodes, edges }: Props) {
       const pos = positions.get(n.slug)!;
       px.set(n.slug, { x: pos.x + PADDING, y: height + PADDING_TOP - pos.y });
     }
-    const labels = new Map(cols.flat().map((n) => [n.slug, { start: LABEL_START, width: labelWidth.get(n.slug)! }]));
-    const bends = edgeCurvatures(positions, drawn, slotsByEdge(lay, positions), stageBox, effectiveNow, labels);
-    const hiddenBends = edgeCurvatures(positions, hidden, new Map(), stageBox, effectiveNow, labels);
+    // Metro routes (lib/metroRoute.ts): elbows with 45-degree chamfers; long edges pass through their reserved corridors.
+    // Stacked (a phone, which has no map) is plain straight lines.
+    const slots = slotsByEdge(lay, positions);
+    const route = (list: GraphEdge[], through: boolean) =>
+      effectiveNow === "horizontal"
+        ? routeEdges(px, list.map((e) => ({ from: e.from, to: e.to, via: through ? (slots.get(edgeId(e)) ?? []).map((q) => ({ x: q.x + PADDING, y: height + PADDING_TOP - q.y })) : [] })), labelWidth)
+        : new Map(list.map((e): [string, P[]] => [edgeId(e), [px.get(e.from)!, px.get(e.to)!]]));
+    const routes = route(drawn, true);
+    const hiddenRoutes = effectiveNow === "horizontal" ? routeHidden(px, hidden, labelWidth) : route(hidden, false);
 
     // Static map: fit the full content into the stage (which is content-width when
     // overflowing), so no zoom or pan is needed and the wrapper scrolls sideways.
     const W = width + PADDING * 2;
     const fit = fitRatio(W, height + PADDING + PADDING_TOP, W, size.height);
     fitRef.current = fit;
-    const next: Layout = { W, H: size.height, fit, px, bends, hiddenBends };
+    const next: Layout = { W, H: size.height, fit, px, routes, hiddenRoutes, labelWidth };
     layoutRef.current = next;
     setLayout(next);
     cancelAnimation();
@@ -537,6 +540,15 @@ export default function GraphView({ nodes, edges }: Props) {
   }, [layout, cam]);
   const points = useMemo(() => (view ? nodes.flatMap((n) => (view.pos.has(n.slug) ? [{ slug: n.slug, ...view.pos.get(n.slug)!, r: NODE_RADIUS }] : [])) : []), [view, nodes]);
 
+  // The ring goes round the station the reader is on: a topic in progress, else the best ready one (as the Next up
+  // button picks it, without the lesson metadata it also weighs, so it can differ when several are started).
+  const current = useMemo(() => {
+    const started = inProgress.find((slug) => bySlug.has(slug) && !read.includes(slug));
+    if (started) return started;
+    if (read.length === 0) return cols[0]?.[0]?.slug ?? null; // "Start with", the map's first topic
+    const entries = nodes.map((n) => ({ slug: n.slug, title: n.title, prerequisites: prereqs.get(n.slug) ?? [] }));
+    return readyTopics(entries, read)[0]?.slug ?? null;
+  }, [inProgress, read, nodes, prereqs, bySlug, cols]);
   // Opaque while something is highlighted: the node, its prerequisite chain and dependents, or a clicked group.
   const highlighting = active !== null || activeGroup !== null;
   const lit = useMemo(
@@ -596,7 +608,7 @@ export default function GraphView({ nodes, edges }: Props) {
       const p = layout.px.get(n.slug);
       if (!p) continue;
       const column = Math.round(p.x);
-      ends.set(column, Math.max(ends.get(column) ?? 0, p.x + LABEL_START + ctx.measureText(n.title).width));
+      ends.set(column, Math.max(ends.get(column) ?? 0, p.x - LABEL_LEFT + ctx.measureText(n.title).width));
     }
     return [...ends.values()];
   }, [layout, nodes, effective, labelScale, contentWidth]);
@@ -653,6 +665,12 @@ export default function GraphView({ nodes, edges }: Props) {
         ))}
       </div>
 
+      <div className="graph-frame">
+      {/* Crop marks: hairline ticks just outside each corner of the chart, decoration only. */}
+      <svg className="graph-crop" style={{ left: -22, top: -22 }} aria-hidden="true"><path d="M22 10V0M10 22H0" /></svg>
+      <svg className="graph-crop" style={{ right: -22, top: -22 }} aria-hidden="true"><path d="M0 10V0M12 22H22" /></svg>
+      <svg className="graph-crop" style={{ left: -22, bottom: -22 }} aria-hidden="true"><path d="M22 12V22M10 0H0" /></svg>
+      <svg className="graph-crop" style={{ right: -22, bottom: -22 }} aria-hidden="true"><path d="M0 12V22M12 0H22" /></svg>
       <div ref={scrollWrap} className="graph-scrollwrap">
         {/* Snap points live here, not in the stage: the stage clips, so it is its own scroll container. */}
         {snapEnds.map((end) => (
@@ -682,28 +700,34 @@ export default function GraphView({ nodes, edges }: Props) {
                 {hidden
                   .filter((e) => (interactive && showAll) || (!activeGroup && (active === e.from || active === e.to)))
                   .map((e) => {
-                    const a = layout.px.get(e.from);
-                    const b = layout.px.get(e.to);
-                    if (!a || !b) return null;
-                    const c = control(a, b, layout.hiddenBends.get(`${e.from}->${e.to}`) ?? 0);
-                    const shape = edgeShape(view.to(a), view.to(c), view.to(b), NODE_RADIUS, 1, false);
-                    return <path key={`${e.from}->${e.to}`} className="graph-edge graph-edge-extra" d={shape.d} />;
+                    const pts = layout.hiddenRoutes.get(edgeId(e));
+                    if (!pts) return null;
+                    const shape = routeShape(pts.map(view.to), NODE_RADIUS, false);
+                    return <path key={edgeId(e)} className="graph-edge graph-edge-extra" d={shape.d} />;
                   })}
                 {drawn.map((e) => {
-                  const a = layout.px.get(e.from);
-                  const b = layout.px.get(e.to);
-                  if (!a || !b) return null;
+                  const pts = layout.routes.get(edgeId(e));
+                  if (!pts) return null;
                   const inChain = highlighting && lit.has(e.from) && lit.has(e.to);
                   const faded = highlighting && !inChain;
-                  const c = control(a, b, layout.bends.get(`${e.from}->${e.to}`) ?? 0);
-                  const shape = edgeShape(view.to(a), view.to(c), view.to(b), NODE_RADIUS, inChain ? 2 : 1);
+                  const shape = routeShape(pts.map(view.to), NODE_RADIUS);
                   return (
-                    <g key={`${e.from}->${e.to}`}>
+                    <g key={edgeId(e)}>
                       <path className="graph-edge" d={shape.d} data-lit={inChain || undefined} data-faded={faded || undefined} />
                       <polygon className="graph-edge-head" points={shape.head} data-lit={inChain || undefined} data-faded={faded || undefined} />
                     </g>
                   );
                 })}
+                {/* The current station: a hand-drawn ring in the second ink, drawn once and never animated. */}
+                {current && view.pos.has(current) && (
+                  <path
+                    className="graph-ring"
+                    d={(() => {
+                      const { cx, cy, rx, ry } = ringFor(view.pos.get(current)!, layout.labelWidth.get(current) ?? 100);
+                      return handRing(cx, cy, rx, ry);
+                    })()}
+                  />
+                )}
               </g>
 
               {/* Each node is a real link: keyboard focus, middle and Ctrl click, and screen readers all work. */}
@@ -749,11 +773,11 @@ export default function GraphView({ nodes, edges }: Props) {
                       <circle className="graph-node-shape" cx={p.x} cy={p.y} r={NODE_RADIUS - 1} />
                       <circle className="graph-node-dot" cx={p.x} cy={p.y} r={3.5} />
                     </a>
-                    {/* 4b: labels move under the station in 4b; here they sit right of the node, as before. */}
+                    {/* The label hangs under the station, left-aligned with the station's left edge. */}
                     <text
                       className="graph-label"
-                      x={p.x + LABEL_START}
-                      y={p.y + (LABEL_SIZE * labelScale) / 3}
+                      x={p.x - LABEL_LEFT}
+                      y={p.y + LABEL_BASELINE}
                       fontSize={LABEL_SIZE * labelScale}
                       data-faded={faded}
                       aria-hidden="true"
@@ -799,6 +823,7 @@ export default function GraphView({ nodes, edges }: Props) {
             document.body,
           )}
         </div>
+      </div>
       </div>
     </>
   );

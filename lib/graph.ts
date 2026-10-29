@@ -312,7 +312,7 @@ export const NODE_RADIUS = 14;
 /** A label starts this far right of its node's centre. */
 export const LABEL_START = NODE_RADIUS + 8;
 /** Smallest space between the end of a label and the edge of the next node. */
-export const MIN_LABEL_GAP = 16;
+export const MIN_LABEL_GAP = 40;
 
 /**
  * Pixel positions inside a `width` x `height` box (the stage minus its

@@ -9,9 +9,9 @@ function LegendMark({ state }: { state: State }) {
       ) : state === "progress" ? (
         <circle cx="8" cy="8" r="5.5" fill="var(--paper)" stroke="var(--accent)" strokeWidth="3" />
       ) : (
-        <circle cx="8" cy="8" r={state === "ready" ? 5.5 : 6.25} fill="var(--paper)" stroke="var(--ink-soft)" strokeWidth={state === "ready" ? 3 : 1.5} />
+        <circle cx="8" cy="8" r={state === "ready" ? 5.5 : 6} fill="var(--paper)" stroke="var(--ink)" strokeWidth={state === "ready" ? 3 : 2} />
       )}
-      {state === "ready" && <circle cx="8" cy="8" r="1.6" fill="var(--ink-soft)" />}
+      {state === "ready" && <circle cx="8" cy="8" r="1.6" fill="var(--ink)" />}
       {state === "progress" && <circle cx="8" cy="8" r="1.6" fill="var(--accent)" />}
     </svg>
   );
