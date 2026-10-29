@@ -64,3 +64,18 @@ describe("sectionTerms", () => {
     expect(sectionTerms(["nothing here"], entries)).toEqual([]);
   });
 });
+
+describe("note numbers", () => {
+  it("number a term the same in the prose and in the margin: its place in first-use order", () => {
+    const entries: GlossaryEntry[] = [
+      { term: "ring", definition: "r" },
+      { term: "hash", definition: "h" },
+    ];
+    const texts = ["The hash comes first.", "Then the ring, then the hash again."];
+    const seen = new Set<string>();
+    const prose = texts.flatMap((t) => markTerms(t, entries, seen).flatMap((s) => (typeof s === "string" ? [] : [[...seen].indexOf(s.entry.term) + 1])));
+    const margin = sectionTerms(texts, entries).map((_, i) => i + 1);
+    expect(prose).toEqual(margin);
+    expect(prose).toEqual([1, 2]);
+  });
+});

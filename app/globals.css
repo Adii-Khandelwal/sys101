@@ -4113,6 +4113,21 @@ html {
   position: relative;
 }
 
+/* The number of the term's margin note, from 1200px where the margin shows. Generated content with an empty alt: not in the text, so find on page,
+   search and screen readers skip it. */
+@media (min-width: 1200px) {
+  .chapter .gloss[data-num]::after {
+    content: attr(data-num);
+    content: attr(data-num) / "";
+    margin-left: 1px;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 0.6rem;
+    line-height: 0;
+    vertical-align: super;
+    color: var(--ink-soft);
+  }
+}
+
 /* Dotted, not solid: it says "a term with a definition" and stays apart from the solid underline of a real link. */
 :is(p, dd, blockquote, li) a.gloss-term {
   text-decoration: underline dotted var(--ink-soft);
@@ -6332,6 +6347,14 @@ html[data-splash] .splash.is-leaving::before {
 
   .margin-terms dt {
     font-weight: 700;
+  }
+
+  .margin-num {
+    margin-right: 5px;
+    font-size: 0.6667rem;
+    vertical-align: super;
+    line-height: 0;
+    color: var(--ink-soft);
   }
 
   .margin-terms dd {

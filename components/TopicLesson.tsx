@@ -125,7 +125,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
         typeof seg === "string" ? (
           seg
         ) : (
-          <GlossTerm key={i} note={noteId(section, seg.entry.term)} href={`/glossary#${glossaryId(topic.slug, seg.entry.term)}`} definition={seg.entry.definition}>
+          <GlossTerm key={i} num={[...seen].indexOf(seg.entry.term) + 1} note={noteId(section, seg.entry.term)} href={`/glossary#${glossaryId(topic.slug, seg.entry.term)}`} definition={seg.entry.definition}>
             {seg.text}
           </GlossTerm>
         ),

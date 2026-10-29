@@ -10,6 +10,7 @@ type Item = { term: string; definition: string; id?: string };
  * the popover text, so it is hidden from screen readers and from search (data-pagefind-ignore, and lib/findOnPage.ts skips it).
  * Below 1200px it is display:none. Without JavaScript it is a plain list that sticks beside the section. With it, each note is moved
  * beside the line holding its term (`data-note` on the term, `data-note-for` here), pushed down so none overlap (lib/marginStack.ts);
+ * each note starts with its number (the order of first use in the section) and the term carries the same number as CSS content;
  * hovering or focusing a term or its note marks the other (`data-linked`). A learn page passes items without ids: they stay a list.
  */
 export default function MarginTerms({ terms, label = "Terms in this section" }: { terms: Item[]; label?: string }) {
@@ -77,9 +78,9 @@ export default function MarginTerms({ terms, label = "Terms in this section" }: 
       <div className="margin-terms-in">
         <p className="margin-terms-label">{label}</p>
         <dl>
-          {terms.map((t) => (
+          {terms.map((t, n) => (
             <div key={t.term} className="margin-note" data-note-for={t.id}>
-              <dt>{t.term}</dt>
+              <dt><span className="margin-num">{n + 1}</span>{t.term}</dt>
               <dd>{t.definition}</dd>
             </div>
           ))}
