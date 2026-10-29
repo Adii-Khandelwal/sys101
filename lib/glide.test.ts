@@ -45,7 +45,7 @@ beforeEach(() => {
   });
   vi.stubGlobal("document", {
     documentElement: { scrollHeight: 5000 },
-    querySelector: () => ({ offsetHeight: 64 }), // the sticky header
+    querySelector: (s: string) => ({ offsetHeight: s === ".site-header" ? 64 : 0 }), // the sticky header; no phone strip
     getElementById: () => null,
   });
   vi.stubGlobal("performance", { now: () => nowMs });

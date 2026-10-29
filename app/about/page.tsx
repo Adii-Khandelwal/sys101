@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AI_ASSISTANCE, CONTACT_EMAIL, PAGE_DATES, pageMeta } from "@/lib/site";
 import Link from "next/link";
 import Overprint from "@/components/Overprint";
+import PageRail from "@/components/PageRail";
 import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -22,19 +23,8 @@ const SECTIONS = [
 
 export default function About() {
   return (
-    <article className="dossier legal about-page" data-pagefind-body>
-      <nav className="about-rail" aria-label="On this page" data-pagefind-ignore>
-        <div className="about-rail-in">
-          <p className="label">On this page</p>
-          <ol>
-            {SECTIONS.map(([id, name]) => (
-              <li key={id}>
-                <a href={`#${id}`}>{name}</a>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </nav>
+    <article className="dossier legal rail-page" data-pagefind-body>
+      <PageRail sections={SECTIONS} />
       <Overprint as="h1" className="page-h1" data-pagefind-meta="title">
         About sys101
       </Overprint>

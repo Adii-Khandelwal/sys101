@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import CompanyLogo from "@/components/CompanyLogo";
 import JsonLd from "@/components/JsonLd";
+import Overprint from "@/components/Overprint";
 import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
 import { getNews, newsDate } from "@/lib/news";
@@ -35,7 +36,7 @@ export default function New() {
   return (
     <article className="dossier posts-page news-page">
       <div data-pagefind-body>
-        <h1 data-pagefind-meta="title">What&apos;s new</h1>
+        <Overprint as="h1" className="page-h1" data-pagefind-meta="title">What’s new</Overprint>
         <p className="posts-lead">
           Recent pages from approved sources on the topics we teach, grouped by the month they were added. Each is dated as its own page shows it. For one subject, open the topic, where the same items sit under What&apos;s new.
         </p>
