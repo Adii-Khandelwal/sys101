@@ -24,6 +24,10 @@
       }
     ]
   },
+  "pullQuote": {
+    "text": "MySQL’s replication architecture means that if bugs do cause table corruption, the problem is unlikely to cause a catastrophic failure.",
+    "postId": "uber-postgres-to-mysql-2016"
+  },
   "posts": [
     {
       "id": "uber-postgres-to-mysql-2016",

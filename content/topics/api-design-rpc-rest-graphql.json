@@ -32,6 +32,10 @@
       }
     ]
   },
+  "pullQuote": {
+    "text": "Versioning is always a compromise between improving developer experience and the additional burden of maintaining old versions.",
+    "postId": "api-versioning-stripe-2017"
+  },
   "prerequisiteReasons": {
     "idempotency-and-retries": "A contract is only useful if callers can retry against it safely, so you need to know what makes a repeated call harmless before designing one.",
     "http-tcp-tls": "REST uses HTTP verbs and status codes, and every style here travels over a connection, so you need to know how HTTP requests and responses work first."

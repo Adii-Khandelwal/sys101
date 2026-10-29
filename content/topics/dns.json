@@ -25,6 +25,10 @@
       }
     ]
   },
+  "pullQuote": {
+    "text": "We decided not to restore signing due to a lack of confidence.",
+    "postId": "slack-dnssec-2021"
+  },
   "posts": [
     {
       "id": "cloudflare-dns-builds-2022",

@@ -2678,7 +2678,11 @@ h1[tabindex="-1"]:focus {
     font-size: 2.6667rem;
   }
   .masthead p {
-    font-size: 1rem;
+    font-size: 0.9444rem;
+    line-height: 1.4;
+  }
+  .masthead .masthead-about {
+    margin-top: 14px;
   }
   .graph-stage {
     /* Stacked on a phone: grow to fit all nodes; the page scrolls past it. */
@@ -4944,11 +4948,11 @@ html[data-posts-view] .posts-view-h {
     transform: none;
   }
 
-  a[target="_blank"][href^="http"]::after {
-    content: " (" attr(href) ")";
-    font-size: 0.8em;
+  /* External sources carry their host in small type; internal links print as plain text. */
+  a[data-host]::after {
+    content: " " attr(data-host);
+    font-size: 0.75em;
     color: var(--ink-soft);
-    overflow-wrap: anywhere;
   }
 
   h1,
@@ -4959,8 +4963,83 @@ html[data-posts-view] .posts-view-h {
 
   figure,
   svg,
-  .post {
+  .post,
+  .quiz > li,
+  .in-short,
+  .margin-note,
+  .route li {
     break-inside: avoid;
+  }
+
+  /* A printed plate: the page chrome and the guided-tour links go, the title block stays. */
+  .scroll-ruler,
+  .lesson-tour,
+  .lesson-jump,
+  .lesson-top,
+  .text-button,
+  .quiz-score {
+    display: none !important;
+  }
+
+  .overprint::before {
+    content: none;
+  }
+
+  .chapter-grid,
+  .chapter-head,
+  .chapter-body,
+  .chapter-main {
+    display: block !important;
+  }
+
+  .chapter-head {
+    padding: 0 0 16pt;
+    border-bottom: 1pt solid var(--ink);
+  }
+
+  .chapter-h1 {
+    font-size: 30pt;
+    line-height: 1.1;
+    margin: 6pt 0 10pt;
+  }
+
+  .chapter-meta {
+    margin: 0;
+  }
+
+  .in-short {
+    border: 1pt solid var(--ink);
+    padding: 8pt 12pt;
+    background: none !important;
+  }
+
+  .margin-num {
+    margin-right: 6pt;
+  }
+
+  /* The margin notes and the full route print open, in the flow instead of beside the text. */
+  .chapter .margin-terms,
+  .margin-terms[data-placed] .margin-note {
+    display: block !important;
+    position: static !important;
+    width: auto;
+    transform: none !important;
+    margin: 6pt 0 0;
+    font-size: 10pt;
+  }
+
+  .margin-terms-in {
+    position: static !important;
+  }
+
+  .route::details-content {
+    content-visibility: visible;
+    display: block;
+    height: auto;
+  }
+
+  .route summary {
+    display: none;
   }
 }
 
@@ -6732,4 +6811,93 @@ html[data-splash] .splash.is-leaving::before {
   font-size: 1.1111rem;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--rule);
+}
+
+/* References and pull quotes */
+
+/* The references list: bracketed numbers (the margin notes use plain superscripts, so the two cannot be confused). --ink-soft, since --ink2 is too faint for small type. */
+.sources .references {
+  counter-reset: ref;
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.sources .references li {
+  counter-increment: ref;
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  grid-template-areas: "num meta" "num title";
+  gap: 2px 0;
+  margin-bottom: 14px;
+}
+
+.sources .references li::before {
+  grid-area: num;
+  content: "[" counter(ref) "]";
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.8889rem;
+  color: var(--ink-soft);
+}
+
+.sources .references .source-meta {
+  grid-area: meta;
+}
+
+.sources .references li > a {
+  grid-area: title;
+}
+
+/* The mark after a company the prose names: generated content with an empty alt, so find on page, search and screen readers skip it. */
+.cite {
+  line-height: 0;
+  vertical-align: super;
+}
+
+/* One pull quote per topic, at the start of Part B: Caslon italic, the source in Cabin below, a 1.5px ink rule at the left. */
+.pull-quote {
+  margin: 20px 0 8px;
+  padding-left: 18px;
+  border-left: 1.5px solid var(--ink);
+}
+
+.pull-quote blockquote {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pull-quote p {
+  margin: 0 0 8px;
+  font-family: var(--font-serif-italic), Georgia, serif;
+  font-style: italic;
+  font-size: 1.3333rem;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.pull-quote p::before {
+  content: "\201C";
+}
+
+.pull-quote p::after {
+  content: "\201D";
+}
+
+.pull-quote figcaption a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-soft);
+}
+
+.cite::after {
+  content: "[" attr(data-cite) "]";
+  content: "[" attr(data-cite) "]" / "";
+  margin-left: 1px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.6rem;
+  font-weight: 400;
+  font-style: normal;
+  color: var(--ink-soft);
 }

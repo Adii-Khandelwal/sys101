@@ -99,12 +99,13 @@ export default function Home() {
         <div className="masthead-side">
           <div className="masthead-about">
             <p>
-              Behind most systems you use is a team that got it wrong first: a database that outgrew its server, a cache that took the
-              site down, a retry storm nobody saw coming. They wrote it up, and those posts are a goldmine.
+              The best system design lessons are buried in engineering posts, written by teams that got it wrong first. But each
+              post assumes you already know what another post explains. Quorum, replication lag, thundering herd: nothing says
+              which to read first.
             </p>
             <p>
-              sys101 puts them in order, so you learn caching, replication and queues from what really happened, and always know
-              what to read next.
+              sys101 puts them in order. Every topic comes after the ones it needs and is taught through what those teams actually
+              did, with their real numbers. Start anywhere you are ready, and the next topic is always one step away.
             </p>
           </div>
           <Search />

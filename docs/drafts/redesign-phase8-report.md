@@ -38,3 +38,11 @@ Home, topic (route open, notes), learn, capstone chat-messaging, glossary, about
 - Fixed from review: privacy Short version now ends "until you play a video or follow a link out"; .reads-theme scroll-margin-top; jump-line focus outline offset; PathView hidden text separator; "Back to the idea"; learn page heading back to "Where to go next" (rules and copy-pass row corrected); JumpLine recomputes on filter change (no unit test: it reads the DOM); tally starts at x = 4.
 - Found and fixed: glossary no-result state said "0 terms match" and "No terms match" on one page; the note now only says to clear the filter.
 - Not checked: Safari, a real phone, Pagefind (skipped with NEXT_DIST_DIR).
+
+## Queue verification (29 Oct 2026, branch claude/design-queue)
+
+- Passed: tsc, lint, npm test (717), build, check-seo (86 pages, per-topic og accepted), check-news, check-diagram-overflow, check:ui (86 pages x 2 widths x 2 themes), check:tour, check:offline, audit:figures (55 states), verify:quotes. og:image on /topic/dns is https://sys101.vercel.app/og/dns.png and /og/dns.png returns image/png.
+- Found and fixed: at 390x844 the map's top edge (Path toolbar) sat at y 861, below the fold after the longer intro. Phone intro text is now 0.9444rem at line-height 1.4 with a tighter about-block gap (app/globals.css, max-width 767px); the toolbar is at 778 and the path section at 807. At 1440x800 the map frame was already visible (top about 547).
+- Review fixes: vitest check that every topic has public/og/<slug>.png; topic page passes `image` only when that file exists; four pull quotes dropped (failover, observability-and-slos, disaster-recovery-and-backups, circuit-breakers), leaving 8 (docs/drafts/pull-quotes.md, topic-pages.md and the test updated); verify-quotes prints "NO POST <slug>" instead of throwing; the pull-quote logo is aria-hidden so the link name is the company and date only.
+- Looked at: home (1440 light, 390 dark), dns (1440 light, 390 dark, print emulation at 816px), failover (no quote). The quote, bracket cite marks ([2]) and the references list read as separate from the superscript margin-note numbers; one "Original posts" list; "Page last updated" intact.
+- Not checked: Safari, a real phone, Pagefind, dark print (never prints), the Vercel deploy.

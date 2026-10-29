@@ -11,6 +11,7 @@ import Reveal from "./Reveal";
 import PageUpdated from "./PageUpdated";
 import SiteFooter from "./SiteFooter";
 import PostFigure from "./figures/PostFigure";
+import { hostOf } from "@/lib/site";
 
 type Props = {
   topic: Topic;
@@ -59,7 +60,7 @@ export function PostDigest({ post, index, titles }: { post: Post; index: number;
           {post.stillCitedBy && (
             <p>
               Still cited in {post.stillCitedBy.year}:{" "}
-              <a href={post.stillCitedBy.url} target="_blank" rel="noopener noreferrer">
+              <a href={post.stillCitedBy.url} data-host={hostOf(post.stillCitedBy.url)} target="_blank" rel="noopener noreferrer">
                 {post.stillCitedBy.title}
               </a>
             </p>
@@ -69,7 +70,7 @@ export function PostDigest({ post, index, titles }: { post: Post; index: number;
       {!old && post.stillCitedBy && (
         <p className="age-cited">
           Still cited in {post.stillCitedBy.year}:{" "}
-          <a href={post.stillCitedBy.url} target="_blank" rel="noopener noreferrer">
+          <a href={post.stillCitedBy.url} data-host={hostOf(post.stillCitedBy.url)} target="_blank" rel="noopener noreferrer">
             {post.stillCitedBy.title}
           </a>
         </p>
@@ -235,26 +236,26 @@ export default function TopicDossier({ topic, prerequisites, dependents, titles,
   );
 }
 
-/** The topic's sources, title on the left, and on the right the company mark, name and year side by side, one source above the next. */
+/** The topic's references: a numbered list, company and year first, then the title as a link. The [1], [2] marks in the lesson prose point here. */
 export function OriginalPosts({ posts }: { posts: Post[] }) {
   return (
     <section className="sources" aria-labelledby="sources" data-pagefind-ignore>
       <h2 id="sources" className="label">
         {posts.length === 1 ? "Original post" : "Original posts"}
       </h2>
-      <ul>
+      <ol className="references">
         {posts.map((post) => (
-          <li key={post.url}>
-            <a href={post.url} target="_blank" rel="noopener noreferrer">
-              {post.title}
-            </a>
+          <li key={post.url} id={`ref-${post.id}`}>
             <span className="source-meta label">
               <CompanyLogo name={post.company} size="sm" />
-              <span>{companyWhen(post, "year")}</span>
+              <span>{companyWhen(post, "month")}</span>
             </span>
+            <a href={post.url} data-host={hostOf(post.url)} target="_blank" rel="noopener noreferrer">
+              {post.title}
+            </a>
           </li>
         ))}
-      </ul>
+      </ol>
     </section>
   );
 }

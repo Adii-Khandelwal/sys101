@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import TopicDossier from "@/components/TopicDossier";
@@ -26,7 +28,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const topic = getTopic((await params).slug);
   if (!topic) return {};
-  return pageMeta({ path: `/topic/${topic.slug}`, title: pageTitle(topic), description: topic.description ?? topic.concept });
+  return pageMeta({ path: `/topic/${topic.slug}`, title: pageTitle(topic), description: topic.description ?? topic.concept, image: existsSync(join(process.cwd(), "public", "og", `${topic.slug}.png`)) ? { path: `/og/${topic.slug}.png`, alt: `${topic.title} on sys101` } : undefined });
 }
 
 export default async function TopicPage({ params }: Props) {

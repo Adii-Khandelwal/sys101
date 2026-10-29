@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
+import { citable, markCitations } from "@/lib/citations";
 import GlossTerm from "./GlossTerm";
 import CopyLink from "./CopyLink";
 import { glossaryId, markTerms, noteId, sectionTerms } from "@/lib/glossaryMatch";
@@ -9,7 +10,7 @@ import { StepThroughLazy } from "./StepThroughLazy";
 import Link from "next/link";
 import CompanyLogo from "./CompanyLogo";
 import { optionId } from "@/lib/quizIds";
-import { figureParts, type Topic } from "@/lib/topics";
+import { companyWhen, figureParts, type Topic } from "@/lib/topics";
 import { readingLabel } from "@/lib/readingTime";
 import { OriginalPosts, PostDigest, TopicList } from "./TopicDossier";
 import { CompactProgress, FinishTopic, MarkDone, QuizBlock, ResumeLine } from "./LessonTrackers";
@@ -121,12 +122,20 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
     ...Object.fromEntries(topic.posts.map((p) => [p.id!, `${p.company} post`])),
   };
   // One gloss per section: it marks the first use of each of this topic's glossary terms in that section's prose.
+  const pullPost = topic.pullQuote ? topic.posts.find((p) => p.id === topic.pullQuote!.postId) : undefined;
+  const cites = citable(topic.posts);
   const glossFor = (section: string): Gloss => {
     const seen = new Set<string>();
+    const cited = new Set<number>();
+    // Where the prose already names a source's company, a bracketed reference mark follows (CSS content, not text).
     return (text) =>
       markTerms(text, topic.glossary, seen).map((seg, i) =>
         typeof seg === "string" ? (
-          seg
+          <Fragment key={i}>
+            {markCitations(seg, cites, cited).map((c, j) =>
+              typeof c === "string" ? c : <sup key={j} className="cite" data-cite={c.n} aria-hidden="true" />,
+            )}
+          </Fragment>
         ) : (
           <GlossTerm key={i} num={[...seen].indexOf(seg.entry.term) + 1} note={noteId(section, seg.entry.term)} href={`/glossary#${glossaryId(topic.slug, seg.entry.term)}`} definition={seg.entry.definition}>
             {seg.text}
@@ -323,6 +332,19 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
           <section aria-labelledby="posts-h">
             <Overprint as="h2" id="posts-h" className="part-title" data-tour="posts">How companies use it</Overprint>
             <Outcome text={l.postsOutcome} />
+            {pullPost && (
+              <figure className="pull-quote" data-pagefind-ignore>
+                <blockquote>
+                  <p>{topic.pullQuote!.text}</p>
+                </blockquote>
+                <figcaption className="label company-label">
+                  <a href={`#${pullPost.id}`}>
+                    <span aria-hidden="true"><CompanyLogo name={pullPost.company} size="sm" /></span>
+                    <span>{companyWhen(pullPost, "month")}</span>
+                  </a>
+                </figcaption>
+              </figure>
+            )}
             {backgroundHref && (
               <p className="posts-background" data-pagefind-ignore>
                 <span>Before you read these posts:</span>

@@ -27,6 +27,10 @@
       }
     ]
   },
+  "pullQuote": {
+    "text": "Even if we threw a ton of money at the problem, it still wouldn’t meet our user experience goals.",
+    "postId": "github-code-search-2023"
+  },
   "prerequisiteReasons": {
     "databases": "Indexing takes from databases the table of rows and the queries over it, since an index is a second copy kept in step with that data.",
     "sharding": "Indexing takes from sharding the shard key, which decides whether a query visits one machine or all of them."

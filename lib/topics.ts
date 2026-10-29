@@ -151,6 +151,8 @@ export type Topic = {
   prerequisites: string[];
   /** In short: 3 to 5 plain sentences and 0 to 3 digest figures. Required on every topic (REQUIRE_NEW_FIELDS). */
   summary?: Summary;
+  /** Optional: one sentence copied word for word from one of this topic's posts, under 25 words. `npm run verify:quotes` checks it against the live page. */
+  pullQuote?: { text: string; postId: string };
   /** Why each prerequisite comes first: one sentence per prerequisite id, hidden edges included. */
   prerequisiteReasons?: Record<string, string>;
   /** Recap of what the prerequisites taught, 2 to 4 sentences. Not used by lesson topics. */
@@ -449,6 +451,18 @@ const wordCount = (v: string) => v.trim().split(/\s+/).length;
 const EDITORIAL = /headline|\bfirst limit|\bsecond limit|\bthe post['’]s\b/i;
 export const BANNED_PHRASING = /—|\bit['’]s not\b|\bnot (?:just|only|merely)\b|\bisn['’]t (?:just|only|merely)\b/i;
 
+/** Rules for `pullQuote`: the post is one of the topic's, the text is one sentence under 25 words. The wording itself is checked against the page by scripts/verify-quotes.mjs (no excerpt is stored, so the build cannot). */
+export function checkPullQuote(topic: Topic): string[] {
+  const q = topic.pullQuote;
+  if (q === undefined) return [];
+  const problems: string[] = [];
+  if (!nonEmpty(q.text)) return ["pullQuote.text is empty"];
+  if (!topic.posts.some((p) => p.id === q.postId)) problems.push(`pullQuote.postId "${q.postId}" is not one of the topic's posts`);
+  if (wordCount(q.text) >= 25) problems.push(`pullQuote.text is ${wordCount(q.text)} words, must be under 25`);
+  if (/[.!?]\s+\S/.test(q.text.trim())) problems.push("pullQuote.text must be one sentence");
+  return problems;
+}
+
 /** Rules for `summary`: counts, lengths, figure references, digits that come from the page, banned phrasing. */
 export function checkSummary(topic: Topic): string[] {
   const s = topic.summary;
@@ -542,6 +556,7 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
     if (topic.interviewRelevance !== undefined && !INTERVIEW_RELEVANCE.includes(topic.interviewRelevance)) {
       problems.push(`${file}: interviewRelevance must be one of ${INTERVIEW_RELEVANCE.join(", ")}`);
     }
+    for (const p of checkPullQuote(topic)) problems.push(`${file}: ${p}`);
   }
 
   for (const { file, topic } of entries) {
