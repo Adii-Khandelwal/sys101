@@ -99,12 +99,12 @@ export default function Home() {
         <div className="masthead-side">
           <div className="masthead-about">
             <p>
-              Behind most systems you use is a team that got it wrong first: a database that outgrew its server, a cache that took the
-              site down, a retry storm nobody saw coming. They wrote it up, and those posts are a goldmine.
+              Behind most systems you use is a team that got it wrong first. A database outgrew its server. A cache took the site
+              down. A retry storm hit that nobody saw coming. Then they wrote up what happened, with real numbers.
             </p>
             <p>
-              sys101 puts them in order, so you learn caching, replication and queues from what really happened, and always know
-              what to read next.
+              sys101 puts those write-ups in order. Each topic builds on the ones before it, so you learn caching, replication and
+              queues from what really happened, and never have to guess what to read next.
             </p>
           </div>
           <Search />

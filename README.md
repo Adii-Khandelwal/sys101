@@ -22,7 +22,7 @@
 
 ## What it is
 
-Behind most systems you use is a team that got it wrong first: a database that outgrew its server, a cache that took the site down, a retry storm nobody saw coming. They wrote it up, and those posts are a goldmine. They are also hard to use, because each blog assumes background that a different post explains, and nothing says which to read first.
+Behind most systems you use is a team that got it wrong first. A database outgrew its server. A cache took the site down. A retry storm hit that nobody saw coming. Then they wrote up what happened, with real numbers. Those write-ups are hard to use, because each blog assumes background that a different post explains, and nothing says which to read first.
 
 sys101 puts them in order. It is a map of <!--stat:topics-->35<!--/stat--> system design topics, each one placed after the topics it depends on and taught through engineering posts picked from the teams that ran the system. Every topic has its own explanation, a quiz and design exercises. The posts come from <!--stat:sources-->85<!--/stat--> sources by <!--stat:organizations-->29<!--/stat--> organizations (<!--stat:kinds-->65 engineering posts, 15 research papers and 5 documentation pages<!--/stat-->), and a separate Great reads list holds <!--stat:reads-->30<!--/stat--> influential posts and papers in <!--stat:themes-->5<!--/stat--> themes.
 
