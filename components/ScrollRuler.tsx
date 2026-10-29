@@ -112,7 +112,7 @@ export default function ScrollRuler() {
       onPointerUp={() => (dragging.current = false)}
       onPointerCancel={() => (dragging.current = false)}
     >
-      <svg width={W} height={track} viewBox={`0 0 ${W} ${track}`} focusable="false">
+      <svg width={W} height={track} viewBox={`0 0 ${W} ${track}`} aria-hidden="true" focusable="false">
         <path className="scroll-ruler-minor" d={tickPath(2, MINOR, (p) => p % 5 === 0)} />
         <path className="scroll-ruler-mid" d={tickPath(5, MID, (p) => p % 10 === 0)} />
         <path className="scroll-ruler-major" d={tickPath(10, MAJOR, () => false)} />

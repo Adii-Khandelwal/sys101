@@ -6223,6 +6223,13 @@ html[data-splash] .splash.is-leaving::before {
     color: var(--ink-soft);
   }
 
+  /* With scripting on, notes stay invisible until MarginTerms has placed them, so first paint has no jump (layout shift). Without scripting they show as a list. */
+  @media (scripting: enabled) {
+    .margin-terms:not([data-ready]) .margin-terms-in {
+      visibility: hidden;
+    }
+  }
+
   /* With JavaScript each note is placed beside its term (components/MarginTerms.tsx): no sticky list, no label, one rule per note. */
   .margin-terms[data-placed] .margin-terms-in {
     position: static;

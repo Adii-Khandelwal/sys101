@@ -18,6 +18,7 @@ export default function MarginTerms({ terms, label = "Terms in this section" }: 
   useLayoutEffect(() => {
     const el = box.current;
     const section = el?.closest<HTMLElement>("section");
+    el?.setAttribute("data-ready", ""); // from here the notes may show (CSS hides them until then when scripting is on, so they never jump)
     if (!el || !section || !terms.some((t) => t.id)) return;
     const wide = window.matchMedia("(min-width: 1200px)");
     const notes = [...el.querySelectorAll<HTMLElement>("[data-note-for]")];
