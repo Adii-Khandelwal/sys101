@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Overprint from "@/components/Overprint";
 import HighlightTarget from "@/components/HighlightTarget";
 import LearnRail from "@/components/LearnRail";
 import SiteFooter from "@/components/SiteFooter";
@@ -35,17 +36,17 @@ export default function Background() {
         <StripBackToTop />
       </div>
       <div data-pagefind-body>
-        <h1 data-pagefind-meta="title">Background</h1>
+        <Overprint as="h1" className="page-h1" data-pagefind-meta="title">Background</Overprint>
         <p className="background-lead">
-          The posts on each topic assume a few things the topic itself does not teach. They are listed here, each with the sentence that
-          assumes it. A concept marked Taught later comes up in a later topic, and its one-line gist is enough for now.
+          Each topic&apos;s posts take a few ideas for granted that the topic does not teach. Every idea is listed here with the sentence that
+          assumes it. A concept marked Taught later has its own topic further along, and its one-line gist is enough for now.
         </p>
 
         {files.map((b) => {
           const topic = bySlug.get(b.topic)!;
           return (
             <section key={b.topic} id={b.topic} className="bg-section" aria-labelledby={`${b.topic}-h`}>
-              <h2 id={`${b.topic}-h`}>Background for {topic.title}</h2>
+              <Overprint as="h2" id={`${b.topic}-h`}>{`Background for ${topic.title}`}</Overprint>
               <ul className="bg-items">
                 {b.items.map((item) => {
                   const later = isTaughtLater(item, b.topic, numbers);

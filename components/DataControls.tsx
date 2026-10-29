@@ -1,5 +1,6 @@
 "use client";
 
+import Overprint from "./Overprint";
 import { useEffect, useRef, useState } from "react";
 import { inProgressSlugs, replaceProgress, useAllProgress } from "@/lib/progress";
 import { clearReadReads } from "@/lib/readsRead";
@@ -150,11 +151,11 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
           it, or reset everything below.
         </p>
       )}
-      {empty && <p className="data-note">Nothing has been saved in this browser yet.</p>}
+      {empty && <p className="data-note">Nothing saved in this browser yet. Mark a section done and it will show here.</p>}
 
       {!blocked && !corrupt && (
         <section aria-labelledby="summary-h">
-          <h2 id="summary-h">Progress</h2>
+          <Overprint as="h2" id="summary-h">Progress</Overprint>
           <p>
             {doneTopics} of {topics.length} topics read
             {inProgressCount > 0 ? `, ${inProgressCount} in progress` : ""}
@@ -194,7 +195,7 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
       )}
 
       <section aria-labelledby="export-h">
-        <h2 id="export-h">Export and import</h2>
+        <Overprint as="h2" id="export-h">Export and import</Overprint>
         <p>
           An export is a small file{fileName ? `, ${fileName},` : " named with today's date,"} holding everything on
           this page. Import it in another browser to carry your progress over.
@@ -253,7 +254,7 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
       </p>
 
       <section aria-labelledby="tours-h">
-        <h2 id="tours-h">Guided tours</h2>
+        <Overprint as="h2" id="tours-h">Guided tours</Overprint>
         {toursSeen ? (
           <>
             <p>You have taken or skipped the guided tour here, so its link is hidden. Show it again on the homepage and on topic pages:</p>
@@ -276,7 +277,7 @@ export default function DataControls({ topics }: { topics: TopicMeta[] }) {
       </section>
 
       <section aria-labelledby="reset-h" className="data-danger">
-        <h2 id="reset-h">Reset everything</h2>
+        <Overprint as="h2" id="reset-h">Reset everything</Overprint>
         <p>Clears every topic&apos;s progress in this browser and brings the tour links back. It can&apos;t be undone, so export first if you may want your progress back.</p>
         {confirmReset === "all" ? (
           <p className="data-confirm" role="group" aria-label="Reset everything?">

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BURST_AT_MS, BURST_SCALE, GROWTH_MS, SAFETY_MS, SHOCK_SCALE, SWELL_SCALE, bubbleLayers, clickIntent, growBubble, playNodeOpen, removeBubbles } from "./nodeOpen";
+import { BURST_AT_MS, BURST_SCALE, GROWTH_MS, SAFETY_MS, SHOCK_SCALE, SWELL_SCALE, bubbleLayers, clickIntent, growBubble, playNodeOpen, removeBubbles, stationSpec } from "./nodeOpen";
 
 const root = path.resolve(__dirname, "..");
 const css = fs.readFileSync(path.join(root, "app/globals.css"), "utf8");
@@ -12,7 +12,7 @@ describe("which clicks play the node-open animation", () => {
 
   it("a plain pointer click or a touch tap animates", () => {
     expect(clickIntent(click, false)).toBe("animate");
-    expect(clickIntent({ type: "touchend" }, false)).toBe("animate"); // Sigma's tap carries a touch event: no detail, no button
+    expect(clickIntent({ type: "touchend" }, false)).toBe("animate"); // a tap carries a touch event: no detail, no button
     expect(clickIntent({ type: "click", button: 0, detail: 2 }, false)).toBe("animate");
   });
 
@@ -43,12 +43,15 @@ describe("which clicks play the node-open animation", () => {
   });
 
   it("the Map's click handler wires the intents: new tab for modified clicks, no bubble unless the intent is animate", () => {
-    expect(graphView).toContain("clickIntent(event.original");
-    expect(graphView).toMatch(/intent === "new-tab"\)[^}]*window\.open\(href, "_blank", "noopener,noreferrer"\)/s);
-    // the animation is only reached after the new-tab and instant branches have returned
+    expect(graphView).toContain("clickIntent(e.nativeEvent");
+    // the page-wide link handlers read `a.href`, which is an SVGAnimatedString on an SVG link: the node runs its own navigation
+    expect(graphView).toContain('data-own-transition=""');
+    // modified and middle clicks return before anything is prevented or played: the browser opens the new tab
     const handler = graphView.slice(graphView.indexOf("const openNode"));
-    expect(handler.indexOf("playNodeOpen(")).toBeGreaterThan(handler.indexOf('intent === "instant"'));
-    expect(handler.indexOf("playNodeOpen(")).toBeGreaterThan(handler.indexOf('intent === "new-tab"'));
+    expect(handler.indexOf('=== "new-tab") return;')).toBeGreaterThan(-1);
+    expect(handler.indexOf('=== "new-tab") return;')).toBeLessThan(handler.indexOf("e.preventDefault();\n    // A second click"));
+    // reduced motion and script clicks (the "instant" intent) navigate without the bubble, which is only built after that return
+    expect(handler.indexOf('intent === "instant"')).toBeLessThan(handler.indexOf("playNodeOpen("));
     // the animation lives only in the Map: Path view, search and plain links never import it
     for (const f of ["components/PathView.tsx", "components/Search.tsx", "components/TopicList.tsx", "components/TopicIndex.tsx", "components/HomeView.tsx"]) {
       if (fs.existsSync(path.join(root, f))) expect(fs.readFileSync(path.join(root, f), "utf8"), f).not.toMatch(/nodeOpen|growBubble|playNodeOpen|node-open/);
@@ -267,6 +270,21 @@ describe("playNodeOpen: the whole sequence", () => {
     expect(t.navigate).not.toHaveBeenCalled();
   });
 
+  it("a cancel after the screen is in, but before the swap, still never navigates; it is no longer active, and its safety timer is gone", async () => {
+    const t = setup();
+    const open = playNodeOpen(t.spec, t.navigate);
+    expect(open.isActive()).toBe(true);
+    const clear = vi.spyOn(window, "clearTimeout");
+    open.cancel();
+    expect(clear).toHaveBeenCalled();
+    find(t.made, "node-curtain").listeners.transitionend?.();
+    await t.flush();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(open.isActive()).toBe(false);
+    expect(t.navigate).not.toHaveBeenCalled();
+    clear.mockRestore();
+  });
+
   it("nothing can hold the screen for longer than the safety limit", async () => {
     const t = setup();
     playNodeOpen(t.spec, t.navigate);
@@ -281,6 +299,28 @@ describe("playNodeOpen: the whole sequence", () => {
     expect(graphView).toContain("playNodeOpen(");
     expect(graphView).toMatch(/router\.push\(href\);\s*await pageReady\(href/);
     expect(graphView).toContain("if (!pendingOpen.current) removeBubbles()");
+    expect(graphView).toContain("e.persisted && removeBubbles()"); // a page restored from the back/forward cache
+    // a second click (the second of a double click, or any click while one is playing) cancels it instead of starting another
+    const handler = graphView.slice(graphView.indexOf("const openNode"));
+    expect(handler).toMatch(/pendingOpen\.current\?\.isActive\(\) \|\| e\.detail > 1/);
+    expect(handler.indexOf("e.detail > 1")).toBeLessThan(handler.indexOf("playNodeOpen("));
+  });
+
+  it("the bubble is drawn from the station's own circle: its centre, ring, fill and dot", () => {
+    const rect = { left: 100, top: 40, width: 26, height: 26 };
+    // a ready station: 26px circle (r 13) with a 4.5px stroke and a 3.5px centre dot
+    expect(stationSpec(rect, { stroke: "rgb(27, 42, 107)", fill: "rgb(230, 226, 214)", strokeWidth: 4.5, dot: "rgb(27, 42, 107)", dotRadius: 3.5 })).toEqual({
+      x: 113, y: 53, r: 15.25, border: "rgb(27, 42, 107)", fill: "rgb(230, 226, 214)", dot: "rgb(27, 42, 107)", borderSize: 4.5, dotRadius: 3.5,
+    });
+    // an unread station has no dot (fill none): the dot takes the fill colour and has no size
+    const unread = stationSpec(rect, { stroke: "a", fill: "b", strokeWidth: 2.5, dot: "none", dotRadius: 3.5 });
+    expect([unread.dot, unread.dotRadius]).toEqual(["b", 0]);
+    // the layers the bubble builds from it: ring, inside the ring, the dot at its own size
+    expect(bubbleLayers(15.25, 4.5, 3.5)).toEqual({ outer: 15.25, inner: 10.75, dot: 3.5 });
+    // a half mark carries its side and colour into the spec
+    expect(stationSpec(rect, { stroke: "a", fill: "b", strokeWidth: 2.5, dot: "none", dotRadius: 3.5 }, { side: "right", color: "c" }).half).toEqual({ side: "right", color: "c" });
+    expect(unread.half).toBeUndefined();
+    expect(bubbleLayers(15.25, 4.5, 99).dot).toBe(10.75); // never larger than the space inside the ring
   });
 });
 

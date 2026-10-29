@@ -40,7 +40,7 @@ Path-scoped rule files load when you read, write or edit a matching file; open t
 | `learn-pages.md` | /topic/<slug>/learn, official-source rules, videos, Try it commands |
 | `progress-tracking.md` | Tracked units, "in progress", localStorage store, the Path group toggle |
 | `homepage.md` | Masthead, the one start button and its priority, map or Path, Inside a topic, Try a question, sources, topic numbering |
-| `graph.md` | The map: layout, states, zoom and pan, group labels, node-open transition |
+| `graph.md` | The map: layout, states, sideways scroll, group labels, node-open transition |
 | `motion.md` | Duration and easing tokens, what may animate |
 | `seo.md` | Canonicals, titles, descriptions, JSON-LD, sitemap, images, `check-seo` |
 | `accessibility-and-chrome.md` | Contrast, focus, touch targets, phone and laptop parity, skeletons, header, footer, AI sentence |
@@ -80,15 +80,15 @@ Only include a post if it passes most of these:
 
 ## Site feel
 
-Handcrafted, not AI-template. Cream background, serif headings, restrained palette with one or two accents (one rust). Plain, specific copy written like a person.
+Handcrafted, not AI-template. Paper background, Libre Caslon serif headings, Cabin labels, restrained palette: blue ink and one orange second ink. Plain, specific copy written like a person.
 
-- Two themes from CSS-variable tokens in app/globals.css: light (cream) and a warm dark (brown-charcoal, off-white ink, brighter AA rust). Any new colour must be a token, never a literal.
-- Theme toggle (sun/moon) stored locally, follows prefers-color-scheme until chosen, set before paint (no flash). SVG diagrams theme via the tokens; the Sigma map reads live vars (readThemeColors, lib/graphUi.ts).
+- Two themes from CSS-variable tokens in app/globals.css: light (paper `#e6e2d6`, blue ink, orange accent) and a warm dark (brown-charcoal, off-white ink, brighter orange that holds AA). Any new colour must be a token, never a literal.
+- Theme toggle (sun/moon) stored locally, follows prefers-color-scheme until chosen, set before paint (no flash). SVG diagrams theme via the tokens; the SVG map uses the CSS tokens directly, so a theme change needs no repaint.
 - Never use: gradients, neon, rainbow, pastels, purple and black, pure white background, drop shadows, large radius, liquid glass, emojis, sparkle icons, loose side icons, animated arrows, hover animations everywhere, bounce or elastic easing,
   three-card rows, bento grids, pricing tiers, testimonials, colored stripes, terminal mockups, dot grids, radial orbs, checkmark bullets, Inter/Geist/Space Grotesk, em dashes, "It's not X, it's Y" phrasing.
-- Links are not underlined unless they sit inside a running sentence; a standalone link shows itself by a colour change on hover (rust; ink in side contents lists). Every search or filter box behaves like the homepage search: "/" focus, Escape clears, Enter to the first result, word-start matching, a "/" hint, an aria-live count (`accessibility-and-chrome.md`). Only the homepage "sys101" flies letter by letter into the bar; elsewhere the page name and the current section name fade into it, the section name lighter (`motion.md`).
+- Links are not underlined unless they sit inside a running sentence; a standalone link shows itself by a colour change on hover (orange accent; ink in side contents lists). Every search or filter box behaves like the homepage search: "/" focus, Escape clears, Enter to the first result, word-start matching, a "/" hint, an aria-live count (`accessibility-and-chrome.md`). Only the homepage "sys101" flies letter by letter into the bar; elsewhere the page name and the current section name fade into it, the section name lighter (`motion.md`).
 - Always: skeleton loaders, a real working demo, Terms and Privacy pages in the footer.
-- Review every page or UI piece before calling it done: render it at 1440px and 390px and check it reads as part of the whole (mono small-caps labels, generous whitespace, state shown by shape not colour alone).
+- Review every page or UI piece before calling it done: render it at 1440px and 390px and check it reads as part of the whole (Cabin labels in sentence case, generous whitespace, state shown by shape not colour alone).
 - Check spacing: text and adjacent controls must never run together. Prefer a flex row with `gap` over JSX `{" "}`. Catch this in development, never push it.
 - Company marks are the only icons: beside company names, from local files, never recoloured (`logos.md`). The one other mark is the site's own three-node `LogoMark` (components/Logo.tsx): in the header, beside the homepage wordmark, at the start of the footer and on the opening screen (`Splash`) and the slow-navigation loader (`NavPending`), nowhere else and never as a background or watermark. Homepage: thin dividers, no cards or images.
 - On a UI request, fix every similar element across the page, not one spot, and check that no count or status appears twice on one page (client-rendered parts included).

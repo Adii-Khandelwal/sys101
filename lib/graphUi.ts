@@ -1,58 +1,13 @@
 // Pure pieces of the homepage graph's hover and focus behaviour.
 
-export const INK = "#1f1b16";
-export const INK_SOFT = "#5c5346";
-export const EDGE = "#8a7f6c";
-export const PAPER = "#f3ecdc";
-export const ACCENT = "#9a3b1f";
-const ACCENT_DARK = "#7a2c15";
+export const INK = "#1b2a6b";
+export const INK_SOFT = "#505b8a";
+export const EDGE = "#767d9b";
+export const PAPER = "#e6e2d6";
+export const ACCENT = "#aa3012";
 
 /** Unrelated nodes and edges keep 60% of their colour while a node is highlighted. */
 const FADE = 0.6;
-/** The map's palette. Defaults are the light theme; readThemeColors() reads the live CSS vars. */
-export type ThemeColors = {
-  ink: string;
-  inkSoft: string;
-  edge: string;
-  paper: string;
-  accent: string;
-  accentDark: string;
-};
-
-export const LIGHT_COLORS: ThemeColors = { ink: INK, inkSoft: INK_SOFT, edge: EDGE, paper: PAPER, accent: ACCENT, accentDark: ACCENT_DARK };
-
-/**
- * The current theme's map colours, read from the CSS custom properties so the
- * Sigma canvas (which cannot use CSS) matches the themed page. Falls back to the
- * light constants on the server or before styles resolve. --accent-dark is
- * derived if the theme does not define it.
- */
-export function readThemeColors(): ThemeColors {
-  if (typeof window === "undefined") return LIGHT_COLORS;
-  const s = getComputedStyle(document.documentElement);
-  const v = (name: string, fallback: string) => {
-    const raw = s.getPropertyValue(name).trim();
-    return /^#[0-9a-f]{6}$/i.test(raw) ? raw : fallback;
-  };
-  const accent = v("--accent", ACCENT);
-  return {
-    ink: v("--ink", INK),
-    inkSoft: v("--ink-soft", INK_SOFT),
-    edge: v("--edge", EDGE),
-    paper: v("--paper", PAPER),
-    accent,
-    accentDark: v("--accent-dark", darken(accent)),
-  };
-}
-
-/** A slightly darker shade of a hex colour, for the pressed/active rust outline. */
-function darken(hex: string, amount = 0.82) {
-  if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex;
-  const n = parseInt(hex.slice(1), 16);
-  const ch = (s: number) => Math.round(((n >> s) & 255) * amount);
-  return `#${((ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).padStart(6, "0")}`;
-}
-
 /** Blend `hex` toward `paper`, keeping `amount` of the original. */
 export function fadeTo(hex: string, paper: string, amount = FADE) {
   const a = parseInt(hex.slice(1), 16);
@@ -103,22 +58,6 @@ export function groupSet(group: string, nodes: { slug: string; group?: string }[
   return new Set(nodes.filter((n) => n.group === group).map((n) => n.slug));
 }
 
-/**
- * Below this many topics the map is a fixed, fitted picture: no zoom, pan or map controls.
- * Lowered from 25 to 12 when the twelfth topic's long label made the map need a wider stage than
- * a 1280px screen gives it: zoom and pan switch on earlier instead of squeezing the layout.
- */
-export const INTERACTIVE_MIN_NODES = 12;
-export const mapIsInteractive = (nodeCount: number) => nodeCount >= INTERACTIVE_MIN_NODES;
-
-/**
- * Whether the map should be interactive (zoom and pan) right now. Needs both
- * enough nodes to justify it and a non-phone viewport: a phone always gets a
- * fixed, non-interactive map so a finger scrolls the page past it and a tap
- * opens the topic (.claude/rules/graph.md, Graph and Touch).
- */
-export const mapIsInteractiveAt = (nodeCount: number, isPhone: boolean) => mapIsInteractive(nodeCount) && !isPhone;
-
 export type HighlightEvent =
   | { type: "enter"; node: string }
   | { type: "focus"; node: string }
@@ -126,8 +65,7 @@ export type HighlightEvent =
   | { type: "blur" }
   | { type: "escape" }
   | { type: "touchOutside" }
-  | { type: "scroll" }
-  | { type: "camera" };
+  | { type: "scroll" };
 
 /** Which node is highlighted after an event. Everything but enter and focus clears it. */
 export function nextHighlight(_current: string | null, event: HighlightEvent): string | null {
@@ -164,8 +102,42 @@ export function placeTooltip(
 export function prerequisiteLines(prerequisites: string[], read: readonly string[], titleOf: (slug: string) => string) {
   const pending = prerequisites.filter((q) => !read.includes(q));
   return {
-    builtOn: prerequisites.length > 0 && pending.length < prerequisites.length ? `Builds on: ${prerequisites.map(titleOf).join(", ")}` : null,
+    builtOn: prerequisites.length > 0 && pending.length < prerequisites.length ? `Read first: ${prerequisites.map(titleOf).join(", ")}` : null,
     // Three or more are joined by commas only: a title may itself contain "and".
     finish: pending.length > 0 ? `Finish ${pending.map(titleOf).join(pending.length === 2 ? " and " : ", ")} first.` : null,
   };
+}
+
+/**
+ * Which station an arrow key moves keyboard focus to, or null. Left goes to a prerequisite and right to a topic that builds
+ * on this one (the nearest by height when there are several); up and down go to the station above or below in the same
+ * column. `px` are stage positions (y down) and `edges` the drawn prerequisites.
+ */
+export function nextStation(
+  key: string,
+  slug: string,
+  px: Map<string, { x: number; y: number }>,
+  edges: { from: string; to: string }[],
+): string | null {
+  const here = px.get(slug);
+  if (!here) return null;
+  const nearest = (slugs: string[]) =>
+    slugs.filter((s) => px.has(s)).sort((a, b) => Math.abs(px.get(a)!.y - here.y) - Math.abs(px.get(b)!.y - here.y) || a.localeCompare(b))[0] ?? null;
+  if (key === "ArrowLeft") return nearest(edges.filter((e) => e.to === slug).map((e) => e.from));
+  if (key === "ArrowRight") return nearest(edges.filter((e) => e.from === slug).map((e) => e.to));
+  if (key !== "ArrowUp" && key !== "ArrowDown") return null;
+  const column = [...px].filter(([, p]) => Math.abs(p.x - here.x) < 1).sort((a, b) => a[1].y - b[1].y);
+  const i = column.findIndex(([s]) => s === slug);
+  return column[i + (key === "ArrowDown" ? 1 : -1)]?.[0] ?? null;
+}
+
+/**
+ * How far to scroll (in px, positive is right or down) so a point at `p` sits at least `before` px inside the low edge and
+ * `after` px inside the high edge of the range [lo, hi]; 0 when it already does. For keyboard focus landing on a station
+ * that is off screen.
+ */
+export function revealDelta(p: number, lo: number, hi: number, before = 40, after = 40) {
+  if (p < lo + before) return p - (lo + before);
+  if (p > hi - after) return p - (hi - after);
+  return 0;
 }

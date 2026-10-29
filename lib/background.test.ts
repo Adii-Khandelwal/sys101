@@ -135,7 +135,7 @@ describe("the /background page", () => {
   });
 
   it("intro says what the page does now: no link forward", () => {
-    expect(html).toContain("A concept marked Taught later comes up in a later topic, and its one-line gist is enough for now.");
+    expect(html).toContain("A concept marked Taught later has its own topic further along, and its one-line gist is enough for now.");
     expect(html).not.toMatch(/link forward/i);
   });
 

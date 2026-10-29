@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Newsreader, IBM_Plex_Mono } from "next/font/google";
+import { Libre_Caslon_Text, Libre_Caslon_Display, Cabin } from "next/font/google";
 import "./globals.css";
 import ViewTransitions from "@/components/ViewTransitions";
 import Logo from "@/components/Logo";
 import SiteNav from "@/components/SiteNav";
 import HeaderTopic from "@/components/HeaderTopic";
 import BackToTop from "@/components/BackToTop";
+import ScrollRuler from "@/components/ScrollRuler";
 import ThemeToggle from "@/components/ThemeToggle";
 import Splash from "@/components/Splash";
 import NavPending from "@/components/NavPending";
@@ -14,25 +15,31 @@ import FindOnPage from "@/components/FindOnPage";
 import { Analytics } from "@vercel/analytics/next";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
-const serif = Newsreader({
+const serif = Libre_Caslon_Text({
   subsets: ["latin"],
+  weight: ["400", "700"],
   variable: "--font-serif",
-  axes: ["opsz"],
 });
 
-// Not preloaded, so it does not compete with the first paint (about 130 kB); it still loads on any page that shows italic text, and every page has some.
-const serifItalic = Newsreader({
+// Not preloaded, so it does not compete with the first paint; every page has some italic text, so it loads soon after.
+const serifItalic = Libre_Caslon_Text({
   subsets: ["latin"],
-  variable: "--font-serif-italic",
+  weight: "400",
   style: "italic",
-  axes: ["opsz"],
+  variable: "--font-serif-italic",
   preload: false,
 });
 
-const mono = IBM_Plex_Mono({
+const display = Libre_Caslon_Display({
   subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-mono",
+  weight: "400",
+  variable: "--font-display",
+});
+
+const sans = Cabin({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -49,15 +56,15 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f3ecdc" },
-    { media: "(prefers-color-scheme: dark)", color: "#1a1713" },
+    { media: "(prefers-color-scheme: light)", color: "#e6e2d6" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1512" },
   ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   // Inline scripts set data-theme and data-posts-view on <html> before hydration, so React must not flag them.
   return (
-    <html lang="en" className={`${serif.variable} ${serifItalic.variable} ${mono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${serif.variable} ${serifItalic.variable} ${display.variable} ${sans.variable}`} suppressHydrationWarning>
       <head>
         {/* Set the theme before first paint so there is no flash. Reads the saved
             choice; with none, follows the OS. Mirrors ThemeToggle's storage key. */}
@@ -91,6 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         {children}
         <BackToTop />
+        <ScrollRuler />
         <Analytics />
         <OfflineSupport />
         <FindOnPage />

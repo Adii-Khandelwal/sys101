@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Overprint from "./Overprint";
 import TopicReadiness from "@/components/capstone/TopicReadiness";
 import type { Capstone } from "@/lib/capstones";
 
@@ -10,9 +11,7 @@ export default function PutItTogether({ capstones, titles }: { capstones: Capsto
   if (capstones.length === 0) return null;
   return (
     <section className="home-extra put-together" aria-labelledby="put-heading" data-tour="capstones">
-      <h2 id="put-heading" className="label">
-        Put it together
-      </h2>
+      <Overprint id="put-heading" className="label">Put it together</Overprint>
       <p className="home-extra-note">Whole systems that combine topics from the map.</p>
       <ul className="cap-index">
         {capstones.slice(0, SHOWN).map((c) => (

@@ -49,3 +49,14 @@ export function markTerms(text: string, entries: GlossaryEntry[], seen: Set<stri
   if (last < text.length) out.push(text.slice(last));
   return out.length ? out : [text];
 }
+
+/** Joins a term's inline marker to its margin note: the section id and the term, so a term used in two sections has two notes. */
+export const noteId = (section: string, term: string) => `${section}:${slugify(term)}`;
+
+/** The entries a section's inline popovers mark, in order of first use, for the margin copy. Same rule as the prose (`markTerms`), so the two lists never differ. */
+export function sectionTerms(texts: string[], entries: GlossaryEntry[]): GlossaryEntry[] {
+  const seen = new Set<string>();
+  const out: GlossaryEntry[] = [];
+  for (const t of texts) for (const seg of markTerms(t, entries, seen)) if (typeof seg !== "string") out.push(seg.entry);
+  return out;
+}

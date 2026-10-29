@@ -45,7 +45,7 @@ beforeEach(() => {
   });
   vi.stubGlobal("document", {
     documentElement: { scrollHeight: 5000 },
-    querySelector: () => ({ offsetHeight: 64 }), // the sticky header
+    querySelector: (s: string) => ({ offsetHeight: s === ".site-header" ? 64 : 0 }), // the sticky header; no phone strip
     getElementById: () => null,
   });
   vi.stubGlobal("performance", { now: () => nowMs });
@@ -91,6 +91,17 @@ describe("glideToSection", () => {
     reduced = true;
     await glideToSection(section(1000) as unknown as HTMLElement);
     expect(scrollY).toBe(1000 - 80);
+  });
+
+  it("also clears the phone contents strip when it is shown", async () => {
+    reduced = true;
+    vi.stubGlobal("document", {
+      documentElement: { scrollHeight: 5000 },
+      querySelector: (s: string) => ({ offsetHeight: s === ".site-header" ? 64 : 48 }),
+      getElementById: () => null,
+    });
+    await glideToSection(section(1000) as unknown as HTMLElement);
+    expect(scrollY).toBe(1000 - 80 - 48);
   });
 
   it("moves focus to the heading without scrolling, and makes it focusable", async () => {

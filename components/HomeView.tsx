@@ -4,9 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import GraphView from "./GraphView";
 import PathView, { type PathEntry } from "./PathView";
 import TopicIndex from "./TopicIndex";
+import StationSign from "./StationSign";
+import type { LessonMeta } from "@/lib/lessonStore";
+import type { IndexEntry } from "@/lib/nextUp";
 import { PHONE } from "@/lib/breakpoints";
 
-type GraphNode = { slug: string; title: string; posts: number; group: string };
+type GraphNode = { slug: string; title: string; posts: number; group: string; concept: string };
 type Edge = { from: string; to: string };
 type IndexGroup = {
   name: string;
@@ -18,6 +21,9 @@ type Props = {
   edges: Edge[];
   pathEntries: PathEntry[];
   indexGroups: IndexGroup[];
+  /** For the station sign's default topic (the same inputs as the Next up button). */
+  nextEntries: IndexEntry[];
+  metas: LessonMeta[];
 };
 
 type View = "map" | "path";
@@ -34,6 +40,8 @@ export default function HomeView({
   edges,
   pathEntries,
   indexGroups,
+  nextEntries,
+  metas,
 }: Props) {
   // Server and first client render must match, so start on "map" and decide the
   // real view after mount. Phones (under 768px) always get the Path view with
@@ -41,6 +49,7 @@ export default function HomeView({
   const [view, setView] = useState<View>("map");
   const [mobile, setMobile] = useState(false);
   const mobileRef = useRef(false);
+  const [signActive, setSignActive] = useState<string | null>(null);
 
   useEffect(() => {
     let saved: string | null = null;
@@ -122,11 +131,23 @@ export default function HomeView({
 
       {view === "map" ? (
         <>
-          <GraphView nodes={nodes} edges={edges} />
+          <GraphView nodes={nodes} edges={edges} onActive={setSignActive} metas={metas} />
+          <div className="sign-slot">
+            <StationSign
+              topics={nodes.map((n) => {
+                const e = indexGroups.flatMap((g) => g.entries).find((x) => x.slug === n.slug);
+                return { slug: n.slug, title: n.title, group: n.group, concept: n.concept, number: e?.number ?? "", minutes: e?.minutes ?? 0 };
+              })}
+              edges={edges}
+              entries={nextEntries}
+              metas={metas}
+              active={signActive}
+            />
+          </div>
           <TopicIndex groups={indexGroups} />
         </>
       ) : (
-        <PathView entries={pathEntries} />
+        <PathView entries={pathEntries} metas={metas} />
       )}
     </>
   );

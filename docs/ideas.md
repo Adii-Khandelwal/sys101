@@ -149,4 +149,4 @@ Code the owner keeps for future goals. Reviews and audits must list it as "parke
 
 - `pipeline/` (RSS fetch and Gemini summarize stubs) with its two dependencies `@google/genai` and `rss-parser` and the `pipeline:*` scripts: the LLM drafting pipeline, planned.
 - Figure geometry exports used by the anatomy skill's audit (`GAUGE_WORLD`, `BEAD_WORLD`, `PROJECTION`, the spec lists and `auditShapes`): kept so the audit can be re-run.
-- `zoomLevel` (lib/camera.ts) and `optionIds` (lib/quizIds.ts): small helpers with no caller today (the zoom readout was removed); exported so they stay available.
+- `optionIds` (lib/quizIds.ts): a small helper with no caller today; exported so it stays available.

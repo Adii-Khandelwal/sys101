@@ -7,9 +7,7 @@ import {
   MIN_LABEL_SCALE,
   chooseLayers,
   crossings,
-  drawnCrossings,
   sample,
-  edgeCollisions,
   edgeCurvatures,
   fitPositions,
   layers,
@@ -19,6 +17,7 @@ import {
   transitiveReduction,
   type Orientation,
 } from "./graph";
+import { edgeId, routeEdges, routeProblems } from "./metroRoute";
 
 type E = { from: string; to: string };
 const keys = (es: E[]) => es.map((e) => `${e.from}->${e.to}`).sort();
@@ -72,7 +71,7 @@ describe("transitive reduction", () => {
 
 
 // Lay a graph out the way GraphView does, with label widths estimated at
-// 9.2px per character (Newsreader 500 at 18px averages under 9px).
+// 9.2px per character (estimate for the body serif at 500 and 18px, which averages under 9px).
 function plan(nodes: { slug: string; title: string }[], edges: E[], stageWidth: number, orientation: Orientation, perChar = 9.2, scale = 1) {
   const drawn = transitiveReduction(edges);
   const cols = layers(nodes, drawn);
@@ -89,12 +88,21 @@ function plan(nodes: { slug: string; title: string }[], edges: E[], stageWidth: 
   const labels = new Map(nodes.map((n) => [n.slug, { start: LABEL_START, width: labelWidth.get(n.slug)! }]));
   const bends = edgeCurvatures(positions, drawn, slotsByEdge(lay, positions), stage, orientation, labels);
   const real = new Map([...positions].filter(([s]) => labels.has(s)));
+  // The map draws metro elbows (lib/metroRoute.ts): audit those, in stage pixels with y down.
+  const flip = (p: { x: number; y: number }) => ({ x: p.x + PAD, y: height + PAD_TOP - p.y });
+  const px = new Map([...real].map(([s, p]) => [s, flip(p)]));
+  const slots = slotsByEdge(lay, positions);
+  const routes =
+    orientation === "horizontal"
+      ? routeEdges(px, drawn.map((e) => ({ from: e.from, to: e.to, via: (slots.get(edgeId(e)) ?? []).map(flip) })), labelWidth)
+      : new Map();
+  const problems = orientation === "horizontal" ? routeProblems(routes, px, labelWidth, { minX: 0, maxX: width + PAD * 2, minY: 0, maxY: height + PAD + PAD_TOP }) : [];
   return {
     required,
     width,
-    collisions: edgeCollisions(real, drawn, bends, labels, stage),
+    collisions: problems.filter((p) => !p.startsWith("edge-edge")),
     gap: minLabelGap(real, labels),
-    crossed: drawnCrossings(real, drawn, bends),
+    crossed: problems.filter((p) => p.startsWith("edge-edge")),
     // Distance from the highest point of any edge to the stage's top line (the legend and controls row).
     topGap: height + PAD_TOP - Math.max(...drawn.map((e) => Math.max(...sample(positions.get(e.from)!, positions.get(e.to)!, bends.get(`${e.from}->${e.to}`) ?? 0).map((p) => p.y)))),
   };
@@ -118,7 +126,7 @@ describe("layout: no edge crosses a label or node, labels keep their gap", () =>
     const r = plan(nodes, edges, required + PAD * 2, "horizontal", 7.8, 1);
     expect(r.required).toBeLessThanOrEqual(r.width);
     expect(r.collisions).toEqual([]);
-    expect(r.gap).toBeGreaterThanOrEqual(MIN_LABEL_GAP);
+    expect(r.gap).toBeGreaterThanOrEqual(MIN_LABEL_GAP - 1e-6); // float rounding in the sums
     expect(r.crossed).toEqual([]);
   }, 30000);
 
@@ -134,7 +142,7 @@ describe("layout: no edge crosses a label or node, labels keep their gap", () =>
     expect(r.required).toBeLessThanOrEqual(r.width);
     expect(r.collisions).toEqual([]);
     expect(r.crossed).toEqual([]);
-    expect(r.gap).toBeGreaterThanOrEqual(MIN_LABEL_GAP);
+    expect(r.gap).toBeGreaterThanOrEqual(MIN_LABEL_GAP - 1e-6); // float rounding in the sums
   }, 60000);
 
   it("the current topics are clean across label widths, with room under the legend row", () => {
@@ -166,7 +174,7 @@ describe("layout: no edge crosses a label or node, labels keep their gap", () =>
     const wide = plan(n25, e25, 100000, "horizontal").required + PAD * 2;
     const r = plan(n25, e25, wide, "horizontal");
     expect(r.collisions).toEqual([]);
-    expect(r.gap).toBeGreaterThanOrEqual(MIN_LABEL_GAP);
+    expect(r.gap).toBeGreaterThanOrEqual(MIN_LABEL_GAP - 1e-6); // float rounding in the sums
   });
 });
 

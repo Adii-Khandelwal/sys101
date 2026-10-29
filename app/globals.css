@@ -1,18 +1,23 @@
 :root {
   color-scheme: light;
-  --paper: #f3ecdc;
-  --ink: #1f1b16;
-  --ink-soft: #5c5346;
-  --rule: #cfc3a8;
-  --accent: #9a3b1f;
-  --skeleton: #e2d8c2;
-  --edge: #8a7f6c;
+  --paper: #e6e2d6;
+  --ink: #1b2a6b;
+  --ink-soft: #505b8a;
+  --rule: #b3b4bb;
+  --accent: #aa3012;
+  --accent-dark: #8a260e; /* the pressed or lit outline of an orange node: darker than --accent, 3:1 on paper as a graphic */
+  --ink2: #e8452a; /* second ink: lines, rings, large type only (3.05:1 on paper) */
+  --skeleton: #dedbd2; /* raised surface, a 4% ink tint: put ink text on it, not muted or accent */
+  --edge: #767d9b;
+  --highlight: #e6ded3;
+  --overprint: multiply; /* second-ink copies darken where they cross the ink (light) and lighten it (dark) */
 
   /* Motion tokens: mirror lib/motion.ts (checked by lib/motion.test.ts). */
   --dur-fast: 120ms;
   --dur-base: 200ms;
   --dur-slow: 320ms;
   --dur-page: 160ms;
+  --dur-reveal: 560ms;
   --dur-pulse: 1400ms;
   --dur-reduced: 80ms;
   --flicker: 900ms; /* the opening screen: one bulb flicker */
@@ -27,32 +32,40 @@
 }
 
 /* Dark theme: a warm, low-glare dark that keeps the handcrafted feel - deep
-   brown-charcoal paper, warm off-white ink, and a brighter rust that holds
+   brown-charcoal paper, warm off-white ink, and a brighter orange that holds
    WCAG AA on the dark background. Applied when the reader chooses dark, or when
    the OS prefers dark and the reader has made no explicit choice. The colour
    tokens are the whole system, so the SVG diagrams (var(--paper)/--ink/--edge)
-   theme for free; the Sigma map reads these same values at runtime. */
+   theme for free, and so does the SVG map, which uses the tokens directly. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --paper: #1a1713;
-  --ink: #ece4d4;
-  --ink-soft: #a89b85;
-  --rule: #39332a;
-  --accent: #d4683f;
-  --skeleton: #2a251e;
-  --edge: #6b6252;
+  --paper: #1a1512;
+  --ink: #ede3cc;
+  --ink-soft: #a39b8b;
+  --rule: #403a33;
+  --accent: #ff7050;
+  --accent-dark: #e0583a;
+  --ink2: #ff7050;
+  --skeleton: #2a241f;
+  --edge: #797266;
+  --highlight: #352019;
+  --overprint: screen;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --paper: #1a1713;
-    --ink: #ece4d4;
-    --ink-soft: #a89b85;
-    --rule: #39332a;
-    --accent: #d4683f;
-    --skeleton: #2a251e;
-    --edge: #6b6252;
+    --paper: #1a1512;
+    --ink: #ede3cc;
+    --ink-soft: #a39b8b;
+    --rule: #403a33;
+    --accent: #ff7050;
+    --accent-dark: #e0583a;
+    --ink2: #ff7050;
+    --skeleton: #2a241f;
+    --edge: #797266;
+    --highlight: #352019;
+    --overprint: screen;
   }
 }
 
@@ -84,8 +97,8 @@ body {
 h1,
 h2,
 h3 {
-  font-family: var(--font-serif), Georgia, serif;
-  font-weight: 500;
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 400;
   letter-spacing: -0.01em;
   margin: 0;
 }
@@ -123,7 +136,7 @@ h3,
 }
 
 /* Links are not underlined: where one stands on its own (a list, a heading, a label, the footer) the colour shift on hover and
-   the layout say "link". Links inside running sentences keep an underline below, because rust against ink is under 3:1. */
+   the layout say "link". Links inside running sentences keep an underline below, because the accent against ink is under 3:1. */
 a {
   color: inherit;
   text-decoration: none;
@@ -137,7 +150,7 @@ a {
   }
 }
 
-/* Touch has no hover: a tapped link takes the same rust while it is pressed. */
+/* Touch has no hover: a tapped link takes the accent while it is pressed. */
 @media (hover: none) {
   a:active:not(.cta) {
     color: var(--accent);
@@ -145,9 +158,9 @@ a {
 }
 
 /* Links inside running text share the body's colour, so the underline is their only cue: draw it in --ink-soft
-   (6.4:1 light, 6.5:1 dark against the paper) instead of the faint --rule that lists of links use. A colour change
-   cannot do it: rust against ink is 2.5:1 light and 2.8:1 dark, under the 3:1 that WCAG 1.4.1 asks for. */
-:is(p, dd, blockquote) a:not(.text-button, .label, .cta, .footer-group a, .explain a, .inside-source a, .label a) {
+   (5.06:1 light, 6.57:1 dark against the paper) instead of the faint --rule that lists of links use. A colour change
+   cannot do it: the accent against ink is 2.0:1 light and 2.1:1 dark, under the 3:1 that WCAG 1.4.1 asks for. */
+:is(p, dd, blockquote) a:not(.text-button, .label, .cta, .site-footer a, .explain a, .inside-source a, .label a) {
   text-decoration: underline;
   text-decoration-color: var(--ink-soft);
 }
@@ -163,7 +176,7 @@ a {
   }
 }
 
-/* Selected text: ink on a tint of the rule colour (9.8:1 light, 9.9:1 dark); rust on it would be 4.0 and 3.5. */
+/* Selected text: ink on a tint of the rule colour (6.4:1 light, 8.8:1 dark); the accent on it would be 3.2 and 4.1. */
 ::selection {
   background: var(--rule);
   color: var(--ink);
@@ -181,10 +194,8 @@ h1[tabindex="-1"]:focus {
 }
 
 .label {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
@@ -201,7 +212,7 @@ h1[tabindex="-1"]:focus {
 .topic-tagline .reading-time {
   color: var(--ink-soft);
 }
-/* "Core" earns the one rust accent; the others stay quiet. State reads from the
+/* "Core" earns the one orange accent; the others stay quiet. State reads from the
    text, so colour is never the only signal. */
 .interview-tag.is-core {
   color: var(--accent);
@@ -229,7 +240,7 @@ h1[tabindex="-1"]:focus {
 
 .masthead h1 {
   font-size: 3.5556rem;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1;
   letter-spacing: -0.02em;
 }
@@ -318,15 +329,15 @@ h1[tabindex="-1"]:focus {
   align-items: center;
   min-height: 48px;
   padding: 0 24px;
-  border-radius: 2px;
-  background: var(--accent);
+  border-radius: 0;
+  background: var(--ink);
   color: var(--paper);
   font-size: 1.1111rem;
   text-decoration: none;
   transition: transform var(--dur-fast) var(--ease-out);
 }
 
-/* The global a:hover turns links rust; on the rust button that made the text vanish, so the label keeps its colour. */
+/* The global a:hover turns links orange; on the orange button that made the text vanish, so the label keeps its colour. */
 @media (hover: hover) and (pointer: fine) {
   .cta:hover {
     color: var(--paper);
@@ -355,7 +366,7 @@ h1[tabindex="-1"]:focus {
   width: 100%;
   padding: 8px 0;
   border: 0;
-  border-bottom: 1px solid var(--ink-soft);
+  border-bottom: 1.5px solid var(--ink);
   border-radius: 0;
   background: transparent;
   color: var(--ink);
@@ -377,7 +388,7 @@ h1[tabindex="-1"]:focus {
   transform: translateY(-50%);
   padding: 0 7px;
   border: 1px solid var(--rule);
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   line-height: 20px;
   color: var(--ink-soft);
@@ -397,7 +408,7 @@ h1[tabindex="-1"]:focus {
   margin: 0 0 24px;
 }
 
-/* Five across, two rows: each step is a top rule, a number, a name, and a count line. */
+/* Five across, two rows: each step is a number, a name, and a count line. */
 .inside-sequence {
   list-style: none;
   margin: 0;
@@ -412,7 +423,6 @@ h1[tabindex="-1"]:focus {
   flex-direction: column;
   gap: 4px;
   padding: 12px 0 18px;
-  border-top: 1px solid var(--rule);
   font-size: 1rem;
   line-height: 1.25;
 }
@@ -422,7 +432,7 @@ h1[tabindex="-1"]:focus {
 }
 
 .inside-count {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   color: var(--ink-soft);
 }
@@ -434,9 +444,8 @@ h1[tabindex="-1"]:focus {
   align-items: baseline;
   gap: 8px 28px;
   margin: 8px 0 0;
-  padding: 20px 0;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
+  padding: 20px 24px;
+  border: 1.5px solid var(--ink);
 }
 
 .inside-kicker {
@@ -487,8 +496,6 @@ h1[tabindex="-1"]:focus {
 
 .search input::placeholder {
   color: var(--ink-soft);
-  font-style: italic;
-  font-family: var(--font-serif-italic), Georgia, serif;
 }
 
 .search input:focus-visible {
@@ -558,26 +565,21 @@ h1[tabindex="-1"]:focus {
   text-underline-offset: 3px;
 }
 
+/* The key above the map, in its own row; the badges follow it. It wraps with a gap on narrow widths. */
 .graph-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin: 4px 0 8px;
+  margin: 4px 0 12px;
 }
 
-/* "Fit to size": a plain text button at the right of the legend row, with a 44px tap target. */
-.graph-fit {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  margin: -12px 0;
-}
-
+/* The key: a framed bar of the four station marks, each with its word, on one row (the prototype's legend). */
 .graph-legend {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px 20px;
+  gap: 10px 28px;
   margin: 0;
+  padding: 12px 18px;
+  border: 1.5px solid var(--ink);
+  font-size: 0.7222rem;
 }
 
 .graph-legend .legend-dot + .legend-dot,
@@ -628,12 +630,32 @@ h1[tabindex="-1"]:focus {
   opacity: 0.5;
 }
 
+/* The chart frame and its crop marks: four hairline ticks just outside the corners, as on a printed plate. */
+.graph-frame {
+  position: relative;
+  margin: 26px 22px;
+}
+
+.graph-crop {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+}
+
+.graph-crop path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
 /* Wraps the map so a map wider than the viewport scrolls sideways (step 1 test). */
 .graph-scrollwrap {
   position: relative;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x proximity;
+  border: 1.5px solid var(--ink);
 }
 
 /* Zero-size marks at the right edge of each column's labels: the scroll window ends on one of them. */
@@ -646,31 +668,11 @@ h1[tabindex="-1"]:focus {
   pointer-events: none;
 }
 
-.graph-toolbar-end {
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-}
-
-/* Quiet hint that the map continues to the right; it hides at the end of the scroll. */
-.graph-scroll-cue {
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity var(--dur-fast) var(--ease-out), visibility var(--dur-fast);
-}
-
-.graph-scroll-cue[data-shown] {
-  opacity: 1;
-  visibility: visible;
-}
-
 .graph-stage {
   position: relative;
   min-width: 100%;
   height: clamp(250px, calc(var(--rows, 1) * 120px + 130px), 70vh);
   overflow: hidden;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
 }
 
 /* "Next up" under the tagline: the start button's twin, with the second ready topic on its own quiet line. */
@@ -693,46 +695,52 @@ h1[tabindex="-1"]:focus {
   color: var(--ink-soft);
 }
 
-/* Group names in a row above the map: each is a button that highlights that group's topics. */
+/* Group names in a row above the map: line badges (framed Cabin labels), each a button that highlights that group's topics. */
 .graph-groups {
   display: flex;
   flex-wrap: wrap;
-  gap: 0 20px;
-  margin: 0 0 4px;
+  gap: 8px 12px;
+  margin: 4px 0 4px;
 }
 .graph-group {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
+  min-height: 32px;
+  padding: 0 12px;
   white-space: nowrap;
-  color: var(--ink-soft);
+  color: var(--ink);
   appearance: none;
   margin: 0;
-  padding: 0;
-  border: 0;
+  border: 1.5px solid var(--ink);
   background: transparent;
   font: inherit;
   letter-spacing: inherit;
   text-transform: inherit;
   cursor: pointer;
-  border-radius: 2px;
-  transition: color var(--dur-fast) var(--ease-out);
+  border-radius: 0;
+  transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+}
+/* The badge is 32px tall; its tap target is 44px. */
+.graph-group::after {
+  content: "";
+  position: absolute;
+  inset: -6px -2px;
 }
 @media (hover: hover) and (pointer: fine) {
   .graph-group:hover {
-    color: var(--ink);
+    background: var(--highlight);
   }
 }
 .graph-group:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-/* Pressed: this group's topics are the highlighted ones. */
+/* Pressed: this group's topics are the highlighted ones. The badge is reversed out, a shape change, not only a colour. */
 .graph-group[aria-pressed="true"] {
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  color: var(--paper);
+  background: var(--ink);
 }
 
 .legend-mark {
@@ -741,7 +749,7 @@ h1[tabindex="-1"]:focus {
 }
 
 
-/* Each mark stays with its word; on a phone the legend is two lines, Unread and Ready, then In progress and Read. */
+/* Each mark stays with its word. */
 .graph-legend .legend-item {
   display: inline-flex;
   align-items: center;
@@ -749,38 +757,156 @@ h1[tabindex="-1"]:focus {
   white-space: nowrap;
 }
 
-.graph-legend .legend-break {
-  display: none;
+/* The map is one SVG; every colour is a token, so a theme change needs no repaint. Lines are the metro lines. */
+.graph-edge {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
 }
 
-@media (max-width: 767px) {
-  .graph-legend {
-    flex-wrap: wrap;
-    gap: 8px 20px;
-  }
-  .graph-legend .legend-break {
-    display: block;
-    flex-basis: 100%;
-    height: 0;
-    margin: -8px 0 0;
-  }
+.graph-edge-head {
+  fill: var(--ink);
+  stroke: none;
+}
+
+/* The lit route is overprinted in the second ink. */
+.graph-edge[data-lit] {
+  stroke: var(--ink2);
+  stroke-width: 3.5;
+}
+
+.graph-edge-head[data-lit] {
+  fill: var(--ink2);
+}
+
+.graph-edge[data-faded],
+.graph-edge-head[data-faded],
+.graph-node[data-faded] .graph-node-shape,
+.graph-node[data-faded] .graph-node-dot {
+  opacity: 0.6;
 }
 
 /* Edges implied by a longer path: shown faint and dashed as a hint. */
-.graph-extra {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+.graph-edge-extra {
+  stroke: var(--edge);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+  opacity: 0.6;
+}
+
+/* The hand-drawn ring round the current station, in the second ink. */
+.graph-ring {
+  fill: none;
+  stroke: var(--ink2);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
   pointer-events: none;
 }
 
-.graph-extra path {
+/* Stations: unread a plain ring, ready a thicker ring with a centre dot, in progress the same in the accent, read filled. */
+.graph-node-shape {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 2.5;
+}
+
+.graph-node-dot {
   fill: none;
-  stroke: var(--edge);
-  stroke-width: 1;
-  stroke-dasharray: 4 4;
+}
+
+.graph-node[data-ready] .graph-node-shape,
+.graph-node[data-progress] .graph-node-shape {
+  stroke-width: 4.5;
+}
+
+.graph-node[data-ready] .graph-node-dot {
+  fill: var(--ink);
+}
+
+.graph-node[data-progress] .graph-node-shape {
+  stroke: var(--accent);
+}
+
+.graph-node[data-progress] .graph-node-dot {
+  fill: var(--accent);
+}
+
+/* Half marks: the in-progress ring with the left half filled (concept read) or the right half (posts read), no centre dot. */
+.graph-node[data-half] .graph-node-shape {
+  stroke: var(--accent);
+  stroke-width: 4.5;
+}
+
+.graph-node-half {
+  fill: var(--accent);
+  stroke: none;
+  pointer-events: none;
+}
+
+.graph-node[data-faded] .graph-node-half {
   opacity: 0.6;
+}
+
+.graph-node[data-lit][data-half] .graph-node-shape {
+  stroke: var(--accent-dark);
+  stroke-width: 5.5;
+}
+
+.graph-node[data-lit] .graph-node-half {
+  fill: var(--accent-dark);
+}
+
+.graph-node[data-active][data-half] .graph-node-shape {
+  stroke-width: 6;
+}
+
+.graph-node[data-read] .graph-node-shape {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+.graph-node[data-lit] .graph-node-shape {
+  stroke-width: 3.5;
+}
+
+.graph-node[data-lit][data-progress] .graph-node-shape,
+.graph-node[data-lit][data-read] .graph-node-shape {
+  stroke: var(--accent-dark);
+}
+
+.graph-node[data-lit][data-progress] .graph-node-dot {
+  fill: var(--accent-dark);
+}
+
+.graph-node[data-lit][data-ready] .graph-node-shape,
+.graph-node[data-lit][data-progress] .graph-node-shape {
+  stroke-width: 5.5;
+}
+
+.graph-node[data-active] .graph-node-shape {
+  stroke-width: 4;
+}
+
+.graph-node[data-active][data-ready] .graph-node-shape,
+.graph-node[data-active][data-progress] .graph-node-shape {
+  stroke-width: 6;
+}
+
+/* Labels hang under their station on a paper-coloured halo, so a line passing beside them never touches the text. */
+.graph-label {
+  fill: var(--ink);
+  font-weight: 500;
+  stroke: var(--paper);
+  stroke-width: 5;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  pointer-events: none;
+}
+
+.graph-label[data-faded] {
+  fill: var(--ink-soft); /* faded labels keep AA contrast */
 }
 
 /* Stacked when the columns' labels do not fit the stage width. */
@@ -791,15 +917,22 @@ h1[tabindex="-1"]:focus {
 }
 
 .graph-node-link {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  pointer-events: none; /* the canvas handles the mouse; these are for keyboard focus */
+  cursor: pointer;
+  outline: none;
 }
 
-.graph-node-link:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
+.graph-node-hit {
+  fill: transparent; /* the 44px target around the drawn node */
+}
+
+.graph-node-focus {
+  fill: none;
+  stroke: none;
+}
+
+.graph-node-link:focus-visible .graph-node-focus {
+  stroke: var(--accent);
+  stroke-width: 2;
 }
 
 .graph-tooltip {
@@ -818,20 +951,18 @@ h1[tabindex="-1"]:focus {
 }
 
 .graph-tooltip strong {
-  font-weight: 500;
+  font-weight: 400;
   font-size: 0.8889rem;
   line-height: 1.2;
 }
 
 .graph-tooltip span {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
-/* The description reads as prose, not a mono label. */
+/* The description reads as prose, not a Cabin label. */
 .graph-tooltip .tip-desc {
   font-family: var(--font-serif), Georgia, serif;
   font-size: 0.7222rem;
@@ -862,9 +993,11 @@ h1[tabindex="-1"]:focus {
 }
 
 .index h3 {
-  margin: 0 0 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--rule);
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 1px 10px;
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
 }
 
 .index ol {
@@ -882,7 +1015,7 @@ h1[tabindex="-1"]:focus {
 }
 
 .index-number {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   color: var(--ink-soft);
   min-width: 2ch;
@@ -923,17 +1056,163 @@ h1[tabindex="-1"]:focus {
   max-width: none;
 }
 
-/* Section titles on the homepage: serif and larger than the mono labels, so each section starts clearly. */
+/* Section titles on the homepage: serif and larger than the Cabin labels, so each section starts clearly. */
 .home-extra h2.label,
 .index > h2.label {
   margin: 0 0 12px;
-  font-family: inherit;
-  font-size: 1.5556rem;
-  font-weight: 500;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 2rem;
+  font-weight: 400;
   letter-spacing: -0.01em;
   text-transform: none;
   line-height: 1.15;
   color: var(--ink);
+}
+
+/* Overprint: a second-ink copy of the heading, 2px down and right. A pseudo-element, so the text exists once in the DOM. Large type only (the lead line and
+   the 32px section titles); the copy is not text for reading, so --ink2 is allowed here. */
+.overprint {
+  position: relative;
+}
+
+/* The lead line is 26px: 1px keeps the copy a shadow of the ink, not a second word. */
+.masthead-lead.overprint {
+  --offset: 1px;
+}
+
+.overprint::before {
+  content: attr(data-text);
+  content: attr(data-text) / "";
+  position: absolute;
+  inset: 0;
+  transform: translate(var(--offset, 2px), var(--offset, 2px));
+  color: var(--ink2);
+  mix-blend-mode: var(--overprint);
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+  .overprint::before {
+    content: none;
+  }
+}
+
+/* The station sign under the map: a reversed-out bar (ink with paper text), then three columns. Shown from 1024px; below that the Path view and
+   the Next up button do its job. */
+.sign-slot {
+  margin: 56px 0 0;
+}
+
+@media (max-width: 1023px) {
+  .sign-slot {
+    display: none;
+  }
+}
+
+.station-sign {
+  border: 1.5px solid var(--ink);
+}
+
+.sign-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px 28px;
+  padding: 16px 28px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.sign-badge {
+  padding: 1px 14px;
+  border: 2px solid var(--paper);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.sign-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 2.5rem;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.sign-number {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.875rem;
+}
+
+.sign-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+  min-height: 11rem;
+}
+
+.sign-body > div {
+  padding: 20px 28px;
+}
+
+.sign-label {
+  margin: 0 0 6px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.sign-side ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 1rem;
+}
+
+.sign-side li a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+}
+
+.sign-side p:not(.sign-label) {
+  margin: 0;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  color: var(--ink-soft);
+}
+
+.sign-after {
+  text-align: right;
+}
+
+.sign-summary {
+  margin: 0 0 12px;
+  max-width: 36rem;
+  font-size: 1.25rem;
+}
+
+.sign-meta {
+  margin: 0 0 8px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+}
+
+.sign-open {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+/* On the homepage the section has its one rule; the capstone rows need none. */
+.put-together .cap-index li {
+  padding: 16px 0;
+  border-top: 0;
 }
 
 .home-extra-note {
@@ -1010,7 +1289,7 @@ h1[tabindex="-1"]:focus {
   height: 22px;
 }
 
-/* The small slot beside a company name in a mono label (post headers, Original posts, In short, Background, the daily figure). */
+/* The small slot beside a company name in a Cabin label (post headers, Original posts, In short, Background, the daily figure). */
 .company-logo-sm {
   width: 20px;
   height: 16px;
@@ -1027,7 +1306,7 @@ h1[tabindex="-1"]:focus {
   vertical-align: middle;
 }
 
-/* In the left rail the mark sits inline with the mono name, a touch smaller. */
+/* In the left rail the mark sits inline with the Cabin name, a touch smaller. */
 .lesson-rail .company-logo {
   display: inline-flex;
   width: 16px;
@@ -1139,7 +1418,7 @@ h1[tabindex="-1"]:focus {
   color: var(--rule);
 }
 
-/* The Map / Path buttons must read as the same mono small-caps label as "View";
+/* The Map / Path buttons must read as the same Cabin small-caps label as "View";
    buttons do not inherit font or text-transform from the container, so set them. */
 .home-view-toggle .text-button {
   font: inherit;
@@ -1157,9 +1436,9 @@ h1[tabindex="-1"]:focus {
 
 /* The active view word sits right after "View" and is the one marked pressed. */
 .home-view-toggle .home-view-active {
-  color: var(--accent);
+  color: var(--ink);
   text-decoration: underline;
-  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
   text-underline-offset: 4px;
 }
 
@@ -1211,18 +1490,21 @@ h1[tabindex="-1"]:focus {
   margin-top: 24px;
 }
 
-/* Group name as a mono small-caps marker with a rule running to the edge. */
+/* Group name as a framed Cabin marker with a rule running to the edge. */
 .path-group-name {
   display: flex;
   align-items: center;
   gap: 14px;
   margin: 0 0 4px;
-  color: var(--ink-soft);
+  color: var(--ink);
 }
-/* The connecting rule follows the group name and fills to the controls on the right. */
+/* The group name is a line badge: a framed Cabin word, like a metro line sign. */
 .path-group-name > span:first-child {
+  padding: 1px 10px;
+  border: 1.5px solid var(--ink);
   flex: 0 0 auto;
 }
+/* The connecting rule follows the group name and fills to the controls on the right. */
 .path-group-name::after {
   content: "";
   order: 1;
@@ -1297,7 +1579,7 @@ h1[tabindex="-1"]:focus {
 }
 
 .path-number {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   line-height: 44px;
   color: var(--ink-soft);
@@ -1316,8 +1598,8 @@ h1[tabindex="-1"]:focus {
   position: absolute;
   top: -2px;
   bottom: -12px;
-  width: 1px;
-  background: var(--rule);
+  width: 2px;
+  background: var(--ink2);
 }
 .path-list .path-item:first-child .path-rail::before {
   top: 22px;
@@ -1329,26 +1611,51 @@ h1[tabindex="-1"]:focus {
 .path-marker {
   position: relative;
   z-index: 1;
-  margin-top: 16px;
-  width: 11px;
-  height: 11px;
-  border: 1.5px solid var(--ink-soft);
+  margin-top: 14px;
+  width: 15px;
+  height: 15px;
+  border: 2px solid var(--ink);
   border-radius: 50%;
   background: var(--paper);
 }
 .path-item.is-ready .path-marker {
-  border-width: 2.5px;
+  border-width: 3px;
   border-color: var(--ink);
+}
+.path-item.is-ready .path-marker::after {
+  content: "";
+  position: absolute;
+  inset: 2.5px;
+  border-radius: 50%;
+  background: var(--ink);
 }
 .path-item.is-read .path-marker {
   background: var(--accent);
   border-color: var(--accent);
 }
-/* In progress: a hollow marker ringed in rust with a small rust centre, so it
+/* In progress: a hollow marker ringed in orange with a small orange centre, so it
    matches the map's in-progress node and reads as "started, not full". */
 .path-item.is-progress .path-marker {
-  border-width: 2.5px;
+  border-width: 3px;
   border-color: var(--accent);
+}
+/* Half marks: the same ring, the marker's left half (concept) or right half (posts) filled. */
+.path-item.is-concept .path-marker,
+.path-item.is-posts .path-marker {
+  border-width: 2px;
+  border-color: var(--accent);
+}
+.path-item.is-concept .path-marker::after,
+.path-item.is-posts .path-marker::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  clip-path: inset(0 50% 0 0);
+}
+.path-item.is-posts .path-marker::after {
+  clip-path: inset(0 0 0 50%);
 }
 .path-item.is-progress .path-marker::after {
   content: "";
@@ -1386,17 +1693,13 @@ h1[tabindex="-1"]:focus {
 }
 
 .path-ready-tag {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--accent);
 }
 .path-progress-tag {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--accent);
 }
 
@@ -1404,7 +1707,7 @@ h1[tabindex="-1"]:focus {
   font-size: 0.8333rem;
   color: var(--ink-soft);
 }
-/* Same type as the rest of the line, so "Builds on Databases" reads as one sentence. */
+/* Same type as the rest of the line, so "Read first Databases" reads as one sentence. */
 .path-meta-key {
   font: inherit;
 }
@@ -1458,7 +1761,7 @@ h1[tabindex="-1"]:focus {
   border-bottom: 1px solid var(--rule);
 }
 
-/* Builds on takes the spare width; Leads to is as wide as its longest name, which never breaks. */
+/* Read first takes the spare width; Makes possible is as wide as its longest name, which never breaks. */
 .relations > div:first-child {
   flex: 1 1 220px;
   min-width: 0;
@@ -1509,7 +1812,7 @@ h1[tabindex="-1"]:focus {
   font-size: 1.1111rem;
   font-style: italic;
   font-family: var(--font-serif-italic), Georgia, serif;
-  font-weight: 500;
+  font-weight: 400;
   margin: 32px 0 8px;
 }
 
@@ -1532,13 +1835,13 @@ h1[tabindex="-1"]:focus {
 }
 
 .walkthrough li::marker {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7222rem;
   color: var(--ink-soft);
 }
 
 .walkthrough strong {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .diagram {
@@ -1563,9 +1866,9 @@ h1[tabindex="-1"]:focus {
 .numbers th {
   width: 38%;
   padding-right: 16px;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7222rem;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .tradeoffs {
@@ -1578,10 +1881,8 @@ h1[tabindex="-1"]:focus {
 
 .tradeoffs dt,
 .glossary dt {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
@@ -1629,7 +1930,7 @@ h1[tabindex="-1"]:focus {
 
 .mistakes li::marker,
 .quiz li::marker {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7222rem;
   color: var(--ink-soft);
 }
@@ -1699,10 +2000,8 @@ h1[tabindex="-1"]:focus {
 }
 
 .age-note .age-year {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--accent);
 }
 
@@ -1737,7 +2036,7 @@ h1[tabindex="-1"]:focus {
   margin: 0;
 }
 
-/* 44px touch targets without extra visible space. The two ways in are serif text, not tiny mono labels, so a beginner sees them. */
+/* 44px touch targets without extra visible space. The two ways in are serif text, not tiny Cabin labels, so a beginner sees them. */
 .lesson-top .lesson-jump a {
   display: inline-flex;
   align-items: center;
@@ -1794,16 +2093,14 @@ h1[tabindex="-1"]:focus {
 }
 
 .option[aria-pressed="true"] {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .verdict {
   margin-left: 12px;
   white-space: nowrap;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--accent);
 }
 
@@ -2149,10 +2446,8 @@ h1[tabindex="-1"]:focus {
   padding: 0 4px;
   background: none;
   border: 0;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--ink-soft);
   cursor: pointer;
   opacity: 0;
@@ -2216,9 +2511,9 @@ h1[tabindex="-1"]:focus {
   margin: 0 0 4px;
 }
 
-/* The number matches the mono label beside it (same face and size, so the baselines meet). */
+/* The number matches the Cabin label beside it (same face and size, so the baselines meet). */
 .exercises > li::marker {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   color: var(--ink-soft);
 }
@@ -2226,7 +2521,7 @@ h1[tabindex="-1"]:focus {
 .exercises h3 {
   margin: 12px 0 4px;
   font-size: 0.8889rem;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 /* Thin progress rail, desktop only: it sits in the margin left of the text column. */
@@ -2270,9 +2565,8 @@ h1[tabindex="-1"]:focus {
 
   .lesson-rail li {
     margin: 0 0 8px;
-    font-family: var(--font-mono), monospace;
+    font-family: var(--font-sans), system-ui, sans-serif;
     font-size: 0.6667rem;
-    letter-spacing: 0.04em;
   }
 
   .lesson-rail a {
@@ -2281,7 +2575,7 @@ h1[tabindex="-1"]:focus {
   }
 
   @media (hover: hover) and (pointer: fine) {
-    /* Ink, not rust: rust marks the current section in this list. */
+    /* Ink, not orange: orange marks the current section in this list. */
     .lesson-rail a:hover {
       color: var(--ink);
     }
@@ -2337,13 +2631,13 @@ h1[tabindex="-1"]:focus {
 }
 
 .dg-label {
-  font-family: var(--font-serif), Georgia, serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.8333rem;
   fill: var(--ink);
 }
 
 .dg-note {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
   fill: var(--ink-soft);
 }
@@ -2361,12 +2655,6 @@ h1[tabindex="-1"]:focus {
   }
   .masthead p {
     font-size: 1rem;
-  }
-  .graph-toolbar {
-    margin-top: 32px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
   }
   .graph-stage {
     /* Stacked on a phone: grow to fit all nodes; the page scrolls past it. */
@@ -2402,13 +2690,11 @@ h1[tabindex="-1"]:focus {
 .graph-canvas {
   position: absolute;
   inset: 0;
-  /* A fixed small map does not pan, so let a finger scroll the page past it. */
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* A finger scrolls the map sideways and the page vertically; nothing here captures touch. */
   touch-action: auto;
-}
-
-/* Only an interactive map captures touch: one finger pans, two pinch, the rest of the page scrolls normally. */
-.graph-stage[data-interactive] .graph-canvas {
-  touch-action: none;
 }
 
 .graph-skeleton {
@@ -2494,8 +2780,10 @@ h1[tabindex="-1"]:focus {
   flex-wrap: wrap;
   gap: 10px 40px;
   margin-top: 72px;
-  font-family: var(--font-mono), monospace;
-  font-size: 0.6667rem;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.7222rem;
   color: var(--ink-soft);
 }
 
@@ -2504,14 +2792,33 @@ h1[tabindex="-1"]:focus {
 .site-footer .footer-mark {
   display: inline-flex;
   align-items: center;
+  align-self: flex-start;
+  min-height: 1.2em;
 }
 
-.site-footer .footer-group {
+.site-footer .footer-col {
+  min-width: 140px;
+}
+
+@media (max-width: 640px) {
+  .site-footer {
+    flex-direction: column;
+  }
+}
+
+.site-footer .footer-label {
+  margin: 0 0 8px;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+
+.site-footer ul {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 /* The tour button looks like the footer links beside it. */
@@ -2542,6 +2849,108 @@ h1[tabindex="-1"]:focus {
 .legal h2 {
   font-size: 1.2222rem;
   margin: 36px 0 8px;
+}
+
+/* Page title on the list and text pages: the chapter title, smaller (it has no station sign beside it). */
+.dossier .page-h1 {
+  --offset: 3px;
+  margin: 12px 0 24px;
+  font-size: clamp(2.3rem, 5.2vw, 4.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  overflow-wrap: break-word;
+}
+
+/* About, Terms, Privacy, Your data: the section titles are overprinted, so they are set larger than the plain legal ones. */
+.rail-page h2 {
+  --offset: 2px;
+  margin: 56px 0 12px;
+  font-size: 1.9rem;
+  line-height: 1.1;
+  scroll-margin-top: calc(var(--header-h, 60px) + 16px);
+}
+
+/* The left margin from 1200px: a short contents list that stays in view. Without it the margin is empty. */
+.rail-page {
+  position: relative;
+}
+
+.dossier .page-rail {
+  display: none;
+}
+
+@media (min-width: 1200px) {
+  .dossier .page-rail {
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: calc(100% + 16px);
+    width: 190px;
+    margin: 0;
+  }
+
+  .page-rail-in {
+    position: sticky;
+    top: calc(var(--header-h, 60px) + 24px);
+    padding-top: 6px;
+    border-top: 1.5px solid var(--ink2);
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 0.8333rem;
+    line-height: 1.35;
+  }
+
+  .page-rail .label {
+    margin: 0 0 10px;
+    font-size: 0.7222rem;
+    color: var(--ink-soft);
+  }
+
+  .page-rail ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .page-rail a {
+    display: block;
+    padding: 7px 0;
+    color: var(--ink);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .page-rail a:hover {
+      color: var(--accent);
+    }
+  }
+}
+
+.faq details {
+  border-top: 1px solid var(--rule);
+  padding: 12px 0;
+}
+
+.faq details:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+
+.faq summary {
+  cursor: pointer;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.8889rem;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .faq summary:hover {
+    color: var(--accent);
+  }
+}
+
+.faq details p {
+  margin: 8px 0 0;
 }
 
 .legal p {
@@ -2776,6 +3185,31 @@ button:active:not(:disabled),
   animation: none;
 }
 
+/* Theme reveal (ThemeToggle, runThemeReveal): the new theme grows as a circle from the click. The flag is on <html> only while it runs. */
+html[data-theme-reveal]::view-transition-old(root),
+html[data-theme-reveal]::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html[data-theme-reveal]::view-transition-new(root) {
+  animation: theme-reveal var(--dur-reveal) var(--ease-out) both;
+}
+
+html[data-theme-reveal] .site-header {
+  view-transition-name: none; /* else the header cross-fades outside the circle */
+}
+
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0 at var(--reveal-x) var(--reveal-y));
+  }
+
+  to {
+    clip-path: circle(var(--reveal-r) at var(--reveal-x) var(--reveal-y));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     /* Movement becomes instant; a fade that helps you follow a change stays, at 80ms. */
@@ -2858,6 +3292,9 @@ button:active:not(:disabled),
 
 /* Windows high contrast: author backgrounds are dropped, so fills use system colours and boxes get a visible edge. */
 @media (forced-colors: active) {
+  .cta {
+    border: 1px solid LinkText;
+  }
   .seg,
   .learn-progress-track,
   .read-box {
@@ -2895,7 +3332,8 @@ html {
   top: 0;
   z-index: 30;
   height: var(--header-h);
-  background: var(--paper); /* no rule: only the logo shows, content passes under it */
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule); /* hairline: content passes under the bar */
 }
 
 .site-header-inner {
@@ -2907,14 +3345,12 @@ html {
   padding: 0 40px;
 }
 
-/* Content pages in the bar: small mono links on wide screens, a Menu button below 900px (components/SiteNav.tsx). */
+/* Content pages in the bar: small Cabin links on wide screens, a Menu button below 900px (components/SiteNav.tsx). */
 .site-nav {
   margin-left: auto;
   flex: none;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.7778rem;
 }
 .site-nav ul {
   list-style: none;
@@ -2929,11 +3365,15 @@ html {
   padding: 0 12px;
   color: var(--ink-soft);
 }
+.site-nav a {
+  border-bottom: 1.5px solid transparent;
+}
 .site-nav a[aria-current="page"] {
   color: var(--ink);
+  border-bottom: 1.5px solid var(--ink); /* the current page shows by shape as well as colour */
 }
 .site-nav-button {
-  border: 0;
+  border: 1.5px solid var(--ink-soft);
   background: none;
   font: inherit;
   letter-spacing: inherit;
@@ -2980,10 +3420,8 @@ html {
   padding: 4px 16px 12px;
   background: var(--paper);
   border-bottom: 1px solid var(--rule);
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7778rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   animation: menu-in var(--dur-fast) var(--ease-out);
 }
 @keyframes menu-in {
@@ -3089,7 +3527,7 @@ html {
 .logo-word {
   font-family: var(--font-serif), Georgia, serif;
   font-size: 1.3333rem;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1;
   letter-spacing: -0.01em;
 }
@@ -3208,15 +3646,13 @@ html {
   gap: 8px;
   min-width: 44px;
   min-height: 44px;
-  padding: 0 8px;
+  padding: 0 12px;
   background: var(--paper);
-  border: 0;
-  /* Same look as .text-button: ink, mono small caps, underlined text. */
+  border: 1.5px solid var(--ink-soft);
+  /* Ink Cabin text in a square 1.5px frame; the frame is what sets it apart from .text-button. */
   color: var(--ink);
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
@@ -3320,6 +3756,7 @@ html {
 }
 .glossary-topic h2 {
   margin-bottom: 4px;
+  scroll-margin-top: calc(var(--header-h, 60px) + 56px); /* clear the header and the phone contents strip */
 }
 .glossary-search {
   margin-top: 20px;
@@ -3339,7 +3776,7 @@ html {
 .learn-terms dt,
 .glossary-terms dt,
 .learn-myths dt {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .learn-terms dd,
@@ -3433,7 +3870,7 @@ html {
   padding: 10px 14px;
   border: 1px solid var(--rule);
   background: var(--skeleton);
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7778rem;
   line-height: 1.55;
   tab-size: 2;
@@ -3535,9 +3972,11 @@ html {
     inset: -15px -4px;
   }
   /* Wrapped footer rows sit 44px apart, so one link's tap area never overlaps the row above or below. */
-  .site-footer,
-  .site-footer .footer-group {
+  .site-footer {
     row-gap: 25px;
+  }
+  .site-footer ul {
+    gap: 25px;
   }
   /* The Map and Path toggle sits close together, so its areas grow sideways just enough to reach 44px. */
   .home-view-toggle .text-button::after {
@@ -3621,7 +4060,7 @@ html {
   font-size: 0.8333rem;
   color: var(--ink-soft);
 }
-/* "Builds on" with the topic names right after it, so the sentences below do not have to be read to know what it builds on. */
+/* "Read first" with the topic names right after it, so the sentences below do not have to be read to know what it builds on. */
 .path-builds {
   display: flex;
   flex-wrap: wrap;
@@ -3736,6 +4175,21 @@ html {
   position: relative;
 }
 
+/* The number of the term's margin note, from 1200px where the margin shows. Generated content with an empty alt: not in the text, so find on page,
+   search and screen readers skip it. */
+@media (min-width: 1200px) {
+  .chapter .gloss[data-num]::after {
+    content: attr(data-num);
+    content: attr(data-num) / "";
+    margin-left: 1px;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 0.6rem;
+    line-height: 0;
+    vertical-align: super;
+    color: var(--ink-soft);
+  }
+}
+
 /* Dotted, not solid: it says "a term with a definition" and stays apart from the solid underline of a real link. */
 :is(p, dd, blockquote, li) a.gloss-term {
   text-decoration: underline dotted var(--ink-soft);
@@ -3824,10 +4278,8 @@ html {
 }
 
 .gloss-pop .gloss-more {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--accent);
   text-decoration: none;
   display: inline-flex;
@@ -3842,11 +4294,6 @@ html {
 }
 
 /* ── Background page: what the posts of each topic assume ── */
-:root {
-  /* A faint wash of the accent, so it follows both themes and needs no literal colour. */
-  --highlight: color-mix(in srgb, var(--accent) 12%, transparent);
-}
-
 .background-lead {
   margin: 0 0 8px;
   color: var(--ink-soft);
@@ -3876,7 +4323,10 @@ html {
 }
 
 .bg-section h2 {
+  --offset: 2px;
   margin: 0;
+  font-size: 1.9rem;
+  line-height: 1.1;
 }
 
 .bg-section > .label {
@@ -3938,10 +4388,8 @@ html {
   align-items: center;
   width: fit-content;
   min-height: 44px;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 .bg-assumed q {
@@ -4162,7 +4610,7 @@ html[data-posts-view] .posts-view-h {
   margin: 28px 0 0;
   padding-bottom: 6px;
   font-size: 1.2222rem;
-  font-weight: 500;
+  font-weight: 400;
   border-bottom: 1px solid var(--rule);
 }
 .posts-topic-h a {
@@ -4247,7 +4695,7 @@ html[data-posts-view] .posts-view-h {
 .reads-topicbar-label {
   margin: 20px 0 0;
 }
-/* Quiet by default: small mono text in the soft ink, the box fills rust once read. */
+/* Quiet by default: small Cabin text in the soft ink, the box fills orange once read. */
 .reads-read {
   display: inline-flex;
   align-items: center;
@@ -4332,7 +4780,7 @@ html[data-posts-view] .posts-view-h {
 .reads-topics a {
   color: inherit;
 }
-/* These set color: inherit, which would beat the global a:hover; give them the same rust on hover. */
+/* These set color: inherit, which would beat the global a:hover; give them the same orange on hover. */
 @media (hover: hover) and (pointer: fine) {
   .reads-topics a:hover,
   .posts-topics a:hover,
@@ -4387,16 +4835,14 @@ html[data-posts-view] .posts-view-h {
   .posts-rail li {
     position: relative;
     margin: 0 0 8px;
-    font-family: var(--font-mono), monospace;
+    font-family: var(--font-sans), system-ui, sans-serif;
     font-size: 0.6667rem;
-    letter-spacing: 0.04em;
     line-height: 1.4;
   }
   .posts-rail-group {
     display: block;
     margin: 14px 0 6px;
     color: var(--ink);
-    text-transform: uppercase;
   }
   .posts-rail li:first-child .posts-rail-group {
     margin-top: 0;
@@ -4431,11 +4877,12 @@ html[data-posts-view] .posts-view-h {
   :root,
   :root[data-theme="dark"],
   :root:not([data-theme="light"]) {
-    --paper: #fff;
-    --ink: #1f1b16;
-    --ink-soft: #5c5346;
-    --rule: #cfc3a8;
-    --accent: #9a3b1f;
+    --paper: #ffffff;
+    --ink: #1b2a6b;
+    --ink-soft: #505b8a;
+    --rule: #b3b4bb;
+    --accent: #aa3012;
+    --accent-dark: #8a260e;
   }
 
   .site-header,
@@ -4445,7 +4892,6 @@ html[data-posts-view] .posts-view-h {
   .progress-sticky,
   .search,
   .posts-tools,
-  .graph-toolbar,
   .graph-groups,
   .mark-done,
   .reveal-wrap > button,
@@ -4505,7 +4951,7 @@ html[data-posts-view] .posts-view-h {
   }
 }
 
-/* Newsreader ships tabular figures (checked in the served woff2: GSUB tnum), so years and counts line up in columns. The mono labels are tabular already. */
+/* Years and counts in a list. */
 .posts-year,
 .posts-count,
 .glossary-count {
@@ -4593,7 +5039,7 @@ html[data-posts-view] .posts-view-h {
   stroke: var(--ink);
 }
 
-/* Counted beads are filled rust; beads outside the frame are hollow, so the state is shape, not colour. */
+/* Counted beads are filled orange; beads outside the frame are hollow, so the state is shape, not colour. */
 .fig-svg .fig-bead {
   fill: none;
   stroke: var(--ink-soft);
@@ -4625,16 +5071,15 @@ html[data-posts-view] .posts-view-h {
 }
 
 .fig-formula {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.8333rem;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 
 .fig-status {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7222rem;
-  letter-spacing: 0.04em;
   color: var(--ink-soft);
 }
 
@@ -4705,7 +5150,7 @@ html[data-posts-view] .posts-view-h {
 .fig-seconds {
   min-width: 4ch;
   white-space: nowrap;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.7222rem;
   color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
@@ -4714,10 +5159,8 @@ html[data-posts-view] .posts-view-h {
 .fig-controls .text-button {
   min-height: 44px;
   padding: 0 4px;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .fig-legend {
@@ -5023,7 +5466,7 @@ html[data-posts-view] .posts-view-h {
   border: 1px solid var(--rule);
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 1rem; /* 16px or more: iOS does not zoom the page on focus */
 }
 
@@ -5170,7 +5613,6 @@ html[data-posts-view] .posts-view-h {
   display: block;
   margin-top: 2px;
   font-size: 0.6111rem;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
@@ -5216,12 +5658,13 @@ html[data-posts-view] .posts-view-h {
 }
 
 .cap-bar-list a {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 0;
   color: var(--ink-soft);
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.6667rem;
-  letter-spacing: 0.04em;
   text-decoration: none;
 }
 
@@ -5333,6 +5776,7 @@ html[data-posts-view] .posts-view-h {
   padding: 16px 20px 8px;
   background: var(--paper);
   border: 1px solid var(--ink);
+  border-top: 1.5px solid var(--ink2); /* the same second-ink rule as the margin lists */
   border-radius: 2px;
   opacity: 0;
   transition: opacity var(--dur-base) var(--ease-out);
@@ -5376,7 +5820,7 @@ html[data-posts-view] .posts-view-h {
 .tour-title {
   margin: 4px 0 0;
   font-size: 1.1111rem;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .tour-text {
@@ -5424,7 +5868,7 @@ html[data-splash] .splash {
   /* Leaves by itself even if the scripts never load, so it can never cover the page for good. It waits out the flight below. */
   animation: splash-away var(--dur-base) var(--ease-out) calc(var(--splash-hold) + var(--dur-slow) + var(--dur-fast)) forwards;
 }
-/* The cream backdrop is its own layer so it can fade while the mark and name fly into the masthead. */
+/* The paper backdrop is its own layer so it can fade while the mark and name fly into the masthead. */
 html[data-splash] .splash::before {
   content: "";
   position: absolute;
@@ -5573,4 +6017,642 @@ html[data-splash] .splash.is-leaving::before {
   background: var(--highlight);
   outline: 6px solid var(--highlight);
   border-radius: 2px;
+}
+
+/* Scroll ruler (components/ScrollRuler.tsx): replaces the native page scrollbar on desktop with a fine pointer; touch, forced colours and more contrast keep the native one. */
+.scroll-ruler {
+  display: none;
+}
+@media (hover: hover) and (pointer: fine) and (min-width: 1024px) and (not (forced-colors: active)) and (not (prefers-contrast: more)) {
+  html.has-ruler {
+    scrollbar-width: none; /* set by ScrollRuler only while the ruler is shown */
+  }
+  .scroll-ruler {
+    display: block;
+    position: fixed;
+    top: var(--header-h);
+    right: 0;
+    bottom: 16px;
+    width: 48px;
+    z-index: 20; /* above page content, below the header (30), tour, loader and opening screen */
+    cursor: ns-resize;
+    touch-action: none;
+    user-select: none;
+    color: var(--ink-soft);
+  }
+  .scroll-ruler[hidden] {
+    display: none;
+  }
+  .back-to-top {
+    right: calc(24px + 48px + env(safe-area-inset-right)); /* clear the ruler */
+  }
+  .scroll-ruler svg {
+    display: block;
+  }
+  .scroll-ruler-minor,
+  .scroll-ruler-mid,
+  .scroll-ruler-major {
+    stroke: var(--ink-soft);
+    stroke-width: 1;
+  }
+  .scroll-ruler-minor {
+    opacity: 0.55;
+  }
+  .scroll-ruler text {
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 11px;
+    fill: var(--ink-soft);
+  }
+  .scroll-ruler-num.is-hidden {
+    visibility: hidden; /* the marker and its readout sit here */
+  }
+  .scroll-ruler-section {
+    stroke: var(--ink);
+    stroke-width: 2;
+  }
+  .scroll-ruler-hit {
+    fill: transparent;
+    cursor: pointer;
+  }
+  .scroll-ruler-marker line {
+    stroke: var(--ink2);
+    stroke-width: 2;
+  }
+  .scroll-ruler-marker rect {
+    fill: var(--paper);
+  }
+  .scroll-ruler-marker text {
+    font-size: 12px;
+    fill: var(--accent);
+  }
+  @media (max-width: 1279px) {
+    body {
+      padding-right: 52px; /* text would run under the ruler (from 1280px the topic and learn pages pad themselves instead, see .dossier.chapter) */
+    }
+    .site-header {
+      margin-right: -52px; /* the header keeps the full width */
+    }
+  }
+}
+@media print {
+  .scroll-ruler {
+    display: none;
+  }
+}
+
+/* ── Chapter: topic and learn pages (Phase 5) ────────────────────────────────────────────────────────────────────────────
+   A wide page: the title block (group badge, "Topic N", a large overprinted title, and Read first / Makes possible / Time at its
+   right), then from 1200px three columns: the lesson rail drawn as a short metro line, the text column, and a margin column. */
+.dossier.chapter {
+  max-width: 1360px;
+  padding: 24px 40px 96px;
+}
+
+.chapter-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 28px 64px;
+  padding: 24px 0 40px;
+}
+
+.chapter-title {
+  flex: 1 1 560px;
+  min-width: 0;
+}
+
+.chapter .topic-tagline {
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.chapter-group {
+  padding: 1px 12px;
+  border: 1.5px solid var(--ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.8333rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.chapter .topic-tagline .label {
+  font-size: 0.8333rem;
+}
+
+.dossier.chapter .chapter-h1 {
+  --offset: 4px;
+  margin: 12px 0 0;
+  font-size: clamp(2.4rem, 7.2vw, 6.4rem);
+  line-height: 0.92;
+  letter-spacing: -0.025em;
+  overflow-wrap: break-word;
+}
+
+.dossier.chapter .chapter-h1.is-learn {
+  --offset: 3px;
+  font-size: clamp(2.3rem, 5.2vw, 4.4rem);
+  line-height: 0.98;
+}
+
+.chapter-meta {
+  flex: 0 1 330px;
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.8333rem;
+  line-height: 1.4;
+}
+
+.chapter-meta dt {
+  font-size: 0.7222rem;
+  color: var(--ink-soft);
+}
+
+.chapter-meta dd {
+  margin: 2px 0 0;
+}
+
+.chapter-meta ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chapter-meta li {
+  margin: 0 0 6px;
+}
+
+.chapter-meta .relation-reason {
+  margin: 2px 0 8px;
+  font-size: 0.7222rem;
+  color: var(--ink-soft);
+}
+
+.chapter-meta .none {
+  margin: 0;
+  font-style: normal;
+  font-family: inherit;
+}
+
+.route summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .route summary:hover {
+    color: var(--accent);
+  }
+}
+
+.route ol {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.route li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 6px;
+}
+
+.route-mark {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+}
+
+.route-mark[data-read] {
+  background: var(--ink);
+}
+
+.route-min,
+.route-total {
+  font-size: 0.7222rem;
+  color: var(--ink-soft);
+}
+
+.route-total {
+  margin: 8px 0 0;
+}
+
+.chapter-body {
+  display: block;
+}
+
+.chapter-main {
+  min-width: 0;
+  line-height: 1.7;
+}
+
+/* In short: a framed box with its label inside at the top. */
+.chapter .in-short {
+  margin: 0 0 40px;
+  padding: 20px 26px;
+  border: 1.5px solid var(--ink);
+  background: var(--skeleton);
+}
+
+.chapter .in-short h2.label {
+  margin: 0 0 6px;
+  font-size: 0.7222rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.chapter .in-short ul {
+  padding-left: 1.1em;
+}
+
+.chapter .in-short li {
+  margin: 0 0 8px;
+  font-size: 1.0556rem;
+  line-height: 1.55;
+}
+
+.chapter .in-short-figures {
+  margin-top: 14px;
+  padding: 6px 0 0;
+  border-top: 1px solid var(--rule);
+}
+
+.chapter .in-short-figures li {
+  margin: 0;
+  border-top: 0;
+  font-size: 1rem;
+}
+
+.chapter .concept {
+  margin: 0 0 20px;
+  font-size: 1.0556rem;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.chapter .learn-note {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-style: normal;
+  font-size: 0.8889rem;
+  color: var(--ink-soft);
+}
+
+.chapter .lesson-top {
+  margin: 0 0 8px;
+}
+
+.chapter .part {
+  margin-top: 72px;
+}
+
+.chapter .part-label {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.7222rem;
+  font-weight: 700;
+}
+
+.chapter section > h2,
+.chapter .learn-section > h2 {
+  margin: 0 0 14px;
+  font-size: clamp(1.9rem, 2.9vw, 2.55rem);
+  line-height: 1.05;
+}
+
+.chapter.lesson section,
+.chapter .learn-section {
+  margin-top: 64px;
+}
+
+.chapter.lesson section.in-short {
+  margin-top: 0;
+}
+
+/* "After this you can ...": a plain line in Cabin, not italic (decision 22). */
+.chapter .outcome {
+  margin: 0 0 16px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-style: normal;
+  font-size: 0.8889rem;
+  color: var(--ink-soft);
+}
+
+.chapter .finish-note,
+.chapter .finish-topic .finish-note {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-style: normal;
+}
+
+/* Mark done: a station, hollow until done, then filled. */
+.chapter .mark-square {
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+.chapter .mark-square::after {
+  inset: -3px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+/* The margin column: terms of this section, from 1200px. A copy of the popovers' text; see components/MarginTerms.tsx. */
+.margin-terms {
+  display: none;
+}
+
+/* Below 1200px the rail is the sticky line at the top. */
+@media (min-width: 1180px) and (max-width: 1199px) {
+  .dossier.chapter .lesson-rail {
+    display: none;
+  }
+  .dossier.chapter .progress-sticky {
+    display: block;
+  }
+}
+
+@media (min-width: 1200px) {
+  /* One grid for the page: row 1 the badge and title, row 2 the rail and the intro (In short, concept, links), the right column spans
+     both rows from the top, so its height never adds space above the title. The sections follow in the text column. */
+  .chapter-grid {
+    display: grid;
+    grid-template-columns: 190px minmax(0, 700px) 250px;
+    column-gap: 48px;
+    align-items: start;
+  }
+
+  .chapter-head,
+  .chapter-body,
+  .chapter-main {
+    display: contents;
+  }
+
+  .chapter-title {
+    grid-column: 1 / 3;
+    grid-row: 1;
+    padding: 24px 0 40px;
+  }
+
+  .chapter-meta {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    margin-top: 28px;
+  }
+
+  .chapter-main > * {
+    grid-column: 2;
+  }
+
+  .dossier.chapter .lesson-rail {
+    grid-column: 1;
+    grid-row: 2 / 99;
+  }
+
+  .dossier.chapter .lesson-rail {
+    display: block;
+    position: sticky;
+    top: calc(var(--header-h, 60px) + 24px);
+    left: auto;
+    width: auto;
+    max-height: calc(100dvh - var(--header-h, 60px) - 48px);
+  }
+
+  .dossier.chapter .progress-sticky {
+    display: none;
+  }
+
+  .chapter .margin-terms {
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(100% + 48px);
+    width: 250px;
+  }
+
+  .margin-terms-in {
+    position: sticky;
+    top: calc(var(--header-h, 60px) + 24px);
+    padding-top: 6px;
+    border-top: 1.5px solid var(--ink2);
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 0.8056rem;
+    line-height: 1.45;
+  }
+
+  .margin-terms-label {
+    margin: 0 0 10px;
+    font-size: 0.7222rem;
+    color: var(--ink-soft);
+  }
+
+  .margin-terms dl {
+    margin: 0;
+  }
+
+  .margin-terms dt {
+    font-weight: 700;
+  }
+
+  .margin-num {
+    margin-right: 5px;
+    font-size: 0.6667rem;
+    vertical-align: super;
+    line-height: 0;
+    color: var(--ink-soft);
+  }
+
+  .margin-terms dd {
+    margin: 0 0 12px;
+    color: var(--ink-soft);
+  }
+
+  /* With scripting on, notes stay invisible until MarginTerms has placed them, so first paint has no jump (layout shift). Without scripting they show as a list. */
+  @media (scripting: enabled) {
+    .margin-terms:not([data-ready]) .margin-terms-in {
+      visibility: hidden;
+    }
+  }
+
+  /* With JavaScript each note is placed beside its term (components/MarginTerms.tsx): no sticky list, no label, one rule per note. */
+  .margin-terms[data-placed] .margin-terms-in {
+    position: static;
+    padding: 0;
+    border-top: 0;
+  }
+
+  .margin-terms[data-placed] .margin-terms-label {
+    display: none;
+  }
+
+  .margin-terms[data-placed] .margin-note {
+    position: absolute;
+    left: 0;
+    right: 0;
+    padding: 6px 0 0 8px;
+    border-top: 1.5px solid var(--ink2);
+    border-left: 1.5px solid transparent;
+  }
+
+  .margin-terms[data-placed] dd {
+    margin: 0;
+  }
+
+  /* The term and its note mark each other on hover or focus: a 1.5px ink edge on the note, a wash on the term (shape, not colour alone). */
+  .margin-note[data-linked] {
+    border-left-color: var(--ink);
+  }
+
+}
+
+/* Capstone: the sections sit in the chapter grid; its own top rule goes (the overprinted title is the divider) and the margin is the chapter's. */
+.chapter .cap-section {
+  margin-top: 64px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.chapter .posts-lead {
+  font-size: 1.0556rem;
+  line-height: 1.7;
+}
+
+/* Clear of the scroll ruler: from 1280px the page pads itself; below that body already pads 52px (see the ruler rules), so not twice. */
+@media (hover: hover) and (pointer: fine) and (min-width: 1280px) and (not (forced-colors: active)) and (not (prefers-contrast: more)) {
+  .dossier.chapter {
+    padding-right: 52px;
+  }
+}
+
+.gloss-term[data-linked] {
+  background: var(--highlight);
+}
+
+/* The lesson rail as a short metro line (also on the Glossary and Background, which are not chapters). */
+:is(.dossier.chapter, .glossary-page, .background-page) .lesson-rail .progress-head {
+  margin: 0 0 18px;
+}
+
+:is(.dossier.chapter, .glossary-page, .background-page) .lesson-rail .progress-head .label {
+  font-size: 0.8333rem;
+  color: var(--ink);
+}
+
+:is(.chapter, .glossary-page, .background-page) .seg::after,
+:is(.chapter, .glossary-page, .background-page) .learn-progress-fill {
+  background: var(--ink);
+}
+
+:is(.dossier.chapter, .glossary-page, .background-page) .lesson-rail ol {
+  padding: 0;
+  border-left: 0;
+}
+
+:is(.dossier.chapter, .glossary-page, .background-page) .lesson-rail ol::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 20px;
+  bottom: 20px;
+  width: 3px;
+  background: var(--ink);
+}
+
+:is(.dossier.chapter, .glossary-page, .background-page) .lesson-rail li {
+  position: relative;
+  margin: 0;
+  font-size: 0.8333rem;
+  line-height: 1.3;
+}
+
+:is(.dossier.chapter, .glossary-page, .background-page) .lesson-rail a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 4px 0;
+  color: var(--ink);
+}
+
+:is(.dossier.chapter, .glossary-page, .background-page) .lesson-rail .is-current a {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.station {
+  position: relative;
+  flex: none;
+  width: 24px;
+  height: 24px;
+}
+
+.station::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  box-sizing: border-box;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+.is-done > a > .station::before {
+  background: var(--ink);
+}
+
+/* The current station: a ring round it and the second-ink dot in the middle. */
+.is-current > a > .station::before {
+  outline: 1.5px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.is-current > a > .station::after {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background: var(--ink2);
+}
+
+@media (forced-colors: active) {
+  :is(.dossier.chapter, .glossary-page, .background-page) .lesson-rail ol::before {
+    background: CanvasText;
+  }
+  .is-done > a > .station::before {
+    background: CanvasText;
+  }
+  .is-current > a > .station::after {
+    background: Highlight;
+  }
+}
+
+@media (max-width: 767px) {
+  .dossier.chapter {
+    padding: 16px 16px 64px;
+  }
+  .chapter-head {
+    padding: 20px 0 28px;
+  }
+  .chapter-meta {
+    flex-basis: 100%;
+  }
+  .chapter .in-short {
+    padding: 16px 18px;
+  }
+}
+
+/* Sub-headings inside a post: Cabin, not italic (decision 22). */
+.chapter .post h3 {
+  margin: 28px 0 6px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-style: normal;
+  font-size: 0.8889rem;
+  font-weight: 700;
 }

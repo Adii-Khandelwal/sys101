@@ -14,7 +14,7 @@ let lastClosed = 0;
  * focus or a tap opens a small popover with the definition and a "See in glossary" link; Escape closes it and puts focus
  * back on the term. Fading is opacity and a 0.97 scale from the term, on the motion tokens (opacity only under reduced motion).
  */
-export default function GlossTerm({ href, definition, children }: { href: string; definition: string; children: string }) {
+export default function GlossTerm({ href, definition, note, num, children }: { href: string; definition: string; /** Number of its margin note in the section (drawn by CSS, so it is not text: search, find on page and screen readers never see it). */ num?: number; /** Id of this term's margin note (lib/glossaryMatch.ts noteId). */ note?: string; children: string }) {
   const id = useId();
   const root = useRef<HTMLSpanElement>(null);
   const term = useRef<HTMLAnchorElement>(null);
@@ -93,6 +93,7 @@ export default function GlossTerm({ href, definition, children }: { href: string
     <span
       ref={root}
       className="gloss"
+      data-num={num}
       onPointerEnter={(e) => {
         if (e.pointerType !== "mouse") return;
         clearTimeout(leaving.current);
@@ -126,6 +127,7 @@ export default function GlossTerm({ href, definition, children }: { href: string
       <a
         ref={term}
         className="gloss-term"
+        data-note={note}
         data-popover
         data-own-transition // the global link handler would navigate; a click here only opens the popover
         href={href}

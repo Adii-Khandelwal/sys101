@@ -18,7 +18,7 @@ export default function TopicReadiness({ items, mode }: { items: Item[]; mode: "
   const read = useReadTopics();
   const mounted = useMounted();
   const done = items.filter((i) => read.includes(i.slug)).length;
-  const count = mounted ? `${done} of ${items.length} topics done` : `${items.length} ${items.length === 1 ? "topic" : "topics"} needed`;
+  const count = mounted ? `${done} of ${items.length} topics done` : `Builds on ${items.length} ${items.length === 1 ? "topic" : "topics"}`;
   if (mode === "summary") {
     return (
       <p className="cap-ready label" aria-live="polite">

@@ -6,10 +6,12 @@ import {
   OLD_POSTS_KEY,
   PROGRESS_KEY,
   emptyProgress,
+  halfOf,
   loadProgress,
   parseProgress,
   syncRead,
   topicOf,
+  type Half,
   type LessonMeta,
   type Progress,
 } from "./lessonStore";
@@ -271,6 +273,19 @@ export function inProgressSlugs(progress: Progress, read: readonly string[]): st
   return Object.entries(progress.topics)
     .filter(([slug, t]) => !read.includes(slug) && (t.done.length > 0 || Object.keys(t.answers).length > 0))
     .map(([slug]) => slug);
+}
+
+/** Topics with exactly one half done (concept or posts), by slug. Callers skip topics already read. */
+export function useHalves(metas: readonly LessonMeta[]): Record<string, Half> {
+  const { progress } = useAllProgress();
+  return useMemo(() => {
+    const out: Record<string, Half> = {};
+    for (const m of metas) {
+      const h = halfOf(progress, m);
+      if (h) out[m.slug] = h;
+    }
+    return out;
+  }, [progress, metas]);
 }
 
 /** Live set of in-progress topic slugs, for the map's "currently reading" marker. */

@@ -39,7 +39,7 @@ It is one person's learning project, built in the open.
   <img src="docs/readme/topic-light.png" alt="The Caching topic page: a contents list on the left, the title and a short summary, then an In short list with links to a Meta post and an Uber post." width="100%">
 </picture>
 
-**Topics built on topics.** Each topic page names its prerequisites and says why each one matters. The page runs from the idea (why it exists, a mental model, a worked example, common mistakes) to the real world: a digest of each company post with its numbers, trade-offs and what failed.
+**Topics built on topics.** Each topic page names its prerequisites and says why each one matters. The page runs from the idea (why it exists, a mental model, a worked example, common mistakes) to the real world: a digest of each company post with its numbers, trade-offs and what failed. On a wide screen the page has three columns: a lesson rail drawn as a short metro line, the text, and a margin that gives the meaning of every glossary term next to the paragraph that uses it (the hover popovers stay). A ruler down the right edge replaces the native scrollbar on desktop and maps the page to 0 to 100%.
 
 **Check yourself.** Every topic ends with a quiz that explains the wrong answers too, and design exercises that rise from applying the idea to designing and scaling a system, with model answers you open when you are ready.
 
@@ -111,7 +111,7 @@ Every post records the date someone last opened it, and each page ends with "Pag
 
 ## Built with
 
-Next.js (App Router) and TypeScript, every page generated at build time and served from Vercel's CDN. The map is Sigma.js on graphology. Search runs in the browser against a Pagefind index built with the site. Vitest runs the unit tests; Playwright drives the browser checks. Vercel Web Analytics counts page views. Nothing is fetched from a third party at runtime, and company marks are local files.
+Next.js (App Router) and TypeScript, every page generated at build time and served from Vercel's CDN. The map is one SVG drawn from the site's own layout (no map library). Search runs in the browser against a Pagefind index built with the site. Vitest runs the unit tests; Playwright drives the browser checks. Vercel Web Analytics counts page views. Nothing is fetched from a third party at runtime, and company marks are local files.
 
 ---
 
