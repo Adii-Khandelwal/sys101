@@ -103,6 +103,8 @@ Replaces the separate time-clocks-and-ordering and consistency-models nodes. Tea
 
 ### exactly-once-processing (Messaging, needs a second source)
 
+Status 29 Oct 2026: folded into `log-based-streaming` (a how-it-works step plus the Uber 2021 post as its fifth source). No node.
+
 Keep narrow: effectively-once is at-least-once plus an idempotent or transactional sink; do not re-teach idempotency keys. Stays later until a second company source is found.
 
 - Uber, "Real-Time Exactly-Once Ad Event Processing with Apache Flink, Kafka, and Pinot", 23 Sep 2021, archive copy: [post](https://www.uber.com/en-US/blog/real-time-exactly-once-ad-event-processing/). Checkpoint every 2 minutes with two-phase commit; "hundreds of millions of ad events per week".
