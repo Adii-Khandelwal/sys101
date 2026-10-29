@@ -816,6 +816,17 @@ h1[tabindex="-1"]:focus {
   fill: none;
 }
 
+/* Interchange station: a thin outer ring, separate from the shape that carries the state. */
+.graph-node-interchange {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.graph-node[data-faded] .graph-node-interchange {
+  opacity: 0.6;
+}
 
 .graph-node[data-ready] .graph-node-shape,
 .graph-node[data-progress] .graph-node-shape {

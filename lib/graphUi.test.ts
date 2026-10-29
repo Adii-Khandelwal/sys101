@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nextStation, revealDelta, groupSet, INK_SOFT, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "./graphUi";
+import { isInterchange, nextStation, revealDelta, groupSet, INK_SOFT, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "./graphUi";
 
 describe("tooltip placement", () => {
   const tip = { w: 280, h: 72 };
@@ -134,5 +134,17 @@ describe("revealDelta (keyboard focus on a station that is off screen)", () => {
   });
   it("leaves room for a label that extends past the station", () => {
     expect(revealDelta(900, 0, 1000, 40, 40 + 150)).toBe(90);
+  });
+});
+
+describe("isInterchange", () => {
+  const groups: Record<string, string> = { a: "Data", b: "Scaling", c: "Data" };
+  const of = (q: string) => groups[q];
+  it("is true only when a prerequisite sits in another group", () => {
+    expect(isInterchange("Data", ["a", "b"], of)).toBe(true);
+    expect(isInterchange("Data", ["a", "c"], of)).toBe(false);
+    expect(isInterchange("Data", [], of)).toBe(false);
+    expect(isInterchange(undefined, ["b"], of)).toBe(false);
+    expect(isInterchange("Data", ["unknown"], of)).toBe(false);
   });
 });
