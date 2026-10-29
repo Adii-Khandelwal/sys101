@@ -2870,6 +2870,12 @@ h1[tabindex="-1"]:focus {
     padding: 7px 0;
     color: var(--ink);
   }
+
+  @media (hover: hover) and (pointer: fine) {
+    .page-rail a:hover {
+      color: var(--accent);
+    }
+  }
 }
 
 .faq details {
@@ -2885,11 +2891,15 @@ h1[tabindex="-1"]:focus {
   cursor: pointer;
   font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 0.8889rem;
-  min-height: 24px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
 }
 
-.faq summary:hover {
-  color: var(--accent);
+@media (hover: hover) and (pointer: fine) {
+  .faq summary:hover {
+    color: var(--accent);
+  }
 }
 
 .faq details p {
@@ -5598,7 +5608,9 @@ html[data-posts-view] .posts-view-h {
 }
 
 .cap-bar-list a {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 0;
   color: var(--ink-soft);
   font-family: var(--font-sans), system-ui, sans-serif;
@@ -6135,11 +6147,15 @@ html[data-splash] .splash.is-leaving::before {
 
 .route summary {
   cursor: pointer;
-  min-height: 24px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
 }
 
-.route summary:hover {
-  color: var(--accent);
+@media (hover: hover) and (pointer: fine) {
+  .route summary:hover {
+    color: var(--accent);
+  }
 }
 
 .route ol {

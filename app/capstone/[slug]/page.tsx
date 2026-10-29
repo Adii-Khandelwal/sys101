@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import CompanyLogo from "@/components/CompanyLogo";
 import { diagramHtml } from "@/lib/diagramHtml";
 import JsonLd from "@/components/JsonLd";
-import Link from "next/link";
 import Overprint from "@/components/Overprint";
 import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
@@ -64,13 +63,7 @@ export default async function CapstonePage({ params }: Props) {
             <div>
               <dt>Read first</dt>
               <dd>
-                <ul>
-                  {c.topics.map((t) => (
-                    <li key={t.slug}>
-                      <Link href={`/topic/${t.slug}`}>{topicTitles[t.slug]}</Link>
-                    </li>
-                  ))}
-                </ul>
+                <a href="#need">{c.topics.length} topics, listed under What you need</a>
               </dd>
             </div>
             <div>
