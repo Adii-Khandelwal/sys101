@@ -77,6 +77,6 @@ describe("posts index", () => {
     expect(read("app/sitemap.ts")).toContain('"/posts"');
     expect(read("components/SiteFooter.tsx")).toContain("NAV_ITEMS");
     expect(read("lib/navItems.ts")).toContain('"/posts"');
-    expect(read("components/PostSources.tsx")).toContain('href="/posts"');
+    expect(read("components/PostSources.tsx")).toContain("/posts#");
   });
 });
