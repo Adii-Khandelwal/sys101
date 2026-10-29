@@ -34,3 +34,16 @@ It is a commercial, purple dark-hero site (gradients, card rows, pricing, Space 
 3. 7a: sidenotes; 7b: timetable; commit each.
 4. Copy pass (owner, 29 Oct 2026): every page's headings, subheadings, descriptions, intros, labels, empty states and button text, checked for clearer, plainer, more specific wording. Scope: the site's own words (home, topic and learn page frames, capstone frames, list pages, text pages, 404, tours, meta titles and descriptions). Not in scope: sourced figures, quotes, post summaries and quiz answers (honesty rules, `verify:figures`); change those only with a source reopened. Rules: no em dashes, titles under 60 characters, descriptions under 155 ending at a sentence boundary, no "It's not X, it's Y", sentence-case Cabin labels, keep tests, tours and `check-seo` in step. Output: a table of old to new wording per page in `docs/drafts/copy-pass.md`, one commit.
 5. 8: full checks (`tsc`, lint, tests, build in `.next-build`, `check-seo`, `check-news`, `check-diagram-overflow`, `check:ui` on a server on another port, `check:tour`, `check:offline`), `/ponytail-review`, update docs and rule files, fix, then push the branch and open the PR into `main`'s integration target as the plan says. Not merged by me. Not checked and said so: Safari, a real phone, Lighthouse, forced-colors.
+
+## Round 2: the optional items (owner "do the optional ones too", 29 Oct 2026)
+
+Branch `claude/redesign-extras` from `main`, one worker at a time (shared CSS, shared `.next-build`), one commit per item, one PR at the end.
+
+| Item | Plan | Gate |
+| - | - | - |
+| Tally marks | Draw topics read in a Path group as tally strokes (fives struck through) that REPLACE the existing read count text in that place, so no count shows twice (6.11); text alternative carries the number | Greyscale and screen-reader check; `lib/homepage.test.ts`, no duplicate counts |
+| Interchange stations | Topics that sit in more than one group of the graph get a separate outer ring; node state stays by shape (6.9, 6.16); legend gains one entry only if needed | Six states plus ring distinct in greyscale; layout and crossing tests stay green |
+| Ring turntable | Only if a verified post's `digest.numbers` rows and its text give a mechanism: one figure per `figures.md`; goes through `add-post` rules and `verify:figures` (network) | Stop and report if no source qualifies; never invent numbers |
+| Copy round three | Topic and learn page frames, glossary, posts, terms, learn pages, empty states, tour text; same rules as before | check-seo, tours, tests in step |
+| Study ideas | Left-label / right-list layout on grouped list pages; a jump line without counts on /capstones, /reads, /glossary; "Short version" under Privacy and Terms titles (only claims the policy makes); oldstyle figures for years if Libre Caslon has them | 390 and 1440 screenshots; accessibility rules |
+| Not doing | "Try this first" and "Where people slip" (35+ new sourced texts), numbered section markers (clash with overprint and station numbers), collapsible side contents (layout shift) | Said again in the PR |
