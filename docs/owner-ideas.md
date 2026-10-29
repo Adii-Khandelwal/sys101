@@ -34,3 +34,7 @@ Moved out of CLAUDE.md to keep it short. Every idea or preference the owner stat
 - 29 Oct 2026: the map legend (Unread, Ready, In progress, Read) sits above the map, not in a bar inside the frame (`graph.md`, `homepage.md`; overrides the 4d prototype bar).
 - 29 Oct 2026: during the redesign, headings may be reworded where a better one reads clearer (plain, specific, no em dashes); keep SEO titles under 60 characters, the tests and the tour text in step.
 - 29 Oct 2026: the page scrollbar is a ruler on the right edge (0 to 100% scale with numbered ticks, a marker with a percent readout, section ticks only: the vertical section names were dropped on 29 Oct 2026 because the lesson rail lists the sections; drag or click to jump) on desktop with a fine pointer; touch and high-contrast modes keep the native scrollbar (`accessibility-and-chrome.md`).
+- 29 Oct 2026: finish the redesign end to end (Phases 6 to 8) without stopping; decide open calls as a senior engineer would; before building, write a plan (`docs/redesign-finish-plan.md`).
+- 29 Oct 2026: study every page of the reference site engineering-atlas.in and adopt only what fits the Atlas look (`docs/drafts/reference-site-study.md`); done: grouped footer columns, About questions, example search placeholders.
+- 29 Oct 2026: check the left tracker on the glossary page (fixed: station dots overlapped labels; phone contents jump hid under the strip).
+- 29 Oct 2026: review every page's headings, subheadings and descriptions for better wording (`docs/drafts/copy-pass.md`, two rounds).
