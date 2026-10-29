@@ -22,7 +22,7 @@ export default function PostSources({ companies }: Props) {
         ))}
       </ul>
       <p className="home-extra-note">
-        <Link href="/posts">Browse all posts</Link>, or start with the <Link href="/reads">great reads</Link>. None of these companies is connected to sys101.
+        <Link href="/posts">Browse all posts</Link>, or start with the <Link href="/reads">great reads</Link>.
       </p>
     </section>
   );
