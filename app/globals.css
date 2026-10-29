@@ -2745,6 +2745,8 @@ h1[tabindex="-1"]:focus {
 .site-footer .footer-mark {
   display: inline-flex;
   align-items: center;
+  align-self: flex-start;
+  min-height: 1.2em;
 }
 
 .site-footer .footer-col {

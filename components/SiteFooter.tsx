@@ -12,7 +12,7 @@ export default function SiteFooter({ tour }: { tour?: TourId }) {
       <span className="footer-mark" aria-hidden="true">
         <LogoMark size={14} />
       </span>
-      <nav className="footer-col" aria-label="Read">
+      <div className="footer-col">
         <p className="footer-label">Read</p>
         <ul>
           {NAV_ITEMS.map((i) => (
@@ -26,15 +26,15 @@ export default function SiteFooter({ tour }: { tour?: TourId }) {
             </li>
           )}
         </ul>
-      </nav>
-      <nav className="footer-col" aria-label="About the site">
+      </div>
+      <div className="footer-col">
         <p className="footer-label">The site</p>
         <ul>
           <li><Link href="/about">About</Link></li>
           <li><Link href="/terms">Terms</Link></li>
           <li><Link href="/privacy">Privacy</Link></li>
         </ul>
-      </nav>
+      </div>
       <div className="footer-col">
         <p className="footer-label">You</p>
         <ul>
