@@ -6131,6 +6131,50 @@ html[data-splash] .splash.is-leaving::before {
   font-family: inherit;
 }
 
+.route summary {
+  cursor: pointer;
+  min-height: 24px;
+}
+
+.route summary:hover {
+  color: var(--accent);
+}
+
+.route ol {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.route li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 6px;
+}
+
+.route-mark {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+}
+
+.route-mark[data-read] {
+  background: var(--ink);
+}
+
+.route-min,
+.route-total {
+  font-size: 0.7222rem;
+  color: var(--ink-soft);
+}
+
+.route-total {
+  margin: 8px 0 0;
+}
+
 .chapter-body {
   display: block;
 }

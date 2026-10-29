@@ -14,6 +14,7 @@ import { readingLabel } from "@/lib/readingTime";
 import { OriginalPosts, PostDigest, TopicList } from "./TopicDossier";
 import { CompactProgress, FinishTopic, MarkDone, QuizBlock, ResumeLine } from "./LessonTrackers";
 import type { LessonMeta } from "@/lib/lessonStore";
+import RouteToTopic, { type RouteItem } from "./RouteToTopic";
 import LessonRail from "./LessonRail";
 import InterviewTag from "./InterviewTag";
 import Reveal from "./Reveal";
@@ -35,6 +36,8 @@ type Props = {
   news?: News | null;
   /** Link to this topic's section of /background, when it has one. */
   backgroundHref?: string;
+  /** Every topic to read first, in order, with its reading time. */
+  route?: RouteItem[];
   /** When the page was last edited, shown once at the bottom. */
   updated: string;
   /** Reading-order number ("07"), shown as "Topic 07". */
@@ -110,7 +113,7 @@ function InShort({ topic }: { topic: Topic }) {
 }
 
 /** Topic page in the teaching-journey format: concept first, then real-world posts. */
-export default function TopicLesson({ topic, prerequisites, dependents, titles, learnHref, news, backgroundHref, updated, number }: Props) {
+export default function TopicLesson({ topic, prerequisites, dependents, titles, learnHref, news, backgroundHref, updated, number, route = [] }: Props) {
   const l = topic.lesson!;
   const meta: LessonMeta = { slug: topic.slug, postIds: topic.posts.map((p) => p.id!), correct: l.quiz.map((q) => optionId(q.options[q.correct])) };
   const names: Record<string, string> = {
@@ -181,6 +184,14 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
               <dt>Time</dt>
               <dd className="reading-time">{readingLabel(topic, news)}</dd>
             </div>
+            {route.length > 0 && (
+              <div>
+                <dt>Full route</dt>
+                <dd>
+                  <RouteToTopic items={route} />
+                </dd>
+              </div>
+            )}
           </dl>
         </header>
 
