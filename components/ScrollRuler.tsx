@@ -25,6 +25,7 @@ export default function ScrollRuler() {
   const [track, setTrack] = useState(0);
   const [heads, setHeads] = useState<{ y: number; offset: number }[]>([]);
   const [active, setActive] = useState(false);
+  const [measured, setMeasured] = useState(false);
   const dragging = useRef(false);
   const geo = useRef({ track: 0, max: 0, clearance: 76 });
 
@@ -52,6 +53,7 @@ export default function ScrollRuler() {
       geo.current = { track: rect.height, max, clearance: header + 16 };
       setTrack(rect.height);
       setActive(doc.scrollHeight > window.innerHeight + 40);
+      setMeasured(true);
       setHeads(els.map((h) => { const offset = h.getBoundingClientRect().top + window.scrollY; return { offset, y: rulerY(offset, max, rect.height) }; }));
       place();
     };
@@ -76,11 +78,16 @@ export default function ScrollRuler() {
     };
   }, []);
 
-  // The native scrollbar is hidden (CSS, `html.has-ruler`) only while the ruler is shown, so no-JS, pre-hydration and short pages keep it.
+  // `html.has-ruler` (native scrollbar hidden) is set before first paint by a script in app/layout.tsx; drop it once measured if the ruler cannot show (short page) and on unmount.
   useEffect(() => {
-    document.documentElement.classList.toggle("has-ruler", active);
-    return () => document.documentElement.classList.remove("has-ruler");
-  }, [active]);
+    if (!measured) return;
+    const cl = document.documentElement.classList;
+    if (active) return cl.add("has-ruler");
+    // Wait: early measures can see a page that is still filling in, and dropping the class then would flash the bar.
+    const t = setTimeout(() => cl.remove("has-ruler"), 800);
+    return () => clearTimeout(t);
+  }, [active, measured]);
+  useEffect(() => () => document.documentElement.classList.remove("has-ruler"), []);
 
   const jump = (e: React.PointerEvent) => {
     const r = rootRef.current!.getBoundingClientRect();

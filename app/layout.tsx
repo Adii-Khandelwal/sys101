@@ -79,6 +79,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `(function(){try{if(location.pathname!=='/'||navigator.webdriver||matchMedia('(prefers-reduced-motion: reduce)').matches||sessionStorage.getItem('sys101:splash'))return;sessionStorage.setItem('sys101:splash','1');document.documentElement.setAttribute('data-splash','1')}catch(e){}})()`,
           }}
         />
+        {/* Hide the native scrollbar before first paint where the scroll ruler will show (same query as the CSS block "Scroll ruler"), so a classic scrollbar does not make the page jump when React hydrates. ScrollRuler removes the class if the page is too short. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(matchMedia('(hover: hover) and (pointer: fine) and (min-width: 1024px) and (not (forced-colors: active)) and (not (prefers-contrast: more))').matches)document.documentElement.classList.add('has-ruler')}catch(e){}})()`,
+          }}
+        />
         {/* Without JavaScript, reveals cannot open, so show their content. */}
         <noscript>
           <style>{`.reveal{grid-template-rows:1fr}.reveal-content{opacity:1;transform:none}.reveal-wrap>button{display:none}`}</style>
