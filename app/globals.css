@@ -6808,3 +6808,55 @@ html[data-splash] .splash.is-leaving::before {
   padding-bottom: 16px;
   border-bottom: 1px solid var(--rule);
 }
+
+/* References and pull quotes */
+
+/* The references list: bracketed numbers (the margin notes use plain superscripts, so the two cannot be confused). --ink-soft, since --ink2 is too faint for small type. */
+.sources .references {
+  counter-reset: ref;
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.sources .references li {
+  counter-increment: ref;
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  grid-template-areas: "num meta" "num title";
+  gap: 2px 0;
+  margin-bottom: 14px;
+}
+
+.sources .references li::before {
+  grid-area: num;
+  content: "[" counter(ref) "]";
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.8889rem;
+  color: var(--ink-soft);
+}
+
+.sources .references .source-meta {
+  grid-area: meta;
+}
+
+.sources .references li > a {
+  grid-area: title;
+}
+
+/* The mark after a company the prose names: generated content with an empty alt, so find on page, search and screen readers skip it. */
+.cite {
+  line-height: 0;
+  vertical-align: super;
+}
+
+.cite::after {
+  content: "[" attr(data-cite) "]";
+  content: "[" attr(data-cite) "]" / "";
+  margin-left: 1px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.6rem;
+  font-weight: 400;
+  font-style: normal;
+  color: var(--ink-soft);
+}

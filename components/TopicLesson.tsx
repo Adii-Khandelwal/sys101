@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
+import { citable, markCitations } from "@/lib/citations";
 import GlossTerm from "./GlossTerm";
 import CopyLink from "./CopyLink";
 import { glossaryId, markTerms, noteId, sectionTerms } from "@/lib/glossaryMatch";
@@ -121,12 +122,19 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
     ...Object.fromEntries(topic.posts.map((p) => [p.id!, `${p.company} post`])),
   };
   // One gloss per section: it marks the first use of each of this topic's glossary terms in that section's prose.
+  const cites = citable(topic.posts);
   const glossFor = (section: string): Gloss => {
     const seen = new Set<string>();
+    const cited = new Set<number>();
+    // Where the prose already names a source's company, a bracketed reference mark follows (CSS content, not text).
     return (text) =>
       markTerms(text, topic.glossary, seen).map((seg, i) =>
         typeof seg === "string" ? (
-          seg
+          <Fragment key={i}>
+            {markCitations(seg, cites, cited).map((c, j) =>
+              typeof c === "string" ? c : <sup key={j} className="cite" data-cite={c.n} aria-hidden="true" />,
+            )}
+          </Fragment>
         ) : (
           <GlossTerm key={i} num={[...seen].indexOf(seg.entry.term) + 1} note={noteId(section, seg.entry.term)} href={`/glossary#${glossaryId(topic.slug, seg.entry.term)}`} definition={seg.entry.definition}>
             {seg.text}
