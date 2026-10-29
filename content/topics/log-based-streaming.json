@@ -31,6 +31,10 @@
       }
     ]
   },
+  "pullQuote": {
+    "text": "Event data records things that happen rather than things that are.",
+    "postId": "linkedin-the-log-2013"
+  },
   "prerequisiteReasons": {
     "message-queues": "A log is what a queue becomes when messages stay after they are read, so the producer, consumer and delivery ideas from queues carry over."
   },

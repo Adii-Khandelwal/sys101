@@ -27,6 +27,10 @@
       }
     ]
   },
+  "pullQuote": {
+    "text": "Despite our incremental scaling progress, we always knew that vertical partitioning could only get us so far.",
+    "postId": "figma-postgres-sharding-2024"
+  },
   "prerequisiteReasons": {
     "replication": "Sharding takes from replication the idea of data spread over several machines, and the question of which machine holds which data.",
     "consistent-hashing": "Sharding takes from consistent hashing the idea of mapping a key to a machine, and the contrast with a range of hashed keys per shard."

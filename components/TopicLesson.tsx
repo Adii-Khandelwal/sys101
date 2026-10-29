@@ -10,7 +10,7 @@ import { StepThroughLazy } from "./StepThroughLazy";
 import Link from "next/link";
 import CompanyLogo from "./CompanyLogo";
 import { optionId } from "@/lib/quizIds";
-import { figureParts, type Topic } from "@/lib/topics";
+import { companyWhen, figureParts, type Topic } from "@/lib/topics";
 import { readingLabel } from "@/lib/readingTime";
 import { OriginalPosts, PostDigest, TopicList } from "./TopicDossier";
 import { CompactProgress, FinishTopic, MarkDone, QuizBlock, ResumeLine } from "./LessonTrackers";
@@ -122,6 +122,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
     ...Object.fromEntries(topic.posts.map((p) => [p.id!, `${p.company} post`])),
   };
   // One gloss per section: it marks the first use of each of this topic's glossary terms in that section's prose.
+  const pullPost = topic.pullQuote ? topic.posts.find((p) => p.id === topic.pullQuote!.postId) : undefined;
   const cites = citable(topic.posts);
   const glossFor = (section: string): Gloss => {
     const seen = new Set<string>();
@@ -331,6 +332,19 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
           <section aria-labelledby="posts-h">
             <Overprint as="h2" id="posts-h" className="part-title" data-tour="posts">How companies use it</Overprint>
             <Outcome text={l.postsOutcome} />
+            {pullPost && (
+              <figure className="pull-quote" data-pagefind-ignore>
+                <blockquote>
+                  <p>{topic.pullQuote!.text}</p>
+                </blockquote>
+                <figcaption className="label company-label">
+                  <a href={`#${pullPost.id}`}>
+                    <CompanyLogo name={pullPost.company} size="sm" />
+                    <span>{companyWhen(pullPost, "month")}</span>
+                  </a>
+                </figcaption>
+              </figure>
+            )}
             {backgroundHref && (
               <p className="posts-background" data-pagefind-ignore>
                 <span>Before you read these posts:</span>

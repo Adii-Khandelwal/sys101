@@ -6850,6 +6850,43 @@ html[data-splash] .splash.is-leaving::before {
   vertical-align: super;
 }
 
+/* One pull quote per topic, at the start of Part B: Caslon italic, the source in Cabin below, a 1.5px ink rule at the left. */
+.pull-quote {
+  margin: 20px 0 8px;
+  padding-left: 18px;
+  border-left: 1.5px solid var(--ink);
+}
+
+.pull-quote blockquote {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pull-quote p {
+  margin: 0 0 8px;
+  font-family: var(--font-serif-italic), Georgia, serif;
+  font-style: italic;
+  font-size: 1.3333rem;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.pull-quote p::before {
+  content: "\201C";
+}
+
+.pull-quote p::after {
+  content: "\201D";
+}
+
+.pull-quote figcaption a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-soft);
+}
+
 .cite::after {
   content: "[" attr(data-cite) "]";
   content: "[" attr(data-cite) "]" / "";

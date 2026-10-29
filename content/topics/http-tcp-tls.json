@@ -31,6 +31,10 @@
       }
     ]
   },
+  "pullQuote": {
+    "text": "Although web applications should be replay resilient, that’s not always the reality.",
+    "postId": "cloudflare-0rtt-2017"
+  },
   "posts": [
     {
       "id": "google-quic-2017",

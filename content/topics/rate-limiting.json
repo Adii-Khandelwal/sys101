@@ -27,6 +27,10 @@
       }
     ]
   },
+  "pullQuote": {
+    "text": "We had to be more efficient and smarter about this, rather than throwing a huge number of servers at the problem.",
+    "postId": "databricks-ratelimiting-2025"
+  },
   "prerequisiteReasons": {
     "caching": "Rate limiting takes from caching the idea of keeping a small piece of state close to the request, and of tolerating a slightly stale copy.",
     "consistent-hashing": "Rate limiting takes from consistent hashing the way to send every request for one key to the same owner of its counter."

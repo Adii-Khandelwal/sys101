@@ -33,6 +33,10 @@
       }
     ]
   },
+  "pullQuote": {
+    "text": "Most metrics are better thought of as distributions rather than averages.",
+    "postId": "google-sre-slos-2017"
+  },
   "prerequisiteReasons": {
     "overload-and-cascading-failures": "Overload and cascading failures are what these signals have to catch early, so seeing how a system fails comes before measuring whether it is failing."
   },

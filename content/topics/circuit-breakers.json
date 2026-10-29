@@ -28,6 +28,10 @@
       }
     ]
   },
+  "pullQuote": {
+    "text": "When those assumptions don't hold, the circuit breaker can become the problem rather than the solution.",
+    "postId": "zalando-circuit-breaker-herd-2026"
+  },
   "prerequisiteReasons": {
     "rate-limiting": "Circuit breakers take from rate limiting the idea of refusing some calls on purpose to protect a system that has limited capacity."
   },

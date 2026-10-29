@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "verify:figures": "node scripts/verify-figures.mjs",
     "verify:news": "node scripts/verify-news.mjs",
+    "verify:quotes": "node scripts/verify-quotes.mjs",
     "verify:reads": "node scripts/verify-reads.mjs",
     "verify:landmarks": "node scripts/verify-reads.mjs",
     "verify:background": "node scripts/verify-background.mjs",
