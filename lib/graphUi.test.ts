@@ -1,7 +1,5 @@
-import fs from "node:fs";
-import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { INTERACTIVE_MIN_NODES, nextStation, groupSet, mapIsInteractive, mapIsInteractiveAt, INK_SOFT, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "./graphUi";
+import { nextStation, revealDelta, groupSet, INK_SOFT, INK, PAPER, EDGE, contrast, fade, highlightSet, nextHighlight, placeTooltip, prerequisiteLines, type HighlightEvent } from "./graphUi";
 
 describe("tooltip placement", () => {
   const tip = { w: 280, h: 72 };
@@ -67,7 +65,7 @@ describe("fading", () => {
 });
 
 describe("highlight clears", () => {
-  const clears: HighlightEvent[] = [{ type: "leave" }, { type: "blur" }, { type: "escape" }, { type: "touchOutside" }, { type: "scroll" }, { type: "camera" }];
+  const clears: HighlightEvent[] = [{ type: "leave" }, { type: "blur" }, { type: "escape" }, { type: "touchOutside" }, { type: "scroll" }];
   for (const e of clears) {
     it(`on ${e.type}`, () => expect(nextHighlight("dns", e)).toBeNull());
   }
@@ -76,26 +74,6 @@ describe("highlight clears", () => {
     expect(nextHighlight("dns", { type: "focus", node: "cdns" })).toBe("cdns");
   });
 });
-
-describe("map controls", () => {
-  it("stay off until the map has 12 topics", () => {
-    expect(mapIsInteractive(8)).toBe(false);
-    expect(mapIsInteractive(11)).toBe(false);
-    expect(mapIsInteractive(12)).toBe(true);
-    expect(INTERACTIVE_MIN_NODES).toBe(12);
-  });
-
-  it("are never interactive on a phone, whatever the topic count", () => {
-    // Phone: fixed map so a finger scrolls the page past it and a tap opens the topic.
-    expect(mapIsInteractiveAt(12, true)).toBe(false);
-    expect(mapIsInteractiveAt(50, true)).toBe(false);
-    // Desktop: interactive only once there are enough topics.
-    expect(mapIsInteractiveAt(11, false)).toBe(false);
-    expect(mapIsInteractiveAt(12, false)).toBe(true);
-    expect(mapIsInteractiveAt(13, false)).toBe(true);
-  });
-});
-
 
 describe("map tooltip prerequisite lines", () => {
   const title = (slug: string) => ({ dns: "DNS", caching: "Caching", databases: "Databases" })[slug] ?? slug;
@@ -123,20 +101,6 @@ describe("map tooltip prerequisite lines", () => {
   });
 });
 
-describe("the Fit to size button", () => {
-  const src = fs.readFileSync(path.resolve(__dirname, "../components/GraphView.tsx"), "utf8");
-  it("is one text button, only on a map that can zoom and pan, and disabled while the view is fitted", () => {
-    const at = src.indexOf("Fit to size");
-    const button = src.slice(src.lastIndexOf("{interactive && (", at), src.indexOf("</button>", at));
-    expect(button).toContain('className="text-button label graph-fit"');
-    expect(button).toContain("onClick={() => fitAll()}");
-    expect(button).toContain("disabled={fitted}");
-    expect(src.match(/Fit to size/g)).toHaveLength(1);
-    // the camera feeds its state, and there are still no zoom or show-all buttons on screen
-    expect(src).toContain("setFitted(isFitted(next, fitRef.current))");
-    expect(src).not.toMatch(/>\s*(Zoom in|Zoom out|Show all links|Fit all)\s*</);
-  });
-});
 
 describe("arrow keys between stations", () => {
   const px = new Map([["a", { x: 0, y: 100 }], ["b", { x: 100, y: 40 }], ["c", { x: 100, y: 130 }], ["d", { x: 100, y: 220 }], ["e", { x: 200, y: 100 }]]);
@@ -156,5 +120,19 @@ describe("arrow keys between stations", () => {
   it("other keys and unknown stations do nothing", () => {
     expect(nextStation("Enter", "a", px, edges)).toBeNull();
     expect(nextStation("ArrowUp", "zzz", px, edges)).toBeNull();
+  });
+});
+
+describe("revealDelta (keyboard focus on a station that is off screen)", () => {
+  it("is zero when the point is already inside the margins", () => {
+    expect(revealDelta(300, 0, 1000)).toBe(0);
+    expect(revealDelta(40, 0, 1000)).toBe(0);
+  });
+  it("moves left or up (negative) for a point before the low margin, and right or down for one past the high margin", () => {
+    expect(revealDelta(-100, 0, 1000)).toBe(-140);
+    expect(revealDelta(1200, 0, 1000, 40, 100)).toBe(300);
+  });
+  it("leaves room for a label that extends past the station", () => {
+    expect(revealDelta(900, 0, 1000, 40, 40 + 150)).toBe(90);
   });
 });

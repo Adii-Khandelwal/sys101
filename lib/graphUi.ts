@@ -58,22 +58,6 @@ export function groupSet(group: string, nodes: { slug: string; group?: string }[
   return new Set(nodes.filter((n) => n.group === group).map((n) => n.slug));
 }
 
-/**
- * Below this many topics the map is a fixed, fitted picture: no zoom, pan or map controls.
- * Lowered from 25 to 12 when the twelfth topic's long label made the map need a wider stage than
- * a 1280px screen gives it: zoom and pan switch on earlier instead of squeezing the layout.
- */
-export const INTERACTIVE_MIN_NODES = 12;
-export const mapIsInteractive = (nodeCount: number) => nodeCount >= INTERACTIVE_MIN_NODES;
-
-/**
- * Whether the map should be interactive (zoom and pan) right now. Needs both
- * enough nodes to justify it and a non-phone viewport: a phone always gets a
- * fixed, non-interactive map so a finger scrolls the page past it and a tap
- * opens the topic (.claude/rules/graph.md, Graph and Touch).
- */
-export const mapIsInteractiveAt = (nodeCount: number, isPhone: boolean) => mapIsInteractive(nodeCount) && !isPhone;
-
 export type HighlightEvent =
   | { type: "enter"; node: string }
   | { type: "focus"; node: string }
@@ -81,8 +65,7 @@ export type HighlightEvent =
   | { type: "blur" }
   | { type: "escape" }
   | { type: "touchOutside" }
-  | { type: "scroll" }
-  | { type: "camera" };
+  | { type: "scroll" };
 
 /** Which node is highlighted after an event. Everything but enter and focus clears it. */
 export function nextHighlight(_current: string | null, event: HighlightEvent): string | null {
@@ -146,4 +129,15 @@ export function nextStation(
   const column = [...px].filter(([, p]) => Math.abs(p.x - here.x) < 1).sort((a, b) => a[1].y - b[1].y);
   const i = column.findIndex(([s]) => s === slug);
   return column[i + (key === "ArrowDown" ? 1 : -1)]?.[0] ?? null;
+}
+
+/**
+ * How far to scroll (in px, positive is right or down) so a point at `p` sits at least `before` px inside the low edge and
+ * `after` px inside the high edge of the range [lo, hi]; 0 when it already does. For keyboard focus landing on a station
+ * that is off screen.
+ */
+export function revealDelta(p: number, lo: number, hi: number, before = 40, after = 40) {
+  if (p < lo + before) return p - (lo + before);
+  if (p > hi - after) return p - (hi - after);
+  return 0;
 }

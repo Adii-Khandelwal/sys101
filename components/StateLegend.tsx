@@ -3,7 +3,7 @@ type State = "unread" | "ready" | "progress" | "read";
 /** Legend icons drawn like the nodes: thin ring, thick ring with a centre dot, filled orange. */
 function LegendMark({ state }: { state: State }) {
   return (
-    <svg className="legend-mark" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+    <svg className="legend-mark" viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" focusable="false">
       {state === "read" ? (
         <circle cx="8" cy="8" r="7" fill="var(--accent)" />
       ) : state === "progress" ? (
@@ -22,17 +22,16 @@ export default function StateLegend() {
   return (
     <p className="graph-legend label" data-tour="states">
       <span className="legend-item">
-        <LegendMark state="unread" /> Unread
+        <LegendMark state="unread" /> not started
       </span>
       <span className="legend-item">
-        <LegendMark state="ready" /> Ready
-      </span>
-      <span className="legend-break" aria-hidden="true" />
-      <span className="legend-item">
-        <LegendMark state="progress" /> In progress
+        <LegendMark state="ready" /> ready to read
       </span>
       <span className="legend-item">
-        <LegendMark state="read" /> Read
+        <LegendMark state="progress" /> in progress
+      </span>
+      <span className="legend-item">
+        <LegendMark state="read" /> read
       </span>
     </p>
   );

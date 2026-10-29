@@ -59,7 +59,7 @@ Masthead keeps: wordmark, lead line, two-paragraph pitch, the one filled start b
 Between 4a and 4c the integration branch's map is missing camera, keyboard, node-open and back-keeps-view, which is acceptable because the branch is never deployed to production; the map-parity checks (`check:ui` map checks, the 1280 and 1440 zero-crossing test) must pass after 4c, not before.
 - 4a: SVG renderer at parity with today's look, on the existing layout (`lib/graph.ts`, `chooseLayers`).
 - 4b: metro styling: elbow edges with chamfers, station markers, group buttons, legend.
-- 4c: port of camera and zoom/pan (`lib/camera.ts`), node-open transition (`lib/nodeOpen.ts`: the bubble must stay "a DOM copy of the node (ring, fill, centre dot)"), `lib/mapView.ts` back-keeps-view, scroll-snap and the "Scroll sideways" cue, tooltip timings (300ms first, 150ms cool-down, keyboard never waits), keyboard traversal and aria-live, the plain text index (the WebGL-fail fallback stays as the no-JS index), the skeleton until placed.
+- 4c: port of camera and zoom/pan (`lib/camera.ts`), node-open transition (`lib/nodeOpen.ts`: the bubble must stay "a DOM copy of the node (ring, fill, centre dot)"), `lib/mapView.ts` back-keeps-view, scroll-snap and the "Scroll sideways" cue (the cue, "Fit to size" and all zoom were dropped on 29 Oct 2026 by owner decision), tooltip timings (300ms first, 150ms cool-down, keyboard never waits), keyboard traversal and aria-live, the plain text index (the WebGL-fail fallback stays as the no-JS index), the skeleton until placed.
 Update `lib/graph.test.ts` crossing tests for elbow geometry; add a 1280 and 1440 zero-crossing test.
 
 ### Phase 4d: design pass on the homepage and chrome (after 4b, owner "yes" 29 Oct 2026)
@@ -128,7 +128,7 @@ No full-page filters, no new runtime third parties, fonts self-hosted, `check:of
 
 ## 8. Feature-parity checklist (tick per phase in each report)
 Rule files: topic-pages, learn-pages, progress-tracking, homepage, graph, motion, seo, accessibility-and-chrome, tours, background, figures, reads, capstones, news, logos, offline, security, tooling.
-Pieces that are easy to lose: Splash and `letterRise` flight, `data-tour` targets, `NavPending`, `HeaderTopic` fades, map scroll-snap and the "Scroll sideways" cue, tooltip timings, the text index fallback, `BackToTop`, `CopyLink`, `StepThrough`, `Reveal`, `HighlightTarget`, `FindOnPage` `.is-found`, `GlossaryFilter`, `DataControls`, `WhatsNew`, `OfflineSupport`, print stylesheet, `prefers-contrast`, `forced-colors`, JSON-LD and OG images, security headers and CSP, sitemap, Pagefind search, "/" shortcut.
+Pieces that are easy to lose: Splash and `letterRise` flight, `data-tour` targets, `NavPending`, `HeaderTopic` fades, map scroll-snap and the "Scroll sideways" cue (dropped 29 Oct 2026 by owner decision, with "Fit to size" and all zoom), tooltip timings, the text index fallback, `BackToTop`, `CopyLink`, `StepThrough`, `Reveal`, `HighlightTarget`, `FindOnPage` `.is-found`, `GlossaryFilter`, `DataControls`, `WhatsNew`, `OfflineSupport`, print stylesheet, `prefers-contrast`, `forced-colors`, JSON-LD and OG images, security headers and CSP, sitemap, Pagefind search, "/" shortcut.
 
 ## 9. Starting the build in a fresh session
 1. Read this plan, then memory notes `redesign-keep-all-features` and `night-theme-brown-and-burst` (reveal is the same feature; use the name "theme reveal").

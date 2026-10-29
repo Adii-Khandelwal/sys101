@@ -5,10 +5,10 @@ const memory = (initial: Record<string, string> = {}) => {
   const data = { ...initial };
   return { data, getItem: (k: string) => data[k] ?? null, setItem: (k: string, v: string) => void (data[k] = v), removeItem: (k: string) => void delete data[k] };
 };
-const view: MapView = { camera: { x: 0.4, y: 0.6, ratio: 0.5, angle: 0 }, scrollLeft: 260 };
+const view: MapView = { scrollLeft: 260 };
 const KEY = "sys101:mapView";
 
-describe("restoring the Map's zoom and position for the Back button", () => {
+describe("restoring the Map's sideways scroll for the Back button", () => {
   it("returns the saved view when the Map is mounted right after a Back or Forward", () => {
     const s = memory();
     saveMapView(view, s, 1000);
@@ -40,7 +40,7 @@ describe("restoring the Map's zoom and position for the Back button", () => {
   });
 
   it("ignores corrupt, wrongly shaped and out-of-range data", () => {
-    for (const raw of ["not json", "null", "{}", JSON.stringify({ v: 1, at: 1, view }), JSON.stringify({ v: 2, at: 1, view: { camera: { x: "a", y: 0, ratio: 1 }, scrollLeft: 0 } }), JSON.stringify({ v: 2, at: 1, view: { camera: { x: 0, y: 0, ratio: 0 }, scrollLeft: 0 } }), JSON.stringify({ v: 2, at: 1, view: { camera: { x: 0, y: 0, ratio: 1 }, scrollLeft: -5 } })]) {
+    for (const raw of ["not json", "null", "{}", JSON.stringify({ v: 3, at: 1, view: { scrollLeft: "a" } }), JSON.stringify({ v: 3, at: 1, view: { scrollLeft: -5 } }), JSON.stringify({ v: 3, at: 1, view: {} })]) {
       expect(takeMapView(memory({ [KEY]: raw }), 100, 90), raw).toBeNull();
     }
   });
@@ -53,13 +53,10 @@ describe("restoring the Map's zoom and position for the Back button", () => {
     expect(takeMapView(broken, 100, 90)).toBeNull();
   });
 
-  it("a view saved by the old y-up camera (version 1) is ignored, so it can never flip the map", () => {
-    const old = memory({ [KEY]: JSON.stringify({ v: 1, at: 10, view }) });
-    expect(takeMapView(old, 20, 15)).toBeNull();
-  });
-
-  it("always restores with angle 0", () => {
-    const s = memory({ [KEY]: JSON.stringify({ v: 2, at: 10, view: { camera: { x: 1, y: 2, ratio: 3, angle: 99 }, scrollLeft: 0 } }) });
-    expect(takeMapView(s, 20, 15)?.camera.angle).toBe(0);
+  it("views saved by the older zoom camera (versions 1 and 2) are ignored", () => {
+    for (const v of [1, 2]) {
+      const old = memory({ [KEY]: JSON.stringify({ v, at: 10, view: { camera: { x: 0.4, y: 0.6, ratio: 0.5, angle: 0 }, scrollLeft: 260 } }) });
+      expect(takeMapView(old, 20, 15), `v${v}`).toBeNull();
+    }
   });
 });

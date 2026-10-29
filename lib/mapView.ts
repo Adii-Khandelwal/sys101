@@ -1,10 +1,9 @@
-// The Map's camera and sideways scroll, kept for the Back button. Saved when a node is opened, restored once when the
-// Map is mounted again by Back or Forward, and thrown away otherwise, so a fresh visit always starts fitted.
-import type { Camera } from "./camera";
+// The Map's sideways scroll, kept for the Back button. Saved when a node is opened, restored once when the
+// Map is mounted again by Back or Forward, and thrown away otherwise, so a fresh visit always starts at the left.
 
-export type MapView = { camera: Camera; scrollLeft: number };
-/** v2: the camera is in the SVG map's framed convention (y down); v1 saved the old Sigma camera (y up) and is ignored. */
-type Saved = { v: 2; at: number; view: MapView };
+export type MapView = { scrollLeft: number };
+/** v3 saves only the scroll; v1 and v2 saved a zoom camera and are ignored. */
+type Saved = { v: 3; at: number; view: MapView };
 
 const KEY = "sys101:mapView";
 /** The Map mounts within this long of a popstate (Back or Forward) when it is the page being returned to. */
@@ -27,9 +26,9 @@ const store = (): Store | null => {
 
 export function saveMapView(view: MapView, s: Store | null = store(), now = Date.now()) {
   try {
-    s?.setItem(KEY, JSON.stringify({ v: 2, at: now, view } satisfies Saved));
+    s?.setItem(KEY, JSON.stringify({ v: 3, at: now, view } satisfies Saved));
   } catch {
-    // storage full or blocked: Back simply returns to the fitted map
+    // storage full or blocked: Back simply returns to the left edge
   }
 }
 
@@ -48,10 +47,9 @@ export function takeMapView(s: Store | null = store(), now = Date.now(), popped 
   if (!raw || now - popped > POP_WINDOW_MS) return null;
   try {
     const p = JSON.parse(raw) as Saved;
-    const c = p?.view?.camera;
-    if (p.v !== 2 || !finite(p.at) || now - p.at > MAX_AGE_MS) return null;
-    if (!c || !finite(c.x) || !finite(c.y) || !finite(c.ratio) || c.ratio <= 0 || !finite(p.view.scrollLeft) || p.view.scrollLeft < 0) return null;
-    return { camera: { x: c.x, y: c.y, ratio: c.ratio, angle: 0 }, scrollLeft: p.view.scrollLeft };
+    if (p.v !== 3 || !finite(p.at) || now - p.at > MAX_AGE_MS) return null;
+    if (!finite(p?.view?.scrollLeft) || p.view.scrollLeft < 0) return null;
+    return { scrollLeft: p.view.scrollLeft };
   } catch {
     return null; // corrupt data
   }
