@@ -11,9 +11,9 @@ import { CompactProgress } from "./LessonTrackers";
 type Entry = { id: string; name: string; tracked: boolean; company?: string };
 
 /**
- * Left rail: the progress header, then every section. Done units get a
- * small filled square (and "(done)" for screen readers); the current section
- * is in the accent color. Scrolling still records visits and the resume point.
+ * Left rail drawn as a short metro line: the progress header, then every section as a station on a vertical line. State is shape:
+ * a done unit is a filled disc (and "(done)" for screen readers), a section not yet done is hollow, and the current section
+ * has a ring round it with a second-ink dot. Scrolling still records visits and the resume point.
  */
 export default function LessonRail({ meta, entries }: { meta: LessonMeta; entries: Entry[] }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -57,12 +57,9 @@ export default function LessonRail({ meta, entries }: { meta: LessonMeta; entrie
     if (current && tracked.split(",").includes(current)) update((p) => markVisited(p, m.slug, current));
   }, [current, tracked, m.slug, update]);
 
-  // One marker slides (transform only) to the current row.
   const list = useRef<HTMLOListElement>(null);
-  const [markerY, setMarkerY] = useState<number | null>(null);
   useEffect(() => {
     const row = list.current?.querySelector<HTMLElement>(`[data-id="${current}"]`);
-    setMarkerY(row ? row.offsetTop : null);
     // A long list scrolls inside the rail: bring the current row into view there, never moving the page.
     const box = list.current?.closest<HTMLElement>(".lesson-rail");
     if (row && box && box.scrollHeight > box.clientHeight) {
@@ -83,15 +80,12 @@ export default function LessonRail({ meta, entries }: { meta: LessonMeta; entrie
     <nav className="lesson-rail" aria-label="Sections on this page" data-pagefind-ignore>
       <CompactProgress meta={m} />
       <ol ref={list}>
-        {markerY !== null && (
-          <span className="rail-marker" aria-hidden="true" style={{ transform: `translateY(${markerY}px)` }} />
-        )}
         {entries.map((e) => {
           const status = e.tracked ? unitStatus(progress, m, e.id) : null;
           return (
-            <li key={e.id} data-id={e.id} className={e.id === current ? "is-current" : undefined}>
+            <li key={e.id} data-id={e.id} className={`${e.id === current ? "is-current" : ""}${status === "done" ? " is-done" : ""}` || undefined}>
               <a href={`#${e.id}`} aria-current={e.id === current ? "location" : undefined} onClick={(ev) => go(ev, e.id)}>
-                {status === "done" && <span className="status is-done" aria-hidden="true" />}
+                <span className="station" aria-hidden="true" />
                 {e.company && <CompanyLogo name={e.company} size="sm" bare />}
                 {e.name}
                 {status === "done" && <span className="visually-hidden"> (done)</span>}

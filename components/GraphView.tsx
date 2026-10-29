@@ -416,7 +416,7 @@ export default function GraphView({ nodes, edges, onActive }: Props) {
   const say = (slug: string) => {
     const pre = prereqs.get(slug) ?? [];
     const lines = prerequisiteLines(pre, read, (q) => bySlug.get(q)?.title ?? q);
-    setAnnounce([lines.builtOn ?? (pre.length ? "" : "Builds on nothing."), lines.finish ?? ""].filter(Boolean).join(" "));
+    setAnnounce([lines.builtOn ?? (pre.length ? "" : "Nothing to read first."), lines.finish ?? ""].filter(Boolean).join(" "));
   };
 
   // Tooltip: rendered in a portal with fixed coordinates, so nothing clips it.

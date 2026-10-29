@@ -130,7 +130,7 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
                         e.reasons ? (
                           <>
                             <span className="path-builds">
-                              <span className="path-meta-key">Builds on</span>
+                              <span className="path-meta-key">Read first</span>
                               <span className="path-builds-names">{buildsOn.join(", ")}</span>
                             </span>
                             <span className="path-reasons">
@@ -141,7 +141,7 @@ export default function PathView({ entries, headingId = "path-heading" }: Props)
                           </>
                         ) : (
                           <>
-                            <span className="path-meta-key">Builds on</span> {buildsOn.join(", ")}
+                            <span className="path-meta-key">Read first</span> {buildsOn.join(", ")}
                           </>
                         )
                       ) : (

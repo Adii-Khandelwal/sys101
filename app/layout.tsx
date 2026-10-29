@@ -6,6 +6,7 @@ import Logo from "@/components/Logo";
 import SiteNav from "@/components/SiteNav";
 import HeaderTopic from "@/components/HeaderTopic";
 import BackToTop from "@/components/BackToTop";
+import ScrollRuler from "@/components/ScrollRuler";
 import ThemeToggle from "@/components/ThemeToggle";
 import Splash from "@/components/Splash";
 import NavPending from "@/components/NavPending";
@@ -97,6 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         {children}
         <BackToTop />
+        <ScrollRuler />
         <Analytics />
         <OfflineSupport />
         <FindOnPage />

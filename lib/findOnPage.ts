@@ -6,7 +6,7 @@ const FRESH_MS = 15_000;
 // A line of reading text. The innermost match wins, so a list item holding a paragraph picks the paragraph.
 export const LINE = "p, li, dd, dt, blockquote, figcaption, summary, td, h1, h2, h3, h4";
 // Navs (every rail) are never searchable, so a rail item cannot win a match over the article text.
-export const SKIPPED = ".site-header, .site-footer, [role=search], nav";
+export const SKIPPED = ".site-header, .site-footer, [role=search], nav, .margin-terms";
 export const FOUND_MS = 2000;
 
 const tokens = (text: string) => text.toLowerCase().match(/[\p{L}\p{N}]{4,}/gu) ?? [];

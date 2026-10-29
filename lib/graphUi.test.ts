@@ -86,12 +86,12 @@ describe("map tooltip prerequisite lines", () => {
     expect(lines([])).toEqual({ builtOn: null, finish: "Finish DNS and Caching first." });
   });
   it("when one is read, the finish line drops it and the two lines differ", () => {
-    expect(lines(["dns"])).toEqual({ builtOn: "Builds on: DNS, Caching", finish: "Finish Caching first." });
-    expect(lines(["caching"])).toEqual({ builtOn: "Builds on: DNS, Caching", finish: "Finish DNS first." });
+    expect(lines(["dns"])).toEqual({ builtOn: "Read first: DNS, Caching", finish: "Finish Caching first." });
+    expect(lines(["caching"])).toEqual({ builtOn: "Read first: DNS, Caching", finish: "Finish DNS first." });
   });
   it("when all are read there is nothing to finish, only what it builds on", () => {
-    expect(lines(["dns", "caching"])).toEqual({ builtOn: "Builds on: DNS, Caching", finish: null });
-    expect(lines(["dns", "caching", "databases"])).toEqual({ builtOn: "Builds on: DNS, Caching", finish: null });
+    expect(lines(["dns", "caching"])).toEqual({ builtOn: "Read first: DNS, Caching", finish: null });
+    expect(lines(["dns", "caching", "databases"])).toEqual({ builtOn: "Read first: DNS, Caching", finish: null });
   });
   it("a topic with no prerequisites has neither line", () => {
     expect(prerequisiteLines([], [], title)).toEqual({ builtOn: null, finish: null });

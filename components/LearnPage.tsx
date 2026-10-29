@@ -1,4 +1,5 @@
-import HeadingText from "./HeadingText";
+import Overprint from "./Overprint";
+import MarginTerms from "./MarginTerms";
 import { diagramHtml } from "@/lib/diagramHtml";
 import Link from "next/link";
 import { Fragment } from "react";
@@ -57,23 +58,44 @@ export default function LearnPage({ topic, learn, titles }: Props) {
   ];
 
   return (
-    <article className="dossier learn lesson">
-      <LearnRail entries={entries} />
+    <article className="dossier learn lesson chapter">
       <div className="progress-sticky" data-pagefind-ignore>
         <LearnRail entries={entries} variant="line" />
         <StripBackToTop />
       </div>
 
-      <nav className="label" data-pagefind-ignore>
-        <Link href={`/topic/${topic.slug}`}>Back to {topic.title}</Link>
-      </nav>
+      <div data-pagefind-body className="chapter-grid">
+        <header className="chapter-head">
+          <div className="chapter-title">
+            <div className="topic-tagline" data-pagefind-ignore>
+              <span className="chapter-group">{topic.group ?? "Concept"}</span>
+              <span className="label">Start from zero</span>
+            </div>
+            <Overprint as="h1" className="chapter-h1 is-learn" data-pagefind-meta="title">
+              {`Start from zero: ${topic.title}`}
+            </Overprint>
+          </div>
+          <dl className="chapter-meta" data-pagefind-ignore>
+            <div>
+              <dt>Back to</dt>
+              <dd>
+                <ul>
+                  <li>
+                    <Link href={`/topic/${topic.slug}`}>{topic.title}</Link>
+                  </li>
+                </ul>
+              </dd>
+            </div>
+            <div>
+              <dt>Time</dt>
+              <dd className="reading-time">{learnReadingLabel(learn)}</dd>
+            </div>
+          </dl>
+        </header>
 
-      <div data-pagefind-body>
-        <div className="topic-tagline" data-pagefind-ignore>
-          <span className="label">Start from zero</span>
-          <span className="label reading-time">{learnReadingLabel(learn)}</span>
-        </div>
-        <h1 data-pagefind-meta="title"><HeadingText text={`Start from zero: ${topic.title}`} /></h1>
+        <div className="chapter-body">
+          <LearnRail entries={entries} />
+          <div className="chapter-main">
         <p className="concept">{learn.promise}</p>
         <p className="learn-note" data-pagefind-ignore>
           A beginner&apos;s path through {topic.title}, built only from official sources. It is separate from your
@@ -81,7 +103,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
         </p>
 
         <section id="before" className="learn-section" aria-labelledby="before-h">
-          <h2 id="before-h">Before you start</h2>
+          <Overprint as="h2" id="before-h">Before you start</Overprint>
           {learn.before.note && <p>{learn.before.note}</p>}
           {learn.before.prerequisites.length > 0 && (
             <p>
@@ -120,7 +142,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
           return (
             <section key={st.id} id={st.id} className="learn-section" aria-labelledby={`${st.id}-h`}>
               <p className="label">Stage {i + 1}</p>
-              <h2 id={`${st.id}-h`}>{st.name}</h2>
+              <Overprint as="h2" id={`${st.id}-h`}>{st.name}</Overprint>
               {st.body.map((p, j) => (
                 <p key={j}>
                   <Cited text={p} number={number} />
@@ -157,6 +179,13 @@ export default function LearnPage({ topic, learn, titles }: Props) {
               </ul>
 
               {video && isVideo(video) && <VideoEmbed video={video} />}
+              <MarginTerms
+                label="Official sources for this stage"
+                terms={st.reading.map((r) => {
+                  const src = byId.get(r.source)!;
+                  return { term: src.title, definition: `${src.publisher}${src.year === "no date shown" ? "" : `, ${src.year}`}` };
+                })}
+              />
 
               <h3>You can now</h3>
               <ul className="learn-can">
@@ -169,7 +198,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
         })}
 
         <section id="myths" className="learn-section" aria-labelledby="myths-h">
-          <h2 id="myths-h">Common misconceptions</h2>
+          <Overprint as="h2" id="myths-h">Common misconceptions</Overprint>
           <dl className="learn-myths">
             {learn.misconceptions.map((m) => (
               <div key={m.myth}>
@@ -183,7 +212,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
         </section>
 
         <section id="try" className="learn-section" aria-labelledby="try-h">
-          <h2 id="try-h">Try it</h2>
+          <Overprint as="h2" id="try-h">Try it</Overprint>
           <p>
             <Cited text={learn.tryIt.intro} number={number} />
           </p>
@@ -226,7 +255,7 @@ export default function LearnPage({ topic, learn, titles }: Props) {
         </section>
 
         <section id="next" className="learn-section" aria-labelledby="next-h">
-          <h2 id="next-h">Where to go next</h2>
+          <Overprint as="h2" id="next-h">Where to go next</Overprint>
           <p>
             <Cited text={learn.next} number={number} />
           </p>
@@ -235,6 +264,8 @@ export default function LearnPage({ topic, learn, titles }: Props) {
             <Link href={`/topic/${topic.slug}#posts`}>its posts</Link>
           </p>
         </section>
+          </div>
+        </div>
       </div>
 
       <section className="learn-section" aria-labelledby="sources-h" data-pagefind-ignore>

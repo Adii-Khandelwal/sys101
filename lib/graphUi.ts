@@ -102,7 +102,7 @@ export function placeTooltip(
 export function prerequisiteLines(prerequisites: string[], read: readonly string[], titleOf: (slug: string) => string) {
   const pending = prerequisites.filter((q) => !read.includes(q));
   return {
-    builtOn: prerequisites.length > 0 && pending.length < prerequisites.length ? `Builds on: ${prerequisites.map(titleOf).join(", ")}` : null,
+    builtOn: prerequisites.length > 0 && pending.length < prerequisites.length ? `Read first: ${prerequisites.map(titleOf).join(", ")}` : null,
     // Three or more are joined by commas only: a title may itself contain "and".
     finish: pending.length > 0 ? `Finish ${pending.map(titleOf).join(pending.length === 2 ? " and " : ", ")} first.` : null,
   };

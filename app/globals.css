@@ -1660,7 +1660,7 @@ h1[tabindex="-1"]:focus {
   font-size: 0.8333rem;
   color: var(--ink-soft);
 }
-/* Same type as the rest of the line, so "Builds on Databases" reads as one sentence. */
+/* Same type as the rest of the line, so "Read first Databases" reads as one sentence. */
 .path-meta-key {
   font: inherit;
 }
@@ -1714,7 +1714,7 @@ h1[tabindex="-1"]:focus {
   border-bottom: 1px solid var(--rule);
 }
 
-/* Builds on takes the spare width; Leads to is as wide as its longest name, which never breaks. */
+/* Read first takes the spare width; Makes possible is as wide as its longest name, which never breaks. */
 .relations > div:first-child {
   flex: 1 1 220px;
   min-width: 0;
@@ -3886,7 +3886,7 @@ html {
   font-size: 0.8333rem;
   color: var(--ink-soft);
 }
-/* "Builds on" with the topic names right after it, so the sentences below do not have to be read to know what it builds on. */
+/* "Read first" with the topic names right after it, so the sentences below do not have to be read to know what it builds on. */
 .path-builds {
   display: flex;
   flex-wrap: wrap;
@@ -5822,4 +5822,567 @@ html[data-splash] .splash.is-leaving::before {
   background: var(--highlight);
   outline: 6px solid var(--highlight);
   border-radius: 2px;
+}
+
+/* Scroll ruler (components/ScrollRuler.tsx): replaces the native page scrollbar on desktop with a fine pointer; touch, forced colours and more contrast keep the native one. */
+.scroll-ruler {
+  display: none;
+}
+@media (hover: hover) and (pointer: fine) and (min-width: 1024px) and (not (forced-colors: active)) and (not (prefers-contrast: more)) {
+  html.has-ruler {
+    scrollbar-width: none; /* set by ScrollRuler only while the ruler is shown */
+  }
+  .scroll-ruler {
+    display: block;
+    position: fixed;
+    top: var(--header-h);
+    right: 0;
+    bottom: 16px;
+    width: 48px;
+    z-index: 20; /* above page content, below the header (30), tour, loader and opening screen */
+    cursor: ns-resize;
+    touch-action: none;
+    user-select: none;
+    color: var(--ink-soft);
+  }
+  .scroll-ruler[hidden] {
+    display: none;
+  }
+  .back-to-top {
+    right: calc(24px + 48px + env(safe-area-inset-right)); /* clear the ruler */
+  }
+  .scroll-ruler svg {
+    display: block;
+  }
+  .scroll-ruler-minor,
+  .scroll-ruler-mid,
+  .scroll-ruler-major {
+    stroke: var(--ink-soft);
+    stroke-width: 1;
+  }
+  .scroll-ruler-minor {
+    opacity: 0.55;
+  }
+  .scroll-ruler text {
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 11px;
+    fill: var(--ink-soft);
+  }
+  .scroll-ruler-num.is-hidden {
+    visibility: hidden; /* the marker and its readout sit here */
+  }
+  .scroll-ruler-section {
+    stroke: var(--ink);
+    stroke-width: 2;
+  }
+  .scroll-ruler-hit {
+    fill: transparent;
+    cursor: pointer;
+  }
+  .scroll-ruler-marker line {
+    stroke: var(--ink2);
+    stroke-width: 2;
+  }
+  .scroll-ruler-marker rect {
+    fill: var(--paper);
+  }
+  .scroll-ruler-marker text {
+    font-size: 12px;
+    fill: var(--accent);
+  }
+  @media (max-width: 1279px) {
+    body {
+      padding-right: 52px; /* text would run under the ruler (from 1280px the topic and learn pages pad themselves instead, see .dossier.chapter) */
+    }
+    .site-header {
+      margin-right: -52px; /* the header keeps the full width */
+    }
+  }
+}
+@media print {
+  .scroll-ruler {
+    display: none;
+  }
+}
+
+/* ── Chapter: topic and learn pages (Phase 5) ────────────────────────────────────────────────────────────────────────────
+   A wide page: the title block (group badge, "Topic N", a large overprinted title, and Read first / Makes possible / Time at its
+   right), then from 1200px three columns: the lesson rail drawn as a short metro line, the text column, and a margin column. */
+.dossier.chapter {
+  max-width: 1360px;
+  padding: 24px 40px 96px;
+}
+
+.chapter-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 28px 64px;
+  padding: 24px 0 40px;
+}
+
+.chapter-title {
+  flex: 1 1 560px;
+  min-width: 0;
+}
+
+.chapter .topic-tagline {
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.chapter-group {
+  padding: 1px 12px;
+  border: 1.5px solid var(--ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.8333rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.chapter .topic-tagline .label {
+  font-size: 0.8333rem;
+}
+
+.dossier.chapter .chapter-h1 {
+  --offset: 4px;
+  margin: 12px 0 0;
+  font-size: clamp(2.4rem, 7.2vw, 6.4rem);
+  line-height: 0.92;
+  letter-spacing: -0.025em;
+  overflow-wrap: break-word;
+}
+
+.dossier.chapter .chapter-h1.is-learn {
+  --offset: 3px;
+  font-size: clamp(2.3rem, 5.2vw, 4.4rem);
+  line-height: 0.98;
+}
+
+.chapter-meta {
+  flex: 0 1 330px;
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.8333rem;
+  line-height: 1.4;
+}
+
+.chapter-meta dt {
+  font-size: 0.7222rem;
+  color: var(--ink-soft);
+}
+
+.chapter-meta dd {
+  margin: 2px 0 0;
+}
+
+.chapter-meta ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chapter-meta li {
+  margin: 0 0 6px;
+}
+
+.chapter-meta .relation-reason {
+  margin: 2px 0 8px;
+  font-size: 0.7222rem;
+  color: var(--ink-soft);
+}
+
+.chapter-meta .none {
+  margin: 0;
+  font-style: normal;
+  font-family: inherit;
+}
+
+.chapter-body {
+  display: block;
+}
+
+.chapter-main {
+  min-width: 0;
+  line-height: 1.7;
+}
+
+/* In short: a framed box with its label inside at the top. */
+.chapter .in-short {
+  margin: 0 0 40px;
+  padding: 20px 26px;
+  border: 1.5px solid var(--ink);
+  background: var(--skeleton);
+}
+
+.chapter .in-short h2.label {
+  margin: 0 0 6px;
+  font-size: 0.7222rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.chapter .in-short ul {
+  padding-left: 1.1em;
+}
+
+.chapter .in-short li {
+  margin: 0 0 8px;
+  font-size: 1.0556rem;
+  line-height: 1.55;
+}
+
+.chapter .in-short-figures {
+  margin-top: 14px;
+  padding: 6px 0 0;
+  border-top: 1px solid var(--rule);
+}
+
+.chapter .in-short-figures li {
+  margin: 0;
+  border-top: 0;
+  font-size: 1rem;
+}
+
+.chapter .concept {
+  margin: 0 0 20px;
+  font-size: 1.0556rem;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.chapter .learn-note {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-style: normal;
+  font-size: 0.8889rem;
+  color: var(--ink-soft);
+}
+
+.chapter .lesson-top {
+  margin: 0 0 8px;
+}
+
+.chapter .part {
+  margin-top: 72px;
+}
+
+.chapter .part-label {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.7222rem;
+  font-weight: 700;
+}
+
+.chapter section > h2,
+.chapter .learn-section > h2 {
+  margin: 0 0 14px;
+  font-size: clamp(1.9rem, 2.9vw, 2.55rem);
+  line-height: 1.05;
+}
+
+.chapter.lesson section,
+.chapter .learn-section {
+  margin-top: 64px;
+}
+
+.chapter.lesson section.in-short {
+  margin-top: 0;
+}
+
+/* "After this you can ...": a plain line in Cabin, not italic (decision 22). */
+.chapter .outcome {
+  margin: 0 0 16px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-style: normal;
+  font-size: 0.8889rem;
+  color: var(--ink-soft);
+}
+
+.chapter .finish-note,
+.chapter .finish-topic .finish-note {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-style: normal;
+}
+
+/* Mark done: a station, hollow until done, then filled. */
+.chapter .mark-square {
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+.chapter .mark-square::after {
+  inset: -3px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+/* The margin column: terms of this section, from 1200px. A copy of the popovers' text; see components/MarginTerms.tsx. */
+.margin-terms {
+  display: none;
+}
+
+/* Below 1200px the rail is the sticky line at the top. */
+@media (min-width: 1180px) and (max-width: 1199px) {
+  .dossier.chapter .lesson-rail {
+    display: none;
+  }
+  .dossier.chapter .progress-sticky {
+    display: block;
+  }
+}
+
+@media (min-width: 1200px) {
+  /* One grid for the page: row 1 the badge and title, row 2 the rail and the intro (In short, concept, links), the right column spans
+     both rows from the top, so its height never adds space above the title. The sections follow in the text column. */
+  .chapter-grid {
+    display: grid;
+    grid-template-columns: 190px minmax(0, 700px) 250px;
+    column-gap: 48px;
+    align-items: start;
+  }
+
+  .chapter-head,
+  .chapter-body,
+  .chapter-main {
+    display: contents;
+  }
+
+  .chapter-title {
+    grid-column: 1 / 3;
+    grid-row: 1;
+    padding: 24px 0 40px;
+  }
+
+  .chapter-meta {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    margin-top: 28px;
+  }
+
+  .chapter-main > * {
+    grid-column: 2;
+  }
+
+  .dossier.chapter .lesson-rail {
+    grid-column: 1;
+    grid-row: 2 / 99;
+  }
+
+  .dossier.chapter .lesson-rail {
+    display: block;
+    position: sticky;
+    top: calc(var(--header-h, 60px) + 24px);
+    left: auto;
+    width: auto;
+    max-height: calc(100dvh - var(--header-h, 60px) - 48px);
+  }
+
+  .dossier.chapter .progress-sticky {
+    display: none;
+  }
+
+  .chapter .margin-terms {
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(100% + 48px);
+    width: 250px;
+  }
+
+  .margin-terms-in {
+    position: sticky;
+    top: calc(var(--header-h, 60px) + 24px);
+    padding-top: 6px;
+    border-top: 1.5px solid var(--ink2);
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 0.8056rem;
+    line-height: 1.45;
+  }
+
+  .margin-terms-label {
+    margin: 0 0 10px;
+    font-size: 0.7222rem;
+    color: var(--ink-soft);
+  }
+
+  .margin-terms dl {
+    margin: 0;
+  }
+
+  .margin-terms dt {
+    font-weight: 700;
+  }
+
+  .margin-terms dd {
+    margin: 0 0 12px;
+    color: var(--ink-soft);
+  }
+
+  /* With JavaScript each note is placed beside its term (components/MarginTerms.tsx): no sticky list, no label, one rule per note. */
+  .margin-terms[data-placed] .margin-terms-in {
+    position: static;
+    padding: 0;
+    border-top: 0;
+  }
+
+  .margin-terms[data-placed] .margin-terms-label {
+    display: none;
+  }
+
+  .margin-terms[data-placed] .margin-note {
+    position: absolute;
+    left: 0;
+    right: 0;
+    padding: 6px 0 0 8px;
+    border-top: 1.5px solid var(--ink2);
+    border-left: 1.5px solid transparent;
+  }
+
+  .margin-terms[data-placed] dd {
+    margin: 0;
+  }
+
+  /* The term and its note mark each other on hover or focus: a 1.5px ink edge on the note, a wash on the term (shape, not colour alone). */
+  .margin-note[data-linked] {
+    border-left-color: var(--ink);
+  }
+
+}
+
+/* Clear of the scroll ruler: from 1280px the page pads itself; below that body already pads 52px (see the ruler rules), so not twice. */
+@media (hover: hover) and (pointer: fine) and (min-width: 1280px) and (not (forced-colors: active)) and (not (prefers-contrast: more)) {
+  .dossier.chapter {
+    padding-right: 52px;
+  }
+}
+
+.gloss-term[data-linked] {
+  background: var(--highlight);
+}
+
+/* The lesson rail as a short metro line. */
+.dossier.chapter .lesson-rail .progress-head {
+  margin: 0 0 18px;
+}
+
+.dossier.chapter .lesson-rail .progress-head .label {
+  font-size: 0.8333rem;
+  color: var(--ink);
+}
+
+.chapter .seg::after,
+.chapter .learn-progress-fill {
+  background: var(--ink);
+}
+
+.dossier.chapter .lesson-rail ol {
+  padding: 0;
+  border-left: 0;
+}
+
+.dossier.chapter .lesson-rail ol::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 20px;
+  bottom: 20px;
+  width: 3px;
+  background: var(--ink);
+}
+
+.dossier.chapter .lesson-rail li {
+  position: relative;
+  margin: 0;
+  font-size: 0.8333rem;
+  line-height: 1.3;
+}
+
+.dossier.chapter .lesson-rail a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 4px 0;
+  color: var(--ink);
+}
+
+.dossier.chapter .lesson-rail .is-current a {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.station {
+  position: relative;
+  flex: none;
+  width: 24px;
+  height: 24px;
+}
+
+.station::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  box-sizing: border-box;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+.is-done > a > .station::before {
+  background: var(--ink);
+}
+
+/* The current station: a ring round it and the second-ink dot in the middle. */
+.is-current > a > .station::before {
+  outline: 1.5px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.is-current > a > .station::after {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background: var(--ink2);
+}
+
+@media (forced-colors: active) {
+  .dossier.chapter .lesson-rail ol::before {
+    background: CanvasText;
+  }
+  .is-done > a > .station::before {
+    background: CanvasText;
+  }
+  .is-current > a > .station::after {
+    background: Highlight;
+  }
+}
+
+@media (max-width: 767px) {
+  .dossier.chapter {
+    padding: 16px 16px 64px;
+  }
+  .chapter-head {
+    padding: 20px 0 28px;
+  }
+  .chapter-meta {
+    flex-basis: 100%;
+  }
+  .chapter .in-short {
+    padding: 16px 18px;
+  }
+}
+
+/* Sub-headings inside a post: Cabin, not italic (decision 22). */
+.chapter .post h3 {
+  margin: 28px 0 6px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-style: normal;
+  font-size: 0.8889rem;
+  font-weight: 700;
 }

@@ -6,6 +6,7 @@ import { getAllTopics, getDependents, getTopic } from "@/lib/topics";
 import { getLearn } from "@/lib/learn";
 import { getNews } from "@/lib/news";
 import { backgroundHref } from "@/lib/background";
+import { formatNumber, topicNumbers, topicOrder } from "@/lib/order";
 import JsonLd from "@/components/JsonLd";
 import { breadcrumbLd, pageMeta, pageTitle, topicLd, topicPageUpdated } from "@/lib/site";
 
@@ -48,6 +49,7 @@ export default async function TopicPage({ params }: Props) {
       <JsonLd data={topicLd(topic, prerequisites)} />
       <Template
         topic={topic}
+        number={formatNumber(topicNumbers(topicOrder(getAllTopics())).get(slug) ?? 0)}
         prerequisites={prerequisites}
         dependents={getDependents(slug)}
         titles={new Map(getAllTopics().map((t) => [t.slug, t.title]))}

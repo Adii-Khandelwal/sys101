@@ -1,3 +1,4 @@
+import Overprint from "./Overprint";
 import HeadingText from "./HeadingText";
 import { diagramHtml } from "@/lib/diagramHtml";
 import Link from "next/link";
@@ -19,6 +20,7 @@ type Props = {
   titles: Map<string, string>;
   /** When the page was last edited, shown once at the bottom. */
   updated: string;
+  number?: string;
 };
 
 export function TopicList({ topics, reasons }: { topics: Topic[]; reasons?: Record<string, string> }) {
@@ -46,7 +48,7 @@ export function PostDigest({ post, index, titles }: { post: Post; index: number;
         <CompanyLogo name={post.company} size="sm" />
         <span>{companyWhen(post, "month")}</span>
       </div>
-      <h2 id={`${id}-title`}>{post.title}</h2>
+      <Overprint as="h2" id={`${id}-title`}>{post.title}</Overprint>
 
       {old && (
         <aside className="age-note">
@@ -153,11 +155,11 @@ export default function TopicDossier({ topic, prerequisites, dependents, titles,
 
         <div className="relations" data-pagefind-ignore>
           <div>
-            <div className="label">Builds on</div>
+            <div className="label">Read first</div>
             <TopicList topics={prerequisites} />
           </div>
           <div>
-            <div className="label">Leads to</div>
+            <div className="label">Makes possible</div>
             <TopicList topics={dependents} />
           </div>
         </div>

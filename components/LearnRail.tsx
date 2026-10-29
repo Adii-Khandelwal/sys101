@@ -8,8 +8,7 @@ export type LearnEntry = { id: string; name: string };
 
 /**
  * Left rail for a "Start from zero" page: a reading-progress bar and the page
- * contents, with the current section highlighted and a marker that slides to
- * it. Progress is how far the reader has moved through the sections, computed
+ * contents as a short metro line (sections passed are filled, the current one is ringed, the rest hollow). Progress is how far the reader has moved through the sections, computed
  * from scroll position only. It never touches the reading-progress store, so
  * learn pages stay untracked (.claude/rules/learn-pages.md: learn pages never touch progress).
  */
@@ -80,12 +79,9 @@ export default function LearnRail({
   const current = entries[index]?.id;
   const done = index + 1;
 
-  // One marker slides (transform only) to the current row.
   const list = useRef<HTMLOListElement>(null);
-  const [markerY, setMarkerY] = useState<number | null>(null);
   useEffect(() => {
     const row = list.current?.querySelector<HTMLElement>(`[data-id="${current}"]`);
-    setMarkerY(row ? row.offsetTop : null);
     // A long list scrolls inside the rail: bring the current row into view there, never moving the page.
     const box = list.current?.closest<HTMLElement>(".lesson-rail");
     if (row && box && box.scrollHeight > box.clientHeight) {
@@ -128,12 +124,10 @@ export default function LearnRail({
         </div>
       </div>
       <ol ref={list}>
-        {markerY !== null && (
-          <span className="rail-marker" aria-hidden="true" style={{ transform: `translateY(${markerY}px)` }} />
-        )}
-        {entries.map((e) => (
-          <li key={e.id} data-id={e.id} className={e.id === current ? "is-current" : undefined}>
+        {entries.map((e, n) => (
+          <li key={e.id} data-id={e.id} className={e.id === current ? "is-current" : n < index ? "is-done" : undefined}>
             <a href={`#${e.id}`} aria-current={e.id === current ? "location" : undefined} onClick={(ev) => go(ev, e.id)}>
+              <span className="station" aria-hidden="true" />
               {e.name}
             </a>
           </li>
