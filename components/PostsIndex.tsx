@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
+import LearnRail, { type LearnEntry } from "./LearnRail";
+import { groupId } from "@/lib/groupId";
 import { useAllProgress } from "@/lib/progress";
 import CompanyLogo from "./CompanyLogo";
 import type { PostRow, PostsIndex as Data } from "@/lib/posts";
@@ -55,8 +57,6 @@ export default function PostsIndex({ data }: { data: Data }) {
   }, []);
 
   useSlashFocus(inputRef);
-
-  const [current, setCurrent] = useState("");
 
   const choose = (id: View) => (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -124,55 +124,20 @@ export default function PostsIndex({ data }: { data: Data }) {
   const companies = data.byCompany.map((c) => ({ ...c, posts: keep(c.posts) })).filter((c) => c.posts.length);
   const years = data.byYear.map((y) => ({ ...y, posts: keep(y.posts) })).filter((y) => y.posts.length);
 
-  // Contents for the left rail: what each view's headings are called there.
-  const rails: Record<View, { label: string; items: { id: string; name: string; group?: string }[] }> = {
-    topic: { label: "Topics", items: topicGroups.flatMap((g) => g.topics.map((t) => ({ id: t.slug, name: t.title, group: g.group }))) },
-    company: { label: "Companies", items: companies.map((c) => ({ id: c.id, name: c.name })) },
-    year: { label: "Years", items: years.map((y) => ({ id: y.id, name: y.year ?? "No date shown" })) },
+  // Contents for the left rail: the groups of each view, names only (the headings carry any count).
+  const rails: Record<View, LearnEntry[]> = {
+    topic: topicGroups.map((g) => ({ id: groupId(g.group), name: g.group })),
+    company: companies.map((c) => ({ id: c.id, name: c.name })),
+    year: years.map((y) => ({ id: y.id, name: y.year ?? "No date shown" })),
   };
-  const ids = rails[view].items.map((i) => i.id).join();
-
-  // The current heading is the last one whose top has passed a third of the way down the screen.
-  useEffect(() => {
-    const els = ids.split(",").map((id) => document.getElementById(id)).filter((e): e is HTMLElement => !!e);
-    const pick = () => {
-      const line = window.innerHeight / 3;
-      let id = els[0]?.id ?? "";
-      for (const el of els) if (el.getBoundingClientRect().top <= line) id = el.id;
-      setCurrent(id);
-    };
-    // One layout read per frame, however many scroll events arrive.
-    let frame = 0;
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(() => ((frame = 0), pick()));
-    };
-    pick();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, [ids]);
 
   return (
     <>
       <script dangerouslySetInnerHTML={{ __html: EARLY_VIEW }} />
       {VIEWS.map((v) => (
-        <nav key={v.id} className="posts-rail" data-view={v.id} aria-label={`${rails[v.id].label} on this page`} data-pagefind-ignore>
-          <p className="posts-rail-label label">{rails[v.id].label}</p>
-          <ul>
-            {rails[v.id].items.map((it, i, all) => (
-              <li key={it.id} className={view === v.id && it.id === current ? "is-current" : undefined}>
-                {it.group && it.group !== all[i - 1]?.group && <span className="posts-rail-group">{it.group}</span>}
-                <a href={`#${it.id}`} aria-current={view === v.id && it.id === current ? "location" : undefined}>
-                  {it.name}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <div key={v.id} className="rail-view" data-view={v.id}>
+          {rails[v.id].length > 1 && <LearnRail entries={rails[v.id]} scope="section" />}
+        </div>
       ))}
       <div className="posts-tools">
         <nav className="posts-views label" aria-label="Choose how to list the posts">
@@ -217,7 +182,7 @@ export default function PostsIndex({ data }: { data: Data }) {
           topicGroups.length === 0,
           topicGroups.map((g) => (
             <div key={g.group} className="posts-group">
-              <h3 className="label posts-group-h">{g.group}</h3>
+              <h3 id={groupId(g.group)} className="label posts-group-h">{g.group}</h3>
               {g.topics.map((t) => (
                 <div key={t.slug}>
                   <h4 id={t.slug} className="posts-topic-h">

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { topicOrder } from "./order";
-import { buildPostsIndex, organization } from "./posts";
+import { buildPostsIndex, groupId, organization } from "./posts";
 import { NOT_COMPANIES } from "./organization";
 import { sourceKinds } from "./sourceKinds";
 import { postsDescription } from "./site";
@@ -58,6 +58,7 @@ describe("posts index", () => {
   it("has unique anchors across the three views", () => {
     const anchors = [
       "by-topic", "by-company", "by-year",
+      ...d.byTopic.map((g) => groupId(g.group)),
       ...d.byTopic.flatMap((g) => g.topics.map((t) => t.slug)),
       ...d.byCompany.map((c) => c.id),
       ...d.byYear.map((y) => y.id),
