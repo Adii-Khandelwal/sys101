@@ -5,6 +5,12 @@ paths:
   - "lib/slidingWindow*.ts"
   - "lib/fillRace*.ts"
   - "lib/commitLatch*.ts"
+  - "lib/xidDial*.ts"
+  - "lib/hashRing*.ts"
+  - "lib/retryJitter*.ts"
+  - "lib/filterBits*.ts"
+  - "lib/breakerGate*.ts"
+  - "lib/tokenBucket*.ts"
   - "scripts/verify-figures.mjs"
   - "scripts/audit-figures.mjs"
 ---
@@ -15,12 +21,12 @@ Applies when editing an interactive figure or its model.
 
 ## Specification
 
-A post digest may carry `figure: { id, rows }` (type FigureSpec, lib/figures.ts). Registered ids: `sliding-window` (Cloudflare 2017), `fill-race` (Meta 2022) and `commit-latch` (Percolator 2010). Each id lists the input names it needs in FIGURE_ROWS; its model and wording live in lib/slidingWindow.ts, lib/fillRace.ts or lib/commitLatch.ts, its geometry in components/figures/<name>/geometry.ts on the shared scene (components/figures/scene.ts), and its client part in <Name>Live.tsx inside the shared FigureFrame (parts.tsx). It renders after the digest, before "Related topic".
+A post digest may carry `figure: { id, rows }` (type FigureSpec, lib/figures.ts). Registered ids: `sliding-window` (Cloudflare 2017), `fill-race` (Meta 2022), `commit-latch` (Percolator 2010), `xid-dial` (Sentry 2015, transactions-and-mvcc), `hash-ring` (Cloudflare 2026, consistent-hashing), `retry-jitter` (Amazon Builders' Library 2019, idempotency-and-retries), `filter-bits` (Meta Ribbon 2021, probabilistic-data-structures), `breaker-gate` (Zalando 2026, circuit-breakers) and `token-bucket` (Databricks 2025, rate-limiting). Several are the post's mechanism with the figure's own example values (client counts, cell counts, capacities); the caption must say which numbers are the post's and which are the figure's (`token-bucket` takes only the batching interval from the post, and `retry-jitter` its retry count). Each id lists the input names it needs in FIGURE_ROWS; its model and wording live in lib/slidingWindow.ts, lib/fillRace.ts or lib/commitLatch.ts, its geometry in components/figures/<name>/geometry.ts on the shared scene (components/figures/scene.ts), and its client part in <Name>Live.tsx inside the shared FigureFrame (parts.tsx). It renders after the digest, before "Related topic".
 
 - Inputs come from rows of the post's `digest.numbers`; `rows` holds the row indexes and the first number of each value is the input. `npm run verify:figures` therefore checks every input against the raw source page. The build fails on an unknown id, a missing row, or a row with no number.
 - Pure model and every visible sentence live in lib/figures.ts (the estimate is computed by the formula, never typed). Reading time counts the figure's prose plus one diagram allowance (lib/readingTime.ts).
 - Geometry is pure TypeScript: one projection, painter's order, three visible faces per box. Fills use existing tokens only (--paper, --skeleton, --rule), flipped in dark. No gradient, filter, halo, dot grid or text inside the SVG; labels, readout and caption are HTML.
 - Client code loads through next/dynamic from a "use client" wrapper (FigureLazy.tsx, one chunk per figure). Imported from a server component the code lands in the shared topic-page chunk and every topic downloads it.
-- Motion: transform transitions on the existing duration tokens only; nothing starts on its own. Under prefers-reduced-motion the tokens are 0 ms, so the figure is static and the controls drive it. Stepper figures (fill-race, commit-latch) move one story step per press, with Back and Next step buttons and the arrow keys; values that a post only gives as a single digit (version 2, dollars, timestamps) are checked by hand against the raw page, because verify:figures skips lone digits.
+- Motion: transform transitions on the existing duration tokens only; nothing starts on its own. Under prefers-reduced-motion the tokens are 0 ms, so the figure is static and the controls drive it. Stepper figures (every id except sliding-window) move one story step per press, with Back and Next step buttons and the arrow keys; values that a post only gives as a single digit (version 2, dollars, timestamps) are checked by hand against the raw page, because verify:figures skips lone digits.
 - Test: lib/figures.test.ts renders the figure to markup and applies the build's diagram rules.
 - `npm run audit:figures` (scripts/audit-figures.mjs) replays every figure's geometry through the anatomy skill's audit (`kit/audit.mjs`, found in `~/.claude/skills/anatomy` or `ANATOMY_SKILL`) in every reachable state. It reads each figure's inputs from the post's numbers rows, bundles the TypeScript with esbuild (a devDependency; vitest 5 no longer brings it) and never runs in the build. The needle, the cord and the rule ticks are not recorded as shapes, so it does not see them. The skill's lines check only sees `.iso-line` elements, which these figures do not use.

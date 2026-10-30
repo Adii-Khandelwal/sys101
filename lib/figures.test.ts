@@ -10,6 +10,18 @@ import { readingExact } from "./readingTime";
 import SlidingWindowLive from "@/components/figures/SlidingWindowLive";
 import FillRaceLive from "@/components/figures/FillRaceLive";
 import CommitLatchLive from "@/components/figures/CommitLatchLive";
+import XidDialLive from "@/components/figures/XidDialLive";
+import HashRingLive from "@/components/figures/HashRingLive";
+import RetryJitterLive from "@/components/figures/RetryJitterLive";
+import FilterBitsLive from "@/components/figures/FilterBitsLive";
+import BreakerGateLive from "@/components/figures/BreakerGateLive";
+import TokenBucketLive from "@/components/figures/TokenBucketLive";
+import { buildGeometry as filterGeometry } from "@/components/figures/filterBits/geometry";
+import { buildGeometry as breakerGeometry } from "@/components/figures/breakerGate/geometry";
+import { buildGeometry as bucketGeometry } from "@/components/figures/tokenBucket/geometry";
+import { buildGeometry as xidGeometry } from "@/components/figures/xidDial/geometry";
+import { buildGeometry as ringGeometry } from "@/components/figures/hashRing/geometry";
+import { buildGeometry as jitterGeometry } from "@/components/figures/retryJitter/geometry";
 import { buildGeometry as windowGeometry, CUR_LANES } from "@/components/figures/slidingWindow/geometry";
 import { buildGeometry as raceGeometry } from "@/components/figures/fillRace/geometry";
 import { buildGeometry as latchGeometry } from "@/components/figures/commitLatch/geometry";
@@ -139,7 +151,19 @@ describe("figure markup", () => {
         ? createElement(SlidingWindowLive, { ...props, geo: windowGeometry(inputs as unknown as WindowInputs) })
         : id === "fill-race"
           ? createElement(FillRaceLive, { ...props, geo: raceGeometry() })
-          : createElement(CommitLatchLive, { ...props, geo: latchGeometry() });
+          : id === "xid-dial"
+            ? createElement(XidDialLive, { ...props, geo: xidGeometry() })
+            : id === "hash-ring"
+              ? createElement(HashRingLive, { ...props, geo: ringGeometry() })
+              : id === "retry-jitter"
+                ? createElement(RetryJitterLive, { ...props, geo: jitterGeometry(inputs as never) })
+                : id === "filter-bits"
+                  ? createElement(FilterBitsLive, { ...props, geo: filterGeometry() })
+                  : id === "breaker-gate"
+                    ? createElement(BreakerGateLive, { ...props, geo: breakerGeometry(inputs as never) })
+                    : id === "token-bucket"
+                      ? createElement(TokenBucketLive, { ...props, geo: bucketGeometry() })
+                      : createElement(CommitLatchLive, { ...props, geo: latchGeometry() });
     const html = renderToStaticMarkup(el);
     return { html, svg: html.match(/<svg[\s\S]*<\/svg>/)![0], post };
   };
@@ -154,7 +178,7 @@ describe("figure markup", () => {
     expect(svg).toMatch(/role="img"/);
     expect(svg).not.toMatch(/gradient|<filter|drop-shadow|<script|\son\w+=|<text/i);
     expect(html).not.toMatch(/—|it's not/i);
-    expect(html.replace(svg, "")).toContain(`Figure from ${post.company} ${post.published.slice(0, 4)} (${post.id})`);
+    expect(html.replace(svg, "")).toContain(`Figure from ${post.company.replace(/'/g, "&#x27;")} ${post.published.slice(0, 4)} (${post.id})`);
   });
 
   it("the sliding window states its slider's spoken value and the worked example", () => {
@@ -167,6 +191,12 @@ describe("figure markup", () => {
     expect(render("fill-race").html).toContain("Step 1 of 5");
     expect(render("fill-race").html).toContain("Version guard: off");
     expect(render("commit-latch").html).toContain("Step 1 of 5");
+    expect(render("xid-dial").html).toContain("Step 1 of 5");
+    expect(render("hash-ring").html).toContain("Step 1 of 3");
+    expect(render("retry-jitter").html).toContain("Step 1 of 4");
+    expect(render("filter-bits").html).toContain("Step 1 of 8");
+    expect(render("breaker-gate").html).toContain("Step 1 of 6");
+    expect(render("token-bucket").html).toContain("Step 1 of 5");
     expect(render("commit-latch").html).toContain('aria-live="polite"');
   });
 });

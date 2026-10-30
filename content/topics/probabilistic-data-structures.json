@@ -310,7 +310,14 @@
           "why": "Ribbon matched the smooth, hazard-free accuracy-versus-space trade-off of Bloom while using roughly 1/3 less memory, and its extra cost shows up as a tiny CPU increase for some major storage systems."
         },
         "failures": "The post is a short research summary and reports no incident. It states that making the filter general and highly configurable took real complexity, which the API hides. It is aimed at static, immutable filters, so it does not apply to a filter you add keys to after building.",
-        "takeaways": "A membership filter is a dial between memory and accuracy, so the first question is how much you pay for each bit. A closer-to-optimal filter moves that cost from RAM to a little extra CPU, a trade the authors expect to pay off at Facebook's scale."
+        "takeaways": "A membership filter is a dial between memory and accuracy, so the first question is how much you pay for each bit. A closer-to-optimal filter moves that cost from RAM to a little extra CPU, a trade the authors expect to pay off at Facebook's scale.",
+        "figure": {
+          "id": "filter-bits",
+          "rows": {
+            "bloomOverhead": 0,
+            "ribbonOverhead": 1
+          }
+        }
       }
     },
     {

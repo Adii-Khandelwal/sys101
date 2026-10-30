@@ -4,8 +4,14 @@
 import { windowText, windowValid, windowFormula, type WindowInputs } from "./slidingWindow";
 import { raceText, raceValid, type RaceInputs } from "./fillRace";
 import { latchText, latchValid, type LatchInputs } from "./commitLatch";
+import { xidText, xidValid, type XidInputs } from "./xidDial";
+import { ringText, ringValid, type RingInputs } from "./hashRing";
+import { jitterText, jitterValid, type JitterInputs } from "./retryJitter";
+import { filterText, filterValid, type FilterInputs } from "./filterBits";
+import { breakerText, breakerValid, type BreakerInputs } from "./breakerGate";
+import { bucketText, bucketValid, type BucketInputs } from "./tokenBucket";
 
-export const FIGURE_IDS = ["sliding-window", "fill-race", "commit-latch"] as const;
+export const FIGURE_IDS = ["sliding-window", "fill-race", "commit-latch", "xid-dial", "hash-ring", "retry-jitter", "filter-bits", "breaker-gate", "token-bucket"] as const;
 export type FigureId = (typeof FIGURE_IDS)[number];
 
 /** Input names each figure needs, each pointing at a row of the post's digest.numbers. */
@@ -13,6 +19,12 @@ const FIGURE_ROWS: Record<FigureId, readonly string[]> = {
   "sliding-window": ["limit", "previous", "current", "elapsed"],
   "fill-race": ["stale", "fresh", "version"],
   "commit-latch": ["bobBefore", "joeBefore", "amount", "oldTs", "startTs", "commitTs"],
+  "xid-dial": ["limit", "margin"],
+  "hash-ring": ["spreadOne", "points", "spreadMany", "servers"],
+  "retry-jitter": ["retries"],
+  "filter-bits": ["bloomOverhead", "ribbonOverhead"],
+  "breaker-gate": ["blocked", "rps", "clientMs", "serviceMs", "factor"],
+  "token-bucket": ["batchMs"],
 };
 
 /** Rows of the post's digest.numbers that feed the figure; the first number in each value is the input. */
@@ -26,6 +38,12 @@ const VALID: Record<FigureId, (i: never) => boolean> = {
   "sliding-window": windowValid as (i: never) => boolean,
   "fill-race": raceValid as (i: never) => boolean,
   "commit-latch": latchValid as (i: never) => boolean,
+  "xid-dial": xidValid as (i: never) => boolean,
+  "hash-ring": ringValid as (i: never) => boolean,
+  "retry-jitter": jitterValid as (i: never) => boolean,
+  "filter-bits": filterValid as (i: never) => boolean,
+  "breaker-gate": breakerValid as (i: never) => boolean,
+  "token-bucket": bucketValid as (i: never) => boolean,
 };
 
 /** The inputs of a figure, read from the post's numbers rows. Null when a row is missing, has no number or breaks the model's limits. */
@@ -51,6 +69,12 @@ export function checkFigure(spec: FigureSpec | undefined, numbers: { value: stri
 export function figureText(id: FigureId, inputs: Record<string, number>, src: FigureSource): FigureText {
   if (id === "sliding-window") return windowText(inputs as WindowInputs, src);
   if (id === "fill-race") return raceText(inputs as RaceInputs, src);
+  if (id === "xid-dial") return xidText(inputs as XidInputs, src);
+  if (id === "hash-ring") return ringText(inputs as RingInputs, src);
+  if (id === "retry-jitter") return jitterText(inputs as JitterInputs, src);
+  if (id === "filter-bits") return filterText(inputs as FilterInputs, src);
+  if (id === "breaker-gate") return breakerText(inputs as BreakerInputs, src);
+  if (id === "token-bucket") return bucketText(inputs as BucketInputs, src);
   return latchText(inputs as LatchInputs, src);
 }
 

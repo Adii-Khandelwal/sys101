@@ -315,6 +315,14 @@
           {
             "value": "1GB",
             "meaning": "Internal limit on the maintenance memory setting for the relevant paths, so the 100GB set aside was never used"
+          },
+          {
+            "value": "around 2 billion",
+            "meaning": "The absolute peak of the transaction id counter, per the 2015 post, though it can be far lower in some situations"
+          },
+          {
+            "value": "1 million",
+            "meaning": "Ids left before the maximum at which Postgres stops accepting commands (the post spells it out as one million)"
           }
         ],
         "tradeoffs": {
@@ -323,7 +331,14 @@
           "why": "The team could not estimate how long a vacuum would take or whether it could be resumed, and the stuck table held data that was cheap to lose."
         },
         "failures": "Autovacuum was behind on the biggest tables: the settings had too high a freeze age, only three workers and too much delay. One autovacuum failed or did not work, and the logs showed nothing because autovacuum logging was off. A later update said the 100GB given to maintenance memory had been wasted because of an internal 1 GB limit.",
-        "takeaways": "Treat vacuum as part of keeping the database running, not as optional housekeeping. Know which tables you can afford to lose before an outage forces the choice, turn on autovacuum logging, and watch how close the id counter is to its limit."
+        "takeaways": "Treat vacuum as part of keeping the database running, not as optional housekeeping. Know which tables you can afford to lose before an outage forces the choice, turn on autovacuum logging, and watch how close the id counter is to its limit.",
+        "figure": {
+          "id": "xid-dial",
+          "rows": {
+            "limit": 7,
+            "margin": 8
+          }
+        }
       }
     },
     {

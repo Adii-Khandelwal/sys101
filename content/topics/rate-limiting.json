@@ -443,7 +443,13 @@
           "why": "A remote call on every request and one Redis instance limited latency, throughput and availability. The team accepted no strict guarantees on limits because backends could tolerate some traffic over the limit."
         },
         "failures": "Traffic inside one batching window can exceed the limit, and fixed-window resets can let overshoot repeat every second under constant high traffic. The team answered with rejection-rate prediction, later replaced by the token bucket, and a client-side limiter. The post does not cover what happens when Dicer or the sidecar fails, how counts survive restarts, or what happens to a lost report.",
-        "takeaways": "If the limit can tolerate some overshoot, take the remote call off the request path: count locally, report in batches, and let the owner of each key answer with a time to reject until. Treat the 10x as the company's headline, not as a measurement you can reuse."
+        "takeaways": "If the limit can tolerate some overshoot, take the remote call off the request path: count locally, report in batches, and let the owner of each key answer with a time to reject until. Treat the 10x as the company's headline, not as a measurement you can reuse.",
+        "figure": {
+          "id": "token-bucket",
+          "rows": {
+            "batchMs": 2
+          }
+        }
       }
     }
   ],

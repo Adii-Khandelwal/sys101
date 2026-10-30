@@ -97,6 +97,10 @@
           {
             "value": "2016",
             "meaning": "Year AWS added token-bucket limiting of retries to its SDK"
+          },
+          {
+            "value": "3 retries at each layer",
+            "meaning": "Retries at each of five layers in the post's example that multiplies load 243x"
           }
         ],
         "tradeoffs": {
@@ -105,7 +109,13 @@
           "why": "Retries are selfish and clients cannot coordinate, so each client limits what it may spend. The page gives this as Amazon's practice and as one engineer's view, and it has no measurement comparing it with circuit breakers."
         },
         "failures": "The 20 millisecond timeout failed a few requests after each deployment until servers opened their connections at startup. The author also warns that retries can delay recovery by keeping load high, and that eventual consistency blurs which errors are worth retrying. The post gives no incident data or measured results for backoff, jitter or the token bucket.",
-        "takeaways": "A retry asks for more of the server's time, so give every client limits: a timeout taken from the downstream's latency, a wait that grows with some randomness, one retrying layer and a local budget. The post is one engineer's account from 2019, with worked arithmetic and no measured results."
+        "takeaways": "A retry asks for more of the server's time, so give every client limits: a timeout taken from the downstream's latency, a wait that grows with some randomness, one retrying layer and a local budget. The post is one engineer's account from 2019, with worked arithmetic and no measured results.",
+        "figure": {
+          "id": "retry-jitter",
+          "rows": {
+            "retries": 5
+          }
+        }
       }
     },
     {

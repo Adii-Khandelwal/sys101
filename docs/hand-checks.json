@@ -522,5 +522,9 @@
   "sentry-xid-2015|three million": {
     "verdict": "ok",
     "source": "current PostgreSQL docs (routine-vacuuming): warns at forty million, system refuses new XIDs below three million left; Sentry 2015 post says fewer than a million, and the digest attributes each figure to its source"
+  },
+  "sentry-xid-2015|1 million": {
+    "verdict": "ok",
+    "source": "post: \"fewer than one million transactions left before the maximum XID value\" (spelled out in words)"
   }
 }

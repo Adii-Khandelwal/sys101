@@ -351,7 +351,17 @@
           "why": "Probes cannot detect autoscaling capacity: the breaker checks the service as it is while probing, not as it will be under full traffic."
         },
         "failures": "The breaker, the autoscaler and the probes each did what they were built to do, and together they trapped the system. The post does not give the breaker's threshold or timeout values, and no fix is measured; only the two manual mitigations are described. The service also keeps working on requests the client has already cancelled, which makes the queues worse.",
-        "takeaways": "A breaker's probes test the service at a trickle, not under the load that returns when it closes. Autoscale on signals that move in seconds, and protect the service at its own boundary instead of relying on the caller's breaker alone. The post is an analysis of one incident, not a measured fix."
+        "takeaways": "A breaker's probes test the service at a trickle, not under the load that returns when it closes. Autoscale on signals that move in seconds, and protect the service at its own boundary instead of relying on the caller's breaker alone. The post is an analysis of one incident, not a measured fix.",
+        "figure": {
+          "id": "breaker-gate",
+          "rows": {
+            "blocked": 0,
+            "rps": 1,
+            "clientMs": 2,
+            "serviceMs": 3,
+            "factor": 4
+          }
+        }
       }
     },
     {

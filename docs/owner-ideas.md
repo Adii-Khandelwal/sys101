@@ -47,4 +47,5 @@ Moved out of CLAUDE.md to keep it short. Every idea or preference the owner stat
 - 30 Oct 2026: owner asked for the same contents rail on Capstones as on Great reads and Blogs (`capstones.md`).
 - 30 Oct 2026: owner said the rail on Great reads, Blogs and Capstones must not look like progress (entries are independent): no bar, no filled discs.
 - 30 Oct 2026: owner asked for neutral wording outside About (no "I" or "we"); the Great reads lead was rewritten and Privacy and Terms made neutral. About keeps "I".
+- 30 Oct 2026: owner asked for anatomy-skill figures on topic pages wherever they make sense (not on the homepage, and never a copy of a figure already on a topic page): six added, see `figures.md`.
 - 30 Oct 2026: owner said the footer column titles were not distinguished from the links; titles are now bold ink.

@@ -26,6 +26,15 @@ const load = async (entry) => {
 const W = await load("components/figures/slidingWindow/geometry.ts");
 const R = await load("components/figures/fillRace/geometry.ts");
 const L = await load("components/figures/commitLatch/geometry.ts");
+const X = await load("components/figures/xidDial/geometry.ts");
+const H = await load("components/figures/hashRing/geometry.ts");
+const ringModel = await load("lib/hashRing.ts");
+const J = await load("components/figures/retryJitter/geometry.ts");
+const F = await load("components/figures/filterBits/geometry.ts");
+const filterModel = await load("lib/filterBits.ts");
+const BG = await load("components/figures/breakerGate/geometry.ts");
+const TB = await load("components/figures/tokenBucket/geometry.ts");
+const bucketModel = await load("lib/tokenBucket.ts");
 const latchModel = await load("lib/commitLatch.ts");
 const slidingWindow = await load("lib/slidingWindow.ts");
 
@@ -93,6 +102,46 @@ const latch = figureOf("distributed-transactions", "commit-latch");
 for (let step = 0; step < latchModel.LATCH_STEPS; step++) {
   const s = latchModel.latchState(latch, step);
   run(`latch step ${step + 1}`, L.PROJECTION, L.auditShapes({ bobLock: s.bobLock, joeLock: s.joeLock, bobNew: s.bobNew !== "none", joeNew: s.joeNew !== "none", bobFlag: s.bobNew === "committed", joeFlag: s.joeNew === "committed" }));
+}
+
+// Id counter: every place of the carriage, gate closed only where the model closes it.
+for (const [pos, x] of Object.entries(X.CAR_AT)) {
+  for (const closed of [true, false]) {
+    if (closed && pos !== "halt") continue;
+    run(`xid carriage=${pos} gate=${closed ? "closed" : "open"}`, X.PROJECTION, X.auditShapes(x, closed));
+  }
+}
+
+// Hash ring: every step of the story, one point and three points per server.
+const ring = figureOf("consistent-hashing", "hash-ring");
+for (const many of [false, true]) {
+  for (let step = 0; step < ringModel.RING_STEPS; step++) {
+    const s = ringModel.ringState(ring, many, step);
+    const tier = s.cellOwner.map(H.tierOf);
+    run(`ring points=${many ? 3 : 1} step ${step + 1}`, H.PROJECTION, H.auditShapes({ tier, posts: s.points, keys: s.owners.map((o) => ({ name: o.name, cell: o.cell, tier: H.tierOf(o.server) })) }));
+  }
+}
+
+// Retry jitter: every step, jitter on and off.
+const retry = figureOf("idempotency-and-retries", "retry-jitter");
+for (const jitter of [false, true]) for (let step = 0; step <= retry.retries; step++) run(`retry jitter=${jitter} step=${step}`, J.PROJECTION, J.auditShapes(retry, jitter, step));
+
+// Filter bits: every step of the story.
+const fb = figureOf("probabilistic-data-structures", "filter-bits");
+for (let step = 0; step < filterModel.FILTER_STEPS; step++) {
+  const s = filterModel.filterState(fb, step);
+  run(`filter step ${step + 1}`, F.PROJECTION, F.auditShapes({ bits: s.bits, probe: s.probe ? s.probe.cells : null, bars: s.bars }, fb));
+}
+
+// Breaker gate: every step of the story.
+const breaker = figureOf("circuit-breakers", "breaker-gate");
+for (let step = 0; step < 6; step++) run(`breaker gate step ${step + 1}`, BG.PROJECTION, BG.auditShapes(breaker, step));
+
+// Token bucket: every step of the story.
+const bucket = figureOf("rate-limiting", "token-bucket");
+for (let step = 0; step < bucketModel.BUCKET_STEPS; step++) {
+  const s = bucketModel.bucketState(bucket, step);
+  run(`token bucket step ${step + 1}`, TB.PROJECTION, TB.auditShapes(s));
 }
 
 fs.rmSync(tmp, { recursive: true, force: true });
