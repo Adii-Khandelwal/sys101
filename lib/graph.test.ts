@@ -34,7 +34,7 @@ describe("transitive reduction", () => {
     const topics = fs.readdirSync(dir).map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")));
     const edges = topics.flatMap((t) => t.prerequisites.map((p: string) => ({ from: p, to: t.slug })));
     const reduced = transitiveReduction(edges);
-    expect(keys(edges).filter((k) => !keys(reduced).includes(k)).sort()).toEqual(["caching->rate-limiting", "databases->indexing", "databases->storage-engines", "dns->cdns", "http-tcp-tls->api-design-rpc-rest-graphql", "http-tcp-tls->cdns", "http-tcp-tls->real-time-delivery", "load-balancing->overload-and-cascading-failures", "load-balancing->safe-deployments", "rate-limiting->overload-and-cascading-failures", "replication->cap", "replication->consensus", "replication->disaster-recovery-and-backups", "replication->failover", "replication->object-storage", "sharding->distributed-transactions"]);
+    expect(keys(edges).filter((k) => !keys(reduced).includes(k)).sort()).toEqual(["caching->rate-limiting", "databases->indexing", "databases->storage-engines", "dns->cdns", "dns->traffic-steering-and-draining", "http-tcp-tls->api-design-rpc-rest-graphql", "http-tcp-tls->cdns", "http-tcp-tls->real-time-delivery", "load-balancing->overload-and-cascading-failures", "load-balancing->safe-deployments", "load-balancing->traffic-steering-and-draining", "rate-limiting->overload-and-cascading-failures", "replication->cap", "replication->consensus", "replication->disaster-recovery-and-backups", "replication->failover", "replication->object-storage", "sharding->distributed-transactions"]);
   });
 
   it("remembers the chosen layers for equal inputs, even for freshly built nodes", () => {

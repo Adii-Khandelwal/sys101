@@ -1,0 +1,476 @@
+{
+  "slug": "traffic-steering-and-draining",
+  "title": "Traffic Steering and Draining",
+  "shortTitle": "Traffic Steering",
+  "group": "Reliability",
+  "interviewRelevance": "niche",
+  "concept": "Traffic steering decides which site, point of presence or zone serves each user, and draining moves traffic off one site gently so it can be repaired or retired. The layer used to move traffic, such as DNS, anycast or a load balancer you run, decides how fast and how gently the move happens. DNS is slow and ragged, a load balancer applies in seconds, and moving traffic between zones in one region is easier than moving users between regions.",
+  "prerequisites": [
+    "dns",
+    "failover",
+    "load-balancing"
+  ],
+  "summary": {
+    "points": [
+      "Steering decides where each user or request goes, and draining lowers a site's share to zero while work already running finishes.",
+      "The layer you steer with sets the speed: DNS answers are cached and slow, while a load balancer you run applies weights in seconds.",
+      "Dropbox found that a one-minute DNS time-to-live still left a long tail of traffic, and it describes a hybrid setup that does not wait on DNS.",
+      "Slack drains a whole Availability Zone with weights at its edge load balancers, which works because each zone is siloed from the others.",
+      "Slack's drain is zone-level inside one region, so it says little about moving users between regions."
+    ],
+    "figures": [
+      {
+        "postId": "dropbox-edge-network-2018",
+        "row": 0,
+        "label": "15 minutes to drain 90% of traffic with a one-minute DNS time-to-live"
+      },
+      {
+        "postId": "slack-cellular-architecture-2023",
+        "row": 2,
+        "label": "1% granularity when draining or undraining a zone with weights"
+      }
+    ]
+  },
+  "prerequisiteReasons": {
+    "dns": "Traffic steering takes from DNS the way names are answered by location, and why cached answers make a change reach users slowly.",
+    "failover": "Traffic steering takes from failover the decision to move traffic away from a site, and adds how that move is carried out gently.",
+    "load-balancing": "Traffic steering takes from load balancing the idea of sending a chosen share of requests to each target, which is how weights drain a site."
+  },
+  "lesson": {
+    "why": {
+      "outcome": "After this you can explain why moving traffic between sites is its own problem, separate from deciding that a site has failed.",
+      "body": "Failover answers one question: when something breaks, what takes over. A second question comes up all the time without anything breaking. You want to take a site out for maintenance, shed load from a data centre that is struggling, test a new site with a sliver of users, or stop sending people to a zone you only suspect is bad. In each case the real work is moving traffic, and doing it without hurting the users who are in the middle of something.\n\nThat work has two halves. Steering decides where each new request or connection goes. Draining lowers a site's share toward zero while letting what is already running finish, so the site can be repaired or retired. Both depend on the layer you use to move traffic, because layers differ wildly in how fast they obey and how gently they let go.\n\nThe lesson that surprises people is the speed. A change at your own load balancer can apply in seconds. A change made through DNS can take about 15 minutes to reach most users and up to an hour for nearly all of them, because every resolver and device between you and them keeps its own copy of the old answer. Choosing the layer is most of the design."
+    },
+    "mentalModel": {
+      "outcome": "After this you can picture steering as a dial per site, and name the three questions that separate steering layers.",
+      "body": "Picture each site (a data centre, a point of presence or a zone) with a dial that sets its share of the traffic. A steering layer is whatever turns those dials. Draining a site is turning its dial down in steps until it reaches zero, with the sites that remain taking up the slack.\n\nThree questions tell the layers apart. Who decides: DNS answers differently by where the user seems to be, a load balancer sees each request as it arrives, and an anycast network lets internet routing choose. How finely: some layers move a whole region of users at once, others move 1% of requests. How fast and how gently: a layer that only influences new connections lets old ones finish, while a layer that changes the route under open connections breaks them.\n\nThe dial and the effect are separate things. The operator can set a share instantly, but the share is only obeyed as fast as caches expire and connections end. Good designs keep the dial where they control it, such as a load balancer or proxy, and use the slower layers only to place users near a site in the first place.",
+      "diagram": "<svg viewBox=\"0 0 560 250\" role=\"img\" aria-labelledby=\"dg-ts-model-t\" class=\"dg\"><title id=\"dg-ts-model-t\">Traffic steering: users reach a steering layer that sets how much traffic each site gets. Lowering one site's share and raising the other's drains the first, but the change only takes effect as fast as caches and open connections let it.</title><defs><marker id=\"dg-ts-model-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"100\" width=\"100\" height=\"50\" class=\"dg-box\"/><text x=\"64\" y=\"129.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Users</text><rect x=\"170\" y=\"90\" width=\"150\" height=\"70\" class=\"dg-box dg-accent\"/><text x=\"245\" y=\"113.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Steering layer</text><text x=\"245\" y=\"129.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">sets each site's</text><text x=\"245\" y=\"145.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">share</text><rect x=\"400\" y=\"30\" width=\"146\" height=\"56\" class=\"dg-box\"/><text x=\"473\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Site A</text><text x=\"473\" y=\"70.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">share goes down</text><rect x=\"400\" y=\"164\" width=\"146\" height=\"56\" class=\"dg-box\"/><text x=\"473\" y=\"188.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Site B</text><text x=\"473\" y=\"204.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">share goes up</text><path d=\"M114,125 L170,125\" class=\"dg-line\" marker-end=\"url(#dg-ts-model-a)\"/><path d=\"M320,108 L400,62\" class=\"dg-line\" marker-end=\"url(#dg-ts-model-a)\"/><path d=\"M320,142 L400,192\" class=\"dg-line\" marker-end=\"url(#dg-ts-model-a)\"/><text x=\"280\" y=\"236\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Turning the dial is quick. The world obeying it takes as long as the slowest cache or connection.</text></svg>"
+    },
+    "howItWorks": {
+      "outcome": "After this you can walk through a drain from choosing the layer to bringing the site back.",
+      "steps": [
+        {
+          "step": "Pick the layer that moves traffic",
+          "explanation": "DNS can steer by user location but its answers are cached. Anycast needs no setup but gives little control. A load balancer or proxy that you run applies weights to each new request. Match the layer to how fast and how gently you need the move."
+        },
+        {
+          "step": "Give each site a share",
+          "explanation": "Express the plan as a weight for every site, not as an on or off switch. A weight of zero then means drained, and any smaller step is a partial drain you can reverse."
+        },
+        {
+          "step": "Lower the share in steps",
+          "explanation": "Reduce the drained site's weight a little at a time and send the difference to the others. Small steps let you stop at the first sign of trouble, and the sites taking the load get time to warm up and scale."
+        },
+        {
+          "step": "Let in-flight work finish",
+          "explanation": "A graceful drain stops new requests but lets running ones complete. Where the layer cannot do that, such as a routing change under open connections, users on those connections get resets, so say so in the plan."
+        },
+        {
+          "step": "Watch errors and latency as you go",
+          "explanation": "A drain is itself a change, and it should not add errors for users. If error rate or latency rises on the sites receiving traffic, stop and restore the previous share."
+        },
+        {
+          "step": "Undrain in small shares",
+          "explanation": "To bring a site back, give it a small slice first and confirm it serves well before raising it. The drain and undrain controls must not depend on the site being drained, or they fail in the one case you need them."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 156\" role=\"img\" aria-labelledby=\"dg-ts-how-t\" class=\"dg\"><title id=\"dg-ts-how-t\">Draining in five steps: pick the layer that moves traffic, set a share for each site, lower the drained site's share in steps, let in-flight work finish, then watch and bring the site back in small shares. A dashed path returns to the lowering step if errors or latency rise.</title><defs><marker id=\"dg-ts-how-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"2\" y=\"24\" width=\"92\" height=\"54\" class=\"dg-box\"/><text x=\"48\" y=\"47.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Pick the</text><text x=\"48\" y=\"63.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">layer</text><path d=\"M94,51 L118,51\" class=\"dg-line\" marker-end=\"url(#dg-ts-how-a)\"/><rect x=\"118\" y=\"24\" width=\"92\" height=\"54\" class=\"dg-box\"/><text x=\"164\" y=\"47.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Set a share</text><text x=\"164\" y=\"63.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">per site</text><path d=\"M210,51 L234,51\" class=\"dg-line\" marker-end=\"url(#dg-ts-how-a)\"/><rect x=\"234\" y=\"24\" width=\"92\" height=\"54\" class=\"dg-box dg-accent\"/><text x=\"280\" y=\"47.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Lower share</text><text x=\"280\" y=\"63.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">in steps</text><path d=\"M326,51 L350,51\" class=\"dg-line\" marker-end=\"url(#dg-ts-how-a)\"/><rect x=\"350\" y=\"24\" width=\"92\" height=\"54\" class=\"dg-box\"/><text x=\"396\" y=\"47.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Let in-flight</text><text x=\"396\" y=\"63.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">work finish</text><path d=\"M442,51 L466,51\" class=\"dg-line\" marker-end=\"url(#dg-ts-how-a)\"/><rect x=\"466\" y=\"24\" width=\"92\" height=\"54\" class=\"dg-box\"/><text x=\"512\" y=\"47.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Watch, then</text><text x=\"512\" y=\"63.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">undrain small</text><path d=\"M510,78 L510,118 L278,118 L278,80\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-ts-how-a)\"/><text x=\"394\" y=\"140\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">errors or latency rise: stop and put the share back</text></svg>"
+    },
+    "workedExample": {
+      "outcome": "After this you can use measured drain times to plan taking a site out of service.",
+      "steps": [
+        {
+          "step": "The job",
+          "explanation": "A team must take one point of presence out of service for maintenance. Its users are steered by GeoDNS, and the record has a time-to-live of one minute. This is an illustration built on figures that Dropbox and Slack report in their own posts."
+        },
+        {
+          "step": "Remove the site from DNS",
+          "explanation": "The operator changes the record so the site gets no new answers. With a one-minute time-to-live the intuition says the site is empty in about a minute."
+        },
+        {
+          "step": "What Dropbox measured",
+          "explanation": "With a one-minute time-to-live on its main web domain, Dropbox saw 90% of traffic leave after 15 minutes. It took a full hour for 95%. Some devices resolve a name only when they power on, so some traffic lags far behind the TTL."
+        },
+        {
+          "step": "Plan around the tail",
+          "explanation": "Either start the drain at least an hour early and accept that a few users remain, or add a faster layer. Dropbox describes a hybrid setup in which each site also answers on a shared address, so traffic can be pulled away without waiting for DNS."
+        },
+        {
+          "step": "If you control the load balancer",
+          "explanation": "Slack drains a zone by changing weights at its edge load balancers, which apply within seconds and in steps of 1%. That is the shape to copy when you can put a layer you control in front of the sites."
+        },
+        {
+          "step": "Undrain",
+          "explanation": "When the work is done, return the site at a small share, such as the 1% Slack's design allows, and check it serves correctly before giving it more."
+        }
+      ],
+      "diagram": "<svg viewBox=\"0 0 560 220\" role=\"img\" aria-labelledby=\"dg-ts-ex-t\" class=\"dg\"><title id=\"dg-ts-ex-t\">A timeline from 0 to 60 minutes. With a DNS record set to a one-minute time-to-live, 90 percent of traffic had left after 15 minutes and 95 percent after a full hour. A weight change at a load balancer, by comparison, applies within seconds.</title><defs><marker id=\"dg-ts-ex-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><path d=\"M40,130 L520,130\" class=\"dg-line\"/><path d=\"M40,124 L40,136\" class=\"dg-line\"/><path d=\"M48,126 L48,134\" class=\"dg-line\"/><path d=\"M160,124 L160,136\" class=\"dg-line\"/><path d=\"M520,124 L520,136\" class=\"dg-line\"/><text x=\"40\" y=\"152\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">0</text><text x=\"160\" y=\"152\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">15 min</text><text x=\"520\" y=\"152\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">60 min</text><text x=\"52\" y=\"112\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">TTL ends at 1 min</text><circle cx=\"160\" cy=\"130\" r=\"5\" class=\"dg-box dg-accent\"/><text x=\"160\" y=\"100\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">90% drained</text><circle cx=\"520\" cy=\"130\" r=\"5\" class=\"dg-box dg-accent\"/><text x=\"520\" y=\"100\" class=\"dg-note\" text-anchor=\"end\" font-size=\"11\">95% drained</text><rect x=\"40\" y=\"180\" width=\"6\" height=\"14\" class=\"dg-box dg-accent\"/><text x=\"58\" y=\"191\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Weight change at a load balancer: applies in seconds</text></svg>"
+    },
+    "mistakesOutcome": "After this you can avoid the three usual errors when moving traffic between sites.",
+    "checkOutcome": "After this you can tell whether you understood the concept before reading the posts.",
+    "quiz": [
+      {
+        "question": "A team removes a site from DNS and sets a one-minute time-to-live. What should they plan for?",
+        "options": [
+          "Traffic is gone from the site within about one minute, because the TTL is a hard limit on caching",
+          "Most traffic leaves in minutes, but a tail keeps arriving for an hour or more",
+          "DNS cannot drain a site, because an answer once given can never be withdrawn from a resolver",
+          "Traffic leaves in proportion to the TTL, so halving the TTL halves the time to drain"
+        ],
+        "correct": 1,
+        "why": "Dropbox measured that a one-minute time-to-live still took 15 minutes to drain 90% of traffic and a full hour for 95%, because caches and devices hold old answers.",
+        "wrong": [
+          "The TTL asks caches to expire, it does not force them to, and Dropbox saw much slower drains.",
+          "",
+          "DNS can drain, only slowly and unevenly. Dropbox reached 90% in 15 minutes.",
+          "The tail comes from caches that ignore the TTL, so a shorter TTL does not shrink it in proportion."
+        ],
+        "teaches": "why"
+      },
+      {
+        "question": "Why can a BGP anycast network not drain a site gracefully?",
+        "options": [
+          "It balances packets, not connections, so a route change resets open connections",
+          "Anycast works only for stateless protocols, so it never carries long-lived connections at all",
+          "Anycast needs a separate DNS record for each site, and those records cannot be set to zero",
+          "Anycast hides the site from monitoring, so no one can tell when traffic has left it"
+        ],
+        "correct": 0,
+        "why": "Dropbox explains that after a routing change all in-flight TCP sessions go straight to the next best site and users get a reset from there, so a graceful drain is not possible.",
+        "wrong": [
+          "",
+          "Anycast carries TCP; the problem is what happens to open connections when routes change.",
+          "Anycast uses one shared address announced from every site, not a record per site.",
+          "Visibility is a separate problem. The issue here is that open connections are broken."
+        ],
+        "teaches": "model"
+      },
+      {
+        "question": "An operator wants to give a recovered zone just 1% of traffic to confirm it works. Which design allows that?",
+        "options": [
+          "Remove the zone's addresses from DNS and wait for resolvers to pick up the change",
+          "Withdraw the zone's routes and announce them again once the zone looks healthy",
+          "Tell every service in every language to refuse a fraction of its calls to that zone",
+          "Weights on the load balancers that route into each zone, in steps as small as 1%"
+        ],
+        "correct": 3,
+        "why": "Slack's edge load balancers take a weight per zone from a control plane, which gives drains and undrains with a granularity of 1% and applies within seconds.",
+        "wrong": [
+          "DNS answers are cached and cannot express a partial share of one zone. Slack notes DNS has no abstraction for a partial drain.",
+          "A route withdrawal is all or nothing and resets open connections. It cannot give a 1% share.",
+          "That would need a separate implementation in each language and each discovery system. Slack chose siloing and edge weights instead.",
+          ""
+        ],
+        "teaches": "how"
+      },
+      {
+        "question": "A drain is started by connecting to every server in the zone and failing its health check. What is the main flaw?",
+        "options": [
+          "Health checks are too slow to be useful for any kind of traffic shifting at all",
+          "Failing a health check removes only half the traffic from a server and never all of it",
+          "It needs to reach machines inside the zone being drained, which may be offline",
+          "It only works for servers that run Envoy, and breaks every other kind of load balancer"
+        ],
+        "correct": 2,
+        "why": "One of Slack's design goals was that a drain must not rely on resources in the zone being drained, so it can be applied even when the zone is completely offline.",
+        "wrong": [
+          "Health checks can be quick. The flaw is where the control runs, not its speed.",
+          "A failed health check normally removes the server from rotation. The flaw is the dependency.",
+          "",
+          "The method is not tied to one load balancer. The flaw is that it relies on the failing zone."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "Slack built a button to drain an Availability Zone within minutes. What does that show about moving users between regions?",
+        "options": [
+          "Nothing, because the zones were all in one region, so it shows zone draining, not regional failover",
+          "That regional failover is solved, since a region is just a larger zone",
+          "That DNS steering is no longer needed for any kind of traffic anywhere",
+          "That each region needs its own edge network, built the same way"
+        ],
+        "correct": 0,
+        "why": "The post says most of Slack's core infrastructure sits in multiple Availability Zones within a single region, with a multi-region edge in front, so the drain is zone-level.",
+        "wrong": [
+          "",
+          "Regions have separate data and longer distances, so the zone result does not carry over by itself.",
+          "The post does not say that. It describes siloing zones and weights at the edge.",
+          "The post says its edge is already global and multi-regional, and it does not draw that conclusion."
+        ],
+        "teaches": "mistakes"
+      },
+      {
+        "question": "A site has been drained for repair and now looks healthy. What is the safest way back?",
+        "options": [
+          "Restore its full weight straight away, since waiting only prolongs the extra load on the other sites",
+          "Give it a small share, check it serves correctly, then raise the share",
+          "Wait until the DNS time-to-live has passed, then restore its full weight in one change",
+          "Leave it at zero until the next planned maintenance window, then restore it all at once"
+        ],
+        "correct": 1,
+        "why": "Slack's design lets an operator assign as little as 1% of traffic to a zone to test whether it has truly recovered, and the trial can be undone if it fails.",
+        "wrong": [
+          "A recovered site can still be fragile, and a full load at once may bring it down again.",
+          "",
+          "The TTL says nothing about whether the site is healthy, and one big step removes the chance to stop early.",
+          "Leaving capacity idle is wasteful, and a large step later has the same risk as one now."
+        ],
+        "teaches": "how"
+      }
+    ],
+    "postsOutcome": "After this you can describe how two companies measured and designed the move of traffic away from a site.",
+    "differOutcome": "After this you can explain why the steering layer decides how fast traffic can be drained.",
+    "exercisesOutcome": "After this you can apply the concept to a maintenance window, design a drain button, and plan for ten times the scale.",
+    "exercises": [
+      {
+        "level": "apply",
+        "prompt": "A web domain is steered by GeoDNS with a one-minute time-to-live. You must take one point of presence out of service for maintenance. What do you do, and when?",
+        "answer": "Do not assume the site empties in a minute. Dropbox saw 90% of traffic leave after 15 minutes and 95% only after a full hour on a one-minute TTL, with some devices resolving only when they power on. Remove the site from DNS well before the work, at least an hour ahead, then watch the site's own traffic graph and begin only when it is low. If you must act sooner, use a layer you control, such as a load balancer weight, or keep the site able to serve stragglers until they are gone.",
+        "tradeoffs": "Starting early costs lead time and delays the work. A faster layer, such as a hybrid setup in which every site can answer on a shared address, costs a more complicated configuration, because every site must handle traffic meant for any other.",
+        "wrongAnswers": [
+          "Shut the site down after a minute, since the TTL has expired.",
+          "Shorten the TTL to a few seconds and expect the drain time to shrink with it.",
+          "Withdraw the routes at once and accept that open connections reset."
+        ],
+        "teaches": "example"
+      },
+      {
+        "level": "design",
+        "prompt": "A service runs in three Availability Zones of one region, in several languages, and uses different discovery systems. Design a button that drains one zone within minutes without user-visible errors.",
+        "answer": "Silo the zones: every service is present in every zone and calls only services in its own zone, so a zone behaves like a separate copy of the system. Then the only place that needs traffic-shifting logic is the front door. Put weighted routing in the edge load balancers, fed by a control plane that lives outside the zones, and set a weight per zone. Reweighting to zero sends all new requests elsewhere while in-flight ones finish. Allow weights in 1% steps for gradual drains and for trial undrains. Make the control independent of the drained zone, and keep alerts on error rate during a drain.",
+        "tradeoffs": "Siloing means every service must exist in every zone and have the capacity to take its zone's share, which costs spare capacity and does not suit services that cannot be split by zone. Weights at the edge are fast and fine-grained, but only protect failures that stay inside one zone.",
+        "wrongAnswers": [
+          "Add a drain feature to every client library in every language.",
+          "Make operators connect to each server in the zone and fail its health check.",
+          "Drain through DNS and wait for the TTL."
+        ],
+        "teaches": "how"
+      },
+      {
+        "level": "scale",
+        "prompt": "Traffic grows tenfold and the service now runs in several regions, each with several zones. What changes about steering and draining?",
+        "answer": "Keep two layers. Use DNS or a global steering layer to place users near a region, accepting that it is slow and ragged to change, and use load balancers you control inside each region for fast, fine-grained, graceful moves. Check capacity before any drain: when one of N sites drains, the others each take about 1/(N-1) extra, so there must be headroom, and a drain step should be small enough to let autoscaling follow. Rehearse drains regularly so the controls are known to work, and keep a way to shed traffic between regions that does not depend on the failing region.",
+        "tradeoffs": "More layers mean more places for a mistake, and a drain between regions moves users away from their data. Headroom for drains costs money in normal times, and the slow layer remains the weak point for emergency moves.",
+        "wrongAnswers": [
+          "Rely on one DNS record per region and a short TTL.",
+          "Copy the zone drain button as is, since a region is a bigger zone.",
+          "Drain a whole region in one step to save time."
+        ],
+        "teaches": "how"
+      }
+    ],
+    "next": {
+      "outcome": "After this you can see where steering and draining sit among the reliability topics.",
+      "body": "Traffic steering and draining sits on top of three topics. DNS shows why steering through names is slow and ragged. Load Balancing is the layer where weights and graceful drains are fast. Failover decides when to move traffic, and this topic is how it moves. Disaster Recovery and Backups continues with the failures that moving traffic cannot cover, such as losing data or a whole site. Overload and Cascading Failures covers what happens when the sites that take the traffic cannot hold it."
+    }
+  },
+  "posts": [
+    {
+      "id": "dropbox-edge-network-2018",
+      "title": "Dropbox traffic infrastructure: Edge network",
+      "url": "https://dropbox.tech/infrastructure/dropbox-traffic-infrastructure-edge-network",
+      "company": "Dropbox",
+      "verifiedOn": "2026-10-29",
+      "published": "2018-10-10",
+      "ageNote": "From October 2018, included for a fundamental that has not changed: DNS answers outlive their time-to-live, so draining through DNS is slow and ragged. Slack's 2023 post in this topic makes a related point about its own systems, that DNS has no way to express a zone or a partial drain. The PoP count, the latency inputs and the drain times are as of 2018, and the post does not say they still hold.",
+      "related": [
+        "dns",
+        "failover",
+        "load-balancing"
+      ],
+      "digest": {
+        "problem": "Dropbox serves more than half a billion registered users from points of presence (PoPs) around the world. Each user has to reach a nearby PoP, and the team has to be able to move users away from a PoP that is over capacity or under maintenance.",
+        "constraints": "Internet routing knows nothing about latency or loss, so the nearest path is only a guess. DNS can steer by location but caches answers. Any steering method has to cope with embedded devices that resolve a name only when they power on.",
+        "walkthrough": [
+          {
+            "step": "Put a PoP near the user",
+            "explanation": "Using inputs of 20 ms from the PoP to the user, 150 ms from the PoP to the data centre and 100 ms of server time, the post shows that a nearby PoP improves latency by more than a factor of two, and speeds up TCP's growth phase for uploads."
+          },
+          {
+            "step": "Choose a global load balancer",
+            "explanation": "The global server load balancer (GSLB) sends each user to the closest PoP unless it is over capacity or under maintenance. The post calls it the most important part of the Edge, since misrouting makes the PoPs useless."
+          },
+          {
+            "step": "Try anycast",
+            "explanation": "Announcing the same range from every PoP is simple and fails over automatically. But routing picks the cheapest route, not the nearest, traffic is hard to move on purpose, and a graceful drain is impossible because routing moves packets, not connections."
+          },
+          {
+            "step": "Use GeoDNS for the main domains",
+            "explanation": "Each PoP gets its own address range and DNS hands out addresses by the user's apparent location. That gives control and graceful drain, but DNS caching makes drains slow: a one-minute time-to-live still needed 15 minutes for 90% and a full hour for 95%."
+          },
+          {
+            "step": "Keep anycast as a fallback and describe a hybrid",
+            "explanation": "Dropbox keeps anycast for its apex domains and as a fallback during large denial-of-service attacks. The post describes a hybrid setup that announces a PoP's own range and a shared range from every PoP, so traffic can be pulled away without waiting for DNS, at the price of every PoP being ready to serve any PoP's addresses."
+          },
+          {
+            "step": "Move toward measured maps",
+            "explanation": "Instead of guessing from hops or distance, Dropbox collects latency from its desktop clients and builds a client-subnet-to-PoP map for DNS, a project that had not yet shipped to its main addresses. It expected this to be the only way to use more than 25-30 PoPs well."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 236\" role=\"img\" aria-labelledby=\"dg-ts-dbx-t\" class=\"dg\"><title id=\"dg-ts-dbx-t\">Dropbox's three ways to steer users to a point of presence: GeoDNS steers by location and can drain gracefully but stale caches outlast the time-to-live; BGP anycast is hard to steer and cannot drain gracefully; a hybrid of unicast and anycast announcements gives a quick fallback and a graceful drain.</title><defs><marker id=\"dg-ts-dbx-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"14\" width=\"112\" height=\"56\" class=\"dg-box\"/><text x=\"70\" y=\"46.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">GeoDNS</text><rect x=\"142\" y=\"14\" width=\"200\" height=\"56\" class=\"dg-box\"/><text x=\"242\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Steers by user location;</text><text x=\"242\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">graceful drain possible</text><rect x=\"358\" y=\"14\" width=\"188\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"452\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Stale caches outlast TTL:</text><text x=\"452\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">15 minutes for 90%</text><rect x=\"14\" y=\"90\" width=\"112\" height=\"56\" class=\"dg-box\"/><text x=\"70\" y=\"122.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">BGP anycast</text><rect x=\"142\" y=\"90\" width=\"200\" height=\"56\" class=\"dg-box\"/><text x=\"242\" y=\"114.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Routing picks the cheapest</text><text x=\"242\" y=\"130.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">route, hard to steer</text><rect x=\"358\" y=\"90\" width=\"188\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"452\" y=\"114.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">No graceful drain:</text><text x=\"452\" y=\"130.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">open connections reset</text><rect x=\"14\" y=\"166\" width=\"112\" height=\"56\" class=\"dg-box\"/><text x=\"70\" y=\"198.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Hybrid</text><rect x=\"142\" y=\"166\" width=\"200\" height=\"56\" class=\"dg-box\"/><text x=\"242\" y=\"190.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Announce a PoP's own range</text><text x=\"242\" y=\"206.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">and a shared one from all</text><rect x=\"358\" y=\"166\" width=\"188\" height=\"56\" class=\"dg-box dg-accent\"/><text x=\"452\" y=\"190.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Quick fallback, no wait</text><text x=\"452\" y=\"206.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">for DNS; graceful drain</text></svg>",
+        "numbers": [
+          {
+            "value": "15 minutes",
+            "meaning": "Time to drain 90% of traffic from a PoP through DNS, with a time-to-live of one minute"
+          },
+          {
+            "value": "a full hour",
+            "meaning": "How long it may take to drain 95% of traffic through DNS on the same one-minute time-to-live"
+          },
+          {
+            "value": "1 minute",
+            "meaning": "Time-to-live set on www.dropbox.com when the drain was measured"
+          },
+          {
+            "value": "20 PoPs",
+            "meaning": "Points of presence Dropbox ran around the world when the post was written"
+          },
+          {
+            "value": "20 ms, 150 ms, 100 ms",
+            "meaning": "Latency inputs behind its comparison: PoP to user, PoP to data centre, and server execution time"
+          },
+          {
+            "value": "more than half a billion",
+            "meaning": "Registered Dropbox users, the scale the Edge serves"
+          },
+          {
+            "value": "up to 30%",
+            "meaning": "Improvement in Edge effectiveness the team saw from early prototypes of a measured-latency DNS map (the company's own estimate)"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "GeoDNS for its web domains, anycast kept for the apex domains and as a DDoS fallback, with a hybrid setup described and a latency-based DNS map under development.",
+          "rejected": "BGP anycast as the main method, because traffic is hard to steer and a graceful drain is impossible.",
+          "why": "GeoDNS gives control and graceful drains and is easier to reason about, but it relies on guesses about user location and its caches are stale. Anycast is simple but opaque. The hybrid adds configuration cost, since every PoP has to serve every PoP's addresses."
+        },
+        "failures": "DNS caching defeated the one-minute time-to-live, and embedded devices such as cameras resolve only at power-on, so some traffic lags far behind the TTL. Different DNS providers make different location guesses, which makes performance harder to monitor.",
+        "takeaways": "A short TTL is a request, not a guarantee, so any plan that depends on DNS needs a long tail in its schedule and a faster layer behind it for urgent moves."
+      }
+    },
+    {
+      "id": "slack-cellular-architecture-2023",
+      "title": "Slack's Migration to a Cellular Architecture",
+      "url": "https://slack.engineering/slacks-migration-to-a-cellular-architecture/",
+      "company": "Slack",
+      "verifiedOn": "2026-10-29",
+      "published": "2023-08-22",
+      "related": [
+        "failover",
+        "load-balancing",
+        "dns"
+      ],
+      "digest": {
+        "problem": "A network fault in one Availability Zone on 2021-06-30 degraded Slack for customers even though its infrastructure spans several zones. The team asked why one failed zone was visible to users at all, and decided to build a button that drains traffic from a zone.",
+        "constraints": "Slack's services are written in Hack, Go, Java and C++, and discover each other through Envoy xDS, Consul and even DNS, which has no way to express a zone or a partial drain. Its main datastore, Vitess, needs a single available primary per shard for writes. And the post is about zones inside one region, us-east-1, with a multi-region edge in front. It is not about moving users between regions.",
+        "walkthrough": [
+          {
+            "step": "Recognise a gray failure",
+            "explanation": "During the outage, components disagreed about what was up: servers inside the bad zone saw their local backends, while others saw the zone as unavailable. A single user request can fan out into hundreds of calls, each of which must succeed, so automatic detection is hard."
+          },
+          {
+            "step": "Set the goals for a drain",
+            "explanation": "Remove as much traffic as possible from a zone within 5 minutes, with no user-visible errors, in steps small enough to hand a zone as little as 1% of traffic to test recovery, and without relying on resources inside the zone being drained."
+          },
+          {
+            "step": "Reject per-client changes",
+            "explanation": "Putting a drain signal in each RPC client would need a version in every language, would not cover DNS discovery, and would mean changing open-source systems such as Vitess."
+          },
+          {
+            "step": "Silo the zones",
+            "explanation": "Every service is present in every zone and talks only to services in its own zone, so each service looks like one virtual service per zone. Redirecting user requests away from a zone makes the internal services in it go quiet, since they receive no new work."
+          },
+          {
+            "step": "Drain at the edge with weights",
+            "explanation": "The edge load balancers run Envoy and take their configuration from an in-house control plane called Rotor. A drain sends new weights through it, using Envoy's weighted clusters and runtime updates. A zone at weight zero still finishes in-flight requests but gets no new ones."
+          },
+          {
+            "step": "Check against the goals",
+            "explanation": "Propagation takes seconds, drains are graceful, and weights give a granularity of 1%. The edge load balancers sit in other regions and the control plane is replicated, so a zone failing does not take the drain control with it."
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 560 252\" role=\"img\" aria-labelledby=\"dg-ts-slack-t\" class=\"dg\"><title id=\"dg-ts-slack-t\">Slack's zone drain: a control plane sends new weights to the edge Envoy load balancers, which send less and less new traffic to one Availability Zone and more to the other two. Each service only calls services in its own zone, so the drained zone goes quiet.</title><defs><marker id=\"dg-ts-slack-a\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M1,1 L9,5 L1,9\" class=\"dg-head\"/></marker></defs><rect x=\"14\" y=\"14\" width=\"150\" height=\"44\" class=\"dg-box\"/><text x=\"89\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Control plane</text><rect x=\"14\" y=\"100\" width=\"150\" height=\"70\" class=\"dg-box dg-accent\"/><text x=\"89\" y=\"131.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Edge Envoy</text><text x=\"89\" y=\"147.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">load balancers</text><path d=\"M89,58 L89,100\" class=\"dg-line\" marker-end=\"url(#dg-ts-slack-a)\"/><text x=\"96\" y=\"82\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">new weights</text><rect x=\"300\" y=\"14\" width=\"246\" height=\"56\" class=\"dg-box\"/><text x=\"423\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Zone A, being drained</text><text x=\"423\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">weight falls toward zero</text><rect x=\"300\" y=\"98\" width=\"246\" height=\"56\" class=\"dg-box\"/><text x=\"423\" y=\"122.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Zone B</text><text x=\"423\" y=\"138.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">weight rises</text><rect x=\"300\" y=\"182\" width=\"246\" height=\"56\" class=\"dg-box\"/><text x=\"423\" y=\"206.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Zone C</text><text x=\"423\" y=\"222.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">weight rises</text><path d=\"M164,125 L300,42\" class=\"dg-line dg-dashed\" marker-end=\"url(#dg-ts-slack-a)\"/><path d=\"M164,135 L300,126\" class=\"dg-line\" marker-end=\"url(#dg-ts-slack-a)\"/><path d=\"M164,150 L300,210\" class=\"dg-line\" marker-end=\"url(#dg-ts-slack-a)\"/><text x=\"14\" y=\"206\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Each zone holds every service and</text><text x=\"14\" y=\"220\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">its calls stay inside the zone.</text></svg>",
+        "numbers": [
+          {
+            "value": "5 minutes",
+            "meaning": "The design goal for removing as much traffic as possible from a zone"
+          },
+          {
+            "value": "99.99%",
+            "meaning": "Availability SLA Slack states, which allows less than 1 hour of total unavailability per year"
+          },
+          {
+            "value": "1%",
+            "meaning": "Granularity of the weights, and the smallest share an operator can assign to a zone to test its recovery"
+          },
+          {
+            "value": "1.5 years",
+            "meaning": "How long the migration of its most critical user-facing services to cells took"
+          },
+          {
+            "value": "hundreds of RPCs",
+            "meaning": "How many service calls a single user request, such as loading a channel, may fan out into"
+          },
+          {
+            "value": "11:45am to 12:33pm PDT, then 5:22pm to 5:31pm PDT",
+            "meaning": "When the 2021-06-30 network fault began, ended, recurred and was finally removed"
+          }
+        ],
+        "tradeoffs": {
+          "chosen": "Siloed zones with a drain done by weights at Envoy edge load balancers, using a human decision to drain instead of automatic detection.",
+          "rejected": "A drain signal built into every RPC client and a manual change in every service discovery system.",
+          "why": "Doing it at one place, the front door, avoids work per language and per discovery system, and avoids forking open-source datastores. Siloing means every service must exist in every zone, and the post says some services cannot be siloed, a subject deferred to a later post."
+        },
+        "failures": "The 2021 incident itself: the same faulty link failed twice in one day, and because detection of a gray failure is hard, one failing zone reached users. The post does not report how long a drain takes in practice, only the 5 minute goal and propagation in seconds.",
+        "takeaways": "A drain is a generic mitigation: when the failure stays inside one zone, an operator can drain first and understand the cause later, and undrain in small steps if it does not help."
+      }
+    }
+  ],
+  "comparison": "Both posts are about moving traffic off a place without waiting for the failure to be understood, and both conclude that the layer you steer with decides how fast and how gently you can do it.\n\nDropbox works at the internet end. It steers users to points of presence with DNS and anycast, which it does not fully control, and measures the result: a one-minute time-to-live still took 15 minutes to drain 90% of traffic. It describes a hybrid setup that does not wait on DNS, and was building a latency map to make its DNS answers better.\n\nSlack works inside one region. It controls the layer in front of its zones, so it can reweight at its edge load balancers within seconds in steps of 1%, and it pays for that by siloing every service per zone. Neither post covers moving users between regions: Dropbox's unit is a point of presence, and Slack's is a zone in one region.",
+  "glossary": [
+    {
+      "term": "Traffic steering",
+      "definition": "Choosing which site, point of presence or zone serves each user or request."
+    },
+    {
+      "term": "Draining",
+      "definition": "Lowering a site's share of traffic toward zero while letting work already running finish."
+    },
+    {
+      "term": "Graceful drain",
+      "definition": "A drain that stops new requests but lets in-flight ones complete, so users do not see errors."
+    },
+    {
+      "term": "Point of presence (PoP)",
+      "definition": "A site near users where traffic enters a company's network, with its own servers and connections."
+    },
+    {
+      "term": "GeoDNS",
+      "definition": "DNS that hands different addresses to different users based on where they seem to be."
+    },
+    {
+      "term": "Anycast",
+      "definition": "Announcing the same address from many sites so internet routing delivers each packet to one of them."
+    },
+    {
+      "term": "Weighted routing",
+      "definition": "Sending each site a stated share of traffic, so a share of zero drains it and a small share is a trial."
+    },
+    {
+      "term": "Siloing",
+      "definition": "Arranging services so each zone only calls services in its own zone, which lets a whole zone be drained at the front door."
+    },
+    {
+      "term": "Availability Zone (AZ)",
+      "definition": "An isolated data centre within a cloud region, built so that zones should not fail together."
+    },
+    {
+      "term": "Undrain",
+      "definition": "Returning traffic to a site, usually in small shares to confirm it has recovered."
+    }
+  ],
+  "mistakes": [
+    "Treating the time-to-live as the drain time. A one-minute TTL is a request to caches, not a guarantee. Plan for a long tail, and use a layer you control for anything that must move quickly.",
+    "A drain control that needs the drained site. If the mechanism works by reaching machines inside the zone or site, it fails when that site is offline. Put the control somewhere that does not depend on the site.",
+    "Reading a zone drain as a regional failover. Moving traffic between zones inside one region is a different, easier job than moving users between regions, which have separate data and longer distances."
+  ]
+}

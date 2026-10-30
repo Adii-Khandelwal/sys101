@@ -36,7 +36,7 @@ Ranking weighs source strength first (rule 1 numbers, rule 3 age, rule 4 credibi
 | api-design-rpc-rest-graphql | API design: RPC, REST, GraphQL | Messaging | http-tcp-tls, idempotency-and-retries | ok (2019, 2020 sources) | later |
 | online-schema-migrations | Online schema migrations | Reliability | databases, replication | needs a second source (no numbers) | later |
 | observability-and-slos | Observability and SLOs (merged) | Reliability | load-balancing, message-queues | needs a second source (papers and one book) | parked |
-| multi-region-traffic-routing | Multi-region traffic routing | Reliability | dns, failover, replication | not ready, needs a source (one 2013 post) | parked |
+| traffic-steering-and-draining | Traffic Steering and Draining | Reliability | dns, failover, load-balancing | Dropbox 2018, Slack 2023 | built (replaces multi-region-traffic-routing) |
 | (existing topic: indexing) | Add the Notion 2026 reindexing post as a third source | Data | n/a | strong (one new post, no new node) | next, any time |
 | (capstones) | see the capstone section | n/a | n/a | see section | after batch 2 onward |
 
@@ -154,7 +154,7 @@ Chaos engineering is folded in as "testing the recovery path".
 - Paper, Facebook, "Canopy", SOSP 2017: [PDF](https://cs.brown.edu/~jcmace/papers/kaldor2017canopy.pdf). 1.3 billion traces per day; 129 performance datasets after 2 years; a distributed token bucket controls sampling.
 - Google SRE Book, "Service Level Objectives", 2017: [page](https://sre.google/sre-book/service-level-objectives/). GCE target 99.95% ("three and a half nines"); a 50 ms typical request with 5% of requests 20 times slower shows why percentiles beat averages. Also "Embracing Risk" ([page](https://sre.google/sre-book/embracing-risk/)) and the Workbook "Implementing SLOs" ([page](https://sre.google/workbook/implementing-slos/)), with few measurements. No company post on log cost or metric cardinality was opened (Uber M3, Netflix Atlas, Honeycomb not fetched).
 
-### multi-region-traffic-routing (Reliability, not ready, needs a source)
+### multi-region-traffic-routing (built as traffic-steering-and-draining; notes below are the original research)
 
 - Netflix, "Active-Active for Multi-Regional Resiliency", Dec 2013, archive copy: [archive](https://web.archive.org/web/2023/https://netflixtechblog.com/active-active-for-multi-regional-resiliency-c47719f6685b). Geo-DNS about 50/50 between regions; a test wrote 1 million records in one region and read them from the other 500 ms later; traffic stayed in US-West-2 for over 24 hours. The page header shows Feb 12, 2013 but the text refers to June 2013 events: cite as "2013". Meta Taiji and Maelstrom were not usable as raw text for this node (Maelstrom is used under disaster recovery).
 

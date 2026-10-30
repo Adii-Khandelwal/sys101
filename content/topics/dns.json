@@ -471,7 +471,7 @@
     ],
     "next": {
       "outcome": "After this you can pick the next topic that builds on this one.",
-      "body": "DNS can hand out several addresses for a name, but cached answers mean it cannot react quickly when one server is overloaded or down. Load Balancing picks up from there: making a fresh choice for every connection or request, close to the traffic."
+      "body": "DNS can hand out several addresses for a name, but cached answers mean it cannot react quickly when one server is overloaded or down. Load Balancing picks up from there: making a fresh choice for every connection or request, close to the traffic. Traffic Steering and Draining then measures how slowly a DNS change really reaches users, and how to move traffic faster."
     }
   }
 }

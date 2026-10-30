@@ -1,0 +1,46 @@
+{
+  "topic": "traffic-steering-and-draining",
+  "updatedOn": "2026-10-29",
+  "items": [
+    {
+      "id": "bgp",
+      "name": "BGP",
+      "explanation": "The routing protocol the networks of the internet use to tell each other which addresses they can reach. Anycast relies on it: the same address is announced from many places and BGP's choices decide where each packet lands.",
+      "assumedBy": [
+        {
+          "postId": "dropbox-edge-network-2018",
+          "quote": "Anycast is the easiest loadbalancing method that relies on the core internet routing protocol, BGP."
+        }
+      ],
+      "sources": [
+        {
+          "title": "RFC 4271: A Border Gateway Protocol 4 (BGP-4)",
+          "publisher": "IETF",
+          "url": "https://www.rfc-editor.org/rfc/rfc4271.html",
+          "year": "2006",
+          "verifiedOn": "2026-10-29"
+        }
+      ]
+    },
+    {
+      "id": "xds",
+      "name": "Envoy and xDS",
+      "explanation": "Envoy is a proxy that can be configured while it runs. Its xDS discovery services let a management server push resources such as routes and cluster weights to it, which is how a drain can be applied without restarting anything.",
+      "assumedBy": [
+        {
+          "postId": "slack-cellular-architecture-2023",
+          "quote": "all our edge load balancers are now running Envoy and receive configuration from Rotor, our in-house xDS control plane."
+        }
+      ],
+      "sources": [
+        {
+          "title": "xDS REST and gRPC protocol",
+          "publisher": "Envoy project",
+          "url": "https://www.envoyproxy.io/docs/envoy/latest/api-docs/xds_protocol",
+          "year": "no date shown",
+          "verifiedOn": "2026-10-29"
+        }
+      ]
+    }
+  ]
+}

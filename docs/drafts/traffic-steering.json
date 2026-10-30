@@ -1,0 +1,22 @@
+{
+  "traffic-steering-and-draining": {
+    "summary": {
+      "points": [
+        "Steering decides where each user or request goes, and draining lowers a site's share to zero while work already running finishes.",
+        "The layer you steer with sets the speed: DNS answers are cached and slow, while a load balancer you run applies weights in seconds.",
+        "Dropbox found that a one-minute DNS time-to-live still left a long tail of traffic, and it describes a hybrid setup that does not wait on DNS.",
+        "Slack drains a whole Availability Zone with weights at its edge load balancers, which works because each zone is siloed from the others.",
+        "Slack's drain is zone-level inside one region, so it says little about moving users between regions."
+      ],
+      "figures": [
+        { "postId": "dropbox-edge-network-2018", "row": 0, "label": "15 minutes to drain 90% of traffic with a one-minute DNS time-to-live" },
+        { "postId": "slack-cellular-architecture-2023", "row": 2, "label": "1% granularity when draining or undraining a zone with weights" }
+      ]
+    },
+    "prerequisiteReasons": {
+      "dns": "Traffic steering takes from DNS the way names are answered by location, and why cached answers make a change reach users slowly.",
+      "failover": "Traffic steering takes from failover the decision to move traffic away from a site, and adds how that move is carried out gently.",
+      "load-balancing": "Traffic steering takes from load balancing the idea of sending a chosen share of requests to each target, which is how weights drain a site."
+    }
+  }
+}
