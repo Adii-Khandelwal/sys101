@@ -110,6 +110,10 @@ describe("checkThirtySeconds", () => {
   });
   it("rejects an em dash", () => expect(checkThirtySeconds(t(base.replace("slow source", "slow \u2014 source"))).join()).toContain("banned phrasing"));
   it("rejects an invented digit", () => expect(checkThirtySeconds(t(base.replace("quickly", "in 77 ms"))).join()).toContain('"77"'));
+  it("matches a digit run whole, not inside a longer number", () => {
+    const withBig = topic({ thirtySeconds: base.replace("quickly", "in 7 ms"), posts: [{ id: "p1", company: "Acme", published: "2017-01-02", digest: { numbers: [{ value: "17 ms", meaning: "x" }] } }] } as unknown as Partial<Topic>);
+    expect(checkThirtySeconds(withBig).join()).toContain('"7"');
+  });
   it("needs a company and year with a number", () => {
     expect(checkThirtySeconds(t(base.replace("popular", "150 popular"))).join()).toContain("company name");
     expect(checkThirtySeconds(t(base.replace("popular", "150 popular").replace("Most", "At Acme most"))).join()).toContain("year");

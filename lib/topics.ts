@@ -524,9 +524,9 @@ export function checkThirtySeconds(topic: Topic): string[] {
   const { thirtySeconds: _t, ...page } = topic;
   const source = JSON.stringify(page);
   const digits = t.match(/\d+/g) ?? [];
-  for (const d of new Set(digits)) if (!source.includes(d)) problems.push(`thirtySeconds: "${d}" does not appear in the topic content`);
+  for (const d of new Set(digits)) if (!new RegExp(`(?<!\\d)${d}(?!\\d)`).test(source)) problems.push(`thirtySeconds: "${d}" does not appear in the topic content`);
   if (digits.length) {
-    const named = topic.posts.filter((p) => t.includes(p.company));
+    const named = topic.posts.filter((p) => t.includes(p.company.split(" (")[0]));
     if (!named.length) problems.push("thirtySeconds: a number needs a company name from the topic's posts");
     else if (!named.some((p) => t.includes(p.published.slice(0, 4)))) problems.push("thirtySeconds: a number needs the year of the named company's post");
   }

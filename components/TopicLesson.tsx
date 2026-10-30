@@ -327,11 +327,10 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
           </section>
 
           <section id="check" aria-labelledby="check-h">
-            <div className="pf-skip" data-pagefind-ignore>
-              <Overprint as="h2" id="check-h" data-tour="check">Check yourself</Overprint>
-              <CopyLink id="check" />
-              <Outcome text={l.checkOutcome} />
-            </div>
+            {/* Not wrapped: the `.lesson section > h2` rules need the heading to stay a direct child of the section. */}
+            <Overprint as="h2" id="check-h" data-tour="check" data-pagefind-ignore>Check yourself</Overprint>
+            <CopyLink id="check" />
+            <p className="outcome" data-pagefind-ignore>{l.checkOutcome}</p>
             {topic.thirtySeconds && (
               <aside className="say-it" aria-labelledby="say-it-h">
                 <p className="label" id="say-it-h">Say it in 30 seconds</p>
