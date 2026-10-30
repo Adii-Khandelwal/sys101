@@ -41,3 +41,4 @@ Moved out of CLAUDE.md to keep it short. Every idea or preference the owner stat
 - Owner removed the /glossary page (30 Oct 2026); term diagrams now live under each term in the topic's "Words to know" (`topic-pages.md`).
 - Diagram figures get a small "Fig. N" label and, on phones where they scroll sideways, a one-line swipe hint (idea from engineering-atlas.in).
 - 30 Oct 2026: borrow from getartcraft.com a ruled column frame with small "+" crossings on topic and learn pages (`topic-pages.md`, Chapter frame).
+- 30 Oct 2026: owner removed the chapter frame (side lines and "+" crossings) from topic and learn pages; no frame remains.
