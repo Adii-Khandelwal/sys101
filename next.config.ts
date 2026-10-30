@@ -8,7 +8,10 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   // Production only: the dev server's refresh runtime evaluates code, which the policy forbids.
   // Browsers still ask for /favicon.ico; point them at the 32px icon.
-  redirects: async () => [{ source: "/favicon.ico", destination: "/icon-32.png", permanent: true }],
+  redirects: async () => [
+    { source: "/favicon.ico", destination: "/icon-32.png", permanent: true },
+    { source: "/glossary", destination: "/", permanent: true }, // the page was removed; terms live in each topic's "Words to know"
+  ],
   headers: async () => (process.env.NODE_ENV === "production" ? [{ source: "/:path*", headers: SECURITY_HEADERS }] : []),
 };
 

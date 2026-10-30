@@ -38,3 +38,6 @@ Moved out of CLAUDE.md to keep it short. Every idea or preference the owner stat
 - 29 Oct 2026: study every page of the reference site engineering-atlas.in and adopt only what fits the Atlas look (`docs/drafts/reference-site-study.md`); done: grouped footer columns, About questions, example search placeholders.
 - 29 Oct 2026: check the left tracker on the glossary page (fixed: station dots overlapped labels; phone contents jump hid under the strip).
 - 29 Oct 2026: review every page's headings, subheadings and descriptions for better wording (`docs/drafts/copy-pass.md`, two rounds).
+- Owner removed the /glossary page (30 Oct 2026); term diagrams now live under each term in the topic's "Words to know" (`topic-pages.md`).
+- Diagram figures get a small "Fig. N" label and, on phones where they scroll sideways, a one-line swipe hint (idea from engineering-atlas.in).
+- 30 Oct 2026: borrow from getartcraft.com a ruled column frame with small "+" crossings on topic and learn pages (`topic-pages.md`, Chapter frame).

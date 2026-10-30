@@ -19,15 +19,15 @@ describe("find on page hand-off", () => {
   });
 
   it("ignores words left for another page", () => {
-    rememberFind("/glossary", "cache");
+    rememberFind("/posts", "cache");
     expect(takeFind("/topic/caching")).toBeNull();
   });
 
   it("ignores words that are no longer fresh", () => {
     vi.useFakeTimers();
-    rememberFind("/glossary", "cache");
+    rememberFind("/posts", "cache");
     vi.advanceTimersByTime(20_000);
-    expect(takeFind("/glossary")).toBeNull();
+    expect(takeFind("/posts")).toBeNull();
     vi.useRealTimers();
   });
 });

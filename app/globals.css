@@ -2295,7 +2295,7 @@ h1[tabindex="-1"]:focus {
   }
 }
 
-/* The strip leaves the heading about 16px below it; Background and Glossary open with their H1, so give it room. */
+/* The strip leaves the heading about 16px below it; Background opens with its H1, so give it room. */
 @media (max-width: 1179px) {
   .progress-sticky + h1,
   .progress-sticky + [data-pagefind-body] > h1:first-child {
@@ -3767,21 +3767,6 @@ html {
   margin: 0;
 }
 
-.glossary-topic {
-  margin-top: 32px;
-}
-.glossary-topic h2 {
-  margin-bottom: 4px;
-  scroll-margin-top: calc(var(--header-h, 60px) + 56px); /* clear the header and the phone contents strip */
-}
-.glossary-search {
-  margin-top: 20px;
-}
-.dossier .glossary-count {
-  margin: 14px 0 0; /* .dossier p's bottom-only margin would otherwise leave it touching the filter */
-  color: var(--ink-soft);
-}
-
 .learn-terms div,
 .glossary-terms div,
 .learn-myths div {
@@ -5045,8 +5030,7 @@ html[data-posts-view] .posts-view-h {
 
 /* Years and counts in a list. */
 .posts-year,
-.posts-count,
-.glossary-count {
+.posts-count {
   font-variant-numeric: tabular-nums;
 }
 
@@ -6627,27 +6611,27 @@ html[data-splash] .splash.is-leaving::before {
   background: var(--highlight);
 }
 
-/* The lesson rail as a short metro line (also on the Glossary and Background, which are not chapters). */
-:is(.dossier.chapter, .glossary-page, .background-page) .lesson-rail .progress-head {
+/* The lesson rail as a short metro line (also on the Background, which is not a chapter). */
+:is(.dossier.chapter, .background-page) .lesson-rail .progress-head {
   margin: 0 0 18px;
 }
 
-:is(.dossier.chapter, .glossary-page, .background-page) .lesson-rail .progress-head .label {
+:is(.dossier.chapter, .background-page) .lesson-rail .progress-head .label {
   font-size: 0.8333rem;
   color: var(--ink);
 }
 
-:is(.chapter, .glossary-page, .background-page) .seg::after,
-:is(.chapter, .glossary-page, .background-page) .learn-progress-fill {
+:is(.chapter, .background-page) .seg::after,
+:is(.chapter, .background-page) .learn-progress-fill {
   background: var(--ink);
 }
 
-:is(.dossier.chapter, .glossary-page, .background-page) .lesson-rail ol {
+:is(.dossier.chapter, .background-page) .lesson-rail ol {
   padding: 0;
   border-left: 0;
 }
 
-:is(.dossier.chapter, .glossary-page, .background-page) .lesson-rail ol::before {
+:is(.dossier.chapter, .background-page) .lesson-rail ol::before {
   content: "";
   position: absolute;
   left: 10px;
@@ -6657,14 +6641,14 @@ html[data-splash] .splash.is-leaving::before {
   background: var(--ink);
 }
 
-:is(.dossier.chapter, .glossary-page, .background-page) .lesson-rail li {
+:is(.dossier.chapter, .background-page) .lesson-rail li {
   position: relative;
   margin: 0;
   font-size: 0.8333rem;
   line-height: 1.3;
 }
 
-:is(.dossier.chapter, .glossary-page, .background-page) .lesson-rail a {
+:is(.dossier.chapter, .background-page) .lesson-rail a {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -6673,7 +6657,7 @@ html[data-splash] .splash.is-leaving::before {
   color: var(--ink);
 }
 
-:is(.dossier.chapter, .glossary-page, .background-page) .lesson-rail .is-current a {
+:is(.dossier.chapter, .background-page) .lesson-rail .is-current a {
   font-weight: 700;
   color: var(--ink);
 }
@@ -6714,7 +6698,7 @@ html[data-splash] .splash.is-leaving::before {
 }
 
 @media (forced-colors: active) {
-  :is(.dossier.chapter, .glossary-page, .background-page) .lesson-rail ol::before {
+  :is(.dossier.chapter, .background-page) .lesson-rail ol::before {
     background: CanvasText;
   }
   .is-done > a > .station::before {
@@ -6900,4 +6884,130 @@ html[data-splash] .splash.is-leaving::before {
   font-weight: 400;
   font-style: normal;
   color: var(--ink-soft);
+}
+
+/* Figure labels */
+.fig-label {
+  margin: 36px 0 6px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.7222rem;
+  color: var(--ink-soft);
+}
+
+.fig-label + .diagram {
+  margin-top: 0;
+}
+
+/* Phone swipe hint: shown only while the frame is narrower than the diagram's 480px minimum. */
+.fig-label + .diagram {
+  container-type: inline-size;
+}
+
+@container (max-width: 479px) {
+  .fig-label + .diagram::after {
+    content: "Swipe sideways to see the whole diagram";
+    display: block;
+    position: sticky;
+    left: 0;
+    width: 100cqw;
+    margin-top: 6px;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 0.7222rem;
+    color: var(--ink-soft);
+  }
+}
+
+/* Figure labels */
+.fig-label {
+  margin: 36px 0 6px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.7222rem;
+  color: var(--ink-soft);
+}
+
+.fig-label + .diagram {
+  margin-top: 0;
+  container-type: inline-size;
+}
+
+/* Phone swipe hint: only while the frame is narrower than the diagram's 480px minimum. */
+@container (max-width: 479px) {
+  .fig-label + .diagram::after {
+    content: "Swipe sideways to see the whole diagram";
+    display: block;
+    position: sticky;
+    left: 0;
+    width: 100cqw;
+    margin-top: 6px;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 0.7222rem;
+    color: var(--ink-soft);
+  }
+}
+
+/* Chapter frame */
+/* From 1200px the text column sits in a drawn frame: a 1px rule 24px outside each side, and a 1px rule across the middle of the gap above each
+   section. Every horizontal rule runs 5px past the frame at both ends, so each crossing reads as an 11px "+" with no extra element. Pseudo-elements
+   only, aria-hidden by nature (no content), none on phones, none in print. The margin column (left: 100% + 48px) and the 48px ruler stay clear. */
+@media screen and (min-width: 1200px) {
+  .chapter-grid {
+    --frame-x: 24px;
+    --frame-over: 5px;
+    position: relative; /* the frame pseudo-elements use the text column's grid area as their box */
+  }
+  .chapter-grid::before {
+    content: "";
+    grid-column: 2 / 3;
+    grid-row: 2 / auto;
+    position: absolute;
+    top: calc(-1 * var(--frame-over));
+    bottom: 0;
+    left: calc(-1 * var(--frame-x));
+    right: calc(-1 * var(--frame-x));
+    border-inline: 1px solid var(--rule);
+    border-top: 0;
+    pointer-events: none;
+  }
+  .chapter-grid::after {
+    content: "";
+    grid-column: 2 / 3;
+    grid-row: 2 / auto;
+    position: absolute;
+    top: 0;
+    left: calc(-1 * var(--frame-x) - var(--frame-over));
+    right: calc(-1 * var(--frame-x) - var(--frame-over));
+    border-top: 1px solid var(--rule);
+    pointer-events: none;
+  }
+  .chapter.lesson .part,
+  .chapter.lesson .part > section:not(:first-of-type),
+  .chapter .learn-section {
+    position: relative;
+  }
+  .chapter.lesson .part::before,
+  .chapter.lesson .part > section:not(:first-of-type)::before,
+  .chapter .chapter-main .learn-section::before {
+    content: "";
+    position: absolute;
+    top: calc(-0.5 * var(--rule-gap, 64px));
+    left: calc(-1 * var(--frame-x) - var(--frame-over));
+    right: calc(-1 * var(--frame-x) - var(--frame-over));
+    border-top: 1px solid var(--rule);
+    pointer-events: none;
+  }
+  .chapter.lesson .part::before {
+    --rule-gap: 72px;
+  }
+  .chapter .chapter-main .learn-section {
+    --rule-gap: 56px;
+  }
+}
+
+@media (forced-colors: active) {
+  .chapter-grid::before,
+  .chapter-grid::after,
+  .chapter .part::before,
+  .chapter section::before {
+    border-color: CanvasText;
+  }
 }

@@ -3,6 +3,7 @@ import { citable, markCitations } from "@/lib/citations";
 import GlossTerm from "./GlossTerm";
 import CopyLink from "./CopyLink";
 import { glossaryId, markTerms, noteId, sectionTerms } from "@/lib/glossaryMatch";
+import HighlightTarget from "./HighlightTarget";
 import MarginTerms from "./MarginTerms";
 import Overprint from "./Overprint";
 import { diagramHtml } from "@/lib/diagramHtml";
@@ -137,13 +138,21 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             )}
           </Fragment>
         ) : (
-          <GlossTerm key={i} num={[...seen].indexOf(seg.entry.term) + 1} note={noteId(section, seg.entry.term)} href={`/glossary#${glossaryId(topic.slug, seg.entry.term)}`} definition={seg.entry.definition}>
+          <GlossTerm key={i} num={[...seen].indexOf(seg.entry.term) + 1} note={noteId(section, seg.entry.term)} href={`#${glossaryId(topic.slug, seg.entry.term)}`} definition={seg.entry.definition}>
             {seg.text}
           </GlossTerm>
         ),
       );
   };
   // The margin copy of each section's popover terms (same first-use rule as the prose, so the two cannot differ).
+  // "Fig. N" counts lesson diagrams in render order; computed here, never stored.
+  let figN = 0;
+  const lessonFig = (svg: string) => (
+    <>
+      <p className="fig-label" data-pagefind-ignore>Fig. {++figN}</p>
+      <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(svg) }} />
+    </>
+  );
   const mt = (section: string, ...texts: string[]) => (
     <MarginTerms terms={sectionTerms(texts, topic.glossary).map((e) => ({ term: e.term, definition: e.definition, id: noteId(section, e.term) }))} />
   );
@@ -241,7 +250,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             <Outcome text={l.why.outcome} />
             <Paragraphs text={l.why.body} g={glossFor("why")} />
             {mt("why", ...l.why.body.split("\n\n"))}
-            {l.why.diagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.why.diagram) }} />}
+            {l.why.diagram && lessonFig(l.why.diagram)}
             <MarkDone meta={meta} unit="why" />
           </section>
 
@@ -251,12 +260,14 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             <Outcome text={l.mentalModel.outcome} />
             <Paragraphs text={l.mentalModel.body} g={glossFor("model")} />
             {mt("model", ...l.mentalModel.body.split("\n\n"))}
-            <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.mentalModel.diagram) }} />
-            <h3>Words to know</h3>
-            <dl className="glossary">
+            {lessonFig(l.mentalModel.diagram)}
+            <h3 id="words-to-know">Words to know</h3>
+            <HighlightTarget selector=".glossary-terms > div" />
+            <dl className="glossary glossary-terms">
               {topic.glossary.map((g) => (
-                <div key={g.term}>
+                <div key={g.term} id={glossaryId(topic.slug, g.term)}>
                   <dt>{g.term}</dt> <dd>{g.definition}</dd>
+                  {g.diagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(g.diagram) }} />}
                 </div>
               ))}
             </dl>
@@ -274,7 +285,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 </li>
               ))}
             </ol>
-            <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.howItWorks.diagram) }} />
+            {lessonFig(l.howItWorks.diagram)}
             {l.howItWorks.stepper && (
               <StepThroughLazy frames={l.howItWorks.stepper.frames.map((f) => ({ caption: f.caption, html: diagramHtml(f.diagram) }))} />
             )}
@@ -293,7 +304,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 </li>
               ))}
             </ol>
-            <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.workedExample.diagram) }} />
+            {lessonFig(l.workedExample.diagram)}
             {mt("example", ...l.workedExample.steps.map((x) => x.explanation))}
             <MarkDone meta={meta} unit="example" />
           </section>
@@ -307,7 +318,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 <li key={m}>{gMistakes(m)}</li>
               ))}
             </ol>
-            {l.mistakesDiagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(l.mistakesDiagram) }} />}
+            {l.mistakesDiagram && lessonFig(l.mistakesDiagram)}
             {mt("mistakes", ...topic.mistakes)}
             <MarkDone meta={meta} unit="mistakes" />
           </section>
@@ -369,7 +380,7 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
                 <p key={para.slice(0, 40)}>{gDiffer(para)}</p>
               ))}
               {mt("differ", ...topic.comparison!.split("\n\n"))}
-              {topic.comparisonDiagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(topic.comparisonDiagram) }} />}
+              {topic.comparisonDiagram && lessonFig(topic.comparisonDiagram)}
             </section>
           )}
 

@@ -33,7 +33,7 @@ describe("checkStepper", () => {
 });
 
 describe("diagram ids across the content", () => {
-  // Pages such as /glossary and /background show many diagrams at once, so an id must name one diagram anywhere.
+  // Pages such as /background and a topic page show many diagrams at once, so an id must name one diagram anywhere.
   it("never repeat", () => {
     const seen = new Map<string, string>();
     const dupes: string[] = [];

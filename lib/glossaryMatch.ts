@@ -5,7 +5,7 @@ export type Segment = string | { text: string; entry: GlossaryEntry };
 
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-/** Anchor on /glossary. Terms repeat across topics ("replica" in two), so the topic is part of the id. */
+/** Anchor of a term in its topic's "Words to know". Terms repeat across topics ("replica" in two), so the topic is part of the id. */
 export const glossaryId = (topicSlug: string, term: string) => `${topicSlug}-${slugify(term)}`;
 
 /** "A / B" gives A and B; "name (xyz)" gives the full term, "name" and the short acronym "xyz". */

@@ -52,7 +52,7 @@ try {
 
   execFileSync("npx", ["pagefind", "--site", site, "--output-path", "public/pagefind"], { stdio: "inherit" });
 
-  // Every topic has a page, plus the glossary, posts, reads, background and the rest; fewer than that means pages were missed.
+  // Every topic has a page, plus posts, reads, background and the rest; fewer than that means pages were missed.
   const { languages } = JSON.parse(fs.readFileSync("public/pagefind/pagefind-entry.json", "utf8"));
   const pages = Object.values(languages).reduce((n, l) => n + l.page_count, 0);
   if (pages < topics + 5) throw new Error(`only ${pages} pages indexed from ${paths.length} sitemap URLs, expected at least ${topics + 5} (${topics} topics + the site pages).`);

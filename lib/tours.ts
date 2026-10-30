@@ -41,8 +41,8 @@ export const TOURS: Record<TourId, TourStep[]> = {
     {
       target: "nav",
       title: "Find your way around",
-      text: "Glossary defines every term the topics use. Blogs lists every write-up they are built on, by topic, company or year. Great reads is a short list of the posts and papers the field leans on. Capstones are whole systems built from several topics.",
-      phone: { text: "Menu opens the Glossary, which defines every term the topics use; Blogs, every write-up they are built on; Great reads, a short list of the posts and papers the field leans on; and Capstones, whole systems built from several topics." },
+      text: "Blogs lists every write-up they are built on, by topic, company or year. Great reads is a short list of the posts and papers the field leans on. Capstones are whole systems built from several topics.",
+      phone: { text: "Menu opens Blogs, every write-up they are built on; Great reads, a short list of the posts and papers the field leans on; and Capstones, whole systems built from several topics." },
     },
     {
       target: "search",

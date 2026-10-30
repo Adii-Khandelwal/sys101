@@ -5,7 +5,6 @@
 <p align="center">
   <a href="https://sys101.vercel.app">Open the site</a> &nbsp;|&nbsp;
   <a href="https://sys101.vercel.app/capstones">Capstones</a> &nbsp;|&nbsp;
-  <a href="https://sys101.vercel.app/glossary">Glossary</a> &nbsp;|&nbsp;
   <a href="https://sys101.vercel.app/reads">Great reads</a>
 </p>
 
@@ -52,7 +51,7 @@ It is one person's learning project, built in the open.
 
 **Put it together.** Capstones at `/capstones` combine finished topics into one system, a metrics pipeline, a social graph store, a payments ledger, a file sync engine, a chat and messaging system, live video streaming and notifications at scale: decide first, size it with a calculator, click through the diagram, break it, compare with the real design, then a quiz. Each shows which of its topics you have read.
 
-**Terms in place.** The first use of a topic's own terms in each section opens a short definition, with a link to the Glossary.
+**Terms in place.** The first use of a topic's own terms in each section opens a short definition, with a link to its entry in Words to know.
 
 **Progress stays in your browser.** There are no accounts and nothing is sent to a server. You can export, import or reset what you have marked on the Your data page.
 
@@ -83,7 +82,7 @@ Every idea comes with a picture, and the pictures are original, drawn for this s
 
 **Numbers you can compare.** A chart appears only where a post's figures share one unit, bars are drawn exactly in proportion, and the build rejects any figure in a chart that is not in the post's numbers. Most posts have no chart, on purpose.
 
-Diagrams also sit in the Glossary, on the Background page, and in the capstone, where the company's real choice appears only after you pick your own.
+Diagrams also sit under terms in Words to know, on the Background page, and in the capstone, where the company's real choice appears only after you pick your own.
 
 ---
 
