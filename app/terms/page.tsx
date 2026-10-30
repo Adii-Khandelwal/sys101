@@ -33,8 +33,8 @@ export default function Terms() {
 
       <Overprint as="h2" id="provided-as-is">Provided as is</Overprint>
       <p>
-        There is no warranty of any kind. The site may be wrong, out of date, or offline, and I&apos;m
-        not responsible for decisions you make based on it.
+        There is no warranty of any kind. The site may be wrong, out of date, or offline, and it takes
+        no responsibility for decisions made based on it.
       </p>
 
       <Overprint as="h2" id="linked-content-belongs-to-its-authors">Linked content belongs to its authors</Overprint>
@@ -52,7 +52,7 @@ export default function Terms() {
       <Overprint as="h2" id="takedowns">Takedowns</Overprint>
       <p>
         If you wrote a post listed here and want it removed or its write-up corrected, email{" "}
-        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> and I&apos;ll deal with it promptly.
+        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> and the request will be handled promptly.
       </p>
 
       <PageUpdated date={PAGE_DATES.terms} />
