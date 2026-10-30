@@ -2832,6 +2832,10 @@ h1[tabindex="-1"]:focus {
   .site-footer {
     flex-direction: column;
   }
+  /* Stacked, a group's links are as far apart as one group is from the next: extra space before each later title makes the three groups read as groups. */
+  .site-footer .footer-col + .footer-col {
+    margin-top: 28px;
+  }
 }
 
 /* The column titles are bold ink and the links regular weight, so a title is never mistaken for a link. */
