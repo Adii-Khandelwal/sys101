@@ -2834,9 +2834,11 @@ h1[tabindex="-1"]:focus {
   }
 }
 
+/* The column titles are bold ink and the links regular weight, so a title is never mistaken for a link. */
 .site-footer .footer-label {
-  margin: 0 0 8px;
-  color: var(--ink-soft);
+  margin: 0 0 12px;
+  font-weight: 700;
+  color: var(--ink);
   letter-spacing: 0.02em;
 }
 
