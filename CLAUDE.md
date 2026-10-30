@@ -80,7 +80,7 @@ Only include a post if it passes most of these:
 
 ## Site feel
 
-Handcrafted, not AI-template. Paper background, Libre Caslon serif headings, Cabin labels, restrained palette: blue ink and one orange second ink. Plain, specific copy written like a person.
+Handcrafted, not AI-template. Paper background, Libre Caslon serif headings, Cabin labels, restrained palette: blue ink and one orange second ink. Plain, specific copy written like a person. Voice: only About speaks as "I"; every other page is neutral (no "I" or "we"), except buttons in the learner's own voice ("I have finished this topic") and the Say it in 30 seconds answers, which are what the learner would say aloud.
 
 - Two themes from CSS-variable tokens in app/globals.css: light (paper `#e6e2d6`, blue ink, orange accent) and a warm dark (brown-charcoal, off-white ink, brighter orange that holds AA). Any new colour must be a token, never a literal.
 - Theme toggle (sun/moon) stored locally, follows prefers-color-scheme until chosen, set before paint (no flash). SVG diagrams theme via the tokens; the SVG map uses the CSS tokens directly, so a theme change needs no repaint.

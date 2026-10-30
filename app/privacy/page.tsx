@@ -30,7 +30,7 @@ export default function Privacy() {
 
       <Overprint as="h2" id="no-accounts">No accounts</Overprint>
       <p>
-        There is nothing to sign up for or log in to. I don&apos;t ask for your name, email or account details. Your host and the site&apos;s analytics tool
+        There is nothing to sign up for or log in to. The site does not ask for your name, email or account details. Your host and the site&apos;s analytics tool
         process some technical data, described below.
       </p>
 
@@ -53,7 +53,7 @@ export default function Privacy() {
       <Overprint as="h2" id="server-logs">Server logs</Overprint>
       <p>
         The company hosting the site may keep standard server logs, such as IP address, browser type,
-        and which page was requested. Hosts keep these for security and debugging. I don&apos;t use
+        and which page was requested. Hosts keep these for security and debugging. The site does not use
         them to identify or track you.
       </p>
 

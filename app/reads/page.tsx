@@ -35,7 +35,7 @@ export default function Reads() {
       <div data-pagefind-body>
         <Overprint as="h1" className="page-h1" data-pagefind-meta="title">Great reads</Overprint>
         <p className="posts-lead">
-          Posts and papers I picked because other teams adopted their ideas, or because they are unusually well written. They fit no single topic, and they are separate from the posts the topics are built on (see{" "}
+          Posts and papers chosen because other teams adopted their ideas, or because they are unusually well written. They do not belong to one topic and are separate from the posts each topic is built on (see{" "}
           <Link href="/posts">Blogs</Link>). Each describes its system as of the year shown.
         </p>
         <ReadsList data={data} />
