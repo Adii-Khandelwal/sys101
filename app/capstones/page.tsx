@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import JsonLd from "@/components/JsonLd";
+import LearnRail from "@/components/LearnRail";
 import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
 import TopicReadiness from "@/components/capstone/TopicReadiness";
@@ -40,9 +41,10 @@ export default function Capstones() {
       <div data-pagefind-body>
         <h1 data-pagefind-meta="title">Capstones</h1>
         <p className="posts-lead">Each capstone is one whole system built on several topics. You make the design choices first, size it, break it, then see what the companies chose.</p>
+        {capstones.length > 1 && <LearnRail entries={capstones.map((c) => ({ id: c.slug, name: c.title }))} scope="section" progress={false} />}
         <ul className="cap-index">
           {capstones.map((c) => (
-            <li key={c.slug}>
+            <li key={c.slug} id={c.slug}>
               <h2>
                 <Link href={`/capstone/${c.slug}`}>{c.title}</Link>
               </h2>

@@ -3058,8 +3058,7 @@ button,
 .site-nav-menu a,
 .path-title,
 .search-results li,
-.lesson-rail li,
-.posts-rail li {
+.lesson-rail li {
   transition: transform var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
@@ -3079,8 +3078,7 @@ button:active:not(:disabled),
 .site-nav-menu a:active,
 .path-title:active,
 .search-results li:active,
-.lesson-rail li:active,
-.posts-rail li:active {
+.lesson-rail li:active {
   transform: scale(0.97);
 }
 
@@ -3286,8 +3284,7 @@ html[data-theme-reveal] .site-header {
   .site-nav-menu a:active,
   .path-title:active,
   .search-results li:active,
-  .lesson-rail li:active,
-  .posts-rail li:active {
+  .lesson-rail li:active {
     transform: none;
   }
 
@@ -4804,72 +4801,23 @@ html[data-posts-view] .posts-view-h {
   .reads-read { grid-area: ext; justify-self: end; }
 }
 
-/* Contents rail: desktop only, in the left margin, one list per view (the script shows the chosen one).
-   .dossier nav makes navs a flex row, so this needs the same weight to stay hidden below 1180px. */
-.dossier .posts-rail {
-  display: none;
+/* Contents rail on /posts and /reads: LearnRail (the metro line), one per view on /posts (the script shows the chosen one). */
+.rail-view {
+  display: contents;
 }
 @media (min-width: 1180px) {
-  html[data-posts-view] .posts-rail {
-    display: block;
-    position: fixed;
-    top: 120px;
-    left: max(calc(24px + env(safe-area-inset-left)), calc(50% - 340px - 230px)); /* the topic page's rail position */
-    width: 200px;
-    max-height: calc(100dvh - 160px);
-    overflow-y: auto;
-  }
-  html[data-posts-view="topic"] .posts-rail:not([data-view="topic"]),
-  html[data-posts-view="company"] .posts-rail:not([data-view="company"]),
-  html[data-posts-view="year"] .posts-rail:not([data-view="year"]) {
+  html[data-posts-view="topic"] .rail-view:not([data-view="topic"]),
+  html[data-posts-view="company"] .rail-view:not([data-view="company"]),
+  html[data-posts-view="year"] .rail-view:not([data-view="year"]) {
     display: none;
   }
-  .posts-rail-label {
-    margin: 0 0 10px;
-    color: var(--ink-soft);
+  .reads-page .jump-line {
+    display: none;
   }
-  .posts-rail ul {
-    list-style: none;
-    margin: 0;
-    padding: 0 0 0 12px;
-    border-left: 1px solid var(--rule);
-  }
-  .posts-rail li {
-    position: relative;
-    margin: 0 0 8px;
-    font-family: var(--font-sans), system-ui, sans-serif;
-    font-size: 0.6667rem;
-    line-height: 1.4;
-  }
-  .posts-rail-group {
-    display: block;
-    margin: 14px 0 6px;
-    color: var(--ink);
-  }
-  .posts-rail li:first-child .posts-rail-group {
-    margin-top: 0;
-  }
-  .posts-rail a {
-    color: var(--ink-soft);
-    text-decoration: none;
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .posts-rail a:hover {
-      color: var(--ink);
-    }
-  }
-  .posts-rail .is-current a {
-    color: var(--accent);
-  }
-  .posts-rail .is-current::before {
-    content: "";
-    position: absolute;
-    left: -13px;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: var(--accent);
-  }
+}
+.posts-group-h,
+.posts-topic-h {
+  scroll-margin-top: calc(var(--header-h) + 16px);
 }
 
 /* ── Print ───────────────────────────────── */
@@ -4890,7 +4838,6 @@ html[data-posts-view] .posts-view-h {
   .site-header,
   .back-to-top,
   .lesson-rail,
-  .posts-rail,
   .progress-sticky,
   .search,
   .posts-tools,
@@ -5377,6 +5324,7 @@ html[data-posts-view] .posts-view-h {
 .cap-index li {
   padding: 24px 0;
   border-top: 1px solid var(--rule);
+  scroll-margin-top: calc(var(--header-h, 60px) + 16px); /* the contents rail glides each entry under the header */
 }
 
 .cap-index h2 {
@@ -6612,26 +6560,26 @@ html[data-splash] .splash.is-leaving::before {
 }
 
 /* The lesson rail as a short metro line (also on the Background, which is not a chapter). */
-:is(.dossier.chapter, .background-page) .lesson-rail .progress-head {
+:is(.dossier.chapter, .background-page, .posts-page) .lesson-rail .progress-head {
   margin: 0 0 18px;
 }
 
-:is(.dossier.chapter, .background-page) .lesson-rail .progress-head .label {
+:is(.dossier.chapter, .background-page, .posts-page) .lesson-rail .progress-head .label {
   font-size: 0.8333rem;
   color: var(--ink);
 }
 
-:is(.chapter, .background-page) .seg::after,
-:is(.chapter, .background-page) .learn-progress-fill {
+:is(.chapter, .background-page, .posts-page) .seg::after,
+:is(.chapter, .background-page, .posts-page) .learn-progress-fill {
   background: var(--ink);
 }
 
-:is(.dossier.chapter, .background-page) .lesson-rail ol {
+:is(.dossier.chapter, .background-page, .posts-page) .lesson-rail ol {
   padding: 0;
   border-left: 0;
 }
 
-:is(.dossier.chapter, .background-page) .lesson-rail ol::before {
+:is(.dossier.chapter, .background-page, .posts-page) .lesson-rail ol::before {
   content: "";
   position: absolute;
   left: 10px;
@@ -6641,14 +6589,14 @@ html[data-splash] .splash.is-leaving::before {
   background: var(--ink);
 }
 
-:is(.dossier.chapter, .background-page) .lesson-rail li {
+:is(.dossier.chapter, .background-page, .posts-page) .lesson-rail li {
   position: relative;
   margin: 0;
   font-size: 0.8333rem;
   line-height: 1.3;
 }
 
-:is(.dossier.chapter, .background-page) .lesson-rail a {
+:is(.dossier.chapter, .background-page, .posts-page) .lesson-rail a {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -6657,7 +6605,7 @@ html[data-splash] .splash.is-leaving::before {
   color: var(--ink);
 }
 
-:is(.dossier.chapter, .background-page) .lesson-rail .is-current a {
+:is(.dossier.chapter, .background-page, .posts-page) .lesson-rail .is-current a {
   font-weight: 700;
   color: var(--ink);
 }
@@ -6698,7 +6646,7 @@ html[data-splash] .splash.is-leaving::before {
 }
 
 @media (forced-colors: active) {
-  :is(.dossier.chapter, .background-page) .lesson-rail ol::before {
+  :is(.dossier.chapter, .background-page, .posts-page) .lesson-rail ol::before {
     background: CanvasText;
   }
   .is-done > a > .station::before {

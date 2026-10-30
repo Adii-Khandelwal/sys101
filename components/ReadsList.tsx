@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import LearnRail from "./LearnRail";
 import CompanyLogo from "./CompanyLogo";
 import { glideToSection } from "@/lib/glide";
 import { useReadReads } from "@/lib/readsRead";
@@ -121,6 +122,7 @@ export default function ReadsList({ data }: { data: ReadsData }) {
         {filtered ? `${shown} of ${data.total} reads match.${q && shown ? " Press Enter to go to the first." : ""}` : null}
       </p>
       {shown === 0 && <p className="search-note">No reads match. Clear a filter to see every read.</p>}
+      {groups.length > 1 && <LearnRail entries={groups.map((g) => ({ id: g.id, name: g.theme }))} scope="section" progress={false} />}
       <JumpLine groups={groups} watch={`${kind}|${topic}|${query}`} />
       {groups.map((g) => (
         <section key={g.id} aria-labelledby={g.id} className="reads-theme">

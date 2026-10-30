@@ -16,11 +16,14 @@ export default function LearnRail({
   entries,
   variant = "rail",
   scope = "page",
+  progress = true,
 }: {
   entries: LearnEntry[];
   variant?: "rail" | "line";
   /** "section": the bar restarts at 0 whenever the next entry's section begins, instead of spanning the page. */
   scope?: "page" | "section";
+  /** false for a list of independent entries (Great reads, Blogs, Capstones): no progress bar, and entries above the current one stay hollow, since nothing is "done". */
+  progress?: boolean;
 }) {
   const [index, setIndex] = useState(0);
   // The bar moves by a ref write, not React state, so a scroll tick re-renders only when the section or the whole percent changes.
@@ -118,14 +121,16 @@ export default function LearnRail({
 
   return (
     <nav className="lesson-rail" aria-label="Contents of this page" data-pagefind-ignore>
-      <div className="progress-head" aria-live="polite">
-        <div className="learn-progress-track" tabIndex={0} aria-label={label}>
-          <span ref={fill} className="learn-progress-fill" style={{ transform: "scaleX(0)" }} />
+      {progress && (
+        <div className="progress-head" aria-live="polite">
+          <div className="learn-progress-track" tabIndex={0} aria-label={label}>
+            <span ref={fill} className="learn-progress-fill" style={{ transform: "scaleX(0)" }} />
+          </div>
         </div>
-      </div>
+      )}
       <ol ref={list}>
         {entries.map((e, n) => (
-          <li key={e.id} data-id={e.id} className={e.id === current ? "is-current" : n < index ? "is-done" : undefined}>
+          <li key={e.id} data-id={e.id} className={e.id === current ? "is-current" : progress && n < index ? "is-done" : undefined}>
             <a href={`#${e.id}`} aria-current={e.id === current ? "location" : undefined} onClick={(ev) => go(ev, e.id)}>
               <span className="station" aria-hidden="true" />
               {e.name}
