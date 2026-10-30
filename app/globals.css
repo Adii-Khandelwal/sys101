@@ -6964,7 +6964,7 @@ html[data-splash] .splash.is-leaving::before {
     bottom: 0;
     left: calc(-1 * var(--frame-x));
     right: calc(-1 * var(--frame-x));
-    border-inline: 1px solid var(--rule);
+    border-inline: 1px solid var(--edge);
     border-top: 0;
     pointer-events: none;
   }
@@ -6976,7 +6976,7 @@ html[data-splash] .splash.is-leaving::before {
     top: 0;
     left: calc(-1 * var(--frame-x) - var(--frame-over));
     right: calc(-1 * var(--frame-x) - var(--frame-over));
-    border-top: 1px solid var(--rule);
+    border-top: 1px solid var(--edge);
     pointer-events: none;
   }
   .chapter.lesson .part,
@@ -6992,7 +6992,7 @@ html[data-splash] .splash.is-leaving::before {
     top: calc(-0.5 * var(--rule-gap, 64px));
     left: calc(-1 * var(--frame-x) - var(--frame-over));
     right: calc(-1 * var(--frame-x) - var(--frame-over));
-    border-top: 1px solid var(--rule);
+    border-top: 1px solid var(--edge);
     pointer-events: none;
   }
   .chapter.lesson .part::before {

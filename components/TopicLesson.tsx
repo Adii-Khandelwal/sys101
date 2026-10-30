@@ -266,8 +266,11 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             <dl className="glossary glossary-terms">
               {topic.glossary.map((g) => (
                 <div key={g.term} id={glossaryId(topic.slug, g.term)}>
-                  <dt>{g.term}</dt> <dd>{g.definition}</dd>
-                  {g.diagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(g.diagram) }} />}
+                  <dt>{g.term}</dt>{" "}
+                  <dd>
+                    {g.definition}
+                    {g.diagram && <figure className="diagram" dangerouslySetInnerHTML={{ __html: diagramHtml(g.diagram) }} />}
+                  </dd>
                 </div>
               ))}
             </dl>
