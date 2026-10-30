@@ -45,3 +45,4 @@ Moved out of CLAUDE.md to keep it short. Every idea or preference the owner stat
 - 30 Oct 2026: owner removed the chapter frame (side lines and "+" crossings) from topic and learn pages; no frame remains.
 - 30 Oct 2026: owner asked for a contents rail on Great reads and Blogs to use the empty side space (`reads.md`, `topic-pages.md`).
 - 30 Oct 2026: owner asked for the same contents rail on Capstones as on Great reads and Blogs (`capstones.md`).
+- 30 Oct 2026: owner said the rail on Great reads, Blogs and Capstones must not look like progress (entries are independent): no bar, no filled discs.

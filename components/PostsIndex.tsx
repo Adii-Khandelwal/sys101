@@ -136,7 +136,7 @@ export default function PostsIndex({ data }: { data: Data }) {
       <script dangerouslySetInnerHTML={{ __html: EARLY_VIEW }} />
       {VIEWS.map((v) => (
         <div key={v.id} className="rail-view" data-view={v.id}>
-          {rails[v.id].length > 1 && <LearnRail entries={rails[v.id]} scope="section" />}
+          {rails[v.id].length > 1 && <LearnRail entries={rails[v.id]} scope="section" progress={false} />}
         </div>
       ))}
       <div className="posts-tools">
