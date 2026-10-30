@@ -5,7 +5,8 @@ import { jumpTarget, maxScroll, percentLabel, percentTicks, scrollFraction, scro
 
 // Columns, left to right: the 10..90 numbers (right-aligned in a fixed box), then the ticks growing from the right edge.
 const W = 48;
-const NUM_X = 26; // right edge of the numbers and the readout
+const NUM_X = 26; // right edge of the numbers
+const READOUT_X = 32; // right edge of the readout: "100%" is 29px wide at 11px, so it needs more than the numbers' 26px
 const MINOR = 6;
 const MID = 10;
 const MAJOR = 16;
@@ -143,9 +144,9 @@ export default function ScrollRuler() {
           ))}
         </g>
         <g className="scroll-ruler-marker" transform={`translate(0 ${markerY})`}>
-          <rect x="0" y="-8" width={NUM_X} height="27" />
+          <rect x="0" y="-8" width={READOUT_X} height="27" />
           <line x1="0" x2={W} y1="0" y2="0" />
-          <text ref={readoutRef} x={NUM_X} y="15" textAnchor="end" />
+          <text ref={readoutRef} x={READOUT_X} y="15" textAnchor="end" />
         </g>
       </svg>
     </div>

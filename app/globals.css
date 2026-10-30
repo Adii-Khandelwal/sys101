@@ -6106,7 +6106,7 @@ html[data-splash] .splash.is-leaving::before {
     fill: var(--paper);
   }
   .scroll-ruler-marker text {
-    font-size: 12px;
+    font-size: 0.6111rem; /* 11px: "100%" has to fit the 32px readout box */
     fill: var(--accent);
   }
   @media (max-width: 1279px) {
