@@ -326,11 +326,20 @@ export default function TopicLesson({ topic, prerequisites, dependents, titles, 
             <MarkDone meta={meta} unit="mistakes" />
           </section>
 
-          <section id="check" aria-labelledby="check-h" data-pagefind-ignore>
-            <Overprint as="h2" id="check-h" data-tour="check">Check yourself</Overprint>
+          <section id="check" aria-labelledby="check-h">
+            {/* Not wrapped: the `.lesson section > h2` rules need the heading to stay a direct child of the section. */}
+            <Overprint as="h2" id="check-h" data-tour="check" data-pagefind-ignore>Check yourself</Overprint>
             <CopyLink id="check" />
-            <Outcome text={l.checkOutcome} />
-            <QuizBlock meta={meta} quiz={l.quiz} names={names} />
+            <p className="outcome" data-pagefind-ignore>{l.checkOutcome}</p>
+            {topic.thirtySeconds && (
+              <aside className="say-it" aria-labelledby="say-it-h">
+                <p className="label" id="say-it-h">Say it in 30 seconds</p>
+                <p>{topic.thirtySeconds}</p>
+              </aside>
+            )}
+            <div className="pf-skip" data-pagefind-ignore>
+              <QuizBlock meta={meta} quiz={l.quiz} names={names} />
+            </div>
           </section>
 
         </div>

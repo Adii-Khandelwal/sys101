@@ -31,6 +31,7 @@
       }
     ]
   },
+  "thirtySeconds": "Before a page can load, the browser opens a TCP connection, sets up TLS, and only then sends the HTTP request, and each step costs a round trip. Round trips are limited by distance, so the fix is fewer of them: keep connections open, resume sessions, or use QUIC. The risk is that zero round trip early data can be replayed, so it suits only safe requests. Cloudflare's 2017 post says a visitor 250 ms away waits about 1000 ms before a site starts loading.",
   "pullQuote": {
     "text": "Although web applications should be replay resilient, that’s not always the reality.",
     "postId": "cloudflare-0rtt-2017"

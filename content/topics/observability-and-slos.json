@@ -33,6 +33,7 @@
       }
     ]
   },
+  "thirtySeconds": "Observability is knowing, from the data a system emits, whether users are served well and where they are not. I pick a few indicators users feel, set an objective below 100% with an error budget, and alert on how fast the budget burns. Averages hide the slow tail, so I measure latency as a distribution, and sampled traces show which service made a request slow. Meta's 2017 paper says its tracing system, Canopy, generates and processes 1.3 billion traces per day.",
   "prerequisiteReasons": {
     "overload-and-cascading-failures": "Overload and cascading failures are what these signals have to catch early, so seeing how a system fails comes before measuring whether it is failing."
   },

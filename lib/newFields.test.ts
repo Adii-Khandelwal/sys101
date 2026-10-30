@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkReasons, checkSummary, companyWhen, figureLine, getAllTopics, postDateShown, type Topic } from "./topics";
+import { checkReasons, checkSummary, checkThirtySeconds, companyWhen, figureLine, getAllTopics, postDateShown, type Topic } from "./topics";
 
 const point = "A cache keeps a copy of popular data close to the reader so most requests skip the slow source.";
 const digit = { value: "150x", meaning: "faster builds" };
@@ -98,4 +98,25 @@ describe("summary figure lines", () => {
     expect(companyWhen({ company: "Acme", published: "2022-06-20" }, "year", ", ")).toBe("Acme, 2022");
   });
 
+});
+
+describe("checkThirtySeconds", () => {
+  const base = "A cache keeps a copy of popular data close to the reader. Most requests then skip the slow source and finish quickly. The hard part is deciding when a copy has gone stale and must be dropped. Teams pick a time limit or an explicit purge for each kind of data. When a copy is wrong the reader sees old data, so the limit has to match the cost of that. Say that trade-off out loud in an interview.";
+  const t = (text: string) => topic({ thirtySeconds: text, posts: [{ id: "p1", company: "Acme", published: "2017-01-02", digest: { numbers: [digit] } }] } as unknown as Partial<Topic>);
+  it("accepts a good answer", () => expect(checkThirtySeconds(t(base))).toEqual([]));
+  it("rejects too short and too long", () => {
+    expect(checkThirtySeconds(t("Short answer here. Two. Three. Four."))[0]).toContain("needs 55 to 100");
+    expect(checkThirtySeconds(t(base + " " + base))[0]).toContain("needs 55 to 100");
+  });
+  it("rejects an em dash", () => expect(checkThirtySeconds(t(base.replace("slow source", "slow \u2014 source"))).join()).toContain("banned phrasing"));
+  it("rejects an invented digit", () => expect(checkThirtySeconds(t(base.replace("quickly", "in 77 ms"))).join()).toContain('"77"'));
+  it("matches a digit run whole, not inside a longer number", () => {
+    const withBig = topic({ thirtySeconds: base.replace("quickly", "in 7 ms"), posts: [{ id: "p1", company: "Acme", published: "2017-01-02", digest: { numbers: [{ value: "17 ms", meaning: "x" }] } }] } as unknown as Partial<Topic>);
+    expect(checkThirtySeconds(withBig).join()).toContain('"7"');
+  });
+  it("needs a company and year with a number", () => {
+    expect(checkThirtySeconds(t(base.replace("popular", "150 popular"))).join()).toContain("company name");
+    expect(checkThirtySeconds(t(base.replace("popular", "150 popular").replace("Most", "At Acme most"))).join()).toContain("year");
+    expect(checkThirtySeconds(t(base.replace("popular", "150 popular").replace("Most", "At Acme in 2017 most")))).toEqual([]);
+  });
 });

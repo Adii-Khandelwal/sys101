@@ -27,6 +27,7 @@
       }
     ]
   },
+  "thirtySeconds": "A transaction bundles changes into one all-or-nothing step, and an isolation level says what it may see of others. Most databases use MVCC: each transaction gets a snapshot, and a write adds a new row version instead of overwriting, so readers and writers do not wait. Old versions become dead space that VACUUM must reclaim. Postgres transaction ids are 32 bits and wrap around. Mailchimp's 2019 post says a Mandrill shard stopped writing at that limit, with a vacuum estimated at up to 40 days.",
   "prerequisiteReasons": {
     "databases": "Transactions and MVCC takes from databases the tables, rows and queries that a transaction groups together and that several versions of a row protect."
   },

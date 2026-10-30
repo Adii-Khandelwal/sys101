@@ -33,6 +33,7 @@
       }
     ]
   },
+  "thirtySeconds": "Machines do not share a clock. Each quartz clock drifts and is nudged by a time protocol, so two machines can disagree about which event came first. I bound the clock error and wait it out, count events with a Lamport clock, or pick a weaker consistency level that needs no exact order. Timing a function with the time-of-day clock is risky, since a sync can step it backwards. Meta's 2020 post says its work moving from ntpd to chrony improved accuracy from 10 ms to 100 µs.",
   "prerequisiteReasons": {
     "distributed-transactions": "Distributed transactions need an agreed order of commits, so you should know why that order matters before seeing how clocks and consistency levels help or hurt."
   },

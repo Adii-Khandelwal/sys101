@@ -29,6 +29,7 @@
       }
     ]
   },
+  "thirtySeconds": "A storage engine decides how data is laid out on disk and how it is found and changed. A B-tree updates sorted pages in place. An LSM-tree writes to a log and a memtable, flushes immutable sorted files, and merges them in the background, so a write is an append but a read may check several files. A delete is only a marker until compaction reaches it. Discord's 2023 post says moving messages from Cassandra to ScyllaDB cut the cluster from 177 nodes to 72 nodes.",
   "prerequisiteReasons": {
     "databases": "Storage Engines takes from databases the tables and rows that a database stores, since an engine decides how that data reaches the disk.",
     "transactions-and-mvcc": "Engines are tested on how they keep many versions of a row and honour isolation levels, which is the transaction and MVCC machinery they must support."

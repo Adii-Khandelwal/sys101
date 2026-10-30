@@ -34,6 +34,7 @@
       }
     ]
   },
+  "thirtySeconds": "Overload becomes a cascading failure when the system's own reactions, such as retries and replacing instances that look unhealthy, add more load than the original problem. Once latency passes the client timeout, callers retry, and failed health checks pull machines out so the rest carry more. The overload can outlast its trigger. I cap retries with budgets and backoff, reject early, and keep recovery tools off the failing path. Slack's 2021 post says that when it tried to add 1,200 servers to its web tier, its provisioning service hit two resource limits, open files and an AWS quota.",
   "prerequisiteReasons": {
     "circuit-breakers": "This topic builds on circuit breakers and load shedding, which are the main defences once a dependency is failing or a server is past its limit.",
     "rate-limiting": "Rate limiting caps what one client can send, and this topic shows what happens when the total load still passes capacity and clients retry.",

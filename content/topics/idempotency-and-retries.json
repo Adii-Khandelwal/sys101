@@ -26,6 +26,7 @@
       }
     ]
   },
+  "thirtySeconds": "After a timeout a caller cannot tell whether the call ran, so retrying a charge or an order can do the work twice. Idempotency fixes that: the client sends the same key on each retry, and the server returns the saved result for a key it has finished. Retries also need exponential backoff with jitter and a budget, so failed clients do not return together. Retrying at every layer multiplies the load. Amazon Web Services' 2019 Builders' Library post shows 243x load on a database when five layers each retry three times.",
   "prerequisiteReasons": {
     "circuit-breakers": "Circuit breakers show that retries add load to a dependency that is already failing, which is the problem that retry limits and backoff exist to solve."
   },

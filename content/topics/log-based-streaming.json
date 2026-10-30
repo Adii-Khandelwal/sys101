@@ -31,6 +31,7 @@
       }
     ]
   },
+  "thirtySeconds": "A streaming log stores messages in append-only order, and each consumer reads by its own position, so reading deletes nothing. Many systems can read the same data, and a consumer with a bug can read it again. The producer appends to a partition chosen by hashing a key, and each consumer saves one offset per partition. Order holds only inside a partition, so related events share a key, and retention trims the log. LinkedIn's 2013 post says its central log took over 60 billion unique message writes per day.",
   "pullQuote": {
     "text": "Event data records things that happen rather than things that are.",
     "postId": "linkedin-the-log-2013"

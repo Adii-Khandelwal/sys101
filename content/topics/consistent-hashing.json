@@ -27,6 +27,7 @@
       }
     ]
   },
+  "thirtySeconds": "Hash-mod-N breaks a cache cluster when N changes, because almost every key moves, nearly every read misses at once, and the database takes the full load. Consistent hashing puts servers and keys on a ring, and a key belongs to the next server clockwise, so adding a server moves only about one N-th of the keys. One point per server is uneven, so each server gets many points, which costs memory. Cloudflare's 2026 post cut points per server by 90% and reclaimed over 100 TB of RAM.",
   "prerequisiteReasons": {
     "caching": "Consistent hashing takes from caching the question of which server holds a key, and the cost of a mass reshuffle when servers change."
   },
@@ -288,7 +289,7 @@
         },
         {
           "step": "Cut what does not pay",
-          "explanation": "Returns diminish sharply, so Cloudflare cut the points per server by 90% and shrank each entry from 8 bytes to 6, reclaiming over 100TB of RAM."
+          "explanation": "Returns diminish sharply, so Cloudflare cut the points per server by 90% and shrank each entry from 8 bytes to 6, reclaiming over 100 TB of RAM."
         },
         {
           "step": "Roll out gently",

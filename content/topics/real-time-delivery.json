@@ -32,6 +32,7 @@
       }
     ]
   },
+  "thirtySeconds": "Real-time delivery lets a server send data the moment it exists, by keeping a connection open. That makes the server remember who is connected, so a message must be routed to the right server through a registry or a hash. Heartbeats catch dead connections, and servers are drained gradually so clients reconnect a few at a time with a random delay. Most connections sit idle, so CPU is a poor scaling signal. Netflix's 2024 post says Pushy averages 200,000 connections per node and scales on connection count.",
   "prerequisiteReasons": {
     "http-tcp-tls": "Real-time delivery starts from an HTTP request that is upgraded or held open, and it depends on how a TCP connection stays up and recovers.",
     "consistent-hashing": "Spreading millions of open connections or channels over servers uses consistent hashing, so a server change moves only a small share of them."

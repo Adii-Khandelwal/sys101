@@ -27,6 +27,7 @@
       }
     ]
   },
+  "thirtySeconds": "A rate limiter caps each client at so many requests in a period, so one runaway caller cannot use up shared capacity. I count per key, such as an API key, and reject requests over the limit, often with a 429. The hard part is that one key's requests reach many machines, so the count must be shared, and an exact shared count slows every request. I would accept a small overshoot to keep the check cheap. Cloudflare's 2017 post keeps two numbers per key, one increment per request.",
   "pullQuote": {
     "text": "We had to be more efficient and smarter about this, rather than throwing a huge number of servers at the problem.",
     "postId": "databricks-ratelimiting-2025"

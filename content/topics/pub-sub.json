@@ -26,6 +26,7 @@
       }
     ]
   },
+  "thirtySeconds": "Pub-sub lets a producer announce that something happened without knowing who needs to hear it. Every subscription gets its own copy and its own position, so readers never wait for each other, and only consumers inside one subscription share the work. Delivery is at least once, so I make consumers safe to repeat. Order holds only inside a partition, and a message that always fails goes to a dead letter queue. Uber's 2021 post says over 300 microservices use Kafka for pub-sub, with a proxy that pushes messages to services.",
   "prerequisiteReasons": {
     "message-queues": "Publish-subscribe takes from message queues the lease, the acknowledgement and at-least-once delivery, now applied to each subscription separately."
   },

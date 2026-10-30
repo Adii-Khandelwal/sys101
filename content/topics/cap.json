@@ -30,6 +30,7 @@
       }
     ]
   },
+  "thirtySeconds": "When the network partitions, a node must answer and risk stale data, or refuse and give up availability. So the real choice is consistency versus availability, and only while a partition lasts. In a quorum store with N replicas, a write needs W acknowledgements and a read needs R, and if R plus W is more than N, reads overlap the latest write. Lowering them keeps answers flowing but allows stale reads. Amazon's 2007 Dynamo paper reports (3, 2, 2) as a common setting for N, R and W.",
   "prerequisiteReasons": {
     "replication": "CAP takes from replication the picture of several copies of one key that can end up on opposite sides of a network split.",
     "sharding": "CAP takes from sharding the fact that data lives on many machines joined by a network, which is where partitions come from."

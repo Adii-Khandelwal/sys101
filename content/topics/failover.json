@@ -29,6 +29,7 @@
       }
     ]
   },
+  "thirtySeconds": "Failover turns spare copies into real availability: detect a failure, pick one replacement, and redirect work to it. I confirm a failure with several observers, promote exactly one replica, and fence the old primary so it cannot cause split brain. Clients move through a proxy I control rather than waiting on DNS time to live. Acting on one missed health check causes needless failovers. GitHub's 2018 post reports a total outage of 10 to 13 seconds in most failover cases.",
   "prerequisiteReasons": {
     "replication": "Failover takes from replication the standby copies that are already current enough to be promoted when the primary dies.",
     "consensus": "Failover takes from consensus the way to choose exactly one replacement, since only one backed by a majority may take over.",

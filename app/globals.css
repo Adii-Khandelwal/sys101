@@ -6917,31 +6917,21 @@ html[data-splash] .splash.is-leaving::before {
   }
 }
 
-/* Figure labels */
-.fig-label {
-  margin: 36px 0 6px;
-  font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 0.7222rem;
-  color: var(--ink-soft);
+/* Say it in 30 seconds */
+.pf-skip {
+  display: contents;
 }
-
-.fig-label + .diagram {
-  margin-top: 0;
-  container-type: inline-size;
+.say-it {
+  margin: 16px 0 24px;
+  padding: 0 0 0 16px;
+  border-left: 1.5px solid var(--ink);
 }
-
-/* Phone swipe hint: only while the frame is narrower than the diagram's 480px minimum. */
-@container (max-width: 479px) {
-  .fig-label + .diagram::after {
-    content: "Swipe sideways to see the whole diagram";
-    display: block;
-    position: sticky;
-    left: 0;
-    width: 100cqw;
-    margin-top: 6px;
-    font-family: var(--font-sans), system-ui, sans-serif;
-    font-size: 0.7222rem;
-    color: var(--ink-soft);
-  }
+.say-it .label {
+  margin: 0 0 8px;
+  font-size: 0.6667rem;
+  font-weight: 400;
+  line-height: 1.4;
 }
-
+.say-it p:not(.label) {
+  margin: 0;
+}

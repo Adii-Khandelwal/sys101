@@ -31,6 +31,7 @@
       }
     ]
   },
+  "thirtySeconds": "Traffic steering decides which site serves each user, and draining moves traffic off a site gently so it can be repaired. The layer you use decides how fast: DNS answers are cached, so a drain has a long tail, while a load balancer you run applies in seconds. I give each site a weight, lower it in steps, let in-flight work finish, and watch errors as I go. Dropbox's 2018 post says draining 90% of traffic through DNS took 15 minutes even with a time-to-live of one minute.",
   "prerequisiteReasons": {
     "dns": "Traffic steering takes from DNS the way names are answered by location, and why cached answers make a change reach users slowly.",
     "failover": "Traffic steering takes from failover the decision to move traffic away from a site, and adds how that move is carried out gently.",

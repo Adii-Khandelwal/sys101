@@ -27,6 +27,7 @@
       }
     ]
   },
+  "thirtySeconds": "Sharding splits one big dataset across many databases by a key, so each stores and serves only part of it. I pick a key most queries include, map it to a fixed set of logical shards, and route each query through a router. Keyless queries scatter to every shard, and foreign keys, unique indexes and transactions across shards stop being enforced for free. With fixed logical shards, adding machines means moving whole shards. Notion's 2021 post sharded by workspace ID into 480 logical shards on 32 physical databases.",
   "pullQuote": {
     "text": "Despite our incremental scaling progress, we always knew that vertical partitioning could only get us so far.",
     "postId": "figma-postgres-sharding-2024"

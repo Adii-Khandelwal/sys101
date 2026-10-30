@@ -28,6 +28,7 @@
       }
     ]
   },
+  "thirtySeconds": "A slow dependency can tie up every thread of its callers, and plain retries make it worse. A circuit breaker counts recent failures and, past a threshold, opens and rejects calls at once, so the dependency can recover. After a pause it lets a few probes through before it closes. The catch is that a trickle of probes says little about how the service copes with full load. In Zalando's 2026 post, the breaker closed with the service at its minimum of three pods, so each pod faced 10x the traffic and nearly every request timed out.",
   "prerequisiteReasons": {
     "rate-limiting": "Circuit breakers take from rate limiting the idea of refusing some calls on purpose to protect a system that has limited capacity."
   },
