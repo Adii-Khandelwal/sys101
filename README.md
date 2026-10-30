@@ -11,7 +11,7 @@
 
 | Topics | Sources | Organizations | Great reads |
 | :-: | :-: | :-: | :-: |
-| <!--stat:topics-->36<!--/stat--> | <!--stat:sources-->87<!--/stat--> | <!--stat:organizations-->29<!--/stat--> | <!--stat:reads-->30<!--/stat--> |
+| <!--stat:topics-->36<!--/stat--> | <!--stat:sources-->88<!--/stat--> | <!--stat:organizations-->29<!--/stat--> | <!--stat:reads-->30<!--/stat--> |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/readme/map-dark.png">
@@ -24,7 +24,7 @@
 
 The best system design lessons are buried in engineering posts, written by teams that got it wrong first. But each post assumes you already know what another post explains (quorum, replication lag, thundering herd), and nothing says which to read first.
 
-sys101 puts them in order. It is a map of <!--stat:topics-->36<!--/stat--> system design topics, each one placed after the topics it depends on and taught through engineering posts picked from the teams that ran the system. Every topic has its own explanation, a quiz and design exercises. The posts come from <!--stat:sources-->87<!--/stat--> sources by <!--stat:organizations-->29<!--/stat--> organizations (<!--stat:kinds-->67 engineering posts, 15 research papers and 5 documentation pages<!--/stat-->), and a separate Great reads list holds <!--stat:reads-->30<!--/stat--> influential posts and papers in <!--stat:themes-->5<!--/stat--> themes.
+sys101 puts them in order. It is a map of <!--stat:topics-->36<!--/stat--> system design topics, each one placed after the topics it depends on and taught through engineering posts picked from the teams that ran the system. Every topic has its own explanation, a quiz and design exercises. The posts come from <!--stat:sources-->88<!--/stat--> sources by <!--stat:organizations-->29<!--/stat--> organizations (<!--stat:kinds-->68 engineering posts, 15 research papers and 5 documentation pages<!--/stat-->), and a separate Great reads list holds <!--stat:reads-->30<!--/stat--> influential posts and papers in <!--stat:themes-->5<!--/stat--> themes.
 
 It is one person's learning project, built in the open.
 
