@@ -5324,6 +5324,7 @@ html[data-posts-view] .posts-view-h {
 .cap-index li {
   padding: 24px 0;
   border-top: 1px solid var(--rule);
+  scroll-margin-top: calc(var(--header-h, 60px) + 16px); /* the contents rail glides each entry under the header */
 }
 
 .cap-index h2 {
