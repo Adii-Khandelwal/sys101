@@ -11,13 +11,12 @@ export function scrollFraction(scrollTop: number, scrollHeight: number, viewport
   return max === 0 ? 0 : clamp01(scrollTop / max);
 }
 
-/** Marker and major ticks share one scale: a heading sits on the marker when it is scrolled to the top. */
-export const rulerY = (scrollTop: number, maxScrollTop: number, trackHeight: number) =>
-  maxScrollTop === 0 ? 0 : clamp01(scrollTop / maxScrollTop) * trackHeight;
+/** Tape shift in px: the tape is `ppp` px per percent from its own 0, and the fixed marker (markerY down the ruler) reads the current fraction. */
+export const tapeShift = (fraction: number, markerY: number, ppp: number) => markerY - clamp01(fraction) * 100 * ppp;
 
-/** Where a press at pointerY (client px) on a track lands, as a scrollTop. */
-export const scrollTopForPointer = (pointerY: number, trackTop: number, trackHeight: number, maxScrollTop: number) =>
-  trackHeight <= 0 ? 0 : clamp01((pointerY - trackTop) / trackHeight) * maxScrollTop;
+/** scrollTop after dragging the tape `dy` px (pulling it down goes up the page), kept inside the page. */
+export const scrollTopForDrag = (startTop: number, dy: number, ppp: number, maxScrollTop: number) =>
+  Math.min(Math.max(0, startTop - (dy / ppp / 100) * maxScrollTop), maxScrollTop);
 
 /** Tick y positions for a 0..100 scale: every `step` percent, from 0 to 100. */
 export function percentTicks(trackHeight: number, step: number) {

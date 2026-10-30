@@ -6127,7 +6127,7 @@ html[data-splash] .splash.is-leaving::before {
     bottom: 16px;
     width: 48px;
     z-index: 20; /* above page content, below the header (30), tour, loader and opening screen */
-    cursor: ns-resize;
+    cursor: grab;
     touch-action: none;
     user-select: none;
     color: var(--ink-soft);
