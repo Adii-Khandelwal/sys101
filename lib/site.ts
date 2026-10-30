@@ -17,7 +17,7 @@ export const SITE_DESCRIPTION =
   "A system design course in prerequisite order, taught through how real engineering teams built their systems.";
 
 /** Content dates for pages with no JSON behind them. Shown on the page and used as sitemap lastmod. */
-export const PAGE_DATES = { about: "2026-10-14", terms: "2026-10-14", privacy: "2026-10-15", glossary: "2026-10-12", news: "2026-10-15" } as const;
+export const PAGE_DATES = { about: "2026-10-14", terms: "2026-10-14", privacy: "2026-10-15", news: "2026-10-15" } as const;
 
 /** How the write-ups are made, word for word the same on About and Terms (lib/site.test.ts checks both pages). */
 export const AI_ASSISTANCE =

@@ -10,8 +10,8 @@ let active: (() => void) | null = null;
 let lastClosed = 0;
 
 /**
- * A glossary term inside lesson prose. Without JavaScript it is a plain link to its entry on /glossary. With it, hover,
- * focus or a tap opens a small popover with the definition and a "See in glossary" link; Escape closes it and puts focus
+ * A glossary term inside lesson prose. Without JavaScript it is a plain link to its entry in "Words to know". With it, hover,
+ * focus or a tap opens a small popover with the definition and a "See in Words to know" link; Escape closes it and puts focus
  * back on the term. Fading is opacity and a 0.97 scale from the term, on the motion tokens (opacity only under reduced motion).
  */
 export default function GlossTerm({ href, definition, note, num, children }: { href: string; definition: string; /** Number of its margin note in the section (drawn by CSS, so it is not text: search, find on page and screen readers never see it). */ num?: number; /** Id of this term's margin note (lib/glossaryMatch.ts noteId). */ note?: string; children: string }) {
@@ -134,7 +134,7 @@ export default function GlossTerm({ href, definition, note, num, children }: { h
         aria-describedby={id}
         aria-expanded={open}
         onClick={(e) => {
-          // A plain click opens the popover; the popover's own link goes to the glossary.
+          // A plain click opens the popover; the popover's own link goes to the entry in "Words to know".
           e.preventDefault();
           if (open && pinned.current) return close();
           clearTimeout(opening.current);

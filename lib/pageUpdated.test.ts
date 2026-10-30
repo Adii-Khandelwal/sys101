@@ -6,7 +6,6 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ prefetch: () => {} }), u
 
 import About from "../app/about/page";
 import Background from "../app/background/page";
-import Glossary from "../app/glossary/page";
 // import New from "../app/_new/page"; // What's new page, hidden for now (rename app/_new to app/new to restore)
 import Reads from "../app/reads/page";
 import Privacy from "../app/privacy/page";
@@ -43,14 +42,13 @@ const pages: { name: string; html: string; date: string }[] = [
   { name: "reads", date: readsUpdated(getAllReads(topics.map((t) => t.slug))), html: render(Reads()) },
   // { name: "new", date: newsUpdated(topics.map((t) => ({ news: getNews(t.slug) }))) || PAGE_DATES.news, html: render(New()) },
   { name: "about", date: PAGE_DATES.about, html: render(About()) },
-  { name: "glossary", date: PAGE_DATES.glossary, html: render(Glossary()) },
   { name: "terms", date: PAGE_DATES.terms, html: render(Terms()) },
   { name: "privacy", date: PAGE_DATES.privacy, html: render(Privacy()) },
 ];
 
 describe("every content page carries one date, at the bottom", () => {
-  it("covers every topic, every learn page and the six other pages", () => {
-    expect(pages.length).toBe(topics.length + getAllLearn(topics.map((t) => t.slug)).length + 6);
+  it("covers every topic, every learn page and the five other pages", () => {
+    expect(pages.length).toBe(topics.length + getAllLearn(topics.map((t) => t.slug)).length + 5);
   });
 
   for (const p of pages) {

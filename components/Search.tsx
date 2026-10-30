@@ -71,7 +71,7 @@ export default function Search() {
     if (id !== latest.current) return;
     setResults(
       pages.map((page) => {
-        // Link to the section with the most matches, so a hit in the glossary opens the glossary.
+        // Link to the section with the most matches, so a hit in a topic's Words to know opens that list (the h3 has an id).
         const best = [...page.sub_results].sort((a, b) => b.locations.length - a.locations.length)[0];
         const title = page.meta.title ?? clean(page.url);
         return {

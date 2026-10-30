@@ -164,7 +164,7 @@ export type Topic = {
   comparison?: string;
   /** Optional side-by-side picture of the posts' approaches, shown under the comparison text. */
   comparisonDiagram?: string;
-  /** `diagram`: optional picture of a term that is really a shape or a process; shown on /glossary only. */
+  /** `diagram`: optional picture of a term that is really a shape or a process; shown under the term in the topic's "Words to know". */
   glossary: { term: string; definition: string; diagram?: string }[];
   /** Exactly three. */
   mistakes: string[];

@@ -30,7 +30,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // entry("/new", newsUpdated(topics.map((t) => ({ news: getNews(t.slug) }))) || PAGE_DATES.news),
     ...(capstones.length ? [entry("/capstones", capstones.map(capstoneUpdated).reduce((a, b) => (b > a ? b : a))), ...capstones.map((c) => entry(`/capstone/${c.slug}`, capstoneUpdated(c)))] : []),
     entry("/about", PAGE_DATES.about),
-    entry("/glossary", PAGE_DATES.glossary),
     entry("/terms", PAGE_DATES.terms),
     entry("/privacy", PAGE_DATES.privacy),
   ];
