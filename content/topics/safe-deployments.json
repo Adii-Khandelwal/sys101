@@ -32,6 +32,7 @@
       }
     ]
   },
+  "thirtySeconds": "A safe deployment puts a change in front of a small share of live traffic first, watches it, and widens only if it behaves. I start with one box beside the old version, compare its errors and latency on their own, and wait through a bake time before widening in waves. An alarm rolls back automatically. Amazon Web Services' 2020 post says a one-box stage typically serves at most ten percent of requests, and a typical pipeline takes about four or five business days.",
   "prerequisiteReasons": {
     "load-balancing": "Safe deployments take from load balancing the way traffic is split across servers, which lets a new version take a small share first.",
     "rate-limiting": "Safe deployments reuse the idea behind rate limiting: cap how much of the system one change can touch at once, and raise the cap only when the checks hold."

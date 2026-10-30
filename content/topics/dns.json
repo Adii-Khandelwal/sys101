@@ -25,6 +25,7 @@
       }
     ]
   },
+  "thirtySeconds": "DNS turns a name into an IP address before almost every connection. It is split across many servers, each responsible for its own part of the names, with answers cached all along the way. A resolver asks a root server, then the top level domain, then the authoritative servers, and keeps each answer for its TTL. So a changed record spreads slowly as old copies expire. Slack's 2021 DNSSEC rollout caused a 24 hour outage for under 1% of its online users.",
   "pullQuote": {
     "text": "We decided not to restore signing due to a lack of confidence.",
     "postId": "slack-dnssec-2021"

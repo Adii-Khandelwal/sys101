@@ -32,6 +32,7 @@
       }
     ]
   },
+  "thirtySeconds": "An API is a promise to its callers, so I ask how they request data, how I change it safely, and how I stop one caller using too much. RPC, REST and GraphQL differ in who decides the shape of the data. I add fields rather than rename them, and I put breaking changes behind a version. The cost is that old shapes must keep working for pinned callers. Shopify's 2021 post prices each GraphQL query by its structure and refills clients at 50 points per second.",
   "pullQuote": {
     "text": "Versioning is always a compromise between improving developer experience and the additional burden of maintaining old versions.",
     "postId": "api-versioning-stripe-2017"

@@ -29,6 +29,7 @@
       }
     ]
   },
+  "thirtySeconds": "Instead of a checkout calling every other service in order, it publishes one fact, such as OrderPlaced, and subscribers react on their own schedule. The producer no longer knows or waits for them. To publish reliably, I write the event to an outbox table in the same transaction as the state change, and a separate process ships it to a durable log. Delivery is at least once, so every consumer must be idempotent. Zapier's 2026 post split its outbox into 50 SQLite shard files per pod.",
   "prerequisiteReasons": {
     "pub-sub": "Event-driven architecture takes from pub-sub the fan-out of one fact to every interested reader, with the producer unaware of who reads it."
   },

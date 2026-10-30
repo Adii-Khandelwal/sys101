@@ -34,6 +34,7 @@
       }
     ]
   },
+  "thirtySeconds": "Replicas survive a machine failing, but not a bad deploy, because they copy the mistake. Disaster recovery sets a recovery point objective for how much data I can lose and a recovery time objective for downtime. I keep a base copy plus a change log, store copies in another failure domain, and restore on a schedule. A backup that has never been restored is only an assumption. GitLab's 2017 postmortem found its pg_dump backup job failing, with the newest usable snapshot roughly 6 hours old.",
   "prerequisiteReasons": {
     "replication": "Recovery takes from replication the live copies that cover a failed machine, and shows why they cannot undo a mistake that was copied to every replica.",
     "failover": "Recovery takes from failover the switch to a standby, and extends it from one machine to a whole site that must be recovered or drained."

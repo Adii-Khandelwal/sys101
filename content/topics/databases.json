@@ -24,6 +24,7 @@
       }
     ]
   },
+  "thirtySeconds": "A database makes changes safe: once it says a change is committed, it survives a crash, and it controls what clients see of each other's unfinished work. It appends every change to a write ahead log and flushes that at commit, updates the data files later, and replays the log after a crash. Replicas apply the same log. Every index is another structure to update on each write. Uber's 2016 post described a Postgres 9.2 update to one small table that took at least 4 physical writes.",
   "pullQuote": {
     "text": "MySQL’s replication architecture means that if bugs do cause table corruption, the problem is unlikely to cause a catastrophic failure.",
     "postId": "uber-postgres-to-mysql-2016"

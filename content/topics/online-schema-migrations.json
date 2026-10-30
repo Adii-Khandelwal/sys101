@@ -31,6 +31,7 @@
       }
     ]
   },
+  "thirtySeconds": "A schema migration changes a live database, such as adding a column or changing a type, while the app keeps serving. Run directly on a big table it can lock the table or take days. So I build the new shape beside the old, copy rows in small throttled batches, and swap with a brief lock. Dropping the old shape waits for a later release, so every step stays reversible. Buildkite's 2021 post moved a table of over 2 billion rows to a new bigint column, kept writing to the old one while it checked, then dropped it.",
   "prerequisiteReasons": {
     "databases": "Databases explain tables, columns, indexes and locks, which is what a migration changes and what a careless one blocks while the application is still reading and writing."
   },

@@ -31,6 +31,7 @@
       }
     ]
   },
+  "thirtySeconds": "Batch processing runs a job over a fixed pile of data and gives one final answer. Stream processing runs all the time over data that never ends. Events arrive late, so I window by event time and let a watermark decide when a window is complete. For a backfill, Lambda keeps a second batch codebase, while Kappa reuses the streaming job on history. Uber's 2020 post reused its streaming job by reading a Hive table as the source, covering nine days of data, roughly 10 terabytes.",
   "prerequisiteReasons": {
     "log-based-streaming": "A stream job reads from a log and relies on being able to read it again from an earlier position, which is the idea that backfill builds on."
   },

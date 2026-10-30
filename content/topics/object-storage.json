@@ -34,6 +34,7 @@
       }
     ]
   },
+  "thirtySeconds": "Object storage keeps whole objects found by a key, instead of blocks or a directory tree, so it can grow to petabytes. A small metadata index records where each object sits, and the bytes live on many cheap drives, protected by copies or erasure coding. You cannot edit in the middle, and at scale the metadata lookup often limits throughput. Amazon's 2023 post says an S3 object may be erasure coded across tens of drives, and different objects go onto different sets of drives.",
   "prerequisiteReasons": {
     "storage-engines": "Object stores pack many small objects into large volume files on each drive, so storage engines explain how data is laid out on one disk.",
     "replication": "Object stores keep several copies or coded shards of every object, so replication explains why redundancy is needed and what it costs in space and repair work.",

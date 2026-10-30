@@ -27,6 +27,7 @@
       }
     ]
   },
+  "thirtySeconds": "Consensus lets a set of replicas agree on one history of changes, so they stay correct while a majority is alive. A cluster of 2f+1 nodes survives f failures, and an entry commits once a majority has stored it. One leader per term replicates its log to followers, and if it dies, a follower stands for election. The price is a majority round trip on every write, which is slow across continents. Cockroach Labs' 2026 post says Leader Leases cut lease maintenance CPU by up to 85% at scale.",
   "prerequisiteReasons": {
     "cap": "Consensus takes from CAP the choice of strong consistency, and the cost that the system keeps serving only while a quorum of nodes survives.",
     "replication": "Consensus takes from replication the picture of several copies of the same data, which must all apply the same changes in the same order."

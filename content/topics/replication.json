@@ -26,6 +26,7 @@
       }
     ]
   },
+  "thirtySeconds": "Replication keeps copies of a database on several machines, so reads spread out and a failed primary can be replaced. Clients write to the primary, which ships its log to replicas. The main choice is when a write is safe: on the primary alone, after one replica confirms, or after a majority. On failure a replica with the latest data is elected, ideally by a quorum. Meta's 2023 post says Raft inside MySQL brought typical failover to about 2 s from 20 to 40 s.",
   "prerequisiteReasons": {
     "databases": "Replication takes from databases the write-ahead log, since replicas stay current by replaying the primary's log in the same order."
   },

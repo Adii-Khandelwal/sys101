@@ -29,6 +29,7 @@
       }
     ]
   },
+  "thirtySeconds": "A CDN keeps copies of content on servers near users, so most requests are answered nearby. A user is sent to a close edge, which serves a hit and fetches from the origin on a miss. The cost is the misses, because how cheaply they reach the origin, including whether a connection is already open, decides much of the latency users see. Reusing open connections skips the handshakes. Cloudflare's 2022 Pingora post raised connection reuse from 87.1% to 99.92% for one major customer.",
   "prerequisiteReasons": {
     "dns": "CDNs take from DNS the way a user's request is pointed at a nearby server, which is how each user lands on a close edge.",
     "caching": "CDNs take from caching the hit, the miss and the fill, applied to many edge copies that sit in front of one origin.",

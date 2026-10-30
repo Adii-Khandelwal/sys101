@@ -6917,97 +6917,21 @@ html[data-splash] .splash.is-leaving::before {
   }
 }
 
-/* Figure labels */
-.fig-label {
-  margin: 36px 0 6px;
-  font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 0.7222rem;
-  color: var(--ink-soft);
+/* Say it in 30 seconds */
+.pf-skip {
+  display: contents;
 }
-
-.fig-label + .diagram {
-  margin-top: 0;
-  container-type: inline-size;
+.say-it {
+  margin: 16px 0 24px;
+  padding: 0 0 0 16px;
+  border-left: 1.5px solid var(--ink);
 }
-
-/* Phone swipe hint: only while the frame is narrower than the diagram's 480px minimum. */
-@container (max-width: 479px) {
-  .fig-label + .diagram::after {
-    content: "Swipe sideways to see the whole diagram";
-    display: block;
-    position: sticky;
-    left: 0;
-    width: 100cqw;
-    margin-top: 6px;
-    font-family: var(--font-sans), system-ui, sans-serif;
-    font-size: 0.7222rem;
-    color: var(--ink-soft);
-  }
+.say-it .label {
+  margin: 0 0 8px;
+  font-size: 0.6667rem;
+  font-weight: 400;
+  line-height: 1.4;
 }
-
-/* Chapter frame */
-/* From 1200px the text column sits in a drawn frame: a 1px rule 24px outside each side, and a 1px rule across the middle of the gap above each
-   section. Every horizontal rule runs 5px past the frame at both ends, so each crossing reads as an 11px "+" with no extra element. Pseudo-elements
-   only, aria-hidden by nature (no content), none on phones, none in print. The margin column (left: 100% + 48px) and the 48px ruler stay clear. */
-@media screen and (min-width: 1200px) {
-  .chapter-grid {
-    --frame-x: 24px;
-    --frame-over: 5px;
-    position: relative; /* the frame pseudo-elements use the text column's grid area as their box */
-  }
-  .chapter-grid::before {
-    content: "";
-    grid-column: 2 / 3;
-    grid-row: 2 / auto;
-    position: absolute;
-    top: calc(-1 * var(--frame-over));
-    bottom: 0;
-    left: calc(-1 * var(--frame-x));
-    right: calc(-1 * var(--frame-x));
-    border-inline: 1px solid var(--edge);
-    border-top: 0;
-    pointer-events: none;
-  }
-  .chapter-grid::after {
-    content: "";
-    grid-column: 2 / 3;
-    grid-row: 2 / auto;
-    position: absolute;
-    top: 0;
-    left: calc(-1 * var(--frame-x) - var(--frame-over));
-    right: calc(-1 * var(--frame-x) - var(--frame-over));
-    border-top: 1px solid var(--edge);
-    pointer-events: none;
-  }
-  .chapter.lesson .part,
-  .chapter.lesson .part > section:not(:first-of-type),
-  .chapter .learn-section {
-    position: relative;
-  }
-  .chapter.lesson .part::before,
-  .chapter.lesson .part > section:not(:first-of-type)::before,
-  .chapter .chapter-main .learn-section::before {
-    content: "";
-    position: absolute;
-    top: calc(-0.5 * var(--rule-gap, 64px));
-    left: calc(-1 * var(--frame-x) - var(--frame-over));
-    right: calc(-1 * var(--frame-x) - var(--frame-over));
-    border-top: 1px solid var(--edge);
-    pointer-events: none;
-  }
-  .chapter.lesson .part::before {
-    --rule-gap: 72px;
-  }
-  .chapter .chapter-main .learn-section {
-    --rule-gap: 56px;
-  }
-}
-
-@media (forced-colors: active) {
-  .chapter-grid::before,
-  .chapter-grid::after,
-  .chapter .part::before,
-  .chapter section::before {
-    border-color: CanvasText;
-  }
+.say-it p:not(.label) {
+  margin: 0;
 }

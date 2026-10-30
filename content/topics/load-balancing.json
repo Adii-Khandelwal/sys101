@@ -27,6 +27,7 @@
       }
     ]
   },
+  "thirtySeconds": "DNS cannot react when a server is overloaded, so a load balancer makes a fresh choice for each request and keeps servers about equally busy. Each caller gets a bounded subset of servers, because connections grow with callers times servers, and a rule such as picking two at random and using the less busy one chooses within it. Round robin spreads requests, not load, because requests differ in cost. Uber's 2022 post says fully meshing two services of 10,000 tasks needs 100,000,000 connections.",
   "prerequisiteReasons": {
     "dns": "Load balancing takes from DNS the idea of one name that stands for many servers, and the staleness of answers that clients keep using.",
     "http-tcp-tls": "Balancing at the transport layer or the application layer only makes sense once you know what a TCP connection and an HTTP request are, and what each costs."

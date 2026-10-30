@@ -29,6 +29,7 @@
       }
     ]
   },
+  "thirtySeconds": "A single database gives all or nothing for free, but across shards a transfer is two writes that can half succeed. Two phase commit restores it: each participant makes its change tentative and votes, and the coordinator durably records commit or abort. That recorded decision is the commit point, and crash recovery reads it. The cost is locks held across machines, so for long workflows I would use a saga instead. Google's 2010 Percolator paper reports roughly 4x overhead over raw Bigtable in its worst case.",
   "prerequisiteReasons": {
     "consensus": "Distributed transactions take from consensus the way each participant's prepared state and the coordinator's decision are made to survive crashes.",
     "sharding": "Distributed transactions take from sharding the fact that one change can touch rows on several shards, which is what needs coordinating."

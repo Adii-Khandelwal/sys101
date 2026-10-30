@@ -27,6 +27,7 @@
       }
     ]
   },
+  "thirtySeconds": "Without an index, a query has to read every row. An index is a structure built ahead of time that points straight at the matches, so reads get much faster. The price is paid on every write, which must update each index, and in extra storage. A search engine splits text into tokens and intersects their lists. GitHub's 2023 post estimated that brute force searching 115 TB of code would take 2,048 cores for 96 seconds per query.",
   "pullQuote": {
     "text": "Even if we threw a ton of money at the problem, it still wouldn’t meet our user experience goals.",
     "postId": "github-code-search-2023"

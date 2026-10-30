@@ -151,6 +151,8 @@ export type Topic = {
   prerequisites: string[];
   /** In short: 3 to 5 plain sentences and 0 to 3 digest figures. Required on every topic (REQUIRE_NEW_FIELDS). */
   summary?: Summary;
+  /** "Say it in 30 seconds": a speakable answer, 55 to 100 words, 4 to 6 sentences (checkThirtySeconds). Required once REQUIRE_THIRTY_SECONDS is true. */
+  thirtySeconds?: string;
   /** Optional: one sentence copied word for word from one of this topic's posts, under 25 words. `npm run verify:quotes` checks it against the live page. */
   pullQuote?: { text: string; postId: string };
   /** Why each prerequisite comes first: one sentence per prerequisite id, hidden edges included. */
@@ -442,6 +444,8 @@ function checkLesson(topic: Topic): string[] {
 
 /** Every topic must have `summary`, and `prerequisiteReasons` when it has prerequisites. Set to false only while backfilling a new field. */
 const REQUIRE_NEW_FIELDS = true;
+/** Flip to true once every content/topics/*.json has `thirtySeconds`. */
+const REQUIRE_THIRTY_SECONDS = true;
 
 /** A unit stuck to its number ("500ms", "100TB", "8M"): write "500 ms", "100 TB", "8 million". */
 const UNIT_NO_SPACE = /\d(?:ms|μs|s|[KMGT]?B|[KMGT]b|Gbps|M|K)\b/;
@@ -502,6 +506,30 @@ export function checkSummary(topic: Topic): string[] {
     const own = numbersIn(row.value);
     if (own.length && !own.some((d) => f.label.includes(d))) problems.push(`${where}: label must contain the figure's value (${row.value})`);
   });
+  return problems;
+}
+
+/** Rules for `thirtySeconds`: length, sentence count, banned phrasing, and no invented figure (every digit run is already in the topic JSON, and a figure needs a post's company and year). */
+export function checkThirtySeconds(topic: Topic): string[] {
+  const t = topic.thirtySeconds;
+  if (t === undefined) return REQUIRE_THIRTY_SECONDS ? ["thirtySeconds is missing"] : [];
+  if (!nonEmpty(t)) return ["thirtySeconds is empty"];
+  const problems: string[] = [];
+  const n = wordCount(t);
+  if (n < 55 || n > 100) problems.push(`thirtySeconds: ${n} words, needs 55 to 100`);
+  const sentences = (t.trim().match(/[.!?](?=\s|$)/g) ?? []).length;
+  if (sentences < 4 || sentences > 6) problems.push(`thirtySeconds: ${sentences} sentences, needs 4 to 6`);
+  if (/[—–]/.test(t) || BANNED_PHRASING.test(t) || /\bnot\b[^.!?]*\bbut\b/i.test(t)) problems.push("thirtySeconds: banned phrasing");
+  if (UNIT_NO_SPACE.test(t)) problems.push('thirtySeconds: put a space between a number and its unit ("500 ms")');
+  const { thirtySeconds: _t, ...page } = topic;
+  const source = JSON.stringify(page);
+  const digits = t.match(/\d+/g) ?? [];
+  for (const d of new Set(digits)) if (!source.includes(d)) problems.push(`thirtySeconds: "${d}" does not appear in the topic content`);
+  if (digits.length) {
+    const named = topic.posts.filter((p) => t.includes(p.company));
+    if (!named.length) problems.push("thirtySeconds: a number needs a company name from the topic's posts");
+    else if (!named.some((p) => t.includes(p.published.slice(0, 4)))) problems.push("thirtySeconds: a number needs the year of the named company's post");
+  }
   return problems;
 }
 
@@ -582,7 +610,7 @@ function validate(entries: { file: string; topic: Topic }[]): string[] {
     if (!Array.isArray(topic.mistakes) || topic.mistakes.length !== 3 || !topic.mistakes.every(nonEmpty)) {
       problems.push(`${file}: mistakes needs exactly 3 items`);
     }
-    problems.push(...checkSummary(topic).map((p) => `${file}: ${p}`), ...checkReasons(topic).map((p) => `${file}: ${p}`));
+    problems.push(...checkSummary(topic).map((p) => `${file}: ${p}`), ...checkReasons(topic).map((p) => `${file}: ${p}`), ...checkThirtySeconds(topic).map((p) => `${file}: ${p}`));
     if (topic.lesson) {
       problems.push(...checkLesson(topic).map((p) => `${file}: ${p}`));
     } else {

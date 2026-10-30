@@ -32,6 +32,7 @@
       }
     ]
   },
+  "thirtySeconds": "Demand moves and new capacity takes minutes to arrive, so a fixed server count is always wrong at some hour. An autoscaler picks a signal and a target, then scales the count by the current value over the target. I grow fast and shrink slowly, so a short dip does not remove capacity I need again soon. When forecasting, the risk is predicting a signal that your own scaling changes. Google's 2020 Autopilot paper reports a slack of 23% for jobs run under Autopilot against 46% for manually managed ones.",
   "prerequisiteReasons": {
     "load-balancing": "Autoscaling changes how many servers sit behind a load balancer, so it relies on traffic being spread evenly across whatever servers exist at that moment."
   },

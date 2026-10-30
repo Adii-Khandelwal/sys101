@@ -33,6 +33,7 @@
       }
     ]
   },
+  "thirtySeconds": "A probabilistic data structure answers a question about huge data from a small, fixed amount of memory, and is sometimes wrong in a way I can bound. A Bloom filter says a key is definitely absent or maybe present, and an LSM-tree engine checks it before reading a file, so a 0 bit skips the disk. More bits per key mean fewer false positives. A maybe is never proof, so I check the real store. Meta's 2021 post says Ribbon filters save roughly 1/3 of the memory compared with Bloom filters.",
   "prerequisiteReasons": {
     "storage-engines": "The Bloom filter earns its place guarding reads on the sorted files of an LSM-tree, so you need to know why those reads are expensive first."
   },

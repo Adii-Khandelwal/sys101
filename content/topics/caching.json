@@ -27,6 +27,7 @@
       }
     ]
   },
+  "thirtySeconds": "A cache keeps a copy of hot data in memory beside the servers, so most reads skip the database. A read checks the cache; on a miss, the server reads the database and fills it. Writes go to the database and invalidate the old entry, with a TTL as backstop. The cost is stale data: a slow fill can land after a newer invalidation, so I store a version with each entry. Uber's 2024 post says its integrated cache, CacheFront, supports over 40 million requests per second across all Docstore instances.",
   "prerequisiteReasons": {
     "load-balancing": "Load balancing shows requests spread over a pool of servers. A cache is one more server in that path, one that answers in place of the origin."
   },
