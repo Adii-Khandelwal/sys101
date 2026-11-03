@@ -43,7 +43,8 @@ describe("diagram ids across the content", () => {
         seen.set(id, file);
       }
     };
-    for (const dir of ["topics", "learn", "background", "capstones"]) {
+    for (const dir of ["topics", "learn", "background", "capstones", "design"]) {
+      if (!fs.existsSync(path.join(process.cwd(), "content", dir))) continue;
       for (const f of fs.readdirSync(path.join(process.cwd(), "content", dir))) scan(`${dir}/${f}`, fs.readFileSync(path.join(process.cwd(), "content", dir, f), "utf8"));
     }
     expect(dupes).toEqual([]);

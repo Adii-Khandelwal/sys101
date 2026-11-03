@@ -115,3 +115,29 @@ export function learnReadingMinutes(learn: Learn): number {
 export function learnReadingLabel(learn: Learn): string {
   return `~${learnReadingMinutes(learn)} min read`;
 }
+
+// ── Design questions ──────────────────────────────────────────────────────
+
+import type { Design } from "./design";
+import { SECTIONS_WITH_BLOCKS } from "./designSteps";
+
+const SKIP_KEYS = new Set(["svg", "diagram", "cites", "id", "type", "topics"]);
+/** Every prose string under a value, skipping SVG markup, ids and citations. */
+function designStrings(v: unknown): string[] {
+  if (typeof v === "string") return [v];
+  if (Array.isArray(v)) return v.flatMap(designStrings);
+  if (v && typeof v === "object") return Object.entries(v).flatMap(([k, x]) => (SKIP_KEYS.has(k) ? [] : designStrings(x)));
+  return [];
+}
+
+/** Minutes to read a design page: its title, summary, sections and Worth knowing lines, plus a look-at allowance per diagram. */
+export function designReadingMinutes(d: Design): number {
+  const { slug: _s, sources: _src, topics: _t, capstone: _c, curiosities, ...page } = d;
+  const wordCount = [...designStrings(page), ...(curiosities ?? []).map((c) => c.text)].reduce((sum, s) => sum + words(s), 0);
+  const blockLists = [...SECTIONS_WITH_BLOCKS.map((id) => d[id].blocks), d["deep-dives"].blocks];
+  const diagrams = blockLists.reduce((n, l) => n + (l ?? []).filter((b) => b.type === "diagram").length, 0) + d["high-level"].stages.filter((x) => x.diagram).length;
+  return Math.max(1, Math.round(wordCount / WORDS_PER_MINUTE + (diagrams * SECONDS_PER_DIAGRAM) / 60));
+}
+
+/** The label shown on a design page, e.g. "~14 min read". */
+export const designReadingLabel = (d: Design) => `~${designReadingMinutes(d)} min read`;

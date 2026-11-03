@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import marks from "../content/logos.json";
 import { getAllCapstones } from "./capstones";
+import { getAllDesign } from "./design";
 import { LOGO_FILES } from "./logoFiles";
 import { organization } from "./organization";
 import { getAllReads } from "./reads";
@@ -12,7 +13,8 @@ const topics = getAllTopics();
 const slugs = topics.map((t) => t.slug);
 const reads = getAllReads(slugs);
 const capstones = getAllCapstones(slugs);
-const orgs = [...new Set([...topics.flatMap((t) => t.posts.map((p) => p.company)), ...reads.map((r) => r.company), ...capstones.flatMap((c) => c.sources.map((x) => x.company))].map(organization))];
+const design = getAllDesign(slugs, capstones.map((c) => c.slug));
+const orgs = [...new Set([...topics.flatMap((t) => t.posts.map((p) => p.company)), ...reads.map((r) => r.company), ...capstones.flatMap((c) => c.sources.map((x) => x.company)), ...design.flatMap((d) => d.sources.map((x) => x.company))].map(organization))];
 const file = (src: string) => path.join(process.cwd(), "public", src);
 
 describe("company logos", () => {

@@ -88,7 +88,7 @@ for (const [name, src] of Object.entries(cfg.logos)) {
   const entry = {};
   if (src.svgl) {
     for (const [suffix, f] of [["", src.svgl], ["-dark", src.svglDark]].filter(([, f]) => f)) {
-      const svg = await (await get(SVGL + f)).text();
+      const svg = (await (await get(SVGL + f)).text()).replace(/^[\s\S]*?(?=<svg)/, ""); // drop an XML prolog, DOCTYPE or editor comment before <svg (Kafka)
       fs.writeFileSync(`public/logos/${base}${suffix}.svg`, svg);
       Object.assign(entry, suffix ? { dark: `/logos/${base}-dark.svg` } : { src: `/logos/${base}.svg`, ...viewBoxSize(svg) });
     }

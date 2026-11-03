@@ -8,10 +8,20 @@
     "licence": "CC0-1.0 icon files, filled with each brand's own colour"
   },
   "logos": {
+    "Adyen": {
+      "simpleIcons": "adyen"
+    },
     "Amazon": {
       "svgl": "aws_light.svg",
       "svglDark": "aws_dark.svg",
       "note": "svgl has no Amazon.com mark and Simple Icons removed Amazon and AWS (no confirmed permission). This is the AWS mark: both credits under Amazon are Amazon-owned, and the Builders' Library credit is AWS."
+    },
+    "Apache Kafka": {
+      "svgl": "apache-kafka-light.svg",
+      "svglDark": "apache-kafka-dark.svg"
+    },
+    "Atlassian": {
+      "svgl": "atlassian.svg"
     },
     "Buildkite": {
       "simpleIcons": "buildkite"
@@ -44,6 +54,9 @@
     "Figma": {
       "svgl": "figma.svg"
     },
+    "Flipkart": {
+      "hunter": "flipkart.com"
+    },
     "GitHub": {
       "svgl": "github_light.svg",
       "svglDark": "github_dark.svg"
@@ -72,6 +85,9 @@
     "Meta": {
       "svgl": "meta.svg"
     },
+    "Microsoft": {
+      "svgl": "microsoft.svg"
+    },
     "MongoDB": {
       "svgl": "mongodb-icon-light.svg",
       "svglDark": "mongodb-icon-dark.svg"
@@ -88,6 +104,18 @@
     },
     "Pinterest": {
       "svgl": "pinterest.svg"
+    },
+    "PostgreSQL": {
+      "svgl": "postgresql.svg"
+    },
+    "Python Software Foundation": {
+      "hunter": "python.org"
+    },
+    "RabbitMQ": {
+      "simpleIcons": "rabbitmq"
+    },
+    "Razorpay": {
+      "hunter": "razorpay.com"
     },
     "Sentry": {
       "svgl": "sentry.svg"
@@ -119,7 +147,15 @@
     }
   },
   "withoutLogo": {
-    "WhatsApp": "Meta's WhatsApp brand guidelines (read 24 Oct 2026) say to use only the logos on its own Brand Guidelines website, not copies found elsewhere, and reserve the right to revoke permission; the svgl copy is not confirmed to be that file."
+    "WhatsApp": "Meta's WhatsApp brand guidelines (read 24 Oct 2026) say to use only the logos on its own Brand Guidelines website, not copies found elsewhere, and reserve the right to revoke permission; the svgl copy is not confirmed to be that file.",
+    "Pat Helland": "A person, not a company, so there is no brand mark to show.",
+    "Gregor Hohpe": "A person, not a company, so there is no brand mark to show.",
+    "Chris Richardson": "A person, not a company, so there is no brand mark to show.",
+    "Hector Garcia-Molina and Kenneth Salem": "Two academic authors of a paper, not a company, so there is no brand mark to show.",
+    "IETF": "A standards body whose RFCs are public documents; no mark was added and its brand rules for third-party use were not read.",
+    "PCI SSC": "A standards council; no mark was added and its brand rules for third-party use were not read.",
+    "Square": "The only mark found automatically (Hunter) was a photo, and Simple Icons' Square colour is too dark for the dark theme; no usable brand mark was added.",
+    "TigerBeetle": "The only mark found automatically (Hunter) was a banner with the name repeated, not a symbol; no usable brand mark was added."
   },
   "hunter": {
     "about": "Last resort for a company neither svgl nor Simple Icons has: https://logos.hunter.io/<domain>, no key, trademarks stay with their owners. Raster, so it is trimmed and saved as WebP; check it on both themes."

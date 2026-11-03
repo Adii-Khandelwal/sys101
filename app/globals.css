@@ -6889,3 +6889,229 @@ html[data-splash] .splash.is-leaving::before {
 .say-it p:not(.label) {
   margin: 0;
 }
+
+/* ── Design questions ───────────────────── */
+/* Reuses the capstone section, option and source styles; only the answer list is new. */
+
+.design-answer,
+.design-claims,
+.design-followups {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.design-answer > li {
+  padding: 16px 0;
+  border-top: 1px solid var(--rule);
+}
+
+
+.design-answer h3,
+.design-stages h4 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 0 0 8px;
+}
+
+.design-empty {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+
+.design-badge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 4px 0 0;
+}
+
+.design-turn {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0 0 12px;
+}
+
+.design-who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  width: 8rem;
+  margin: 0;
+}
+
+.design-said {
+  flex: 1;
+  min-width: min(100%, 16rem);
+}
+
+.design-said > p {
+  margin: 0;
+}
+
+.design-list {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+
+
+.design-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.design-shape {
+  flex: none;
+  width: 11px;
+  height: 11px;
+  border: 1px solid currentColor;
+}
+
+
+
+
+.design-stages > li {
+  padding: 12px 0;
+}
+
+
+
+
+.design-followups > li {
+  padding: 12px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.design-claims li {
+  padding: 8px 0 0;
+}
+
+.design-block {
+  margin: 0 0 12px;
+}
+
+.design-block > p {
+  margin: 0;
+}
+
+.design-cites {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 4px 0 0;
+}
+
+.design-assumption,
+.design-real {
+  padding: 8px 12px;
+  border-left: 2px solid var(--rule);
+}
+
+.design-assumption .design-shape {
+  border-style: dashed;
+}
+
+.design-real .design-shape {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.design-part {
+  margin: 0 0 8px;
+}
+
+.design-part > p {
+  margin: 0;
+}
+
+.design-mistake {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.design-table {
+  margin: 0 0 12px;
+  overflow-x: auto;
+}
+
+.design-table table {
+  min-width: 36rem;
+  border-collapse: collapse;
+}
+
+.design-table caption {
+  text-align: left;
+  padding-bottom: 8px;
+  color: var(--ink-soft);
+}
+
+.design-table th,
+.design-table td {
+  padding: 8px 12px 8px 0;
+  border-top: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+
+.design-stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.design-round {
+  margin: 0 0 20px;
+  padding: 4px 16px;
+  border: 1px solid var(--ink-soft);
+}
+
+.design-round > div {
+  padding: 12px 0;
+}
+
+.design-round > div + div {
+  border-top: 1px solid var(--rule);
+}
+
+.design-round dt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+}
+
+.design-round dd {
+  margin: 0;
+}
+
+.design-mark {
+  flex: none;
+  width: 11px;
+  height: 11px;
+  border: 1px solid currentColor;
+}
+
+.design-mark.is-say {
+  background: currentColor;
+}
+
+.design-mark.is-tip {
+  height: 0;
+  border-width: 1px 0 0;
+}
+
+.design-reasoning {
+  margin: 8px 0 12px;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.8333rem;
+  color: var(--ink-soft);
+}
