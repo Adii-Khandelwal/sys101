@@ -10,6 +10,9 @@ import { STEPS } from "@/lib/designSteps";
  * and no count (design pages track nothing). Below that, one sticky line "Section 3 of N: Entities" that opens the list. The current section comes from an
  * IntersectionObserver on the top third of the screen. Real anchors, so it works without JavaScript. Nothing is stored.
  */
+/** The top fraction of the screen that counts as "the current section"; the observer band and the position test share it. */
+const BAND = 0.34;
+
 export default function DesignRail() {
   const [current, setCurrent] = useState<string>(STEPS[0].id);
   const [open, setOpen] = useState(false);
@@ -20,11 +23,11 @@ export default function DesignRail() {
     const io = new IntersectionObserver(
       () => {
         // The current section is the last one whose top has passed the top third of the screen, so the ring stays on the last section through Worth knowing and Original sources (no rail entry).
-        const line = window.innerHeight / 3;
+        const line = window.innerHeight * BAND;
         const last = els.filter((el) => el.getBoundingClientRect().top <= line).pop();
         setCurrent((last ?? els[0]).id);
       },
-      { rootMargin: "0px 0px -66% 0px", threshold: [0, 1] },
+      { rootMargin: `0px 0px -${Math.round((1 - BAND) * 100)}% 0px`, threshold: [0, 1] },
     );
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();

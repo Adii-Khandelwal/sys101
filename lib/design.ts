@@ -66,8 +66,8 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const realDate = (v: unknown) => typeof v === "string" && DATE.test(v) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v;
 /** A figure outside an assumption: any digit or one of these big-number words, unless the block cites a post or paper. */
 const BIG_WORDS = /\b(?:hundred|thousand|million|billion|trillion|dozen|percent)s?\b/i;
-/** "X is not Y, it is Z" with any subject, and "not X but Y". */
-const CONTRAST = [/\b(?:is|are)(?: not|n['’]t)\b[^.!?]*[,;.]\s*(?:it|they|this)(?: is|['’]s| are)\b/i, /\bit is not\b[^.!?]*\bit is\b/i, /\bnot\b[^.!?]*\bbut\b/i];
+/** "X is not Y, it is Z" (comma, semicolon or colon) with any subject, "not X but Y", and "A, not a Y: ...". */
+const CONTRAST = [/\b(?:is|are)(?: not|n['’]t)\b[^.!?]*[,;:.]\s*(?:it|they|this)(?: is|['’]s| are)\b/i, /\bit is not\b[^.!?]*\bit is\b/i, /\bnot\b[^.!?]*\bbut\b/i, /,\s*not (?:a|an|the)\b[^.!?:;]*:/i];
 const rec = (v: unknown): v is Record<string, any> => typeof v === "object" && v !== null && !Array.isArray(v); // eslint-disable-line @typescript-eslint/no-explicit-any
 const arr = (v: unknown): v is unknown[] => Array.isArray(v);
 // checkDiagram already rejects a style attribute, so only fill and stroke can carry a literal.

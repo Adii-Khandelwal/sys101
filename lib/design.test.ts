@@ -157,7 +157,7 @@ describe("designProblems", () => {
     expect(problems(real('An "unmatched quote.'))).toMatch(/unmatched/);
   });
   it("rejects banned phrasing and contrast patterns, en dash included", () => {
-    for (const t of ["A — dash.", "A – dash.", "It is not fast but it is cheap.", "The queue is not a database, it is a log.", "A queue isn't a database, it's a log.", "The queue is not a database. It is a log."])
+    for (const t of ["A — dash.", "A – dash.", "It is not fast but it is cheap.", "The queue is not a database, it is a log.", "A queue isn't a database, it's a log.", "The queue is not a database. It is a log.", "Pending is not a state: it is a reply.", "A reply, not a state: the merchant waits."])
       expect(problems((d) => (d.summary = t)), t).toMatch(/banned phrasing/);
   });
   it("checks diagrams: svg rules, role, tokens only, unique ids", () => {

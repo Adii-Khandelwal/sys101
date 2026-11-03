@@ -8,10 +8,10 @@ Branch `claude/design-b11` (on `claude/design-questions`). Page: `content/design
 | - | - |
 | D1 | Fixed. New Entities paragraph: pending is no stored state; it is the reply while an attempt or movement is unresolved; the payment keeps its last known state; the merchant keeps the order open, does not charge again, does not mark it failed, waits for the event or calls Get payment. Entities `say` and `tip` and API `say` agree. |
 | D2 | Fixed with one sentence in Entities (authorize uses an attempt because it holds funds and moves none; capture, void and refund change what is held or owed, so they get a movement row). No new table. |
-| D3 | Fixed. Crash dive `better` cut from 305 to about 190 words; the two expired-key sentences removed (the API section keeps them), the retry-later conflict points to the API section. |
+| D3 | Fixed. Crash dive `better` cut from 305 to 191 words; the two expired-key sentences removed (the API section keeps them), the retry-later conflict points to the API section. |
 | D4 | Partly. API status paragraph is now a short table (case, status name, why). Status NUMBERS are not written: the checker rejects any digit outside an assumption or a post-cited block, and a number in an assumption would be a misuse. Names are the ones used elsewhere on the page. |
-| D5 | Fixed. `say` is now the one-minute spoken answer (about 125 words, includes "with more time"); `talkTrack` stays as the longer version. |
-| D6 | Fixed. One sentence in the Requirements closing paragraph: the peak rate holds only with synchronous commit on, which Failure modes requires; a load test with it on settles it. No new figure. |
+| D5 | Fixed. `say` is now the one-minute spoken answer (121 words, includes "with more time"); `talkTrack` stays as the longer version. |
+| D6 | Fixed. One sentence in the Requirements closing paragraph: the judgement must hold with synchronous or quorum commit on, which Failure modes needs for this store; a load test with it on settles it. No new figure. |
 | D7 | Fixed. The qualifier (a broker's own exactly-once mode is fine inside the broker and stops at the provider call) is in the against-the-grain `say` and in the follow-up on exactly-once. |
 | D8 | Fixed. Forward pointer in the final-states paragraph of Entities (the late-authorization exception, failed is final but money may still be held). |
 | D9 | Fixed. The assumption now says "a large gateway" and that a smaller one scales every figure down. Requirements `say` no longer says "modest". |
@@ -39,3 +39,12 @@ Other audit hits ("Other reader hits") not done: undefined terms (local transact
 ## Checks
 
 tsc, lint and `npm test` (785) pass; build with `NEXT_DIST_DIR=.next-build`, check-seo, check-news, check-diagram-overflow and check:tour pass. See the main report for `check:ui`.
+
+## Review round 1 fixes
+
+- API status table row 1 now says "known state" (authorized is not final).
+- Requirements closing paragraph: "must hold with synchronous or quorum commit on, which Failure modes needs for this store", matching the failure-modes row.
+- Follow-ups: "every commit" and "Taking writes in both regions needs one owner region per merchant"; monitoring now pages on "symptoms and broken money invariants"; outbound ordering "blocks that payment's later events"; testing says the sandbox "typically" will not lose a reply.
+- Pending wording: "does not start a new payment"; the colon contrast forms removed from entities and api `say`. The checker's contrast patterns now accept a colon ("is not X: it is Y") and catch "A reply, not a state: ..." (tests added).
+- Rail: one `BAND = 0.34` for both the observer margin and the position test.
+- `.claude/rules/design-questions.md` says 6 to 16 follow-ups (table and checks list); `sourcedLine` wording updated there.

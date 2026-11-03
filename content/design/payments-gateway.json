@@ -162,7 +162,7 @@
    },
    {
     "type": "p",
-    "text": "What the numbers change. This peak write rate looks plausible for one well-run relational primary per partition, so no exotic store is assumed. That holds only with synchronous commit switched on, which the failure modes section requires for the payment store because waiting for a replica lowers write throughput. A load test with it on settles the question. Storage growth never stops, so data is partitioned by merchant from day one and old rows move to cheaper storage on a schedule. Assume status reads stay modest next to writes; if they do not, a read replica or a cache is the first thing to add."
+    "text": "What the numbers change. This peak write rate looks plausible for one well-run relational primary per partition, so no exotic store is assumed. That judgement must hold with synchronous or quorum commit on, which Failure modes needs for this store, because waiting for a replica raises response time and contention. A load test with it on settles the question. Storage growth never stops, so data is partitioned by merchant from day one and old rows move to cheaper storage on a schedule. Assume status reads stay modest next to writes; if they do not, a read replica or a cache is the first thing to add."
    }
   ],
   "ask": "What must the system do, which qualities matter most, and how big is it? Rank them and tell me which you would give up first.",
@@ -218,7 +218,7 @@
    },
    {
     "type": "p",
-    "text": "Pending is no payment state, and nothing stores it as one. The API gives it as the reply while a payment is created or authorized and an attempt or money movement for it is unresolved, meaning the provider has not answered or the answer is not yet known. The payment keeps its last known state until a fact arrives from recovery, an event or reconciliation. A merchant that sees pending keeps the order open, does not charge again and does not mark it failed; it waits for the signed event or asks with Get payment."
+    "text": "Pending is no payment state, and nothing stores it as one. The API gives it as the reply while a payment is created or authorized and an attempt or money movement for it is unresolved, meaning the provider has not answered or the answer is not yet known. The payment keeps its last known state until a fact arrives from recovery, an event or reconciliation. A merchant that sees pending keeps the order open, does not start a new payment and does not mark it failed; it waits for the signed event or asks with Get payment."
    },
    {
     "type": "p",
@@ -235,7 +235,7 @@
    }
   ],
   "ask": "What are the main things the system stores, and what states can a payment be in? Draw the legal moves between them.",
-  "say": "The nouns are merchant, payment, attempt, money movement, ledger transaction and entries, idempotency record, and inbound and outbound events. A payment is the merchant's intent. An attempt is one try through a provider, so the unknown outcome after a timeout lives on the attempt. Payment states are created, authorized, captured, failed, voided and expired. Created goes to authorized or failed, and authorized goes to captured, voided or expired. The last four are final, so repeated or late messages cannot move a payment backwards. Pending is not a state: it is the reply while an attempt or movement is unresolved.",
+  "say": "The nouns are merchant, payment, attempt, money movement, ledger transaction and entries, idempotency record, and inbound and outbound events. A payment is the merchant's intent. An attempt is one try through a provider, so the unknown outcome after a timeout lives on the attempt. Payment states are created, authorized, captured, failed, voided and expired. Created goes to authorized or failed, and authorized goes to captured, voided or expired. The last four are final, so repeated or late messages cannot move a payment backwards. Pending is the reply while an attempt or movement is unresolved; no record stores it.",
   "tip": "Split things when they change at different times or can repeat, such as an attempt and its payment. Draw the state machine, name the final states, and keep a derived answer like pending out of it."
  },
  "api": {
@@ -293,7 +293,7 @@
      [
       "We have an answer",
       "Success class",
-      "The reply holds the final state."
+      "The reply holds the known state."
      ],
      [
       "The reply is pending",
@@ -381,7 +381,7 @@
    }
   ],
   "ask": "Walk me through the calls a merchant makes, what each request and response holds, and how a merchant learns the result of a slow payment.",
-  "say": "There are four merchant calls: create payment, get payment, capture and void. Each is authenticated by a secret key, and each write carries an idempotency key. Create takes an order reference, an amount in the smallest currency unit, a currency, a token and a capture mode. If the provider has not answered by our deadline we reply pending, and the merchant hears the rest through a signed event or by getting the payment. Events carry an id, a type, the payment id and the new state, signed over the raw body with a timestamp. A repeat of the same key returns the saved reply. Pending is a reply, not a state: the merchant keeps the order open and waits for the event or gets the payment.",
+  "say": "There are four merchant calls: create payment, get payment, capture and void. Each is authenticated by a secret key, and each write carries an idempotency key. Create takes an order reference, an amount in the smallest currency unit, a currency, a token and a capture mode. If the provider has not answered by our deadline we reply pending, and the merchant hears the rest through a signed event or by getting the payment. Events carry an id, a type, the payment id and the new state, signed over the raw body with a timestamp. A repeat of the same key returns the saved reply. While pending, the merchant keeps the order open and waits for the event or gets the payment.",
   "tip": "Derive the caller from its credential, let the server set timestamps, and say which calls are safe to repeat. Say that the first version will change, because the contract matters more than field names."
  },
  "data-model": {
@@ -923,7 +923,7 @@
    },
    {
     "ask": "What changes with more than one region, and what recovery targets do you set?",
-    "answer": "I would state two targets first: how much committed data we may lose, and how long the charge path may be down. For money the first is nothing, which needs synchronous replication of the payment store to a second site, paid for in write latency on every attempt. A warm standby region with its own workers takes over, and recovery and reconciliation cover payments where the provider had already acted. Writing in two regions for one merchant needs a single owner region per merchant, because two owners could both move the same payment. This page assumes one region, so this is the first thing I would add."
+    "answer": "I would state two targets first: how much committed data we may lose, and how long the charge path may be down. For money the first is nothing, which needs synchronous replication of the payment store to a second site, paid for in write latency on every commit. A warm standby region with its own workers takes over, and recovery and reconciliation cover payments where the provider had already acted. Taking writes in both regions needs one owner region per merchant, because two owners could both move the same payment. This page assumes one region, so this is the first thing I would add."
    },
    {
     "ask": "Some payment methods settle later or need the customer to act. How does that fit?",
@@ -931,7 +931,7 @@
    },
    {
     "ask": "What do you monitor, and what pages the on-call?",
-    "answer": "Start with the stuck metric: count and age of attempts and movements in sent. Add the age of the oldest unprocessed inbound event and undelivered outbound event, any ledger transaction that does not balance, reconciliation differences by kind, the provider's error and timeout rate, and the share of pending replies. Page for symptoms a user feels: stuck age past its deadline, errors on the charge path, an unbalanced ledger. Everything else goes on dashboards. An objective for the charge path and a budget for it decide when to stop shipping changes."
+    "answer": "Start with the stuck metric: count and age of attempts and movements in sent. Add the age of the oldest unprocessed inbound event and undelivered outbound event, any ledger transaction that does not balance, reconciliation differences by kind, the provider's error and timeout rate, and the share of pending replies. Page for symptoms and broken money invariants: stuck age past its deadline, errors on the charge path, an unbalanced ledger. Everything else goes on dashboards. An objective for the charge path and a budget for it decide when to stop shipping changes."
    },
    {
     "ask": "Which database would you pick, and what does isolation change?",
@@ -943,11 +943,11 @@
    },
    {
     "ask": "Do merchants get events in order, and how long do you retry?",
-    "answer": "We do not promise global order. Each event carries the payment id, the new state and a version or created time, so a receiver can ignore an older one, and the safe habit is to treat an event as a hint and call Get payment. Ordering within one payment is possible by sending its events one at a time, but one slow endpoint then blocks that merchant's stream. Delivery is at least once, so events repeat. The retry window is a choice; I would set it with merchants to be longer than their usual outage, and afterwards they rely on Get payment and a replay list in the dashboard."
+    "answer": "We do not promise global order. Each event carries the payment id, the new state and a version or created time, so a receiver can ignore an older one, and the safe habit is to treat an event as a hint and call Get payment. Ordering within one payment is possible by sending its events one at a time, but one slow endpoint then blocks that payment's later events. Delivery is at least once, so events repeat. The retry window is a choice; I would set it with merchants to be longer than their usual outage, and afterwards they rely on Get payment and a replay list in the dashboard."
    },
    {
     "ask": "How do you test the failure paths?",
-    "answer": "The provider sits behind the adapter, so tests swap in a fake that can time out after it has charged, answer twice, reorder or drop events and send a late authorization. For the crash dive I stop the process between each pair of writes and the provider call, restart it, and check the invariants: one charge per payment, a balanced ledger, nothing left in sent. The provider's sandbox serves contract checks, not failure injection, since it will not lose a reply on request. In production, a small rate of injected faults on the adapter shows that recovery still works."
+    "answer": "The provider sits behind the adapter, so tests swap in a fake that can time out after it has charged, answer twice, reorder or drop events and send a late authorization. For the crash dive I stop the process between each pair of writes and the provider call, restart it, and check the invariants: one charge per payment, a balanced ledger, nothing left in sent. The provider's sandbox serves contract checks, not failure injection, since it typically will not lose a reply on request. In production, a small rate of injected faults on the adapter shows that recovery still works."
    }
   ],
   "ask": "Pull it together for me in about a minute, then tell me what you would do with more time.",
