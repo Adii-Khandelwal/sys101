@@ -175,7 +175,8 @@ describe("designProblems", () => {
   });
   it("checks counts", () => {
     expect(problems((d) => d["deep-dives"].dives.pop())).toMatch(/3 to 4 dives/);
-    expect(problems((d) => d["strong-answer"].followUps.pop())).toMatch(/6 to 8 follow-ups/);
+    expect(problems((d) => d["strong-answer"].followUps.pop())).toMatch(/6 to 16 follow-ups/);
+    expect(problems((d) => { const f = d["strong-answer"].followUps; while (f.length < 17) f.push({ ask: "Ask?", answer: "Answer." }); })).toMatch(/6 to 16 follow-ups/);
     expect(problems((d) => d.mistakes.items.pop())).toMatch(/5 to 8 items/);
     expect(problems((d) => (d.curiosities = [{ id: "c1", text: "A hook.", sourceId: "a" }]))).toMatch(/4 to 8/);
     expect(problems((d) => (d.curiosities = Array.from({ length: 4 }, (_, i) => ({ id: `c${i}`, text: "A hook.", sourceId: "r" }))))).toMatch(/only a post or paper/);
@@ -195,7 +196,7 @@ describe("designProblems", () => {
     d["deep-dives"].dives[0].cites = ["r"];
     d["strong-answer"].followUps[0].cites = ["r"];
     expect(sourcedClaims(d)).toBe(3);
-    expect(sourcedLine(d)).toBe("3 claims are sourced; the rest is our reasoning");
+    expect(sourcedLine(d)).toBe("3 claims are sourced; the rest is the site's own reasoning");
   });
   it("never throws on hostile shapes and always names the file", () => {
     const cases: Array<(d: Design) => void> = [

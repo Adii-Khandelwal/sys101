@@ -17,18 +17,14 @@ export default function DesignRail() {
 
   useEffect(() => {
     const els = STEPS.map((s) => document.getElementById(s.id)).filter((e): e is HTMLElement => !!e);
-    const inBand = new Set<string>();
     const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) inBand.add(e.target.id);
-          else inBand.delete(e.target.id);
-        }
-        // The last section in page order that touches the top third is the current one; with none there, keep the last.
-        const last = [...STEPS].reverse().find((s) => inBand.has(s.id));
-        if (last) setCurrent(last.id);
+      () => {
+        // The current section is the last one whose top has passed the top third of the screen, so the ring stays on the last section through Worth knowing and Original sources (no rail entry).
+        const line = window.innerHeight / 3;
+        const last = els.filter((el) => el.getBoundingClientRect().top <= line).pop();
+        setCurrent((last ?? els[0]).id);
       },
-      { rootMargin: "0px 0px -66% 0px" },
+      { rootMargin: "0px 0px -66% 0px", threshold: [0, 1] },
     );
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();

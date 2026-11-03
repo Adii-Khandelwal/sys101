@@ -280,7 +280,7 @@ export function designProblems(d: Design, file: string, topicSlugs: readonly str
     prose(sa.talkTrack, "strong-answer talkTrack");
     for (const k of ["mid", "senior", "staff"]) prose(rec(sa.levels) ? sa.levels[k] : undefined, `strong-answer level ${k}`);
     const fu = arr(sa.followUps) ? sa.followUps : [];
-    if (fu.length < 6 || fu.length > 8) add(`strong-answer: needs 6 to 8 follow-ups, has ${fu.length}`);
+    if (fu.length < 6 || fu.length > 16) add(`strong-answer: needs 6 to 16 follow-ups, has ${fu.length}`);
     fu.forEach((f, i) => {
       if (!rec(f)) return add(`follow-up ${i + 1} is not an object`);
       const kinds = cited(f.cites, `follow-up ${i + 1}`);
@@ -344,7 +344,7 @@ export function sourcedClaims(d: Design): number {
   const blockList = [...SECTIONS_WITH_BLOCKS.flatMap((id) => d[id].blocks ?? []), ...(d["deep-dives"].blocks ?? [])];
   return blockList.filter((b) => "cites" in b && has(b.cites)).length + d["deep-dives"].dives.filter((x) => has(x.cites) || x.real).length + d["strong-answer"].followUps.filter((f) => has(f.cites)).length;
 }
-export const sourcedLine = (d: Design) => `${sourcedClaims(d)} claims are sourced; the rest is our reasoning`;
+export const sourcedLine = (d: Design) => `${sourcedClaims(d)} claims are sourced; the rest is the site's own reasoning`;
 
 /** The newest source check, which is the page's "last updated" date. */
 export const designUpdated = (d: Pick<Design, "sources">) => d.sources.map((s) => s.verifiedOn).reduce((a, b) => (b > a ? b : a));

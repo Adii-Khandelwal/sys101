@@ -47,7 +47,7 @@ Sections, the only order a page may list them (`STEPS` in lib/designSteps.ts; th
 | `deep-dives` | Deep dives | `blocks?`, `dives [{id, title, attempt, breaks, better, tradeoff, cites?, real?: {text, cites}}]` (3 to 4), `notes?: string[]` |
 | `failure-modes` | Failure modes | `blocks` (at least 1) |
 | `against-the-grain` | Against the grain | `blocks` (at least 1) |
-| `strong-answer` | A strong answer | `talkTrack`, `levels {mid, senior, staff}`, `followUps [{ask, answer, cites?}]` (6 to 8) |
+| `strong-answer` | A strong answer | `talkTrack`, `levels {mid, senior, staff}`, `followUps [{ask, answer, cites?}]` (6 to 16) |
 | `mistakes` | Common mistakes | `items [{mistake, fix}]` (5 to 8) |
 
 Every section except `general-tips` also carries `topics: string[]` (existing topic slugs; may be empty) and the round strings `ask`, `say`, `tip`, shown in a framed box ("The interviewer asks", "What you say", "Tip", each with a text label and a shape marker) before a "The reasoning behind it" heading. Word limits (`ROUND_LIMITS`): ask 6 to 40, say 25 to 140, tip 8 to 45. `general-tips.topics` is optional and checked only when present.
@@ -58,7 +58,7 @@ Block types: `p {text, cites?}`, `list {items, cites?}` (the type allows no `cit
 
 `sources [{id, title, url, company, published, verifiedOn, kind, license?, edition?}]`: at least one; `published` is `YYYY`, `YYYY-MM-DD` or `no date shown` (then `edition` is required); `verifiedOn` is a real date; `license` is required for `reference`.
 
-The header line reads "N claims are sourced; the rest is our reasoning" (`sourcedLine`): N counts blocks with non-empty `cites` (a `real` block always has some), dives with `cites` or `real`, and follow-ups with `cites`, once each.
+The header line reads "N claims are sourced; the rest is the site's own reasoning" (`sourcedLine`): N counts blocks with non-empty `cites` (a `real` block always has some), dives with `cites` or `real`, and follow-ups with `cites`, once each.
 
 ### What `designProblems` checks
 
@@ -81,7 +81,7 @@ Structure
 - Round strings present as text and within the word limits for all eleven sections but `general-tips`.
 - Sections with `blocks` need at least one block, except `high-level`. `high-level` needs at least one stage; stage ids unique; `need`, `add`, `weak` are prose.
 - `deep-dives`: 3 to 4 dives, ids unique, `title`, `attempt`, `breaks`, `better`, `tradeoff` prose (cited kinds apply); `real` an object with at least one cite and its text checked as a `real` block; `notes` an array of prose.
-- `strong-answer`: `talkTrack` and the three levels are prose; 6 to 8 follow-ups, `ask` and `answer` prose (answer takes its cites' kinds).
+- `strong-answer`: `talkTrack` and the three levels are prose; 6 to 16 follow-ups, `ask` and `answer` prose (answer takes its cites' kinds).
 - `mistakes`: 5 to 8 items, `mistake` and `fix` prose.
 - `curiosities`: an array; 4 to 8 when non-empty; ids unique; id and text non-empty; text 45 words or fewer; no source company word; no quotation mark; `sourceId` exists and is not a `reference`. A figure is allowed.
 - Banned phrasing over every string in the file: em or en dash, `BANNED_PHRASING` from lib/topics.ts, and the contrast patterns "is not X, it is Z", "it is not X ... it is" and "not X ... but".

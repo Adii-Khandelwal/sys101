@@ -107,7 +107,7 @@
    }
   ],
   "ask": "We need a payment gateway for online merchants. Before you design anything, what would you ask me, and what would you leave out?",
-  "say": "I would confirm that merchants call us from their servers, that card details go to a separate vault and we only handle a stand-in value, and that we start with one outside provider behind an adapter. In scope: create a payment, authorize it, capture it in full, void it, tell the merchant the outcome, and keep an auditable money record. Out of scope: the vault, fraud scoring, payouts, subscriptions, refunds and disputes. The thing that must never happen is a customer charged twice.",
+  "say": "I would ask who calls us, whether we see card numbers, one step or two, and how many outside providers. Then I would say my scope back: merchants call from their servers, card details go to a separate vault and we only handle a stand-in value, and we start with one provider behind an adapter. In scope: create a payment, authorize it, capture it in full, void it, tell the merchant the outcome, and keep an auditable money record. Out of scope: the vault, fraud scoring, payouts, subscriptions, refunds and disputes. The thing that must never happen is a customer charged twice.",
   "tip": "Say the scope back in a few sentences, including what you leave out and why. A scope stated aloud is hard to change quietly later."
  },
  "requirements": {
@@ -154,7 +154,7 @@
    },
    {
     "type": "assumption",
-    "text": "Assume 500 payments per second on average and 2,000 at the peak, with about 4 ledger rows written per captured payment at about 200 bytes each."
+    "text": "Assume a large gateway with 500 payments per second on average and 2,000 at the peak, with about 4 ledger rows written per captured payment at about 200 bytes each. A smaller gateway can scale every figure down; the method stays the same."
    },
    {
     "type": "assumption",
@@ -162,11 +162,11 @@
    },
    {
     "type": "p",
-    "text": "What the numbers change. This peak write rate looks plausible for one well-run relational primary per partition, which a load test would confirm, so no exotic store is assumed. Storage growth never stops, so data is partitioned by merchant from day one and old rows move to cheaper storage on a schedule. Assume status reads stay modest next to writes; if they do not, a read replica or a cache is the first thing to add."
+    "text": "What the numbers change. This peak write rate looks plausible for one well-run relational primary per partition, so no exotic store is assumed. That holds only with synchronous commit switched on, which the failure modes section requires for the payment store because waiting for a replica lowers write throughput. A load test with it on settles the question. Storage growth never stops, so data is partitioned by merchant from day one and old rows move to cheaper storage on a schedule. Assume status reads stay modest next to writes; if they do not, a read replica or a cache is the first thing to add."
    }
   ],
   "ask": "What must the system do, which qualities matter most, and how big is it? Rank them and tell me which you would give up first.",
-  "say": "Functionally: create a payment, authorize and capture it, void it, and tell the merchant the outcome by reply and by signed event, with every money movement recorded. In ranked order the qualities are correctness of money, auditability, availability of the charge path, then latency, then scale. Under the assumptions below the peak write rate is modest, so storage growth and hot merchants matter more than raw throughput. When we cannot tell what happened, the answer is pending and we keep the evidence.",
+  "say": "Functionally: create a payment, authorize and capture it, void it, and tell the merchant the outcome by reply and by signed event, with every money movement recorded. In ranked order the qualities are correctness of money, auditability, availability of the charge path, then latency, then scale. Under the assumptions below the peak write rate looks manageable for one primary per partition, so storage growth and hot merchants matter more than raw throughput. I would give up scale headroom, then latency, before any of the first three. When we cannot tell what happened, the answer is pending and we keep the evidence.",
   "tip": "Rank the qualities and say what gives way when two collide. Do arithmetic only when the result changes a decision, and label every number as an assumption."
  },
  "entities": {
@@ -194,7 +194,7 @@
    },
    {
     "type": "p",
-    "text": "Payment and Attempt are split on purpose. A payment can need several attempts, for example a second provider tried after the first definitely rejected the request before processing. An unknown outcome keeps the same attempt. A decline of the card ends the payment as failed, and the merchant starts a new payment. The unknown outcome after a timeout belongs to the attempt. The payment itself moves only when a fact is known."
+    "text": "Payment and Attempt are split on purpose. A payment can need several attempts, for example a second provider tried after the first definitely rejected the request before processing. An unknown outcome keeps the same attempt. A decline of the card ends the payment as failed, and the merchant starts a new payment. The unknown outcome after a timeout belongs to the attempt. The payment itself moves only when a fact is known. Authorize uses an attempt, while capture, void and refund use a money movement, because an authorization holds funds and moves none, and the other three change what is held or owed and feed the ledger."
    },
    {
     "type": "diagram",
@@ -214,7 +214,11 @@
    },
    {
     "type": "p",
-    "text": "Captured, voided, expired and failed are final. A request for any other move is refused with a conflict. Later money events, such as a refund, are separate records that point at the payment, so its own state never travels backwards. Final states are what make a repeated or late message harmless, which the webhook dive uses."
+    "text": "Captured, voided, expired and failed are final. A request for any other move is refused with a conflict. Later money events, such as a refund, are separate records that point at the payment, so its own state never travels backwards. Final states are what make a repeated or late message harmless, which the webhook dive uses. The one exception, a late authorization on a failed payment, is the next paragraph: failed is final for the payment, but money may still be held."
+   },
+   {
+    "type": "p",
+    "text": "Pending is no payment state, and nothing stores it as one. The API gives it as the reply while a payment is created or authorized and an attempt or money movement for it is unresolved, meaning the provider has not answered or the answer is not yet known. The payment keeps its last known state until a fact arrives from recovery, an event or reconciliation. A merchant that sees pending keeps the order open, does not charge again and does not mark it failed; it waits for the signed event or asks with Get payment."
    },
    {
     "type": "p",
@@ -231,8 +235,8 @@
    }
   ],
   "ask": "What are the main things the system stores, and what states can a payment be in? Draw the legal moves between them.",
-  "say": "The nouns are merchant, payment, attempt, money movement, ledger transaction and entries, idempotency record, and inbound and outbound events. A payment is the merchant's intent. An attempt is one try through a provider, so the unknown outcome after a timeout lives on the attempt. Payment states are created, authorized, captured, failed, voided and expired. Created goes to authorized or failed, and authorized goes to captured, voided or expired. The last four are final, so repeated or late messages cannot move a payment backwards.",
-  "tip": "Split things when they change at different times or can repeat, such as an attempt and its payment. Draw the state machine and name the final states, since they simplify every later argument."
+  "say": "The nouns are merchant, payment, attempt, money movement, ledger transaction and entries, idempotency record, and inbound and outbound events. A payment is the merchant's intent. An attempt is one try through a provider, so the unknown outcome after a timeout lives on the attempt. Payment states are created, authorized, captured, failed, voided and expired. Created goes to authorized or failed, and authorized goes to captured, voided or expired. The last four are final, so repeated or late messages cannot move a payment backwards. Pending is not a state: it is the reply while an attempt or movement is unresolved.",
+  "tip": "Split things when they change at different times or can repeat, such as an attempt and its payment. Draw the state machine, name the final states, and keep a derived answer like pending out of it."
  },
  "api": {
   "topics": [
@@ -275,7 +279,53 @@
    },
    {
     "type": "p",
-    "text": "Status codes follow the usual classes, and the exact choice for each case is ours. A success class when we have an answer. An accepted-and-still-working status when the reply is pending. A client-error status for a bad body. A conflict status that tells the client to retry later when a second copy of a request arrives while the first still runs. A conflict status when the move is illegal from the current state; that case is our own choice. An unprocessable-content status when a key is reused with a different body. A too-many-requests status when the merchant is over its limit. A capture with a new key while an earlier capture movement is still sent or unknown is refused with a conflict status, so a payment has at most one open capture movement."
+    "text": "Status codes follow the usual classes, and the exact choice for each case is ours."
+   },
+   {
+    "type": "table",
+    "caption": "Which HTTP status each case gets",
+    "columns": [
+     "Case",
+     "Status",
+     "Why"
+    ],
+    "rows": [
+     [
+      "We have an answer",
+      "Success class",
+      "The reply holds the final state."
+     ],
+     [
+      "The reply is pending",
+      "Accepted",
+      "The work continues after the reply."
+     ],
+     [
+      "The body is bad",
+      "Client error (bad request)",
+      "Nothing was written."
+     ],
+     [
+      "A second copy arrives while the first still runs, or a retry finds a record left in progress",
+      "Conflict, with a retry-later hint",
+      "The first copy owns the key until it finishes."
+     ],
+     [
+      "A move is illegal from the current state, or a capture with a new key finds an earlier capture still open",
+      "Conflict",
+      "Our own choice; a payment has at most one open capture movement."
+     ],
+     [
+      "A key is reused with a different body",
+      "Unprocessable content",
+      "Almost certainly a client bug."
+     ],
+     [
+      "The merchant is over its limit",
+      "Too many requests",
+      "Protects the shared workers."
+     ]
+    ]
    },
    {
     "type": "real",
@@ -331,7 +381,7 @@
    }
   ],
   "ask": "Walk me through the calls a merchant makes, what each request and response holds, and how a merchant learns the result of a slow payment.",
-  "say": "There are four merchant calls: create payment, get payment, capture and void. Each is authenticated by a secret key, and each write carries an idempotency key. Create takes an order reference, an amount in the smallest currency unit, a currency, a token and a capture mode. If the provider has not answered by our deadline we reply pending, and the merchant hears the rest through a signed event or by getting the payment. Events carry an id, a type, the payment id and the new state, signed over the raw body with a timestamp. A repeat of the same key returns the saved reply.",
+  "say": "There are four merchant calls: create payment, get payment, capture and void. Each is authenticated by a secret key, and each write carries an idempotency key. Create takes an order reference, an amount in the smallest currency unit, a currency, a token and a capture mode. If the provider has not answered by our deadline we reply pending, and the merchant hears the rest through a signed event or by getting the payment. Events carry an id, a type, the payment id and the new state, signed over the raw body with a timestamp. A repeat of the same key returns the saved reply. Pending is a reply, not a state: the merchant keeps the order open and waits for the event or gets the payment.",
   "tip": "Derive the caller from its credential, let the server set timestamps, and say which calls are safe to repeat. Say that the first version will change, because the contract matters more than field names."
  },
  "data-model": {
@@ -547,7 +597,7 @@
     "title": "The crash between the provider charging and us recording it",
     "attempt": "Call the provider, wait for the answer, then write the result to our database.",
     "breaks": "If the process dies after the provider takes the money and before our write, the card is charged and our record says the payment is only created. The merchant retries. We have no memory of a call, so we call again, and the customer is charged twice. The same hole opens when the provider is slow and our request times out.",
-    "better": "Write down the intention before acting. In one short transaction, commit the key record, the payment and an attempt row in the sent state with a reference we generated, then make the call and pass that reference to the provider as its own deduplication key. Do not hold a database transaction open across the call. After the call, save the answer on the attempt and move the payment in a second short transaction. The same rule covers capture and void: the money-movement row is committed before the provider call and its id is the provider's idempotency key. A recovery worker scans attempts and money movements that have sat in sent for longer than the call deadline plus margin. For each, it looks up the provider's record for that reference. A found result goes through the same function the normal path uses. A lookup that finds nothing proves nothing: the request may still be in flight, or the provider's lookup may lag behind its processing. So the worker never concludes the call was not sent. It repeats the call with the same reference as the provider's idempotency key, which is safe whichever way the first call went, as long as the provider still holds the key. Past the provider's key retention window a reused key can start a new request, so the worker checks the window first and, beyond it, resolves the attempt by lookup or by reconciliation. Meanwhile a merchant's retry with the same key finds the record still in progress and gets a conflict status that tells it to retry later until the recovery worker finishes it. After a record has expired, a retried create runs as a new request, and only the unique order reference stops a second charge; a retried capture is refused because the payment's final state refuses a second capture.",
+    "better": "Write down the intention before acting. In one short transaction, commit the key record, the payment and an attempt row in the sent state with a reference we generated, then call the provider and pass that reference as its own deduplication key. Never hold a database transaction open across the call. Afterwards, save the answer and move the payment in a second short transaction. Capture and void follow the same rule with a money-movement row whose id is the provider's idempotency key. A recovery worker scans attempts and movements that have sat in sent longer than the call deadline plus margin and looks each up by reference. A found result goes through the normal path. A lookup that finds nothing proves nothing, since the request may be in flight or the lookup may lag, so the worker repeats the call with the same reference, which is safe whichever way the first call went while the provider still holds the key. Past the provider's retention window it resolves the attempt by lookup or reconciliation instead. Meanwhile the merchant's retry gets the retry-later conflict status until recovery finishes, as the API section describes.",
     "tradeoff": "We pay one extra committed write before every provider call, and the merchant sees pending for the recovery delay after a crash. The design needs a provider that accepts our reference as an idempotency key or lets us look the request up. If a provider offers neither, the payment stays pending until its settlement report resolves it, and that gap should be said aloud.",
     "real": {
      "text": "Stripe's error-handling page deals with unclear outcomes after a connection failure and advises: \"Retrieve the relevant object from Stripe and check its status.\"",
@@ -608,7 +658,7 @@
    "Reconciliation. A daily job compares the provider's settlement report with our ledger, matching on the provider reference. It lists four kinds of difference: only in our ledger, only in their report, an amount mismatch, and a state mismatch. Each is fixed by an explicit compensating entry or by resolving a stuck attempt or movement, with no row edited. Reconciliation is the backstop for what every earlier safeguard missed, so it runs even when nothing looks wrong."
   ],
   "ask": "Let's go deeper on the parts that worry you most. What happens when the provider charges the card and your process dies right after?",
-  "say": "For the crash, I write an attempt row, or a money-movement row for a capture, with our own reference before calling the provider and pass that reference along. A recovery worker looks up stuck attempts and movements by reference, and if the lookup finds nothing it repeats the call with the same reference. For webhooks, I store each event under its unique id, reply fast, and run it through the state machine. For timeouts, I treat the outcome as unknown, retry within a budget, then ask the provider. For consistency, payment and ledger commit in one local transaction, with an outbox for everything outside.",
+  "say": "For the crash, my first attempt is to call the provider and then write the result, which double charges if we die in between. So I write an attempt row, or a money-movement row for a capture, with our own reference before calling the provider and pass that reference along. A recovery worker looks up stuck attempts and movements by reference, and if the lookup finds nothing it repeats the call with the same reference. On the other three worries: for webhooks, I store each event under its unique id, reply fast, and run it through the state machine. For timeouts, I treat the outcome as unknown, retry within a budget, then ask the provider. For consistency, payment and ledger commit in one local transaction, with an outbox for everything outside.",
   "tip": "For each weak spot give a first attempt, say how it breaks, then the better design and its cost. A cost named without prompting reads as judgement.",
   "blocks": [
    {
@@ -810,19 +860,20 @@
    }
   ],
   "ask": "A textbook would reach for two-phase commit here. Would you?",
-  "say": "I would not, and I would avoid exactly-once delivery too. Two-phase commit would tie the charge path to a coordinator, and the card network cannot take part anyway, so I keep what we own in one local transaction and make outside calls safe to repeat. Exactly-once is real only where one system controls both the log and the effect. A charge is an effect at the provider, so I use at-least-once delivery, a repeat-safe call keyed by our reference, and idempotent receivers. I also would not hold a database transaction open across the provider call.",
+  "say": "I would not, and I would avoid exactly-once delivery too. Two-phase commit would tie the charge path to a coordinator, and the card network cannot take part anyway, so I keep what we own in one local transaction and make outside calls safe to repeat. Exactly-once is real only where one system controls both the log and the effect, so a broker's own mode is fine inside the broker and stops at the provider call. A charge is an effect at the provider, so I use at-least-once delivery, a repeat-safe call keyed by our reference, and idempotent receivers. I also would not hold a database transaction open across the provider call.",
   "tip": "When you reject a textbook answer, name the assumption it needs and show that it fails here. Then say what you use instead and what that costs."
  },
  "strong-answer": {
   "topics": [
    "idempotency-and-retries",
-   "distributed-transactions"
+   "distributed-transactions",
+   "observability-and-slos"
   ],
   "talkTrack": "A payment gateway sits between merchants and outside providers that I cannot roll back. So I rank correctness first: never charge twice, always record what moved. I scope to create, authorize, capture and void, and I leave vaults, fraud and payouts out. The core is a payment state machine with final states, an attempt or money-movement record written before every provider call, and an idempotency key stored in the same transaction as the payment. Money goes into an append-only, double-entry ledger in the same local transaction as the state change, so I need no distributed transaction. Provider events and merchant events both go through tables, an inbox and an outbox, because delivery is at least once and I make every step safe to repeat. A timeout means unknown, so I retry within a budget or ask the provider by reference, and I answer pending when I cannot be sure. A reconciler compares the provider's reports with my ledger. I scale by merchant partition and watch for hot merchants.",
   "levels": {
-   "mid": "A first pass covers the shape: clear scope, the calls, a payment record with states, a provider adapter, an idempotency key so a retry does not charge twice, and a webhook for the result. The learner can name why capture comes after authorization and can say what a ledger is for. Depth here means being able to explain each box and what happens on a simple failure.",
-   "senior": "A deeper pass takes the weak spots unprompted. It separates attempts from payments, explains that a timeout leaves the outcome unknown and the payment unchanged, and picks between retrying and asking with a stated reason. It handles duplicate and reordered events with a unique event id and a state machine, and keeps the ledger in the same transaction as the state. It states the cost of each choice, such as the extra write before every provider call and the pending answer merchants must handle.",
-   "staff": "A judgement pass argues where the usual answer is wrong: why two-phase commit and exactly-once delivery are the wrong tools, and what takes their place. It sets out the failure of each component and the order of recovery, names what reconciliation catches that nothing else does, and plans for hot merchants, retention and the growth of history. It names the first metric to watch, the count and age of attempts and movements stuck in sent, and says what it would change if a provider offered no safe repeat or lookup."
+   "mid": "My first pass covers the shape: clear scope, the calls, a payment record with states, a provider adapter, an idempotency key so a retry does not charge twice, and a webhook for the result. I can say why capture comes after authorization and what a ledger is for, and I can explain each box and what happens on a simple failure.",
+   "senior": "My deeper pass takes the weak spots unprompted. I separate attempts from payments, say that a timeout leaves the outcome unknown and the payment unchanged, and choose between retrying and asking with a stated reason. I handle duplicate and reordered events with a unique event id and a state machine, keep the ledger in the same transaction as the state, and state the cost of each choice, such as the extra write before every provider call and the pending answer merchants must handle.",
+   "staff": "My judgement pass argues where the usual answer is wrong: why two-phase commit, and exactly-once delivery across the provider call, are the wrong tools, and what takes their place. I set out how each component fails and the order of recovery, name what reconciliation catches that nothing else does, and plan for hot merchants, retention and the growth of history. I name the first metric to watch, the count and age of attempts and movements stuck in sent, and say what I would change if a provider offered no safe repeat or lookup."
   },
   "followUps": [
    {
@@ -861,14 +912,46 @@
    },
    {
     "ask": "Why not use a queue with exactly-once delivery between the payment and ledger services?",
-    "answer": "Exactly-once holds where one system controls both the log and the effect. Between the payment and the ledger we avoid the question by using one database. For the charge itself the effect lives at the provider, who has to cooperate, so we make the call repeat-safe by reference and keep delivery at least once.",
+    "answer": "Exactly-once holds where one system controls both the log and the effect, so a broker's own mode is fine inside the broker and stops at the provider call. Between the payment and the ledger we avoid the question by using one database. For the charge itself the effect lives at the provider, who has to cooperate, so we make the call repeat-safe by reference and keep delivery at least once.",
     "cites": [
      "kafka-design"
     ]
+   },
+   {
+    "ask": "How would you move a merchant to another partition?",
+    "answer": "Copy the merchant's rows to the target while the source keeps serving, and keep the copy fed from the change log. Then pause that merchant's writes briefly, check that row counts and ledger sums match, and switch the routing entry. Because the partition key is the merchant, the payment, its attempts, movements, entries, key records and outbox rows travel together, so a capture is one local transaction before and after. In-progress rows move too, so a retry during the move still finds its key. The costs are a short write pause for that merchant and a routing directory that becomes a dependency of every request."
+   },
+   {
+    "ask": "What changes with more than one region, and what recovery targets do you set?",
+    "answer": "I would state two targets first: how much committed data we may lose, and how long the charge path may be down. For money the first is nothing, which needs synchronous replication of the payment store to a second site, paid for in write latency on every attempt. A warm standby region with its own workers takes over, and recovery and reconciliation cover payments where the provider had already acted. Writing in two regions for one merchant needs a single owner region per merchant, because two owners could both move the same payment. This page assumes one region, so this is the first thing I would add."
+   },
+   {
+    "ask": "Some payment methods settle later or need the customer to act. How does that fit?",
+    "answer": "They break the authorize-then-capture shape. A bank transfer or wallet has a customer step and a result that arrives hours or days later, and some methods ask the customer to authenticate in their own app before the provider approves. I would add a state before authorized, such as awaiting customer action, with an expiry, and let only the provider's signed event or a lookup move it on. Idempotency, the inbox and reconciliation stay as they are. What changes is that pending can last long, so merchants rely on the event and need a clear expiry."
+   },
+   {
+    "ask": "What do you monitor, and what pages the on-call?",
+    "answer": "Start with the stuck metric: count and age of attempts and movements in sent. Add the age of the oldest unprocessed inbound event and undelivered outbound event, any ledger transaction that does not balance, reconciliation differences by kind, the provider's error and timeout rate, and the share of pending replies. Page for symptoms a user feels: stuck age past its deadline, errors on the charge path, an unbalanced ledger. Everything else goes on dashboards. An objective for the charge path and a budget for it decide when to stop shipping changes."
+   },
+   {
+    "ask": "Which database would you pick, and what does isolation change?",
+    "answer": "A relational store with transactions inside a partition, because a capture needs the state change, balanced entries and the outbox row to commit together, and because unique constraints do real work here: the key per merchant, the order reference, the provider event id and the ledger transaction id. A unique constraint is enforced by its index at any isolation level. Weaker isolation allows read-then-write races, so state changes use a version check. A distributed store also works if it gives transactions within one merchant's partition and enforces uniqueness there; if uniqueness holds only per node, the key and order-reference protections weaken."
+   },
+   {
+    "ask": "How do you handle several currencies and conversion?",
+    "answer": "Every amount is a whole number of the smallest unit with its currency code, and amounts of different currencies are never added. A conversion is its own money movement that records the rate, both amounts and the rounding rule. It posts entries that balance within each currency, using a conversion account on each side. The rate is recorded with the payment so a later dispute can replay it. Rounding happens in one place, and any leftover smallest unit is an explicit entry instead of a silent loss."
+   },
+   {
+    "ask": "Do merchants get events in order, and how long do you retry?",
+    "answer": "We do not promise global order. Each event carries the payment id, the new state and a version or created time, so a receiver can ignore an older one, and the safe habit is to treat an event as a hint and call Get payment. Ordering within one payment is possible by sending its events one at a time, but one slow endpoint then blocks that merchant's stream. Delivery is at least once, so events repeat. The retry window is a choice; I would set it with merchants to be longer than their usual outage, and afterwards they rely on Get payment and a replay list in the dashboard."
+   },
+   {
+    "ask": "How do you test the failure paths?",
+    "answer": "The provider sits behind the adapter, so tests swap in a fake that can time out after it has charged, answer twice, reorder or drop events and send a late authorization. For the crash dive I stop the process between each pair of writes and the provider call, restart it, and check the invariants: one charge per payment, a balanced ledger, nothing left in sent. The provider's sandbox serves contract checks, not failure injection, since it will not lose a reply on request. In production, a small rate of injected faults on the adapter shows that recovery still works."
    }
   ],
   "ask": "Pull it together for me in about a minute, then tell me what you would do with more time.",
-  "say": "I would open with scope and ranked qualities, then entities and the state machine, the API with the idempotency key, and the data model with the append-only ledger. Then the six build-up steps and the four deep dives, spending most time on the crash after the charge and on timeouts. I would close with failure modes, reconciliation and the first metric I would watch, the count and age of attempts and movements stuck in sent. With more time I would load test one partition and add a second provider.",
+  "say": "A gateway sits between merchants and outside providers I cannot roll back, so correctness of money ranks first: never charge twice, always record what moved. Scope is create, authorize, capture and void. The core is a payment state machine with final states, an attempt or money-movement row written before every provider call, and an idempotency key stored in the same transaction as the payment. Money goes into an append-only, double-entry ledger in the same local transaction as the state change. A timeout means unknown, so I retry within a budget or ask the provider, and answer pending meanwhile. A reconciler compares the provider's reports with my ledger. With more time I would load test one partition and add a second provider.",
   "tip": "Practise a short version out loud, then the long one. Leave a minute at the end to say what you would do next and what you would measure."
  },
  "mistakes": {
@@ -907,7 +990,7 @@
    }
   ],
   "ask": "What would you warn a new engineer about when they build this?",
-  "say": "Treating a timeout as a failure is the first warning, because the card may already be charged. Then keeping the idempotency key away from the payment's transaction, editing ledger rows or updating balances in place, wrapping the provider call in a database transaction, trusting webhook order, and skipping reconciliation. The habit that avoids most of these is to write the intent first, append to the ledger and leave history untouched, and treat each event as a claim to check.",
+  "say": "Treating a timeout as a failure is the first warning, because the card may already be charged. Then keeping the idempotency key away from the payment's transaction, editing ledger rows or updating balances in place, wrapping the provider call in a database transaction, trusting webhook order, skipping reconciliation, and opening with the diagram instead of the scope. The habit that avoids most of these is to write the intent first, append to the ledger and leave history untouched, and treat each event as a claim to check.",
   "tip": "Pair every warning with its fix in one line, and rank the warnings by how much damage each does. A short ranked list is easier to remember than a long flat one."
  },
  "curiosities": [
