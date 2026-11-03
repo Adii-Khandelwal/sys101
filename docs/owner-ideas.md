@@ -49,3 +49,10 @@ Moved out of CLAUDE.md to keep it short. Every idea or preference the owner stat
 - 30 Oct 2026: owner asked for neutral wording outside About (no "I" or "we"); the Great reads lead was rewritten and Privacy and Terms made neutral. About keeps "I".
 - 30 Oct 2026: owner asked for anatomy-skill figures on topic pages wherever they make sense (not on the homepage, and never a copy of a figure already on a topic page): six added, see `figures.md`.
 - 30 Oct 2026: owner said the footer column titles were not distinguished from the links; titles are now bold ink.
+- 31 Oct 2026: owner asked for standalone "Design X" interview questions (payment gateway, Splitwise, Uber, Flipkart and similar; HLD and LLD) aimed at Google, Uber, Rubrik, Flipkart, Microsoft and other top tech companies; plan in `docs/design-questions-plan.md`.
+- 31 Oct 2026: owner said to never guess content and use only verified legitimate sources (no "general reasoning" tier; LLD parked until a licensed source is named).
+- 31 Oct 2026: owner made design pages read-only (no timer, exercises, quiz, calculator or stored notes) and interview-shaped: "if the interviewer says this, answer like this", plus a page on how an interview goes (`design-questions.md`).
+- 31 Oct 2026: owner said to teach from the recognised system design teaching sources on the open web, with figures only from company posts and papers, and to use the tech blogs only for a short "Worth knowing" close.
+- 31 Oct 2026: owner asked for vendor-neutral, original model answers, with vendor names only in a short "How a real system does it" note.
+- 31 Oct 2026: owner decided the model-answer text may use "we" and a four-digit year may appear in a real block that names its company.
+- 1 Nov 2026: owner asked each section to show what the interviewer asks, what to say and a tip, plus a General tips section on how the round goes.

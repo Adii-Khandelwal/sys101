@@ -1,0 +1,757 @@
+{
+  "slug": "payments-gateway",
+  "title": "Design a payment gateway",
+  "summary": "How a payment gateway holds, takes and records a charge, and stays safe when requests repeat or answers arrive late.",
+  "topics": [
+    {
+      "slug": "idempotency-and-retries",
+      "role": "Makes a repeated payment call safe and keeps retries from adding load."
+    },
+    {
+      "slug": "distributed-transactions",
+      "role": "Covers a hold and a capture that must stay in step with the record."
+    },
+    {
+      "slug": "circuit-breakers",
+      "role": "Limits retrying a provider that is likely to keep failing."
+    },
+    {
+      "slug": "api-design-rpc-rest-graphql",
+      "role": "Covers the calls and the signed events a merchant depends on."
+    }
+  ],
+  "capstone": "payments-ledger",
+  "scope": {
+    "mustDo": [
+      "Authorize: a merchant asks the gateway to charge a customer, and the gateway reserves the money first.",
+      "Capture: the merchant takes the reserved money, or lets the hold lapse.",
+      "Record: every step is written down so the history can be checked and balanced.",
+      "Retry safely: a merchant that sends the same request again never charges the customer twice.",
+      "Notify: the merchant hears about a result that arrives later."
+    ],
+    "leftOut": [
+      {
+        "item": "Refunds",
+        "kind": "feature"
+      },
+      {
+        "item": "Saved cards and wallets",
+        "kind": "feature"
+      },
+      {
+        "item": "Merchant dashboard and reports",
+        "kind": "feature"
+      },
+      {
+        "item": "Fraud screening",
+        "kind": "system"
+      },
+      {
+        "item": "Settlement and reconciliation with banks",
+        "kind": "system"
+      },
+      {
+        "item": "Routing between payment providers",
+        "kind": "system"
+      },
+      {
+        "item": "Card storage and tokenization",
+        "kind": "system"
+      }
+    ],
+    "why": "This page covers authorizing, capturing, recording, retrying safely and notifying. Every left-out item is a separate feature or a separate design question, and each can wait."
+  },
+  "qualities": {
+    "status": "sourced",
+    "topics": [
+      "idempotency-and-retries",
+      "distributed-transactions"
+    ],
+    "claims": [
+      {
+        "text": "Charge calls: Unmesh Joshi's Idempotent Receiver pattern (on martinfowler.com) notes that servers receive duplicate requests when clients retry.",
+        "kind": "reference",
+        "sourceId": "s21"
+      },
+      {
+        "text": "Square's guide treats accidental repeats of a call as a hazard to guard against, and notes they can have harmful effects.",
+        "kind": "reference",
+        "sourceId": "s7"
+      },
+      {
+        "text": "Whole path: a teaching page on payment systems wants transactions to stay safe and financial records sound, even though outside payment networks respond on their own schedule.",
+        "kind": "reference",
+        "sourceId": "s28"
+      },
+      {
+        "text": "Records: in Martin Fowler's accounting transaction, each withdrawal needs a matching deposit.",
+        "kind": "reference",
+        "sourceId": "s20"
+      }
+    ]
+  },
+  "things-and-contract": {
+    "status": "sourced",
+    "topics": [
+      "idempotency-and-retries",
+      "api-design-rpc-rest-graphql"
+    ],
+    "claims": [
+      {
+        "text": "Payment record: Stripe's PaymentIntent follows a payment from the moment it is created until checkout finishes.",
+        "kind": "reference",
+        "sourceId": "s1"
+      },
+      {
+        "text": "It usually maps to a shopper's cart or session inside the merchant's application.",
+        "kind": "reference",
+        "sourceId": "s1"
+      },
+      {
+        "text": "Order: Razorpay lets merchants make orders and attach payments to them.",
+        "kind": "reference",
+        "sourceId": "s15"
+      },
+      {
+        "text": "Calls: PayPal's orders API has a call to authorize payment for an order and a separate call to capture it.",
+        "kind": "reference",
+        "sourceId": "s16"
+      },
+      {
+        "text": "Retry-safe calls: Stripe's API lets a client repeat a request safely, without the operation being performed again by mistake.",
+        "kind": "reference",
+        "sourceId": "s3"
+      },
+      {
+        "text": "Hello Interview's delivery page defines the contract between the system and its users before the high-level design.",
+        "kind": "reference",
+        "sourceId": "s27"
+      },
+      {
+        "text": "Trust: Razorpay sends a hash signature in a request header with every event, and the receiver is expected to check it.",
+        "kind": "reference",
+        "sourceId": "s13"
+      }
+    ]
+  },
+  "build-it-up": {
+    "status": "sourced",
+    "topics": [
+      "idempotency-and-retries",
+      "distributed-transactions"
+    ],
+    "stages": [
+      {
+        "id": "authorize",
+        "need": "The merchant asks to charge a customer and needs the money set aside.",
+        "claims": [
+          {
+            "text": "Adyen: authorizing reserves the money in the shopper's bank account.",
+            "kind": "reference",
+            "sourceId": "s8"
+          },
+          {
+            "text": "Stripe's PaymentIntent status says whether it needs more processing or an action from the customer.",
+            "kind": "reference",
+            "sourceId": "s2"
+          }
+        ]
+      },
+      {
+        "id": "capture",
+        "need": "The merchant wants to take the reserved money when it chooses.",
+        "claims": [
+          {
+            "text": "Stripe: an eligible payment method can carry a hold that sets funds aside to be taken later.",
+            "kind": "reference",
+            "sourceId": "s5"
+          },
+          {
+            "text": "Adyen notes that some payment methods allow capture to happen apart from authorization.",
+            "kind": "reference",
+            "sourceId": "s8"
+          },
+          {
+            "text": "Razorpay describes the alternative where the payment moves to the captured state automatically.",
+            "kind": "reference",
+            "sourceId": "s12"
+          }
+        ],
+        "weak": {
+          "text": "Still weak: Stripe says an authorization that expires before capture releases the funds.",
+          "kind": "reference",
+          "sourceId": "s5"
+        },
+        "diagram": "<svg viewBox=\"0 0 310 84\" role=\"img\" aria-label=\"Hold funds aside to be taken later\" class=\"dg\"><title>Hold funds aside to be taken later</title><rect x=\"12\" y=\"20\" width=\"120\" height=\"48\" class=\"dg-box\"/><text x=\"72.0\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Hold</text><path d=\"M132,44.0 L178,44.0\" class=\"dg-line\"/><path d=\"M172,40.0 L178,44.0 L172,48.0\" class=\"dg-line\"/><rect x=\"178\" y=\"20\" width=\"120\" height=\"48\" class=\"dg-box\"/><text x=\"238.0\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Capture</text></svg>"
+      },
+      {
+        "id": "record",
+        "need": "Each step must be written down so the history can be checked.",
+        "claims": [
+          {
+            "text": "In TigerBeetle each account keeps running totals of posted debits and posted credits.",
+            "kind": "reference",
+            "sourceId": "s17"
+          },
+          {
+            "text": "TigerBeetle's guide on pending transfers says they do not change the posted debit or credit totals.",
+            "kind": "reference",
+            "sourceId": "s18"
+          },
+          {
+            "text": "TigerBeetle's data-modelling guide gives the id field the job of acting as an idempotency key.",
+            "kind": "reference",
+            "sourceId": "s17"
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 244 96\" role=\"img\" aria-label=\"Account totals of posted debits and posted credits\" class=\"dg\"><title>Account totals of posted debits and posted credits</title><rect x=\"12\" y=\"12\" width=\"220\" height=\"72\" class=\"dg-box\"/><text x=\"122\" y=\"38\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Account</text><text x=\"122\" y=\"56\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">posted debits</text><text x=\"122\" y=\"72\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">posted credits</text></svg>"
+      },
+      {
+        "id": "retry-safely",
+        "need": "A merchant that cannot tell whether a call worked must be able to send it again.",
+        "claims": [
+          {
+            "text": "Stripe: the client makes up a unique idempotency key and sends it, and the server uses it to spot a later retry of the same request.",
+            "kind": "reference",
+            "sourceId": "s3"
+          },
+          {
+            "text": "The Idempotent Receiver pattern has the server return an identical response to a repeat and skip processing the request again.",
+            "kind": "reference",
+            "sourceId": "s21"
+          },
+          {
+            "text": "Square defines an operation as idempotent when repeating it, however often, gives the same result.",
+            "kind": "reference",
+            "sourceId": "s7"
+          },
+          {
+            "text": "Adyen says idempotency support helps avoid unwanted duplicates when failures and retries happen.",
+            "kind": "reference",
+            "sourceId": "s10"
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 310 84\" role=\"img\" aria-label=\"The client sends a unique idempotency key and the server uses it\" class=\"dg\"><title>The client sends a unique idempotency key and the server uses it</title><rect x=\"12\" y=\"20\" width=\"120\" height=\"48\" class=\"dg-box\"/><text x=\"72.0\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Client</text><path d=\"M132,44.0 L178,44.0\" class=\"dg-line\"/><path d=\"M172,40.0 L178,44.0 L172,48.0\" class=\"dg-line\"/><text x=\"155.0\" y=\"14\" class=\"dg-note\" text-anchor=\"middle\" font-size=\"11\">Idempotency key</text><rect x=\"178\" y=\"20\" width=\"120\" height=\"48\" class=\"dg-box\"/><text x=\"238.0\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Server</text></svg>"
+      },
+      {
+        "id": "notify",
+        "need": "The final result arrives later and the merchant must hear about it.",
+        "claims": [
+          {
+            "text": "Stripe lists a customer's bank confirming a payment as an event that arrives asynchronously, delivered by webhook.",
+            "kind": "reference",
+            "sourceId": "s4"
+          },
+          {
+            "text": "Adyen advises the receiving side to store the message and then process what it contains afterwards.",
+            "kind": "reference",
+            "sourceId": "s9"
+          }
+        ],
+        "diagram": "<svg viewBox=\"0 0 310 84\" role=\"img\" aria-label=\"Store the message and then process what it contains\" class=\"dg\"><title>Store the message and then process what it contains</title><rect x=\"12\" y=\"20\" width=\"120\" height=\"48\" class=\"dg-box\"/><text x=\"72.0\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Store</text><text x=\"72.0\" y=\"56.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">the message</text><path d=\"M132,44.0 L178,44.0\" class=\"dg-line\"/><path d=\"M172,40.0 L178,44.0 L172,48.0\" class=\"dg-line\"/><rect x=\"178\" y=\"20\" width=\"120\" height=\"48\" class=\"dg-box\"/><text x=\"238.0\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Process what</text><text x=\"238.0\" y=\"56.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">it contains</text></svg>"
+      }
+    ]
+  },
+  "deep-dives": {
+    "status": "no-source-yet",
+    "topics": [],
+    "dives": []
+  },
+  "against-the-grain": {
+    "status": "no-source-yet",
+    "topics": [],
+    "claims": []
+  },
+  "failure-and-change": {
+    "status": "sourced",
+    "topics": [
+      "circuit-breakers",
+      "idempotency-and-retries"
+    ],
+    "claims": [
+      {
+        "text": "Azure's retry pattern expects temporary faults in the cloud and wants applications built to absorb them quietly.",
+        "kind": "reference",
+        "sourceId": "s22"
+      },
+      {
+        "text": "Azure's circuit breaker pattern is about not retrying again and again an operation that is expected to fail.",
+        "kind": "reference",
+        "sourceId": "s23"
+      }
+    ]
+  },
+  "thorough-answer": {
+    "status": "sourced",
+    "topics": [],
+    "claims": [
+      {
+        "text": "Hello Interview's delivery framework advises starting with a simple design that covers the core functional requirements.",
+        "kind": "reference",
+        "sourceId": "s27"
+      },
+      {
+        "text": "The same framework says to do calculations only when they would change the design.",
+        "kind": "reference",
+        "sourceId": "s27"
+      },
+      {
+        "text": "The system-design-primer says candidates might be asked to estimate by hand, a different stance from the delivery framework.",
+        "kind": "reference",
+        "sourceId": "s30"
+      }
+    ]
+  },
+  "followUps": [
+    {
+      "id": "timeout-retry",
+      "ask": "The merchant is unsure whether its call worked. Can it send the request again?",
+      "claims": [
+        {
+          "text": "Stripe's API lets a client repeat a request without repeating its effect.",
+          "kind": "reference",
+          "sourceId": "s3"
+        },
+        {
+          "text": "Unmesh Joshi's Idempotent Receiver pattern answers a repeat with the same response and skips the work.",
+          "kind": "reference",
+          "sourceId": "s21"
+        }
+      ],
+      "topics": [
+        "idempotency-and-retries"
+      ]
+    },
+    {
+      "id": "late-bank",
+      "ask": "A webhook arrives late or is repeated. What happens?",
+      "claims": [
+        {
+          "text": "Razorpay's guide warns that the bank's report on a payment can reach it late.",
+          "kind": "reference",
+          "sourceId": "s12"
+        },
+        {
+          "text": "Adyen advises a merchant receiving webhooks to store the message and then process what it contains.",
+          "kind": "reference",
+          "sourceId": "s9"
+        },
+        {
+          "text": "The Idempotent Receiver pattern notes that clients which retry cause servers to see duplicate requests.",
+          "kind": "reference",
+          "sourceId": "s21"
+        }
+      ],
+      "topics": [
+        "idempotency-and-retries"
+      ]
+    },
+    {
+      "id": "trust-event",
+      "ask": "How does the merchant check an event before acting on it?",
+      "claims": [
+        {
+          "text": "Razorpay includes a hash signature in a header that the receiver should validate.",
+          "kind": "reference",
+          "sourceId": "s13"
+        },
+        {
+          "text": "Stripe's webhook guide says verifying a signature takes the raw request body.",
+          "kind": "reference",
+          "sourceId": "s4"
+        }
+      ],
+      "topics": [
+        "api-design-rpc-rest-graphql"
+      ]
+    },
+    {
+      "id": "hold-expiry",
+      "ask": "A hold is never captured. What happens?",
+      "claims": [
+        {
+          "text": "With Stripe, if the authorization expires before capture, the held funds go back.",
+          "kind": "reference",
+          "sourceId": "s5"
+        },
+        {
+          "text": "Adyen notes that capture can be separate from authorization for some payment methods.",
+          "kind": "reference",
+          "sourceId": "s8"
+        }
+      ],
+      "topics": [
+        "distributed-transactions"
+      ]
+    },
+    {
+      "id": "retry-harder",
+      "ask": "The bank keeps failing. Should the gateway retry harder?",
+      "claims": [
+        {
+          "text": "Azure's circuit breaker pattern is an alternative to retrying again and again.",
+          "kind": "reference",
+          "sourceId": "s23"
+        },
+        {
+          "text": "Azure's retry pattern still expects temporary faults and wants them handled smoothly.",
+          "kind": "reference",
+          "sourceId": "s22"
+        }
+      ],
+      "topics": [
+        "circuit-breakers",
+        "overload-and-cascading-failures"
+      ]
+    },
+    {
+      "id": "balanced-books",
+      "ask": "How do you know the records add up?",
+      "claims": [
+        {
+          "text": "Fowler's accounting transaction matches each withdrawal with a deposit.",
+          "kind": "reference",
+          "sourceId": "s20"
+        },
+        {
+          "text": "TigerBeetle keeps running posted debit and credit totals per account.",
+          "kind": "reference",
+          "sourceId": "s17"
+        },
+        {
+          "text": "Pending transfers do not change those posted totals.",
+          "kind": "reference",
+          "sourceId": "s18"
+        }
+      ],
+      "topics": [
+        "distributed-transactions"
+      ]
+    }
+  ],
+  "curiosities": [
+    {
+      "id": "trillion-move",
+      "text": "More than a trillion ledger entries had to move to a new store over two years, with no downtime and no outage. How do you prove a copy that large is right?",
+      "sourceId": "migration"
+    },
+    {
+      "id": "offline-check",
+      "text": "The largest offline validation job in Uber's ledger move compared 760 billion records, 70 TB compressed. The post says live shadow validation cannot give strong guarantees for rarely accessed history. Why was that gap there?",
+      "sourceId": "migration"
+    },
+    {
+      "id": "two-rules",
+      "text": "In Uber's ledger, card holds must be visible to the next read, while payment history may lag a few seconds. Why would one ledger want both rules?",
+      "sourceId": "indexes"
+    },
+    {
+      "id": "backfill-steps",
+      "text": "One backfill example: 100 billion records at 10,000 a second take 120 days, while production normally handles 1,000 a second. The post says to scale the job up in small steps. Why small?",
+      "sourceId": "migration"
+    },
+    {
+      "id": "stack-243",
+      "text": "In a stack five deep with three retries at each layer, a failing database would see 243x the load. Where do the retries belong?",
+      "sourceId": "aws-timeouts-retries-backoff-2019"
+    },
+    {
+      "id": "budget-10",
+      "text": "Google's retry budget lets a client retry only while retries are below 10% of its requests, and layering it brings growth to 1.1x in the general case. Why such a small budget?",
+      "sourceId": "google-sre-handling-overload-2017"
+    },
+    {
+      "id": "four-times",
+      "text": "Percolator's worst case, writing a single cell and committing, costs roughly four times raw Bigtable, and Google accepted that overhead. What did it buy?",
+      "sourceId": "google-percolator-2010"
+    }
+  ],
+  "sources": [
+    {
+      "id": "s1",
+      "title": "The Payment Intents API | Stripe Documentation",
+      "url": "https://docs.stripe.com/payments/payment-intents",
+      "company": "Stripe",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "No licence or terms line on the page; Stripe documentation, quote limit applies",
+      "edition": "Page read on 2026-10-31; no version or date shown on the page"
+    },
+    {
+      "id": "s2",
+      "title": "Payment status updates | Stripe Documentation",
+      "url": "https://docs.stripe.com/payments/payment-intents/verifying-status",
+      "company": "Stripe",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "No licence or terms line on the page; Stripe documentation",
+      "edition": "Page read on 2026-10-31; no version or date shown on the page"
+    },
+    {
+      "id": "s3",
+      "title": "Idempotent requests | Stripe API Reference",
+      "url": "https://docs.stripe.com/api/idempotent_requests",
+      "company": "Stripe",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "No licence or terms line on the page; Stripe API reference",
+      "edition": "Page read on 2026-10-31; no version or date shown on the page"
+    },
+    {
+      "id": "s4",
+      "title": "Receive Stripe events in your webhook endpoint | Stripe Documentation",
+      "url": "https://docs.stripe.com/webhooks",
+      "company": "Stripe",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "No licence or terms line on the page; Stripe documentation",
+      "edition": "Page read on 2026-10-31; no version or date shown on the page"
+    },
+    {
+      "id": "s5",
+      "title": "Place a hold on a payment method | Stripe Documentation",
+      "url": "https://docs.stripe.com/payments/place-a-hold-on-a-payment-method",
+      "company": "Stripe",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "No licence or terms line on the page; Stripe documentation",
+      "edition": "Page read on 2026-10-31; no version or date shown on the page"
+    },
+    {
+      "id": "s7",
+      "title": "Idempotency",
+      "url": "https://developer.squareup.com/docs/build-basics/common-api-patterns/idempotency",
+      "company": "Square",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "Footer: \"© 2026 Square, Inc.\" with links to Developer terms of service; no reuse licence",
+      "edition": "Page read on 2026-10-31; no version or date shown on the page"
+    },
+    {
+      "id": "s8",
+      "title": "Capture | Adyen Docs",
+      "url": "https://docs.adyen.com/online-payments/capture/",
+      "company": "Adyen",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "Footer: \"© 2026 Adyen\" with Terms & Conditions link; no reuse licence",
+      "edition": "Page read on 2026-10-31; no version or date shown on the page"
+    },
+    {
+      "id": "s9",
+      "title": "Webhooks | Adyen Docs",
+      "url": "https://docs.adyen.com/development-resources/webhooks/",
+      "company": "Adyen",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "Footer \"© 2026 Adyen\", Terms & Conditions link; no reuse licence",
+      "edition": "Page read on 2026-10-31; no version or date shown on the page"
+    },
+    {
+      "id": "s10",
+      "title": "API idempotency | Adyen Docs",
+      "url": "https://docs.adyen.com/development-resources/api-idempotency/",
+      "company": "Adyen",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "Footer \"© 2026 Adyen\", Terms & Conditions link; no reuse licence",
+      "edition": "Page read on 2026-10-31; no version or date shown on the page"
+    },
+    {
+      "id": "s12",
+      "title": "Payment Capture Settings - Razorpay",
+      "url": "https://razorpay.com/docs/payments/payments/capture-settings/",
+      "company": "Razorpay",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "No licence or terms line found on the page text",
+      "edition": "Page read on 2026-10-31; no version or date shown on the page"
+    },
+    {
+      "id": "s13",
+      "title": "Validate and Test Webhooks - Razorpay",
+      "url": "https://razorpay.com/docs/webhooks/validate-test/",
+      "company": "Razorpay",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "No licence or terms line found on the page text",
+      "edition": "Page read on 2026-10-31; no version or date shown on the page"
+    },
+    {
+      "id": "s15",
+      "title": "Orders - Razorpay",
+      "url": "https://razorpay.com/docs/api/orders/",
+      "company": "Razorpay",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "No licence or terms line found on the page text",
+      "edition": "Page read on 2026-10-31; no version or date shown on the page"
+    },
+    {
+      "id": "s16",
+      "title": "Orders v2 | PayPal Developer",
+      "url": "https://developer.paypal.com/docs/api/orders/v2/",
+      "company": "PayPal",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "Footer: \"© 2026 PayPal\"; no reuse licence",
+      "edition": "Page read on 2026-10-31; no version or date shown on the page"
+    },
+    {
+      "id": "s17",
+      "title": "Data Modeling (TigerBeetle documentation)",
+      "url": "https://raw.githubusercontent.com/tigerbeetle/tigerbeetle/main/docs/coding/data-modeling.md",
+      "company": "TigerBeetle project (docs in repo)",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "Repo LICENSE read at raw.githubusercontent.com/tigerbeetle/tigerbeetle/main/LICENSE: \"Apache License Version 2.0\". Assumes docs fall under the repo licence.",
+      "edition": "Page read on 2026-10-31; no version or date shown on the page"
+    },
+    {
+      "id": "s18",
+      "title": "Two-Phase Transfers (TigerBeetle documentation)",
+      "url": "https://raw.githubusercontent.com/tigerbeetle/tigerbeetle/main/docs/coding/two-phase-transfers.md",
+      "company": "TigerBeetle project (docs in repo)",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "Apache License Version 2.0 (repo LICENSE, as S17)",
+      "edition": "Page read on 2026-10-31; no version or date shown on the page"
+    },
+    {
+      "id": "s20",
+      "title": "Accounting Transaction",
+      "url": "https://martinfowler.com/eaaDev/AccountingTransaction.html",
+      "company": "Martin Fowler",
+      "published": "2005-01-22",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "Footer: \"© Martin Fowler | Disclosures\"; no reuse licence"
+    },
+    {
+      "id": "s21",
+      "title": "Idempotent Receiver",
+      "url": "https://martinfowler.com/articles/patterns-of-distributed-systems/idempotent-receiver.html",
+      "company": "Unmesh Joshi (on martinfowler.com)",
+      "published": "2023-11-23",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "Footer: \"© Martin Fowler | Disclosures\"; no reuse licence"
+    },
+    {
+      "id": "s22",
+      "title": "Retry pattern - Azure Architecture Center | Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/retry",
+      "company": "Microsoft, Azure Architecture Center",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "Footer: \"Terms of Use ... © Microsoft 2026\"; no reuse licence",
+      "edition": "page metadata shows modified 2024-07-18"
+    },
+    {
+      "id": "s23",
+      "title": "Circuit Breaker Pattern - Azure Architecture Center | Microsoft Learn",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker",
+      "company": "Microsoft, Azure Architecture Center",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "Footer: \"Terms of Use ... © Microsoft 2026\"; no reuse licence",
+      "edition": "page metadata shows modified 2025-02-05"
+    },
+    {
+      "id": "s27",
+      "title": "System Design Delivery Framework | Hello Interview",
+      "url": "https://www.hellointerview.com/learn/system-design/in-a-hurry/delivery",
+      "company": "Hello Interview (Optick Labs Inc.)",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "Footer: \"© 2026 Optick Labs Inc. All rights reserved.\" Free to read; reuse not licensed; quote and idea only",
+      "edition": "page metadata shows modified 2024-07-07"
+    },
+    {
+      "id": "s28",
+      "title": "Design a Payment System like Stripe | Hello Interview",
+      "url": "https://www.hellointerview.com/learn/system-design/problem-breakdowns/payment-system",
+      "company": "Hello Interview (Optick Labs Inc.)",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "Footer: \"© 2026 Optick Labs Inc. All rights reserved.\"; raw page shows only requirements and an outline, not the full walkthrough",
+      "edition": "page metadata shows modified 2025-07-11"
+    },
+    {
+      "id": "s30",
+      "title": "system-design-primer",
+      "url": "https://github.com/donnemartin/system-design-primer",
+      "company": "Donne Martin (system-design-primer)",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-31",
+      "kind": "reference",
+      "license": "Repo licence text read at raw.githubusercontent.com/donnemartin/system-design-primer/master/LICENSE.txt: \"Creative Commons Attribution 4.0 International License (CC BY 4.0)\"; attribution required",
+      "edition": "Page read on 2026-10-31; no version or date shown on the page"
+    },
+    {
+      "id": "indexes",
+      "title": "How LedgerStore Supports Trillions of Indexes at Uber",
+      "url": "https://www.uber.com/us/en/blog/how-ledgerstore-supports-trillions-of-indexes/",
+      "company": "Uber",
+      "published": "2024-04-04",
+      "verifiedOn": "2026-10-23",
+      "kind": "post"
+    },
+    {
+      "id": "migration",
+      "title": "Migrating a Trillion Entries of Uber's Ledger Data from DynamoDB to LedgerStore",
+      "url": "https://www.uber.com/us/en/blog/migrating-from-dynamodb-to-ledgerstore/",
+      "company": "Uber",
+      "published": "2024-04-11",
+      "verifiedOn": "2026-10-23",
+      "kind": "post"
+    },
+    {
+      "id": "google-percolator-2010",
+      "title": "Large-scale Incremental Processing Using Distributed Transactions and Notifications",
+      "url": "https://research.google/pubs/pub36726/",
+      "company": "Google",
+      "published": "2010-10-04",
+      "verifiedOn": "2026-10-13",
+      "kind": "paper"
+    },
+    {
+      "id": "aws-timeouts-retries-backoff-2019",
+      "title": "Timeouts, retries, and backoff with jitter",
+      "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
+      "company": "Amazon Web Services (Builders' Library)",
+      "published": "2019-12-05",
+      "verifiedOn": "2026-10-15",
+      "kind": "post"
+    },
+    {
+      "id": "google-sre-handling-overload-2017",
+      "title": "Handling Overload (Site Reliability Engineering, chapter 21)",
+      "url": "https://sre.google/sre-book/handling-overload/",
+      "company": "Google",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-15",
+      "kind": "post",
+      "edition": "page shows copyright 2017 Google, Inc., published by O'Reilly Media, SRE book chapter"
+    }
+  ]
+}

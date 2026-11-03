@@ -27,6 +27,7 @@ Still to do:
 1. Batch 4 is done.
 2. Built from the parked list: `traffic-steering-and-draining` ("Traffic Steering and Draining", Dropbox 2018 and Slack 2023; the old `multi-region-traffic-routing` idea, reframed after judging it against failover, DNS and disaster recovery). `exactly-once-processing` is folded into `log-based-streaming` (Uber 2021). `service-mesh-and-api-gateways` was dropped (overlaps load balancing and rate limiting; no recent source).
 3. Capstones: chat is built on six sources (WhatsApp 2012 and 2021, Messenger 2014, Slack 2017 and 2020, Discord 2024; Slack 2023 belongs to `real-time-delivery`), with no figures yet for presence or read receipts; notifications is built (Patreon 2026, Pinterest 2020, Slack tracing 2023; no source on batching, de-duplication, push delivery or guarantees); ride dispatch not ready. Each new capstone is a content JSON plus research.
+4. Design questions (`/design`, `design-questions.md`): one pilot, the payments gateway, awaiting owner review; no other question is written until its sources are confirmed. Not built: LLD (parked until the owner names a licensed source) and the "How an interview goes" page (`docs/drafts/interview-process-sources.md`). Plan: `docs/design-questions-plan.md`.
 
 Go-live bar for an announcement is met for topics (batches 1 and 2) and the chat capstone now exists. Post rule 4 as decided by the owner: papers by teams that ran the system, MongoDB Atlas and the CrowdStrike RCA count; Confluent and Debezium are explanation only.
 
@@ -49,6 +50,7 @@ Path-scoped rule files load when you read, write or edit a matching file; open t
 | `figures.md` | Interactive post figures, their inputs and checks |
 | `reads.md` | Great reads (/reads): selection, `influence` rule, data, `verify:reads` |
 | `capstones.md` | Capstone pages (/capstones, /capstone/<slug>): schema, interactive parts, checks |
+| `design-questions.md` | Design questions (/design, /design/<slug>): evidence tiers, sourcing, schema, `designProblems` checks, review workflow |
 | `news.md` | What's new, the allowlist, the routine, the guard workflow |
 | `logos.md` | Company marks, sources, the `add` command, brand rules, exceptions |
 | `offline.md` | Service worker, offline caching, warm-up |
@@ -75,12 +77,13 @@ Only include a post if it passes most of these:
 - If a post fails the selection rules, say so and find another. Before saving a new post, show the user the URL, the company, and why it passed.
 - The fetch tool returns a model-written reading, not the page. For every figure, fetch the raw page with curl (browser-like headers if blocked) and confirm the number appears. Drop any figure you cannot find, and list the drops in the reply.
 - A peer-reviewed paper by a company's engineering team counts as a post, labeled "paper", under the same five rules.
+- Design pages have a second source kind, `reference` (official docs, standards, recognised teaching sites, openly licensed material, licence recorded): explanation only, never a figure, never "a company did this"; paid, unlicensed or login-gated material is never used. Only a post or paper may back a figure or a "Worth knowing" line (`design-questions.md`).
 - Learn pages use official sources only (details in `learn-pages.md`). Claude cannot watch videos: show each candidate and get approval first.
 - A new company in any post needs a logo in the same change: `node scripts/make-logos.mjs add "<Company>" [domain]` (see `logos.md`); `lib/logos.test.ts` fails without it.
 
 ## Site feel
 
-Handcrafted, not AI-template. Paper background, Libre Caslon serif headings, Cabin labels, restrained palette: blue ink and one orange second ink. Plain, specific copy written like a person. Voice: only About speaks as "I"; every other page is neutral (no "I" or "we"), except buttons in the learner's own voice ("I have finished this topic") and the Say it in 30 seconds answers, which are what the learner would say aloud.
+Handcrafted, not AI-template. Paper background, Libre Caslon serif headings, Cabin labels, restrained palette: blue ink and one orange second ink. Plain, specific copy written like a person. Voice: only About speaks as "I"; every other page is neutral (no "I" or "we"), except buttons in the learner's own voice ("I have finished this topic"), the Say it in 30 seconds answers, which are what the learner would say aloud, and design pages (owner decision, 31 Oct 2026), whose model-answer text may say "we" and whose "What you say" scripts are spoken first person (`design-questions.md`).
 
 - Two themes from CSS-variable tokens in app/globals.css: light (paper `#e6e2d6`, blue ink, orange accent) and a warm dark (brown-charcoal, off-white ink, brighter orange that holds AA). Any new colour must be a token, never a literal.
 - Theme toggle (sun/moon) stored locally, follows prefers-color-scheme until chosen, set before paint (no flash). SVG diagrams theme via the tokens; the SVG map uses the CSS tokens directly, so a theme change needs no repaint.

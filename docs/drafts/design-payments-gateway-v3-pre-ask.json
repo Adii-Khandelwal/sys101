@@ -1,0 +1,1284 @@
+{
+ "slug": "payments-gateway",
+ "title": "Design a payment gateway",
+ "summary": "A model answer for a payment gateway that never charges a customer twice and can explain where every cent went.",
+ "topics": [
+  {
+   "slug": "idempotency-and-retries",
+   "role": "Makes a repeated payment call safe and keeps retries from adding load."
+  },
+  {
+   "slug": "distributed-transactions",
+   "role": "Explains why the ledger and the payment share one local transaction."
+  },
+  {
+   "slug": "circuit-breakers",
+   "role": "Limits retrying a provider that is likely to keep failing."
+  },
+  {
+   "slug": "api-design-rpc-rest-graphql",
+   "role": "Covers the calls and the signed events a merchant depends on."
+  },
+  {
+   "slug": "indexing",
+   "role": "Shapes the keys and unique constraints the payment tables lean on."
+  },
+  {
+   "slug": "sharding",
+   "role": "Partitions payments and the ledger by merchant."
+  },
+  {
+   "slug": "message-queues",
+   "role": "Frames the inbox and outbox tables and at-least-once delivery."
+  }
+ ],
+ "capstone": "payments-ledger",
+ "clarify": {
+  "topics": [
+   "api-design-rpc-rest-graphql"
+  ],
+  "blocks": [
+   {
+    "type": "p",
+    "text": "A payment gateway takes a merchant's request to charge a customer and carries it to the outside world that moves money: card networks, banks and the companies that connect to them. The gateway has no control over that world. It asks, waits, and has to cope when the answer is slow, late or missing. Nearly every hard part of this question comes from that one fact."
+   },
+   {
+    "type": "p",
+    "text": "Questions to ask before drawing anything, each with the answer to say out loud if the interviewer lets you choose:"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Who calls us? Merchant servers, through an API. A customer's browser never asks us to move money directly.",
+     "Do we see card numbers? No. The merchant's page sends card details to a separate vault and we receive a token that stands for them.",
+     "One step or two? Both. A merchant may charge in one go, or hold funds first and capture later.",
+     "How many outside providers? One at first, behind an adapter, so a second can be added without touching the rest.",
+     "What must never happen? A customer charged twice for one payment, and money that moved without a record of it.",
+     "What may be slow? Reports and old history. The path that starts and finishes a charge stays fast and available."
+    ]
+   },
+   {
+    "type": "p",
+    "text": "Scope in. Each item is here because it forces a real design decision:"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Create a payment and ask the provider to authorize it.",
+     "Capture an authorized payment, in full.",
+     "Void an authorization that has not been captured.",
+     "Tell the merchant the outcome, in the reply and later by a signed event.",
+     "Keep an auditable record of every money movement and compare it with the provider's own reports."
+    ]
+   },
+   {
+    "type": "p",
+    "text": "Scope out. Each item is tagged as a feature or as a whole system that is its own interview question:"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Card vault and tokenisation (whole system).",
+     "Fraud and risk scoring (whole system).",
+     "Paying merchants out to their banks (whole system).",
+     "Subscriptions, invoices and tax (whole system).",
+     "Refunds, partial capture and disputes (features; they reuse the same state machine and ledger, with new records going the other way).",
+     "Currency conversion (feature)."
+    ]
+   },
+   {
+    "type": "p",
+    "text": "Leaving refunds out is safe because this design never edits history, so a refund is just a later, separate record. If the interviewer pulls refunds in, say that, and add them at the data model."
+   },
+   {
+    "type": "p",
+    "text": "Tokenisation and card-data scope in two sentences. A token is a random stand-in for card details that live in a vault; our systems store and pass the token and never the number. Rules on protecting card data apply to every system that stores, processes or sees card numbers, so keeping numbers out of the gateway keeps that audited surface small."
+   },
+   {
+    "type": "assumption",
+    "text": "Assumptions for the rest of this page: merchants call server to server, one region at first, one provider behind an adapter, card data kept out of our systems, and a token supplied by the client."
+   }
+  ]
+ },
+ "requirements": {
+  "topics": [
+   "databases",
+   "sharding"
+  ],
+  "blocks": [
+   {
+    "type": "p",
+    "text": "Functional requirements, kept short on purpose. A long list costs time you need for the hard parts."
+   },
+   {
+    "type": "list",
+    "items": [
+     "A merchant can create a payment for an amount and currency against a payment-method token.",
+     "A payment can be authorized and captured later, or authorized and captured in one step.",
+     "A merchant can void an authorization that has not been captured.",
+     "A merchant learns the final outcome of every payment, by reply and by signed event.",
+     "Every movement of money is recorded in a ledger that can be audited and compared with provider reports."
+    ]
+   },
+   {
+    "type": "p",
+    "text": "Non-functional requirements, in rank order. The order is your answer to what gives way when two of them collide."
+   },
+   {
+    "type": "list",
+    "items": [
+     "Correctness of money. One payment moves money at most once, and every movement that does happen is recorded. It ranks first because a slow system can be made faster later, while a wrong charge has already reached a customer.",
+     "Auditability. Any balance can be rebuilt from entries that are never edited or deleted.",
+     "Availability of the charge path. Merchants can start and finish payments while a provider is slow or a reporting job is behind. When we cannot tell what happened, the answer is pending and we do not guess.",
+     "Latency. The provider call dominates, so our own work stays small. We accept one extra write before the call to buy safety.",
+     "Scale. Write-heavy, with bursts around sales events and a few merchants far larger than the rest."
+    ]
+   },
+   {
+    "type": "p",
+    "text": "Look at the tension between the first and third items. Staying available while unsure means we need a third answer besides success and failure: pending. Much of the design exists to make pending safe and short-lived."
+   },
+   {
+    "type": "p",
+    "text": "Estimation waits until a choice depends on it. Two numbers do, so they are stated as assumptions and then used."
+   },
+   {
+    "type": "assumption",
+    "text": "Assume 500 payments per second on average and 2,000 at the peak, with about 4 ledger rows written per captured payment at about 200 bytes each."
+   },
+   {
+    "type": "assumption",
+    "text": "Arithmetic from that assumption: 500 payments per second is about 43 million payments a day, so about 170 million ledger rows and about 35 GB a day, or about 13 TB a year. At the peak, 2,000 payments per second times 4 rows is about 8,000 ledger rows per second."
+   },
+   {
+    "type": "p",
+    "text": "What the numbers change. This peak write rate looks plausible for one well-run relational primary per partition, which a load test would confirm, so no exotic store is assumed. Storage growth never stops, so data is partitioned by merchant from day one and old rows move to cheaper storage on a schedule. Assume status reads stay modest next to writes; if they do not, a read replica or a cache is the first thing to add."
+   }
+  ]
+ },
+ "entities": {
+  "topics": [
+   "idempotency-and-retries",
+   "databases"
+  ],
+  "blocks": [
+   {
+    "type": "p",
+    "text": "The nouns, as a first draft that the later sections refine:"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Merchant: the business that owns payments, a webhook address and a signing secret.",
+     "Payment: the merchant's intent to collect an amount. It holds the amount, currency, the merchant's own order reference and the current state. This is what the merchant asks about.",
+     "Attempt: one try to move the money through a provider. It holds our reference for the provider, the time sent and the result: sent, approved, declined or unknown.",
+     "Ledger transaction and ledger entries: the immutable money record. A transaction groups the entries that must balance.",
+     "Idempotency record: the saved answer to a request, kept under the key the client chose.",
+     "Inbound event: a notification from the provider, stored before anything acts on it.",
+     "Outbound event: a notification for a merchant, waiting to be delivered."
+    ]
+   },
+   {
+    "type": "p",
+    "text": "Payment and Attempt are split on purpose. A payment can need several tries, for example after a decline or when a second provider is added. The unknown outcome after a timeout belongs to the attempt. The payment itself moves only when a fact is known."
+   },
+   {
+    "type": "diagram",
+    "title": "Payment states and the legal moves between them",
+    "svg": "<svg viewBox=\"0 0 530 245\" role=\"img\" aria-labelledby=\"pg-states-t\" class=\"dg\"><title id=\"pg-states-t\">Payment states: created moves to authorized or failed; authorized moves to captured, voided or expired</title><rect x=\"10\" y=\"95\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"60\" y=\"119.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Created</text><rect x=\"200\" y=\"95\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"250\" y=\"119.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Authorized</text><rect x=\"410\" y=\"20\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"460\" y=\"44.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Captured</text><rect x=\"410\" y=\"95\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"460\" y=\"119.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Voided</text><rect x=\"410\" y=\"170\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"460\" y=\"194.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Expired</text><rect x=\"10\" y=\"170\" width=\"100\" height=\"40\" class=\"dg-box\"/><text x=\"60\" y=\"194.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Failed</text><path d=\"M110,115 L200,115\" class=\"dg-line\"/><path d=\"M193.0,119.0 L200,115 L193.0,111.0\" class=\"dg-line\"/><path d=\"M60,135 L60,170\" class=\"dg-line\"/><path d=\"M56.0,163.0 L60,170 L64.0,163.0\" class=\"dg-line\"/><path d=\"M300,105 L410,45\" class=\"dg-line\"/><path d=\"M405.8,51.9 L410,45 L401.9,44.8\" class=\"dg-line\"/><path d=\"M300,115 L410,115\" class=\"dg-line\"/><path d=\"M403.0,119.0 L410,115 L403.0,111.0\" class=\"dg-line\"/><path d=\"M300,125 L410,190\" class=\"dg-line\"/><path d=\"M401.9,189.9 L410,190 L406.0,183.0\" class=\"dg-line\"/><text x=\"10\" y=\"236\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Final states: captured, voided, expired, failed</text></svg>"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Created to authorized: the provider approved and holds the funds.",
+     "Created to failed: the provider declined, or the request was rejected for good. Failed stays final for the payment, but see the late-authorization rule below.",
+     "Authorized to captured: the merchant claimed the held funds.",
+     "Authorized to voided: the merchant released the hold.",
+     "Authorized to expired: the hold lapsed before anyone captured it.",
+     "One-step charges run created, authorized, captured back to back."
+    ]
+   },
+   {
+    "type": "p",
+    "text": "Captured, voided, expired and failed are final. A request for any other move is refused with a conflict. Later money events, such as a refund, are separate records that point at the payment, so its own state never travels backwards. Final states are what make a repeated or late message harmless, which the webhook dive uses."
+   },
+   {
+    "type": "p",
+    "text": "One late message needs a rule of its own. A bank can answer slowly, so the provider may authorize a payment after we already marked it failed. Do not drop that event and do not revive the payment. Record it, look the attempt up with the provider, and if the provider holds funds we do not mean to keep, void the hold automatically (or refund, if the money was taken) and log it as an exception for review."
+   },
+   {
+    "type": "real",
+    "text": "Providers do not share one machine, so the one above is ours. Stripe documents that a failed attempt returns the payment to its first state, ready for another try. Razorpay documents late authorization: a payment first marked failed can become authorized once the bank finally answers. Stripe typically holds funds for some days, with the length depending on the card brand and whether the payment is online or in person. Adyen says how long an authorization stays valid depends on the card scheme.",
+    "cites": [
+     "stripe-status",
+     "razorpay-late",
+     "stripe-hold",
+     "adyen-adjust"
+    ]
+   }
+  ]
+ },
+ "api": {
+  "topics": [
+   "api-design-rpc-rest-graphql",
+   "idempotency-and-retries"
+  ],
+  "blocks": [
+   {
+    "type": "p",
+    "text": "Four calls for merchants, one signed event stream out, and one endpoint in for the provider. The caller's identity comes from its credential and the server sets all timestamps."
+   },
+   {
+    "type": "p",
+    "text": "Merchant authentication. Each merchant holds a secret API key, sent on every call over an encrypted connection. We store only a hash of it, scope it (test or live, and which calls it may make), and let a merchant create a new key and retire the old one after an overlap. The key tells us who is calling, so a merchant id in a request body is never trusted."
+   },
+   {
+    "type": "list",
+    "items": [
+     "Create payment. Body: merchant order reference, amount as a whole number of the smallest currency unit, currency code, payment-method token, and capture mode (automatic or manual). Header: an idempotency key. Reply: payment id, state, and a pending flag if we have no final answer yet.",
+     "Get payment. By id. Reply: state, amounts, and a short list of attempts with their results.",
+     "Capture payment. By id, for the full authorized amount, plus an idempotency key.",
+     "Void payment. By id, plus an idempotency key.",
+     "Outbound event. We post to the merchant's address: event id, type, payment id, new state, created time.",
+     "Inbound event. The provider posts to our receiver; the same checks apply in reverse."
+    ]
+   },
+   {
+    "type": "p",
+    "text": "Status codes follow the usual classes, and the exact choice for each case is ours. A success class when we have an answer. An accepted-and-still-working status when the reply is pending. A client-error status for a bad body. A conflict status when the move is illegal from the current state, or when a second copy of a request arrives while the first still runs. An unprocessable-content status when a key is reused with a different body. A too-many-requests status when the merchant is over its limit."
+   },
+   {
+    "type": "real",
+    "text": "The IETF idempotency-key header draft, a work in progress, suggests an unprocessable-content status when a key is reused with a different payload, and a conflict status when a retry arrives while the original request is still being processed.",
+    "cites": [
+     "ietf-idem"
+    ]
+   },
+   {
+    "type": "p",
+    "text": "The idempotency key is how a merchant safely repeats a call after a timeout. The client makes it, one per logical operation, and reuses it on every retry of that operation. The server saves a fingerprint of the request with the key. The same key with the same body returns the saved reply. The same key with a different body is an error, because it is almost certainly a bug. A second copy that arrives while the first is still running is refused with a retry-later answer rather than run in parallel.",
+    "cites": [
+     "stripe-idem",
+     "square-idem",
+     "adyen-idem"
+    ]
+   },
+   {
+    "type": "real",
+    "text": "Stripe replays the stored reply to a repeated key, failures from its own servers included, and returns an error when the new parameters differ from the original request. A request that collided with one still running is left unsaved, so it can be sent again. Adyen says a repeat of a request it already processed returns the first answer without duplication. Square says a repeat returns the first successful response, and that a changed request under an old key gets an error.",
+    "cites": [
+     "stripe-idem",
+     "adyen-idem",
+     "square-idem"
+    ]
+   },
+   {
+    "type": "p",
+    "text": "Async results. The create call waits for the provider only up to a deadline we set. If the deadline passes we reply pending, and the merchant learns the rest from a signed event or by calling Get payment. Polling works as a fallback, but events are cheaper for both sides."
+   },
+   {
+    "type": "p",
+    "text": "Signing and verifying an event, the same on both directions of the exchange:"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Sign the exact bytes of the body, with a secret shared with the receiver, and send a timestamp that is part of what is signed.",
+     "The receiver checks the signature on the raw bytes before parsing them, because parsing and re-encoding can change the bytes.",
+     "The receiver rejects a timestamp that is too old, so a captured request cannot be replayed later.",
+     "The receiver compares signatures in constant time.",
+     "The receiver saves the event id, ignores one it has seen, replies with a success status quickly and does the work afterwards."
+    ]
+   },
+   {
+    "type": "real",
+    "text": "Stripe's signature check runs over the unparsed body, and its signature header carries a signed timestamp. Adyen says to verify the HMAC signature before using the payload. Razorpay sends a hash signature in a request header that the receiver must validate. Stripe and Adyen both say to acknowledge an event before applying business logic.",
+    "cites": [
+     "stripe-webhooks",
+     "adyen-webhooks",
+     "razorpay-validate"
+    ]
+   }
+  ]
+ },
+ "data-model": {
+  "topics": [
+   "indexing",
+   "sharding",
+   "transactions-and-mvcc"
+  ],
+  "blocks": [
+   {
+    "type": "table",
+    "caption": "Core records and why they are shaped this way",
+    "columns": [
+     "Record",
+     "Key fields",
+     "Shape"
+    ],
+    "rows": [
+     [
+      "Payment",
+      "id, merchant id, merchant order reference, amount, currency, state, version, times",
+      "Unique on merchant id plus order reference. The version number lets a state change succeed only if nobody moved the state first."
+     ],
+     [
+      "Attempt",
+      "id, payment id, provider reference, state, sent time, answered time",
+      "Written before the provider call. Its id is the reference the provider sees."
+     ],
+     [
+      "Money movement",
+      "id, payment id, kind (capture, void, refund), amount, idempotency key, time",
+      "One row per capture, void or refund request. Several refunds on one payment each get their own row."
+     ],
+     [
+      "Ledger transaction",
+      "id, movement id, kind (capture, fee, reversal), time",
+      "The id comes from the movement that caused it and is unique, so posting the same movement twice is refused."
+     ],
+     [
+      "Ledger entry",
+      "id, transaction id, account id, direction, amount, time",
+      "Insert only. The entries of one transaction add up to zero across accounts."
+     ],
+     [
+      "Ledger account",
+      "id, owner, type (provider receivable, merchant payable, fee income)",
+      "A balance is the sum of entries since a checkpoint, never a field that is updated."
+     ],
+     [
+      "Idempotency record",
+      "merchant id, key, request fingerprint, status, saved reply, expiry",
+      "Unique on merchant id plus key. Written in the same transaction as the payment."
+     ],
+     [
+      "Inbound event",
+      "provider event id, raw body, received time, processed time",
+      "Unique on provider event id. The body is stored before any logic runs."
+     ],
+     [
+      "Outbox event",
+      "id, payment id, type, body, attempts, delivered time",
+      "Written in the same transaction as the state change it describes."
+     ]
+    ]
+   },
+   {
+    "type": "p",
+    "text": "Indexes follow the questions we ask. Payments by merchant and id, and by merchant and order reference. Attempts by payment. Attempts by state and sent time, for the recovery worker to find stuck ones. Ledger entries by account and time, for statements and balances. Outbox rows by delivered time, for the relay to find undelivered ones."
+   },
+   {
+    "type": "p",
+    "text": "Why the ledger is append-only. Money records are evidence. If a row can be edited, a bug or an attacker can change history and nobody can show it. If rows are only added, a mistake is fixed by adding a reversing entry, the history stays whole, and every balance can be rebuilt by adding up entries. It also removes a class of races, because inserts do not fight over one row."
+   },
+   {
+    "type": "p",
+    "text": "Why double-entry. Every transaction moves an amount out of one account and into another, so its entries add up to zero. A lost or invented cent then shows as a transaction that does not balance, which a simple check can find. A ledger with single-sided entries has no such check."
+   },
+   {
+    "type": "real",
+    "text": "Square's 2019 engineering post on its books service describes records nobody can alter: a balance moves only through an accounting transaction whose two sides cancel. TigerBeetle, an open-source ledger database, documents transfers as immutable records between two accounts, and says accounts and transfers cannot change once created.",
+    "cites": [
+     "square-books",
+     "tigerbeetle-transfer",
+     "tigerbeetle-model"
+    ]
+   },
+   {
+    "type": "p",
+    "text": "Where the idempotency record lives. In the same database as the payment, written in the same transaction. If they lived apart, a crash between the two writes could leave a payment with no key or a key with no payment, and the key would stop protecting anyone."
+   },
+   {
+    "type": "assumption",
+    "text": "Assume idempotency records are kept for 72 hours."
+   },
+   {
+    "type": "p",
+    "text": "Why retention needs a stated choice. The record must outlive the longest time a merchant's client keeps retrying, with margin, or a late retry is treated as new. Longer costs only one small row per request, so the limit is set by how long merchants retry. After the record expires, the unique order reference is the second line of defence: a second payment for the same order is refused for ever. Keys and order references protect against different mistakes, so keep both."
+   },
+   {
+    "type": "real",
+    "text": "Providers choose differently. Stripe documents that keys may be removed once they are at least a day old. Adyen keeps them for between one and two weeks.",
+    "cites": [
+     "stripe-idem",
+     "adyen-idem"
+    ]
+   }
+  ]
+ },
+ "high-level": {
+  "topics": [
+   "databases",
+   "message-queues"
+  ],
+  "blocks": [
+   {
+    "type": "p",
+    "text": "Start with the happy path in words, then build it one need at a time. After each step the drawing is a working system, and the last line of each step names what is still weak. The weak spots become the deep dives."
+   },
+   {
+    "type": "p",
+    "text": "The happy path for a two-step payment:"
+   },
+   {
+    "type": "list",
+    "items": [
+     "Create: the merchant sends the amount, currency, token and an idempotency key. We store a payment in the created state and an attempt in the sent state.",
+     "Authorize: the adapter asks the provider, passing our attempt reference. The provider approves and holds the funds. We save the answer and move the payment to authorized.",
+     "Capture: later, the merchant asks us to capture. We ask the provider to take the held funds, and on success move the payment to captured and post balanced ledger entries in the same transaction.",
+     "Event: a signed event reaches the merchant through the outbox, and the provider's own confirmation, when it arrives, is matched against the payment."
+    ]
+   },
+   {
+    "type": "diagram",
+    "title": "The whole design, after all six steps",
+    "svg": "<svg viewBox=\"0 0 530 305\" role=\"img\" aria-labelledby=\"pg-final-t\" class=\"dg\"><title id=\"pg-final-t\">The whole design: merchant, gateway API, payment store, provider adapter, inbox and workers</title><rect x=\"6\" y=\"20\" width=\"96\" height=\"44\" class=\"dg-box\"/><text x=\"54\" y=\"46.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Merchant</text><rect x=\"170\" y=\"20\" width=\"100\" height=\"44\" class=\"dg-box\"/><text x=\"220\" y=\"46.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Gateway API</text><rect x=\"360\" y=\"20\" width=\"150\" height=\"100\" class=\"dg-box dg-accent\"/><text x=\"435\" y=\"58.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Payment store</text><text x=\"435\" y=\"74.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">payments, attempts</text><text x=\"435\" y=\"90.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">ledger, outbox</text><rect x=\"6\" y=\"130\" width=\"96\" height=\"44\" class=\"dg-box\"/><text x=\"54\" y=\"156.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Provider</text><rect x=\"170\" y=\"130\" width=\"100\" height=\"44\" class=\"dg-box\"/><text x=\"220\" y=\"148.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Provider</text><text x=\"220\" y=\"164.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">adapter</text><rect x=\"360\" y=\"150\" width=\"120\" height=\"56\" class=\"dg-box\"/><text x=\"420\" y=\"166.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Workers</text><text x=\"420\" y=\"182.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">recover, relay,</text><text x=\"420\" y=\"198.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">reconcile</text><rect x=\"360\" y=\"230\" width=\"150\" height=\"44\" class=\"dg-box\"/><text x=\"435\" y=\"256.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Inbox</text><path d=\"M102,42 L170,42\" class=\"dg-line\"/><path d=\"M163.0,46.0 L170,42 L163.0,38.0\" class=\"dg-line\"/><path d=\"M270,42 L360,42\" class=\"dg-line\"/><path d=\"M353.0,46.0 L360,42 L353.0,38.0\" class=\"dg-line\"/><path d=\"M220,64 L220,130\" class=\"dg-line\"/><path d=\"M216.0,123.0 L220,130 L224.0,123.0\" class=\"dg-line\"/><path d=\"M170,152 L102,152\" class=\"dg-line\"/><path d=\"M109.0,148.0 L102,152 L109.0,156.0\" class=\"dg-line\"/><path d=\"M270,140 L360,100\" class=\"dg-line\"/><path d=\"M355.2,106.5 L360,100 L352.0,99.2\" class=\"dg-line\"/><path d=\"M102,170 L360,252\" class=\"dg-line\"/><path d=\"M352.1,253.7 L360,252 L354.5,246.1\" class=\"dg-line\"/><path d=\"M495,230 L495,120\" class=\"dg-line\"/><path d=\"M499.0,127.0 L495,120 L491.0,127.0\" class=\"dg-line\"/><path d=\"M420,150 L420,120\" class=\"dg-line\"/><path d=\"M424.0,127.0 L420,120 L416.0,127.0\" class=\"dg-line\"/><path d=\"M416.0,143.0 L420,150 L424.0,143.0\" class=\"dg-line\"/><path d=\"M360,165 L270,165\" class=\"dg-line dg-dashed\"/><path d=\"M277.0,161.0 L270,165 L277.0,169.0\" class=\"dg-line\"/><text x=\"6\" y=\"296\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Workers also send signed events to the merchant</text></svg>"
+   },
+   {
+    "type": "p",
+    "text": "Read the whole picture as three loops. The merchant loop is request, payment store, reply. The provider loop is adapter, provider, and the inbox for what the provider says later. The repair loop is the workers, which retry, ask the provider about stuck attempts, send events and compare our records with the provider's reports."
+   }
+  ],
+  "stages": [
+   {
+    "id": "take-a-charge",
+    "need": "A merchant asks to charge a customer and gets an answer.",
+    "add": "A gateway API checks the request, writes a payment in the created state, calls the provider through an adapter, writes the result and replies.",
+    "weak": "A merchant that times out and retries makes a second charge. A crash after the provider answers loses the answer.",
+    "diagram": "<svg viewBox=\"0 0 540 160\" role=\"img\" aria-labelledby=\"pg-s1-t\" class=\"dg\"><title id=\"pg-s1-t\">First design: merchant, gateway API, provider adapter, outside provider and a payment store</title><rect x=\"6\" y=\"20\" width=\"92\" height=\"48\" class=\"dg-box\"/><text x=\"52\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Merchant</text><rect x=\"140\" y=\"20\" width=\"104\" height=\"48\" class=\"dg-box\"/><text x=\"192\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Gateway API</text><rect x=\"286\" y=\"20\" width=\"104\" height=\"48\" class=\"dg-box\"/><text x=\"338\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Provider</text><text x=\"338\" y=\"56.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">adapter</text><rect x=\"432\" y=\"20\" width=\"92\" height=\"48\" class=\"dg-box\"/><text x=\"478\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Outside</text><text x=\"478\" y=\"56.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">provider</text><rect x=\"140\" y=\"100\" width=\"104\" height=\"48\" class=\"dg-box\"/><text x=\"192\" y=\"120.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Payment</text><text x=\"192\" y=\"136.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">store</text><path d=\"M98,44 L140,44\" class=\"dg-line\"/><path d=\"M133.0,48.0 L140,44 L133.0,40.0\" class=\"dg-line\"/><path d=\"M244,44 L286,44\" class=\"dg-line\"/><path d=\"M279.0,48.0 L286,44 L279.0,40.0\" class=\"dg-line\"/><path d=\"M390,44 L432,44\" class=\"dg-line\"/><path d=\"M425.0,48.0 L432,44 L425.0,40.0\" class=\"dg-line\"/><path d=\"M192,68 L192,100\" class=\"dg-line\"/><path d=\"M188.0,93.0 L192,100 L196.0,93.0\" class=\"dg-line\"/></svg>"
+   },
+   {
+    "id": "repeat-safe",
+    "need": "Networks drop replies, so merchants will repeat calls. A repeat must not repeat the charge.",
+    "add": "An idempotency key on every write call. The key and the payment are written in one transaction. A repeat finds the key and gets the saved reply. A unique order reference backs it up.",
+    "weak": "This protects the merchant-to-gateway leg only. Our own call to the provider can still be sent twice, and a crash can still hide the provider's answer.",
+    "diagram": "<svg viewBox=\"0 0 470 115\" role=\"img\" aria-labelledby=\"pg-s2-t\" class=\"dg\"><title id=\"pg-s2-t\">Idempotency: the key and the payment are written together, and a repeat gets the saved reply</title><rect x=\"6\" y=\"20\" width=\"92\" height=\"48\" class=\"dg-box\"/><text x=\"52\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Merchant</text><rect x=\"140\" y=\"20\" width=\"104\" height=\"48\" class=\"dg-box\"/><text x=\"192\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Gateway API</text><rect x=\"286\" y=\"20\" width=\"170\" height=\"60\" class=\"dg-box dg-accent\"/><text x=\"371\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Payment store</text><text x=\"371\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">key + payment,</text><text x=\"371\" y=\"70.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">one transaction</text><path d=\"M98,44 L140,44\" class=\"dg-line\"/><path d=\"M133.0,48.0 L140,44 L133.0,40.0\" class=\"dg-line\"/><path d=\"M244,44 L286,44\" class=\"dg-line\"/><path d=\"M279.0,48.0 L286,44 L279.0,40.0\" class=\"dg-line\"/><path d=\"M286,66 L244,66\" class=\"dg-line dg-dashed\"/><path d=\"M251.0,62.0 L244,66 L251.0,70.0\" class=\"dg-line\"/><text x=\"150\" y=\"100\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">Same key again: saved reply returned</text></svg>"
+   },
+   {
+    "id": "record-attempt",
+    "need": "After a crash we must know what we asked the provider to do.",
+    "add": "An attempt row in the sent state, committed before the call, carrying our own reference that the provider also sees. The answer is saved on the same row afterwards.",
+    "weak": "An attempt can stay in sent for ever if we crash or the call times out. Its true outcome is unknown until someone asks.",
+    "diagram": "<svg viewBox=\"0 0 540 170\" role=\"img\" aria-labelledby=\"pg-s3-t\" class=\"dg\"><title id=\"pg-s3-t\">Attempt written before the provider call, answer saved after it</title><rect x=\"6\" y=\"20\" width=\"92\" height=\"48\" class=\"dg-box\"/><text x=\"52\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Gateway API</text><rect x=\"140\" y=\"20\" width=\"120\" height=\"48\" class=\"dg-box dg-accent\"/><text x=\"200\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Attempt row</text><text x=\"200\" y=\"56.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">state: sent</text><rect x=\"302\" y=\"20\" width=\"92\" height=\"48\" class=\"dg-box\"/><text x=\"348\" y=\"40.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Provider</text><text x=\"348\" y=\"56.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">adapter</text><rect x=\"436\" y=\"20\" width=\"88\" height=\"48\" class=\"dg-box\"/><text x=\"480\" y=\"48.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Provider</text><rect x=\"140\" y=\"110\" width=\"120\" height=\"48\" class=\"dg-box\"/><text x=\"200\" y=\"130.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Attempt row</text><text x=\"200\" y=\"146.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">answer saved</text><path d=\"M98,44 L140,44\" class=\"dg-line\"/><path d=\"M133.0,48.0 L140,44 L133.0,40.0\" class=\"dg-line\"/><path d=\"M260,44 L302,44\" class=\"dg-line\"/><path d=\"M295.0,48.0 L302,44 L295.0,40.0\" class=\"dg-line\"/><path d=\"M394,44 L436,44\" class=\"dg-line\"/><path d=\"M429.0,48.0 L436,44 L429.0,40.0\" class=\"dg-line\"/><path d=\"M330,68 L260,128\" class=\"dg-line dg-dashed\"/><path d=\"M262.7,120.4 L260,128 L267.9,126.5\" class=\"dg-line\"/></svg>"
+   },
+   {
+    "id": "record-money",
+    "need": "Every capture must leave a trustworthy money record.",
+    "add": "Ledger entries are inserted in the same local transaction that moves the payment to captured. Entries balance, and are never updated.",
+    "weak": "The provider often confirms later, by event, and events can repeat or arrive out of order.",
+    "diagram": "<svg viewBox=\"0 0 400 140\" role=\"img\" aria-labelledby=\"pg-s4-t\" class=\"dg\"><title id=\"pg-s4-t\">Payment state change and ledger entries committed in one local transaction</title><rect x=\"6\" y=\"44\" width=\"92\" height=\"48\" class=\"dg-box\"/><text x=\"52\" y=\"64.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Gateway</text><text x=\"52\" y=\"80.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">API</text><rect x=\"130\" y=\"10\" width=\"250\" height=\"116\" class=\"dg-box dg-dashed\"/><text x=\"142\" y=\"30\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">One database transaction</text><rect x=\"142\" y=\"50\" width=\"106\" height=\"52\" class=\"dg-box\"/><text x=\"195\" y=\"72.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Payment</text><text x=\"195\" y=\"88.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">state change</text><rect x=\"262\" y=\"50\" width=\"106\" height=\"52\" class=\"dg-box dg-accent\"/><text x=\"315\" y=\"72.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Ledger</text><text x=\"315\" y=\"88.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">entries</text><path d=\"M98,68 L130,68\" class=\"dg-line\"/><path d=\"M123.0,72.0 L130,68 L123.0,64.0\" class=\"dg-line\"/></svg>"
+   },
+   {
+    "id": "hear-events",
+    "need": "Hear what the provider says later, and tell merchants what happened.",
+    "add": "An inbox table stores each provider event before it is processed. An outbox table, written with each state change, feeds a relay that delivers signed events to merchants.",
+    "weak": "Both sides are at-least-once. Duplicates and reordering have to be made harmless, and a merchant endpoint can be down for long stretches.",
+    "diagram": "<svg viewBox=\"0 0 540 170\" role=\"img\" aria-labelledby=\"pg-s5-t\" class=\"dg\"><title id=\"pg-s5-t\">Provider events land in an inbox first; merchant events leave through an outbox and a relay</title><rect x=\"6\" y=\"20\" width=\"92\" height=\"44\" class=\"dg-box\"/><text x=\"52\" y=\"46.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Provider</text><rect x=\"140\" y=\"20\" width=\"104\" height=\"44\" class=\"dg-box\"/><text x=\"192\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Inbox</text><text x=\"192\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">table</text><rect x=\"286\" y=\"20\" width=\"104\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"338\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Payment</text><text x=\"338\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">store</text><rect x=\"286\" y=\"110\" width=\"104\" height=\"44\" class=\"dg-box\"/><text x=\"338\" y=\"136.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Relay</text><rect x=\"432\" y=\"110\" width=\"92\" height=\"44\" class=\"dg-box\"/><text x=\"478\" y=\"136.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Merchant</text><path d=\"M98,42 L140,42\" class=\"dg-line\"/><path d=\"M133.0,46.0 L140,42 L133.0,38.0\" class=\"dg-line\"/><path d=\"M244,42 L286,42\" class=\"dg-line\"/><path d=\"M279.0,46.0 L286,42 L279.0,38.0\" class=\"dg-line\"/><path d=\"M338,64 L338,110\" class=\"dg-line\"/><path d=\"M334.0,103.0 L338,110 L342.0,103.0\" class=\"dg-line\"/><path d=\"M390,132 L432,132\" class=\"dg-line\"/><path d=\"M425.0,136.0 L432,132 L425.0,128.0\" class=\"dg-line\"/><text x=\"346\" y=\"92\" class=\"dg-note\" text-anchor=\"start\" font-size=\"11\">outbox</text></svg>"
+   },
+   {
+    "id": "check-outside",
+    "need": "Prove our records match the outside world, and finish what crashes left half done.",
+    "add": "A recovery worker resolves stuck attempts by asking the provider. A reconciler compares the provider's settlement reports with our ledger and lists differences.",
+    "weak": "Finding a difference is detection. A person or a compensating entry still has to fix it, and the history grows without limit.",
+    "diagram": "<svg viewBox=\"0 0 420 170\" role=\"img\" aria-labelledby=\"pg-s6-t\" class=\"dg\"><title id=\"pg-s6-t\">A reconciler compares the provider report with the store; a recovery worker reads stuck attempts</title><rect x=\"6\" y=\"20\" width=\"112\" height=\"44\" class=\"dg-box\"/><text x=\"62\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Provider</text><text x=\"62\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">report</text><rect x=\"160\" y=\"20\" width=\"104\" height=\"44\" class=\"dg-box dg-accent\"/><text x=\"212\" y=\"46.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Reconciler</text><rect x=\"306\" y=\"20\" width=\"104\" height=\"44\" class=\"dg-box\"/><text x=\"358\" y=\"38.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Mismatch</text><text x=\"358\" y=\"54.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">list</text><rect x=\"160\" y=\"110\" width=\"104\" height=\"44\" class=\"dg-box\"/><text x=\"212\" y=\"128.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Payment</text><text x=\"212\" y=\"144.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">store</text><rect x=\"306\" y=\"110\" width=\"104\" height=\"44\" class=\"dg-box\"/><text x=\"358\" y=\"128.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">Recovery</text><text x=\"358\" y=\"144.5\" class=\"dg-label\" text-anchor=\"middle\" font-size=\"13\">worker</text><path d=\"M118,42 L160,42\" class=\"dg-line\"/><path d=\"M153.0,46.0 L160,42 L153.0,38.0\" class=\"dg-line\"/><path d=\"M264,42 L306,42\" class=\"dg-line\"/><path d=\"M299.0,46.0 L306,42 L299.0,38.0\" class=\"dg-line\"/><path d=\"M212,110 L212,64\" class=\"dg-line\"/><path d=\"M216.0,71.0 L212,64 L208.0,71.0\" class=\"dg-line\"/><path d=\"M264,132 L306,132\" class=\"dg-line\"/><path d=\"M299.0,136.0 L306,132 L299.0,128.0\" class=\"dg-line\"/></svg>"
+   }
+  ]
+ },
+ "deep-dives": {
+  "topics": [
+   "idempotency-and-retries",
+   "distributed-transactions",
+   "circuit-breakers",
+   "event-driven-architecture"
+  ],
+  "blocks": [
+   {
+    "type": "p",
+    "text": "Four weak spots from the build-up, each from a first attempt to a better design. Two shorter notes on scale and reconciliation follow the dives."
+   },
+   {
+    "type": "real",
+    "text": "On hot keys, Amazon's DynamoDB guidance says to spread activity evenly over partition keys. For one overloaded key it suggests a random suffix on the key to spread the writes, and names the price on the read side: every suffix must be queried and the answers merged. Google's Spanner schema guide describes a hotspot as too many requests landing on one server, with high latency as the possible result. Square's 2019 books post says its schema had to be designed with hotspots in mind.",
+    "cites": [
+     "dynamo-key-design",
+     "dynamo-sharding",
+     "spanner-schema",
+     "square-books"
+    ]
+   },
+   {
+    "type": "real",
+    "text": "On reconciliation, Stripe documents a payout report that ties each deposit in a bank account to the group of payments behind it, and tells merchants to match instant payouts themselves. Adyen documents settlement in batches, with a report that lists each transaction and its status.",
+    "cites": [
+     "stripe-payout-recon",
+     "adyen-settle",
+     "adyen-settle-details"
+    ]
+   }
+  ],
+  "dives": [
+   {
+    "id": "crash-after-charge",
+    "title": "The crash between the provider charging and us recording it",
+    "attempt": "Call the provider, wait for the answer, then write the result to our database.",
+    "breaks": "If the process dies after the provider takes the money and before our write, the card is charged and our record says the payment is only created. The merchant retries. We have no memory of a call, so we call again, and the customer is charged twice. The same hole opens when the provider is slow and our request times out.",
+    "better": "Write down the intention before acting. In one short transaction, commit an attempt row in the sent state with a reference we generated, then make the call and pass that reference to the provider as its own deduplication key. Do not hold a database transaction open across the call. After the call, save the answer on the attempt and move the payment in a second short transaction. A recovery worker scans for attempts that have sat in sent for longer than the call deadline plus margin. For each, it looks up the provider's record for that reference. A found result goes through the same function the normal path uses. A lookup that finds nothing proves nothing: the request may still be in flight, or the provider's lookup may lag behind its processing. So the worker never concludes the call was not sent. It repeats the call with the same reference as the provider's idempotency key, which is safe whichever way it went: the provider either returns the first result or processes the request once.",
+    "tradeoff": "We pay one extra committed write before every provider call, and the merchant sees pending for the recovery delay after a crash. The design needs a provider that accepts our reference as an idempotency key or lets us look the request up. If a provider offers neither, the payment stays pending until its settlement report resolves it, and that gap should be said aloud.",
+    "cites": [
+     "adyen-idem",
+     "square-idem",
+     "stripe-errors"
+    ],
+    "real": {
+     "text": "Adyen says a request it has already processed returns the first answer when repeated, and Square says the same for a repeated payment call, so a repeat can double as a status check. Stripe's guidance for connection and API errors puts reconciliation ahead of any repeat when an outcome stays unclear, names a status lookup on the object as the first tool, and tells the caller to assume neither success nor failure at the start.",
+     "cites": [
+      "adyen-idem",
+      "square-idem",
+      "stripe-errors"
+     ]
+    }
+   },
+   {
+    "id": "webhook-duplicates-order",
+    "title": "Duplicate and out-of-order webhooks",
+    "attempt": "When an event arrives, set the payment to the state it names and post any ledger entries it implies.",
+    "breaks": "Providers retry deliveries when a reply is late, so the same event can arrive more than once, and a second capture event would post the money twice. Events can also arrive in a different order than they happened, so a late authorized event can land after captured and drag the payment backwards. Doing the work before replying also makes the provider retry while we are still busy.",
+    "better": "Four rules. First, store the raw event in the inbound table under its provider event id, with a unique constraint, then reply with success straight away and process afterwards. A duplicate insert is ignored. Second, treat an event as a claim about a state and run it through the state machine. A move that is legal from the current state is applied. A move that would go backwards or sideways is recorded and dropped, with one exception: an event showing that the provider holds or took money for a payment we consider dead, such as a late authorization on a failed payment, goes to lookup and an automatic void or refund, logged as an exception. Third, when an event implies a state we have not seen yet, or the order is in doubt, ask the provider for the current state by reference and apply that. Fourth, give each ledger transaction an id taken from the money movement that caused it, with a unique constraint, so even a bug cannot post one movement twice while several captures or refunds on a payment still each post once.",
+    "tradeoff": "An extra read call to the provider for the unclear cases, an inbox table that grows and needs trimming, and a small delay between the event arriving and the payment moving. In return, delivery order and repeats stop mattering. Relying on provider timestamps for order is cheaper but trusts their clocks and their stated ordering rules.",
+    "cites": [
+     "stripe-webhooks",
+     "adyen-webhooks",
+     "razorpay-webhooks"
+    ],
+    "real": {
+     "text": "Stripe says it does not guarantee delivery in generation order and that an endpoint may see the same event twice. Adyen says a duplicate is possible and tells receivers to put events in order by timestamp. Razorpay describes at-least-once delivery and says order is not always kept. Stripe and Adyen both tell receivers to acknowledge before applying business logic.",
+     "cites": [
+      "stripe-webhooks",
+      "adyen-webhooks",
+      "razorpay-webhooks"
+     ]
+    }
+   },
+   {
+    "id": "timeouts-retry-or-ask",
+    "title": "Timeouts on the card network or bank: retry, or ask what happened?",
+    "attempt": "Set a timeout. When it fires, mark the attempt failed and tell the merchant to try again.",
+    "breaks": "A timeout tells us we stopped waiting. It does not tell us the provider did nothing. The charge may have gone through, so a payment marked failed can be a charged card, and the merchant's retry creates a second charge. Retrying blindly at every layer also multiplies load on a provider that is already struggling.",
+    "better": "Sort every outcome into three kinds. A definite no, such as a decline or a rejection before processing, ends the attempt and can move the payment to failed. A definite yes moves it forward. Everything else is unknown: a timeout after the request was sent, a dropped connection, a server error with no usable body. An unknown outcome keeps the same attempt and the same provider reference. Then choose between retrying and asking. If the provider honours repeats under the same reference, retry the same request a small bounded number of times, with backoff and jitter, spending from a shared retry budget so a bad hour cannot turn into a flood. If the budget runs out, or the provider has no safe repeat, stop sending and ask: look up the reference, then wait for the event, then wait for reconciliation. Only one layer retries, and the total of timeouts and retries must fit inside the deadline we gave the merchant, or the merchant retries over the top of ours. Never move a payment with an unknown attempt to a second provider until the first has answered, or both may charge.",
+    "tradeoff": "More payments end as pending for a while, and merchants must handle that answer. Tight budgets keep a provider outage from spreading, and cost some payments that a longer retry would have saved. Choosing the timeout from the provider's observed latency tail trades the odd needless timeout for speed.",
+    "cites": [
+     "aws-timeouts-retries-backoff-2019",
+     "sre-cascading"
+    ],
+    "real": {
+     "text": "Amazon's 2019 post on timeouts and retries makes the point we need with one sentence: \"A timeout or failure doesn't necessarily mean that side effects haven't happened.\" It then derives the timeout from a latency percentile of the callee and limits retries per client with a token bucket. Google's SRE book, in its chapter on cascading failures, gives the same job to a retry budget at the server and to randomness in retry timing.",
+     "cites": [
+      "aws-timeouts-retries-backoff-2019",
+      "sre-cascading"
+     ]
+    }
+   },
+   {
+    "id": "ledger-payment-consistency",
+    "title": "Keeping the ledger and the payment record consistent without a distributed transaction",
+    "attempt": "Run the payment service and the ledger service separately. Update the payment, then call the ledger, and wrap both in a two-phase commit so they succeed together.",
+    "breaks": "Two-phase commit makes every participant wait on a coordinator. A participant that is down before it votes only causes an abort, which is survivable. The costly case is a coordinator that fails after participants have voted yes: they hold their locks and wait, so a ledger outage or coordinator crash can stall every capture. The provider cannot join the protocol at all, so it protects only part of the flow. Skipping it and just calling both in turn leaves a window where the payment says captured and the ledger has no entry, or the reverse.",
+    "better": "Start by shrinking the problem so that most of it needs no coordination. Keep the payment, its attempts, its money movements and its ledger entries in the same database, partitioned by merchant, so a capture is one local transaction: the state change, the balanced entries and the outbox row commit together or none of them do. Ids taken from the movement make a replay harmless. For anything that must reach another system, such as the merchant's event or an analytics feed, the outbox row is the promise: a relay reads committed rows and publishes them at least once, and the receiver deduplicates by event id. Where a flow truly crosses services, break it into local steps, each safe to repeat, and fix a failed step with a compensating entry that reverses it. A compensation adds a record and deletes nothing, so the money history stays whole.",
+    "tradeoff": "The payment and the ledger now scale together by merchant partition, so they cannot be split into independent services without paying coordination costs again. A transfer between two merchants on different partitions needs two local transactions and a relay between them. Consumers must be idempotent, and there is a delay between commit and delivery. In exchange there is no coordinator to block on.",
+    "cites": [
+     "microservices-outbox",
+     "kafka-design"
+    ],
+    "real": {
+     "text": "The outbox pattern page on microservices.io calls a classic distributed transaction across a database and a message broker unviable. It promises that a message is published only for a committed change, and warns that the relay can publish the same message twice. The Kafka documentation suggests a consumer save its progress in the store that holds its results, which avoids a distributed commit.",
+     "cites": [
+      "microservices-outbox",
+      "kafka-design"
+     ]
+    }
+   }
+  ],
+  "notes": [
+   "Scaling and the partition key. Partition by merchant id, hashed, so a payment, its attempts, its money movements and its ledger entries sit together and a capture stays a local transaction. Idempotency records, inbound events and outbox rows use the same key. Status reads go to the same partition by payment id, which carries the merchant id in it.",
+   "Hot merchants. One very large merchant can saturate its partition. First, avoid contention inside it: update no balance row per payment, since balances are sums of entries plus periodic checkpoint entries. If that is still not enough, sub-partition only the heavy rows (payments, attempts, movements and ledger entries) and keep the small uniqueness checks, for idempotency keys and order references, in one merchant-level index, so a repeated key or order cannot slip into a different sub-partition. Merchant-wide totals then become a sum over several places. Finally, rate-limit per merchant so one burst cannot take the shared workers.",
+   "Reconciliation. A daily job compares the provider's settlement report with our ledger, matching on the provider reference. It lists four kinds of difference: only in our ledger, only in their report, an amount mismatch, and a state mismatch. Each is fixed by an explicit compensating entry or by resolving a stuck attempt, with no row edited. Reconciliation is the backstop for what every earlier safeguard missed, so it runs even when nothing looks wrong."
+  ]
+ },
+ "failure-modes": {
+  "topics": [
+   "failover",
+   "overload-and-cascading-failures"
+  ],
+  "blocks": [
+   {
+    "type": "table",
+    "caption": "What fails, what the merchant sees, how we recover",
+    "columns": [
+     "Component",
+     "What fails",
+     "What the user sees",
+     "How we recover"
+    ],
+    "rows": [
+     [
+      "Gateway API",
+      "Crash before the payment is written",
+      "A connection error",
+      "The merchant repeats the call with the same key. Nothing exists yet, so it runs fresh."
+     ],
+     [
+      "Gateway API",
+      "Crash after the attempt is committed, before the provider call",
+      "Pending",
+      "The recovery worker looks the reference up. A miss proves nothing, since the call may be in flight or the lookup may lag, so it repeats the call with the same reference as the idempotency key."
+     ],
+     [
+      "Gateway API",
+      "Crash after the provider answered, before we saved it",
+      "Pending",
+      "The recovery worker asks the provider by reference and applies the answer through the normal path."
+     ],
+     [
+      "Provider",
+      "Slow or no reply",
+      "Pending after our deadline",
+      "Bounded retry with the same reference, then ask, then wait for the event, then reconciliation."
+     ],
+     [
+      "Provider",
+      "Down for a while",
+      "Retryable errors, then a fast refusal",
+      "A breaker stops new calls. Payments with an unknown attempt are not moved elsewhere until it answers."
+     ],
+     [
+      "Payment store",
+      "Primary unavailable in a partition",
+      "Errors for merchants in that partition only",
+      "Promote a replica only if it holds every committed attempt and key row. That needs synchronous or quorum commit for this store, because asynchronous replication can lose the last committed attempt and a retry could then charge twice. Merchants' retries stay safe after that. We never accept writes without a key."
+     ],
+     [
+      "Ledger write",
+      "Insert fails",
+      "The capture does not complete; payment stays authorized",
+      "The state change and entries are one transaction, so both roll back. Retry the capture."
+     ],
+     [
+      "Inbound events",
+      "Receiver down",
+      "Nothing, usually",
+      "The provider retries for its own window. Reconciliation catches anything past it."
+     ],
+     [
+      "Inbound events",
+      "Duplicate or stale event",
+      "Nothing",
+      "The unique event id drops the duplicate. The state machine drops the stale one, except a late authorization on a failed payment, which goes to lookup and an automatic void, logged as an exception."
+     ],
+     [
+      "Outbound events",
+      "Merchant endpoint down",
+      "The merchant is late to learn the result",
+      "The relay retries with backoff and jitter for a fixed window. The merchant can call Get payment."
+     ],
+     [
+      "Reconciler",
+      "Finds a mismatch",
+      "Nothing, until it is fixed",
+      "A reviewer approves a compensating entry, or the stuck attempt is resolved with the provider."
+     ],
+     [
+      "One hot merchant",
+      "Saturates its partition",
+      "That merchant sees slowness or limit errors",
+      "Per-merchant limits, sub-partitioning, and a separate worker pool for the largest merchants."
+     ]
+    ]
+   },
+   {
+    "type": "p",
+    "text": "The one rule behind the table: when the store is unsure, it says pending and keeps the evidence, and a worker resolves it later. It never guesses a final answer to look responsive."
+   },
+   {
+    "type": "real",
+    "text": "Adyen documents a fallback in which a client leaves the idempotency header off when the check is unavailable. This design makes the opposite choice for a charge path and refuses the write, because a duplicate charge costs more than a retry.",
+    "cites": [
+     "adyen-idem"
+    ]
+   }
+  ]
+ },
+ "against-the-grain": {
+  "topics": [
+   "distributed-transactions",
+   "message-queues"
+  ],
+  "blocks": [
+   {
+    "type": "p",
+    "text": "Four textbook answers that sound right in an interview and are wrong or too costly here."
+   },
+   {
+    "type": "p",
+    "text": "Two-phase commit across the payment and the ledger. The textbook says atomic commit across services keeps them consistent. Here it ties the charge path to a coordinator, and the one participant that matters most, the card network, cannot join. Say instead: keep what we own in one local transaction, and make the outside calls safe to repeat."
+   },
+   {
+    "type": "p",
+    "text": "An authorization with a later void is itself a tentative operation: a promise that can still be cancelled. That is the shape that replaces atomic commit across parties we do not control."
+   },
+   {
+    "type": "real",
+    "text": "Pat Helland's 2007 paper reports that large scalable applications are generally built without distributed transactions, because atomicity cannot reach across separate entities, and that a two-phase protocol can stall when a node is unavailable. His alternative is tentative operations that the parties use to settle on an outcome.",
+    "cites": [
+     "helland"
+    ]
+   },
+   {
+    "type": "p",
+    "text": "Exactly-once delivery from a queue. The textbook says to buy a broker with that property. Inside one system that controls both the log and the effect, it can be real. A gateway's effect is a charge on someone else's system, which no broker of ours can enrol. Say instead: deliver at least once, make the charge call itself repeat-safe by reference, and make each receiver idempotent. The effect then happens once."
+   },
+   {
+    "type": "real",
+    "text": "The Kafka documentation describes an idempotent producer option that stops resends from creating duplicate log entries, and adds that exactly-once toward systems outside Kafka needs those systems to take part. The SQS documentation says standard queues can deliver duplicates. RabbitMQ tells consumers to deduplicate or be idempotent. Google's Pub/Sub offers exactly-once only within a region and for a defined kind of subscription. Helland's paper already named at-least-once messaging as the common case.",
+    "cites": [
+     "kafka-design",
+     "sqs-standard",
+     "rabbitmq",
+     "pubsub-exactly-once",
+     "helland"
+    ]
+   },
+   {
+    "type": "p",
+    "text": "One big database transaction around the whole payment. The textbook says wrap the provider call and the writes in a transaction so they cannot disagree. Holding locks while waiting on a slow outside party blocks other work, and the provider's side cannot be rolled back by us in any case. Say instead: two short transactions with the attempt row between them, and the provider reference as the thread that ties them."
+   },
+   {
+    "type": "p",
+    "text": "Sagas for everything. A saga strings together local steps, each committing on its own, and pays back completed steps with compensations. It fits the steps between our own stores. For money, a compensation cannot undo a captured charge, which already sits in the customer's bank world. It adds a record: a void before capture, a refund after. The ledger shows both the charge and the reversal."
+   },
+   {
+    "type": "real",
+    "text": "The 1987 paper that introduced sagas dealt with long-running work inside a single database, with no services in view, and ran compensating steps after a partial run. Gregor Hohpe's 2004 essay lists undoing completed steps as one way back to consistency and notes that money is an easy case, since a debit can be answered with a credit.",
+    "cites": [
+     "saga-paper",
+     "hohpe"
+    ]
+   }
+  ]
+ },
+ "strong-answer": {
+  "topics": [
+   "idempotency-and-retries",
+   "distributed-transactions"
+  ],
+  "talkTrack": "A payment gateway sits between merchants and outside providers that I cannot roll back. So I rank correctness first: never charge twice, always record what moved. I scope to create, authorize, capture and void, and I leave vaults, fraud and payouts out. The core is a payment state machine with final states, an attempt record written before every provider call, and an idempotency key stored in the same transaction as the payment. Money goes into an append-only, double-entry ledger in the same local transaction as the state change, so I need no distributed transaction. Provider events and merchant events both go through tables, an inbox and an outbox, because delivery is at least once and I make every step safe to repeat. A timeout means unknown, so I retry within a budget or ask the provider by reference, and I answer pending rather than guess. A reconciler compares the provider's reports with my ledger. I scale by merchant partition and watch for hot merchants.",
+  "levels": {
+   "mid": "A first pass covers the shape: clear scope, the calls, a payment record with states, a provider adapter, an idempotency key so a retry does not charge twice, and a webhook for the result. The learner can name why capture comes after authorization and can say what a ledger is for. Depth here means being able to explain each box and what happens on a simple failure.",
+   "senior": "A deeper pass takes the weak spots unprompted. It separates attempts from payments, explains why a timeout is unknown rather than failed, and picks between retrying and asking with a stated reason. It handles duplicate and reordered events with a unique event id and a state machine, and keeps the ledger in the same transaction as the state. It states the cost of each choice, such as the extra write before every provider call and the pending answer merchants must handle.",
+   "staff": "A judgement pass argues where the usual answer is wrong: why two-phase commit and exactly-once delivery are the wrong tools, and what takes their place. It sets out the failure of each component and the order of recovery, names what reconciliation catches that nothing else does, and plans for hot merchants, retention and the growth of history. It says what it would measure first, and what it would change if a provider offered no safe repeat or lookup."
+  },
+  "followUps": [
+   {
+    "ask": "A merchant sends the same idempotency key with a different amount. What happens?",
+    "answer": "The server compares the request to the fingerprint saved with the key and sees a mismatch. It refuses with a conflict status and does nothing else. The client reused a key for a different operation, which is a bug on their side, and silently replaying the old reply would hide it.",
+    "cites": [
+     "stripe-idem",
+     "square-idem"
+    ]
+   },
+   {
+    "ask": "How long do you keep idempotency records, and what protects a payment after they expire?",
+    "answer": "Longer than the longest time a merchant's client retries, plus margin; I would state a number for the exercise and ask the merchants. After expiry, the unique merchant order reference refuses a second payment for the same order. Keys protect against retries of one call. The order reference protects against a repeated intent."
+   },
+   {
+    "ask": "The provider is down. Do you send traffic to another one?",
+    "answer": "For new payments, yes, once a breaker opens and the second provider is ready. For a payment whose attempt is unknown, no. Moving it before the first provider answers risks two charges. Resolve the unknown attempt first, by lookup or by repeating the call with the same reference, then decide."
+   },
+   {
+    "ask": "How do you reconcile, and what happens on a mismatch?",
+    "answer": "A scheduled job matches the provider's settlement report against our ledger by provider reference and lists differences in four kinds. Each is fixed with an explicit compensating entry or by resolving a stuck attempt, with a person approving. We never edit a row. Reports are the final safety net, so the job runs even when everything looks fine.",
+    "cites": [
+     "stripe-payout-recon",
+     "adyen-settle",
+     "adyen-settle-details"
+    ]
+   },
+   {
+    "ask": "How would you add refunds, and partial capture later?",
+    "answer": "Full capture is the scope here. A refund is a new money movement that points at the payment and posts reversing ledger entries in its own balanced transaction, with its own idempotency key. Partial capture would be the same idea: several capture movements up to the authorized amount, each with its own id and entries. The payment's final state stays final, and the detail lives in the movement rows."
+   },
+   {
+    "ask": "One merchant is a large share of all traffic. What changes?",
+    "answer": "Contention comes first from the balance, so balances become sums of entries with checkpoints and no row is updated per payment. Then per-merchant limits and a separate worker pool. If one partition is still too hot, sub-partition the heavy rows and keep key and order-reference uniqueness in one small merchant-level index, so a repeated key cannot land in a different sub-partition. Merchant totals become sums over several places."
+   },
+   {
+    "ask": "How does a merchant verify that an event really came from you?",
+    "answer": "We sign the raw body with a secret shared with that merchant and include a signed timestamp. The merchant recomputes the signature on the raw bytes, rejects old timestamps to stop replay, and ignores event ids it has already handled. Rotating the secret needs a short period where both old and new are accepted.",
+    "cites": [
+     "stripe-webhooks",
+     "adyen-webhooks"
+    ]
+   },
+   {
+    "ask": "Why not use a queue with exactly-once delivery between the payment and ledger services?",
+    "answer": "Exactly-once holds only where one system controls both the log and the effect. Our effect is a charge at a provider, so the receiving side has to tolerate repeats anyway. Keeping the payment and the ledger in one database removes the question for the core path, and the outbox handles the rest at least once.",
+    "cites": [
+     "kafka-design",
+     "microservices-outbox"
+    ]
+   }
+  ]
+ },
+ "mistakes": {
+  "topics": [
+   "idempotency-and-retries",
+   "distributed-transactions"
+  ],
+  "items": [
+   {
+    "mistake": "Treating a timeout as a failure and telling the merchant to retry with a new request.",
+    "fix": "A timeout is unknown. Keep the attempt and the provider reference, retry the same request within a budget, or ask the provider, and answer pending meanwhile."
+   },
+   {
+    "mistake": "Putting the idempotency key in a cache or a separate store from the payment.",
+    "fix": "Write the key and the payment in one transaction. Two stores can disagree after a crash, and then the key protects nothing."
+   },
+   {
+    "mistake": "Updating a balance field on each payment, or editing a ledger row to fix a mistake.",
+    "fix": "Append entries only, fix errors with a reversing entry, and compute balances from entries and checkpoints. This keeps the history auditable and avoids a hot row."
+   },
+   {
+    "mistake": "Wrapping the provider call and the database writes in one transaction, or reaching for two-phase commit.",
+    "fix": "Use short local transactions around a durable attempt row, make outside calls safe to repeat, and use an outbox for anything that must follow a commit."
+   },
+   {
+    "mistake": "Trusting webhook order and uniqueness, or doing the work before replying.",
+    "fix": "Store the event under its unique id, reply fast, process later, and apply it only if the state machine allows the move. Ask the provider when the order is unclear."
+   },
+   {
+    "mistake": "Skipping reconciliation because every step is idempotent.",
+    "fix": "Idempotency prevents duplicates it knows about. Only comparison with the provider's reports finds what slipped through, such as a charge no event ever described."
+   },
+   {
+    "mistake": "Opening with the diagram and ignoring scope, so the design never meets a real requirement.",
+    "fix": "Spend the first minutes on scope and ranked qualities. Put numbers in only where they change a choice."
+   }
+  ]
+ },
+ "curiosities": [
+  {
+   "id": "trillion-move",
+   "text": "More than a trillion ledger entries had to move to a new store over two years, with no downtime and no outage. How do you prove a copy that large is right?",
+   "sourceId": "migration"
+  },
+  {
+   "id": "offline-check",
+   "text": "The largest offline validation job in one ledger move compared 760 billion records, 70 TB compressed. The post says live shadow validation cannot give strong guarantees for rarely accessed history. Why was that gap there?",
+   "sourceId": "migration"
+  },
+  {
+   "id": "two-rules",
+   "text": "In one large ledger, card holds must be visible to the next read, while payment history may lag a few seconds. Why would one ledger want both rules?",
+   "sourceId": "indexes"
+  },
+  {
+   "id": "backfill-steps",
+   "text": "One backfill example: 100 billion records at 10,000 a second take 120 days, while production normally handles 1,000 a second. The post says to scale the job up in small steps. Why small?",
+   "sourceId": "migration"
+  },
+  {
+   "id": "stack-243",
+   "text": "In a stack five deep with three retries at each layer, a failing database would see 243x the load. Where do the retries belong?",
+   "sourceId": "aws-timeouts-retries-backoff-2019"
+  },
+  {
+   "id": "budget-10",
+   "text": "A retry budget lets a client retry only while retries are below 10% of its requests, and layering it brings growth to 1.1x in the general case. Why such a small budget?",
+   "sourceId": "google-sre-handling-overload-2017"
+  },
+  {
+   "id": "four-times",
+   "text": "One paper's transaction layer, in its worst case of writing a single cell and committing, costs roughly four times the raw store, and the team accepted that overhead. What did it buy?",
+   "sourceId": "google-percolator-2010"
+  }
+ ],
+ "sources": [
+  {
+   "id": "stripe-status",
+   "title": "Payment intents: verifying status",
+   "url": "https://docs.stripe.com/payments/payment-intents/verifying-status",
+   "company": "Stripe",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown on the page; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "stripe-webhooks",
+   "title": "Webhooks",
+   "url": "https://docs.stripe.com/webhooks",
+   "company": "Stripe",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown on the page; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "stripe-idem",
+   "title": "Idempotent requests (API reference)",
+   "url": "https://docs.stripe.com/api/idempotent_requests",
+   "company": "Stripe",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown on the page; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "stripe-errors",
+   "title": "Error handling",
+   "url": "https://docs.stripe.com/error-handling",
+   "company": "Stripe",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown on the page; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "stripe-hold",
+   "title": "Place a hold on a payment method",
+   "url": "https://docs.stripe.com/payments/place-a-hold-on-a-payment-method",
+   "company": "Stripe",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown on the page; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "stripe-payout-recon",
+   "title": "Payout reconciliation report",
+   "url": "https://docs.stripe.com/reports/payout-reconciliation",
+   "company": "Stripe",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown on the page; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "razorpay-late",
+   "title": "Late authorization",
+   "url": "https://razorpay.com/docs/payments/payments/late-authorization/",
+   "company": "Razorpay",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown on the page; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "razorpay-webhooks",
+   "title": "Webhook best practices",
+   "url": "https://razorpay.com/docs/webhooks/best-practices/",
+   "company": "Razorpay",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown on the page; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "razorpay-validate",
+   "title": "Validate and test webhooks",
+   "url": "https://razorpay.com/docs/webhooks/validate-test/",
+   "company": "Razorpay",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown on the page; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "adyen-adjust",
+   "title": "Adjust authorisation",
+   "url": "https://docs.adyen.com/online-payments/adjust-authorisation/",
+   "company": "Adyen",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown; footer carries a copyright line and a terms link; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "adyen-webhooks",
+   "title": "Handle webhook events",
+   "url": "https://docs.adyen.com/development-resources/webhooks/handle-webhook-events/",
+   "company": "Adyen",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown; footer carries a copyright line and a terms link; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "adyen-idem",
+   "title": "API idempotency",
+   "url": "https://docs.adyen.com/development-resources/api-idempotency/",
+   "company": "Adyen",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown; footer carries a copyright line and a terms link; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "adyen-settle",
+   "title": "Settlement reconciliation",
+   "url": "https://docs.adyen.com/reporting/settlement-reconciliation/",
+   "company": "Adyen",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown; footer carries a copyright line and a terms link; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "adyen-settle-details",
+   "title": "Settlement details report",
+   "url": "https://docs.adyen.com/reporting/settlement-reconciliation/transaction-level/settlement-details-report/",
+   "company": "Adyen",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown; footer carries a copyright line and a terms link; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "square-idem",
+   "title": "Idempotency (common API patterns)",
+   "url": "https://developer.squareup.com/docs/build-basics/common-api-patterns/idempotency",
+   "company": "Square",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown; footer carries a copyright line; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "square-books",
+   "title": "Books, an immutable double-entry accounting database service",
+   "url": "https://developer.squareup.com/blog/books-an-immutable-double-entry-accounting-database-service/",
+   "company": "Square",
+   "published": "2019-10-16",
+   "verifiedOn": "2026-11-01",
+   "kind": "post"
+  },
+  {
+   "id": "ietf-idem",
+   "title": "The Idempotency-Key HTTP Header Field (Internet-Draft)",
+   "url": "https://www.ietf.org/archive/id/draft-ietf-httpapi-idempotency-key-header-07.txt",
+   "company": "IETF",
+   "published": "2025",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "Internet-Draft, work in progress; quoted briefly, the rest in our own words"
+  },
+  {
+   "id": "tigerbeetle-transfer",
+   "title": "Transfer",
+   "url": "https://raw.githubusercontent.com/tigerbeetle/tigerbeetle/main/docs/reference/transfer.md",
+   "company": "TigerBeetle",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "Apache License Version 2.0 (repository licence, assumed to cover the docs)",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "tigerbeetle-model",
+   "title": "Data modeling",
+   "url": "https://raw.githubusercontent.com/tigerbeetle/tigerbeetle/main/docs/coding/data-modeling.md",
+   "company": "TigerBeetle",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "Apache License Version 2.0 (repository licence, assumed to cover the docs)",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "helland",
+   "title": "Life beyond distributed transactions: an apostate's opinion",
+   "url": "https://www.cidrdb.org/cidr2007/papers/cidr07p15.pdf",
+   "company": "Pat Helland",
+   "published": "2007",
+   "verifiedOn": "2026-11-01",
+   "kind": "paper"
+  },
+  {
+   "id": "saga-paper",
+   "title": "Sagas",
+   "url": "https://www.cs.cornell.edu/andru/cs711/2002fa/reading/sagas.pdf",
+   "company": "Hector Garcia-Molina and Kenneth Salem",
+   "published": "1987",
+   "verifiedOn": "2026-11-01",
+   "kind": "paper"
+  },
+  {
+   "id": "hohpe",
+   "title": "Starbucks Does Not Use Two-Phase Commit",
+   "url": "https://www.enterpriseintegrationpatterns.com/ramblings/18_starbucks.html",
+   "company": "Gregor Hohpe",
+   "published": "2004-11-19",
+   "verifiedOn": "2026-11-01",
+   "kind": "post"
+  },
+  {
+   "id": "microservices-outbox",
+   "title": "Pattern: transactional outbox",
+   "url": "https://microservices.io/patterns/data/transactional-outbox.html",
+   "company": "Chris Richardson",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "Footer: all rights reserved; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "kafka-design",
+   "title": "Design (message delivery semantics)",
+   "url": "https://kafka.apache.org/42/design/design/",
+   "company": "Apache Kafka",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "Apache License v2 (page footer)",
+   "edition": "documentation for version 4.2, read 2026-11-01"
+  },
+  {
+   "id": "sqs-standard",
+   "title": "Amazon SQS standard queues",
+   "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/standard-queues.html",
+   "company": "Amazon",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown on the page; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "rabbitmq",
+   "title": "Reliability guide",
+   "url": "https://www.rabbitmq.com/docs/reliability",
+   "company": "RabbitMQ",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "Footer: copyright line; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "pubsub-exactly-once",
+   "title": "Exactly-once delivery",
+   "url": "https://cloud.google.com/pubsub/docs/exactly-once-delivery",
+   "company": "Google",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "Page footer: content licensed under Creative Commons Attribution 4.0",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "dynamo-key-design",
+   "title": "Best practices for designing partition keys",
+   "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-partition-key-design.html",
+   "company": "Amazon",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown on the page; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "dynamo-sharding",
+   "title": "Using write sharding to distribute workloads evenly in your DynamoDB table",
+   "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-partition-key-sharding.html",
+   "company": "Amazon",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "No licence shown on the page; quoted briefly, the rest in our own words",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "spanner-schema",
+   "title": "Schema design best practices",
+   "url": "https://cloud.google.com/spanner/docs/schema-design",
+   "company": "Google",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "reference",
+   "license": "Page footer: content licensed under Creative Commons Attribution 4.0",
+   "edition": "documentation page as read on 2026-11-01"
+  },
+  {
+   "id": "sre-cascading",
+   "title": "Addressing cascading failures (Site Reliability Engineering, chapter 22)",
+   "url": "https://sre.google/sre-book/addressing-cascading-failures/",
+   "company": "Google",
+   "published": "no date shown",
+   "verifiedOn": "2026-11-01",
+   "kind": "post",
+   "edition": "page shows copyright 2017 Google, Inc., SRE book chapter"
+  },
+  {
+   "id": "indexes",
+   "title": "How LedgerStore Supports Trillions of Indexes at Uber",
+   "url": "https://www.uber.com/us/en/blog/how-ledgerstore-supports-trillions-of-indexes/",
+   "company": "Uber",
+   "published": "2024-04-04",
+   "verifiedOn": "2026-10-23",
+   "kind": "post"
+  },
+  {
+   "id": "migration",
+   "title": "Migrating a Trillion Entries of Uber's Ledger Data from DynamoDB to LedgerStore",
+   "url": "https://www.uber.com/us/en/blog/migrating-from-dynamodb-to-ledgerstore/",
+   "company": "Uber",
+   "published": "2024-04-11",
+   "verifiedOn": "2026-10-23",
+   "kind": "post"
+  },
+  {
+   "id": "google-percolator-2010",
+   "title": "Large-scale Incremental Processing Using Distributed Transactions and Notifications",
+   "url": "https://research.google/pubs/pub36726/",
+   "company": "Google",
+   "published": "2010-10-04",
+   "verifiedOn": "2026-10-13",
+   "kind": "paper"
+  },
+  {
+   "id": "aws-timeouts-retries-backoff-2019",
+   "title": "Timeouts, retries, and backoff with jitter",
+   "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
+   "company": "Amazon Web Services (Builders' Library)",
+   "published": "2019-12-05",
+   "verifiedOn": "2026-10-15",
+   "kind": "post"
+  },
+  {
+   "id": "google-sre-handling-overload-2017",
+   "title": "Handling Overload (Site Reliability Engineering, chapter 21)",
+   "url": "https://sre.google/sre-book/handling-overload/",
+   "company": "Google",
+   "published": "no date shown",
+   "verifiedOn": "2026-10-15",
+   "kind": "post",
+   "edition": "page shows copyright 2017 Google, Inc., published by O'Reilly Media, SRE book chapter"
+  }
+ ]
+}

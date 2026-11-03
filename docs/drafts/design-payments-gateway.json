@@ -1,0 +1,571 @@
+{
+  "slug": "payments-gateway",
+  "title": "Design a payment gateway",
+  "summary": "Design the system that takes payment requests and records them safely. The verified sources cover the recording side well: an immutable ledger, strict and relaxed indexes, retry-safe calls, sharding and a migration with no gap. They say nothing about card authorisation, routing between payment providers, settlement or webhooks, so the API step is left empty.",
+  "topics": [
+    {
+      "slug": "distributed-transactions",
+      "role": "Explains how a write that touches several rows or shards can commit as one."
+    },
+    {
+      "slug": "idempotency-and-retries",
+      "role": "Makes a repeated payment call safe and keeps retries from adding load."
+    },
+    {
+      "slug": "indexing",
+      "role": "Covers lookups that must be strict and lookups that may lag, and how an index is rebuilt."
+    },
+    {
+      "slug": "sharding",
+      "role": "Covers the shard key and the costs of splitting one database."
+    }
+  ],
+  "capstone": "payments-ledger",
+  "steps": [
+    {
+      "id": "requirements",
+      "status": "sourced",
+      "claims": [
+        {
+          "text": "Records cannot be altered, and this can be checked with cryptographic signatures.",
+          "kind": "post",
+          "sourceId": "migration"
+        },
+        {
+          "text": "Card holds must be visible to the next read. Payment history may lag a few seconds.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "A time index must take writes at a peak of about 1,000 trips a second without being throttled.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "More than a trillion ledger entries had to move to a new store over two years, with no downtime and no outage.",
+          "kind": "post",
+          "sourceId": "migration"
+        }
+      ],
+      "topics": [
+        "idempotency-and-retries",
+        "indexing"
+      ]
+    },
+    {
+      "id": "estimation",
+      "status": "sourced",
+      "claims": [
+        {
+          "text": "Scale in one company's ledger: billions of trips and deliveries, and tens of billions of financial transactions, every quarter, with over 2 trillion unique indexes over hundreds of billions of ledgers.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "Storage in the same ledger: all data since 2017 comes to 1.2 PB of immutable records (compressed) and 0.5 PB of secondary indexes (uncompressed).",
+          "kind": "post",
+          "sourceId": "migration"
+        },
+        {
+          "text": "The post's worked backfill example: 100 billion records at 10,000 a second take 120 days, when production normally handles 1,000 a second. The post says to scale the job up in small steps.",
+          "kind": "post",
+          "sourceId": "migration"
+        },
+        {
+          "text": "One company needed at least 60K disk operations a second, with size limits of 500 GB per table and 10 TB per database.",
+          "kind": "post",
+          "sourceId": "notion-postgres-sharding-2021"
+        }
+      ],
+      "topics": [
+        "sharding",
+        "indexing"
+      ]
+    },
+    {
+      "id": "api",
+      "status": "no-source-yet",
+      "claims": [],
+      "topics": [
+        "idempotency-and-retries"
+      ]
+    },
+    {
+      "id": "data-model",
+      "status": "sourced",
+      "claims": [
+        {
+          "text": "Records in the ledger are immutable, and this can be checked with cryptographic signatures.",
+          "kind": "post",
+          "sourceId": "migration"
+        },
+        {
+          "text": "A strong index is written as an intent before the record and committed after it. Eventually consistent indexes are generated in the background from materialised views, away from the online write path.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "The time-range index is one table sorted by primary key and partitioned on the full timestamp, read as prefix scans over a fixed number of shards.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "One company shards by workspace ID. Every block belongs to exactly one workspace, so most queries stay on one shard.",
+          "kind": "post",
+          "sourceId": "notion-postgres-sharding-2021"
+        },
+        {
+          "text": "Another groups tables that are queried together under one shard key (user, file or organisation ID), so joins and transactions within one key still work. It hashes the key so sequential IDs do not pile onto one shard.",
+          "kind": "post",
+          "sourceId": "figma-postgres-sharding-2024"
+        }
+      ],
+      "topics": [
+        "indexing",
+        "sharding"
+      ]
+    },
+    {
+      "id": "high-level",
+      "status": "sourced",
+      "claims": [
+        {
+          "text": "The ledger has a strong index path (intent, then commit), an eventual index path built in the background and a time-range index.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "On a store that only offers atomic single-row writes, a transaction across rows and shards can use two-phase commit with one designated lock as the commit point. A reader that meets a lock follows it to the primary, so no coordinator is needed on the read path.",
+          "kind": "paper",
+          "sourceId": "google-percolator-2010"
+        },
+        {
+          "text": "The cutover used shadow validation, a rollout over a few weeks with a fallback to the old store, and the old table was dropped only after a month.",
+          "kind": "post",
+          "sourceId": "migration"
+        }
+      ],
+      "topics": [
+        "distributed-transactions",
+        "indexing"
+      ]
+    },
+    {
+      "id": "deep-dives",
+      "status": "sourced",
+      "claims": [
+        {
+          "text": "Strong index: an index intent is written before the record and committed after it, and the commit runs asynchronously so insert latency is not affected. If the intent write fails, the whole insert fails. A read that meets an intent checks whether the record exists, then commits or rolls back the intent. Only a very small percentage of indexes end up in the intent state.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "Time index on DynamoDB: a write-optimised buffer index with M hash buckets, and a read-optimised permanent table partitioned on the timestamp aligned to a window such as 10 minutes. Buffer tables are deleted after offload.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "Cross-shard commit: prewrite each cell with a lock, designate one lock as the primary, then commit with a single atomic write that clears the primary and records the commit timestamp. Timestamps come from an oracle that hands out strictly increasing values.",
+          "kind": "paper",
+          "sourceId": "google-percolator-2010"
+        },
+        {
+          "text": "Originally each statement's write waited for its consensus round, so n statements meant n sequential rounds. Pipelining lets each round proceed in the background and waits for all of them at commit, an O(1) cost in rounds. In the TPC-C New-Order experiment each extra millisecond of inter-node latency added 6 ms of transaction latency without pipelining and 2 ms with it.",
+          "kind": "post",
+          "sourceId": "cockroachdb-transaction-pipelining-2019"
+        },
+        {
+          "text": "APIs with side effects are not safe to retry unless they are idempotent. Reads usually are, and creating a resource may not be. Some APIs, such as the EC2 RunInstances call, take a token that makes a retry safe.",
+          "kind": "post",
+          "sourceId": "aws-timeouts-retries-backoff-2019"
+        },
+        {
+          "text": "Backfill job: batches that each finish within a few minutes, idempotent, statistics written after each batch, rate limited with additive increase and multiplicative decrease under an upper bound. The post says to stop it on any suspicion of overload.",
+          "kind": "post",
+          "sourceId": "migration"
+        }
+      ],
+      "topics": [
+        "distributed-transactions",
+        "indexing",
+        "idempotency-and-retries"
+      ]
+    },
+    {
+      "id": "failure-and-scale",
+      "status": "sourced",
+      "claims": [
+        {
+          "text": "If a strong-index intent write fails, the whole insert fails. A read that meets a leftover intent checks whether the record exists, then commits or rolls back the intent.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "Buffer tables not created in time caused write failures and availability issues in the past.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "In a stack five deep with three retries at each layer, a failing database would see 243x the load. For low-cost operations the author retries at a single point in the stack. The author also limits retries locally with a token bucket and adds jitter. A timeout can be chosen from an acceptable false-timeout rate such as 0.1%, using the matching percentile, p99.9. This is one engineer's account from 2019.",
+          "kind": "post",
+          "sourceId": "aws-timeouts-retries-backoff-2019"
+        },
+        {
+          "text": "Google's retry budgets: a request is attempted at most three times, and a client retries only while retries are below 10% of its requests. Layering the 10% budget brings the growth to 1.1x in the general case. A backend can answer overloaded, don't retry, and a request is retried only by the layer directly above the one that rejected it.",
+          "kind": "post",
+          "sourceId": "google-sre-handling-overload-2017"
+        },
+        {
+          "text": "Shadow validation had a target of at least 99.99% complete and correct and an upper bound of 99.9999%. Offline validation used Apache Spark, and the biggest single job compared 760 billion records (70 TB compressed). The post notes that live shadow validation cannot give strong guarantees for rarely accessed history.",
+          "kind": "post",
+          "sourceId": "migration"
+        },
+        {
+          "text": "A query without a shard key goes to every shard.",
+          "kind": "post",
+          "sourceId": "figma-postgres-sharding-2024"
+        },
+        {
+          "text": "In Notion's rebuild, live writes go to temporary indices while the snapshot is built, and a versioned reindex then copies them in, so a newer document is never overwritten by an older one. Snapshots avoid the live write path and make rollback a restore of yesterday's snapshot.",
+          "kind": "post",
+          "sourceId": "notion-lexical-reindexer-2026"
+        }
+      ],
+      "topics": [
+        "idempotency-and-retries",
+        "sharding",
+        "indexing"
+      ]
+    },
+    {
+      "id": "trade-offs",
+      "status": "sourced",
+      "claims": [
+        {
+          "text": "Strong indexes give up a higher write latency, because the intent and record writes are serial, and a lower availability, because any one intent write that fails fails the whole write. The post says strong indexes should be used only when the use case strongly demands it.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "The two-table time index design brought state management. A fixed shard count lets the single-table design bound the number of read requests, which does not work on DynamoDB, where partitions keep growing.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "The paper's worst case, writing a single cell and committing, costs roughly four times raw Bigtable. Google accepted that overhead and higher latency for incremental indexing.",
+          "kind": "paper",
+          "sourceId": "google-percolator-2010"
+        },
+        {
+          "text": "Hashing the shard key gives an even spread without changing IDs, at the cost of slower range scans. The company rejected transactions that span shards.",
+          "kind": "post",
+          "sourceId": "figma-postgres-sharding-2024"
+        },
+        {
+          "text": "Notion chose 480 logical shards. The post says 480 divides evenly in many ways, so hosts can be added a few at a time instead of doubling. Citus and Vitess were rejected. The post says they hid how data was distributed, which Notion wanted to control.",
+          "kind": "post",
+          "sourceId": "notion-postgres-sharding-2021"
+        },
+        {
+          "text": "The author's view on circuit breakers is that they add modal behaviour that is hard to test and can add recovery time. The page has no measurement comparing them with the other retry limits.",
+          "kind": "post",
+          "sourceId": "aws-timeouts-retries-backoff-2019"
+        }
+      ],
+      "topics": [
+        "indexing",
+        "sharding",
+        "distributed-transactions"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "indexes",
+      "title": "How LedgerStore Supports Trillions of Indexes at Uber",
+      "url": "https://www.uber.com/us/en/blog/how-ledgerstore-supports-trillions-of-indexes/",
+      "company": "Uber",
+      "published": "2024-04-04",
+      "verifiedOn": "2026-10-23",
+      "kind": "post"
+    },
+    {
+      "id": "migration",
+      "title": "Migrating a Trillion Entries of Uber's Ledger Data from DynamoDB to LedgerStore",
+      "url": "https://www.uber.com/us/en/blog/migrating-from-dynamodb-to-ledgerstore/",
+      "company": "Uber",
+      "published": "2024-04-11",
+      "verifiedOn": "2026-10-23",
+      "kind": "post"
+    },
+    {
+      "id": "google-percolator-2010",
+      "title": "Large-scale Incremental Processing Using Distributed Transactions and Notifications",
+      "url": "https://research.google/pubs/pub36726/",
+      "company": "Google",
+      "published": "2010-10-04",
+      "verifiedOn": "2026-10-13",
+      "kind": "paper"
+    },
+    {
+      "id": "cockroachdb-transaction-pipelining-2019",
+      "title": "How Pipelining consensus writes speeds up distributed SQL transactions",
+      "url": "https://www.cockroachlabs.com/blog/transaction-pipelining/",
+      "company": "Cockroach Labs",
+      "published": "2019-01-10",
+      "verifiedOn": "2026-10-13",
+      "kind": "post"
+    },
+    {
+      "id": "aws-timeouts-retries-backoff-2019",
+      "title": "Timeouts, retries, and backoff with jitter",
+      "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
+      "company": "Amazon Web Services (Builders' Library)",
+      "published": "2019-12-05",
+      "verifiedOn": "2026-10-15",
+      "kind": "post"
+    },
+    {
+      "id": "google-sre-handling-overload-2017",
+      "title": "Handling Overload (Site Reliability Engineering, chapter 21)",
+      "url": "https://sre.google/sre-book/handling-overload/",
+      "company": "Google",
+      "published": "no date shown",
+      "verifiedOn": "2026-10-15",
+      "kind": "post",
+      "edition": "page shows copyright 2017 Google, Inc., published by O'Reilly Media, SRE book chapter"
+    },
+    {
+      "id": "figma-postgres-sharding-2024",
+      "title": "How Figma’s databases team lived to tell the scale",
+      "url": "https://www.figma.com/blog/how-figmas-databases-team-lived-to-tell-the-scale/",
+      "company": "Figma",
+      "published": "2024-03-14",
+      "verifiedOn": "2026-10-13",
+      "kind": "post"
+    },
+    {
+      "id": "notion-postgres-sharding-2021",
+      "title": "Herding elephants: Lessons learned from sharding Postgres at Notion",
+      "url": "https://www.notion.com/blog/sharding-postgres-at-notion",
+      "company": "Notion",
+      "published": "2021-10-06",
+      "verifiedOn": "2026-10-13",
+      "kind": "post"
+    },
+    {
+      "id": "notion-lexical-reindexer-2026",
+      "title": "Rebuilding Notion's lexical search reindexer",
+      "url": "https://www.notion.com/blog/rebuilding-notions-lexical-search-reindexer",
+      "company": "Notion",
+      "published": "2026-08-10",
+      "verifiedOn": "2026-10-17",
+      "kind": "post"
+    }
+  ],
+  "followUps": [
+    {
+      "id": "load-jump",
+      "ask": "Traffic jumps and the time index starts being throttled. What do you change?",
+      "claims": [
+        {
+          "text": "On DynamoDB, use a write-optimised buffer index with M hash buckets and a read-optimised permanent table partitioned on the timestamp aligned to a window such as 10 minutes. Buffer tables are deleted after offload.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "Say what the buffer costs: the two-table design brought state management, and buffer tables not created in time caused write failures and availability issues in the past.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "One design keeps a single time-range table, partitioned on the full timestamp and read as prefix scans over each shard. A fixed shard count lets them bound the number of read requests, which does not work on DynamoDB, where partitions keep growing.",
+          "kind": "post",
+          "sourceId": "indexes"
+        }
+      ],
+      "topics": [
+        "indexing",
+        "sharding"
+      ]
+    },
+    {
+      "id": "retry-storm",
+      "ask": "A downstream service is overloaded and every client keeps retrying. How do you stop it making things worse?",
+      "claims": [
+        {
+          "text": "In a stack five deep with three retries at each layer, a failing database would see 243x the load. For low-cost operations, the author retries at a single point in the stack.",
+          "kind": "post",
+          "sourceId": "aws-timeouts-retries-backoff-2019"
+        },
+        {
+          "text": "A token bucket lets calls retry while tokens last, then at a fixed rate. Add jitter: clients that back off by the same amount line up again, and randomness spreads retries in time.",
+          "kind": "post",
+          "sourceId": "aws-timeouts-retries-backoff-2019"
+        },
+        {
+          "text": "Budgets: a request is attempted at most three times, and a client retries only while retries are below 10% of its requests. Layering the 10% budget brings the growth to 1.1x in the general case.",
+          "kind": "post",
+          "sourceId": "google-sre-handling-overload-2017"
+        },
+        {
+          "text": "The backend can answer overloaded, don't retry, and a request is retried only by the layer directly above the one that rejected it.",
+          "kind": "post",
+          "sourceId": "google-sre-handling-overload-2017"
+        },
+        {
+          "text": "APIs with side effects are not safe to retry unless they are idempotent. Some APIs take a token that makes a retry safe, such as the EC2 RunInstances call.",
+          "kind": "post",
+          "sourceId": "aws-timeouts-retries-backoff-2019"
+        }
+      ],
+      "topics": [
+        "idempotency-and-retries"
+      ]
+    },
+    {
+      "id": "migration-failure",
+      "ask": "You are moving the ledger to a new store. How do you know it is right, and what if the backfill overloads production?",
+      "claims": [
+        {
+          "text": "Shadow validation had a target of at least 99.99% complete and correct and an upper bound of 99.9999%.",
+          "kind": "post",
+          "sourceId": "migration"
+        },
+        {
+          "text": "The post notes live shadow validation cannot give strong guarantees for rarely accessed history.",
+          "kind": "post",
+          "sourceId": "migration"
+        },
+        {
+          "text": "An offline comparison with Apache Spark is added. The biggest single job compared 760 billion records (70 TB compressed).",
+          "kind": "post",
+          "sourceId": "migration"
+        },
+        {
+          "text": "The backfill ran in idempotent batches that each finish within a few minutes, and rate limited with additive increase and multiplicative decrease. The post says to stop it on any suspicion of overload.",
+          "kind": "post",
+          "sourceId": "migration"
+        },
+        {
+          "text": "The post's worked example: 100 billion records at 10,000 a second take 120 days, when production normally handles 1,000 a second. The post says to scale the job up in small steps.",
+          "kind": "post",
+          "sourceId": "migration"
+        },
+        {
+          "text": "The rollout ran over a few weeks with a fallback to the old store, and the old table was dropped only after a month.",
+          "kind": "post",
+          "sourceId": "migration"
+        }
+      ],
+      "topics": [
+        "indexing",
+        "idempotency-and-retries"
+      ]
+    },
+    {
+      "id": "stricter-consistency",
+      "ask": "A lookup must reflect a write at once, with no lag. How do you build it, and what does it cost?",
+      "claims": [
+        {
+          "text": "Card holds must be visible to the next read, while payment history may lag a few seconds. The post says strong indexes should be used only when the use case strongly demands it.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "An index intent is written first, then the record, then the intent is committed asynchronously so insert latency is not affected. If the intent write fails, the whole insert fails.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "A read that meets an intent checks whether the record exists, then commits or rolls back the intent. Only a very small percentage of indexes end up in the intent state.",
+          "kind": "post",
+          "sourceId": "indexes"
+        },
+        {
+          "text": "The post lists what strong indexes give up: a higher write latency, because the intent and record writes are serial, and a lower availability, because any one intent write that fails fails the whole write.",
+          "kind": "post",
+          "sourceId": "indexes"
+        }
+      ],
+      "topics": [
+        "distributed-transactions",
+        "indexing"
+      ]
+    },
+    {
+      "id": "cross-shard-write",
+      "ask": "One request must change rows on several shards, all or nothing. What do you do?",
+      "claims": [
+        {
+          "text": "Two-phase commit with one lock as the commit point: prewrite each cell with a lock, make one lock the primary, then commit with a single atomic write that clears the primary and records the commit timestamp.",
+          "kind": "paper",
+          "sourceId": "google-percolator-2010"
+        },
+        {
+          "text": "A reader that meets a lock follows it to the primary to learn the outcome, so no coordinator is needed on the read path.",
+          "kind": "paper",
+          "sourceId": "google-percolator-2010"
+        },
+        {
+          "text": "The cost: the paper's worst case, writing a single cell and committing, is roughly four times raw Bigtable.",
+          "kind": "paper",
+          "sourceId": "google-percolator-2010"
+        },
+        {
+          "text": "On a consensus-replicated store, originally each statement's write waited for its round, so n statements meant n sequential rounds. Pipelining lets the rounds proceed in the background and waits for all of them at commit, an O(1) cost in rounds.",
+          "kind": "post",
+          "sourceId": "cockroachdb-transaction-pipelining-2019"
+        },
+        {
+          "text": "Another route: one company rejected transactions that span shards. It grouped tables queried together under one shard key, so joins and transactions within one key still work.",
+          "kind": "post",
+          "sourceId": "figma-postgres-sharding-2024"
+        }
+      ],
+      "topics": [
+        "distributed-transactions",
+        "sharding"
+      ]
+    },
+    {
+      "id": "database-too-big",
+      "ask": "The single database is running out of room. How do you split it?",
+      "claims": [
+        {
+          "text": "One company needed at least 60K disk operations a second, with size limits of 500 GB per table and 10 TB per database.",
+          "kind": "post",
+          "sourceId": "notion-postgres-sharding-2021"
+        },
+        {
+          "text": "Pick the key: workspace ID, since every block belongs to exactly one workspace, so most queries stay on one shard.",
+          "kind": "post",
+          "sourceId": "notion-postgres-sharding-2021"
+        },
+        {
+          "text": "Fix the shard count: Notion chose 480 logical shards. The post says 480 divides evenly in many ways, so hosts can be added a few at a time instead of doubling.",
+          "kind": "post",
+          "sourceId": "notion-postgres-sharding-2021"
+        },
+        {
+          "text": "Route in one place: application code maps each workspace ID to its logical shard.",
+          "kind": "post",
+          "sourceId": "notion-postgres-sharding-2021"
+        },
+        {
+          "text": "Shard logically first: each shard is a Postgres view over a range of hashed keys, traffic moves behind feature flags, so going back is a configuration change. Then split physically, the riskier and less reversible step.",
+          "kind": "post",
+          "sourceId": "figma-postgres-sharding-2024"
+        },
+        {
+          "text": "A query without a shard key goes to every shard.",
+          "kind": "post",
+          "sourceId": "figma-postgres-sharding-2024"
+        }
+      ],
+      "topics": [
+        "sharding"
+      ]
+    }
+  ]
+}

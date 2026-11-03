@@ -51,6 +51,8 @@ It is one person's learning project, built in the open.
 
 **Put it together.** Capstones at `/capstones` combine finished topics into one system, a metrics pipeline, a social graph store, a payments ledger, a file sync engine, a chat and messaging system, live video streaming and notifications at scale: decide first, size it with a calculator, click through the diagram, break it, compare with the real design, then a quiz. Each shows which of its topics you have read.
 
+**Practice the round.** Design questions at `/design` are read-only model answers to "Design X", in the order of an interview: for each section what the interviewer asks, what to say and a tip, then the reasoning, failure modes, a strong answer with follow-ups, common mistakes and a short "Worth knowing" close from company posts. Explanations are the site's own; a fact about a real system links its source, and a figure appears only from a company post or paper. The build fails a page that breaks the sourcing rules.
+
 **Terms in place.** The first use of a topic's own terms in each section opens a short definition, with a link to its entry in Words to know.
 
 **Progress stays in your browser.** There are no accounts and nothing is sent to a server. You can export, import or reset what you have marked on the Your data page.
@@ -152,7 +154,7 @@ Scripts worth knowing:
 
 ## Where things live
 
-- `content/` is the course: `topics/`, `learn/`, `background/`, `reads/`, `news/`, `capstones/`, one JSON file each. A capstone (`/capstone/<slug>`, `.claude/rules/capstones.md`) combines finished topics: decide first, size it, break it, compare.
+- `content/` is the course: `topics/`, `learn/`, `background/`, `reads/`, `news/`, `capstones/`, `design/`, one JSON file each. A design question (`/design/<slug>`, `.claude/rules/design-questions.md`, checked by `designProblems` in `lib/design.ts`) is a read-only model answer in interview order. A capstone (`/capstone/<slug>`, `.claude/rules/capstones.md`) combines finished topics: decide first, size it, break it, compare.
 - `app/` and `components/` are the routes and the interface.
 - `lib/` loads and checks the content, lays out the graph, and holds the tests.
 - `scripts/` holds the build-time checks and the by-hand verifiers.
