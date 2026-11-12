@@ -8,47 +8,47 @@
       "heading": "The stages of a loop",
       "claims": [
         {
-          "text": "Amazon's SDE II preparation page (no date shown) says the loop has four 55-minute interviews, each with members of its software development community.",
+          "text": "Amazon's SDE II preparation page says the loop has four 55-minute interviews, each with members of its software development community.",
           "sourceId": "amz-sde2"
         },
         {
-          "text": "Amazon's SDE II preparation page (no date shown) says to expect at least one question on software systems design.",
+          "text": "Amazon's SDE II preparation page says to expect at least one question on software systems design.",
           "sourceId": "amz-sde2"
         },
         {
-          "text": "Amazon's SDE II preparation page (no date shown) describes the online assessment as 90 minutes for two technical questions followed by 20 minutes of Systems Design scenarios.",
+          "text": "Amazon's SDE II preparation page describes the online assessment as 90 minutes for two technical questions followed by 20 minutes of Systems Design scenarios.",
           "sourceId": "amz-sde2"
         },
         {
-          "text": "Amazon's SDE III page (no date shown) lists five 55-minute interviews in the loop.",
+          "text": "Amazon's SDE III page lists five 55-minute interviews in the loop.",
           "sourceId": "amz-sde3"
         },
         {
-          "text": "Amazon's SDE III page (no date shown) says the technical phone screen is with a senior leader on the team and lasts 60 minutes.",
+          "text": "Amazon's SDE III page says the technical phone screen is with a senior leader on the team and lasts 60 minutes.",
           "sourceId": "amz-sde3"
         },
         {
-          "text": "Meta's hiring process page (no date shown) says the process usually consists of a recruiter conversation, an initial screening and a full loop interview.",
+          "text": "Meta's hiring process page says the process usually consists of a recruiter conversation, an initial screening and a full loop interview.",
           "sourceId": "meta-hiring"
         },
         {
-          "text": "Meta's hiring process page (no date shown) says the typical process takes about 2 to 3 months.",
+          "text": "Meta's hiring process page says the typical process takes about 2 to 3 months.",
           "sourceId": "meta-hiring"
         },
         {
-          "text": "Meta's technical screen page (no date shown) describes the initial tech screen as a 45-minute conversation with an engineer.",
+          "text": "Meta's technical screen page describes the initial tech screen as a 45-minute conversation with an engineer.",
           "sourceId": "meta-techscreen"
         },
         {
-          "text": "Atlassian's P30 to P50 backend guide (no date shown, file metadata 2023) lists two coding interviews, one system design interview, one management interview and a values interview.",
+          "text": "Atlassian's P30 to P50 backend guide (file metadata 2023) lists two coding interviews, one system design interview, one management interview and a values interview.",
           "sourceId": "atl-p30"
         },
         {
-          "text": "The same Atlassian guide (no date shown, file metadata 2023) gives timings of 60 minutes for system design, 60 minutes for management and 45 minutes for values.",
+          "text": "The same Atlassian guide (file metadata 2023) gives timings of 60 minutes for system design, 60 minutes for management and 45 minutes for values.",
           "sourceId": "atl-p30"
         },
         {
-          "text": "Flipkart's SDE guide (no date shown, file metadata 2020) names a design round, round 2.3, that involves discussing and solving a non-trivial design problem.",
+          "text": "Flipkart's SDE guide (file metadata 2020) names a design round, round 2.3, that involves discussing and solving a non-trivial design problem.",
           "sourceId": "fk-sde"
         }
       ]
@@ -62,27 +62,27 @@
           "sourceId": "meta-blog"
         },
         {
-          "text": "Atlassian's Principal Backend guide (no date shown, file metadata 2023) says the system design portion of the interview is 60 minutes.",
+          "text": "Atlassian's Principal Backend guide (file metadata 2023) says the system design portion of the interview is 60 minutes.",
           "sourceId": "atl-p60"
         },
         {
-          "text": "Flipkart's SDE guide (no date shown, file metadata 2020) gives the design round as 60 minutes.",
+          "text": "Flipkart's SDE guide (file metadata 2020) gives the design round as 60 minutes.",
           "sourceId": "fk-sde"
         },
         {
-          "text": "Flipkart's Architect guide (no date shown, file metadata 2020) gives a 60-minute high-level design round, with 1 or 2 scenarios that need a fully detailed architectural solution.",
+          "text": "Flipkart's Architect guide (file metadata 2020) gives a 60-minute high-level design round, with 1 or 2 scenarios that need a fully detailed architectural solution.",
           "sourceId": "fk-arch"
         },
         {
-          "text": "Microsoft's technical interviewing page (no date shown) calls its interview round short at 45 minutes. The page does not tie the 45 minutes to system design.",
+          "text": "Microsoft's technical interviewing page calls its interview round short at 45 minutes. The page does not tie the 45 minutes to system design.",
           "sourceId": "ms-technical"
         },
         {
-          "text": "Amazon's SDE II preparation page (no date shown) says the loop has four 55-minute interviews. The page gives this length for each loop interview and does not give a length for design alone.",
+          "text": "Amazon's SDE II preparation page says the loop has four 55-minute interviews. The page gives this length for each loop interview and does not give a length for design alone.",
           "sourceId": "amz-sde2"
         },
         {
-          "text": "Amazon's SDE III page (no date shown) says the loop has five 55-minute interviews. The page gives this length for each loop interview and does not give a length for design alone.",
+          "text": "Amazon's SDE III page says the loop has five 55-minute interviews. The page gives this length for each loop interview and does not give a length for design alone.",
           "sourceId": "amz-sde3"
         }
       ]
@@ -104,43 +104,43 @@
           "sourceId": "meta-blog"
         },
         {
-          "text": "Amazon's SDE II page (no date shown) lists these objectives: practicality, accuracy, efficiency, reliability, optimization and scalability.",
+          "text": "Amazon's SDE II page lists these objectives: practicality, accuracy, efficiency, reliability, optimization and scalability.",
           "sourceId": "amz-sde2"
         },
         {
-          "text": "Amazon's software development topics page (no date shown) says interviewers look for the ability to apply what you know to solve problems efficiently and effectively.",
+          "text": "Amazon's software development topics page says interviewers look for the ability to apply what you know to solve problems efficiently and effectively.",
           "sourceId": "amz-topics"
         },
         {
-          "text": "Microsoft's technical interviewing page (no date shown) says knowledge of distributed systems, SOA and n-tiered software architecture is very important for system design questions.",
+          "text": "Microsoft's technical interviewing page says knowledge of distributed systems, SOA and n-tiered software architecture is very important for system design questions.",
           "sourceId": "ms-technical"
         },
         {
-          "text": "Microsoft's technical interviewing page (no date shown) says resiliency, high availability, auto-scaling, replication, CAP theory and partitioning may all be included.",
+          "text": "Microsoft's technical interviewing page says resiliency, high availability, auto-scaling, replication, CAP theory and partitioning may all be included.",
           "sourceId": "ms-technical"
         },
         {
-          "text": "Microsoft's technical interviewing page (no date shown) says candidates should understand what it takes to build or design a new system or platform from scratch.",
+          "text": "Microsoft's technical interviewing page says candidates should understand what it takes to build or design a new system or platform from scratch.",
           "sourceId": "ms-technical"
         },
         {
-          "text": "Atlassian's Principal Backend guide (no date shown) says the interviewer looks at problem-solving thought process, decision making and operational considerations.",
+          "text": "Atlassian's Principal Backend guide says the interviewer looks at problem-solving thought process, decision making and operational considerations.",
           "sourceId": "atl-p60"
         },
         {
-          "text": "The Atlassian Principal Backend guide (no date shown) tells candidates to keep the customer in mind and how the solution might perform and scale.",
+          "text": "The Atlassian Principal Backend guide tells candidates to keep the customer in mind and how the solution might perform and scale.",
           "sourceId": "atl-p60"
         },
         {
-          "text": "Flipkart's SDE guide (no date shown, file metadata 2020) expects a scalable system with the trade-offs needed to achieve that, and knowledge of different types of data stores and when to choose one over another.",
+          "text": "Flipkart's SDE guide (file metadata 2020) expects a scalable system with the trade-offs needed to achieve that, and knowledge of different types of data stores and when to choose one over another.",
           "sourceId": "fk-sde"
         },
         {
-          "text": "In its general interview tips, Flipkart's SDE guide (no date shown, file metadata 2020) says: \"We don't necessarily look for absolute solutions.\" It adds that the interviewers want to know how you approach a problem.",
+          "text": "In its general interview tips, Flipkart's SDE guide (file metadata 2020) says: \"We don't necessarily look for absolute solutions.\" It adds that the interviewers want to know how you approach a problem.",
           "sourceId": "fk-sde"
         },
         {
-          "text": "Flipkart's Architect guide (no date shown, file metadata 2020) lists tech stack selection, scalability of the solution, and choosing between consistency, availability and partition tolerance as separate evaluation pivots.",
+          "text": "Flipkart's Architect guide (file metadata 2020) lists tech stack selection, scalability of the solution, and choosing between consistency, availability and partition tolerance as separate evaluation pivots.",
           "sourceId": "fk-arch"
         }
       ]
@@ -154,19 +154,19 @@
           "sourceId": "meta-blog"
         },
         {
-          "text": "Microsoft's technical interviewing page (no date shown) says to ask clarifying questions about any ambiguities and come up with a plan before implementing a solution.",
+          "text": "Microsoft's technical interviewing page says to ask clarifying questions about any ambiguities and come up with a plan before implementing a solution.",
           "sourceId": "ms-technical"
         },
         {
-          "text": "Microsoft's interview tips page (no date shown) says to start by asking clarifying questions and stating your assumptions, then talk through your approach, including the tools you would use and why.",
+          "text": "Microsoft's interview tips page says to start by asking clarifying questions and stating your assumptions, then talk through your approach, including the tools you would use and why.",
           "sourceId": "ms-tips"
         },
         {
-          "text": "Atlassian's P30 to P50 guide (no date shown) describes starting with fundamentals and then building in complexity, and asking any clarifying questions upfront.",
+          "text": "Atlassian's P30 to P50 guide describes starting with fundamentals and then building in complexity, and asking any clarifying questions upfront.",
           "sourceId": "atl-p30"
         },
         {
-          "text": "Flipkart's SDE guide (no date shown, file metadata 2020) says the problem will be very generic and tells candidates to start by gathering all the specific requirements from the interviewer.",
+          "text": "Flipkart's SDE guide (file metadata 2020) says the problem will be very generic and tells candidates to start by gathering all the specific requirements from the interviewer.",
           "sourceId": "fk-sde"
         }
       ]
@@ -176,7 +176,7 @@
       "heading": "How the discussion is driven",
       "claims": [
         {
-          "text": "Amazon's SDE II page (no date shown) says the interviewer will ask questions related to your design, and that you should ask questions to complete and validate your design.",
+          "text": "Amazon's SDE II page says the interviewer will ask questions related to your design, and that you should ask questions to complete and validate your design.",
           "sourceId": "amz-sde2"
         },
         {
@@ -192,19 +192,19 @@
           "sourceId": "meta-blog"
         },
         {
-          "text": "Atlassian's P30 to P50 guide (no date shown) tells candidates to keep communicating with the interviewer as they progress towards a solution.",
+          "text": "Atlassian's P30 to P50 guide tells candidates to keep communicating with the interviewer as they progress towards a solution.",
           "sourceId": "atl-p30"
         },
         {
-          "text": "Flipkart's SDE guide (no date shown, file metadata 2020) describes the round as the interviewer and interviewee discussing trade-offs and requirements and coming up with a solution.",
+          "text": "Flipkart's SDE guide (file metadata 2020) describes the round as the interviewer and interviewee discussing trade-offs and requirements and coming up with a solution.",
           "sourceId": "fk-sde"
         },
         {
-          "text": "Flipkart's SDE guide (no date shown, file metadata 2020) says the design round is about discussing different approaches at different stages and zeroing in on one.",
+          "text": "Flipkart's SDE guide (file metadata 2020) says the design round is about discussing different approaches at different stages and zeroing in on one.",
           "sourceId": "fk-sde"
         },
         {
-          "text": "Flipkart's Architect guide (no date shown, file metadata 2020) asks candidates to be vocal about multiple acceptable solutions, and specifically why they rejected the others.",
+          "text": "Flipkart's Architect guide (file metadata 2020) asks candidates to be vocal about multiple acceptable solutions, and specifically why they rejected the others.",
           "sourceId": "fk-arch"
         }
       ]
@@ -214,11 +214,11 @@
       "heading": "Stated tooling",
       "claims": [
         {
-          "text": "Meta's hiring process page (no date shown) says design interviews are conducted in CoderPad with Mermaid Markdown, with the same AI assistant available as in the coding interview.",
+          "text": "Meta's hiring process page says design interviews are conducted in CoderPad with Mermaid Markdown, with the same AI assistant available as in the coding interview.",
           "sourceId": "meta-hiring"
         },
         {
-          "text": "Amazon's software development topics page (no date shown) says most technical interviews require coding and system design white boarding exercises.",
+          "text": "Amazon's software development topics page says most technical interviews require coding and system design white boarding exercises.",
           "sourceId": "amz-topics"
         }
       ]

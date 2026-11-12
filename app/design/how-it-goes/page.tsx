@@ -32,7 +32,7 @@ export default function HowItGoes() {
         </Overprint>
         <p className="posts-lead">{d.summary}</p>
         <p className="label">
-          Every statement below is from the company&apos;s own careers page and carries the date of the page it comes from, or says &quot;no date shown&quot; where the page has none. Nothing here is a hiring bar, and rounds differ by role and by year. Back to the{" "}
+          Every statement below is from the company&apos;s own careers page and carries the date of the page it comes from where the page shows one. Nothing here is a hiring bar, and rounds differ by role and by year. Back to the{" "}
           <Link href="/design">design questions</Link>.
         </p>
         {d.sections.map((s) => (
@@ -79,7 +79,7 @@ export default function HowItGoes() {
                   {s.title}
                 </a>
                 <span className="label">
-                  {s.company}, {s.published === "no date shown" ? `No date on the page. ${s.edition}` : s.published}. Terms: {s.terms}. Read {s.verifiedOn}.
+                  {s.company}{s.published === "no date shown" ? "" : `, ${s.published}`}. Terms: {s.terms}. Read {s.verifiedOn}.
                 </span>
               </li>
             ))}

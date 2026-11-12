@@ -17,7 +17,8 @@ describe("interview process page", () => {
   });
   it("rejects a claim that leaves out its source's page date", () => {
     const problems = bad((d) => {
-      const c = d.sections[0].claims[0];
+      const dated = new Set(d.sources.filter((s) => s.published !== "no date shown").map((s) => s.id));
+      const c = d.sections.flatMap((s) => s.claims).find((x) => dated.has(x.sourceId))!;
       c.text = c.text.replace(d.sources.find((s) => s.id === c.sourceId)!.published, "");
     });
     expect(problems.join()).toContain("must carry the page date");
