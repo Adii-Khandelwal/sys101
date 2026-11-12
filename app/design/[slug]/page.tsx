@@ -79,7 +79,7 @@ export default async function DesignPage({ params }: Props) {
 
         <div className="chapter-body">
           <div className="chapter-main">
-            <p className="label">The interviewer lines are typical prompts, not a record of any company&apos;s interview.</p>
+            <p className="label">The interviewer lines are typical prompts, not a record of any company&apos;s interview. What companies say about their rounds is on <Link href="/design/how-it-goes">How an interview goes</Link>.</p>
             <section className="cap-section" id="question">
               <Overprint as="h2">The question</Overprint>
               <p className="cap-outcome">After this you can say what is being asked and which topics the answer leans on.</p>

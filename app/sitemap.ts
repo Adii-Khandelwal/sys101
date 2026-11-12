@@ -7,6 +7,7 @@ import { getNews } from "@/lib/news";
 import { backgroundUpdated, getAllBackground } from "@/lib/background";
 import { capstoneUpdated, getAllCapstones } from "@/lib/capstones";
 import { designUpdated, getAllDesign } from "@/lib/design";
+import { getInterview, interviewUpdated } from "@/lib/interview";
 import { getAllReads, readsUpdated } from "@/lib/reads";
 import { PAGE_DATES, absoluteUrl, learnUpdated, postsUpdated, topicPageUpdated } from "@/lib/site";
 
@@ -33,6 +34,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...(capstones.length ? [entry("/capstones", capstones.map(capstoneUpdated).reduce((a, b) => (b > a ? b : a))), ...capstones.map((c) => entry(`/capstone/${c.slug}`, capstoneUpdated(c)))] : []),
     entry("/design", design.length ? design.map(designUpdated).reduce((a, b) => (b > a ? b : a)) : PAGE_DATES.design),
     ...design.map((x) => entry(`/design/${x.slug}`, designUpdated(x))),
+    entry("/design/how-it-goes", interviewUpdated(getInterview())),
     entry("/about", PAGE_DATES.about),
     entry("/terms", PAGE_DATES.terms),
     entry("/privacy", PAGE_DATES.privacy),

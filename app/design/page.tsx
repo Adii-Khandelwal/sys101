@@ -5,6 +5,8 @@ import SiteFooter from "@/components/SiteFooter";
 import DesignIndex from "@/components/design/DesignIndex";
 import { designUpdated, getAllDesign, sourcedLine } from "@/lib/design";
 import { getAllCapstones } from "@/lib/capstones";
+import Link from "next/link";
+import { getInterview } from "@/lib/interview";
 import { PAGE_DATES, absoluteUrl, pageMeta } from "@/lib/site";
 import { getAllTopics } from "@/lib/topics";
 
@@ -13,6 +15,7 @@ export const dynamic = "error";
 
 const slugs = getAllTopics().map((t) => t.slug);
 const designs = getAllDesign(slugs, getAllCapstones(slugs).map((c) => c.slug));
+const interview = getInterview();
 
 export const metadata: Metadata = pageMeta({
   path: "/design",
@@ -37,6 +40,15 @@ export default function Design() {
       <div data-pagefind-body>
         <h1 data-pagefind-meta="title">Design questions</h1>
         <p className="posts-lead">Each question is answered section by section, the way the round goes; a fact about a real system links its source, and the rest is reasoning checked against official sources.</p>
+        <ul className="cap-index">
+          <li id="how-it-goes">
+            <h2>
+              <Link href="/design/how-it-goes">{interview.title}</Link>
+            </h2>
+            <p>{interview.summary}</p>
+            <p className="label">Read this first, then pick a question below.</p>
+          </li>
+        </ul>
         {designs.length ? (
           <DesignIndex rows={designs.map((d) => ({ slug: d.slug, title: d.title, summary: d.summary, coverage: sourcedLine(d) }))} />
         ) : (

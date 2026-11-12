@@ -1,0 +1,379 @@
+{
+  "slug": "how-it-goes",
+  "title": "How an interview goes",
+  "summary": "What Amazon, Meta, Microsoft, Atlassian and Flipkart say on their own careers pages about their interview loops and design rounds, plus the companies that have no readable official guidance.",
+  "sections": [
+    {
+      "id": "stages",
+      "heading": "The stages of a loop",
+      "claims": [
+        {
+          "text": "The loop has four 55-minute interviews, each with members of its software development community.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "Expect at least one question on software systems design.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "The online assessment is 90 minutes for two technical questions followed by 20 minutes of Systems Design scenarios.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "The loop has five 55-minute interviews.",
+          "sourceId": "amz-sde3"
+        },
+        {
+          "text": "The technical phone screen is with a senior leader on the team and lasts 60 minutes.",
+          "sourceId": "amz-sde3"
+        },
+        {
+          "text": "The process usually consists of a recruiter conversation, an initial screening and a full loop interview.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "The typical process takes about 2 to 3 months.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "The initial tech screen is a 45-minute conversation with an engineer.",
+          "sourceId": "meta-techscreen"
+        },
+        {
+          "text": "The stages listed are two coding interviews, one system design interview, one management interview and a values interview.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "Timings are 60 minutes for system design, 60 minutes for management and 45 minutes for values.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "A design round, round 2.3, involves discussing and solving a non-trivial design problem.",
+          "sourceId": "fk-sde"
+        }
+      ]
+    },
+    {
+      "id": "length",
+      "heading": "How long a system design round is",
+      "claims": [
+        {
+          "text": "The loop has four 55-minute interviews. The page gives this length for each loop interview and does not give a length for design alone.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "The loop has five 55-minute interviews. The page gives this length for each loop interview and does not give a length for design alone.",
+          "sourceId": "amz-sde3"
+        },
+        {
+          "text": "The design interview is 45 minutes long and almost never involves coding.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The interview round is called short at 45 minutes. The page does not tie the 45 minutes to system design.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "The system design portion of the interview is 60 minutes.",
+          "sourceId": "atl-p60"
+        },
+        {
+          "text": "The design round is 60 minutes.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "The high-level design round is 60 minutes, with 1 or 2 scenarios that need a fully detailed architectural solution.",
+          "sourceId": "fk-arch"
+        }
+      ]
+    },
+    {
+      "id": "looks-for",
+      "heading": "What interviewers say they look for",
+      "claims": [
+        {
+          "text": "The listed objectives are practicality, accuracy, efficiency, reliability, optimization and scalability.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "Interviewers look for the ability to apply what you know to solve problems efficiently and effectively.",
+          "sourceId": "amz-topics"
+        },
+        {
+          "text": "The purpose of the design interview is to assess the candidate's ability to solve a non-trivial engineering design problem.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "A good solution compares and contrasts different approaches.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The ability to anticipate and work around typical problems is part of the signal.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Knowledge of distributed systems, SOA and n-tiered software architecture is very important for system design questions.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "Resiliency, high availability, auto-scaling, replication, CAP theory and partitioning may all be included.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "Candidates should understand what it takes to build or design a new system or platform from scratch.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "The interviewer looks at problem-solving thought process, decision making and operational considerations.",
+          "sourceId": "atl-p60"
+        },
+        {
+          "text": "Candidates are told to keep the customer in mind and how the solution might perform and scale.",
+          "sourceId": "atl-p60"
+        },
+        {
+          "text": "The guide expects a scalable system with the trade-offs needed to achieve that, and knowledge of different types of data stores and when to choose one over another.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "In its general interview tips, the guide says: \"We don't necessarily look for absolute solutions.\" It adds that the interviewers want to know how you approach a problem.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Tech stack selection, scalability of the solution, and choosing between consistency, availability and partition tolerance are listed as separate evaluation pivots.",
+          "sourceId": "fk-arch"
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "heading": "How to start",
+      "claims": [
+        {
+          "text": "Start with requirements. The example is how to architect the backend for a messaging system, with questions to ask about how many people, how many messages, latency, storage, and push or pull.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Ask clarifying questions about any ambiguities and come up with a plan before implementing a solution.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "Start by asking clarifying questions and stating your assumptions, then talk through your approach, including the tools you would use and why.",
+          "sourceId": "ms-tips"
+        },
+        {
+          "text": "The guide describes starting with fundamentals and then building in complexity, and asking any clarifying questions upfront.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "The problem will be very generic, and candidates are told to start by gathering all the specific requirements from the interviewer.",
+          "sourceId": "fk-sde"
+        }
+      ]
+    },
+    {
+      "id": "driven",
+      "heading": "How the discussion is driven",
+      "claims": [
+        {
+          "text": "The interviewer will ask questions related to your design, and you should ask questions to complete and validate your design.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "The interviewer asks a very broad design problem and evaluates the solution.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Candidates are asked to make it a conversation, ask clarifying questions, and drive towards a good solution.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "There is not enough time to discuss every detail, so find the interesting and hard problems to focus the discussion on.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Candidates are told to keep communicating with the interviewer as they progress towards a solution.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "The round is described as the interviewer and interviewee discussing trade-offs and requirements and coming up with a solution.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "The design round is about discussing different approaches at different stages and zeroing in on one.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Candidates are asked to be vocal about multiple acceptable solutions, and specifically why they rejected the others.",
+          "sourceId": "fk-arch"
+        }
+      ]
+    },
+    {
+      "id": "tooling",
+      "heading": "Stated tooling",
+      "claims": [
+        {
+          "text": "Most technical interviews require coding and system design white boarding exercises.",
+          "sourceId": "amz-topics"
+        },
+        {
+          "text": "Design interviews are conducted in CoderPad with Mermaid Markdown, with the same AI assistant available as in the coding interview.",
+          "sourceId": "meta-hiring"
+        }
+      ]
+    }
+  ],
+  "noGuidance": [
+    {
+      "company": "Google",
+      "note": "The how-we-hire interview page returned 200, but its text is drawn by JavaScript. The raw page held only navigation and footer; nothing could be confirmed."
+    },
+    {
+      "company": "Uber",
+      "note": "Uber's careers pages and jobs.uber.com returned HTTP 403 or 406 to curl. The one readable Uber page, an engineering blog post from 8 Dec 2015, covers the hiring market and does not cover the design round."
+    },
+    {
+      "company": "Rubrik",
+      "note": "Rubrik's careers page returned 403 to curl, and no other official page was found."
+    },
+    {
+      "company": "Netflix",
+      "note": "The Netflix Tech Blog interview post returned 403 on netflixtechblog.com and on medium.com. The jobs.netflix.com new-grad page was not read."
+    },
+    {
+      "company": "Apple",
+      "note": "No interview process page was found."
+    },
+    {
+      "company": "Stripe",
+      "note": "The stripe.com/jobs/interview address is a 404, and no candidate-facing system design page was found."
+    },
+    {
+      "company": "Shopify",
+      "note": "The careers FAQ gives a 60 to 75 minute Craft Assessment but never names system design; it is not used."
+    }
+  ],
+  "sources": [
+    {
+      "id": "amz-sde2",
+      "title": "Amazon: SDE II interview prep",
+      "url": "https://amazon.jobs/content/en/how-we-hire/sde-ii-interview-prep",
+      "company": "Amazon",
+      "published": "no date shown",
+      "edition": "No file metadata date recorded",
+      "verifiedOn": "2026-10-31",
+      "terms": "(c) 1996-2026 Amazon.com, Inc. or its affiliates; \"Conditions of use\" link"
+    },
+    {
+      "id": "amz-sde3",
+      "title": "Amazon: SDE III interview prep",
+      "url": "https://amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep",
+      "company": "Amazon",
+      "published": "no date shown",
+      "edition": "No file metadata date recorded",
+      "verifiedOn": "2026-10-31",
+      "terms": "(c) 1996-2026 Amazon.com, Inc. or its affiliates; \"Conditions of use\" link"
+    },
+    {
+      "id": "amz-topics",
+      "title": "Amazon: software development topics",
+      "url": "https://amazon.jobs/content/en/how-we-hire/interview-prep/software-development-topics",
+      "company": "Amazon",
+      "published": "no date shown",
+      "edition": "No file metadata date recorded",
+      "verifiedOn": "2026-10-31",
+      "terms": "(c) 1996-2026 Amazon.com, Inc. or its affiliates; \"Conditions of use\" link"
+    },
+    {
+      "id": "meta-blog",
+      "title": "Meta: Preparing for your software engineering interview at Meta",
+      "url": "https://www.metacareers.com/blog/preparing-for-your-software-engineering-interview-at-meta/",
+      "company": "Meta",
+      "published": "6 Oct 2022",
+      "edition": "Page says updated for 2022; first published 27 Jun 2016",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in raw page"
+    },
+    {
+      "id": "meta-hiring",
+      "title": "Meta: Hiring process",
+      "url": "https://www.metacareers.com/hiring-process/",
+      "company": "Meta",
+      "published": "no date shown",
+      "edition": "No file metadata date recorded",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in raw page"
+    },
+    {
+      "id": "meta-techscreen",
+      "title": "Meta: Software engineer technical screen prep",
+      "url": "https://www.metacareers.com/swe-prep-techscreen/",
+      "company": "Meta",
+      "published": "no date shown",
+      "edition": "No file metadata date recorded",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in raw page"
+    },
+    {
+      "id": "ms-technical",
+      "title": "Microsoft: Technical interviewing",
+      "url": "https://careers.microsoft.com/v2/global/en/hiring-tips/technical-interviewing",
+      "company": "Microsoft",
+      "published": "no date shown",
+      "edition": "Undated page; page metadata modifyDate 2026-09-10 (not a published date)",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in raw page"
+    },
+    {
+      "id": "ms-tips",
+      "title": "Microsoft: Interview tips",
+      "url": "https://careers.microsoft.com/v2/global/en/hiring-tips/interview-tips.html",
+      "company": "Microsoft",
+      "published": "no date shown",
+      "edition": "Undated page; page metadata modifyDate 2026-09-10 (not a published date)",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in raw page"
+    },
+    {
+      "id": "atl-p60",
+      "title": "Atlassian: Principal Backend interview guide (PDF)",
+      "url": "https://wac-cdn.atlassian.com/dam/jcr:705fb1c3-fa29-4b1d-bcac-7ce8806fd0b6/P60%20Backend.pdf?cdnVersion=1203",
+      "company": "Atlassian",
+      "published": "no date shown",
+      "edition": "Undated PDF; file metadata created 2023-08-21 (not a published date)",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in the PDF"
+    },
+    {
+      "id": "atl-p30",
+      "title": "Atlassian: P30 to P50 Backend interview guide (PDF)",
+      "url": "https://wac-cdn.atlassian.com/dam/jcr:cf9c7fc1-ab28-47d6-bb56-9c01fb09b871/P30-P50-Backend-Interview-Guide.pdf?cdnVersion=1968",
+      "company": "Atlassian",
+      "published": "no date shown",
+      "edition": "Undated PDF; file metadata created 2023-12-11 (not a published date)",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in the PDF"
+    },
+    {
+      "id": "fk-sde",
+      "title": "Flipkart: SDE interview guide (PDF)",
+      "url": "https://www.flipkartcareers.com/assets/flipkart_pdf/SDE.pdf",
+      "company": "Flipkart",
+      "published": "no date shown",
+      "edition": "Undated PDF; file metadata created 2020-02-06, about six years old (not a published date)",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in the PDF"
+    },
+    {
+      "id": "fk-arch",
+      "title": "Flipkart: Architect interview guide (PDF)",
+      "url": "https://www.flipkartcareers.com/assets/flipkart_pdf/Architect.pdf",
+      "company": "Flipkart",
+      "published": "no date shown",
+      "edition": "Undated PDF; file metadata created 2020-02-06, modified 2020-02-20 (not a published date)",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in the PDF"
+    }
+  ]
+}
