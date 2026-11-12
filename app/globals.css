@@ -6993,6 +6993,29 @@ html[data-splash] .splash.is-leaving::before {
   padding: 8px 0 0;
 }
 
+.interview-group {
+  padding: 4px 0 12px;
+  border-top: 1px solid var(--rule);
+}
+
+.interview-group .design-claims p {
+  margin: 0 0 6px;
+}
+
+.interview-source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 0;
+}
+
+.interview-source a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 .design-block {
   margin: 0 0 12px;
 }

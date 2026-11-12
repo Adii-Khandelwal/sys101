@@ -13,6 +13,17 @@ export const dynamic = "error";
 
 const d = getInterview();
 
+// Claims are stored sorted by source, so a group is a run of the same source.
+function groupBySource(claims: { text: string; sourceId: string }[]) {
+  const g: { sourceId: string; texts: string[] }[] = [];
+  for (const c of claims) {
+    const last = g[g.length - 1];
+    if (last?.sourceId === c.sourceId) last.texts.push(c.text);
+    else g.push({ sourceId: c.sourceId, texts: [c.text] });
+  }
+  return g;
+}
+
 export const metadata: Metadata = pageMeta({
   path: "/design/how-it-goes",
   title: d.title,
@@ -32,28 +43,34 @@ export default function HowItGoes() {
         </Overprint>
         <p className="posts-lead">{d.summary}</p>
         <p className="label">
-          Every statement below is from the company&apos;s own careers page and carries the date of the page it comes from where the page shows one. Nothing here is a hiring bar, and rounds differ by role and by year. Back to the{" "}
-          <Link href="/design">design questions</Link>.
+          Nothing here is a hiring bar, and rounds differ by role and by year. Back to the <Link href="/design">design questions</Link>.
         </p>
         {d.sections.map((s) => (
           <section className="cap-section" id={s.id} key={s.id}>
             <Overprint as="h2">{s.heading}</Overprint>
-            <ul className="design-claims">
-              {s.claims.map((c, i) => {
-                const so = src(c.sourceId);
-                return (
-                  <li key={i}>
-                    <p>{c.text}</p>
-                    <p className="label design-badge">
-                      <CompanyLogo name={so.company} size="sm" />
-                      <a href={so.url} target="_blank" rel="noopener noreferrer">
-                        {so.title}
-                      </a>
-                    </p>
-                  </li>
-                );
-              })}
-            </ul>
+            {groupBySource(s.claims).map((g) => {
+              const so = src(g.sourceId);
+              const meta = so.published !== "no date shown" ? so.published : /file metadata created (\d{4})/.exec(so.edition)?.[0].replace("created ", "");
+              return (
+                <div className="interview-group" key={g.sourceId}>
+                  <p className="label design-badge interview-source">
+                    <CompanyLogo name={so.company} size="sm" />
+                    <a href={so.url} target="_blank" rel="noopener noreferrer">
+                      {so.title}
+                    </a>
+                    {meta && <span>{meta}</span>}
+                    {so.published !== "no date shown" && !so.edition.startsWith("No file metadata") && <span>{so.edition}</span>}
+                  </p>
+                  <ul className="design-claims">
+                    {g.texts.map((t, i) => (
+                      <li key={i}>
+                        <p>{t}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
           </section>
         ))}
         <section className="cap-section" id="no-guidance">

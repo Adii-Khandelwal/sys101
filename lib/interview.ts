@@ -19,7 +19,7 @@ const FILE = path.join(process.cwd(), "content", "interview-process.json");
 const nonEmpty = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
 const QUOTE = /[“”"]([^“”"]*)[“”"]/g;
 
-/** Every claim must name its source's company, carry the source's page date when the page shows one, cite a source that exists, and say nothing no official page says (interviewers changing constraints). */
+/** Every claim must cite a source that exists (the page renders that source's company and date above its claims) and say nothing no official page says (interviewers changing constraints). */
 export function interviewProblems(d: Interview): string[] {
   const p: string[] = [];
   const add = (m: string) => p.push(`interview-process.json: ${m}`);
@@ -46,8 +46,6 @@ export function interviewProblems(d: Interview): string[] {
       const so = src.get(c.sourceId);
       if (!so) return add(`${w} cites "${c.sourceId}", which is not in sources`);
       used.add(so.id);
-      if (!c.text.includes(so.company)) add(`${w} must name ${so.company}`);
-      if (so.published !== "no date shown" && !c.text.includes(so.published)) add(`${w} must carry the page date "${so.published}"`);
       const spans = [...c.text.matchAll(QUOTE)];
       if (spans.some((m) => m[1].split(/\s+/).length > 25)) add(`${w} quotes more than 25 words`);
       if (spans.length) quotes.set(so.id, (quotes.get(so.id) ?? 0) + spans.length);

@@ -10,18 +10,9 @@ describe("interview process page", () => {
     f(d);
     return interviewProblems(d);
   };
-  it("rejects a claim that names no company, an unknown source and a constraint claim", () => {
-    expect(bad((d) => (d.sections[0].claims[0].text = "A loop has four rounds."))).not.toEqual([]);
+  it("rejects an unknown source and a constraint claim", () => {
     expect(bad((d) => (d.sections[0].claims[0].sourceId = "nope"))).not.toEqual([]);
     expect(bad((d) => (d.sections[0].claims[0].text += " Interviewers change the constraints. Amazon"))).not.toEqual([]);
-  });
-  it("rejects a claim that leaves out its source's page date", () => {
-    const problems = bad((d) => {
-      const dated = new Set(d.sources.filter((s) => s.published !== "no date shown").map((s) => s.id));
-      const c = d.sections.flatMap((s) => s.claims).find((x) => dated.has(x.sourceId))!;
-      c.text = c.text.replace(d.sources.find((s) => s.id === c.sourceId)!.published, "");
-    });
-    expect(problems.join()).toContain("must carry the page date");
   });
   it("rejects a missing no-guidance company and an em dash", () => {
     expect(bad((d) => (d.noGuidance = d.noGuidance.filter((n) => n.company !== "Apple")))).not.toEqual([]);
