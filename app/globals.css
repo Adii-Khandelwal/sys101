@@ -4526,6 +4526,28 @@ html {
   max-width: 62ch;
   color: var(--ink-soft);
 }
+.design-first {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 32px;
+  padding: 0;
+}
+
+.design-first a {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  text-decoration: none;
+}
+
+.design-first span:last-child {
+  color: var(--ink-soft);
+}
+
 .posts-tools {
   display: flex;
   flex-wrap: wrap;
@@ -7010,9 +7032,7 @@ html[data-splash] .splash.is-leaving::before {
   margin: 0;
 }
 
-.interview-source a {
-  display: inline-flex;
-  align-items: center;
+.interview-source {
   min-height: 44px;
 }
 

@@ -55,9 +55,7 @@ export default function HowItGoes() {
                 <div className="interview-group" key={g.sourceId}>
                   <p className="label design-badge interview-source">
                     <CompanyLogo name={so.company} size="sm" />
-                    <a href={so.url} target="_blank" rel="noopener noreferrer">
-                      {so.title}
-                    </a>
+                    <span>{so.title}</span>
                     {meta && <span>{meta}</span>}
                     {so.published !== "no date shown" && !so.edition.startsWith("No file metadata") && <span>{so.edition}</span>}
                   </p>
@@ -82,22 +80,6 @@ export default function HowItGoes() {
                 <p>
                   <strong>{n.company}.</strong> {n.note}
                 </p>
-              </li>
-            ))}
-          </ul>
-        </section>
-        <section className="cap-section" id="sources">
-          <Overprint as="h2">Original sources</Overprint>
-          <ul className="cap-sources">
-            {d.sources.map((s) => (
-              <li key={s.id}>
-                <CompanyLogo name={s.company} size="sm" />
-                <a href={s.url} target="_blank" rel="noopener noreferrer">
-                  {s.title}
-                </a>
-                <span className="label">
-                  {s.company}{s.published === "no date shown" ? "" : `, ${s.published}`}. Terms: {s.terms}. Read {s.verifiedOn}.
-                </span>
               </li>
             ))}
           </ul>
