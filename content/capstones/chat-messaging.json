@@ -1,7 +1,7 @@
 {
   "slug": "chat-messaging",
   "title": "Chat and real-time messaging",
-  "summary": "Design the delivery path of a chat system: long-lived connections, an ordered store of recent messages, push to phones, an edge cache for big workspaces, per-device encryption and message storage. Read six posts from four companies: WhatsApp 2012 and 2021, Messenger 2014, Slack 2017 and 2020, and Discord 2024. Half are old, and none gives figures for presence or read receipts.",
+  "summary": "Design the delivery path of a chat system: long-lived connections, an ordered store of recent messages, push to phones, an edge cache for big workspaces, per-device encryption and message storage. Read seven posts from five companies: WhatsApp 2012 and 2021, Messenger 2014, LinkedIn 2018, Slack 2017 and 2020, and Discord 2024. Most are old. Only LinkedIn's gives figures for presence, and none gives figures for read receipts.",
   "topics": [
     {
       "slug": "real-time-delivery",
@@ -29,7 +29,7 @@
     }
   ],
   "brief": {
-    "text": "A chat system keeps many phones and browsers connected at once, delivers each message to every device in order, and has to cope with devices that drop off the network and come back. Design the connection layer, the store of recent messages, the push path to the device, the cache that serves big workspaces and the storage under it all. This page does not cover media upload, search, group-call video or typing and read-receipt design. Be careful with the sources: they are from 2012 (WhatsApp), 2014 (Messenger, then run by Facebook), 2017 (Slack, the page shows an update date of June 2020), 2020 (Slack), 2021 (WhatsApp) and 2024 (Discord), from four companies, and each describes its system as of that year. None of them gives figures for presence (who is online), delivery acknowledgements or read receipts. The Slack 2017 post only says that presence updates moved to pub/sub and that clients then received about 5 times fewer presence events. Nothing here says any of the older designs still holds.",
+    "text": "A chat system keeps many phones and browsers connected at once, delivers each message to every device in order, and has to cope with devices that drop off the network and come back. Design the connection layer, the store of recent messages, the push path to the device, the cache that serves big workspaces and the storage under it all. This page does not cover media upload, search, group-call video or typing and read-receipt design. Be careful with the sources: they are from 2012 (WhatsApp), 2014 (Messenger, then run by Facebook), 2017 (Slack, the page shows an update date of June 2020), 2018 (LinkedIn), 2020 (Slack), 2021 (WhatsApp) and 2024 (Discord), from five companies, and each describes its system as of that year. Only the LinkedIn post gives figures for presence (who is online); the Slack 2017 post only says that presence updates moved to pub/sub and that clients then received about 5 times fewer presence events. None gives figures for delivery acknowledgements or read receipts. Nothing here says any of the older designs still holds.",
     "requirements": [
       {
         "label": "1. Fewer bytes and fewer failed sends",
@@ -80,6 +80,11 @@
         "label": "10. Message storage that spreads load",
         "value": "Slack's datastore served 2.3 million queries per second at peak (2M reads, 300K writes), with a median query latency of 2 ms and p99 of 11 ms, after moving to Vitess (2020)",
         "sourceId": "vitess"
+      },
+      {
+        "label": "Presence without flicker",
+        "value": "Online status must survive brief network drops, update watchers in under 200ms at p99, and a node handles about 1.8K requests per second (2018)",
+        "sourceId": "linkedin"
       }
     ]
   },
@@ -274,6 +279,30 @@
         "company": "Slack",
         "text": "Slack said it was moving clients to a pub/sub model, so that a client subscribes to the events that matter in its current view and changes subscriptions when the user switches view (2017). It had already moved user presence updates to pub/sub, and the number of presence events clients received fell by a factor of 5. The post gives no further presence detail, such as how online status is detected or how often it is refreshed. It also lists moving event fanout into Flannel as planned work, not as something finished.",
         "sourceId": "flannel"
+      }
+    },
+    {
+      "id": "presence",
+      "question": "Your chat app shows a green dot for each contact who is online. Phones drop their connection in tunnels and lifts, and there are hundreds of millions of members. How do you decide who is online without the dot flickering?",
+      "options": [
+        {
+          "label": "Treat a missed heartbeat as offline at once and broadcast the change",
+          "why": "Simple and quick to react, but a brief network drop makes the dot flip off and on and floods the backend with updates."
+        },
+        {
+          "label": "Have connected clients send periodic heartbeats and stay online while they arrive within a set window, then broadcast only real changes",
+          "why": "Short drops are absorbed, so fewer updates go out, at the price of a slightly late offline status."
+        },
+        {
+          "label": "Poll every contact's status from the client every few seconds",
+          "why": "No state on the server, but traffic grows with the number of contacts viewed and status is always a little stale."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "LinkedIn",
+        "text": "LinkedIn built a presence platform on Play and Akka actors (2018). Connected clients send periodic heartbeats, and as long as one arrives within a fixed window of d seconds the member counts as online, so a member who drops and reconnects inside the window does not flip to offline. The post says that without this the status would bounce between online and offline and cause a lot of avoidable backend traffic. A change in status is published to a topic on the real-time platform, which pushes it to the members watching. The post says this takes under 200ms at the 99th percentile, and that one node handles about 1.8K requests per second (heartbeats and reads), with the platform scaled horizontally for roughly 500 million members. It does not give the value of d. This post is from 2018 and says nothing about whether the design is unchanged.",
+        "sourceId": "linkedin"
       }
     },
     {
@@ -649,7 +678,7 @@
       }
     ]
   },
-  "compare": "These are six posts from four companies across 2012 to 2024, so read them as separate snapshots, not one system. WhatsApp is from January 2012 and July 2021, Messenger from October 2014 (when it was part of Facebook), Slack from May 2017 (the page shows an update date of June 2020) and December 2020, and Discord from September 2024. Each describes its system as of that year. Nothing here says the older designs still hold today. The posts do not say how WhatsApp's connection servers hand messages on, so the diagram draws no link from them, and it draws no links between products. There are still no figures here for presence or read receipts, so this page does not size them.\n\nThe older posts attack different ends of the same path. WhatsApp shows what one machine can hold: over 2 million connections with CPU to spare, but it says nothing about the messages on them. Messenger works on the middle: an ordered queue with a pointer per consumer lets a phone or a disk tier fall behind without blocking the other, and the price is a queue with a one-week backlog, backed by MySQL on flash. Slack works on the edge: it sends less at startup and keeps a cache near the user, and the price is a new service that has to guess what the client will ask for next. The newer posts add three more ends of the path. Discord cuts what idle clients receive: its passive update went from full snapshots to deltas, and the post says the snapshot design worked until servers grew larger. WhatsApp 2021 puts the cost of encryption on the sender, which encrypts one copy per device, in exchange for a server that keeps no message after delivery. Slack 2020 spreads storage load by sharding message data by channel instead of workspace, at the price of reworking queries written for one workspace per shard.\n\nThe common move is to stop sending everything to everyone. Messenger sends a snapshot once and then deltas. Slack sends a slim startup payload (7 times smaller for 1.5K users, 44 times for 32K) and then fills in on demand, and has moved presence to subscriptions. Each post also names its limit. Messenger's gains are measured in data use (about 40%) and send errors (roughly 20%), not in delivery latency. Slack's fanout and further pub/sub work were still plans in the post. WhatsApp's figure is for a single box, not a fleet.",
+  "compare": "These are seven posts from five companies across 2012 to 2024, so read them as separate snapshots, not one system. WhatsApp is from January 2012 and July 2021, Messenger from October 2014 (when it was part of Facebook), LinkedIn from January 2018, Slack from May 2017 (the page shows an update date of June 2020) and December 2020, and Discord from September 2024. Each describes its system as of that year. Nothing here says the older designs still hold today. The posts do not say how WhatsApp's connection servers hand messages on, so the diagram draws no link from them, and it draws no links between products. LinkedIn's presence figures are per node and per request, not per user, and there are still no figures for read receipts, so this page does not size either.\n\nThe older posts attack different ends of the same path. WhatsApp shows what one machine can hold: over 2 million connections with CPU to spare, but it says nothing about the messages on them. Messenger works on the middle: an ordered queue with a pointer per consumer lets a phone or a disk tier fall behind without blocking the other, and the price is a queue with a one-week backlog, backed by MySQL on flash. Slack works on the edge: it sends less at startup and keeps a cache near the user, and the price is a new service that has to guess what the client will ask for next. The newer posts add three more ends of the path. Discord cuts what idle clients receive: its passive update went from full snapshots to deltas, and the post says the snapshot design worked until servers grew larger. WhatsApp 2021 puts the cost of encryption on the sender, which encrypts one copy per device, in exchange for a server that keeps no message after delivery. Slack 2020 spreads storage load by sharding message data by channel instead of workspace, at the price of reworking queries written for one workspace per shard.\n\nThe common move is to stop sending everything to everyone. Messenger sends a snapshot once and then deltas. Slack sends a slim startup payload (7 times smaller for 1.5K users, 44 times for 32K) and then fills in on demand, and has moved presence to subscriptions. Each post also names its limit. Messenger's gains are measured in data use (about 40%) and send errors (roughly 20%), not in delivery latency. Slack's fanout and further pub/sub work were still plans in the post. WhatsApp's figure is for a single box, not a fleet.",
   "quiz": [
     {
       "question": "Why does Iris keep a separate pointer for the app and for the storage tier?",
@@ -762,6 +791,22 @@
         "The phone is no longer the source of truth."
       ],
       "teaches": "real-time-delivery"
+    },
+    {
+      "question": "In LinkedIn's 2018 presence platform, why does a member stay online for a short time after their connection drops?",
+      "options": [
+        "The server cannot tell that the connection dropped",
+        "A heartbeat window absorbs brief drops so the status does not bounce and flood the backend",
+        "Offline updates are always sent in batches once a minute"
+      ],
+      "correct": 1,
+      "why": "The post says a member is deemed online while a heartbeat arrives within d seconds, so a quick reconnect in a tunnel changes nothing. Without it the status would bounce and add avoidable traffic.",
+      "wrong": [
+        "The platform does detect the drop; it waits on purpose.",
+        "",
+        "The post describes no batching of offline updates."
+      ],
+      "teaches": "pub-sub"
     }
   ],
   "sources": [
@@ -812,6 +857,14 @@
       "company": "Slack",
       "published": "2020-12-01",
       "verifiedOn": "2026-10-25"
+    },
+    {
+      "id": "linkedin",
+      "title": "Now You See Me, Now You Don't: LinkedIn's Real-Time Presence Platform",
+      "url": "https://engineering.linkedin.com/blog/2018/01/now-you-see-me--now-you-dont--linkedins-real-time-presence-platf",
+      "company": "LinkedIn",
+      "published": "2018-01-12",
+      "verifiedOn": "2026-11-12"
     }
   ]
 }

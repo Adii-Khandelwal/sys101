@@ -5,7 +5,7 @@ import JsonLd from "@/components/JsonLd";
 import Overprint from "@/components/Overprint";
 import PageUpdated from "@/components/PageUpdated";
 import SiteFooter from "@/components/SiteFooter";
-import { getInterview, interviewUpdated } from "@/lib/interview";
+import { getInterview, interviewDescription, interviewUpdated } from "@/lib/interview";
 import { absoluteUrl, breadcrumbLd, pageMeta } from "@/lib/site";
 
 // Prerendered at build time; the static route wins over /design/[slug], which only knows the files in content/design.
@@ -16,7 +16,7 @@ const d = getInterview();
 export const metadata: Metadata = pageMeta({
   path: "/design/how-it-goes",
   title: d.title,
-  description: "What Amazon, Meta, Microsoft, Atlassian and Flipkart say on their own careers pages about interview stages, design rounds and what they look for.",
+  description: interviewDescription(d),
 });
 
 export default function HowItGoes() {

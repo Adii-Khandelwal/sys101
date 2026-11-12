@@ -1,7 +1,7 @@
 {
   "slug": "notifications",
   "title": "Notifications at scale",
-  "summary": "Design the path from one event, such as a creator publishing a post, to millions of notifications across push, email and an in-app feed: splitting the work, keeping one channel's failure away from the others, deciding how many each person should get, and tracing what happened to one of them. Read three posts from three companies: Patreon's 2026 fanout post, Pinterest's 2020 notification volume post and Slack's 2023 tracing post. They do not cover how a notification reaches a phone, grouping or de-duplication, or delivery guarantees.",
+  "summary": "Design the path from one event, such as a creator publishing a post, to millions of notifications across push, email and an in-app feed: splitting the work, keeping one channel's failure away from the others, deciding how many each person should get, and tracing what happened to one of them. Read five posts from four companies: Patreon's 2026 fanout post, Pinterest's 2020 notification volume post, Slack's 2023 tracing post, LinkedIn's 2018 batching and de-duplication post and Uber's 2020 push platform post. None covers how a notification passes through the phone makers' push services (Apple's and Google's).",
   "topics": [
     {
       "slug": "message-queues",
@@ -25,7 +25,7 @@
     }
   ],
   "brief": {
-    "text": "One action by a creator or a person should become a notification for a very large audience, on several channels, without a single job timing out, without one broken channel blocking the rest, without drowning people who then switch notifications off, and in a way that lets an engineer say what happened to one of them. This page does not cover how a notification reaches a phone through the platform push services, grouping or merging several notifications into one, de-duplication, ordering, retries, or delivery guarantees. The three posts do not describe any of these in detail, and this page does not fill the gap with general knowledge. Slack's post only names its push service and 'several third-party services' on the path. Be careful with the dates. Patreon's post is from July 2026 and describes a rebuild done in 2025 and early 2026. Pinterest's is from April 2020, more than six years old, so it describes the system as of 2020 and says nothing about how Pinterest works now. Slack's is from April 2023 and describes tracing it built and used over the preceding quarters. They are three companies with three different problems, so they are not three confirmations of one design, and none of them reports the cost of its system.",
+    "text": "One action by a creator or a person should become a notification for a very large audience, on several channels, without a single job timing out, without one broken channel blocking the rest, without drowning people who then switch notifications off, and in a way that lets an engineer say what happened to one of them. This page does not cover how a notification reaches a phone through the phone makers' push services. LinkedIn's post covers grouping and de-duplication, and Uber's covers retries and its delivery guarantee, but only as each company built it, and this page does not fill the gap with general knowledge. Slack's post only names its push service and 'several third-party services' on the path. Be careful with the dates. Patreon's post is from July 2026 and describes a rebuild done in 2025 and early 2026. Pinterest's is from April 2020, more than six years old, so it describes the system as of 2020 and says nothing about how Pinterest works now. Slack's is from April 2023 and describes tracing it built and used over the preceding quarters. LinkedIn's is from March 2018 and Uber's is from December 2020, so both describe their systems as of those years. They are four companies with different problems, so they are not confirmations of one design, and none of them reports the cost of its system.",
     "requirements": [
       {
         "label": "1. Billions per year",
@@ -66,6 +66,16 @@
         "label": "8. Faster support triage",
         "value": "Slack says tracing cut the time its customer experience team needed to triage notification tickets by 30 percent (2023)",
         "sourceId": "slack"
+      },
+      {
+        "label": "9. Group and de-duplicate",
+        "value": "LinkedIn's Air Traffic Controller processed over a billion requests per day and, with it, LinkedIn says it cut member complaints in half (2018)",
+        "sourceId": "linkedin"
+      },
+      {
+        "label": "10. Messages that are late are useless",
+        "value": "Uber's push platform pushed over 70,000 messages per second to apps over up to 600,000 concurrent connections at peak, with a lifetime of a few seconds to 30 minutes for each message (2020)",
+        "sourceId": "uber"
       }
     ]
   },
@@ -164,6 +174,54 @@
         "company": "Slack",
         "text": "Slack modelled each notification sent as its own trace, with the notification_id used as the trace id, and tied it to the sender's trace with span links (2023). The reasons it gives: customer experience staff wanted 100 percent fidelity, while backend requests were sampled at 1 percent; an @here or @channel could send a push to potentially hundreds of thousands of users across devices and make billions of spans in one trace; and standard tracing ties a trace to one request context, which a notification flow does not fit. It agreed a spec of six spans (trigger, notify, sent, received, opened, read in app). Tracing took several quarters across teams. The post says investigating a notification issue had taken several days and deep technical expertise (and, elsewhere, several hours of very senior engineers' time), and that after tracing anyone could see where a notification was dropped. It gives no storage cost.",
         "sourceId": "slack"
+      }
+    },
+    {
+      "id": "batch",
+      "question": "Some notifications are urgent and some can wait, such as invitation reminders. A request can also reach the processor twice when a job restarts. How do you decide when to send, and what do you do with repeats?",
+      "options": [
+        {
+          "label": "Send every request the moment it arrives, with no queue and no memory of what was sent, and leave members to sort out the pile and any repeats",
+          "why": "No state to keep, but members get repeats and floods, and bursts hit delivery at once."
+        },
+        {
+          "label": "Queue the low-urgency ones, send a group as one notification later, and drop any request already processed",
+          "why": "Fewer, better-timed messages, but you keep state for every queued notification and must tolerate some reordering."
+        },
+        {
+          "label": "Hold everything until you are certain no repeat can exist",
+          "why": "Stops repeats, but delays urgent messages for no reason and cannot be proven for a restarting job."
+        }
+      ],
+      "answerIndex": 1,
+      "realChoice": {
+        "company": "LinkedIn",
+        "text": "LinkedIn's Air Traffic Controller (March 2018) sits in front of delivery. It can queue chosen notifications in RocksDB and send a group together as one notification later. It treats traffic by latency need: a daily batch of about a hundred million requests for the Daily Rundown can wait a couple of hours, while member messaging needs under a second. Parallelising request handling brought the 90th percentile push latency for messaging from about 12 seconds to about 1.5 seconds. The cost the post names is that requests can be processed out of order. Because a Samza job that restarts before its checkpoint is set reprocesses a request, ATC drops requests it has already processed and accepts slightly out-of-order sends. A duplicate notification being processed is one of its reasons to block a send. The post says over a billion requests per day, more than 546 million members and member complaints cut in half. It describes the system as of 2018 and does not say whether it still holds.",
+        "sourceId": "linkedin"
+      }
+    },
+    {
+      "id": "guarantee",
+      "question": "A push message must reach an app over a connection that drops often. Missing a message is worse than seeing it twice, but a stale message is worth nothing. What delivery promise do you make?",
+      "options": [
+        {
+          "label": "Send each message once and never retry, so nothing arrives twice",
+          "why": "Simple, but any dropped connection loses the message."
+        },
+        {
+          "label": "Promise exactly once for every message, and keep retrying until the app confirms it, whatever the message's age",
+          "why": "Sounds ideal, but needs acknowledgements for everything and sends old messages late."
+        },
+        {
+          "label": "Promise at least once, retry until the lifetime ends, and let a newer message of the same type replace it",
+          "why": "Messages survive flaky links, but the app may see repeats and you must store messages and set a lifetime for each."
+        }
+      ],
+      "answerIndex": 2,
+      "realChoice": {
+        "company": "Uber",
+        "text": "Uber's real-time push platform (December 2020) gives an at-least-once guarantee. Each message carries a time to live from a few seconds to 30 minutes; the server stores the message and retries until it expires. Messages are put in three priority buckets (high, medium, low), sent in descending order of priority when a connection opens, and high-priority ones get server-side retries and cross-region replication. A deduplication setting lets the platform send only the most recent message of a type, which the post says was enough for most uses and cut the data sent. The app acknowledges by calling an endpoint every 30 seconds, so the server can free older messages. At peak the system pushed over 70,000 messages per second and held up to 600,000 concurrent connections. It describes the system as of 2020, and the post gives no figure for how often a message arrives twice.",
+        "sourceId": "uber"
       }
     },
     {
@@ -412,7 +470,7 @@
       }
     ]
   },
-  "compare": "These posts come from three companies, three years and three problems, so read them as snapshots, not one design. Patreon's is from July 2026 and covers generation and handoff of notifications for a large audience. Pinterest's is from April 2020, more than six years old, and covers how many notifications each person should get in a week. Slack's is from April 2023 and covers how to see what happened to one notification. Nothing here says Pinterest's 2020 design still holds, and none of the posts gives a cost.\n\nThe three meet at the same point, which is that one event becomes a very large number of separate things to account for. Patreon answers with batches and a second fanout so no task holds the whole audience. Slack answers with one trace per notification so no trace holds the whole fanout, and it names @here and @channel as the case that would make a single trace huge. Pinterest answers from the other side: it asks whether a notification should exist at all, and drops the ones with the least added value for that person. Patreon and Slack both put observability next to scale. Patreon records timestamps at each stage and per-recipient outcomes after hours-long investigations; Slack standardised events after multi-day ones.\n\nWhat the sources do not cover is as large as what they do. None describes batching or merging several notifications into one, de-duplication, how the push services are called, retries, ordering, or what a delivery guarantee means (whether a notification can arrive twice or not at all). Patreon says the delivery systems already existed and does not describe them; Slack's figure lists third-party services on the path without saying what they do; Pinterest sets a volume budget but does not say how sends are counted against it. So this page teaches generation, volume and visibility, and leaves delivery itself to sources it has not opened.",
+  "compare": "These posts come from four companies, four years and different problems, so read them as snapshots, not one design. LinkedIn's is from March 2018 and covers batching, timing and de-duplication in front of delivery. Uber's is from December 2020 and covers a push platform's delivery promise, lifetimes and priorities. Patreon's is from July 2026 and covers generation and handoff of notifications for a large audience. Pinterest's is from April 2020, more than six years old, and covers how many notifications each person should get in a week. Slack's is from April 2023 and covers how to see what happened to one notification. Nothing here says Pinterest's 2020 design still holds, and none of the posts gives a cost.\n\nThe three meet at the same point, which is that one event becomes a very large number of separate things to account for. Patreon answers with batches and a second fanout so no task holds the whole audience. Slack answers with one trace per notification so no trace holds the whole fanout, and it names @here and @channel as the case that would make a single trace huge. Pinterest answers from the other side: it asks whether a notification should exist at all, and drops the ones with the least added value for that person. Patreon and Slack both put observability next to scale. Patreon records timestamps at each stage and per-recipient outcomes after hours-long investigations; Slack standardised events after multi-day ones.\n\nWhat the sources do not cover is still large. None describes how the phone makers' push services are called. Patreon says the delivery systems already existed and does not describe them; Slack's figure lists third-party services on the path without saying what they do; Pinterest sets a volume budget but does not say how sends are counted against it. LinkedIn and Uber both accept repeats and reordering instead of preventing them, and Uber's message lifetime is the reason a late retry stops. This page teaches generation, volume, grouping, delivery promises and visibility, and leaves the last hop to a phone to sources it has not opened.",
   "quiz": [
     {
       "question": "Why did Patreon's old notification flow stop working for its largest creators?",
@@ -519,6 +577,22 @@
       "company": "Slack",
       "published": "2023-04-04",
       "verifiedOn": "2026-10-24"
+    },
+    {
+      "id": "linkedin",
+      "title": "Air Traffic Controller: Member-First Notifications at LinkedIn",
+      "url": "https://engineering.linkedin.com/blog/2018/03/air-traffic-controller--member-first-notifications-at-linkedin",
+      "company": "LinkedIn",
+      "published": "2018-03-01",
+      "verifiedOn": "2026-11-12"
+    },
+    {
+      "id": "uber",
+      "title": "Uber's Real-Time Push Platform",
+      "url": "https://www.uber.com/blog/real-time-push-platform/",
+      "company": "Uber",
+      "published": "2020-12-18",
+      "verifiedOn": "2026-11-12"
     }
   ]
 }
