@@ -63,7 +63,7 @@ const DIR = path.join(process.cwd(), "content", "design");
 const nonEmpty = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 /** YYYY-MM-DD that survives a round trip through Date, so 2026-02-31 fails. */
-const realDate = (v: unknown) => typeof v === "string" && DATE.test(v) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v;
+export const realDate = (v: unknown) => typeof v === "string" && DATE.test(v) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v;
 /** A figure outside an assumption: any digit or one of these big-number words, unless the block cites a post or paper. */
 const BIG_WORDS = /\b(?:hundred|thousand|million|billion|trillion|dozen|percent)s?\b/i;
 /** "X is not Y, it is Z" (comma, semicolon or colon) with any subject, "not X but Y", and "A, not a Y: ...". */
@@ -82,6 +82,9 @@ const GENERIC = new Set(["inc", "corp", "corporation", "ltd", "llc", "the", "and
 const words = (t: string): string[] => t.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
 
 /** Everything the build checks about one design file. `topicSlugs` and `capstoneSlugs` are the slugs that exist. Never throws on a bad shape. */
+/** Em or en dash, the topic banned list and the contrast patterns. */
+export const bannedPhrasing = (s: string) => /[—–]/.test(s) || BANNED_PHRASING.test(s) || CONTRAST.some((r) => r.test(s));
+
 export function designProblems(d: Design, file: string, topicSlugs: readonly string[], capstoneSlugs: readonly string[] = []): string[] {
   const p: string[] = [];
   const add = (m: string) => p.push(`${file}: ${m}`);
@@ -324,7 +327,7 @@ export function designProblems(d: Design, file: string, topicSlugs: readonly str
 
   const all: string[] = [];
   JSON.stringify(d, (_k, v) => (typeof v === "string" && all.push(v), v));
-  for (const s of all) if (/[—–]/.test(s) || BANNED_PHRASING.test(s) || CONTRAST.some((r) => r.test(s))) add(`banned phrasing in "${s.slice(0, 50)}"`);
+  for (const s of all) if (bannedPhrasing(s)) add(`banned phrasing in "${s.slice(0, 50)}"`);
   return p;
 }
 

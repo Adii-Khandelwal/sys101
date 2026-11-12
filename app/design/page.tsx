@@ -5,6 +5,7 @@ import SiteFooter from "@/components/SiteFooter";
 import DesignIndex from "@/components/design/DesignIndex";
 import { designUpdated, getAllDesign, sourcedLine } from "@/lib/design";
 import { getAllCapstones } from "@/lib/capstones";
+import Link from "next/link";
 import { PAGE_DATES, absoluteUrl, pageMeta } from "@/lib/site";
 import { getAllTopics } from "@/lib/topics";
 
@@ -37,6 +38,9 @@ export default function Design() {
       <div data-pagefind-body>
         <h1 data-pagefind-meta="title">Design questions</h1>
         <p className="posts-lead">Each question is answered section by section, the way the round goes; a fact about a real system links its source, and the rest is reasoning checked against official sources.</p>
+        <p className="label">
+          Want to know how the round itself goes? Read <Link href="/design/how-it-goes">How an interview goes</Link>, from companies&apos; own careers pages.
+        </p>
         {designs.length ? (
           <DesignIndex rows={designs.map((d) => ({ slug: d.slug, title: d.title, summary: d.summary, coverage: sourcedLine(d) }))} />
         ) : (
