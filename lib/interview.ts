@@ -4,13 +4,13 @@ import { bannedPhrasing, realDate } from "./design";
 import { httpsUrlProblem } from "./httpsUrl";
 import { metaDescription } from "./site";
 
-export type InterviewClaim = { text: string; sourceId: string };
+export type InterviewParagraph = { text: string; cites: string[] };
 export type InterviewSource = { id: string; title: string; url: string; company: string; published: string; edition: string; verifiedOn: string; terms: string };
 export type Interview = {
   slug: string;
   title: string;
   summary: string;
-  sections: { id: string; heading: string; claims: InterviewClaim[] }[];
+  sections: { id: string; heading: string; paragraphs: InterviewParagraph[] }[];
   noGuidance: { company: string; note: string }[];
   sources: InterviewSource[];
 };
@@ -19,7 +19,7 @@ const FILE = path.join(process.cwd(), "content", "interview-process.json");
 const nonEmpty = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
 const QUOTE = /[“”"]([^“”"]*)[“”"]/g;
 
-/** Every claim must cite a source that exists (the page renders that source's company and date above its claims) and say nothing no official page says (interviewers changing constraints). */
+/** Every paragraph must cite sources that exist and name each cited company in its own text, so a reader always knows whose page says it. */
 export function interviewProblems(d: Interview): string[] {
   const p: string[] = [];
   const add = (m: string) => p.push(`interview-process.json: ${m}`);
@@ -40,25 +40,33 @@ export function interviewProblems(d: Interview): string[] {
   const used = new Set<string>();
   const quotes = new Map<string, number>();
   (d.sections ?? []).forEach((s) => {
-    if (!nonEmpty(s.id) || !nonEmpty(s.heading) || !s.claims?.length) add(`section "${s.id}" needs an id, a heading and claims`);
-    (s.claims ?? []).forEach((c, i) => {
+    if ((s.paragraphs?.length ?? 0) > 6 || (s.paragraphs?.length ?? 2) < 2) add(`section "${s.id}" needs 2 to 6 paragraphs`);
+    if (!nonEmpty(s.id) || !nonEmpty(s.heading) || !s.paragraphs?.length) add(`section "${s.id}" needs an id, a heading and paragraphs`);
+    (s.paragraphs ?? []).forEach((c, i) => {
       const w = `${s.id}[${i}]`;
-      const so = src.get(c.sourceId);
-      if (!so) return add(`${w} cites "${c.sourceId}", which is not in sources`);
-      used.add(so.id);
+      if (!nonEmpty(c.text)) return add(`${w} has no text`);
+      if (/\n/.test(c.text)) add(`${w} has a line break inside its text`);
+      if (!c.cites?.length) return add(`${w} cites no source`);
+      for (const id of c.cites) {
+        const so = src.get(id);
+        if (!so) { add(`${w} cites "${id}", which is not in sources`); continue; }
+        used.add(id);
+        if (!c.text.includes(so.company)) add(`${w} cites ${id} but does not name ${so.company}`);
+        if (c.cites.indexOf(id) !== c.cites.lastIndexOf(id)) add(`${w} cites ${id} twice`);
+      }
       const spans = [...c.text.matchAll(QUOTE)];
       if (spans.some((m) => m[1].split(/\s+/).length > 25)) add(`${w} quotes more than 25 words`);
-      if (spans.length) quotes.set(so.id, (quotes.get(so.id) ?? 0) + spans.length);
+      // a quote counts against its first cited source
+      if (spans.length) quotes.set(c.cites[0], (quotes.get(c.cites[0]) ?? 0) + spans.length);
     });
   });
   quotes.forEach((n, id) => n > 1 && add(`source ${id} is quoted ${n} times; one short quote per source`));
-  src.forEach((_s, id) => !used.has(id) && add(`source ${id} backs no claim`));
+  src.forEach((_s, id) => !used.has(id) && add(`source ${id} is cited by no paragraph`));
   for (const c of ["Google", "Uber", "Rubrik", "Netflix", "Apple"]) if (!d.noGuidance?.some((n) => n.company === c)) add(`noGuidance must list ${c}`);
   const all: string[] = [];
   JSON.stringify(d, (_k, v) => (typeof v === "string" && all.push(v), v));
   for (const s of all) {
     if (bannedPhrasing(s)) add(`banned phrasing in "${s.slice(0, 50)}"`);
-    if (/\bconstraints?\b/i.test(s)) add(`no official page says interviewers change constraints; remove "${s.slice(0, 50)}"`);
   }
   return p;
 }

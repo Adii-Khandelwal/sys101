@@ -1,0 +1,1163 @@
+{
+  "slug": "how-it-goes",
+  "title": "How an interview goes",
+  "summary": "What Amazon, Meta, Microsoft, Atlassian and Flipkart say on their own careers pages about their interview loops and design rounds, plus the companies that have no readable official guidance.",
+  "sections": [
+    {
+      "id": "stages",
+      "heading": "The stages of a loop",
+      "claims": [
+        {
+          "text": "The loop has four 55-minute interviews, each with members of its software development community.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "Expect at least one question on software systems design.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "The online assessment is 90 minutes for two technical questions followed by 20 minutes of Systems Design scenarios.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "The path runs from an application to an online assessment, then to a loop that a recruiter arranges once the assessment goes well.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "The online assessment also has an 8-minute multiple choice survey on work style, tied to the Leadership Principles.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "Different loop interviewers are assigned to evaluate technical areas and areas based on the Leadership Principles.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "The loop has five 55-minute interviews.",
+          "sourceId": "amz-sde3"
+        },
+        {
+          "text": "The technical phone screen is with a senior leader on the team and lasts 60 minutes.",
+          "sourceId": "amz-sde3"
+        },
+        {
+          "text": "The path runs from an application to a technical phone screening, then to a loop that a recruiter arranges once the screen goes well.",
+          "sourceId": "amz-sde3"
+        },
+        {
+          "text": "Half of the phone screen covers Leadership Principles questions and the other half covers coding problems and system design.",
+          "sourceId": "amz-sde3"
+        },
+        {
+          "text": "Different loop interviewers are assigned to evaluate technical areas and areas based on the Leadership Principles.",
+          "sourceId": "amz-sde3"
+        },
+        {
+          "text": "The initial technical screen decides whether you continue to the full interview cycle, and it is primarily a coding interview with an engineer.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The recruiter says whether the screen is by video chat or in person.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The screen is split into 5 minutes of introductions, 35 minutes of coding and 5 minutes for your questions.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The full interview has a coding interview, a design interview and a behavioral interview.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The coding interview in the full loop is 45 minutes with the same split as the screen, but harder questions and a more exacting evaluation.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The behavioral interview is 45 minutes.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The process usually consists of a recruiter conversation, an initial screening and a full loop interview.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "The typical process takes about 2 to 3 months.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "For most roles the first step is a call with a recruiter about your background, experience, goals and interest, in which they describe the role and team.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "Some roles start with a prescreen form in Career Profile instead.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "Hiring usually involves several rounds where you are assessed on technical background and problem-solving, with sample tasks such as writing code, solving algorithms or a case study, depending on the role.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "Initial interviews are typically by phone or video, and you meet peers, cross-functional partners and leaders.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "The initial tech screen is a 45-minute conversation with an engineer.",
+          "sourceId": "meta-techscreen"
+        },
+        {
+          "text": "The initial tech screen is meant to assess technical skills, and the page points to a downloadable screen guide for preparation.",
+          "sourceId": "meta-techscreen"
+        },
+        {
+          "text": "Later steps vary by role: you may meet potential teammates and cross-functional colleagues, and some roles include coding exercises, a portfolio review or work samples.",
+          "sourceId": "ms-tips"
+        },
+        {
+          "text": "The interview is described as a two-way conversation, and the recruiter explains the format and timeline.",
+          "sourceId": "ms-tips"
+        },
+        {
+          "text": "The principal guide lists two coding interviews, one system design interview, one leadership craft interview and one values interview.",
+          "sourceId": "atl-p60"
+        },
+        {
+          "text": "Timings are 60 minutes each for coding, system design and leadership craft, and 45 minutes for values.",
+          "sourceId": "atl-p60"
+        },
+        {
+          "text": "The stages listed are two coding interviews, one system design interview, one management interview and a values interview.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "Timings are 60 minutes for system design, 60 minutes for management and 45 minutes for values.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "Interviews are scheduled in three stages, and the recruiter says after each stage whether you move on.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "Candidates are told to read each email from the coordinator to know which stage they are in and what is expected.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "The management interview is 60 minutes with an engineering manager, using scenario-based questions about how you handle aspects of your role in a team.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "The values interview is behavioral and checks how your thinking and actions line up with the company values.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "A design round, round 2.3, involves discussing and solving a non-trivial design problem.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Phase 1 begins with a 30-minute exploratory discussion with a potential hiring manager once your CV is shortlisted, covering experience, expectations and aspirations.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "A 60-minute technical phone screen with a potential peer follows, mainly on past work, role eligibility and a few problem-solving questions.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "The phone screen can be skipped or repeated case by case, and the recruiter explains the exact process.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Phase 2 is onsite: 120-minute machine coding, 60-minute problem solving and data structures, the 60-minute design round, 60-minute team fitment and 60-minute culture fitment.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "The phases and the first two rounds match the SDE guide: a 30-minute exploratory discussion and a 60-minute technical phone screen.",
+          "sourceId": "fk-arch"
+        },
+        {
+          "text": "The exploratory discussion with the hiring manager depends on the case, and the recruiter explains the process.",
+          "sourceId": "fk-arch"
+        },
+        {
+          "text": "Onsite rounds are machine coding (120), problem solving (60), low-level design (60), high-level design (60), team fitment (60) and culture fitment (60).",
+          "sourceId": "fk-arch"
+        }
+      ]
+    },
+    {
+      "id": "length",
+      "heading": "How long a system design round is",
+      "claims": [
+        {
+          "text": "The loop has four 55-minute interviews. The page gives this length for each loop interview and does not give a length for design alone.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "The loop has five 55-minute interviews. The page gives this length for each loop interview and does not give a length for design alone.",
+          "sourceId": "amz-sde3"
+        },
+        {
+          "text": "The design interview is 45 minutes long and almost never involves coding.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The interviewer typically saves the last five minutes for your questions.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The interview round is called short at 45 minutes. The page does not tie the 45 minutes to system design.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "The system design portion of the interview is 60 minutes.",
+          "sourceId": "atl-p60"
+        },
+        {
+          "text": "The design round is 60 minutes.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "The high-level design round is 60 minutes, with 1 or 2 scenarios that need a fully detailed architectural solution.",
+          "sourceId": "fk-arch"
+        }
+      ]
+    },
+    {
+      "id": "design-types",
+      "heading": "Kinds of design round",
+      "claims": [
+        {
+          "text": "System design resources are split into high-level design and low-level design, with a prep video for each.",
+          "sourceId": "amz-sde3"
+        },
+        {
+          "text": "The design interview comes in two types, systems design and product design, depending on the candidate background.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Every candidate is expected to know basic design principles, and the company tries to pair you with an interviewer of a similar background.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The aim is a conversation in an area slightly familiar to you, on a problem that is unfamiliar.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "A product design example is designing an email server, with questions on storing mail as it grows, large mailing lists, spam abuse and reliability under failures.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Another example is designing a client-server API for a rich document editor, including how the client fetches a large document and how formatting appears in responses.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The design round has two types, systems design and object-oriented design, for example designing Twitter or a parking lot.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "In object-oriented design you design a real-world problem with design principles and patterns so it stays maintainable and extensible.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Low-level design is a 60-minute round on 1 or 2 real-world, fuzzy problems, drawn on a whiteboard or paper, with no UML knowledge required.",
+          "sourceId": "fk-arch"
+        },
+        {
+          "text": "Low-level design expects multiple components, REST or RPC interface design, entity modelling, class diagrams and flow modelling.",
+          "sourceId": "fk-arch"
+        },
+        {
+          "text": "Candidates are encouraged to give several approaches, weigh pros and cons and take an opinionated view.",
+          "sourceId": "fk-arch"
+        },
+        {
+          "text": "High-level design asks for an architectural diagram on a whiteboard or paper, and may include sequence diagrams for important use cases.",
+          "sourceId": "fk-arch"
+        }
+      ]
+    },
+    {
+      "id": "looks-for",
+      "heading": "What interviewers say they look for",
+      "claims": [
+        {
+          "text": "The listed objectives are practicality, accuracy, efficiency, reliability, optimization and scalability.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "Interviewers look for the ability to apply what you know to solve problems efficiently and effectively.",
+          "sourceId": "amz-topics"
+        },
+        {
+          "text": "The purpose of the design interview is to assess the candidate's ability to solve a non-trivial engineering design problem.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "A good solution compares and contrasts different approaches.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The ability to anticipate and work around typical problems is part of the signal.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Part of the signal is whether you have learned to build large systems through hard experience.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "A good solution covers both high-level ideas and low-level specifics, moving between goals, approach and detail.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "AI-assisted interviews are designed to mirror the real work and assess problem-solving, coding, debugging and collaboration.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "Knowledge of distributed systems, SOA and n-tiered software architecture is very important for system design questions.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "Resiliency, high availability, auto-scaling, replication, CAP theory and partitioning may all be included.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "Candidates should understand what it takes to build or design a new system or platform from scratch.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "Technical interviews focus on problem-solving and the skills the role needs, including how you approach problems, adapt to new challenges and think strategically.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "Problem solving is judged on how you break down information, put yourself in the customer's shoes and make choices.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "The aim is to assess fundamental knowledge, capability and learning potential, and you are not expected to know everything.",
+          "sourceId": "ms-tips"
+        },
+        {
+          "text": "Culture is part of the process, with growth mindset, inclusion, collaboration, customer obsession and values named.",
+          "sourceId": "ms-tips"
+        },
+        {
+          "text": "The interviewer looks at problem-solving thought process, decision making and operational considerations.",
+          "sourceId": "atl-p60"
+        },
+        {
+          "text": "Candidates are told to keep the customer in mind and how the solution might perform and scale.",
+          "sourceId": "atl-p60"
+        },
+        {
+          "text": "The design interview is for showing technical depth, breadth and proficiency by designing a solution to an established problem.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "Interviewers want to see how you draw on past experience when designing something new.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "The guide expects a scalable system with the trade-offs needed to achieve that, and knowledge of different types of data stores and when to choose one over another.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "In its general interview tips, the guide says: \"We don't necessarily look for absolute solutions.\" It adds that the interviewers want to know how you approach a problem.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "No specific answer is expected in the design round.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Culture fitment has no right or wrong answers and asks for honest answers about past experience, aspirations and strengths.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Team fitment is with a potential team leader or hiring manager and covers motivations, self-awareness, leadership and stakeholder management.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Tech stack selection, scalability of the solution, and choosing between consistency, availability and partition tolerance are listed as separate evaluation pivots.",
+          "sourceId": "fk-arch"
+        },
+        {
+          "text": "Tech stack selection covers the choice of data store, web service framework and queue processor.",
+          "sourceId": "fk-arch"
+        },
+        {
+          "text": "Knowing open-source technology is not mandatory, and a proprietary component such as CosmosDB is fine if you can explain its access patterns and limitations.",
+          "sourceId": "fk-arch"
+        },
+        {
+          "text": "The overall discussion focuses on your ability to positively influence design and architecture.",
+          "sourceId": "fk-arch"
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "heading": "How to start",
+      "claims": [
+        {
+          "text": "Start with requirements. The example is how to architect the backend for a messaging system, with questions to ask about how many people, how many messages, latency, storage, and push or pull.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The sample prompt gets vague at first, so the guide suggests turning it into requirements before designing.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Ask clarifying questions about any ambiguities and come up with a plan before implementing a solution.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "Start by asking clarifying questions and stating your assumptions, then talk through your approach, including the tools you would use and why.",
+          "sourceId": "ms-tips"
+        },
+        {
+          "text": "The guide describes starting with fundamentals and then building in complexity, and asking any clarifying questions upfront.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "The problem will be very generic, and candidates are told to start by gathering all the specific requirements from the interviewer.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Gathering requirements is called the most important thing in the design interview.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "For object-oriented design, decide the structure of the design before drawing the class diagram.",
+          "sourceId": "fk-sde"
+        }
+      ]
+    },
+    {
+      "id": "driven",
+      "heading": "How the discussion is driven",
+      "claims": [
+        {
+          "text": "The interviewer will ask questions related to your design, and you should ask questions to complete and validate your design.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "The interviewer asks a very broad design problem and evaluates the solution.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Candidates are asked to make it a conversation, ask clarifying questions, and drive towards a good solution.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "There is not enough time to discuss every detail, so find the interesting and hard problems to focus the discussion on.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Outline the high-level approach first, then think about how it breaks down into subparts.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Say which components you would use and how they share responsibility, and describe implementation details with a reason, such as why a pub-sub queue fits.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The last five minutes of the design interview are for your questions to the engineer.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "When stuck or without experience in the subject, ask clarifying questions, which shows collaboration and resourcefulness.",
+          "sourceId": "ms-tips"
+        },
+        {
+          "text": "Candidates are told to keep communicating with the interviewer as they progress towards a solution.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "The round is described as the interviewer and interviewee discussing trade-offs and requirements and coming up with a solution.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "The design round is about discussing different approaches at different stages and zeroing in on one.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Candidates are told to make the interview as interactive as possible.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "The interview is described as a discussion, not an interrogation.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "It is fine to take a few minutes to gather your thoughts, and thinking out loud helps interviewers follow your thinking.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Candidates are asked to be vocal about multiple acceptable solutions, and specifically why they rejected the others.",
+          "sourceId": "fk-arch"
+        }
+      ]
+    },
+    {
+      "id": "tooling",
+      "heading": "Stated tooling",
+      "claims": [
+        {
+          "text": "The page links a guide to interviewing with Bluescape and suggests Livecode for getting used to coding without an IDE.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "Most technical interviews require coding and system design white boarding exercises.",
+          "sourceId": "amz-topics"
+        },
+        {
+          "text": "The design interview is mostly talking and drawing on a whiteboard.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "In the screen, coding happens in a shared online editor, or on a whiteboard if you are in person.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Design interviews are conducted in CoderPad with Mermaid Markdown, with the same AI assistant available as in the coding interview.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "Many interviews now include an AI assistant inside the interview environment, and candidates are expected to use it.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "The assistant offers several models, including Claude, ChatGPT, Gemini and the company's own, and you choose one during the interview.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "No outside AI tools or help are allowed; only the tools inside the interview environment.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "The AI-native coding interview supports nine languages, including Python, Java and Go, picked at the start.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "In coding interviews you share your own IDE by screen share, and a CodePair environment is available if you cannot set one up.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "Zoom is used for screen sharing whether the interview is onsite or remote.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "The system design problem is drawn on a whiteboard or paper; on Zoom use paper and pen, the Zoom whiteboard, or share an editor or drawing tool.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "Machine coding is on your laptop and problem solving is on paper or a whiteboard.",
+          "sourceId": "fk-sde"
+        }
+      ]
+    },
+    {
+      "id": "other-rounds",
+      "heading": "The other rounds in a loop",
+      "claims": [
+        {
+          "text": "The coding part expects syntactically correct code, with no pseudocode.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "Coding is judged mainly on scalable, robust and well-tested code, so check edge cases and make sure bad input cannot slip through.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "A large part of the behavioral conversation is about how you showed the Leadership Principles in past jobs, and brain teasers are not asked.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "Each interviewer typically asks two or three behavioral questions about successes or challenges.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "The coding objectives listed are efficiency, reliability, robustness, portability, maintainability and readability.",
+          "sourceId": "amz-sde3"
+        },
+        {
+          "text": "The behavioral part works the same way: two or three questions per interviewer about how you used the Leadership Principles.",
+          "sourceId": "amz-sde3"
+        },
+        {
+          "text": "Screen questions are short enough to explain in a few minutes and solve in 10 to 30 minutes, and they typically avoid estimation and trick questions.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "In the screen, you could solve a problem in any way you choose, and the interviewer could then add further requirements.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The screen covers computer science fundamentals such as algorithms, data structures, recursion and binary trees, and has two coding problems.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The behavioral interview is about your background, what you are passionate about in tech and the impact you want to make.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Beyond technical discussion you may be asked about past experience and how you would approach role-related scenarios.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "Coding must be in a language you are strong in, with no pseudocode, in a third-party tool where you can run and compile the code.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "Interviewers expect some testing: check the code before calling it done, and consider security, stress, boundaries, error conditions and corner cases.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "The listed technical areas include algorithms, data structures, AI and machine learning, data science and computer networking, as examples rather than an exhaustive list.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "For algorithms, know at least one n log n sort, preferably two, and explain its complexity.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "Each coding interview is capped at 60 minutes and shows coding skills, code quality and conceptual thinking, plus adaptability, handling blockers and communication style.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "How you think matters as much as the end result in coding, so communicate with the interviewer throughout.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "Testing is called crucial in the coding task, with a recommendation to brush up on testing and TDD.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "Because problems rarely have one solution, show other solutions and why yours fits best.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "Machine coding has three stages: 15 minutes of pre-coding to clarify the problem, 90 of coding with 1 or 2 interviewer checkpoints, and 15 of demo.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "You send your code at the end of coding, and in the demo the interviewer enters several test cases that your program must handle.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "The problem solving round has 1 to 3 problems on common data structures and algorithms.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Data structures named are array, linked list, stack, queue, hash map, tree, graph and heap, and algorithm types include sorting, searching, backtracking and dynamic programming.",
+          "sourceId": "fk-sde"
+        }
+      ]
+    },
+    {
+      "id": "level",
+      "heading": "Differences by level and role",
+      "claims": [
+        {
+          "text": "The senior role adds a technical phone screening with a senior leader before the loop, where the SDE II path goes from the online assessment to the loop.",
+          "sourceId": "amz-sde3"
+        },
+        {
+          "text": "At this level the third round is a 60-minute leadership craft interview with an engineering manager on projects where you showed engineering leadership.",
+          "sourceId": "atl-p60"
+        },
+        {
+          "text": "The leadership craft questions are scenario-based and dig into driving outcomes on large projects, the direction you give teams and your organizational impact through knowledge sharing.",
+          "sourceId": "atl-p60"
+        },
+        {
+          "text": "That interview is not meant to go deep on technical architecture. You should still explain why you made architectural choices and how you involved your teams.",
+          "sourceId": "atl-p60"
+        },
+        {
+          "text": "The guide asks you to pick complex projects with measurable organizational impact, which need not be your best or most recent.",
+          "sourceId": "atl-p60"
+        },
+        {
+          "text": "At the P30 to P50 level the management interview covers four areas: driving outcomes across the software lifecycle, applying and sharing lessons, managing conflict, and taking initiative.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "The problem solving round has 2 or 3 problems, close to real-world, to break into sub-problems, with pseudocode asked for some parts and no single expected answer.",
+          "sourceId": "fk-arch"
+        },
+        {
+          "text": "That round may ask about the internal implementation of data structures such as queues, heaps, graphs, trees and hash tables.",
+          "sourceId": "fk-arch"
+        },
+        {
+          "text": "Machine coding is on a laptop in any language, preferably an object-oriented one with good concurrency libraries, and you can bring your own or use one provided.",
+          "sourceId": "fk-arch"
+        }
+      ]
+    },
+    {
+      "id": "preparation",
+      "heading": "How to prepare",
+      "claims": [
+        {
+          "text": "Recall specific details of memorable past experiences and include metrics or data where they apply.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "Have examples of taking risks, succeeding, failing and growing, and shape answers with the STAR method.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "The page links prep videos on system design, high-level design and common candidate questions.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "Before studying, ask the recruiting contact which subjects and skills you are most likely to discuss.",
+          "sourceId": "amz-topics"
+        },
+        {
+          "text": "The online assessment includes a coding test, and a sample coding challenge can be tried as many times as you like.",
+          "sourceId": "amz-topics"
+        },
+        {
+          "text": "Interviewers are not testing whether you memorize every detail of the topics.",
+          "sourceId": "amz-topics"
+        },
+        {
+          "text": "The advice is to review computer science fundamentals and practice coding outside an IDE.",
+          "sourceId": "amz-topics"
+        },
+        {
+          "text": "The topic list covers programming language, data structures, algorithms, coding, object-oriented design, databases, distributed computing, operating systems, internet topics, and general machine learning and AI.",
+          "sourceId": "amz-topics"
+        },
+        {
+          "text": "Keep the customer in mind while reviewing the topics.",
+          "sourceId": "amz-topics"
+        },
+        {
+          "text": "The page links a video that works through a system design example and how to approach it.",
+          "sourceId": "amz-topics"
+        },
+        {
+          "text": "Prepare a short, interesting description of who you are, where you trained and worked, and your areas of expertise.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Think about complex systems you have designed and what you would change if you did it again.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Practice designing a system the company already runs, from the ground up.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Read engineering blogs about approaches that work and the false starts big companies had along the way.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "For the screen, write code in a plain text editor without syntax highlighting or auto-completion, by hand, and under time pressure.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "A mock interview with a friend is suggested to simulate the time pressure.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Be able to discuss the big-O complexity of your approaches and review common data structures and traversals.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "In the coding interview, think out loud, because the way you solve problems matters as much as having the right answer.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Use the language you know best unless the recruiter says one is required.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Manage time in coding: look for a good solution, but if none appears in reasonable time write a working one and improve it, since some interviews end with no code written.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Be ready to explain your solution, find and fix your own bugs, and ask questions if you are stuck.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "For the behavioral interview, review your own resume, be honest about failures, structure answers with STAR and give concrete examples rather than theory.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Come prepared with questions about working as an engineer there.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "The page also asks candidates to know the company's six core values.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Review the prep material from the recruiter and in your career profile, and research your interviewers to anticipate their questions.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "A practice session in the same tool as the interview is available before it, and practising with AI coding tools and reading and debugging existing code helps.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "Prepare questions for the recruiter on team dynamics, role specifics and next steps.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "The page says to practice coding a great deal and calls it a critical part of the interview.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "If you do not work with distributed systems concepts regularly, review them before the interview.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "Research the role, the tech industry and what the company does well, and prepare questions to ask.",
+          "sourceId": "ms-tips"
+        },
+        {
+          "text": "Read the job description for the most relevant skills and prepare examples that cover the situation, what you did, the result and what you learned.",
+          "sourceId": "ms-tips"
+        },
+        {
+          "text": "Think about how you have used feedback, worked with others and adapted.",
+          "sourceId": "ms-tips"
+        },
+        {
+          "text": "Structure answers with STAR plus a reflection step.",
+          "sourceId": "ms-tips"
+        },
+        {
+          "text": "The guide lists sample questions under company values, such as handling difficult conversations, advocating for change and putting the customer first.",
+          "sourceId": "atl-p60"
+        },
+        {
+          "text": "Coding prep: set up a familiar IDE and test framework, use a debugger if useful, and join Zoom about 10 minutes early.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "For the values interview, review the company values and prepare examples of living them in past roles.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "Research the company and look up your interviewers on LinkedIn.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "Come with questions; if one goes unasked, reach out to the recruiter or coordinator.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "For the phone screen, find a quiet place, know your resume, prepare a short introduction and go deeper on any detail asked.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "For the first discussion, ask questions to understand the role charter, scope and kind of work.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "For design, read engineering blogs on how companies design systems, with the guide naming Netflix TechBlog and High Scalability.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Learn the parts of a distributed system and their trade-offs, and practice a few design problems.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Design topics listed are data stores, distributed systems, CAP theorem, scaling, caches and queues, and Internet and OS basics.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "For machine coding, ask clarifying questions, clarify input limits, write test cases and dry run before and after coding.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "For problem solving, compute time and space complexity and understand trade-offs between them.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Practice coding on online platforms, since interviews expect bug-free code in a short time.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Learn about the business and the role beforehand, and tell the interviewers something that makes you stand out.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Ask questions, and be honest about past failures, since intent and commitment are valued over success.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Read up on the four values, Audacity, Bias for Action, Customer First and Integrity, and recall times you showed them.",
+          "sourceId": "fk-sde"
+        },
+        {
+          "text": "Bring your own laptop if you can, because the IDE or compiler you prefer may not be on the provided one.",
+          "sourceId": "fk-arch"
+        },
+        {
+          "text": "Suggested resources include LeetCode, HackerRank, awesome-scalability and High Scalability.",
+          "sourceId": "fk-arch"
+        }
+      ]
+    },
+    {
+      "id": "logistics",
+      "heading": "Logistics and accommodations",
+      "claims": [
+        {
+          "text": "For a remote interview, pick a quiet spot with a good internet connection and phone reception, and headphones leave both hands free.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Speak clearly, and tell the interviewer if you cannot hear them well.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Unless the interview is very early or very late in the day, someone from engineering or recruiting takes you to lunch, which is a chance to ask someone who is not interviewing you.",
+          "sourceId": "meta-blog"
+        },
+        {
+          "text": "Interview schedules and prep materials are tailored to the role, and Career Profile shows upcoming interviews, role-specific prep guides and a CoderPad practice environment.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "Check your computer and WiFi beforehand, and protect your interview time because it can be hard to reschedule at the last minute.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "Accommodations are available for disabilities, long-term and mental health conditions, neurodivergence, sincerely held religious beliefs and pregnancy-related needs.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "The recruiter is the contact for questions about the format.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "You can apply for more than one role if you meet the minimum qualifications for each, and the careers site holds only one resume per applicant.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "If Teams or another virtual platform is not fully accessible for you, you can submit an accessibility request and they will reach out.",
+          "sourceId": "ms-technical"
+        },
+        {
+          "text": "You do not need to dress up; wear what is comfortable.",
+          "sourceId": "ms-tips"
+        },
+        {
+          "text": "Accommodations can be requested if the virtual platform is not accessible to you.",
+          "sourceId": "ms-tips"
+        },
+        {
+          "text": "Ask for accommodations or adjustments if you need them.",
+          "sourceId": "atl-p30"
+        }
+      ]
+    },
+    {
+      "id": "after",
+      "heading": "After the interviews",
+      "claims": [
+        {
+          "text": "The interview outcome is given within 5 business days.",
+          "sourceId": "amz-sde2"
+        },
+        {
+          "text": "The interview outcome is given within 5 business days.",
+          "sourceId": "amz-sde3"
+        },
+        {
+          "text": "After each interview you can send that interviewer a personal message through your career profile.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "The decision time is hard to estimate, and candidates should tell the recruiter about competing offers or deadlines.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "The timeline can shift because of holidays and other factors.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "If selected, the recruiter sends an offer letter, and either way you hear back about your application status.",
+          "sourceId": "meta-hiring"
+        },
+        {
+          "text": "At the end, ask the hiring manager or recruiter when to expect the decision or next steps.",
+          "sourceId": "ms-tips"
+        },
+        {
+          "text": "The recruiter follows up on the outcome as soon as a decision is made, and a thank-you email to the recruiter is passed on to the hiring manager and interviewers.",
+          "sourceId": "ms-tips"
+        },
+        {
+          "text": "After the management and values stages, feedback goes to a hiring committee, and successful candidates move to team match.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "Team match is a call with hiring managers who have open roles, not an interview, and you then have 24 hours to choose after teams are presented.",
+          "sourceId": "atl-p30"
+        },
+        {
+          "text": "Open teams depend on business priorities and can change, which is why assessments come first.",
+          "sourceId": "atl-p30"
+        }
+      ]
+    }
+  ],
+  "noGuidance": [
+    {
+      "company": "Google",
+      "note": "The how-we-hire interview page returned 200, but its text is drawn by JavaScript. The raw page held only navigation and footer; nothing could be confirmed."
+    },
+    {
+      "company": "Uber",
+      "note": "Uber's careers pages and jobs.uber.com returned HTTP 403 or 406 to curl. The one readable Uber page, an engineering blog post from 8 Dec 2015, covers the hiring market and does not cover the design round."
+    },
+    {
+      "company": "Rubrik",
+      "note": "Rubrik's careers page returned 403 to curl, and no other official page was found."
+    },
+    {
+      "company": "Netflix",
+      "note": "The Netflix Tech Blog interview post returned 403 on netflixtechblog.com and on medium.com. The jobs.netflix.com new-grad page was not read."
+    },
+    {
+      "company": "Apple",
+      "note": "No interview process page was found."
+    },
+    {
+      "company": "Stripe",
+      "note": "The stripe.com/jobs/interview address is a 404, and no candidate-facing system design page was found."
+    },
+    {
+      "company": "Shopify",
+      "note": "The careers FAQ gives a 60 to 75 minute Craft Assessment but never names system design; it is not used."
+    }
+  ],
+  "sources": [
+    {
+      "id": "amz-sde2",
+      "title": "Amazon: SDE II interview prep",
+      "url": "https://amazon.jobs/content/en/how-we-hire/sde-ii-interview-prep",
+      "company": "Amazon",
+      "published": "no date shown",
+      "edition": "No file metadata date recorded",
+      "verifiedOn": "2026-10-31",
+      "terms": "(c) 1996-2026 Amazon.com, Inc. or its affiliates; \"Conditions of use\" link"
+    },
+    {
+      "id": "amz-sde3",
+      "title": "Amazon: SDE III interview prep",
+      "url": "https://amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep",
+      "company": "Amazon",
+      "published": "no date shown",
+      "edition": "No file metadata date recorded",
+      "verifiedOn": "2026-10-31",
+      "terms": "(c) 1996-2026 Amazon.com, Inc. or its affiliates; \"Conditions of use\" link"
+    },
+    {
+      "id": "amz-topics",
+      "title": "Amazon: software development topics",
+      "url": "https://amazon.jobs/content/en/how-we-hire/interview-prep/software-development-topics",
+      "company": "Amazon",
+      "published": "no date shown",
+      "edition": "No file metadata date recorded",
+      "verifiedOn": "2026-10-31",
+      "terms": "(c) 1996-2026 Amazon.com, Inc. or its affiliates; \"Conditions of use\" link"
+    },
+    {
+      "id": "meta-blog",
+      "title": "Meta: Preparing for your software engineering interview at Meta",
+      "url": "https://www.metacareers.com/blog/preparing-for-your-software-engineering-interview-at-meta/",
+      "company": "Meta",
+      "published": "6 Oct 2022",
+      "edition": "Page says updated for 2022; first published 27 Jun 2016",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in raw page"
+    },
+    {
+      "id": "meta-hiring",
+      "title": "Meta: Hiring process",
+      "url": "https://www.metacareers.com/hiring-process/",
+      "company": "Meta",
+      "published": "no date shown",
+      "edition": "No file metadata date recorded",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in raw page"
+    },
+    {
+      "id": "meta-techscreen",
+      "title": "Meta: Software engineer technical screen prep",
+      "url": "https://www.metacareers.com/swe-prep-techscreen/",
+      "company": "Meta",
+      "published": "no date shown",
+      "edition": "No file metadata date recorded",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in raw page"
+    },
+    {
+      "id": "ms-technical",
+      "title": "Microsoft: Technical interviewing",
+      "url": "https://careers.microsoft.com/v2/global/en/hiring-tips/technical-interviewing",
+      "company": "Microsoft",
+      "published": "no date shown",
+      "edition": "Undated page; page metadata modifyDate 2026-09-10 (not a published date)",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in raw page"
+    },
+    {
+      "id": "ms-tips",
+      "title": "Microsoft: Interview tips",
+      "url": "https://careers.microsoft.com/v2/global/en/hiring-tips/interview-tips.html",
+      "company": "Microsoft",
+      "published": "no date shown",
+      "edition": "Undated page; page metadata modifyDate 2026-09-10 (not a published date)",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in raw page"
+    },
+    {
+      "id": "atl-p60",
+      "title": "Atlassian: Principal Backend interview guide (PDF)",
+      "url": "https://wac-cdn.atlassian.com/dam/jcr:705fb1c3-fa29-4b1d-bcac-7ce8806fd0b6/P60%20Backend.pdf?cdnVersion=1203",
+      "company": "Atlassian",
+      "published": "no date shown",
+      "edition": "Undated PDF; file metadata created 2023-08-21 (not a published date)",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in the PDF"
+    },
+    {
+      "id": "atl-p30",
+      "title": "Atlassian: P30 to P50 Backend interview guide (PDF)",
+      "url": "https://wac-cdn.atlassian.com/dam/jcr:cf9c7fc1-ab28-47d6-bb56-9c01fb09b871/P30-P50-Backend-Interview-Guide.pdf?cdnVersion=1968",
+      "company": "Atlassian",
+      "published": "no date shown",
+      "edition": "Undated PDF; file metadata created 2023-12-11 (not a published date)",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in the PDF"
+    },
+    {
+      "id": "fk-sde",
+      "title": "Flipkart: SDE interview guide (PDF)",
+      "url": "https://www.flipkartcareers.com/assets/flipkart_pdf/SDE.pdf",
+      "company": "Flipkart",
+      "published": "no date shown",
+      "edition": "Undated PDF; file metadata created 2020-02-06, about six years old (not a published date)",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in the PDF"
+    },
+    {
+      "id": "fk-arch",
+      "title": "Flipkart: Architect interview guide (PDF)",
+      "url": "https://www.flipkartcareers.com/assets/flipkart_pdf/Architect.pdf",
+      "company": "Flipkart",
+      "published": "no date shown",
+      "edition": "Undated PDF; file metadata created 2020-02-06, modified 2020-02-20 (not a published date)",
+      "verifiedOn": "2026-10-31",
+      "terms": "none in the PDF"
+    }
+  ]
+}
