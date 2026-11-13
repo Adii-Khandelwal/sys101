@@ -12,6 +12,20 @@ import { absoluteUrl, breadcrumbLd, pageMeta } from "@/lib/site";
 export const dynamic = "error";
 
 const d = getInterview();
+const COMPANIES = [...new Set(d.sources.map((x) => x.company))];
+
+/** The company a paragraph opens with is set in bold ink, so a reader sees whose page the paragraph describes. */
+function withLead(text: string) {
+  const c = COMPANIES.find((n) => text.startsWith(n));
+  return c ? (
+    <>
+      <strong className="interview-lead">{c}</strong>
+      {text.slice(c.length)}
+    </>
+  ) : (
+    text
+  );
+}
 
 export const metadata: Metadata = pageMeta({
   path: "/design/how-it-goes",
@@ -37,7 +51,7 @@ export default function HowItGoes() {
           <section className="cap-section" id={s.id} key={s.id}>
             <Overprint as="h2">{s.heading}</Overprint>
             {s.paragraphs.map((p, i) => (
-              <p key={i}>{p.text}</p>
+              <p key={i}>{withLead(p.text)}</p>
             ))}
           </section>
         ))}

@@ -4526,6 +4526,11 @@ html {
   max-width: 62ch;
   color: var(--ink-soft);
 }
+.interview-lead {
+  font-weight: 700;
+  color: var(--ink);
+}
+
 .design-first {
   display: grid;
   gap: 4px;
