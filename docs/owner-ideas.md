@@ -56,3 +56,4 @@ Moved out of CLAUDE.md to keep it short. Every idea or preference the owner stat
 - 31 Oct 2026: owner asked for vendor-neutral, original model answers, with vendor names only in a short "How a real system does it" note.
 - 31 Oct 2026: owner decided the model-answer text may use "we" and a four-digit year may appear in a real block that names its company.
 - 1 Nov 2026: owner asked each section to show what the interviewer asks, what to say and a tip, plus a General tips section on how the round goes.
+- 13 Nov 2026: owner: a cited line keeps its link, and the interview page should carry all the information from its sources as a self-written knowledge base in paragraphs with the links gathered at the end (replaces the earlier no-links request).

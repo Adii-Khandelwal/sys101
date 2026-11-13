@@ -10,9 +10,13 @@ describe("interview process page", () => {
     f(d);
     return interviewProblems(d);
   };
-  it("rejects an unknown source and a constraint claim", () => {
-    expect(bad((d) => (d.sections[0].claims[0].sourceId = "nope"))).not.toEqual([]);
-    expect(bad((d) => (d.sections[0].claims[0].text += " Interviewers change the constraints. Amazon"))).not.toEqual([]);
+  it("rejects an unknown cite and a missing company name", () => {
+    expect(bad((d) => (d.sections[0].paragraphs[0].cites = ["nope"]))).not.toEqual([]);
+    expect(bad((d) => (d.sections[0].paragraphs[0].text = "A paragraph that names nobody."))).not.toEqual([]);
+  });
+  it("rejects a line break and a section with one paragraph", () => {
+    expect(bad((d) => (d.sections[0].paragraphs[0].text += "\nx"))).not.toEqual([]);
+    expect(bad((d) => (d.sections[0].paragraphs = d.sections[0].paragraphs.slice(0, 1)))).not.toEqual([]);
   });
   it("rejects a missing no-guidance company and an em dash", () => {
     expect(bad((d) => (d.noGuidance = d.noGuidance.filter((n) => n.company !== "Apple")))).not.toEqual([]);

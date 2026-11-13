@@ -6,220 +6,431 @@
     {
       "id": "stages",
       "heading": "The stages of a loop",
-      "claims": [
+      "paragraphs": [
         {
-          "text": "The loop has four 55-minute interviews, each with members of its software development community.",
-          "sourceId": "amz-sde2"
+          "text": "Amazon's SDE II preparation page describes a path from an application to an online assessment, then to a loop that a recruiter arranges once the assessment goes well. The assessment gives 90 minutes to two technical questions and then 20 minutes to scenarios on systems design. It also holds a short multiple choice survey of 8 minutes about work style, linked to the Leadership Principles. The loop has four interviews of 55 minutes, each with someone from Amazon's software development community, and at least one of them will ask about software systems design. The interviewers are split between technical areas and Leadership Principles areas.",
+          "cites": [
+            "amz-sde2"
+          ]
         },
         {
-          "text": "Expect at least one question on software systems design.",
-          "sourceId": "amz-sde2"
+          "text": "Amazon's SDE III page has the same shape with a different front door and a longer loop. The path runs from an application to a technical phone screening, then to a loop that a recruiter arranges once the screen goes well, and the loop is five interviews of 55 minutes. The phone screen is 60 minutes with a senior leader on the team, and half of it covers Leadership Principles questions while the other half covers coding problems and system design. As on the SDE II page, different loop interviewers are assigned to technical areas and to areas based on the Leadership Principles.",
+          "cites": [
+            "amz-sde3"
+          ]
         },
         {
-          "text": "The online assessment is 90 minutes for two technical questions followed by 20 minutes of Systems Design scenarios.",
-          "sourceId": "amz-sde2"
+          "text": "Meta's blog post on preparing for its software engineering interview starts with the initial technical screen, which decides whether a candidate continues to the full interview cycle. It is primarily a coding interview with an engineer, and the recruiter says whether it happens by video chat or in person. The screen divides into 5 minutes of introductions, 35 minutes of coding and 5 minutes for the candidate's own questions. The full interview then has a coding interview, a design interview and a behavioral interview. The post gives the full-loop coding interview 45 minutes with the same split as the screen, though with harder questions and a more exacting evaluation, and it gives the behavioral interview 45 minutes.",
+          "cites": [
+            "meta-blog"
+          ]
         },
         {
-          "text": "The loop has five 55-minute interviews.",
-          "sourceId": "amz-sde3"
+          "text": "Meta's hiring process page says the process usually consists of a recruiter conversation, an initial screening and a full loop interview, and that it typically takes about 2 to 3 months. For most roles the first step is a call in which the recruiter asks about background, experience, goals and interest and describes the role and team, while some roles begin with a prescreen form in Career Profile instead. Later there are several rounds that assess technical background and problem-solving, with sample tasks such as writing code, solving algorithms or a case study, depending on the role. The first interviews are typically by phone or video, and candidates meet peers, cross-functional partners and leaders. Meta's software engineer technical screen page calls the initial tech screen a 45-minute conversation with an engineer meant to assess technical skills, and it points to a downloadable screen guide. Microsoft's interview tips page says later steps vary by role: candidates may meet potential teammates and cross-functional colleagues, and some roles include coding exercises, a portfolio review or work samples. It also describes the interview as a two-way conversation, with the recruiter explaining the format and timeline.",
+          "cites": [
+            "meta-hiring",
+            "meta-techscreen",
+            "ms-tips"
+          ]
         },
         {
-          "text": "The technical phone screen is with a senior leader on the team and lasts 60 minutes.",
-          "sourceId": "amz-sde3"
+          "text": "Atlassian's principal backend guide lists two coding interviews, one system design interview, one leadership craft interview and one values interview. Coding, system design and leadership craft take 60 minutes each, and values takes 45. The guide for the P30 to P50 backend level lists two coding interviews, a system design interview, a management interview and a values interview, with 60 minutes for system design, 60 for management and 45 for values. That guide says interviews are scheduled in three stages and that the recruiter says after each stage whether the candidate moves on. Candidates are told to read each email from the coordinator to know which stage they are in and what is expected. The management interview is with an engineering manager and uses scenario-based questions about how the candidate handles aspects of the role in a team, and the values interview is behavioral and checks how thinking and actions line up with the company values.",
+          "cites": [
+            "atl-p60",
+            "atl-p30"
+          ]
         },
         {
-          "text": "The process usually consists of a recruiter conversation, an initial screening and a full loop interview.",
-          "sourceId": "meta-hiring"
-        },
-        {
-          "text": "The typical process takes about 2 to 3 months.",
-          "sourceId": "meta-hiring"
-        },
-        {
-          "text": "The initial tech screen is a 45-minute conversation with an engineer.",
-          "sourceId": "meta-techscreen"
-        },
-        {
-          "text": "The stages listed are two coding interviews, one system design interview, one management interview and a values interview.",
-          "sourceId": "atl-p30"
-        },
-        {
-          "text": "Timings are 60 minutes for system design, 60 minutes for management and 45 minutes for values.",
-          "sourceId": "atl-p30"
-        },
-        {
-          "text": "A design round, round 2.3, involves discussing and solving a non-trivial design problem.",
-          "sourceId": "fk-sde"
+          "text": "Flipkart's SDE interview guide splits the process into two phases. Phase 1 begins once a CV is shortlisted, with a 30-minute exploratory discussion with a potential hiring manager about experience, expectations and aspirations. A 60-minute technical phone screen with a potential peer follows, mainly on past work, role eligibility and a few problem-solving questions, and the guide says it can be skipped or repeated case by case, with the recruiter explaining the exact process. Phase 2 is onsite and has five rounds: 120 minutes of machine coding, 60 of problem solving and data structures, the 60-minute design round (round 2.3, where a non-trivial design problem is discussed and solved), 60 of team fitment and 60 of culture fitment. Flipkart's Architect guide matches the SDE guide on the phases and the first two rounds, a 30-minute exploratory discussion and a 60-minute technical phone screen, and it says the discussion with the hiring manager depends on the case. Its onsite rounds are machine coding (120), problem solving (60), low-level design (60), high-level design (60), team fitment (60) and culture fitment (60).",
+          "cites": [
+            "fk-sde",
+            "fk-arch"
+          ]
         }
       ]
     },
     {
       "id": "length",
       "heading": "How long a system design round is",
-      "claims": [
+      "paragraphs": [
         {
-          "text": "The loop has four 55-minute interviews. The page gives this length for each loop interview and does not give a length for design alone.",
-          "sourceId": "amz-sde2"
+          "text": "Amazon's SDE II and SDE III pages give a length only for the loop interviews as a whole, which is 55 minutes each. Neither page gives a length for design alone, so the 55 minutes cannot be read as a design round.",
+          "cites": [
+            "amz-sde2",
+            "amz-sde3"
+          ]
         },
         {
-          "text": "The loop has five 55-minute interviews. The page gives this length for each loop interview and does not give a length for design alone.",
-          "sourceId": "amz-sde3"
+          "text": "Meta's blog post says the design interview is 45 minutes long and almost never involves coding. The interviewer typically saves the last five minutes for the candidate's questions.",
+          "cites": [
+            "meta-blog"
+          ]
         },
         {
-          "text": "The design interview is 45 minutes long and almost never involves coding.",
-          "sourceId": "meta-blog"
+          "text": "Microsoft's technical interviewing page calls the interview round short at 45 minutes. It does not tie those 45 minutes to system design.",
+          "cites": [
+            "ms-technical"
+          ]
         },
         {
-          "text": "The interview round is called short at 45 minutes. The page does not tie the 45 minutes to system design.",
-          "sourceId": "ms-technical"
+          "text": "Atlassian's principal backend guide gives the system design portion of its interview as 60 minutes. Flipkart's SDE guide also gives the design round 60 minutes. Flipkart's Architect guide gives the high-level design round 60 minutes too, and says it holds 1 or 2 scenarios that need a fully detailed architectural solution.",
+          "cites": [
+            "atl-p60",
+            "fk-sde",
+            "fk-arch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "design-types",
+      "heading": "Kinds of design round",
+      "paragraphs": [
+        {
+          "text": "Meta's blog post says the design interview comes in two types, systems design and product design, depending on the candidate's background. Every candidate is expected to know basic design principles, and the company tries to pair a candidate with an interviewer of a similar background. The aim is a conversation in an area slightly familiar to the candidate, on a problem that is unfamiliar. One product design example is an email server, with questions on storing mail as it grows, large mailing lists, spam abuse and reliability under failures. Another is a client-server API for a rich document editor, including how the client fetches a large document and how formatting appears in responses.",
+          "cites": [
+            "meta-blog"
+          ]
         },
         {
-          "text": "The system design portion of the interview is 60 minutes.",
-          "sourceId": "atl-p60"
+          "text": "Flipkart's SDE guide also names two types of design round, systems design and object-oriented design, with Twitter and a parking lot as examples. In object-oriented design the candidate designs a real-world problem with design principles and patterns so that it stays maintainable and extensible. Flipkart's Architect guide describes low-level design as a 60-minute round on 1 or 2 real-world, fuzzy problems, drawn on a whiteboard or paper, with no UML knowledge required. It expects multiple components, REST or RPC interface design, entity modelling, class diagrams and flow modelling, and it encourages candidates to offer several approaches, weigh pros and cons and take an opinionated view. High-level design in the same guide asks for an architectural diagram on a whiteboard or paper, and may include sequence diagrams for important use cases.",
+          "cites": [
+            "fk-sde",
+            "fk-arch"
+          ]
         },
         {
-          "text": "The design round is 60 minutes.",
-          "sourceId": "fk-sde"
-        },
-        {
-          "text": "The high-level design round is 60 minutes, with 1 or 2 scenarios that need a fully detailed architectural solution.",
-          "sourceId": "fk-arch"
+          "text": "Amazon's SDE III page splits its system design resources into high-level design and low-level design, with a prep video for each.",
+          "cites": [
+            "amz-sde3"
+          ]
         }
       ]
     },
     {
       "id": "looks-for",
       "heading": "What interviewers say they look for",
-      "claims": [
+      "paragraphs": [
         {
-          "text": "The listed objectives are practicality, accuracy, efficiency, reliability, optimization and scalability.",
-          "sourceId": "amz-sde2"
+          "text": "Amazon's SDE II page lists the objectives of the design part as practicality, accuracy, efficiency, reliability, optimization and scalability. Amazon's software development topics page puts it more broadly: interviewers look for the ability to apply what a candidate knows to solve problems efficiently and effectively.",
+          "cites": [
+            "amz-sde2",
+            "amz-topics"
+          ]
         },
         {
-          "text": "Interviewers look for the ability to apply what you know to solve problems efficiently and effectively.",
-          "sourceId": "amz-topics"
+          "text": "Meta's blog post says the design interview tests whether a candidate can work through an engineering design problem that has no easy answer. Strong answers set several approaches side by side and move between goals, approach and detail, covering high-level ideas as well as low-level specifics. Spotting likely problems early and having a way around them counts toward the signal, as does evidence that the candidate learned to build large systems the hard way, through experience.",
+          "cites": [
+            "meta-blog"
+          ]
         },
         {
-          "text": "The purpose of the design interview is to assess the candidate's ability to solve a non-trivial engineering design problem.",
-          "sourceId": "meta-blog"
+          "text": "Meta's hiring process page adds that its AI-assisted interviews are designed to mirror the real work and assess problem-solving, coding, debugging and collaboration.",
+          "cites": [
+            "meta-hiring"
+          ]
         },
         {
-          "text": "A good solution compares and contrasts different approaches.",
-          "sourceId": "meta-blog"
+          "text": "Microsoft's technical interviewing page says system design questions lean heavily on knowledge of distributed systems, SOA and n-tiered software architecture. The topics that may come up are resiliency, high availability, auto-scaling, replication, CAP theory and partitioning, and candidates should grasp what is involved in designing a new system or platform from the ground up. More generally, technical interviews focus on problem-solving and the skills the role needs, including how a candidate approaches problems, adapts to new challenges and thinks strategically. Problem solving is judged on how the candidate breaks down information, puts themselves in the customer's shoes and makes choices. The interview tips page says the aim is to assess fundamental knowledge, capability and learning potential, and that nobody is expected to know everything. It also says culture is part of the process, naming growth mindset, inclusion, collaboration, customer obsession and values.",
+          "cites": [
+            "ms-technical",
+            "ms-tips"
+          ]
         },
         {
-          "text": "The ability to anticipate and work around typical problems is part of the signal.",
-          "sourceId": "meta-blog"
+          "text": "Atlassian's principal backend guide says the interviewer watches how the candidate reasons through the problem, makes decisions and handles operational concerns, and it tells candidates to think of the customer and of the solution's performance and scale. The P30 to P50 guide describes the design interview as a place to show technical depth, breadth and proficiency by designing a solution to an established problem. Its interviewers want to see how a candidate draws on past experience when designing something new.",
+          "cites": [
+            "atl-p60",
+            "atl-p30"
+          ]
         },
         {
-          "text": "Knowledge of distributed systems, SOA and n-tiered software architecture is very important for system design questions.",
-          "sourceId": "ms-technical"
-        },
-        {
-          "text": "Resiliency, high availability, auto-scaling, replication, CAP theory and partitioning may all be included.",
-          "sourceId": "ms-technical"
-        },
-        {
-          "text": "Candidates should understand what it takes to build or design a new system or platform from scratch.",
-          "sourceId": "ms-technical"
-        },
-        {
-          "text": "The interviewer looks at problem-solving thought process, decision making and operational considerations.",
-          "sourceId": "atl-p60"
-        },
-        {
-          "text": "Candidates are told to keep the customer in mind and how the solution might perform and scale.",
-          "sourceId": "atl-p60"
-        },
-        {
-          "text": "The guide expects a scalable system with the trade-offs needed to achieve that, and knowledge of different types of data stores and when to choose one over another.",
-          "sourceId": "fk-sde"
-        },
-        {
-          "text": "In its general interview tips, the guide says: \"We don't necessarily look for absolute solutions.\" It adds that the interviewers want to know how you approach a problem.",
-          "sourceId": "fk-sde"
-        },
-        {
-          "text": "Tech stack selection, scalability of the solution, and choosing between consistency, availability and partition tolerance are listed as separate evaluation pivots.",
-          "sourceId": "fk-arch"
+          "text": "Flipkart's SDE guide expects the candidate to build in scalability and name the trade-offs that buy it, and to know the kinds of data store available and when each fits. No specific answer is expected in the design round. In its general tips the guide says interviewers do not “necessarily look for absolute solutions” and adds that they want to know how a candidate approaches a problem. Its culture fitment round has no right or wrong answers and asks for honest answers about past experience, aspirations and strengths, and team fitment is with a potential team leader or hiring manager and covers motivations, self-awareness, leadership and stakeholder management. The Architect guide lists tech stack selection, scalability of the solution, and the choice between consistency, availability and partition tolerance as separate evaluation pivots. Tech stack selection there covers the choice of data store, web service framework and queue processor. Knowing open-source technology is not mandatory, and a proprietary component such as CosmosDB is fine if the candidate can explain its access patterns and limitations, while the overall discussion focuses on the ability to positively influence design and architecture.",
+          "cites": [
+            "fk-sde",
+            "fk-arch"
+          ]
         }
       ]
     },
     {
       "id": "start",
       "heading": "How to start",
-      "claims": [
+      "paragraphs": [
         {
-          "text": "Start with requirements. The example is how to architect the backend for a messaging system, with questions to ask about how many people, how many messages, latency, storage, and push or pull.",
-          "sourceId": "meta-blog"
+          "text": "Meta's blog post says to start with requirements. Its example is how to architect the backend for a messaging system, with questions to ask about how many people, how many messages, latency, storage, and push or pull. The sample prompt is vague at first, so the guide suggests turning it into requirements before designing anything.",
+          "cites": [
+            "meta-blog"
+          ]
         },
         {
-          "text": "Ask clarifying questions about any ambiguities and come up with a plan before implementing a solution.",
-          "sourceId": "ms-technical"
+          "text": "Microsoft's technical interviewing page says to ask clarifying questions about any ambiguities and to come up with a plan before implementing a solution. The interview tips page gives a similar order: ask clarifying questions and state assumptions, then talk through the approach, including the tools the candidate would use and why.",
+          "cites": [
+            "ms-technical",
+            "ms-tips"
+          ]
         },
         {
-          "text": "Start by asking clarifying questions and stating your assumptions, then talk through your approach, including the tools you would use and why.",
-          "sourceId": "ms-tips"
+          "text": "Atlassian's P30 to P50 guide describes starting with fundamentals and building in complexity from there, and asking any clarifying questions upfront.",
+          "cites": [
+            "atl-p30"
+          ]
         },
         {
-          "text": "The guide describes starting with fundamentals and then building in complexity, and asking any clarifying questions upfront.",
-          "sourceId": "atl-p30"
-        },
-        {
-          "text": "The problem will be very generic, and candidates are told to start by gathering all the specific requirements from the interviewer.",
-          "sourceId": "fk-sde"
+          "text": "Flipkart's SDE guide warns that the problem will be stated in very general terms, so the first job is to collect the specifics from the interviewer. It calls gathering requirements the most important thing in the design interview. For object-oriented design it adds that the structure of the design should be decided before the class diagram is drawn.",
+          "cites": [
+            "fk-sde"
+          ]
         }
       ]
     },
     {
       "id": "driven",
       "heading": "How the discussion is driven",
-      "claims": [
+      "paragraphs": [
         {
-          "text": "The interviewer will ask questions related to your design, and you should ask questions to complete and validate your design.",
-          "sourceId": "amz-sde2"
+          "text": "Amazon's SDE II page says the interviewer will ask questions related to the design, and the candidate should ask questions of their own to complete and validate it.",
+          "cites": [
+            "amz-sde2"
+          ]
         },
         {
-          "text": "The interviewer asks a very broad design problem and evaluates the solution.",
-          "sourceId": "meta-blog"
+          "text": "Meta's blog post describes an interviewer who poses a very broad design problem and then evaluates the solution. Candidates are asked to make it a conversation, ask clarifying questions and drive towards a good solution. Since there is not enough time to discuss every detail, the post says to find the interesting and hard problems and focus the discussion there. The suggested order is to outline the high-level approach first and then think about how it breaks down into subparts. The candidate should say which components they would use and how those share responsibility, and give a reason with implementation details, such as why a pub-sub queue fits. The last five minutes are for the candidate's questions to the engineer.",
+          "cites": [
+            "meta-blog"
+          ]
         },
         {
-          "text": "Candidates are asked to make it a conversation, ask clarifying questions, and drive towards a good solution.",
-          "sourceId": "meta-blog"
+          "text": "Microsoft's interview tips page says that when a candidate is stuck or has no experience in the subject, asking clarifying questions shows collaboration and resourcefulness.",
+          "cites": [
+            "ms-tips"
+          ]
         },
         {
-          "text": "There is not enough time to discuss every detail, so find the interesting and hard problems to focus the discussion on.",
-          "sourceId": "meta-blog"
+          "text": "Atlassian's P30 to P50 guide tells candidates to keep communicating with the interviewer as they progress towards a solution.",
+          "cites": [
+            "atl-p30"
+          ]
         },
         {
-          "text": "Candidates are told to keep communicating with the interviewer as they progress towards a solution.",
-          "sourceId": "atl-p30"
-        },
-        {
-          "text": "The round is described as the interviewer and interviewee discussing trade-offs and requirements and coming up with a solution.",
-          "sourceId": "fk-sde"
-        },
-        {
-          "text": "The design round is about discussing different approaches at different stages and zeroing in on one.",
-          "sourceId": "fk-sde"
-        },
-        {
-          "text": "Candidates are asked to be vocal about multiple acceptable solutions, and specifically why they rejected the others.",
-          "sourceId": "fk-arch"
+          "text": "Flipkart's SDE guide says the design round is a shared conversation: interviewer and candidate talk through requirements and trade-offs and settle on a solution. Different approaches get weighed at different stages until one is chosen. Candidates are told to keep the exchange as interactive as they can, and the guide calls the round a discussion. It says taking a few minutes to gather thoughts is fine, and that thinking out loud helps interviewers follow along. Flipkart's Architect guide asks candidates to be vocal about multiple acceptable solutions, and specifically about why they rejected the others.",
+          "cites": [
+            "fk-sde",
+            "fk-arch"
+          ]
         }
       ]
     },
     {
       "id": "tooling",
       "heading": "Stated tooling",
-      "claims": [
+      "paragraphs": [
         {
-          "text": "Most technical interviews require coding and system design white boarding exercises.",
-          "sourceId": "amz-topics"
+          "text": "Amazon's SDE II page links a guide to interviewing with Bluescape and suggests Livecode for getting used to coding without an IDE. The software development topics page says most technical interviews require coding and system design white boarding exercises.",
+          "cites": [
+            "amz-sde2",
+            "amz-topics"
+          ]
         },
         {
-          "text": "Design interviews are conducted in CoderPad with Mermaid Markdown, with the same AI assistant available as in the coding interview.",
-          "sourceId": "meta-hiring"
+          "text": "Meta's blog post describes the design interview as mostly talking and drawing on a whiteboard. In the screen, coding happens in a shared online editor, or on a whiteboard if the candidate is there in person.",
+          "cites": [
+            "meta-blog"
+          ]
+        },
+        {
+          "text": "Meta's hiring process page says design interviews run in CoderPad using Mermaid Markdown, and the AI assistant from the coding interview is available there too. Many interviews now include an AI assistant inside the interview environment, and candidates are expected to use it. The assistant offers several models, including Claude, ChatGPT, Gemini and Meta's own, and the candidate chooses one during the interview. No outside AI tools or help are allowed, only the tools inside the interview environment, and the AI-native coding interview supports nine languages, including Python, Java and Go, picked at the start.",
+          "cites": [
+            "meta-hiring"
+          ]
+        },
+        {
+          "text": "Atlassian's P30 to P50 guide says candidates share their own IDE by screen share in coding interviews, and a CodePair environment is available for anyone who cannot set one up. Zoom is used for screen sharing whether the interview is onsite or remote. The system design problem is drawn on a whiteboard or paper, and on Zoom the candidate can use paper and pen, the Zoom whiteboard, or share an editor or drawing tool.",
+          "cites": [
+            "atl-p30"
+          ]
+        },
+        {
+          "text": "Flipkart's SDE guide puts machine coding on the candidate's laptop and problem solving on paper or a whiteboard.",
+          "cites": [
+            "fk-sde"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "other-rounds",
+      "heading": "The other rounds in a loop",
+      "paragraphs": [
+        {
+          "text": "Amazon's SDE II page expects syntactically correct code, with no pseudocode, and judges coding mainly on scalable, robust and well-tested code, so candidates should check edge cases and make sure bad input cannot slip through. Its SDE III page lists the coding objectives as efficiency, reliability, robustness, portability, maintainability and readability. For the behavioral part, the SDE II page says a large share of the conversation is about how the candidate showed the Leadership Principles in past jobs, and brain teasers are not asked. Each interviewer typically asks two or three behavioral questions about successes or challenges, and the SDE III page describes the same pattern, with two or three questions per interviewer about how the candidate used the Leadership Principles.",
+          "cites": [
+            "amz-sde2",
+            "amz-sde3"
+          ]
+        },
+        {
+          "text": "Meta's blog post says its screen covers computer science fundamentals such as algorithms, data structures, recursion and binary trees, and has two coding problems. The questions are short enough to explain in a few minutes and solve in 10 to 30 minutes, and they typically avoid estimation and trick questions. A candidate could solve a problem in any way they choose, and the interviewer could then add further requirements. The behavioral interview is about the candidate's background, what they are passionate about in tech and the impact they want to make.",
+          "cites": [
+            "meta-blog"
+          ]
+        },
+        {
+          "text": "Microsoft's technical interviewing page says that beyond technical discussion, candidates may be asked about past experience and how they would approach role-related scenarios. Coding must be in a language the candidate is strong in, with no pseudocode, in a third-party tool where the code can be run and compiled. Interviewers expect some testing: the code should be checked before it is called done, with security, stress, boundaries, error conditions and corner cases in mind. The technical areas it lists are algorithms, data structures, AI and machine learning, data science and computer networking, given as examples; the list is not exhaustive, and for algorithms the candidate should know at least one n log n sort, preferably two, and explain its complexity.",
+          "cites": [
+            "ms-technical"
+          ]
+        },
+        {
+          "text": "Atlassian's P30 to P50 guide caps each coding interview at 60 minutes and says it shows coding skills, code quality and conceptual thinking, plus adaptability, handling blockers and communication style. How the candidate thinks matters as much as the end result, so communicating with the interviewer throughout is advised. Testing is called crucial in the coding task, with a recommendation to brush up on testing and TDD. Because problems rarely have one solution, the guide asks candidates to show other solutions and why theirs fits best.",
+          "cites": [
+            "atl-p30"
+          ]
+        },
+        {
+          "text": "Flipkart's SDE guide divides machine coding into three stages: 15 minutes of pre-coding to clarify the problem, 90 of coding with 1 or 2 interviewer checkpoints, and 15 of demo. The code is sent at the end of coding, and in the demo the interviewer enters several test cases that the program must handle. The problem solving round has 1 to 3 problems on common data structures and algorithms. The data structures it names are array, linked list, stack, queue, hash map, tree, graph and heap, and the algorithm types include sorting, searching, backtracking and dynamic programming.",
+          "cites": [
+            "fk-sde"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "level",
+      "heading": "Differences by level and role",
+      "paragraphs": [
+        {
+          "text": "Amazon's SDE III page shows where the senior role differs: it adds a technical phone screening with a senior leader before the loop, while the SDE II page has the path go straight from the online assessment to the loop.",
+          "cites": [
+            "amz-sde3",
+            "amz-sde2"
+          ]
+        },
+        {
+          "text": "At the principal level, Atlassian's guide makes the third round a 60-minute leadership craft interview with an engineering manager, on projects where the candidate showed engineering leadership. The questions are scenario-based and dig into driving outcomes on large projects, the direction given to teams and organizational impact through knowledge sharing. The interview is not meant to go deep on technical architecture, though the candidate should still explain why they made architectural choices and how they involved their teams. The guide asks for complex projects with measurable organizational impact, which need not be the candidate's best or most recent.",
+          "cites": [
+            "atl-p60"
+          ]
+        },
+        {
+          "text": "At the P30 to P50 level, Atlassian's guide has the management interview cover four areas: driving outcomes across the software lifecycle, applying and sharing lessons, managing conflict, and taking initiative.",
+          "cites": [
+            "atl-p30"
+          ]
+        },
+        {
+          "text": "Flipkart's Architect guide gives its problem solving round 2 or 3 problems, close to real-world, to break into sub-problems, with pseudocode asked for some parts and no single expected answer. That round may ask about the internal implementation of data structures such as queues, heaps, graphs, trees and hash tables. Machine coding is on a laptop in any language, preferably an object-oriented one with good concurrency libraries, and the candidate can bring their own laptop or use one provided.",
+          "cites": [
+            "fk-arch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "preparation",
+      "heading": "How to prepare",
+      "paragraphs": [
+        {
+          "text": "On its SDE II page Amazon suggests recalling specific details of memorable past experiences and including metrics or data where they apply. Candidates should have examples of taking risks, succeeding, failing and growing, and shape the answers with the STAR method. The page links prep videos on system design, high-level design and common candidate questions. Amazon's software development topics page says to ask the recruiting contact which subjects and skills are most likely to come up before studying. Its list covers programming language, data structures, algorithms, coding, object-oriented design, databases, distributed computing, operating systems, internet topics, and general machine learning and AI, and it says interviewers are not testing whether candidates memorize every detail. The advice there is to review computer science fundamentals, practice coding outside an IDE and keep the customer in mind. The online assessment includes a coding test, a sample coding challenge can be tried as many times as you like, and the page links a video that works through a system design example and how to approach it.",
+          "cites": [
+            "amz-sde2",
+            "amz-topics"
+          ]
+        },
+        {
+          "text": "Meta's blog post asks candidates to prepare a short, interesting description of who they are, where they trained and worked, and their areas of expertise. It also suggests thinking about complex systems they have designed and what they would change if they did it again, and practising the design of a system the company already runs, from the ground up. Reading engineering blogs is recommended, both for approaches that work and for the false starts big companies had along the way. For the screen, the post says to write code by hand in a plain text editor without syntax highlighting or auto-completion, under time pressure, and it suggests a mock interview with a friend to simulate that pressure. Candidates should be able to discuss the big-O complexity of their approaches and review common data structures and traversals. In the coding interview they should think out loud, because the way a problem is solved matters as much as having the right answer, and use the language they know best unless the recruiter says one is required. On time, the post says to look for a good solution but, if none appears in reasonable time, to write a working one and improve it, since some interviews end with no code written. Candidates should be ready to explain the solution, find and fix their own bugs, and ask questions when stuck. For the behavioral interview the post advises reviewing your own resume, being honest about failures, structuring answers with STAR and giving concrete examples instead of theory, and it asks candidates to come with questions about working as an engineer there and to know the company's six core values.",
+          "cites": [
+            "meta-blog"
+          ]
+        },
+        {
+          "text": "Meta's hiring process page says to review the prep material from the recruiter and in the career profile, and to research the interviewers to anticipate their questions. A practice session in the same tool as the interview is available beforehand, and practising with AI coding tools and reading and debugging existing code helps. Candidates should also prepare questions for the recruiter on team dynamics, role specifics and next steps. Microsoft's technical interviewing page says to practice coding a great deal and calls it a critical part of the interview, and to review distributed systems concepts beforehand for anyone who does not work with them regularly. Its interview tips page says to research the role, the tech industry and what the company does well, and to prepare questions to ask. It also says to read the job description for the most relevant skills and prepare examples covering the situation, what you did, the result and what you learned. Candidates should think about how they have used feedback, worked with others and adapted, and structure answers with STAR plus a reflection step.",
+          "cites": [
+            "meta-hiring",
+            "ms-technical",
+            "ms-tips"
+          ]
+        },
+        {
+          "text": "Atlassian's principal backend guide lists sample questions under company values, such as handling difficult conversations, advocating for change and putting the customer first. The P30 to P50 guide adds preparation for the coding interview: set up a familiar IDE and test framework, use a debugger if it helps, and join Zoom about 10 minutes early. For the values interview, candidates should review the company values and prepare examples of living them in past roles. The guide also suggests researching the company, looking up the interviewers on LinkedIn, and coming with questions, and says that if a question goes unasked the candidate can reach out to the recruiter or coordinator.",
+          "cites": [
+            "atl-p60",
+            "atl-p30"
+          ]
+        },
+        {
+          "text": "Flipkart's SDE guide gives advice per round. For the phone screen, find a quiet place, know your resume, prepare a short introduction and go deeper on any detail asked. For the first discussion, ask questions to understand the role charter, scope and kind of work. For design, the guide says to read engineering blogs on how companies design systems, naming Netflix TechBlog and High Scalability, to learn the parts of a distributed system and their trade-offs, and to practice a few design problems. The design topics it lists are data stores, distributed systems, CAP theorem, scaling, caches and queues, and Internet and OS basics. For machine coding it says to ask clarifying questions, clarify input limits, write test cases and dry run before and after coding, and for problem solving to compute time and space complexity and understand the trade-offs between them. Since interviews expect bug-free code in a short time, it recommends practising on online platforms. It also says to learn about the business and the role beforehand and tell the interviewers something that makes you stand out, to ask questions, and to be honest about past failures, since intent and commitment are valued over success. For culture fitment it asks candidates to read up on the four values, Audacity, Bias for Action, Customer First and Integrity, and recall times they showed them.",
+          "cites": [
+            "fk-sde"
+          ]
+        },
+        {
+          "text": "Flipkart's Architect guide adds two tips. Candidates should bring their own laptop if they can, because the IDE or compiler they prefer may not be on the provided one. The resources it suggests are LeetCode, HackerRank, awesome-scalability and High Scalability.",
+          "cites": [
+            "fk-arch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "logistics",
+      "heading": "Logistics and accommodations",
+      "paragraphs": [
+        {
+          "text": "Meta's blog post says that for a remote interview a candidate should pick a quiet spot with a good internet connection and phone reception, and that headphones leave both hands free. It adds to speak clearly and to say so if the interviewer is hard to hear. Unless the interview is very early or very late in the day, someone from engineering or recruiting takes the candidate to lunch, which is a chance to ask someone who is not interviewing them.",
+          "cites": [
+            "meta-blog"
+          ]
+        },
+        {
+          "text": "Meta's hiring process page says interview schedules and prep materials are tailored to the role, and that Career Profile shows upcoming interviews, role-specific prep guides and a CoderPad practice environment. Candidates should check their computer and WiFi beforehand and protect their interview time, since it can be hard to reschedule at the last minute. Accommodations are available for disabilities, long-term and mental health conditions, neurodivergence, sincerely held religious beliefs and pregnancy-related needs, and the recruiter is the contact for questions about the format. The page also says a candidate can apply for more than one role if they meet the minimum qualifications for each, and that the careers site holds only one resume per applicant.",
+          "cites": [
+            "meta-hiring"
+          ]
+        },
+        {
+          "text": "Microsoft's technical interviewing page says that if Teams or another virtual platform is not fully accessible, a candidate can submit an accessibility request and Microsoft will reach out. Its interview tips page repeats that accommodations can be requested when the virtual platform is not accessible, and adds that there is no need to dress up, since candidates can wear what is comfortable.",
+          "cites": [
+            "ms-technical",
+            "ms-tips"
+          ]
+        },
+        {
+          "text": "Atlassian's P30 to P50 guide tells candidates to ask for accommodations or adjustments if they need them.",
+          "cites": [
+            "atl-p30"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "after",
+      "heading": "After the interviews",
+      "paragraphs": [
+        {
+          "text": "Amazon's SDE II and SDE III pages both say the interview outcome is given within 5 business days.",
+          "cites": [
+            "amz-sde2",
+            "amz-sde3"
+          ]
+        },
+        {
+          "text": "Meta's hiring process page says a candidate can send each interviewer a personal message through their career profile after the interview. The time to a decision is hard to estimate, candidates should tell the recruiter about competing offers or deadlines, and the timeline can shift because of holidays and other factors. If selected, the recruiter sends an offer letter, and either way the candidate hears back about the application status.",
+          "cites": [
+            "meta-hiring"
+          ]
+        },
+        {
+          "text": "Microsoft's interview tips page says to ask the hiring manager or recruiter at the end when to expect the decision or next steps. The recruiter follows up on the outcome as soon as a decision is made, and a thank-you email to the recruiter is passed on to the hiring manager and interviewers.",
+          "cites": [
+            "ms-tips"
+          ]
+        },
+        {
+          "text": "In Atlassian's P30 to P50 guide, feedback goes to a hiring committee after the management and values stages, and successful candidates move to team match. Team match is a call with hiring managers who have open roles, and it is not an interview, and the candidate has 24 hours to choose after the teams are presented. Open teams depend on business priorities and can change, which is why assessments come first.",
+          "cites": [
+            "atl-p30"
+          ]
         }
       ]
     }

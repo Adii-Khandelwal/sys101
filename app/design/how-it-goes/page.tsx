@@ -13,17 +13,6 @@ export const dynamic = "error";
 
 const d = getInterview();
 
-// Claims are stored sorted by source, so a group is a run of the same source.
-function groupBySource(claims: { text: string; sourceId: string }[]) {
-  const g: { sourceId: string; texts: string[] }[] = [];
-  for (const c of claims) {
-    const last = g[g.length - 1];
-    if (last?.sourceId === c.sourceId) last.texts.push(c.text);
-    else g.push({ sourceId: c.sourceId, texts: [c.text] });
-  }
-  return g;
-}
-
 export const metadata: Metadata = pageMeta({
   path: "/design/how-it-goes",
   title: d.title,
@@ -31,7 +20,6 @@ export const metadata: Metadata = pageMeta({
 });
 
 export default function HowItGoes() {
-  const src = (id: string) => d.sources.find((s) => s.id === id)!;
   const ld = { "@context": "https://schema.org", "@type": "WebPage", name: d.title, description: d.summary, url: absoluteUrl("/design/how-it-goes"), inLanguage: "en", dateModified: interviewUpdated(d) };
   return (
     <article className="dossier posts-page cap-page">
@@ -48,27 +36,9 @@ export default function HowItGoes() {
         {d.sections.map((s) => (
           <section className="cap-section" id={s.id} key={s.id}>
             <Overprint as="h2">{s.heading}</Overprint>
-            {groupBySource(s.claims).map((g) => {
-              const so = src(g.sourceId);
-              const meta = so.published !== "no date shown" ? so.published : /file metadata created (\d{4})/.exec(so.edition)?.[0].replace("created ", "");
-              return (
-                <div className="interview-group" key={g.sourceId}>
-                  <p className="label design-badge interview-source">
-                    <CompanyLogo name={so.company} size="sm" />
-                    <span>{so.title}</span>
-                    {meta && <span>{meta}</span>}
-                    {so.published !== "no date shown" && !so.edition.startsWith("No file metadata") && <span>{so.edition}</span>}
-                  </p>
-                  <ul className="design-claims">
-                    {g.texts.map((t, i) => (
-                      <li key={i}>
-                        <p>{t}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })}
+            {s.paragraphs.map((p, i) => (
+              <p key={i}>{p.text}</p>
+            ))}
           </section>
         ))}
         <section className="cap-section" id="no-guidance">
@@ -80,6 +50,23 @@ export default function HowItGoes() {
                 <p>
                   <strong>{n.company}.</strong> {n.note}
                 </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section className="cap-section" id="sources">
+          <Overprint as="h2">Sources</Overprint>
+          <ul className="cap-sources">
+            {d.sources.map((s) => (
+              <li key={s.id}>
+                <CompanyLogo name={s.company} size="sm" />
+                <a href={s.url} target="_blank" rel="noopener noreferrer">
+                  {s.title}
+                </a>
+                <span className="label">
+                  {s.company}
+                  {s.published !== "no date shown" ? `, ${s.published}` : /file metadata created (\d{4})/.exec(s.edition)?.[1] ? `, file created ${/file metadata created (\d{4})/.exec(s.edition)![1]}` : ""}. Terms: {s.terms}. Read {s.verifiedOn}.
+                </span>
               </li>
             ))}
           </ul>
